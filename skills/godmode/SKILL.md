@@ -50,24 +50,15 @@ code exists, tests passing → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute
-Read the skill's SKILL.md. Follow it. For chains: `think → plan → build → test → fix → optimize → secure → ship`. Print `── chain: build ✓ → test ──` between steps. Never ask "should I continue?"
-
-## The Loop — Core Principle
-Iterative skills (optimize, fix, debug, test, secure) define their own `WHILE` loop. Follow literally. Universal invariants:
-- Track `current_iteration`. No counter = not looping.
-- Commit BEFORE verify. Revert: `git reset --hard HEAD~1`.
-- Log every iteration to `.godmode/<skill>-results.tsv`.
-- `Iterations: N` = bounded. No number = loop forever.
-- Stuck (>5 discards): re-read all, try opposite, try radical.
-
-## Multi-Agent Dispatch
-When 2+ independent tasks touch different files: up to 5 agents per round, each with task, skill, file scope, `isolation: "worktree"`. Merge sequentially. Test after each. Conflict/fail → discard, retry.
+Read the skill's SKILL.md. Follow it.
 
 ## Rules
-1. Detect stack FIRST.
+1. Detect stack FIRST. Cache result.
 2. One skill at a time. Read its SKILL.md. Follow it.
-3. Never ask "should I continue?" Loop until done or bounded.
-4. Log every skill to `.godmode/session-log.tsv`.
-5. Commit before verify. Revert on failure. One change per iteration.
-6. Max 5 agents per round. Scope files. Merge sequentially.
-7. Chain auto-transitions. Skip completed phases.
+3. Iterative skills define `WHILE` loops. Track `current_iteration`. No counter = not looping.
+4. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
+5. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
+6. Log iterations to `.godmode/<skill>-results.tsv`, skills to `.godmode/session-log.tsv`.
+7. Stuck (>5 discards): re-read all, try opposite, try radical.
+8. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
+9. Chain auto-transitions: `think → plan → build → test → fix → optimize → secure → ship`. Skip completed.
