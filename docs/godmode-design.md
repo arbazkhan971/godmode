@@ -1428,4 +1428,123 @@ Chain to /godmode:fix? [Y/n]
 
 ---
 
-## Status: ITERATION 14 — Debug skill spec complete
+## 15. `/godmode:fix` — Error Fixer Skill Spec
+
+**Origin:** Autoresearch (autonomous error remediation)
+**Phase:** OPTIMIZE
+**Purpose:** Autonomous error fixing — one fix per iteration, auto-revert on failure, repeat until zero errors remain.
+
+### Trigger Conditions
+
+- Tests are failing and root cause is known (from `/godmode:debug` or obvious)
+- Lint errors, type errors, build errors
+- User says "fix this", "fix the errors", "make it pass"
+- Explicitly invoked with `/godmode:fix`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--errors` | auto | Error source: `test`, `lint`, `typecheck`, `build`, `runtime`, `all` |
+| `--verify` | auto | Verification command (auto-detects from project) |
+| `--max-iterations` | 15 | Maximum fix attempts |
+| `--one-at-a-time` | true | Fix one error per iteration (safer, more traceable) |
+| `--auto-revert` | true | Automatically revert if fix introduces new errors |
+
+### Workflow
+
+**Step 1: Enumerate Errors**
+- Run the verification command (test suite, linter, type checker, build)
+- Parse the output to extract individual errors
+- Create an error inventory:
+
+```
+Error Inventory (5 errors):
+  E1: [TEST]  rate-limiter.test.ts:34 — "should reject at limit" — AssertionError
+  E2: [TEST]  rate-limiter.test.ts:56 — "should reset window" — Timeout
+  E3: [LINT]  rate-limiter.ts:12 — no-unused-vars: 'oldLimit'
+  E4: [TYPE]  rate-limiter.ts:45 — Type 'string' not assignable to 'number'
+  E5: [LINT]  rate-limiter.ts:78 — prefer-const: 'config' is never reassigned
+```
+
+**Step 2: Prioritize**
+- Fix order: BUILD errors → TYPE errors → TEST errors → LINT errors
+- Within a category: fix root causes first (a type error might cause a test failure)
+- Identify cascading errors (fixing E4 might auto-fix E1)
+
+**Step 3: Fix One Error**
+- Select the highest-priority error
+- Make the minimal code change to fix it
+- One fix, one error, one iteration — no bundling
+
+**Step 4: Verify**
+- Run the full verification command
+- Count remaining errors
+- Check: did the fix introduce any NEW errors?
+
+**Step 5: Keep or Revert**
+
+| Result | Action |
+|--------|--------|
+| Error fixed, no new errors | **KEEP** — commit: `fix: resolve E1 — off-by-one in limit check` |
+| Error fixed, but new error introduced | **REVERT** — the fix is wrong, try different approach |
+| Error not fixed | **REVERT** — try different approach |
+| Error fixed, but different error now fails | **KEEP** — net progress (fewer total errors) |
+
+**Step 6: Repeat**
+- Loop back to Step 1 with updated error inventory
+- Continue until: zero errors, max iterations reached, or stuck (same error fails 3 fixes)
+
+### Progress Tracking
+
+```
+Fix Progress:
+  Iteration 1: Fix E4 (type error) → 5 errors → 4 errors ✓
+  Iteration 2: Fix E1 (test, caused by E4) → 4 errors → 3 errors ✓ (cascade)
+  Iteration 3: Fix E2 (test timeout) → 3 errors → 3 errors ✗ (reverted)
+  Iteration 4: Fix E2 (different approach) → 3 errors → 2 errors ✓
+  Iteration 5: Fix E3 (lint) → 2 errors → 1 error ✓
+  Iteration 6: Fix E5 (lint) → 1 error → 0 errors ✓
+
+  ✅ All errors resolved in 6 iterations (1 revert)
+```
+
+### Key Behaviors
+
+1. **One fix per iteration** — Atomic fixes are traceable and revertable
+2. **Auto-revert is default** — If a fix makes things worse, undo it immediately
+3. **Root causes first** — Don't fix symptoms; cascade fixes save iterations
+4. **Minimal changes** — The smallest change that fixes the error, nothing more
+5. **Know when to stop** — If the same error resists 3 fix attempts, escalate to user
+
+### Example Usage
+
+```
+User: /godmode:fix --errors all
+
+Agent: Scanning for errors...
+  Found: 2 test failures, 1 type error, 2 lint warnings (5 total)
+
+  Iteration 1/15: Fixing TYPE error in rate-limiter.ts:45
+    Change: parseInt(config.limit) → config.limit (already a number from schema)
+    Verify: 5 → 3 errors (type error fixed, 1 test cascade-fixed) ✓ KEPT
+
+  Iteration 2/15: Fixing TEST "should reset window" timeout
+    Change: Increase test timeout 1000ms → 5000ms? No — fix the actual issue.
+    Change: Use fake timers in test instead of real setTimeout
+    Verify: 3 → 2 errors ✓ KEPT
+
+  Iteration 3/15: Fixing LINT no-unused-vars
+    Change: Remove unused variable 'oldLimit'
+    Verify: 2 → 1 error ✓ KEPT
+
+  Iteration 4/15: Fixing LINT prefer-const
+    Change: let config → const config
+    Verify: 1 → 0 errors ✓ KEPT
+
+  ✅ All errors resolved in 4 iterations (0 reverts)
+```
+
+---
+
+## Status: ITERATION 15 — Fix skill spec complete
