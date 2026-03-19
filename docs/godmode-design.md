@@ -10545,3 +10545,109 @@ These skills are designed to be invoked after `/godmode:comply` identifies which
 | `commands/godmode/soc2.md` | Command | Usage reference for `/godmode:soc2` |
 
 **Iterations 375-380 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 92. Database Specialization Skills
+
+Three database specialization skills give Godmode deep, production-grade expertise in PostgreSQL, Redis, and NoSQL databases — going far beyond the query optimization and migration skills already in the toolkit. These skills cover architecture, internals, operational tuning, and system design patterns specific to each database technology.
+
+### 92.1 Postgres — PostgreSQL Mastery (`skills/postgres/SKILL.md`)
+
+**Purpose:** Master advanced PostgreSQL features, extensions, replication, partitioning, performance tuning, and connection pooling.
+
+**Key capabilities:**
+- **Advanced SQL features:** Recursive and materialized CTEs (with PostgreSQL 12+ optimization fence control), window functions (ROW_NUMBER, PERCENT_RANK, LAG/LEAD, moving averages with RANGE frames), GROUPING SETS/CUBE/ROLLUP for multi-dimensional aggregation, and FILTER clause for conditional aggregation.
+- **JSONB mastery:** GIN indexing (full and path-specific), containment operators (@>), SQL/JSON path queries (jsonb_path_query, jsonb_path_exists), JSONB aggregation (jsonb_agg, jsonb_build_object), atomic updates (jsonb_set, deep merge), and key removal.
+- **Full-text search:** Weighted tsvector columns with GIN indexes, ts_rank_cd scoring, ts_headline snippet generation, auto-update triggers, prefix matching for autocomplete, phrase search, and pg_trgm for fuzzy matching.
+- **Extension management:** pgvector (HNSW and IVFFlat indexes, cosine/L2/inner product distance, search quality tuning), PostGIS (spatial indexes, radius queries, bounding box queries, GeoJSON output), TimescaleDB (hypertables, compression policies, retention policies, continuous aggregates), and an extension selection guide covering 12 extensions.
+- **Replication:** Streaming replication (physical, byte-for-byte HA with failover), logical replication (table-level, cross-version, selective sync), with monitoring queries and a comparison matrix.
+- **Partitioning:** Declarative range (time-series), list (multi-tenant), and hash (even distribution) partitioning with pg_partman automation, partition pruning verification, and sizing guidelines.
+- **VACUUM and autovacuum:** Dead tuple diagnostics, per-table autovacuum threshold tuning (scale factor, cost delay, cost limit), bloat remediation (pg_repack for online compaction), and the trigger formula explained.
+- **pg_stat diagnostics:** pg_stat_statements (top queries by time, mean time, cache hit ratio), pg_stat_user_indexes (unused index detection), pg_stat_activity (lock monitoring, connection stats), and a diagnostic checklist with targets.
+- **Connection pooling:** PgBouncer (session/transaction/statement modes, pool sizing, monitoring), Supavisor (multi-tenant, prepared statements in transaction mode), and pgcat (sharding) with a comparison matrix.
+- **Performance tuning:** Memory (shared_buffers, effective_cache_size, work_mem), WAL (checkpoint tuning, wal_buffers), planner (random_page_cost for SSD, effective_io_concurrency), and parallelism configuration.
+
+**Workflow:** Assess environment -> Apply advanced features (CTEs, windows, JSONB, FTS) -> Configure extensions -> Set up replication -> Design partitioning -> Tune VACUUM/autovacuum -> Configure pooling -> Performance tune -> Report.
+
+**Command:** `/godmode:postgres` (`commands/godmode/postgres.md`)
+
+### 92.2 Redis — Redis Architecture & System Design (`skills/redis/SKILL.md`)
+
+**Purpose:** Design Redis-based systems including caching, queues, pub/sub, session stores, rate limiters, leaderboards, and distributed locks.
+
+**Key capabilities:**
+- **Data structure selection:** Complete guide covering strings (cache, counters, locks), hashes (objects, sessions), lists (queues, stacks, bounded collections), sets (membership, tags, set operations), sorted sets (leaderboards, priority queues, time-series indexes, rate limiting), and streams (event sourcing, consumer groups, reliable messaging) with memory encoding details and a decision matrix mapping 16 use cases to structures.
+- **Caching strategies:** Cache-aside (lazy loading), write-through, write-behind patterns with code examples, four invalidation strategies (TTL, event, version, tag-based), key design conventions, and cache stampede prevention (probabilistic early expiration, distributed lock on miss, background refresh).
+- **Queue and messaging:** Reliable queues with BRPOPLPUSH, priority queues with sorted sets, pub/sub for broadcasts, Redis Streams with consumer groups (XREADGROUP, XACK, XAUTOCLAIM for stuck messages), and a comparison matrix (Streams vs Pub/Sub vs Lists).
+- **Session store:** Hash-based session design with TTL sliding, secondary indexes for user-to-session mapping, and session invalidation patterns.
+- **Cluster and Sentinel:** Sentinel topology (3-node quorum, automatic failover, client connection via sentinel), Redis Cluster (16384 hash slots, hash tags for multi-key operations, cluster commands, limitations), and replication modes (async, WAIT for sync).
+- **Memory optimization:** Encoding thresholds (listpack vs hashtable), key naming conventions, TTL hygiene, value compression, memory analysis commands (MEMORY USAGE, --bigkeys, --memkeys, MEMORY DOCTOR), and a memory report template.
+- **Eviction policies:** Eight policies compared (noeviction, allkeys-lru, volatile-lru, allkeys-lfu, volatile-lfu, allkeys-random, volatile-random, volatile-ttl) with recommendations per use case.
+- **Lua scripting and Redis Functions:** Atomic rate limiter in Lua, EVAL/EVALSHA for script caching, Redis 7+ Functions with named libraries and persistent registration, distributed lock with fencing tokens.
+- **Common patterns:** Sliding window rate limiter, distributed locking (single-node and Redlock), leaderboards with contextual rankings.
+- **Persistence:** RDB snapshots, AOF (appendfsync modes), combined RDB+AOF, and recommendations per use case.
+
+**Workflow:** Assess environment -> Select data structures -> Design caching/queue/session strategy -> Configure Cluster or Sentinel -> Optimize memory and eviction -> Write Lua/Functions for atomicity -> Configure persistence -> Report.
+
+**Command:** `/godmode:redis` (`commands/godmode/redis.md`)
+
+### 92.3 NoSQL — NoSQL Database Design (`skills/nosql/SKILL.md`)
+
+**Purpose:** Design data models for document, key-value, wide-column, graph, and time-series databases with database selection guidance.
+
+**Key capabilities:**
+- **Database selection:** Decision matrix comparing MongoDB, DynamoDB, Cassandra, Neo4j, InfluxDB, TimescaleDB, Redis, and Elasticsearch across data model fit, access pattern support, consistency, and scale. Includes a decision tree and NoSQL vs SQL comparison with the default advice: "Start with PostgreSQL."
+- **MongoDB document modeling:** Five modeling patterns (embedded document, referenced document, bucket pattern for time-series, computed pattern for pre-aggregation, polymorphic pattern for mixed shapes), embedding vs referencing decision guide, compound and partial indexes, text indexes, wildcard indexes, TTL indexes, and multi-stage aggregation pipeline construction with optimization tips ($match early, $project early, allowDiskUse).
+- **DynamoDB single-table design:** Composite PK/SK patterns, entity packing in a single table, GSI strategies (inverted index, status index, sparse index, overloaded GSI), LSI vs GSI trade-offs, capacity planning (on-demand vs provisioned, WCU/RCU calculations), and hot partition prevention with sharding workarounds.
+- **Cassandra partition key design:** Query-driven table design (one table per query), partition key selection for high cardinality and even distribution, clustering column ordering, time bucketing strategies (day/hour/minute based on data rate), partition size targets (< 100MB, < 100K rows), wide-row pattern, and multi-table write amplification as a normal practice.
+- **Neo4j graph modeling:** Node and relationship design principles, five graph patterns (social network, e-commerce recommendations, knowledge graph, fraud detection, dependency graph), Cypher queries for traversals (variable-length paths, shortest path, pattern matching, recommendations), and Graph vs Relational comparison showing where graphs are 100-1000x faster.
+- **Time-series databases:** InfluxDB concepts (measurements, tags vs fields, high-cardinality warnings), Flux queries (aggregation windows, anomaly detection, downsampling tasks), and TimescaleDB vs InfluxDB comparison.
+
+**Workflow:** Assess requirements -> Select database (decision matrix) -> Design data model for access patterns -> Build indexes -> Write queries for every access pattern -> Validate model against requirements -> Report.
+
+**Command:** `/godmode:nosql` (`commands/godmode/nosql.md`)
+
+### Skill Chains
+
+**Database Deep-Dive Chain:**
+```
+/godmode:nosql --compare → /godmode:postgres (if SQL) → /godmode:query → /godmode:migrate
+/godmode:nosql --compare → /godmode:nosql --mongodb (if document) → /godmode:query --mongo
+/godmode:nosql --compare → /godmode:nosql --dynamodb (if key-value) → /godmode:deploy
+```
+
+**Full-Stack Data Chain:**
+```
+/godmode:schema → /godmode:postgres → /godmode:redis --cache → /godmode:query → /godmode:migrate → /godmode:deploy
+```
+
+**Performance Chain:**
+```
+/godmode:postgres --diagnose → /godmode:postgres --vacuum → /godmode:query → /godmode:redis --cache → /godmode:optimize
+```
+
+### Key Design Principles
+
+| # | Principle | Rationale |
+|---|-----------|-----------|
+| 1 | Start with PostgreSQL | It handles 90% of workloads. Move to NoSQL only when PostgreSQL cannot meet a specific technical requirement. |
+| 2 | Access patterns drive NoSQL design | In NoSQL, you design the data model around your queries, not around your entities. List every access pattern first. |
+| 3 | Measure before tuning | Run pg_stat_statements, check Redis SLOWLOG, use MongoDB explain() before changing any configuration. |
+| 4 | Connection pooling is mandatory | PostgreSQL forks a process per connection (~10MB each). Redis has max_clients limits. Always use poolers. |
+| 5 | Denormalization is a feature in NoSQL | Duplicating data across tables (Cassandra) or embedding (MongoDB) trades storage for read performance. Document every decision. |
+| 6 | Graph databases for relationships | If queries are "find connections" or "shortest path", a graph database is 100-1000x faster than relational JOINs. |
+| 7 | Redis data structure selection matters | Using String for a leaderboard instead of Sorted Set wastes memory and makes operations harder. Choose the right structure. |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/postgres/SKILL.md` | Skill | PostgreSQL mastery with CTEs, JSONB, FTS, extensions, replication, partitioning, tuning |
+| `skills/redis/SKILL.md` | Skill | Redis architecture with data structures, caching, queues, Cluster, Sentinel, Lua |
+| `skills/nosql/SKILL.md` | Skill | NoSQL design with MongoDB, DynamoDB, Cassandra, Neo4j, time-series databases |
+| `commands/godmode/postgres.md` | Command | Usage reference for `/godmode:postgres` |
+| `commands/godmode/redis.md` | Command | Usage reference for `/godmode:redis` |
+| `commands/godmode/nosql.md` | Command | Usage reference for `/godmode:nosql` |
+
+**Iterations 364-369 (6 files, 3 skills, 3 commands)**
