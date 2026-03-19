@@ -2675,4 +2675,128 @@ When a cycle completes, results are archived:
 
 ---
 
-## Status: ITERATION 25 — Results Logging complete
+## 26. Parallel Agent Dispatch
+
+**Purpose:** Split work across multiple agents for independent tasks, using git worktrees for isolation and model matching for cost optimization.
+
+### When to Use Parallel Dispatch
+
+| Scenario | Parallel? | Reason |
+|----------|-----------|--------|
+| Tasks in same parallel group | Yes | No dependencies between them |
+| Multiple test suites | Yes | Tests are independent |
+| Code review + next task | Yes | Review doesn't block next task's RED phase |
+| Sequential tasks | No | Task B depends on Task A's output |
+| Optimization iterations | No | Each iteration depends on the previous |
+
+### Architecture
+
+```
+Main Agent (Coordinator)
+  │
+  ├── Creates worktrees for each parallel task
+  ├── Dispatches sub-agents with task context
+  ├── Monitors progress and handles failures
+  └── Merges results and resolves conflicts
+
+Sub-Agent A                    Sub-Agent B
+  ├── Works in worktree A       ├── Works in worktree B
+  ├── Follows TDD cycle         ├── Follows TDD cycle
+  ├── Commits to task branch    ├── Commits to task branch
+  └── Reports completion        └── Reports completion
+```
+
+### Git Worktree Strategy
+
+Each parallel agent gets its own worktree to avoid file conflicts:
+
+```bash
+# Coordinator creates worktrees
+git worktree add .godmode/worktrees/task-003 -b godmode/task-003
+git worktree add .godmode/worktrees/task-004 -b godmode/task-004
+git worktree add .godmode/worktrees/task-005 -b godmode/task-005
+
+# After completion, coordinator merges
+git checkout godmode/feature-branch
+git merge godmode/task-003
+git merge godmode/task-004
+git merge godmode/task-005
+
+# Cleanup
+git worktree remove .godmode/worktrees/task-003
+git worktree remove .godmode/worktrees/task-004
+git worktree remove .godmode/worktrees/task-005
+```
+
+### Model Matching Strategy
+
+Not all tasks need the most powerful model. Match task complexity to model capability:
+
+| Task Type | Complexity Signal | Recommended Model | Cost Factor |
+|-----------|------------------|-------------------|-------------|
+| Write test stub | Low: template-based work | Haiku/Flash | 1x |
+| Add config/boilerplate | Low: repetitive patterns | Haiku/Flash | 1x |
+| Implement feature | Medium: requires understanding | Sonnet | 5x |
+| Fix complex bug | High: requires reasoning | Opus | 25x |
+| Architecture change | High: cross-cutting concern | Opus | 25x |
+| Code review | Medium: analysis, not creation | Sonnet | 5x |
+| Write documentation | Low-Medium: summarization | Sonnet | 5x |
+
+### Dispatch Protocol
+
+**Step 1: Identify Parallel Tasks**
+- Read the plan's dependency graph
+- Find tasks with no incomplete dependencies (ready to execute)
+- Group by parallel group letter
+
+**Step 2: Prepare Context**
+- For each task, prepare a context package:
+  - Task description from the plan
+  - Relevant file contents (read from worktree)
+  - Test expectations
+  - Coding conventions from the project
+  - Reference to the spec (for understanding the big picture)
+
+**Step 3: Dispatch**
+- Create worktree per task
+- Launch sub-agent with task context and model selection
+- Each sub-agent follows the same TDD workflow as `/godmode:build`
+
+**Step 4: Monitor**
+- Track completion status of each sub-agent
+- Handle timeouts (kill after 2x expected time)
+- Handle failures (mark task as failed, move on)
+
+**Step 5: Merge**
+- Wait for all parallel tasks to complete
+- Merge each task branch into the feature branch
+- If merge conflicts arise:
+  1. Auto-resolve if trivial (different files, different sections)
+  2. If non-trivial: merge one at a time, running tests after each
+
+**Step 6: Integration Verification**
+- Run the full test suite on the merged result
+- If tests fail: identify which merge caused the failure
+- Fix integration issues before proceeding
+
+### Conflict Resolution Strategy
+
+| Conflict Type | Resolution |
+|--------------|-----------|
+| Different files modified | Auto-merge (no conflict) |
+| Same file, different sections | Auto-merge (git handles this) |
+| Same file, same section | Manual resolution by coordinator |
+| Package dependency conflicts | Merge package files, run install, test |
+| Test file conflicts | Keep both test sets, run all |
+
+### Key Behaviors
+
+1. **Worktrees, not branches** — Each agent gets an isolated working directory
+2. **Model matching saves cost** — Don't use Opus for boilerplate tasks
+3. **Integration test after merge** — Parallel work can create integration issues
+4. **Graceful failure** — If one agent fails, the others continue
+5. **Coordinator is responsible** — The main agent owns the merge and conflict resolution
+
+---
+
+## Status: ITERATION 26 — Parallel Agent Dispatch complete
