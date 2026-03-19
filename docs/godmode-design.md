@@ -7953,6 +7953,115 @@ Integration with existing skills:
 
 ---
 
+## 83. Security Specialization Skills
+
+Deep security specialization skills that extend beyond the general `/godmode:secure` audit to cover penetration testing, DevSecOps pipeline integration, and cryptographic implementation.
+
+### Skill Overview
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| **Pentest** | `/godmode:pentest` | Authorized penetration testing with reconnaissance, OWASP-methodology exploitation, API security testing, and formal report writing |
+| **DevSecOps** | `/godmode:devsecops` | Security integration into CI/CD pipelines — SAST, DAST, SCA, container scanning, secret scanning, and security gates |
+| **Crypto** | `/godmode:crypto` | Correct cryptographic implementation — encryption, key management, password hashing, digital signatures, JWT security, TLS hardening |
+
+### Pentest Skill (`/godmode:pentest`)
+
+The penetration testing skill provides structured, authorized security testing following OWASP methodology:
+
+- **Authorization verification** — mandatory scope agreement before any testing begins
+- **Reconnaissance** — passive information gathering (tech stack, public exposure, dependency CVEs) and active enumeration (endpoints, input vectors, user roles)
+- **Vulnerability assessment** — systematic OWASP Top 10 testing: broken access control, cryptographic failures, injection (SQL, XSS, command, NoSQL, SSTI), insecure design, misconfiguration, vulnerable components, authentication failures, integrity failures, logging gaps, SSRF
+- **API security testing** — BOLA, BFLA, mass assignment, rate limiting, data exposure, authentication bypass
+- **Web app testing** — DOM XSS, prototype pollution, storage security, WebSocket auth, file upload, CSRF, clickjacking
+- **Proof-of-concept creation** — minimal-impact exploitation evidence with reproducible steps
+- **Report writing** — executive summary, findings with severity/CVSS, remediation priority (24h/1wk/1mo/ongoing)
+
+Flags: `--recon`, `--assess`, `--api`, `--web`, `--auth`, `--injection`, `--deps`, `--retest`, `--quick`, `--report`
+
+### DevSecOps Skill (`/godmode:devsecops`)
+
+The DevSecOps skill integrates security controls into CI/CD pipelines with a maturity model:
+
+- **Pipeline assessment** — evaluate current security maturity (Level 0-5) and identify gaps
+- **SAST integration** — Semgrep (OWASP + CWE rulesets), CodeQL (data flow analysis), SonarQube (quality gates)
+- **DAST integration** — OWASP ZAP (baseline + full scan), Burp Suite Enterprise (crawl and audit)
+- **SCA** — Snyk, npm/pip/cargo audit, Dependabot/Renovate auto-update PRs, SBOM generation (SPDX/CycloneDX)
+- **Container scanning** — Trivy (image + IaC + fs), Snyk Container, hardening checks (non-root, pinned tags, multi-stage builds)
+- **Secret scanning** — gitleaks pre-commit + CI, trufflehog scheduled deep scan, GitHub push protection, custom patterns
+- **IaC security** — Checkov, tfsec for Terraform/Kubernetes/Dockerfile misconfigurations
+- **Security gates** — blocking gates per severity, documented override process with expiry, metrics dashboard
+- **Artifact signing** — cosign for containers, sigstore for provenance, GPG for commits
+
+Maturity levels:
+- Level 0: No security in pipeline
+- Level 1: Basic dependency scanning
+- Level 2: SAST + SCA + secret scanning
+- Level 3: Full SAST/DAST/SCA + container scanning
+- Level 4: Security gates + SBOM + signed artifacts
+- Level 5: Continuous verification + policy-as-code
+
+Flags: `--assess`, `--sast`, `--dast`, `--sca`, `--containers`, `--secrets`, `--gates`, `--iac`, `--sbom`, `--metrics`, `--platform <name>`
+
+### Crypto Skill (`/godmode:crypto`)
+
+The cryptography skill ensures correct algorithm selection and implementation:
+
+- **Algorithm selection guide** — definitive recommendations for every use case: passwords (Argon2id), symmetric encryption (AES-256-GCM), asymmetric (X25519, RSA-OAEP), signatures (Ed25519, RS256), hashing (SHA-256, BLAKE3), KDF (HKDF), RNG (CSPRNG)
+- **Encryption at rest** — envelope encryption pattern with KMS, application-level field encryption, database-level TDE + column encryption
+- **Encryption in transit** — TLS 1.2/1.3 hardening (Nginx/Apache configs), AEAD-only cipher suites, forward secrecy via ECDHE, HSTS with preload, OCSP stapling
+- **Password hashing** — Argon2id (m=64MB, t=3, p=4) or bcrypt (cost 12+), hash upgrade migration on login, breach list checking
+- **JWT security** — algorithm selection by architecture (HS256 single-service, RS256/ES256 multi-service), mandatory claim verification (iss, aud, exp), JWKS endpoint for key distribution
+- **Digital signatures** — Ed25519 for documents, HMAC-SHA256 for API request signing, cosign for container images
+- **Key management lifecycle** — generation (CSPRNG, KMS), storage (KMS/Vault), distribution (JWKS, envelopes), rotation (scheduled + emergency), revocation (CRL, OCSP, blacklist), destruction (crypto-shred)
+
+Flags: `--passwords`, `--encrypt`, `--tls`, `--jwt`, `--signatures`, `--keys`, `--audit`, `--migrate`, `--test`
+
+### Integration with Existing Skills
+
+The security specialization skills form a comprehensive security workflow:
+
+```
+/godmode:secure  ->  /godmode:pentest  ->  /godmode:fix  ->  /godmode:pentest --retest
+     |                                          |
+  STRIDE + OWASP              Verify fixes with re-testing
+  audit identifies             after remediation
+  areas to test
+
+/godmode:devsecops  ->  /godmode:cicd  ->  /godmode:ship
+     |                       |                  |
+  Security controls     Pipeline config    Deploy through
+  integrated into       with gates         secure pipeline
+  CI/CD workflow
+
+/godmode:crypto  ->  /godmode:auth  ->  /godmode:secrets
+     |                    |                   |
+  Algorithm          Token signing       Key storage
+  selection and      and password        and rotation
+  implementation     hashing             management
+```
+
+- **From `/godmode:secure`:** General security audit identifies areas needing deeper testing via `/godmode:pentest`
+- **From `/godmode:pentest`:** Findings feed into `/godmode:fix` for remediation, then `/godmode:pentest --retest` for verification
+- **From `/godmode:devsecops`:** Pipeline security integrates with `/godmode:cicd` configuration and `/godmode:ship` deployment
+- **From `/godmode:crypto`:** Cryptographic implementation supports `/godmode:auth` (password hashing, JWT signing) and `/godmode:secrets` (key management)
+- **All three to `/godmode:ship`:** Security specialization skills are pre-ship quality gates
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/pentest/SKILL.md` | Skill | Authorized penetration testing workflow |
+| `skills/devsecops/SKILL.md` | Skill | DevSecOps pipeline security integration |
+| `skills/crypto/SKILL.md` | Skill | Cryptographic implementation guidance |
+| `commands/godmode/pentest.md` | Command | Usage reference for `/godmode:pentest` |
+| `commands/godmode/devsecops.md` | Command | Usage reference for `/godmode:devsecops` |
+| `commands/godmode/crypto.md` | Command | Usage reference for `/godmode:crypto` |
+
+**Iterations 266-271 (6 files, 3 skills, 3 commands)**
+
+---
+
 ## 86. Productivity & Project Management Skills
 
 Four new skills bring structured developer productivity and project management workflows into Godmode — from daily standups and sprint retrospectives through task prioritization and scope management.
@@ -8393,3 +8502,100 @@ The Web Performance & SEO skills integrate with the existing Godmode workflow:
 | `commands/godmode/pwa.md` | Command | Usage reference for `/godmode:pwa` |
 
 **Iterations 292-297 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 84. State Management & Data Modeling Skills
+
+Three new skills extend Godmode into application state architecture, data modeling, and ORM/data access optimization. These skills cover the full data lifecycle: from how state is managed on the client, to how data is modeled in the database, to how the application accesses that data through an ORM.
+
+### 84.1 State Management (`/godmode:state`)
+
+**Purpose:** Design and implement application state architecture with the right tool for each category of state.
+
+**Key capabilities:**
+- **State classification:** Categorizes all application state into server state, client UI state, client domain state, form state, URL state, persisted state, computed/derived state, and machine state. Correct classification drives correct tool selection.
+- **Frontend state libraries:** Comparison matrices for Redux Toolkit, Zustand, Jotai, MobX, Pinia, and Signals with bundle size, DX, TypeScript support, and use-case recommendations.
+- **Server state management:** React Query, SWR, Apollo Client, and RTK Query setup with query key factories, staleness configuration, cache invalidation, and garbage collection.
+- **Optimistic updates:** Full optimistic mutation pattern with snapshot, optimistic cache update, error rollback, and settlement invalidation.
+- **State machines:** XState and Robot for complex workflows (checkout, file upload, WebSocket lifecycle) where invalid state combinations must be prevented.
+- **Persistence and hydration:** Storage strategy selection (localStorage, sessionStorage, IndexedDB, cookies, URL params), SSR hydration patterns, and cross-tab synchronization.
+- **Cache synchronization:** Real-time cache invalidation via WebSocket/SSE integration with React Query.
+
+**Workflow:** Audit current state -> Classify by category -> Select tools -> Design store architecture -> Implement server state caching -> Add optimistic updates -> Build state machines -> Configure persistence/hydration -> Report.
+
+**Command:** `/godmode:state` (`commands/godmode/state.md`)
+
+### 84.2 Data Modeling & Schema Design (`/godmode:schema`)
+
+**Purpose:** Design, evaluate, and evolve data models and schemas across relational and NoSQL databases.
+
+**Key capabilities:**
+- **Entity-relationship modeling:** Entity catalog with attributes and volume estimates, relationship mapping with cardinality (1:1, 1:N, M:N), and text-based ER diagrams.
+- **Relational schema design:** Normalization from 1NF through BCNF with practical guidance. Full SQL DDL generation with UUIDs, constraints (CHECK, NOT NULL, UNIQUE, FK), indexes, and automatic `updated_at` triggers.
+- **Denormalization trade-offs:** Evidence-based denormalization decisions: when read frequency dominates writes, when joins are proven bottlenecks, when data is point-in-time (order snapshots), and when counter caches eliminate aggregation.
+- **NoSQL data modeling:** Document store patterns (embed vs reference decision matrix), key-value design (Redis patterns for caching, sessions, rate limiting, leaderboards), graph database modeling (Neo4j nodes and relationships), and time-series design (TimescaleDB hypertables with compression, retention, and continuous aggregates).
+- **Schema evolution:** Safe changes (add nullable column, add index CONCURRENTLY) vs breaking changes with the expand-contract pattern (add new, backfill, dual-write, migrate reads, drop old).
+- **Validation schemas:** Zod (TypeScript runtime), JSON Schema, Protobuf, and Avro as single sources of truth with derived types and operation-specific variants (create, update, filter).
+- **Multi-tenancy:** Shared schema with row-level security, schema-per-tenant, and database-per-tenant patterns with isolation and complexity trade-offs.
+
+**Workflow:** Understand domain -> Model entities and relationships -> Design schema at correct normalization level -> Evaluate denormalization -> Plan evolution strategy -> Generate validation schemas -> Design multi-tenancy (if needed) -> Report.
+
+**Command:** `/godmode:schema` (`commands/godmode/schema.md`)
+
+### 84.3 ORM & Data Access (`/godmode:orm`)
+
+**Purpose:** Select, configure, and optimize ORMs and data access layers for production performance.
+
+**Key capabilities:**
+- **ORM selection:** Framework-specific comparison matrices for TypeScript (Prisma, Drizzle, TypeORM, Sequelize), Python (SQLAlchemy, Django ORM, Tortoise), Go (GORM, Ent, sqlc), Ruby (ActiveRecord, Sequel), Java (Hibernate, jOOQ), C# (EF Core, Dapper), Rust (Diesel, SeaORM), and PHP (Eloquent, Doctrine).
+- **N+1 query detection and resolution:** Enable query logging, count queries per request, detect loop-based lazy loading, and apply ORM-idiomatic eager loading fixes (Prisma `include`, Django `select_related`/`prefetch_related`, Rails `includes`, GORM `Preload`, SQLAlchemy `joinedload`/`selectinload`).
+- **Connection pooling:** Pool sizing formula (cores * 2 + spindles), configuration for Prisma, Drizzle, SQLAlchemy, Rails, and GORM with min/max connections, idle timeout, max lifetime, statement timeout, and health checks. PgBouncer and serverless pooler guidance.
+- **Transaction management:** Basic transactions, nested transactions with savepoints, and distributed transactions with the Saga pattern (execute/compensate steps with reverse-order rollback).
+- **Query builder patterns:** Composable dynamic query building with type-safe filter, sort, and pagination. Raw SQL escape hatches for every ORM when the abstraction leaks.
+- **Production readiness:** 13-point checklist covering pooling, logging, N+1 detection, timeouts, retries, replica routing, migration sync, and monitoring.
+
+**Workflow:** Detect environment -> Select ORM -> Detect N+1 queries -> Configure connection pool -> Implement transactions -> Build query builders -> Add raw SQL escape hatches -> Verify production readiness -> Report.
+
+**Command:** `/godmode:orm` (`commands/godmode/orm.md`)
+
+### Skill Interactions
+
+The three State Management & Data Modeling skills form a vertical stack from frontend to database:
+
+```
+/godmode:state   ->  /godmode:schema  ->  /godmode:orm   ->  /godmode:query
+(client state)       (data models)        (data access)       (query optimization)
+```
+
+- **State** designs how the frontend manages and caches data
+- **Schema** designs the underlying data models and structures
+- **ORM** configures how the application reads and writes that data
+- **Query** optimizes individual queries when performance issues arise
+
+Each skill can run independently or as part of the data architecture pipeline. The orchestrator (`/godmode`) routes to the appropriate skill based on context.
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Classify before choosing | Separate server state from client state before selecting a library |
+| 2 | Access patterns drive schema | Design schemas for how data is read, not for normalization purity |
+| 3 | The ORM is a tool, not a religion | Use the ORM for CRUD, raw SQL for complex queries |
+| 4 | Measure before optimizing | N+1 detection requires query logging; denormalization requires EXPLAIN evidence |
+| 5 | Minimize state, minimize schema | If it can be computed, don't store it. If it can live in the URL, put it there |
+| 6 | Single source of truth | Define schemas once (Zod, Protobuf), derive everything else |
+| 7 | Evolution must be backward compatible | Every schema change must deploy without downtime |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/state/SKILL.md` | Skill | State management design and implementation |
+| `skills/schema/SKILL.md` | Skill | Data modeling and schema design |
+| `skills/orm/SKILL.md` | Skill | ORM and data access optimization |
+| `commands/godmode/state.md` | Command | Usage reference for `/godmode:state` |
+| `commands/godmode/schema.md` | Command | Usage reference for `/godmode:schema` |
+| `commands/godmode/orm.md` | Command | Usage reference for `/godmode:orm` |
+
+**Iterations 272-277 (6 files, 3 skills, 3 commands)**
