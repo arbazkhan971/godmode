@@ -5148,4 +5148,135 @@ tests/fixtures/
 
 ---
 
-## Status: ITERATION 44 — Testing Strategy complete
+## 45. Marketplace Metadata
+
+**Purpose:** Define the `.claude-plugin/marketplace.json` schema that enables Godmode to be listed in the Claude Code skill marketplace.
+
+### Plugin Manifest (`.claude-plugin/manifest.json`)
+
+```json
+{
+  "schema_version": "1.0",
+  "name": "godmode",
+  "display_name": "Godmode",
+  "version": "1.3.0",
+  "description": "Turn on Godmode for Claude Code. Complete development workflow from idea to shipped product.",
+  "author": {
+    "name": "Godmode AI",
+    "url": "https://github.com/godmode-ai/godmode",
+    "email": "hello@godmode.dev"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/godmode-ai/godmode",
+  "homepage": "https://godmode.dev",
+  "skills": [
+    {
+      "path": "SKILL.md",
+      "command": "/godmode",
+      "description": "Auto-detect phase and route to the right skill"
+    },
+    {
+      "path": "skills/think/SKILL.md",
+      "command": "/godmode:think",
+      "description": "Collaborative brainstorming with spec writing"
+    }
+    // ... (all 16 skills listed)
+  ],
+  "hooks": [
+    {
+      "path": "hooks/session-start.md",
+      "event": "session_start"
+    },
+    {
+      "path": "hooks/lifecycle.md",
+      "event": "lifecycle"
+    }
+  ],
+  "compatibility": {
+    "claude_code": ">=1.0.0",
+    "platforms": ["macos", "linux", "windows"]
+  },
+  "dependencies": [],
+  "keywords": ["development", "workflow", "optimization", "tdd", "security", "shipping"]
+}
+```
+
+### Marketplace Metadata (`.claude-plugin/marketplace.json`)
+
+```json
+{
+  "listing": {
+    "title": "Godmode",
+    "tagline": "Turn on Godmode for Claude Code",
+    "short_description": "Complete development workflow — brainstorm, plan, build with TDD, optimize autonomously, and ship with confidence.",
+    "long_description": "Godmode gives your AI agent a disciplined development workflow from idea to shipped product. It combines structured brainstorming from superpowers with autonomous optimization loops from autoresearch. 16 skills across 4 phases: THINK, BUILD, OPTIMIZE, SHIP.",
+    "icon": "assets/icon.png",
+    "banner": "assets/banner.png",
+    "screenshots": [
+      {
+        "path": "assets/screenshots/brainstorm.png",
+        "caption": "Structured brainstorming with approach comparison"
+      },
+      {
+        "path": "assets/screenshots/optimize.png",
+        "caption": "Autonomous optimization with metric tracking"
+      },
+      {
+        "path": "assets/screenshots/security.png",
+        "caption": "Security audit with STRIDE + OWASP"
+      }
+    ],
+    "demo_gif": "assets/demo.gif"
+  },
+  "categories": ["Development Workflow", "Testing", "Security", "DevOps"],
+  "tags": ["tdd", "optimization", "security", "shipping", "brainstorming", "planning"],
+  "stats": {
+    "skill_count": 16,
+    "file_count": 50,
+    "phases": ["THINK", "BUILD", "OPTIMIZE", "SHIP"]
+  },
+  "pricing": "free",
+  "featured": false,
+  "maturity": "stable",
+  "support": {
+    "issues": "https://github.com/godmode-ai/godmode/issues",
+    "discussions": "https://github.com/godmode-ai/godmode/discussions",
+    "docs": "https://godmode.dev/docs"
+  }
+}
+```
+
+### Icon Spec
+
+- **Size:** 256x256px
+- **Format:** PNG with transparency
+- **Design:** Clean, recognizable at 32x32 (marketplace thumbnail)
+- **Theme:** Lightning bolt or power-up aesthetic (Godmode = power mode)
+
+### Banner Spec
+
+- **Size:** 1280x640px
+- **Format:** PNG
+- **Content:** Plugin name, tagline, and visual representation of the THINK→BUILD→OPTIMIZE→SHIP loop
+
+### Validation
+
+The marketplace validates:
+1. `manifest.json` has all required fields
+2. All skill paths exist
+3. Version follows semver
+4. Icon and banner files exist and meet size requirements
+5. Description is under 500 characters (short) / 2000 characters (long)
+6. No broken links in support URLs
+
+### Key Behaviors
+
+1. **Marketplace-first distribution** — The primary way users find Godmode
+2. **Rich listing** — Screenshots, demo GIF, and detailed description
+3. **Version pinning** — Users can install specific versions
+4. **Update notifications** — Marketplace notifies users of new versions
+5. **Free and open source** — MIT license, no paid tiers
+
+---
+
+## Status: ITERATION 45 — Marketplace Metadata complete
