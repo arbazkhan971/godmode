@@ -10,7 +10,7 @@ description: Ship workflow. Checklist → dry-run → ship → verify. PR, deplo
 ### 1. Inventory Changes
 Run `git log main..HEAD --oneline` and `git diff main..HEAD --stat`.
 ### 2. Pre-Ship Checklist
-Run each check, record pass/fail: `test_cmd` passes, `lint_cmd` clean, `build_cmd` succeeds, no secrets in diff (`grep -rn 'API_KEY\|SECRET\|PASSWORD'`), no TODO/FIXME in diff.
+Run each, record pass/fail: `test_cmd`, `lint_cmd`, `build_cmd`, `grep -rn 'API_KEY\|SECRET\|PASSWORD' $(git diff main..HEAD --name-only)`, `grep -n 'TODO\|FIXME' $(git diff main..HEAD --name-only)`.
 Score = passing/total x 100. Must be 100% to proceed.
 ### 3. Dry-Run
 Preview: show exact commands that will run, files/branches/tags that will be created. User must confirm.
@@ -25,5 +25,5 @@ Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
 
 ## Rules
 1. 100% checklist before shipping. No exceptions.
-2. Dry-run before real ship. Rollback plan before shipping.
+2. Dry-run before real ship. State rollback command before executing.
 3. Verify after shipping. One ship per invocation.
