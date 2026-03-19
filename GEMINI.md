@@ -21,7 +21,7 @@ When a skill says "use Read to examine the file," use `read_file`. When it says 
 
 ## How to Use Skills
 
-Godmode has **165 skills** and **7 subagents**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
+Godmode has **171 skills** and **7 subagents**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
 
 **When a user invokes a skill** (e.g., `/godmode:secure`), read the full skill file before executing:
 ```
@@ -50,7 +50,7 @@ Godmode ships with 7 specialized agents. For complex tasks, use the planner to d
 
 Note: Gemini CLI does not support parallel subagent dispatch. Execute agent roles sequentially: plan → explore → build → review → optimize.
 
-## Skill Catalog (165 skills)
+## Skill Catalog (171 skills)
 
 | Skill | Description |
 |---|---|
@@ -207,6 +207,23 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | wasm | WebAssembly development |
 | web3 | Blockchain and Web3 development |
 | webperf | Web performance optimization |
+| apidocs | OpenAPI/Swagger documentation generation |
+| cron | Scheduled tasks and job queue management |
+| dependencies | Dependency management and supply chain security |
+| experiment | A/B testing and statistical analysis |
+| feature | Feature flags and gradual rollouts |
+| ghactions | GitHub Actions workflow design and optimization |
+| notify | Push, SMS, and in-app notifications |
+| pm | Product management — PRDs, user stories, prioritization |
+| ratelimit | Rate limiting algorithms and middleware |
+| research | User research — personas, journey mapping, JTBD |
+| seed | Database seeding and factory patterns |
+| slo | SLO/SLI definition and error budget tracking |
+| strategy | Product strategy — roadmaps, growth models |
+| upload | File uploads and media processing |
+| uxdesign | UI/UX design — personas, heuristics, user flows |
+| webhook | Webhook design, delivery, and retry logic |
+| wireframe | Wireframing, prototyping, component layout |
 
 ## Core Behaviors
 

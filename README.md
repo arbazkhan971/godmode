@@ -2,20 +2,22 @@
 
 # GODMODE
 
-### Turn on Godmode for Claude Code.
+### Turn on Godmode for Claude Code, Codex, Gemini CLI & OpenCode.
 
-**153 skills. Zero configuration. One command.**
+**171 skills. 7 subagents. Zero configuration. One command.**
 
 Your AI writes code. Godmode makes it write *great* code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](package.json)
-[![Skills](https://img.shields.io/badge/skills-153-ff6b6b.svg)](skills/)
-[![Commands](https://img.shields.io/badge/commands-146-orange.svg)](commands/)
+[![Skills](https://img.shields.io/badge/skills-171-ff6b6b.svg)](skills/)
+[![Agents](https://img.shields.io/badge/subagents-7-ff9f43.svg)](agents/)
+[![Commands](https://img.shields.io/badge/commands-158-orange.svg)](commands/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet.svg)](https://claude.ai)
+[![Codex](https://img.shields.io/badge/Codex-Compatible-green.svg)](.codex/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Quick Start](#quick-start) · [All 153 Skills](#the-skill-map-153-skills) · [Examples](#real-world-examples) · [Contributing](#contributing)
+[Quick Start](#quick-start) · [Subagents](#subagents-7-built-in) · [All 170 Skills](#the-skill-map-170-skills) · [Examples](#real-world-examples) · [Contributing](#contributing)
 
 </div>
 
@@ -57,9 +59,10 @@ Every improvement is **measured**. Every bad change is **reverted**. Every exper
 |---|---|
 | Your AI generates code, then you spend hours fixing it | Godmode enforces TDD — tests first, implementation second, zero rework |
 | "Make it faster" produces guesswork, not results | The autonomous loop measures, experiments, and proves every change |
-| You need 10 different tools for design, build, test, deploy | 153 skills, one plugin — from brainstorm to production |
+| You need 10 different tools for design, build, test, deploy | 171 skills + 7 subagents, one plugin — from brainstorm to production |
 | AI changes break things and you don't notice until prod | Git-as-memory: every experiment committed, bad changes auto-reverted |
 | Security review means "looks fine to me" | STRIDE + OWASP + red-team audit finds what humans miss |
+| Design and product work lives in Figma/Notion, disconnected from code | UX design, wireframing, PRDs, and user research skills — design to code in one loop |
 
 ---
 
@@ -88,6 +91,67 @@ Every improvement is **measured**. Every bad change is **reverted**. Every exper
 
 **SHIP** — Pre-flight checklist. Dry run. Deploy. Smoke test. Monitor. Rollback plan ready. Every time.
 
+### How Agents Drive Each Phase
+
+Every phase uses the same agentic pattern: **decompose → dispatch → merge → verify**.
+
+```
+    USER GOAL: "Build a rate limiter"
+         │
+         ▼
+    ┌──────────┐
+    │ GODMODE  │ ← Orchestrator detects phase, routes to skill
+    │  detect  │
+    └────┬─────┘
+         │
+    ┌────▼─────┐     ┌──────────┐
+    │ PLANNER  │────▸│ EXPLORER │  ← Recon agent reads codebase
+    │ agent    │     │ agent    │    before planning
+    └────┬─────┘     └──────────┘
+         │
+         ▼  Generates rounds of parallel tasks
+    ╔══════════════════════════════════════╗
+    ║  Round 1: Foundation                 ║
+    ║  ┌─────────┐ ┌─────────┐ ┌────────┐ ║
+    ║  │BUILDER 1│ │BUILDER 2│ │BUILDER 3│ ║ ← Each in isolated
+    ║  │  wt-1   │ │  wt-2   │ │  wt-3  │ ║   git worktree
+    ║  └────┬────┘ └────┬────┘ └───┬────┘ ║
+    ║       └───────────┼──────────┘      ║
+    ║              MERGE + TEST           ║
+    ╠══════════════════════════════════════╣
+    ║  Round 2: Core Logic                 ║
+    ║  ┌─────────┐ ┌─────────┐            ║
+    ║  │BUILDER 4│ │BUILDER 5│            ║ ← Depends on Round 1
+    ║  │  wt-4   │ │  wt-5   │            ║
+    ║  └────┬────┘ └────┬────┘            ║
+    ║       └───────────┘                 ║
+    ║         MERGE + TEST                ║
+    ╠══════════════════════════════════════╣
+    ║  Round 3: Verification               ║
+    ║  ┌──────────┐  ┌──────────┐         ║
+    ║  │ REVIEWER │  │ SECURITY │         ║ ← Final gates
+    ║  │  agent   │  │  agent   │         ║
+    ║  └──────────┘  └──────────┘         ║
+    ╚══════════════════════════════════════╝
+         │
+         ▼
+    ┌──────────┐
+    │ OPTIMIZE │ ← Optimizer agent runs autonomous loop
+    │  agent   │   measure → modify → verify → keep/revert
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │   SHIP   │ ← Pre-flight, deploy, smoke test, monitor
+    └──────────┘
+```
+
+**Key principles:**
+- **Isolation**: Every builder agent works in its own git worktree — no conflicts during parallel work
+- **Rounds**: Tasks with dependencies wait; independent tasks run simultaneously
+- **Verification**: Full test suite runs after every merge, not just at the end
+- **Auto-revert**: If a merge introduces failures, the offending branch is reverted and flagged for retry
+
 ---
 
 ## Quick Start
@@ -113,7 +177,116 @@ Or go directly to any skill:
 
 ---
 
-## The Skill Map (153 Skills)
+## Subagents (7 Built-in)
+
+Godmode ships with **7 specialized subagents** that work in parallel via isolated git worktrees. The orchestrator decomposes your goal, dispatches agents across rounds, merges results, and verifies — all automatically.
+
+| Agent | Role | Mode |
+|-------|------|------|
+| **planner** | Decomposes goals into parallel tasks mapped to skills | Read-only |
+| **builder** | Implements tasks following skill workflows with TDD | Read-write |
+| **reviewer** | Reviews code for correctness, security, and spec adherence | Read-only |
+| **optimizer** | Autonomous measure → modify → verify iteration loop | Read-write |
+| **explorer** | Read-only codebase reconnaissance and research | Read-only |
+| **security** | STRIDE + OWASP audit with 4 adversarial personas | Read-only |
+| **tester** | TDD test generation and RED-GREEN-REFACTOR enforcement | Read-write |
+
+### Multi-Agent Execution Flow
+
+This is the **default execution mode**. Every plan, build, and optimization runs through this pipeline:
+
+```
+                         ┌─────────────┐
+                         │   PLANNER   │
+                         │  Decompose  │
+                         │  goal into  │
+                         │   rounds    │
+                         └──────┬──────┘
+                                │
+                    ┌───────────┼───────────┐
+                    ▼           ▼           ▼
+              ┌──────────┐┌──────────┐┌──────────┐
+  Round 1     │ BUILDER  ││ BUILDER  ││ BUILDER  │   ← Parallel agents
+  (parallel)  │ worktree ││ worktree ││ worktree │     in isolated
+              │  wt-1    ││  wt-2    ││  wt-3    │     git worktrees
+              └────┬─────┘└────┬─────┘└────┬─────┘
+                   │           │           │
+                   └───────────┼───────────┘
+                               ▼
+                      ┌────────────────┐
+                      │  MERGE + TEST  │   ← Integrate all branches
+                      │  Full suite    │     Run full test suite
+                      └───────┬────────┘
+                              │
+                   ┌──────────┼──────────┐
+                   ▼          ▼          ▼
+             ┌──────────┐┌──────────┐┌──────────┐
+  Round 2    │ BUILDER  ││ BUILDER  ││ TESTER   │   ← Next round of
+  (parallel) │ worktree ││ worktree ││ worktree │     parallel agents
+             │  wt-4    ││  wt-5    ││  wt-6    │
+             └────┬─────┘└────┬─────┘└────┬─────┘
+                  │           │           │
+                  └───────────┼───────────┘
+                              ▼
+                     ┌────────────────┐
+                     │  MERGE + TEST  │
+                     └───────┬────────┘
+                             │
+                   ┌─────────┴─────────┐
+                   ▼                   ▼
+            ┌────────────┐      ┌────────────┐
+            │  REVIEWER  │      │  SECURITY  │   ← Final verification
+            │  Code review│      │  STRIDE +  │     before completion
+            │  vs spec   │      │  OWASP     │
+            └────────────┘      └────────────┘
+```
+
+**How it works across CLIs:**
+
+| CLI | Agent Dispatch Method |
+|-----|----------------------|
+| **Claude Code** | `Agent` tool with `isolation: "worktree"` per task |
+| **Codex** | Native subagents via `.codex/agents/*.toml` definitions |
+| **Gemini CLI** | Sequential execution (no native parallel support) |
+| **OpenCode** | Sequential execution with agent role instructions |
+
+### Example: Multi-Agent Build
+
+```
+$ /godmode Build a SaaS billing system with Stripe
+
+  GODMODE ─── Decomposing into parallel rounds...
+
+  Round 1 — Dispatching 3 agents in parallel:
+    Agent 1 [wt-schema]  → Design database schema     (skill: schema)
+    Agent 2 [wt-api]     → Design API contracts        (skill: api)
+    Agent 3 [wt-webhook] → Set up Stripe webhooks      (skill: webhook)
+
+  [Agent 1] ✓ Schema complete — 4 migrations, 6 tests
+  [Agent 3] ✓ Webhooks complete — 3 endpoints, 5 tests
+  [Agent 2] ✓ API contracts complete — 8 endpoints, 12 tests
+
+  Merging Round 1... ✓ All 23 tests passing
+
+  Round 2 — Dispatching 2 agents in parallel:
+    Agent 4 [wt-auth] → Implement auth + RBAC    (skill: auth)
+    Agent 5 [wt-pay]  → Build payment endpoints   (skill: pay)
+
+  [Agent 4] ✓ Auth complete — JWT + roles, 8 tests
+  [Agent 5] ✓ Payments complete — checkout flow, 11 tests
+
+  Merging Round 2... ✓ All 42 tests passing
+
+  Round 3 — Final verification:
+    Reviewer  → Code review against spec         ✓ APPROVED
+    Security  → STRIDE + OWASP audit             ✓ 0 critical, 1 low
+
+  BUILD COMPLETE ✓  5 agents · 2 rounds · 42 tests · 0 failures
+```
+
+---
+
+## The Skill Map (170 Skills)
 
 ### Core Workflow
 | Skill | Description |
@@ -165,6 +338,10 @@ Or go directly to any skill:
 | `edge` | Edge computing and CDN optimization |
 | `micro` | Microservices architecture and patterns |
 | `search` | Full-text search implementation |
+| `ratelimit` | Rate limiting algorithms and middleware |
+| `webhook` | Webhook design, delivery, and retry logic |
+| `apidocs` | OpenAPI/Swagger documentation generation |
+| `upload` | File uploads and media processing |
 
 ### Frameworks
 | Skill | Description |
@@ -220,6 +397,7 @@ Or go directly to any skill:
 | `snapshot` | Snapshot testing workflows |
 | `chaos` | Chaos engineering experiments |
 | `reliability` | Site reliability engineering |
+| `slo` | SLO/SLI definition and error budget tracking |
 
 ### DevOps & Infrastructure
 | Skill | Description |
@@ -240,6 +418,8 @@ Or go directly to any skill:
 | `resilience` | Circuit breakers, retries, fallbacks |
 | `config` | Configuration management |
 | `cost` | Cloud cost optimization |
+| `cron` | Scheduled tasks and job queue management |
+| `ghactions` | GitHub Actions workflow design and optimization |
 
 ### Frontend & UI
 | Skill | Description |
@@ -260,6 +440,16 @@ Or go directly to any skill:
 | `responsive` | Responsive and adaptive design |
 | `three` | 3D web development |
 | `gamedev` | Game development architecture |
+
+### UI/UX & Product
+| Skill | Description |
+|-------|-------------|
+| `uxdesign` | UI/UX design — personas, heuristics, user flows, design handoff |
+| `wireframe` | Wireframing, prototyping, and component layout planning |
+| `research` | User research — interviews, surveys, journey mapping, JTBD |
+| `pm` | Product management — PRDs, user stories, prioritization, launch |
+| `strategy` | Product strategy — roadmaps, growth models, market analysis |
+| `designconsistency` | Design contract enforcement — no more AI-generated drift |
 
 ### AI & ML
 | Skill | Description |
@@ -315,6 +505,11 @@ Or go directly to any skill:
 | `migrate` | Database and system migrations |
 | `storage` | Storage strategy (S3, blob, local) |
 | `agent` | AI agent design and orchestration |
+| `feature` | Feature flags and gradual rollouts |
+| `notify` | Push, SMS, and in-app notifications |
+| `experiment` | A/B testing and statistical analysis |
+| `seed` | Database seeding and factory patterns |
+| `dependencies` | Dependency management and supply chain security |
 
 ---
 
@@ -324,12 +519,12 @@ Or go directly to any skill:
 |---|---------|-------------|
 | 1 | **Autonomous Optimization Loop** | Measures, experiments, proves — no guesswork, just data |
 | 2 | **TDD Enforcement** | RED-GREEN-REFACTOR on every build, every time |
-| 3 | **Parallel Agent Dispatch** | Independent tasks run simultaneously across agents |
+| 3 | **7 Subagents, Multi-Agent Default** | Planner decomposes, builders execute in parallel worktrees, reviewers verify |
 | 4 | **Git-as-Memory** | Every experiment committed, every revert tracked |
 | 5 | **Mechanical Verification** | Real commands, real output — never "it should work" |
 | 6 | **STRIDE + OWASP Security** | Structured security audit, not a vibes check |
 | 7 | **5 Expert Personas** | Your design reviewed by simulated domain experts |
-| 8 | **153 Skills, Zero Config** | Install once, use everything — no setup required |
+| 8 | **170 Skills, Zero Config** | Install once, use everything — no setup required |
 | 9 | **8-Phase Ship Workflow** | Pre-flight, dry run, deploy, smoke test, monitor, rollback |
 | 10 | **Language Agnostic** | JS/TS, Python, Rust, Go, Ruby, Java — auto-detected |
 
@@ -343,11 +538,13 @@ Or go directly to any skill:
 | Full workflow (idea to production) | **Yes** | No | No | No | No |
 | Autonomous optimization loop | **Yes** | No | No | No | No |
 | Mechanical verification | **Yes** | No | No | No | No |
-| 153 specialized skills | **Yes** | No | No | No | No |
+| 170 specialized skills | **Yes** | No | No | No | No |
 | TDD enforcement | **Yes** | No | No | No | No |
 | Security audit framework | **Yes** | No | No | No | No |
 | Git-as-memory (auto-revert) | **Yes** | No | No | No | No |
 | Parallel agent dispatch | **Yes** | No | No | No | No |
+| 7 specialized subagents | **Yes** | No | No | No | No |
+| Multi-CLI support (5 platforms) | **Yes** | No | No | No | No |
 | Evidence-based claims | **Yes** | No | No | No | No |
 | Works inside your existing editor | **Yes** | Built-in | Built-in | Yes | Yes |
 
@@ -370,21 +567,24 @@ Or go directly to any skill:
 
 # Ship with confidence
 /godmode:ship --pr
+
+# Multi-agent build — 3 agents in parallel
+/godmode:build  # Auto-dispatches parallel agents per round
 ```
 
 ---
 
 ## Supported Platforms
 
-Godmode is a skill plugin. It works anywhere Claude Code runs.
+Godmode works across all major AI coding CLIs — with native subagent support where available.
 
-| Platform | Status |
-|----------|--------|
-| **Claude Code** | Full support |
-| **Cursor** | Compatible |
-| **Codex** | Compatible |
-| **OpenCode** | Compatible |
-| **Gemini CLI** | Compatible |
+| Platform | Status | Subagents |
+|----------|--------|-----------|
+| **Claude Code** | Full support | `Agent` tool with worktree isolation |
+| **Codex** | Full support | Native `.codex/agents/*.toml` subagents |
+| **Cursor** | Compatible | Sequential execution |
+| **OpenCode** | Compatible | Sequential with agent roles |
+| **Gemini CLI** | Compatible | Sequential execution |
 
 ---
 
@@ -426,6 +626,6 @@ MIT — see [LICENSE](LICENSE).
 
 **Discipline before speed. Evidence before claims. Git is memory.**
 
-**[Install Godmode](https://github.com/godmode-team/godmode)** · **[Read the Docs](docs/getting-started.md)** · **[Join the Discussion](https://github.com/godmode-team/godmode/discussions)**
+**[Install Godmode](https://github.com/arbazkhan971/godmode)** · **[Read the Docs](docs/getting-started.md)** · **[Join the Discussion](https://github.com/arbazkhan971/godmode/discussions)**
 
 </div>

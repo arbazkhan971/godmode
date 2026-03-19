@@ -1,6 +1,6 @@
 # AGENTS.md — Godmode for AI Coding Agents
 
-Godmode is a skill plugin with 165 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
+Godmode is a skill plugin with 171 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
 
 ## Core Workflow: The Godmode Loop
 
@@ -58,7 +58,7 @@ Godmode ships with 7 specialized subagents. Spawn them for complex tasks that be
 5. Spawn `optimizer` to improve the merged result
 6. Spawn `security` for a final audit before shipping
 
-## Skill Catalog (165 Skills)
+## Skill Catalog (171 Skills)
 
 | Skill | Description |
 |-------|-------------|
@@ -215,3 +215,20 @@ Godmode ships with 7 specialized subagents. Spawn them for complex tasks that be
 | `wasm` | WebAssembly development |
 | `web3` | Blockchain and Web3 development |
 | `webperf` | Web performance optimization |
+| `apidocs` | OpenAPI/Swagger documentation generation |
+| `cron` | Scheduled tasks and job queue management |
+| `dependencies` | Dependency management and supply chain security |
+| `experiment` | A/B testing and statistical analysis |
+| `feature` | Feature flags and gradual rollouts |
+| `ghactions` | GitHub Actions workflow design and optimization |
+| `notify` | Push, SMS, and in-app notifications |
+| `pm` | Product management — PRDs, user stories, prioritization |
+| `ratelimit` | Rate limiting algorithms and middleware |
+| `research` | User research — personas, journey mapping, JTBD |
+| `seed` | Database seeding and factory patterns |
+| `slo` | SLO/SLI definition and error budget tracking |
+| `strategy` | Product strategy — roadmaps, growth models, market analysis |
+| `upload` | File uploads and media processing |
+| `uxdesign` | UI/UX design — personas, heuristics, user flows, handoff |
+| `webhook` | Webhook design, delivery, and retry logic |
+| `wireframe` | Wireframing, prototyping, and component layout |
