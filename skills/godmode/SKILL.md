@@ -58,7 +58,7 @@ Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass cached stack vars.
 3. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Track `current_iteration`. No counter = not looping.
 4. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
 5. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
-6. Log iterations to `.godmode/<skill>-results.tsv`, skills to `.godmode/session-log.tsv`.
+6. Log iterations to `.godmode/<skill>-results.tsv` (columns defined per skill), sessions to `.godmode/session-log.tsv`: timestamp, skill, iterations, outcome.
 7. Stuck (>5 discards): re-read all, try opposite, try radical.
 8. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
 9. Chain: `think → plan → build → test → fix → review → optimize → secure → ship`. Auto-advance when current skill completes.

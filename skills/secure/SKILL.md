@@ -20,7 +20,7 @@ WHILE untested categories remain:
     Pick next untested category. Order: Injection, Auth, XSS, SSRF, then remaining.
     Test as 4 personas: External (no auth), Insider (valid session), Supply Chain (malicious dep), Infra (server access).
     Each finding: file:line + exploit steps + severity (Critical/High/Med/Low) + fix (code snippet).
-    Log to .godmode/security-findings.tsv.
+    Log to .godmode/security-findings.tsv: iteration, category, persona, finding, severity, file:line, status(open/fixed).
     Every 5 iters: print "{tested}/10 OWASP, {findings} findings"
 ```
 6. **Report** — OWASP (N/10), STRIDE (N/6), findings by severity, verdict (PASS if 0 critical+high).
