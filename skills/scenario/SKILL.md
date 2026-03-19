@@ -14,18 +14,7 @@ description: |
 ### 1. Read the Design
 Read spec or proposal. Identify: inputs, outputs, dependencies, state transitions.
 ### 2. Explore 12 Dimensions
-1. Invalid Input
-2. Boundary Values
-3. Concurrency
-4. Network
-5. Data Integrity
-6. Auth & Security
-7. Time
-8. Scale
-9. Failure Modes
-10. Migration
-11. User Error
-12. External Deps
+Invalid Input, Boundary Values, Concurrency, Network, Data Integrity, Auth & Security, Time, Scale, Failure Modes, Migration, User Error, External Deps.
 ### 3. Score Each Scenario
 Priority = Likelihood (1-5) x Impact (1-5). CRITICAL: 20-25 | HIGH: 12-19 | MEDIUM: 6-11 | LOW: 1-5.
 ### 4. Generate Test Skeletons

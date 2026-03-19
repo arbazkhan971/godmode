@@ -17,7 +17,7 @@ target = user_target OR 80
 current_iteration = 0
 WHILE coverage < target:
     current_iteration += 1
-    # 1. FIND — coverage report, pick highest-impact uncovered path
+    # 1. FIND — highest-impact uncovered path (unit > integration > edge > error)
     # 2. RED — write test that FAILS
     # 3. GREEN — verify fail, then verify pass (write minimum code if needed)
     # 4. REFACTOR — clean up, re-run all tests
@@ -29,9 +29,6 @@ WHILE coverage < target:
         "Test iter {N}: coverage {coverage}% (target: {target}%)"
 Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ```
-
-## Test Types
-Unit (pure functions) > Integration (API, DB) > Edge cases (null, empty, bounds) > Error paths.
 
 ## Rules
 1. RED first. Test must fail before code exists.
