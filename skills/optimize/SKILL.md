@@ -7,9 +7,7 @@ description: Autonomous optimization loop. 3 parallel agents per round, mechanic
 - `/godmode:optimize`, "make faster", "improve", "optimize"
 
 ## Setup (once)
-1. **Detect** — Scan for test/bench/build outputs. Suggest metric + verify + guard.
-2. **Config** — Goal, Metric (numeric output only), Direction (higher|lower), Verify (dry-run first), Guard (must-pass, optional), Scope, Iterations.
-3. **Baseline** — Run verify 3x, median. Commit: `"optimize: baseline — {metric} = {value}"`
+Detect test/bench/build outputs → suggest metric + verify + guard. Collect: Goal, Metric (numeric), Direction, Verify (dry-run first), Guard, Scope, Iterations. Baseline: verify 3x, median, commit.
 
 ## The Loop
 ```
