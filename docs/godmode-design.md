@@ -5279,4 +5279,199 @@ The marketplace validates:
 
 ---
 
-## Status: ITERATION 45 — Marketplace Metadata complete
+## 46. Example Workflows
+
+**Purpose:** 5 complete end-to-end examples showing the full THINK → BUILD → OPTIMIZE → SHIP cycle in different contexts.
+
+### Example 1: Add Rate Limiting to an Express API
+
+```
+SESSION START
+─────────────
+Godmode: You're in a Node.js Express project. No existing state.
+
+User: /godmode
+
+Godmode: No spec or plan found. Recommending /godmode:think.
+         What are you building?
+
+User: I need to add rate limiting to our API
+
+─── THINK PHASE ──────────────────────────────────────────
+/godmode:think
+
+Q1: Is this for all endpoints or specific ones?
+A: All endpoints, but different limits for auth vs public
+
+Q2: What load are you expecting?
+A: ~10K requests per minute in production
+
+Q3: Do you already have Redis or another shared store?
+A: Yes, Redis is already in the stack
+
+Approaches:
+  1. Token Bucket with Redis (recommended for your setup)
+  2. Sliding Window Log
+  3. Express middleware library (express-rate-limit)
+
+User picks: #1 with elements of #3
+
+What does success look like mechanically?
+→ Primary metric: All rate limit tests pass (accuracy)
+→ Optimization metric: p95 latency overhead < 5ms
+→ Guard: Existing 47 tests still pass
+
+Spec written → .godmode/specs/rate-limiter.md
+Commit: spec: rate-limiter initial design
+
+─── BUILD PHASE ──────────────────────────────────────────
+/godmode:plan --spec .godmode/specs/rate-limiter.md
+
+Plan: 6 tasks, ~20 minutes estimated
+  Task 001: Redis rate limit key schema (2 min)
+  Task 002: Token bucket implementation (5 min)
+  Task 003: Express middleware wrapper (3 min)
+  Task 004: Per-endpoint config (3 min)
+  Task 005: Rate limit headers (2 min)
+  Task 006: Integration tests (5 min)
+
+User approves plan.
+Commit: plan: rate-limiter — 6 tasks, estimated 20min
+
+/godmode:build --continue
+
+Task 001: [RED] Write test → FAIL → [GREEN] Implement → PASS → [REVIEW] Clean ✓
+Task 002: [RED] Write test → FAIL → [GREEN] Implement → PASS → [REVIEW] 1 WARN fixed ✓
+Task 003: [RED] Write test → FAIL → [GREEN] Implement → PASS → [REVIEW] Clean ✓
+  (Tasks 004+005 in parallel)
+Task 004: ✓  |  Task 005: ✓
+Task 006: Integration tests → 15 tests, all passing ✓
+
+Commit: build: all 6 tasks complete (62 tests passing)
+
+─── OPTIMIZE PHASE ───────────────────────────────────────
+/godmode:optimize --metric "wrk latency p95" --guard "npm test" --target "5ms overhead"
+
+Iteration 1: Add connection pooling → 12ms → 8ms (-33%) ✓ KEPT
+Iteration 2: Pipeline Redis commands → 8ms → 4ms (-50%) ✓ KEPT
+Target met! (4ms < 5ms)
+
+/godmode:secure --scope src/middleware/
+
+Findings: 0 critical, 1 medium (rate limit bypass via IP spoofing)
+Fix: Validate X-Forwarded-For header chain
+Commit: secure: audit clean (1 medium fixed)
+
+─── SHIP PHASE ───────────────────────────────────────────
+/godmode:ship --type npm
+
+Pre-flight: ✓ 62 tests | ✓ lint clean | ✓ security clean
+Version: 2.1.0 (MINOR — new feature)
+Changelog: auto-generated
+Dry run: ✓
+Ship: npm publish ✓
+Verify: npm view api-server@2.1.0 ✓
+
+/godmode:finish --action pr
+
+PR created: "feat: add rate limiting middleware (#45)"
+```
+
+### Example 2: Optimize a Slow Python ML Pipeline
+
+```
+User: /godmode:optimize --metric "python train.py --time-only" \
+  --guard "pytest" --target "120s" --iterations 15
+
+Baseline: Training takes 340s
+
+Iteration 1: Vectorize feature computation → 340s → 245s (-28%) ✓
+Iteration 2: Add data caching → 245s → 198s (-19%) ✓
+Iteration 3: Switch to float32 from float64 → 198s → 185s (-7%) ✓
+Iteration 4: Parallel data loading → 185s → 142s (-23%) ✓
+Iteration 5: Batch normalization optimization → 142s → 139s (-2%) ✗ REVERTED
+Iteration 6: Reduce model complexity → 142s → 115s (-19%) ✓
+
+Target met! 115s < 120s
+Total: 340s → 115s (-66% improvement) in 6 iterations
+```
+
+### Example 3: Debug and Fix Flaky Tests
+
+```
+User: /godmode:debug --bug "test suite has 3 intermittent failures" --chain fix
+
+Investigation:
+  H1: Race condition in async tests → CONFIRMED (2 tests)
+  H2: Time-dependent assertion → CONFIRMED (1 test)
+
+Root causes:
+  1. Shared database state between test files (no cleanup)
+  2. setTimeout-based test relies on wall clock
+
+Chaining to /godmode:fix...
+
+Fix 1: Add beforeEach cleanup → 3 failing → 1 failing ✓
+Fix 2: Replace setTimeout with fake timers → 1 failing → 0 failing ✓
+
+All tests stable across 5 consecutive runs.
+Commit: fix: resolve 3 flaky tests (shared state + time dependency)
+```
+
+### Example 4: Security Hardening Sprint
+
+```
+User: /godmode --pipeline harden
+
+/godmode:test --target src/ --coverage
+  Added 23 tests, coverage: 62% → 81%
+
+/godmode:secure --scope src/
+  Found: 1 critical (SQLi), 2 high (XSS, IDOR), 4 medium
+
+/godmode:fix (chained from secure)
+  Fixed: 7/7 findings in 7 iterations (0 reverts)
+
+/godmode:optimize --metric "security findings count" --target 0
+  Already at 0! Verifying with re-audit...
+  Re-audit: 0 critical, 0 high, 0 medium ✓
+
+Sprint complete: 23 tests added, 7 security issues fixed, 0 remaining.
+```
+
+### Example 5: Full Cycle for a New Feature (Frontend)
+
+```
+User: /godmode --pipeline full
+
+THINK: Brainstorm dark mode toggle
+  Spec: CSS custom properties approach, localStorage persistence
+  Metric: Lighthouse accessibility score > 95
+
+PLAN: 5 tasks
+  1. CSS custom properties theme system
+  2. Toggle component
+  3. localStorage persistence
+  4. System preference detection
+  5. Transition animations
+
+BUILD: All 5 tasks complete (TDD, 18 tests)
+  Review: 1 WARN (missing prefers-reduced-motion check) → fixed
+
+OPTIMIZE: Lighthouse score
+  Baseline: 88
+  Iteration 1: Add prefers-color-scheme media query → 88 → 91 ✓
+  Iteration 2: Reduce CSS specificity → 91 → 94 ✓
+  Iteration 3: Add aria labels to toggle → 94 → 97 ✓
+  Target exceeded! (97 > 95)
+
+SHIP: vercel deploy
+  Pre-flight: ✓ | Ship: ✓ | Verify: site loads with dark mode ✓
+
+Cycle complete! Dark mode feature shipped.
+Total: 45 minutes, 12 iterations, 18 tests added.
+```
+
+---
+
+## Status: ITERATION 46 — Example Workflows complete
