@@ -4050,4 +4050,134 @@ User: /godmode:yourskill --flag value
 
 ---
 
-## Status: ITERATION 36 — Contributing Guide complete
+## 37. Skill Discovery & Invocation System
+
+**Purpose:** How Claude Code discovers Godmode skills, injects their descriptions, and matches user intent to the right skill.
+
+### Discovery Mechanism
+
+Claude Code scans for `SKILL.md` files in registered skill directories. When Godmode is installed:
+
+```
+Scan: ~/.claude/skills/godmode/
+  Found: SKILL.md (orchestrator)
+  Found: skills/think/SKILL.md
+  Found: skills/predict/SKILL.md
+  Found: skills/scenario/SKILL.md
+  ... (16 total)
+```
+
+Each discovered skill is registered with:
+- **Name:** From frontmatter `name` field
+- **Triggers:** From frontmatter `triggers` field
+- **Description:** From frontmatter `description` field
+
+### Description Injection
+
+Claude Code injects skill descriptions into the agent's context at session start:
+
+```
+Available skills:
+  /godmode - Auto-detect phase and route to the right skill
+  /godmode:think - Collaborative brainstorming with spec writing
+  /godmode:predict - Multi-persona expert evaluation
+  /godmode:scenario - Edge case exploration across 12 dimensions
+  /godmode:plan - Decompose spec into 2-5 min tasks
+  /godmode:build - Execute plan with TDD and parallel agents
+  /godmode:test - Write tests with RED-GREEN-REFACTOR
+  /godmode:review - Code review with severity levels
+  /godmode:optimize - Autonomous optimization with mechanical metrics
+  /godmode:debug - Scientific bug hunting
+  /godmode:fix - One fix per iteration until zero errors
+  /godmode:secure - STRIDE + OWASP security audit
+  /godmode:ship - 8-phase shipping workflow
+  /godmode:finish - Branch finalization
+  /godmode:setup - Configuration wizard
+  /godmode:verify - Evidence-before-claims gate
+```
+
+### Trigger Matching
+
+When the user types a message, Claude Code matches it against skill triggers:
+
+**Exact match (slash command):**
+```
+User: /godmode:think
+Match: skills/think/SKILL.md (exact trigger match)
+Action: Load SKILL.md, follow workflow
+```
+
+**Natural language match:**
+```
+User: "Let's brainstorm the authentication system"
+Match: skills/think/SKILL.md (trigger phrase: "let's brainstorm")
+Action: Suggest /godmode:think, or auto-invoke if confidence is high
+```
+
+**Orchestrator routing:**
+```
+User: /godmode
+Match: Root SKILL.md (orchestrator)
+Action: Run auto-detection algorithm, route to appropriate skill
+```
+
+### Trigger Confidence Levels
+
+| Confidence | Action |
+|-----------|--------|
+| **High** (>0.9) | Auto-invoke the skill (exact match, explicit trigger phrase) |
+| **Medium** (0.6-0.9) | Suggest the skill: "Would you like to use /godmode:think for brainstorming?" |
+| **Low** (<0.6) | Don't suggest; let the user invoke explicitly |
+
+### Skill Loading Process
+
+When a skill is invoked:
+
+```
+1. Load SKILL.md content
+2. Parse frontmatter (flags, requirements, phase)
+3. Check prerequisites (does `requires` list have all skills completed?)
+4. Load shared references (@shared/*.md) if referenced
+5. Load skill-specific references (@references/*.md) as needed
+6. Execute workflow step by step
+```
+
+### Namespace Convention
+
+All Godmode skills use the `godmode:` namespace prefix:
+
+```
+/godmode           → Orchestrator (root SKILL.md)
+/godmode:think     → skills/think/SKILL.md
+/godmode:build     → skills/build/SKILL.md
+```
+
+This prevents collisions with other plugins:
+```
+/godmode:test      → Godmode's TDD skill
+/other-plugin:test → Different plugin's test skill
+```
+
+### Skill Aliasing
+
+Common abbreviations are registered as aliases:
+
+| Alias | Full Command |
+|-------|-------------|
+| `/gm` | `/godmode` |
+| `/gm:t` | `/godmode:think` |
+| `/gm:b` | `/godmode:build` |
+| `/gm:o` | `/godmode:optimize` |
+| `/gm:s` | `/godmode:ship` |
+
+### Key Behaviors
+
+1. **Namespace isolation** — `godmode:` prefix prevents collisions
+2. **Lazy loading** — SKILL.md content is loaded only when invoked, not at discovery
+3. **Natural language is optional** — Users can always use explicit slash commands
+4. **References load on demand** — Heavy files load only when the workflow step needs them
+5. **Graceful missing skills** — If a skill file is missing, show a helpful error, not a crash
+
+---
+
+## Status: ITERATION 37 — Skill Discovery & Invocation System complete
