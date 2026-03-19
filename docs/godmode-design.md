@@ -4325,4 +4325,148 @@ What kind of project is this?
 
 ---
 
-## Status: ITERATION 38 — Domain Adaptation Guide complete
+## 39. Anti-Patterns
+
+**Purpose:** What NOT to do when using or implementing Godmode. Learn from the mistakes so you don't repeat them.
+
+### Anti-Pattern 1: Vibes-Based Optimization
+
+```
+BAD:  "The code looks cleaner now, so I'll keep this change."
+WHY:  "Looks cleaner" is not a metric. Run the verification command.
+GOOD: "Running metric... p95 went from 241ms to 198ms. Keeping the change."
+```
+
+**Rule:** If you can't measure it with a command, it's not an improvement.
+
+### Anti-Pattern 2: Big Bang Changes
+
+```
+BAD:  Make 5 changes in one optimization iteration.
+WHY:  When the metric improves, you don't know which change helped.
+      When it regresses, you don't know which change broke it.
+GOOD: One change per iteration. Know exactly what worked.
+```
+
+**Rule:** Atomic changes make learning possible.
+
+### Anti-Pattern 3: Skipping the RED Step
+
+```
+BAD:  Write the test and implementation at the same time.
+WHY:  If the test never fails, it might not be testing anything.
+GOOD: Write test → see it fail → then implement → see it pass.
+```
+
+**Rule:** A test that never failed never proved anything.
+
+### Anti-Pattern 4: Ignoring Reverts
+
+```
+BAD:  "The last 5 iterations were reverted, but I'll keep trying the same approach."
+WHY:  5 consecutive reverts = plateau. The current approach is exhausted.
+GOOD: After 3 reverts, switch strategy. After 5, stop and reconsider.
+```
+
+**Rule:** Reverts are data. Use them.
+
+### Anti-Pattern 5: Over-Guarding
+
+```
+BAD:  15 hard guards that make it impossible to change anything.
+WHY:  Every change triggers a guard failure because the guards are too strict.
+GOOD: 2-3 hard guards (tests pass, build succeeds) + a few soft guards.
+```
+
+**Rule:** Guards should protect, not paralyze.
+
+### Anti-Pattern 6: Premature Optimization
+
+```
+BAD:  /godmode:optimize before /godmode:build is done.
+WHY:  You're optimizing code that will change during build. Wasted iterations.
+GOOD: Build it right first. Then make it fast.
+```
+
+**Rule:** Follow the phases. THINK → BUILD → OPTIMIZE → SHIP.
+
+### Anti-Pattern 7: Claiming Without Evidence
+
+```
+BAD:  "I've fixed the bug and all tests pass now." (without running them)
+WHY:  The agent might be wrong. It often is.
+GOOD: Run the tests, show the output, then claim.
+```
+
+**Rule:** Use `/godmode:verify` before every claim.
+
+### Anti-Pattern 8: Bundling Multiple Questions
+
+```
+BAD:  "What's the goal, who are the users, what's the tech stack, and what's the timeline?"
+WHY:  The user gets overwhelmed. Answers are rushed. Details are missed.
+GOOD: "What are you building?" ... wait ... "Who are the primary users?" ... wait ...
+```
+
+**Rule:** One question at a time. Listen before asking the next.
+
+### Anti-Pattern 9: Infinite Loops
+
+```
+BAD:  No max iteration limit. Optimize forever.
+WHY:  Diminishing returns. Costs money. Wastes time.
+GOOD: Set max iterations. Detect plateaus. Stop when target is met.
+```
+
+**Rule:** Always have a stopping condition.
+
+### Anti-Pattern 10: Cargo Culting from Git History
+
+```
+BAD:  "Caching worked in iteration 3, so I'll add caching to everything."
+WHY:  Context matters. Caching helped one function; it might hurt another.
+GOOD: Read history for inspiration, but validate each change independently.
+```
+
+**Rule:** History informs; it doesn't decide.
+
+### Anti-Pattern 11: Ignoring Soft Guard Warnings
+
+```
+BAD:  "Coverage dropped 15% but it's a soft guard so who cares."
+WHY:  Soft guards exist because the metric matters, just not at the hard-stop level.
+GOOD: Investigate soft guard warnings. Fix them if reasonable.
+```
+
+**Rule:** Soft guards are warnings, not permissions to regress.
+
+### Anti-Pattern 12: Shipping Without Security Audit
+
+```
+BAD:  "Tests pass, let's ship!" (skipping /godmode:secure)
+WHY:  Tests verify functionality, not security. SQL injection passes all tests.
+GOOD: Always run /godmode:secure before /godmode:ship.
+```
+
+**Rule:** Functional correctness is not security.
+
+### Summary Table
+
+| # | Anti-Pattern | One-Line Fix |
+|---|-------------|-------------|
+| 1 | Vibes-based optimization | Use mechanical metrics |
+| 2 | Big bang changes | One change per iteration |
+| 3 | Skipping RED step | See the test fail first |
+| 4 | Ignoring reverts | Reverts are data; learn from them |
+| 5 | Over-guarding | 2-3 hard guards, rest soft |
+| 6 | Premature optimization | Build first, optimize second |
+| 7 | Claiming without evidence | Run verify before claiming |
+| 8 | Bundling questions | One question at a time |
+| 9 | Infinite loops | Always set max iterations |
+| 10 | Cargo culting history | Validate each change independently |
+| 11 | Ignoring soft guards | Investigate warnings |
+| 12 | Shipping without audit | Security audit before shipping |
+
+---
+
+## Status: ITERATION 39 — Anti-Patterns complete
