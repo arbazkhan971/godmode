@@ -31,56 +31,569 @@
       "file": "commands/godmode.md",
       "description": "Orchestrator — auto-detect phase and suggest next action"
     },
-    "godmode:think": {
-      "file": "commands/godmode/think.md",
-      "description": "Brainstorm and design, produce a spec"
+    "godmode:a11y": {
+      "file": "commands/godmode/a11y.md",
+      "description": "Accessibility testing and auditing using WCAG 2.1 AA/AAA compliance checks, automated scanners (Axe, Pa11y, Lighthouse),"
     },
-    "godmode:plan": {
-      "file": "commands/godmode/plan.md",
-      "description": "Decompose spec into implementable tasks"
+    "godmode:adr": {
+      "file": "commands/godmode/adr.md",
+      "description": "Create, discover, and maintain Architecture Decision Records. Documents significant technical decisions with context, al"
+    },
+    "godmode:analytics": {
+      "file": "commands/godmode/analytics.md",
+      "description": "Analytics implementation for product teams. Designs event taxonomies, implements tracking with Segment, Amplitude, Mixpa"
+    },
+    "godmode:animation": {
+      "file": "commands/godmode/animation.md",
+      "description": "Animation and motion design covering CSS animations, Framer Motion, GSAP, Lottie integration, scroll-driven animations, "
+    },
+    "godmode:api": {
+      "file": "commands/godmode/api.md",
+      "description": "Design, specify, and validate REST, GraphQL, or gRPC APIs. Generates OpenAPI specs, enforces versioning strategies, desi"
+    },
+    "godmode:architect": {
+      "file": "commands/godmode/architect.md",
+      "description": "Design system architecture with pattern evaluation, trade-off analysis, C4 diagrams, and Architecture Decision Records. "
+    },
+    "godmode:auth": {
+      "file": "commands/godmode/auth.md",
+      "description": "Design and implement authentication and authorization architecture. Covers auth strategy selection (JWT, OAuth2, OIDC, S"
+    },
+    "godmode:automate": {
+      "file": "commands/godmode/automate.md",
+      "description": "Automate repetitive workflows. Designs cron jobs, webhook handlers, GitHub Actions workflows, automation scripts, and Ma"
+    },
+    "godmode:backup": {
+      "file": "commands/godmode/backup.md",
+      "description": "Backup strategy design and disaster recovery planning. Inventories data assets, defines RPO/RTO targets, designs tiered "
     },
     "godmode:build": {
       "file": "commands/godmode/build.md",
-      "description": "Execute plan with TDD and parallel agents"
+      "description": "Execute an implementation plan using TDD (RED-GREEN-REFACTOR), parallel agent dispatch for independent tasks, and 2-stag"
     },
-    "godmode:optimize": {
-      "file": "commands/godmode/optimize.md",
-      "description": "Autonomous improvement loop with mechanical verification"
+    "godmode:cache": {
+      "file": "commands/godmode/cache.md",
+      "description": "Design and implement caching strategies. Configures multi-layer caches (CDN, application, database), cache invalidation "
+    },
+    "godmode:changelog": {
+      "file": "commands/godmode/changelog.md",
+      "description": "Changelog and release notes management — Keep a Changelog format, Conventional Commits auto-generation, audience-specifi"
+    },
+    "godmode:chaos": {
+      "file": "commands/godmode/chaos.md",
+      "description": "Chaos engineering and resilience testing. Designs controlled failure injection experiments, validates circuit breakers, "
+    },
+    "godmode:chart": {
+      "file": "commands/godmode/chart.md",
+      "description": "Data visualization design and implementation. Selects optimal chart types for data communication goals, integrates with "
+    },
+    "godmode:cicd": {
+      "file": "commands/godmode/cicd.md",
+      "description": "Design, create, and optimize CI/CD pipelines. Supports GitHub Actions, GitLab CI, CircleCI, and Jenkins with caching, sh"
+    },
+    "godmode:cli": {
+      "file": "commands/godmode/cli.md",
+      "description": "CLI tool development — argument parsing design (Commander, Clap, Cobra, Click), interactive prompts and TUI frameworks ("
+    },
+    "godmode:comply": {
+      "file": "commands/godmode/comply.md",
+      "description": "Compliance and governance auditing against GDPR, HIPAA, SOC2, PCI-DSS, and other regulatory frameworks. Examines actual "
+    },
+    "godmode:config": {
+      "file": "commands/godmode/config.md",
+      "description": "Environment and configuration management. Audits dev/staging/prod parity, validates config schemas, manages feature flag"
+    },
+    "godmode:contract": {
+      "file": "commands/godmode/contract.md",
+      "description": "Consumer-driven contract testing for APIs. Defines contracts between consumers and producers, generates mock servers, ve"
+    },
+    "godmode:cost": {
+      "file": "commands/godmode/cost.md",
+      "description": "Cloud cost optimization using evidence-based analysis of resource utilization, waste detection, right-sizing, pricing op"
+    },
+    "godmode:crypto": {
+      "file": "commands/godmode/crypto.md",
+      "description": "Implement cryptography correctly: encryption at rest and in transit, key management, password hashing (Argon2, bcrypt), "
+    },
+    "godmode:ddd": {
+      "file": "commands/godmode/ddd.md",
+      "description": "Apply Domain-Driven Design to your domain. Covers strategic design (bounded contexts, context mapping, ubiquitous langua"
     },
     "godmode:debug": {
       "file": "commands/godmode/debug.md",
-      "description": "Scientific bug investigation"
+      "description": "Scientific bug investigation using 7 systematic techniques. Reproduces the bug, gathers evidence, isolates the root caus"
+    },
+    "godmode:deploy": {
+      "file": "commands/godmode/deploy.md",
+      "description": "Advanced deployment strategy design and orchestration. Supports blue-green deployments, canary releases, progressive rol"
+    },
+    "godmode:designsystem": {
+      "file": "commands/godmode/designsystem.md",
+      "description": "Design system architecture covering token systems (colors, spacing, typography, shadows), component API standards, theme"
+    },
+    "godmode:desktop": {
+      "file": "commands/godmode/desktop.md",
+      "description": "Desktop application development — Electron, Tauri, and Qt architecture, auto-update mechanisms, cross-platform builds (W"
+    },
+    "godmode:devsecops": {
+      "file": "commands/godmode/devsecops.md",
+      "description": "Build secure CI/CD pipelines with SAST, DAST, SCA, container scanning, secret scanning, IaC security, and deployment sec"
+    },
+    "godmode:docs": {
+      "file": "commands/godmode/docs.md",
+      "description": "Generate and maintain project documentation. Produces API docs (OpenAPI/Swagger), code docs (JSDoc/docstrings), READMEs,"
+    },
+    "godmode:dx": {
+      "file": "commands/godmode/dx.md",
+      "description": "Developer experience optimization covering dev environment setup automation, hot reload and fast feedback loops, error m"
+    },
+    "godmode:e2e": {
+      "file": "commands/godmode/e2e.md",
+      "description": "End-to-end browser testing. Sets up Playwright, Cypress, or Selenium test architecture with page object models, cross-br"
+    },
+    "godmode:email": {
+      "file": "commands/godmode/email.md",
+      "description": "Build email delivery and multi-channel notification systems. Integrates email providers, designs responsive templates, a"
+    },
+    "godmode:errorhandling": {
+      "file": "commands/godmode/errorhandling.md",
+      "description": "Error handling architecture design. Creates error hierarchies, implements error boundaries, designs structured error res"
+    },
+    "godmode:errortrack": {
+      "file": "commands/godmode/errortrack.md",
+      "description": "Error tracking and analysis across your application. Aggregates errors from Sentry, Bugsnag, DataDog, and application lo"
+    },
+    "godmode:estimate": {
+      "file": "commands/godmode/estimate.md",
+      "description": "Estimate effort for tasks, features, and projects. Provides complexity analysis, risk factor assessment, three-point est"
+    },
+    "godmode:event": {
+      "file": "commands/godmode/event.md",
+      "description": "Design event-driven architectures. Implements event sourcing, CQRS, message broker topologies (Kafka, RabbitMQ, SQS, NAT"
     },
     "godmode:fix": {
       "file": "commands/godmode/fix.md",
-      "description": "Autonomous error remediation"
+      "description": "Autonomous error remediation loop. Inventories all errors (tests, lint, types), fixes them one at a time with minimum ch"
+    },
+    "godmode:forms": {
+      "file": "commands/godmode/forms.md",
+      "description": "Form architecture covering state management (React Hook Form, Formik, native), multi-step wizard forms, validation patte"
+    },
+    "godmode:gamedev": {
+      "file": "commands/godmode/gamedev.md",
+      "description": "Game development architecture covering game loop design, entity-component systems, physics and collision detection, asse"
+    },
+    "godmode:git": {
+      "file": "commands/godmode/git.md",
+      "description": "Advanced Git workflow mastery. Recommends branching strategies, merge/rebase decisions, interactive rebase guidance, git"
+    },
+    "godmode:i18n": {
+      "file": "commands/godmode/i18n.md",
+      "description": "Internationalization & localization — string extraction, pluralization, date/number formatting, RTL support, and charact"
+    },
+    "godmode:incident": {
+      "file": "commands/godmode/incident.md",
+      "description": "Incident response and blameless post-mortem management. Classifies incidents by severity (SEV1-4), constructs precise ti"
+    },
+    "godmode:infra": {
+      "file": "commands/godmode/infra.md",
+      "description": "Validate, plan, and deploy infrastructure using Infrastructure as Code. Supports Terraform, CloudFormation, Pulumi, and "
+    },
+    "godmode:integration": {
+      "file": "commands/godmode/integration.md",
+      "description": "Integration testing with real dependencies using Testcontainers, proper database seeding/cleanup, API endpoint testing, "
+    },
+    "godmode:iot": {
+      "file": "commands/godmode/iot.md",
+      "description": "IoT and embedded systems development — firmware architecture (FreeRTOS, Zephyr, bare-metal), communication protocols (MQ"
+    },
+    "godmode:k8s": {
+      "file": "commands/godmode/k8s.md",
+      "description": "Manage Kubernetes deployments, generate Helm charts, configure deployment strategies, and troubleshoot pod issues."
+    },
+    "godmode:learn": {
+      "file": "commands/godmode/learn.md",
+      "description": "Interactive learning and teaching using the actual codebase. Creates tutorials, recommends design patterns for specific "
+    },
+    "godmode:legacy": {
+      "file": "commands/godmode/legacy.md",
+      "description": "Modernize legacy codebases safely. Characterizes legacy code, adds tests to untested code (characterization tests, golde"
+    },
+    "godmode:lint": {
+      "file": "commands/godmode/lint.md",
+      "description": "Linting and code standards setup covering ESLint, Prettier, Biome, Ruff, golangci-lint configuration, custom rule creati"
+    },
+    "godmode:loadtest": {
+      "file": "commands/godmode/loadtest.md",
+      "description": "Load testing and performance testing. Generates test scenarios for k6, Artillery, Locust, and JMeter. Establishes baseli"
+    },
+    "godmode:logging": {
+      "file": "commands/godmode/logging.md",
+      "description": "Structured logging implementation. Defines log level strategies, implements JSON structured logging, sets up log aggrega"
+    },
+    "godmode:micro": {
+      "file": "commands/godmode/micro.md",
+      "description": "Design and manage microservice architectures. Decomposes monoliths into bounded contexts, designs inter-service communic"
+    },
+    "godmode:migrate": {
+      "file": "commands/godmode/migrate.md",
+      "description": "Database migration and schema management. Auto-detects your ORM/migration tool, generates idiomatic migrations with back"
+    },
+    "godmode:migration": {
+      "file": "commands/godmode/migration.md",
+      "description": "Plan and execute large-scale system migrations. Handles language/framework transitions (JS to TS, REST to GraphQL), arch"
+    },
+    "godmode:ml": {
+      "file": "commands/godmode/ml.md",
+      "description": "ML development and experimentation management. Tracks experiments with full reproducibility, manages hyperparameters, va"
+    },
+    "godmode:mlops": {
+      "file": "commands/godmode/mlops.md",
+      "description": "MLOps and model deployment management. Handles model serving infrastructure, inference optimization, model versioning, A"
+    },
+    "godmode:mobile": {
+      "file": "commands/godmode/mobile.md",
+      "description": "Mobile app development — iOS and Android architecture patterns, cross-platform frameworks (React Native, Flutter), nativ"
+    },
+    "godmode:monorepo": {
+      "file": "commands/godmode/monorepo.md",
+      "description": "Monorepo architecture and management covering tool selection (Turborepo, Nx, Lerna, Bazel, Rush), package boundary enfor"
+    },
+    "godmode:network": {
+      "file": "commands/godmode/network.md",
+      "description": "Configure, troubleshoot, and secure networking infrastructure. Covers DNS, SSL/TLS certificates, CDN configuration, load"
+    },
+    "godmode:observe": {
+      "file": "commands/godmode/observe.md",
+      "description": "Set up full observability: metrics, structured logging, distributed tracing, alert rules, SLO/SLI definitions, and dashb"
+    },
+    "godmode:onboard": {
+      "file": "commands/godmode/onboard.md",
+      "description": "Codebase onboarding and architecture discovery. Generates architecture walkthroughs, identifies key files, analyzes nami"
+    },
+    "godmode:opensource": {
+      "file": "commands/godmode/opensource.md",
+      "description": "Open source project management — repository scaffolding, community health files, issue/PR templates, GitHub Actions auto"
+    },
+    "godmode:optimize": {
+      "file": "commands/godmode/optimize.md",
+      "description": "The core autonomous iteration loop. Measures a baseline, then runs a disciplined cycle: hypothesize, modify one thing, v"
+    },
+    "godmode:orm": {
+      "file": "commands/godmode/orm.md",
+      "description": "ORM and data access optimization. Covers ORM selection (Prisma, Drizzle, TypeORM, SQLAlchemy, GORM, ActiveRecord), N+1 q"
+    },
+    "godmode:pair": {
+      "file": "commands/godmode/pair.md",
+      "description": "Start a pair programming session with structured driver/navigator roles, real-time code review, knowledge transfer, and "
+    },
+    "godmode:pattern": {
+      "file": "commands/godmode/pattern.md",
+      "description": "Recommend the right design pattern for your problem. Covers Gang of Four patterns, modern distributed system patterns (R"
+    },
+    "godmode:pay": {
+      "file": "commands/godmode/pay.md",
+      "description": "Implement payment processing, subscription billing, invoicing, and tax calculation. Integrates payment gateways with PCI"
+    },
+    "godmode:pentest": {
+      "file": "commands/godmode/pentest.md",
+      "description": "Authorized penetration testing with structured reconnaissance, OWASP-methodology vulnerability assessment, proof-of-conc"
+    },
+    "godmode:perf": {
+      "file": "commands/godmode/perf.md",
+      "description": "Performance profiling & optimization — CPU profiling with flame graph analysis, memory leak detection, concurrency bug d"
+    },
+    "godmode:pipeline": {
+      "file": "commands/godmode/pipeline.md",
+      "description": "Data pipeline and ETL design, implementation, testing, and debugging. Covers extraction, transformation, loading, data q"
+    },
+    "godmode:plan": {
+      "file": "commands/godmode/plan.md",
+      "description": "Decompose a specification into small, implementable tasks. Each task is 2-5 minutes, has exact file paths, code sketches"
+    },
+    "godmode:pr": {
+      "file": "commands/godmode/pr.md",
+      "description": "Pull request excellence. Optimizes PR size, generates description templates, manages stacked PRs for large features, con"
+    },
+    "godmode:prioritize": {
+      "file": "commands/godmode/prioritize.md",
+      "description": "Prioritize work items using structured scoring frameworks. Supports RICE, ICE, MoSCoW, and effort-vs-impact matrices wit"
+    },
+    "godmode:pwa": {
+      "file": "commands/godmode/pwa.md",
+      "description": "Progressive Web App development covering service worker implementation, offline-first architecture, web app manifest con"
+    },
+    "godmode:quality": {
+      "file": "commands/godmode/quality.md",
+      "description": "Code quality analysis — duplication detection, complexity measurement, technical debt identification, dependency analysi"
+    },
+    "godmode:query": {
+      "file": "commands/godmode/query.md",
+      "description": "Query optimization and data analysis. Interprets EXPLAIN plans, recommends indexes, rewrites queries for performance, de"
+    },
+    "godmode:queue": {
+      "file": "commands/godmode/queue.md",
+      "description": "Design, build, and debug message queue and job processing systems. Covers queue architecture (Kafka, RabbitMQ, SQS, Bull"
+    },
+    "godmode:rbac": {
+      "file": "commands/godmode/rbac.md",
+      "description": "Design and implement permission and access control systems. Covers RBAC, ABAC, and ReBAC permission models, role hierarc"
+    },
+    "godmode:realtime": {
+      "file": "commands/godmode/realtime.md",
+      "description": "Design, build, and scale real-time communication features. Covers WebSocket architecture, Server-Sent Events, pub/sub pa"
+    },
+    "godmode:refactor": {
+      "file": "commands/godmode/refactor.md",
+      "description": "Safely transform codebases using proven refactoring patterns. Performs impact analysis, ensures test coverage, executes "
+    },
+    "godmode:release": {
+      "file": "commands/godmode/release.md",
+      "description": "Release management. Handles semantic versioning, release notes generation, changelog automation, release branching and t"
+    },
+    "godmode:report": {
+      "file": "commands/godmode/report.md",
+      "description": "Automated report generation for development teams. Creates sprint retrospectives, code health reports, performance trend"
+    },
+    "godmode:resilience": {
+      "file": "commands/godmode/resilience.md",
+      "description": "System resilience engineering with circuit breakers, retry strategies, bulkheads, rate limiting, graceful degradation, a"
+    },
+    "godmode:responsive": {
+      "file": "commands/godmode/responsive.md",
+      "description": "Responsive and adaptive design covering layout strategies (fluid, adaptive, intrinsic), CSS Grid and Flexbox mastery, co"
+    },
+    "godmode:retro": {
+      "file": "commands/godmode/retro.md",
+      "description": "Facilitate structured sprint retrospectives, track team health metrics, manage action items, and measure continuous impr"
+    },
+    "godmode:rfc": {
+      "file": "commands/godmode/rfc.md",
+      "description": "Write and manage technical proposals (RFCs) with structured templates, stakeholder review tracking, and decision timelin"
+    },
+    "godmode:scaffold": {
+      "file": "commands/godmode/scaffold.md",
+      "description": "Generate boilerplate code for any framework. Creates projects, CRUD resources, API endpoints, components, and services b"
+    },
+    "godmode:schema": {
+      "file": "commands/godmode/schema.md",
+      "description": "Data modeling and schema design. Covers relational schemas (normalization, denormalization), NoSQL modeling (document, k"
+    },
+    "godmode:scope": {
+      "file": "commands/godmode/scope.md",
+      "description": "Manage project scope with feature decomposition, MVP definition, scope creep detection, requirements validation, and use"
+    },
+    "godmode:search": {
+      "file": "commands/godmode/search.md",
+      "description": "Design, build, and optimize full-text search functionality. Covers engine selection (Elasticsearch, Algolia, Meilisearch"
+    },
+    "godmode:secrets": {
+      "file": "commands/godmode/secrets.md",
+      "description": "Manage secrets safely: scan for leaks, set up secret stores, enforce rotation policies, audit access, and prevent future"
     },
     "godmode:secure": {
       "file": "commands/godmode/secure.md",
-      "description": "STRIDE + OWASP security audit"
+      "description": "Security audit using STRIDE threat modeling, OWASP Top 10 checklist, and 4 red-team adversarial personas. Every finding "
+    },
+    "godmode:seo": {
+      "file": "commands/godmode/seo.md",
+      "description": "SEO optimization and technical auditing covering meta tags, structured data (Schema.org JSON-LD), Core Web Vitals, Open "
     },
     "godmode:ship": {
       "file": "commands/godmode/ship.md",
-      "description": "8-phase shipping workflow"
+      "description": "Structured 8-phase shipping workflow. Inventories changes, runs pre-ship checklist, prepares artifacts, performs dry-run"
+    },
+    "godmode:snapshot": {
+      "file": "commands/godmode/snapshot.md",
+      "description": "Snapshot and approval testing for complex outputs. Verifies serialized structures, generated code, UI components, and CL"
+    },
+    "godmode:standup": {
+      "file": "commands/godmode/standup.md",
+      "description": "Generate automated standup reports from git activity. Tracks sprint burndown, calculates velocity, and identifies blocke"
+    },
+    "godmode:state": {
+      "file": "commands/godmode/state.md",
+      "description": "State management design and implementation. Classifies state by category, selects the right tools (Redux, Zustand, Jotai"
+    },
+    "godmode:storage": {
+      "file": "commands/godmode/storage.md",
+      "description": "Design and implement file storage systems with object storage, upload architecture, media processing, cost optimization,"
+    },
+    "godmode:think": {
+      "file": "commands/godmode/think.md",
+      "description": "Collaborative brainstorming and design sessions. Explores 2-3 approaches, facilitates a decision, and produces a written"
+    },
+    "godmode:three": {
+      "file": "commands/godmode/three.md",
+      "description": "3D web development covering Three.js, React Three Fiber, WebGL/WebGPU fundamentals, 3D asset optimization (GLTF, Draco, "
+    },
+    "godmode:type": {
+      "file": "commands/godmode/type.md",
+      "description": "Type system and schema validation covering TypeScript strict mode configuration, gradual typing strategies, Zod/Yup/Joi "
+    },
+    "godmode:ui": {
+      "file": "commands/godmode/ui.md",
+      "description": "UI component architecture analysis covering component library design, design system consistency, Storybook integration, "
+    },
+    "godmode:unittest": {
+      "file": "commands/godmode/unittest.md",
+      "description": "Unit testing mastery with proper structure, mocking strategies, property-based testing, and mutation testing. Produces h"
+    },
+    "godmode:visual": {
+      "file": "commands/godmode/visual.md",
+      "description": "Visual regression testing using component screenshots, pixel-level diffs, cross-browser comparison, responsive breakpoin"
+    },
+    "godmode:web3": {
+      "file": "commands/godmode/web3.md",
+      "description": "Blockchain and Web3 development — smart contract development (Solidity, Rust/Anchor), security auditing (reentrancy, ove"
+    },
+    "godmode:webperf": {
+      "file": "commands/godmode/webperf.md",
+      "description": "Web performance optimization covering Lighthouse auditing, bundle analysis, code splitting, image optimization (WebP/AVI"
     }
   },
   "skills": {
-    "godmode": "skills/godmode/SKILL.md",
-    "think": "skills/think/SKILL.md",
-    "predict": "skills/predict/SKILL.md",
-    "scenario": "skills/scenario/SKILL.md",
-    "plan": "skills/plan/SKILL.md",
+    "a11y": "skills/a11y/SKILL.md",
+    "adr": "skills/adr/SKILL.md",
+    "agent": "skills/agent/SKILL.md",
+    "analytics": "skills/analytics/SKILL.md",
+    "angular": "skills/angular/SKILL.md",
+    "animation": "skills/animation/SKILL.md",
+    "api": "skills/api/SKILL.md",
+    "architect": "skills/architect/SKILL.md",
+    "auth": "skills/auth/SKILL.md",
+    "automate": "skills/automate/SKILL.md",
+    "backup": "skills/backup/SKILL.md",
     "build": "skills/build/SKILL.md",
-    "test": "skills/test/SKILL.md",
-    "review": "skills/review/SKILL.md",
-    "optimize": "skills/optimize/SKILL.md",
+    "cache": "skills/cache/SKILL.md",
+    "changelog": "skills/changelog/SKILL.md",
+    "chaos": "skills/chaos/SKILL.md",
+    "chart": "skills/chart/SKILL.md",
+    "cicd": "skills/cicd/SKILL.md",
+    "cli": "skills/cli/SKILL.md",
+    "comply": "skills/comply/SKILL.md",
+    "concurrent": "skills/concurrent/SKILL.md",
+    "config": "skills/config/SKILL.md",
+    "contract": "skills/contract/SKILL.md",
+    "cost": "skills/cost/SKILL.md",
+    "crypto": "skills/crypto/SKILL.md",
+    "ddd": "skills/ddd/SKILL.md",
     "debug": "skills/debug/SKILL.md",
-    "fix": "skills/fix/SKILL.md",
-    "secure": "skills/secure/SKILL.md",
-    "ship": "skills/ship/SKILL.md",
+    "deploy": "skills/deploy/SKILL.md",
+    "designsystem": "skills/designsystem/SKILL.md",
+    "desktop": "skills/desktop/SKILL.md",
+    "devsecops": "skills/devsecops/SKILL.md",
+    "distributed": "skills/distributed/SKILL.md",
+    "docker": "skills/docker/SKILL.md",
+    "docs": "skills/docs/SKILL.md",
+    "dx": "skills/dx/SKILL.md",
+    "e2e": "skills/e2e/SKILL.md",
+    "edge": "skills/edge/SKILL.md",
+    "email": "skills/email/SKILL.md",
+    "embeddings": "skills/embeddings/SKILL.md",
+    "errorhandling": "skills/errorhandling/SKILL.md",
+    "errortrack": "skills/errortrack/SKILL.md",
+    "estimate": "skills/estimate/SKILL.md",
+    "eval": "skills/eval/SKILL.md",
+    "event": "skills/event/SKILL.md",
+    "extension": "skills/extension/SKILL.md",
+    "finetune": "skills/finetune/SKILL.md",
     "finish": "skills/finish/SKILL.md",
+    "fix": "skills/fix/SKILL.md",
+    "forms": "skills/forms/SKILL.md",
+    "gamedev": "skills/gamedev/SKILL.md",
+    "gdpr": "skills/gdpr/SKILL.md",
+    "git": "skills/git/SKILL.md",
+    "godmode": "skills/godmode/SKILL.md",
+    "graphql": "skills/graphql/SKILL.md",
+    "grpc": "skills/grpc/SKILL.md",
+    "i18n": "skills/i18n/SKILL.md",
+    "incident": "skills/incident/SKILL.md",
+    "infra": "skills/infra/SKILL.md",
+    "integration": "skills/integration/SKILL.md",
+    "iot": "skills/iot/SKILL.md",
+    "k8s": "skills/k8s/SKILL.md",
+    "laravel": "skills/laravel/SKILL.md",
+    "learn": "skills/learn/SKILL.md",
+    "legacy": "skills/legacy/SKILL.md",
+    "lint": "skills/lint/SKILL.md",
+    "loadtest": "skills/loadtest/SKILL.md",
+    "logging": "skills/logging/SKILL.md",
+    "micro": "skills/micro/SKILL.md",
+    "migrate": "skills/migrate/SKILL.md",
+    "migration": "skills/migration/SKILL.md",
+    "ml": "skills/ml/SKILL.md",
+    "mlops": "skills/mlops/SKILL.md",
+    "mobile": "skills/mobile/SKILL.md",
+    "monorepo": "skills/monorepo/SKILL.md",
+    "network": "skills/network/SKILL.md",
+    "nextjs": "skills/nextjs/SKILL.md",
+    "node": "skills/node/SKILL.md",
+    "observe": "skills/observe/SKILL.md",
+    "onboard": "skills/onboard/SKILL.md",
+    "opensource": "skills/opensource/SKILL.md",
+    "optimize": "skills/optimize/SKILL.md",
+    "orm": "skills/orm/SKILL.md",
+    "pair": "skills/pair/SKILL.md",
+    "pattern": "skills/pattern/SKILL.md",
+    "pay": "skills/pay/SKILL.md",
+    "pentest": "skills/pentest/SKILL.md",
+    "perf": "skills/perf/SKILL.md",
+    "pipeline": "skills/pipeline/SKILL.md",
+    "plan": "skills/plan/SKILL.md",
+    "postgres": "skills/postgres/SKILL.md",
+    "pr": "skills/pr/SKILL.md",
+    "predict": "skills/predict/SKILL.md",
+    "prioritize": "skills/prioritize/SKILL.md",
+    "prompt": "skills/prompt/SKILL.md",
+    "pwa": "skills/pwa/SKILL.md",
+    "quality": "skills/quality/SKILL.md",
+    "query": "skills/query/SKILL.md",
+    "queue": "skills/queue/SKILL.md",
+    "rag": "skills/rag/SKILL.md",
+    "rails": "skills/rails/SKILL.md",
+    "rbac": "skills/rbac/SKILL.md",
+    "react": "skills/react/SKILL.md",
+    "realtime": "skills/realtime/SKILL.md",
+    "redis": "skills/redis/SKILL.md",
+    "refactor": "skills/refactor/SKILL.md",
+    "release": "skills/release/SKILL.md",
+    "report": "skills/report/SKILL.md",
+    "resilience": "skills/resilience/SKILL.md",
+    "responsive": "skills/responsive/SKILL.md",
+    "retro": "skills/retro/SKILL.md",
+    "review": "skills/review/SKILL.md",
+    "rfc": "skills/rfc/SKILL.md",
+    "scaffold": "skills/scaffold/SKILL.md",
+    "scale": "skills/scale/SKILL.md",
+    "scenario": "skills/scenario/SKILL.md",
+    "schema": "skills/schema/SKILL.md",
+    "scope": "skills/scope/SKILL.md",
+    "search": "skills/search/SKILL.md",
+    "secrets": "skills/secrets/SKILL.md",
+    "secure": "skills/secure/SKILL.md",
+    "seo": "skills/seo/SKILL.md",
     "setup": "skills/setup/SKILL.md",
-    "verify": "skills/verify/SKILL.md"
+    "ship": "skills/ship/SKILL.md",
+    "snapshot": "skills/snapshot/SKILL.md",
+    "spring": "skills/spring/SKILL.md",
+    "standup": "skills/standup/SKILL.md",
+    "state": "skills/state/SKILL.md",
+    "storage": "skills/storage/SKILL.md",
+    "terminal": "skills/terminal/SKILL.md",
+    "test": "skills/test/SKILL.md",
+    "think": "skills/think/SKILL.md",
+    "three": "skills/three/SKILL.md",
+    "type": "skills/type/SKILL.md",
+    "ui": "skills/ui/SKILL.md",
+    "unittest": "skills/unittest/SKILL.md",
+    "verify": "skills/verify/SKILL.md",
+    "visual": "skills/visual/SKILL.md",
+    "vscode": "skills/vscode/SKILL.md",
+    "vue": "skills/vue/SKILL.md",
+    "wasm": "skills/wasm/SKILL.md",
+    "web3": "skills/web3/SKILL.md",
+    "webperf": "skills/webperf/SKILL.md"
   },
   "agents": {
     "code-reviewer": "agents/code-reviewer.md",
@@ -94,9 +607,14 @@
     "claude_code_version": ">=1.0.0"
   },
   "stats": {
-    "skills_count": 16,
-    "commands_count": 9,
+    "skills_count": 141,
+    "commands_count": 106,
     "agents_count": 2,
-    "phases": ["THINK", "BUILD", "OPTIMIZE", "SHIP"]
+    "phases": [
+      "THINK",
+      "BUILD",
+      "OPTIMIZE",
+      "SHIP"
+    ]
   }
 }
