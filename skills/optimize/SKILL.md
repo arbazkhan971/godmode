@@ -31,13 +31,8 @@ STOP: target | max rounds | diminishing returns | guard broken
 Print: baseline → final (delta%), keeps/discards, best round.
 
 ## Rules
-1. Never stop, never ask. Bounded: N times. Unbounded: forever.
-2. Commit BEFORE verify. Rollback: `git reset --hard HEAD~1`.
-3. Mechanical metric only. Must output a number.
-4. One change per agent per round.
-5. Same/worse → revert. No debates.
-6. Never modify tests to pass optimization.
-7. +0.1% with ugly code → discard. Same metric + simpler → keep.
-8. TSV log every iteration.
-9. Stuck >5 discards: opposite, radical, compound.
-10. Max 3 agents per round. Only winner kept.
+1. Mechanical metric only. Must output a number.
+2. One change per agent per round. Max 3 agents. Only winner kept.
+3. Never modify tests to pass optimization.
+4. +0.1% with ugly code → discard. Same metric + simpler → keep.
+5. Diminishing returns: 3 consecutive <1% keeps → radical → compound → stop.
