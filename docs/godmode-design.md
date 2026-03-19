@@ -28,4 +28,53 @@ Most AI coding tools do one thing well. Godmode does the full cycle:
 
 ---
 
-## Status: ITERATION 1 — Vision & Philosophy complete
+## 2. Skill Architecture — The Complete Skill Map
+
+Godmode organizes skills into **4 phases** matching the core loop: THINK → BUILD → OPTIMIZE → SHIP.
+
+### Phase 1: THINK (Design & Discovery)
+
+| Skill | Command | Origin | Description |
+|-------|---------|--------|-------------|
+| **Brainstorm** | `/godmode:think` | Superpowers | Collaborative design sessions — one question at a time, visual companion, 2-3 approach proposals, spec writing |
+| **Predict** | `/godmode:predict` | Autoresearch | Multi-persona expert consensus — 5 expert perspectives evaluate a design/decision before committing |
+| **Scenario** | `/godmode:scenario` | Autoresearch | Edge case exploration — 12 dimensions (happy paths, errors, abuse, scale, concurrency, etc.) |
+
+### Phase 2: BUILD (Plan & Implement)
+
+| Skill | Command | Origin | Description |
+|-------|---------|--------|-------------|
+| **Plan** | `/godmode:plan` | Superpowers + Autoresearch | Decompose spec into 2-5 min tasks with exact file paths, code samples, and dependencies |
+| **Build** | `/godmode:build` | Superpowers | Execute plan with TDD (RED-GREEN-REFACTOR), parallel agent dispatch, 2-stage code review |
+| **Test** | `/godmode:test` | Superpowers | Test-driven development enforcement — write failing test first, then implement |
+| **Review** | `/godmode:review` | Superpowers | Dispatch code-reviewer agent, handle feedback with technical rigor |
+
+### Phase 3: OPTIMIZE (Autonomous Iteration)
+
+| Skill | Command | Origin | Description |
+|-------|---------|--------|-------------|
+| **Optimize** | `/godmode:optimize` | Autoresearch | The core autonomous loop — modify → verify → keep/discard → repeat. Git-as-memory. Mechanical metrics only |
+| **Debug** | `/godmode:debug` | Autoresearch | Scientific bug hunting — 7 investigation techniques, autonomous until codebase is clean |
+| **Fix** | `/godmode:fix` | Autoresearch | Autonomous error remediation — one fix per iteration until zero errors remain |
+| **Secure** | `/godmode:secure` | Autoresearch | STRIDE + OWASP + 4 red-team personas. Structured security audit with code evidence |
+
+### Phase 4: SHIP (Deliver & Monitor)
+
+| Skill | Command | Origin | Description |
+|-------|---------|--------|-------------|
+| **Ship** | `/godmode:ship` | Autoresearch + Superpowers | 8-phase shipping workflow — inventory, checklist, prepare, dry-run, ship, verify, log |
+| **Finish** | `/godmode:finish` | Superpowers | Branch finalization — merge, PR, keep, or discard with full verification |
+
+### Meta Skills (Always Active)
+
+| Skill | Command | Origin | Description |
+|-------|---------|--------|-------------|
+| **Godmode** | `/godmode` | NEW | The orchestrator — auto-detects what phase you're in and suggests the right skill |
+| **Setup** | `/godmode:setup` | Autoresearch | Interactive wizard — configure goal, scope, metric, verify command with dry-run validation |
+| **Verify** | `/godmode:verify` | Superpowers | Evidence-before-claims gate — run command → read output → confirm → then claim success |
+
+**Total: 16 skills** (3 THINK + 4 BUILD + 4 OPTIMIZE + 2 SHIP + 3 META)
+
+---
+
+## Status: ITERATION 2 — Skill Architecture complete
