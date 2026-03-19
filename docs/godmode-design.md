@@ -4180,4 +4180,149 @@ Common abbreviations are registered as aliases:
 
 ---
 
-## Status: ITERATION 37 — Skill Discovery & Invocation System complete
+## 38. Domain Adaptation Guide
+
+**Purpose:** How to use Godmode effectively for different domains — the core loop is universal, but metrics, guards, and workflows adapt per domain.
+
+### Backend API Development
+
+```json
+{
+  "project": { "type": "node" },
+  "metric": {
+    "name": "p95 response time",
+    "command": "wrk -t4 -c100 -d5s http://localhost:3000/api | grep '99%'",
+    "direction": "lower_is_better"
+  },
+  "guards": [
+    { "name": "tests", "command": "npm test", "severity": "hard" },
+    { "name": "no lint errors", "command": "npx eslint src/", "severity": "hard" }
+  ]
+}
+```
+
+**Key adaptations:**
+- `/godmode:scenario` focuses on: concurrency, failure, scale, abuse
+- `/godmode:secure` runs full STRIDE + OWASP
+- `/godmode:optimize` measures: response time, throughput, memory usage
+- `/godmode:ship` type: `npm`, `docker`, or `custom`
+
+### Frontend Web Development
+
+```json
+{
+  "project": { "type": "node" },
+  "metric": {
+    "name": "Lighthouse performance score",
+    "command": "npx lighthouse http://localhost:3000 --output json --quiet | jq '.categories.performance.score'",
+    "direction": "higher_is_better"
+  },
+  "guards": [
+    { "name": "bundle size", "command": "du -sb dist/ | awk '{print $1}'", "direction": "must_not_increase", "severity": "soft" },
+    { "name": "tests", "command": "npx vitest run", "severity": "hard" }
+  ]
+}
+```
+
+**Key adaptations:**
+- `/godmode:predict` adds "The Accessibility Expert" persona
+- `/godmode:scenario` focuses on: empty/null, permission, browser compatibility
+- `/godmode:optimize` measures: bundle size, Lighthouse score, First Contentful Paint
+- `/godmode:test` includes snapshot tests and visual regression tests
+
+### Machine Learning
+
+```json
+{
+  "project": { "type": "python" },
+  "metric": {
+    "name": "model accuracy",
+    "command": "python evaluate.py --metric accuracy",
+    "direction": "higher_is_better"
+  },
+  "guards": [
+    { "name": "training time", "command": "python train.py --time-only", "direction": "must_not_increase", "tolerance": 60, "severity": "soft" },
+    { "name": "data validation", "command": "python validate_data.py", "severity": "hard" }
+  ]
+}
+```
+
+**Key adaptations:**
+- `/godmode:think` explores: model architecture, feature engineering, data pipeline
+- `/godmode:predict` adds "The Data Scientist" persona (data quality, drift, reproducibility)
+- `/godmode:optimize` measures: accuracy, F1, training time, inference latency
+- `/godmode:scenario` focuses on: data quality, class imbalance, adversarial inputs, distribution shift
+- `/godmode:test` focuses on data validation, model consistency tests
+
+### DevOps / Infrastructure
+
+```json
+{
+  "project": { "type": "generic" },
+  "metric": {
+    "name": "deployment time",
+    "command": "time terraform apply -auto-approve 2>&1 | grep real | awk '{print $2}'",
+    "direction": "lower_is_better"
+  },
+  "guards": [
+    { "name": "terraform validate", "command": "terraform validate", "severity": "hard" },
+    { "name": "cost estimate", "command": "infracost diff --format json | jq '.totalMonthlyCost'", "direction": "must_not_increase", "severity": "soft" }
+  ]
+}
+```
+
+**Key adaptations:**
+- `/godmode:secure` focuses on: IAM misconfigurations, network exposure, secrets in code
+- `/godmode:scenario` focuses on: failure modes, blast radius, recovery time
+- `/godmode:ship` type: `custom` with `terraform apply` or `kubectl apply`
+
+### Content / Documentation
+
+```json
+{
+  "project": { "type": "generic" },
+  "metric": {
+    "name": "word count",
+    "command": "wc -w docs/**/*.md | tail -1 | awk '{print $1}'",
+    "direction": "higher_is_better"
+  },
+  "guards": [
+    { "name": "links valid", "command": "npx markdown-link-check docs/", "severity": "hard" },
+    { "name": "spell check", "command": "npx cspell docs/**/*.md | wc -l", "direction": "must_not_increase", "severity": "soft" }
+  ]
+}
+```
+
+**Key adaptations:**
+- `/godmode:think` focuses on: outline, audience, tone, structure
+- `/godmode:optimize` measures: readability score, completeness, broken links
+- `/godmode:review` focuses on: clarity, accuracy, consistency
+
+### Domain Selection Prompt
+
+During `/godmode:setup`, if project type is ambiguous:
+
+```
+What kind of project is this?
+  1. Backend API (Node, Python, Go, Rust)
+  2. Frontend Web (React, Vue, Svelte)
+  3. Full-Stack (Backend + Frontend)
+  4. Machine Learning (Python, Jupyter)
+  5. DevOps / Infrastructure (Terraform, K8s)
+  6. CLI Tool (Go, Rust, Python)
+  7. Library / Package (any language)
+  8. Content / Documentation
+  9. Other (I'll configure manually)
+```
+
+### Key Behaviors
+
+1. **Same loop, different metrics** — The THINK→BUILD→OPTIMIZE→SHIP cycle works for every domain
+2. **Metrics are domain-specific** — What you measure changes; how you measure doesn't
+3. **Guards adapt** — A backend guard is "tests pass"; an ML guard is "data validates"
+4. **Personas rotate** — Different domains need different expert perspectives
+5. **Templates matter** — Domain-specific setup templates reduce configuration time
+
+---
+
+## Status: ITERATION 38 — Domain Adaptation Guide complete
