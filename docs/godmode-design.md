@@ -4833,4 +4833,161 @@ The target skill reads this context to understand what to do:
 
 ---
 
-## Status: ITERATION 42 — Chain System complete
+## 43. CI/CD Integration
+
+**Purpose:** How to use Godmode in CI/CD pipelines for automated optimization, security audits, and quality gates.
+
+### Non-Interactive Mode
+
+In CI, there's no human to answer questions. Godmode supports non-interactive mode:
+
+```bash
+# All flags provided, no prompts
+claude /godmode:secure --scope src/ --severity high --report sarif --non-interactive
+
+# Optimize with all parameters specified
+claude /godmode:optimize \
+  --metric "npm test 2>&1 | grep passing | awk '{print \$1}'" \
+  --guard "npm test" \
+  --iterations 10 \
+  --target 50 \
+  --non-interactive
+```
+
+The `--non-interactive` flag:
+- Skips all user prompts (uses defaults or provided flags)
+- Never asks for confirmation
+- Outputs structured results (JSON/SARIF) instead of pretty-printed summaries
+- Exits with meaningful exit codes
+
+### Exit Codes
+
+| Code | Meaning | CI Action |
+|------|---------|-----------|
+| 0 | Success (all checks pass, target met) | Pipeline continues |
+| 1 | Failure (checks failed, target not met) | Pipeline fails |
+| 2 | Partial (some checks pass, some fail) | Pipeline warns |
+| 3 | Error (Godmode itself crashed) | Pipeline errors |
+| 4 | Timeout (max iterations reached without target) | Pipeline warns |
+
+### `--fail-on` Flag
+
+Control when the CI step should fail:
+
+```bash
+# Fail if any critical security finding
+claude /godmode:secure --fail-on critical
+
+# Fail if any BLOCK-level review finding
+claude /godmode:review --fail-on block
+
+# Fail if optimization doesn't reach target
+claude /godmode:optimize --fail-on target-not-met
+
+# Fail if any test fails
+claude /godmode:fix --fail-on errors-remaining
+```
+
+### GitHub Actions Example
+
+```yaml
+name: Godmode Quality Gate
+on: [pull_request]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropic/claude-code@v1
+      - run: |
+          claude /godmode:secure \
+            --scope src/ \
+            --report sarif \
+            --fail-on critical \
+            --non-interactive
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .godmode/security/report.sarif
+
+  code-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropic/claude-code@v1
+      - run: |
+          claude /godmode:review \
+            --scope branch \
+            --severity warn \
+            --fail-on block \
+            --non-interactive
+
+  optimize:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.labels.*.name == 'needs-optimization'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropic/claude-code@v1
+      - run: |
+          claude /godmode:optimize \
+            --metric "npm test 2>&1 | grep passing" \
+            --guard "npm test" \
+            --iterations 10 \
+            --non-interactive
+```
+
+### GitLab CI Example
+
+```yaml
+godmode-secure:
+  stage: test
+  script:
+    - claude /godmode:secure --fail-on high --report json --non-interactive
+  artifacts:
+    paths:
+      - .godmode/security/
+```
+
+### Output Formats for CI
+
+| Format | Flag | Use Case |
+|--------|------|----------|
+| `--report json` | Machine-readable results | Custom CI integrations |
+| `--report sarif` | SARIF format | GitHub Code Scanning, VS Code |
+| `--report markdown` | Human-readable summary | PR comments |
+| `--report junit` | JUnit XML | CI test result displays |
+
+### PR Comment Integration
+
+Godmode can post results as PR comments:
+
+```bash
+claude /godmode:secure --report markdown --non-interactive > report.md
+gh pr comment $PR_NUMBER --body-file report.md
+```
+
+Or with the built-in flag:
+```bash
+claude /godmode:secure --pr-comment --non-interactive
+```
+
+### Resource Limits in CI
+
+| Resource | Default | CI Override |
+|----------|---------|------------|
+| Max iterations | 25 | `--iterations 10` (lower for CI speed) |
+| Timeout per command | 60s | `--timeout 30s` |
+| Max parallel agents | 3 | `--parallel 1` (CI runners have limited resources) |
+| Model | sonnet | `--model haiku` (cheaper for CI) |
+
+### Key Behaviors
+
+1. **Non-interactive is explicit** — Don't guess; require `--non-interactive` flag
+2. **Exit codes matter** — CI pipelines read exit codes, not prose
+3. **SARIF for security** — Standard format that integrates with GitHub/GitLab
+4. **Lower budgets for CI** — CI runs should be fast; reduce iterations and use cheaper models
+5. **Results as artifacts** — Always save reports to `.godmode/` for archival
+
+---
+
+## Status: ITERATION 43 — CI/CD Integration complete
