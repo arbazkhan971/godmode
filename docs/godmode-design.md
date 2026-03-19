@@ -1672,4 +1672,155 @@ Each persona "attacks" the system and reports what they could achieve.
 
 ---
 
-## Status: ITERATION 16 — Secure skill spec complete
+## 17. `/godmode:ship` — Shipping Skill Spec
+
+**Origin:** Autoresearch + Superpowers (structured shipping workflow)
+**Phase:** SHIP
+**Purpose:** 8-phase shipping workflow that handles 9 different shipment types, from npm packages to Docker images to GitHub releases.
+
+### Trigger Conditions
+
+- All tasks complete, tests pass, review approved
+- User says "ship it", "deploy", "release", "publish"
+- Orchestrator routes here after OPTIMIZE phase completes
+- Explicitly invoked with `/godmode:ship`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--type` | auto | Shipment type (see 9 types below) |
+| `--dry-run` | false | Run entire workflow without actually shipping |
+| `--version` | auto | Version number (auto-bumps based on changes) |
+| `--skip-security` | false | Skip security audit (not recommended) |
+| `--changelog` | true | Auto-generate changelog from commits |
+
+### 9 Shipment Types
+
+| Type | Command | What it Does |
+|------|---------|-------------|
+| `npm` | `npm publish` | Publish to npm registry |
+| `pypi` | `python -m twine upload` | Publish to PyPI |
+| `docker` | `docker build && docker push` | Build and push Docker image |
+| `github-release` | `gh release create` | Create GitHub release with assets |
+| `github-pages` | `gh-pages -d dist` | Deploy to GitHub Pages |
+| `vercel` | `vercel --prod` | Deploy to Vercel |
+| `cloudflare` | `wrangler deploy` | Deploy to Cloudflare Workers |
+| `binary` | `goreleaser` / custom | Build and distribute binaries |
+| `custom` | user-defined | Run a custom deploy script |
+
+### The 8-Phase Shipping Workflow
+
+**Phase 1: Inventory**
+- List all changes since last ship (commits, files changed, new dependencies)
+- Categorize: features, fixes, breaking changes, chores
+- Determine version bump: MAJOR (breaking), MINOR (feature), PATCH (fix)
+
+**Phase 2: Pre-Flight Checklist**
+
+```
+Pre-Flight Checklist:
+  ✓ All tests pass
+  ✓ No lint errors
+  ✓ No type errors
+  ✓ Security audit passed (or --skip-security)
+  ✓ No uncommitted changes
+  ✓ On correct branch (main/release)
+  ✓ Dependencies up to date
+  ✓ Version bumped in package.json / pyproject.toml / etc.
+  ✗ CHANGELOG.md updated → Auto-generating...
+```
+
+All items must pass. Failures block shipping with clear instructions to fix.
+
+**Phase 3: Changelog**
+- Auto-generate from git history since last tag
+- Group by: Features, Fixes, Breaking Changes, Other
+- Use conventional commit messages for categorization
+- Present to user for review/edit
+
+**Phase 4: Version Bump**
+- Bump version in all relevant files (package.json, Cargo.toml, setup.py, etc.)
+- Create version commit: `git commit -m "release: vX.Y.Z"`
+- Create git tag: `git tag vX.Y.Z`
+
+**Phase 5: Build**
+- Run the project's build command
+- Verify build artifacts exist and are correct size
+- Run smoke tests against built artifacts (not source)
+
+**Phase 6: Dry Run**
+- Execute the shipment command with dry-run flag
+- Show what WOULD be published/deployed
+- User confirms before proceeding
+- If `--dry-run` flag: stop here
+
+**Phase 7: Ship**
+- Execute the actual shipment command
+- Capture output for logging
+- Verify the shipment succeeded (check registry, check deployment URL)
+
+**Phase 8: Post-Ship**
+- Push git tags: `git push --tags`
+- Create GitHub release (if applicable)
+- Post-ship verification: hit the deployed endpoint, check the published package
+- Update `.godmode/state.json` with ship record
+- Log results: `git commit -m "ship: vX.Y.Z shipped to [target]"`
+
+### Post-Ship Verification
+
+| Shipment Type | Verification |
+|--------------|-------------|
+| npm | `npm view package@version` returns correct metadata |
+| Docker | `docker pull image:tag` succeeds |
+| GitHub Release | `gh release view vX.Y.Z` shows correct assets |
+| Vercel/CF | HTTP GET to deployment URL returns 200 |
+| Custom | Run user-defined verification command |
+
+### Key Behaviors
+
+1. **Pre-flight blocks shipping** — Every check must pass; no shortcuts
+2. **Dry run first** — Always show what will happen before doing it
+3. **User confirms** — The agent never ships without explicit user approval
+4. **Post-ship verification** — Don't assume it worked; verify mechanically
+5. **Rollback plan** — If post-ship verification fails, provide rollback instructions
+
+### Example Usage
+
+```
+User: /godmode:ship --type npm
+
+Agent: Phase 1: Inventory
+  12 commits since v1.2.0
+  Features: 2 | Fixes: 3 | Breaking: 0 → Version: 1.3.0
+
+Phase 2: Pre-Flight
+  ✓ 47 tests pass | ✓ 0 lint errors | ✓ Security audit clean
+
+Phase 3: Changelog (auto-generated)
+  ## 1.3.0
+  ### Features
+  - Add rate limiting middleware (#45)
+  - Add Redis connection pooling (#47)
+  ### Fixes
+  - Fix off-by-one in rate limit counter (#48)
+  - Fix Redis reconnection handling (#49)
+  - Fix type error in config parser (#50)
+
+Phase 4: Version → 1.3.0
+
+Phase 5: Build → dist/ (42KB, 3 files)
+
+Phase 6: Dry Run → npm publish --dry-run ✓
+
+Ship v1.3.0 to npm? [Y/n]
+
+Phase 7: Ship → npm publish ✓
+Phase 8: Verify → npm view rate-limiter@1.3.0 ✓
+
+✅ v1.3.0 shipped to npm successfully
+```
+
+---
+
+## Status: ITERATION 17 — Ship skill spec complete
