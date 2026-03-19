@@ -5565,4 +5565,113 @@ Total: 45 minutes, 12 iterations, 18 tests added.
 
 ---
 
-## Status: ITERATION 47 — Comparison Matrix complete
+## 48. Roadmap
+
+**Purpose:** Feature plans for v1.0, v1.1, and v2.0 releases.
+
+### v1.0 — Foundation (Initial Release)
+
+**Goal:** Ship the core THINK → BUILD → OPTIMIZE → SHIP cycle with all 16 skills.
+
+| Feature | Status | Priority |
+|---------|--------|----------|
+| Orchestrator (`/godmode`) | Planned | P0 |
+| Think skill (brainstorm + spec) | Planned | P0 |
+| Plan skill (task decomposition) | Planned | P0 |
+| Build skill (TDD + review) | Planned | P0 |
+| Optimize skill (autonomous loop) | Planned | P0 |
+| Ship skill (8-phase workflow) | Planned | P0 |
+| Fix skill (error remediation) | Planned | P0 |
+| Verify skill (evidence gate) | Planned | P0 |
+| Setup skill (config wizard) | Planned | P0 |
+| Debug skill (bug hunting) | Planned | P1 |
+| Test skill (standalone TDD) | Planned | P1 |
+| Review skill (standalone review) | Planned | P1 |
+| Secure skill (security audit) | Planned | P1 |
+| Predict skill (multi-persona) | Planned | P1 |
+| Scenario skill (edge cases) | Planned | P1 |
+| Finish skill (branch finalization) | Planned | P1 |
+| Git-as-memory system | Planned | P0 |
+| Guard system (hard guards only) | Planned | P0 |
+| Results logging (TSV) | Planned | P0 |
+| Handoff protocol | Planned | P0 |
+| Configuration schema | Planned | P0 |
+| Session start hook | Planned | P1 |
+| Schema validation tests | Planned | P1 |
+
+**Target:** 8-10 weeks of development
+
+### v1.1 — Enhancement
+
+**Goal:** Add advanced features requested from early adopters.
+
+| Feature | Description |
+|---------|-------------|
+| Soft guards | Warning-level guards that don't auto-revert |
+| Chain system (`--chain`) | Link skills together |
+| Pipeline definitions | Pre-built skill sequences |
+| Visual companion | Browser-based brainstorm canvas + progress dashboard |
+| Parallel agent dispatch | Multi-agent execution with worktrees |
+| Model matching | Auto-select model based on task complexity |
+| Metric suggestion database | Pre-built metrics for common scenarios |
+| Iteration budgets | Auto-budget based on complexity |
+| Crash recovery | Resume from failed sessions |
+| Cursor adapter | `.cursorrules` file for Cursor compatibility |
+
+**Target:** 4-6 weeks after v1.0
+
+### v1.2 — CI/CD & Platform
+
+**Goal:** Make Godmode usable in CI pipelines and on more platforms.
+
+| Feature | Description |
+|---------|-------------|
+| Non-interactive mode | `--non-interactive` flag for CI |
+| `--fail-on` flags | Control CI exit codes |
+| SARIF output | Security findings in GitHub Code Scanning format |
+| JUnit output | Test results in CI-compatible format |
+| GitHub Actions example | Ready-to-use workflow file |
+| Codex adapter | System prompt for OpenAI Codex |
+| OpenCode adapter | Plugin for OpenCode |
+| Gemini CLI adapter | System prompt for Gemini |
+
+**Target:** 3-4 weeks after v1.1
+
+### v2.0 — Intelligence
+
+**Goal:** Make Godmode smarter with cross-project learning and advanced optimization strategies.
+
+| Feature | Description |
+|---------|-------------|
+| Cross-project metric database | Learn which optimizations work for which project types |
+| Strategy library | Named optimization strategies (hill-climb, simulated annealing, explore) |
+| Automatic strategy selection | Choose strategy based on metric behavior |
+| Skill marketplace | Users can share custom skills |
+| Custom persona system | User-defined prediction personas |
+| Multi-metric optimization | Optimize multiple metrics simultaneously with Pareto frontier |
+| Time-series analysis | Detect metric trends, predict plateau timing |
+| Cost tracking | Track API costs per skill, per iteration |
+| Team collaboration | Shared `.godmode/` state across team members |
+| Web dashboard | Full web UI (not just companion) |
+
+**Target:** 8-12 weeks after v1.2
+
+### Release Timeline
+
+```
+v1.0  ──────→  v1.1  ────→  v1.2  ───→  v2.0
+Foundation    Enhancement    CI/CD      Intelligence
+(8-10 wk)    (+4-6 wk)     (+3-4 wk)  (+8-12 wk)
+```
+
+### Key Behaviors
+
+1. **v1.0 is complete** — Every core skill works end-to-end; no stubs
+2. **v1.1 is about polish** — Advanced features that make the experience smoother
+3. **v1.2 is about reach** — CI/CD and platform support expand the user base
+4. **v2.0 is about intelligence** — Learning across projects and sessions
+5. **Community drives priorities** — Post-v1.0, roadmap is shaped by user feedback
+
+---
+
+## Status: ITERATION 48 — Roadmap complete
