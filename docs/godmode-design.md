@@ -8599,3 +8599,244 @@ Each skill can run independently or as part of the data architecture pipeline. T
 | `commands/godmode/orm.md` | Command | Usage reference for `/godmode:orm` |
 
 **Iterations 272-277 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 85. Error Handling & Resilience Skills
+
+Three new skills extend Godmode into production hardening — building systems that handle failures gracefully, log effectively, and recover automatically.
+
+### System Resilience (`/godmode:resilience`)
+
+**Purpose:** Design and implement fault-tolerant systems using battle-tested resilience patterns.
+
+**Workflow:**
+1. **Assess** — Evaluate current resilience posture across all patterns (circuit breakers, retries, timeouts, bulkheads, rate limiting, health checks, degradation)
+2. **Circuit Breakers** — State machine implementation (CLOSED/OPEN/HALF-OPEN) with configurable thresholds, monitored exceptions, and fallback strategies
+3. **Retry Strategies** — Exponential backoff with jitter (full, equal, decorrelated) and Retry-After header respect. Decision matrix for retryable vs non-retryable errors
+4. **Bulkhead Pattern** — Semaphore-based concurrency isolation per dependency. One slow dependency cannot starve others
+5. **Rate Limiting** — Token bucket, sliding window, and concurrency-based algorithms with Redis-backed distributed enforcement
+6. **Graceful Degradation** — Multi-level degradation strategy mapping each dependency to its fallback behavior (cached data, queued processing, feature disable)
+7. **Health Checks** — Liveness (process alive, no dependency checks), readiness (can serve traffic, checks dependencies), startup (initialization complete)
+8. **Timeout Management** — Hierarchical timeout budget where each layer's timeout is less than its parent
+
+**Key Patterns:**
+
+| Pattern | Purpose | Failure Mode |
+|---------|---------|-------------|
+| Circuit Breaker | Fast failure when dependency down | Cascading failures |
+| Retry + Backoff | Recover from transient failures | Temporary network issues |
+| Bulkhead | Isolate failure domains | Resource exhaustion |
+| Rate Limiting | Prevent overload | Traffic spikes |
+| Graceful Degradation | Maintain partial functionality | Dependency outage |
+| Health Checks | Container lifecycle management | Orchestrator decisions |
+| Timeout Budget | Prevent unbounded waits | Slow dependencies |
+
+**Critical Rules:**
+- Liveness probes must NEVER check external dependencies (DB outage should not restart pods)
+- Retry without backoff causes thundering herd (all clients retry simultaneously)
+- Retry non-idempotent operations causes duplicates (double charges, double posts)
+- Every external call must have a timeout, and timeout hierarchy must be monotonically decreasing
+
+**Chaining:** `/godmode:resilience` → `/godmode:chaos` (validate) → `/godmode:observe` (monitor) → `/godmode:loadtest` (stress test)
+
+### Error Handling Architecture (`/godmode:errorhandling`)
+
+**Purpose:** Design comprehensive error handling with typed hierarchies, error boundaries, and structured responses.
+
+**Workflow:**
+1. **Classify** — Separate operational errors (expected, recoverable: timeouts, rate limits, validation) from programmer errors (bugs: TypeError, null deref, assertion failures)
+2. **Error Hierarchy** — Base AppError with code, statusCode, isOperational flag, toLog() for internal details, toResponse() for safe user-facing output
+3. **Error Boundaries** — React component boundaries (page + widget level), Express global error handler (registered last), Go panic recovery middleware
+4. **Structured Responses** — Consistent JSON format: `{ error: { code, message, requestId } }` with field-level validation details and Retry-After headers
+5. **Error Code Registry** — Machine-readable codes (VALIDATION_ERROR, NOT_FOUND, RATE_LIMIT_EXCEEDED) mapped to HTTP status codes
+6. **User-Facing Messages** — Helpful and actionable for operational errors, generic "something went wrong" for programmer errors. Never expose stack traces, SQL, or file paths
+7. **Global Handlers** — Framework-specific: Express asyncHandler + global middleware, NestJS ExceptionFilter, Next.js error.tsx/global-error.tsx, FastAPI exception_handler, Go middleware
+
+**Error Classification:**
+
+| Category | Handle | Retry? | User Message | Log Level |
+|----------|--------|--------|-------------|-----------|
+| Operational | Return/degrade | Often | Helpful, specific | WARN |
+| Programmer | Log + alert + crash | Never | Generic "oops" | ERROR/FATAL |
+
+**Key Principle:** If you catch a programmer error and "handle" it, you are hiding a bug. If you crash on an operational error, you are overreacting.
+
+**Chaining:** `/godmode:errorhandling` → `/godmode:logging` (structured error logging) → `/godmode:errortrack` (aggregation and tracking)
+
+### Logging & Structured Logging (`/godmode:logging`)
+
+**Purpose:** Implement production-grade structured logging with correlation IDs, PII redaction, and aggregation pipelines.
+
+**Workflow:**
+1. **Assess** — Evaluate logging maturity: format, levels, context, correlation, aggregation, PII handling, retention, performance
+2. **Log Level Strategy** — FATAL (process exits), ERROR (operation failed), WARN (unexpected but handled), INFO (business events), DEBUG (diagnostics, off in prod)
+3. **Structured Format** — JSON logs with consistent fields: timestamp, level, service, environment, version, requestId, traceId, userId
+4. **Correlation IDs** — Request-scoped loggers with requestId (per HTTP request), traceId (across services), spanId (per operation). Propagated via X-Request-ID/X-Trace-ID headers
+5. **PII Redaction** — Logger-level redaction: mask emails/phones, redact passwords/tokens/cards, anonymize IPs. Allowlist approach (log only explicitly allowed fields)
+6. **Log Aggregation** — Pipeline design for ELK Stack (Filebeat → Logstash → Elasticsearch → Kibana), Grafana Loki (Promtail → Loki → Grafana), or AWS CloudWatch
+7. **OpenTelemetry** — Unified traces + logs with automatic context propagation
+8. **Retention & Rotation** — Per-environment retention (prod ERROR: 365d, INFO: 30d), storage tiering (hot/warm/cold), compliance archival
+
+**Log Level Quick Reference:**
+
+| Level | When | Alert? |
+|-------|------|--------|
+| FATAL | Process cannot continue | Immediate page |
+| ERROR | Operation failed, process continues | Alert within 5m |
+| WARN | Unexpected but handled | Dashboard |
+| INFO | Business event | — |
+| DEBUG | Diagnostic (off in prod) | — |
+
+**Key Rule:** A healthy system should have ZERO ERROR logs in normal operation. If you see ERROR logs during normal traffic, either the errors are miscategorized or you have a bug.
+
+**Chaining:** `/godmode:logging` → `/godmode:observe` (metrics + tracing) → `/godmode:secure` (PII audit) → `/godmode:incident` (better debugging)
+
+### Design Principles for Error Handling & Resilience Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Classify before handling | Operational errors get retries and degradation; programmer errors get alerts and fixes |
+| 2 | Fail fast, recover gracefully | Circuit breakers prevent cascading; fallbacks maintain partial service |
+| 3 | Log at the boundary | One structured log entry per error at the catch point, not at every level |
+| 4 | Users see messages, developers see context | toResponse() for users, toLog() for operators |
+| 5 | Redact by default | PII must be explicitly allowed in logs, not explicitly blocked |
+| 6 | Correlation is non-negotiable | Every log line includes requestId and traceId for cross-service debugging |
+| 7 | Timeouts are mandatory | Every external call has a timeout; timeout hierarchy is monotonically decreasing |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/resilience/SKILL.md` | Skill | System resilience patterns and implementation |
+| `skills/errorhandling/SKILL.md` | Skill | Error handling architecture and error boundaries |
+| `skills/logging/SKILL.md` | Skill | Structured logging, correlation IDs, and PII redaction |
+| `commands/godmode/resilience.md` | Command | Usage reference for `/godmode:resilience` |
+| `commands/godmode/errorhandling.md` | Command | Usage reference for `/godmode:errorhandling` |
+| `commands/godmode/logging.md` | Command | Usage reference for `/godmode:logging` |
+
+**Iterations 278-283 (6 files, 3 skills, 3 commands)**
+
+## 95. Open Source & Community Skills
+
+Three skills for managing open source projects end-to-end: from license selection through community scaffolding to changelog automation.
+
+### 95.1 Open Source Project Management (`/godmode:opensource`)
+
+Repository setup and community management for open source projects.
+
+**Repository Scaffolding** — generates or audits all community health files:
+- LICENSE, CODE_OF_CONDUCT.md (Contributor Covenant 2.1), CONTRIBUTING.md, SECURITY.md
+- `.github/ISSUE_TEMPLATE/` (bug report YAML, feature request YAML, config)
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/CODEOWNERS`, `.github/FUNDING.yml`
+
+**GitHub Actions Automation** — workflows for project management:
+- `labeler.yml` — auto-labels PRs by file path
+- `stale.yml` — marks and closes inactive issues/PRs (60 days stale, 14 days to close)
+- `welcome.yml` — greets first-time contributors on issues and PRs
+- `release-drafter.yml` — auto-drafts release notes from merged PRs
+
+**Maintainer Workflows** — structured processes:
+- Triage: new issue → bot labels → maintainer triage (48h SLA) → categorize → assign/label
+- Review: PR opened → CI runs → CODEOWNERS auto-assigns → code review → merge
+- Release: scope determination → changelog → version bump → tag → publish → announce
+
+**Governance Models** — three models matched to project size:
+- BDFL (1-20 contributors): single decision authority, fast iteration
+- Consensus (10-50 contributors): core team with 72-hour discussion periods
+- Steering Committee (50+ contributors): elected committee, working groups, RFC process
+
+| Flag | Description |
+|------|-------------|
+| `--audit` | Audit only, no file creation |
+| `--governance <model>` | Set governance model (bdfl, consensus, committee) |
+| `--templates` | Issue and PR templates only |
+| `--automation` | GitHub Actions workflows only |
+| `--community` | Community channels only |
+| `--minimal` | LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT only |
+
+### 95.2 Changelog & Release Notes (`/godmode:changelog`)
+
+Changelog generation and release communication.
+
+**Keep a Changelog Format** — standard sections: Added, Changed, Deprecated, Removed, Fixed, Security. Latest version first, release dates, comparison links.
+
+**Conventional Commits Integration** — commit types (feat, fix, perf, refactor, docs, test, chore, ci, build, style, revert) parsed into changelog entries. Setup includes commitlint, Commitizen, and Husky hooks.
+
+**Auto-Generation Tooling**:
+- `conventional-changelog` for local generation
+- `release-please` GitHub Action for automated release PRs
+- `standard-version` for local bump + changelog + tag
+
+**Audience-Specific Release Notes**:
+- Developer-facing: breaking changes with before/after code, new APIs, bug fixes with issue refs
+- User-facing: highlights in plain language, capability improvements, upgrade notices
+
+**Breaking Change Communication**:
+- Advance notice via deprecation warnings (1-2 releases before)
+- Migration guide with step-by-step instructions, codemods, rollback steps
+- Release communication across changelog, GitHub Release, blog, community channels
+- Support window for previous major version
+
+| Flag | Description |
+|------|-------------|
+| `--setup` | Configure Conventional Commits + auto-changelog |
+| `--release <version>` | Generate changelog for specific version |
+| `--migration <from> <to>` | Generate migration guide |
+| `--notes` | User-facing release notes |
+| `--dev-notes` | Developer-facing release notes |
+| `--breaking` | Breaking changes only |
+| `--full` | Regenerate from full git history |
+
+### 95.3 License Management (`/godmode:license`)
+
+License selection, compliance, and attribution.
+
+**License Selection Guidance** — comparison matrix covering MIT, Apache 2.0, GPL v3, AGPL v3, MPL 2.0, BSL 1.1, and proprietary. Each profile includes SPDX identifier, permissions, conditions, limitations, best-for scenarios, risks, and notable users.
+
+**License Compatibility Checking** — dependency scanner that cross-references every dependency's license against the project license. Produces compatibility matrix: OK, OK with NOTICE, WARN (consult legal), FAIL (incompatible).
+
+**SPDX Identifiers and File Headers** — standardized `// SPDX-License-Identifier: <id>` headers for all source files with language-specific templates (JS/TS, Python, Go, Rust, Java, HTML, Shell). CI enforcement via `skywalking-eyes` or `addlicense`.
+
+**Third-Party Attribution** — NOTICE file and THIRD_PARTY_LICENSES generation from dependency trees. Covers attribution requirements per license type (MIT needs copyright, Apache 2.0 needs NOTICE file, etc.).
+
+**CLA / DCO Setup**:
+- Developer Certificate of Origin (DCO): lightweight, `Signed-off-by` line, used by CNCF/Linux Foundation
+- Individual CLA: contributor signs via GitHub bot comment
+- Corporate CLA: company signs on behalf of employees
+- Automated enforcement via GitHub Actions
+
+| Flag | Description |
+|------|-------------|
+| `--select` | Interactive license selection |
+| `--check` | Dependency compatibility check |
+| `--headers` | Add SPDX headers to source files |
+| `--attribution` | Generate NOTICE and attribution files |
+| `--cla` | Set up CLA enforcement |
+| `--dco` | Set up DCO enforcement |
+| `--apply <license>` | Apply specific license |
+| `--audit` | Report without changes |
+
+### 95.4 Skill Interconnections
+
+```
+/godmode:opensource ──→ /godmode:license    (license selection during scaffolding)
+/godmode:opensource ──→ /godmode:changelog  (changelog setup during scaffolding)
+/godmode:opensource ──→ /godmode:cicd       (CI/CD pipeline after project setup)
+/godmode:changelog  ──→ /godmode:ship       (publish release after changelog)
+/godmode:license    ──→ /godmode:opensource (full setup after licensing)
+/godmode:license    ──→ /godmode:secure     (security audit includes license check)
+```
+
+**Open Source Launch Chain:**
+```
+/godmode:license → /godmode:opensource → /godmode:changelog --setup → /godmode:cicd
+```
+
+**Release Chain:**
+```
+/godmode:changelog → /godmode:ship → /godmode:deploy
+```
+
+**Iterations 389-394 (3 skills created, 3 command files created, 1 design doc updated)**
