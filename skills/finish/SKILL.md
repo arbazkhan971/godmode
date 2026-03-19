@@ -8,13 +8,13 @@ description: Branch finalization. Merge, PR, keep, or discard.
 
 ## Workflow
 ### 1. Pre-Check
-Verify: clean working tree, no uncommitted changes, tests pass, lint passes. If anything fails → fix first.
+Run: `git status` (clean?), `test_cmd` (pass?), `lint_cmd` (pass?). Any failure → `/godmode:fix` first.
 ### 2. Choose Outcome
 - **MERGE:** squash-merge to main, delete branch
-- **PR:** `gh pr create` with body auto-generated from git log
+- **PR:** `gh pr create --title '{feature}' --body "$(git log main..HEAD --format='- %s')"`
 - **KEEP:** branch stays for later
 - **DISCARD:** delete branch (confirm first — destructive)
-Decision: tests pass + reviewed → MERGE/PR. Tests pass + unreviewed → PR. WIP → KEEP. Abandoned → DISCARD.
+Auto-decide: tests pass + `/godmode:review` done → MERGE. Tests pass + unreviewed → PR. Uncommitted changes → KEEP. User says abandon → DISCARD.
 ### 3. Post-Finalization
 Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}"`.
 
