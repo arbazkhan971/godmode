@@ -2799,4 +2799,137 @@ Not all tasks need the most powerful model. Match task complexity to model capab
 
 ---
 
-## Status: ITERATION 26 — Parallel Agent Dispatch complete
+## 27. Visual Companion
+
+**Purpose:** Browser-based brainstorming and progress visualization tool that runs alongside the CLI, providing a spatial canvas for ideas and a dashboard for optimization progress.
+
+### Design Philosophy: Zero Dependencies
+
+The visual companion is a single HTML file with inline CSS and JavaScript. No build step, no npm install, no React. Just open it in a browser.
+
+```
+godmode/visual/companion.html   # Single file, everything inline
+```
+
+### How It Connects
+
+```
+CLI (Agent)  ←→  WebSocket  ←→  Browser (Visual Companion)
+     │                                │
+     └── Sends events ──────────────→ Displays in real-time
+     └── Receives user actions ←──── Canvas interactions
+```
+
+**Launch:**
+```bash
+# Agent opens the companion
+open http://localhost:9876/companion.html
+# Or serves it:
+python3 -m http.server 9876 --directory .godmode/visual/ &
+```
+
+### WebSocket Protocol
+
+Messages are JSON objects with a `type` field:
+
+```json
+// Agent → Browser: Add a brainstorming question
+{ "type": "question", "id": "q1", "text": "What are you building?" }
+
+// Agent → Browser: Add user's answer
+{ "type": "answer", "id": "q1", "text": "A rate limiter for our API" }
+
+// Agent → Browser: Show approach proposals
+{ "type": "approaches", "items": [
+  { "id": "a1", "name": "Token Bucket", "pros": [...], "cons": [...] },
+  { "id": "a2", "name": "Sliding Window", "pros": [...], "cons": [...] }
+]}
+
+// Agent → Browser: Optimization progress update
+{ "type": "progress", "iteration": 4, "metric": 198, "target": 200, "kept": true }
+
+// Agent → Browser: Phase transition
+{ "type": "phase", "from": "BUILD", "to": "OPTIMIZE" }
+
+// Browser → Agent: User selected an approach
+{ "type": "select", "id": "a1" }
+
+// Browser → Agent: User annotated something
+{ "type": "annotate", "target": "a1", "text": "Let's use this but with Redis Cluster" }
+```
+
+### Visual Modes
+
+**Mode 1: Brainstorm Canvas**
+- Questions and answers appear as connected cards
+- Approaches appear as comparison columns
+- User can drag, connect, and annotate cards
+- Spatial layout helps organize thinking
+
+```
+┌─────────────────────────────────────────────────┐
+│  BRAINSTORM: Rate Limiter                       │
+│                                                 │
+│  ┌──────────┐     ┌──────────────┐              │
+│  │ Q: What   │────→│ A: Existing  │              │
+│  │ setup?    │     │ Express API  │              │
+│  └──────────┘     └──────────────┘              │
+│       │                                          │
+│  ┌──────────┐     ┌──────────────┐              │
+│  │ Q: Scale? │────→│ A: 10K RPM   │              │
+│  └──────────┘     └──────────────┘              │
+│                                                 │
+│  ┌─────────────┐ ┌─────────────┐ ┌────────────┐│
+│  │ Token Bucket │ │ Sliding Win │ │ API Gateway ││
+│  │ ✓ Selected  │ │             │ │             ││
+│  └─────────────┘ └─────────────┘ └────────────┘│
+└─────────────────────────────────────────────────┘
+```
+
+**Mode 2: Progress Dashboard**
+- Real-time metric chart (line graph showing improvement over iterations)
+- Guard status indicators (green/red lights)
+- Task completion progress bar
+- Current phase indicator
+
+```
+┌─────────────────────────────────────────────────┐
+│  OPTIMIZE: p95 Response Time                    │
+│                                                 │
+│  340ms ┤█                                       │
+│  285ms ┤ █                                      │
+│  241ms ┤  █                                     │
+│  198ms ┤   █ ← current                         │
+│  200ms ┤─ ─ ─ ─ target ─ ─ ─                   │
+│        └────────────────────                    │
+│         1   2   3   4                           │
+│                                                 │
+│  Guards: [✓ tests] [✓ coverage] [✓ lint]        │
+│  Progress: ████████░░ 4/25 iterations           │
+└─────────────────────────────────────────────────┘
+```
+
+**Mode 3: Plan View**
+- Task list with dependencies visualized as a DAG
+- Color coding: green (done), blue (in progress), gray (pending)
+- Parallel groups highlighted
+
+### Implementation Notes
+
+- **No framework** — Vanilla JS, CSS Grid, SVG for charts
+- **No build step** — Single HTML file, works when opened directly
+- **WebSocket fallback** — If WebSocket fails, poll a JSON file every 2 seconds
+- **Responsive** — Works on half-screen (side-by-side with terminal)
+- **Dark mode** — Matches typical terminal aesthetics
+
+### Key Behaviors
+
+1. **Optional** — Godmode works perfectly without the visual companion
+2. **Read-only by default** — The companion displays; the CLI drives
+3. **Zero install** — Open an HTML file, that's it
+4. **Real-time** — Updates as the agent works, no manual refresh
+5. **Exportable** — Canvas state can be saved as PNG or JSON
+
+---
+
+## Status: ITERATION 27 — Visual Companion complete
