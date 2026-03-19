@@ -3532,4 +3532,173 @@ User: /godmode:build
 
 ---
 
-## Status: ITERATION 32 — Hook System complete
+## 33. Configuration Schema
+
+**Purpose:** Define the complete `settings.json` structure, per-project overrides, and global defaults.
+
+### Configuration Hierarchy
+
+Settings are resolved in order (later overrides earlier):
+
+```
+1. Plugin defaults (godmode/settings.json)           — shipped with plugin
+2. Global user config (~/.godmode/settings.json)      — user preferences
+3. Project config (.godmode/settings.json)             — project-specific
+4. Command-line flags                                  — per-invocation override
+```
+
+### Complete Schema
+
+```json
+{
+  "$schema": "https://godmode.dev/schema/settings.v1.json",
+
+  // Project detection (usually auto-detected)
+  "project": {
+    "type": "node",                        // node, python, go, rust, java, generic
+    "test_command": "npm test",
+    "lint_command": "npx eslint src/",
+    "build_command": "npm run build",
+    "typecheck_command": "npx tsc --noEmit",
+    "coverage_command": "npx vitest --coverage"
+  },
+
+  // Current goal (set by /godmode:setup)
+  "goal": "Add rate limiting to the Express API",
+
+  // File scope (what the agent can modify)
+  "scope": {
+    "include": ["src/", "tests/", "config/"],
+    "exclude": ["node_modules/", "dist/", ".env"]
+  },
+
+  // Primary optimization metric
+  "metric": {
+    "name": "p95 response time",
+    "command": "wrk -t4 -c100 -d5s http://localhost:3000/api | grep '99%' | awk '{print $2}'",
+    "parse": "duration_ms",
+    "direction": "lower_is_better",
+    "unit": "ms",
+    "tolerance": 5,
+    "baseline": null,
+    "target": 200
+  },
+
+  // Verification command
+  "verify": "npm test",
+
+  // Guard metrics
+  "guards": [
+    {
+      "name": "tests passing",
+      "command": "npm test 2>&1 | grep -oP '\\d+ passing' | grep -oP '\\d+'",
+      "baseline": 47,
+      "direction": "must_not_decrease",
+      "tolerance": 0,
+      "severity": "hard"
+    },
+    {
+      "name": "test coverage",
+      "command": "npx vitest --coverage 2>&1 | grep 'All files' | awk '{print $NF}'",
+      "baseline": 84,
+      "direction": "must_not_decrease",
+      "tolerance": 2,
+      "severity": "soft"
+    }
+  ],
+
+  // Iteration limits
+  "iterations": {
+    "optimize_max": 25,
+    "fix_max": 15,
+    "debug_max": 10,
+    "plateau_threshold": 5
+  },
+
+  // Agent configuration
+  "agents": {
+    "default_model": "sonnet",
+    "complex_model": "opus",
+    "simple_model": "haiku",
+    "review_model": "sonnet",
+    "max_parallel": 3
+  },
+
+  // Hook configuration
+  "hooks": {
+    "enabled": true,
+    "timeout": "30s",
+    "custom_dir": ".godmode/hooks/",
+    "disabled_hooks": []
+  },
+
+  // Behavior preferences
+  "behavior": {
+    "auto_mode": false,             // Auto-transition between phases
+    "tdd_enforced": true,           // Require TDD in build phase
+    "review_required": true,        // Require code review after each task
+    "security_before_ship": true,   // Require security audit before shipping
+    "visual_companion": false,      // Launch visual companion by default
+    "verbose": false,               // Detailed output
+    "commit_style": "conventional"  // conventional, descriptive, or minimal
+  },
+
+  // Shipping preferences
+  "shipping": {
+    "type": "npm",
+    "registry": "https://registry.npmjs.org/",
+    "dry_run_first": true,
+    "auto_changelog": true
+  }
+}
+```
+
+### Field Reference
+
+| Section | Field | Type | Default | Description |
+|---------|-------|------|---------|-------------|
+| `project.type` | string | auto | Project language/framework |
+| `project.test_command` | string | auto | How to run tests |
+| `scope.include` | string[] | `["src/"]` | Directories the agent can modify |
+| `scope.exclude` | string[] | `["node_modules/"]` | Directories to never touch |
+| `metric.direction` | enum | — | `lower_is_better` or `higher_is_better` |
+| `metric.tolerance` | number | 0 | Noise floor for metric comparison |
+| `iterations.optimize_max` | int | 25 | Max optimization iterations |
+| `iterations.plateau_threshold` | int | 5 | Consecutive reverts before stopping |
+| `agents.max_parallel` | int | 3 | Max parallel sub-agents |
+| `behavior.auto_mode` | bool | false | Automatically chain skills |
+| `behavior.tdd_enforced` | bool | true | Require test-first development |
+
+### Per-Project Override Example
+
+A Python ML project might override:
+```json
+{
+  "project": {
+    "type": "python",
+    "test_command": "pytest -v",
+    "lint_command": "ruff check ."
+  },
+  "metric": {
+    "name": "model accuracy",
+    "command": "python evaluate.py | grep accuracy | awk '{print $2}'",
+    "direction": "higher_is_better",
+    "unit": "%"
+  },
+  "agents": {
+    "default_model": "opus"
+  }
+}
+```
+
+### Key Behaviors
+
+1. **Sensible defaults** — Works out of the box for common project types
+2. **Progressive disclosure** — Basic usage needs no config; advanced users customize everything
+3. **Validation on save** — Config is validated; invalid values are rejected with explanations
+4. **Environment variable support** — Sensitive values can reference env vars: `"$REGISTRY_TOKEN"`
+5. **Schema versioned** — `$schema` field allows config format evolution without breaking
+
+---
+
+## Status: ITERATION 33 — Configuration Schema complete
