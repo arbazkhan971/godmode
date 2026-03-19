@@ -9879,3 +9879,102 @@ The Concurrency, Distribution & Scale skills integrate with the existing Godmode
 | `commands/godmode/reliability.md` | Command | Usage reference for `/godmode:reliability` |
 
 **Iterations 318-325 (8 files, 4 skills, 4 commands)**
+
+## 94. Framework-Specific Skills
+
+Four framework-specific skills providing deep architectural guidance for the most common web development stacks.
+
+### 94.1 Next.js Mastery (`/godmode:nextjs`)
+
+Complete Next.js development skill covering:
+
+- **App Router Architecture** — layouts, loading states, error boundaries, route groups, parallel routes, intercepting routes
+- **Server vs Client Components** — decision tree for component boundaries, composition patterns, provider patterns
+- **Data Fetching** — Server Component fetches, Server Actions for mutations, revalidation strategies (time-based, on-demand, cache tags), parallel fetching with Suspense streaming
+- **Middleware** — auth redirects, A/B testing, geo routing, bot detection; matcher configuration; Edge runtime constraints
+- **Rendering Strategy Selection** — SSG, ISR, SSR, Streaming SSR, and client-side fetching; decision flow per route
+- **Asset Optimization** — next/image (priority, sizes, fill, blur placeholder), next/font (self-hosted, CSS variables, zero layout shift), next/script (strategy selection)
+- **Route Handlers** — CRUD handlers, dynamic routes, streaming responses, webhook handlers
+- **16-point best practices audit** with PASS/NEEDS REVISION verdict
+
+Flags: `--audit`, `--migrate`, `--routes`, `--data`, `--optimize`, `--middleware`, `--api`, `--deploy <target>`
+
+### 94.2 React Architecture (`/godmode:react`)
+
+Complete React development skill covering:
+
+- **Component Architecture** — composition patterns, slot pattern, custom hooks, render props, HOCs; component hierarchy (pages, features, UI components, primitives)
+- **State Management Selection** — decision tree mapping state categories to tools: TanStack Query (server), URL params (URL), React Hook Form (form), useState (local), Zustand/Jotai (shared), Redux Toolkit (complex global); comparison matrix
+- **Performance Optimization** — React.memo, useMemo, useCallback (with measurement-first approach), code splitting with lazy/Suspense, virtualization with @tanstack/react-virtual, Suspense for data fetching
+- **Server Components & Concurrent Features** — RSC patterns, useTransition, useDeferredValue, useOptimistic, use() hook
+- **Testing with React Testing Library** — query priority (getByRole first), userEvent over fireEvent, MSW for network mocking, hook testing with renderHook, provider wrappers
+- **15-point architecture audit** with PASS/NEEDS REVISION verdict
+
+Flags: `--audit`, `--state`, `--perf`, `--test`, `--hooks`, `--migrate <from>`, `--patterns`, `--rsc`
+
+### 94.3 Node.js Backend (`/godmode:node`)
+
+Complete Node.js backend development skill covering:
+
+- **Framework Selection** — Express (ecosystem), Fastify (performance), Hono (edge/multi-runtime), NestJS (enterprise DI); comparison matrix with RPS benchmarks
+- **Application Architecture** — layered architecture (controllers, services, repositories), NestJS module architecture, layer dependency rules
+- **Middleware Design** — request pipeline ordering, composable middleware, Fastify hooks, Hono middleware, NestJS guards/interceptors/pipes, global error handling
+- **Stream Processing** — file upload streaming, CSV parsing with Transform streams, database streaming for large exports, async iterables, pipeline() for error handling
+- **Worker Threads & Cluster Mode** — worker pool implementation, CPU-bound task offloading, cluster mode for multi-core scaling, BullMQ for background jobs; decision matrix
+- **Memory Management & Event Loop** — heap snapshot analysis, LRU cache bounds, event listener cleanup, closure leak prevention, GC tuning, event loop lag monitoring, batch processing
+- **Production Hardening** — graceful shutdown template, health checks, structured logging, unhandled rejection/exception handlers, connection pooling, timeouts
+- **16-point production checklist** with PASS/NEEDS REVISION verdict
+
+Flags: `--audit`, `--framework <name>`, `--middleware`, `--streams`, `--workers`, `--perf`, `--production`, `--migrate <from> <to>`
+
+### 94.4 Django & FastAPI (`/godmode:django`)
+
+Complete Python web development skill covering:
+
+- **Django Project Structure** — settings split by environment, app architecture, service layer pattern, selectors for complex reads, Factory Boy for testing
+- **Django REST Framework** — ModelSerializer patterns (separate create/read serializers), ViewSets with custom actions, router configuration, custom permissions, pagination, throttling, exception handlers
+- **FastAPI Architecture** — Pydantic models for validation (BaseModel inheritance, optional updates), dependency injection (composable deps for auth, roles, pagination, database sessions), async routers
+- **Async Django & ASGI** — ASGI configuration, async views, async ORM operations (Django 4.1+), Channels for WebSocket, Uvicorn with Gunicorn workers
+- **Admin Customization** — list_display with custom methods, fieldsets, inlines, custom actions (export CSV, bulk status), query optimization in admin, custom admin site
+- **Database Optimization** — N+1 prevention (select_related, prefetch_related, Prefetch objects), annotations over Python computation, bulk operations, partial indexes, raw SQL as last resort
+- **16-point architecture audit** with PASS/NEEDS REVISION verdict
+
+Flags: `--audit`, `--django`, `--fastapi`, `--drf`, `--admin`, `--async`, `--orm`, `--migrate`, `--deploy <target>`
+
+### 94.5 Cross-References
+
+```
+/godmode:nextjs ──→ /godmode:react       (React architecture within Next.js)
+/godmode:nextjs ──→ /godmode:deploy      (Vercel, Docker, standalone deployment)
+/godmode:nextjs ──→ /godmode:perf        (Core Web Vitals optimization)
+/godmode:react  ──→ /godmode:nextjs      (Next.js when SSR/SSG needed)
+/godmode:react  ──→ /godmode:a11y        (accessibility audit)
+/godmode:react  ──→ /godmode:test        (comprehensive test suites)
+/godmode:node   ──→ /godmode:api         (API specification and documentation)
+/godmode:node   ──→ /godmode:deploy      (Docker, PM2, Kubernetes deployment)
+/godmode:node   ──→ /godmode:observe     (logging, metrics, tracing)
+/godmode:django ──→ /godmode:api         (OpenAPI spec generation)
+/godmode:django ──→ /godmode:deploy      (Gunicorn, Docker deployment)
+/godmode:django ──→ /godmode:migrate     (database migration strategy)
+```
+
+**Full-Stack Chains:**
+```
+/godmode:nextjs → /godmode:react → /godmode:node → /godmode:api → /godmode:test → /godmode:deploy
+/godmode:django → /godmode:api → /godmode:test → /godmode:deploy
+```
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/nextjs/SKILL.md` | Skill | Next.js mastery with App Router, Server Components, data fetching, optimization |
+| `skills/react/SKILL.md` | Skill | React architecture with composition, state management, performance, testing |
+| `skills/node/SKILL.md` | Skill | Node.js backend with Express/Fastify/Hono/NestJS, streams, workers, production |
+| `skills/django/SKILL.md` | Skill | Django/FastAPI with DRF, Pydantic, async, admin, ORM optimization |
+| `commands/godmode/nextjs.md` | Command | Usage reference for `/godmode:nextjs` |
+| `commands/godmode/react.md` | Command | Usage reference for `/godmode:react` |
+| `commands/godmode/node.md` | Command | Usage reference for `/godmode:node` |
+| `commands/godmode/django.md` | Command | Usage reference for `/godmode:django` |
+
+**Iterations 381-388 (4 skills created, 4 command files created, 1 design doc updated)**
