@@ -35,8 +35,10 @@ Lockfiles: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
 | "plan", "break down" | plan |
 | "think", "design" | think |
 | "ship", "deploy" | ship |
-| "refactor", "simplify" | optimize |
-| "predict", "will this work" | predict |
+| "what could go wrong", "edge cases" | scenario |
+| "predict", "will this work", "evaluate" | predict |
+| "done", "finish", "clean up" | finish |
+| "prove it", "verify" | verify |
 
 No match → phase detection (Step 3).
 
@@ -53,12 +55,11 @@ code exists, tests passing → OPTIMIZE or SHIP
 Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass cached stack vars.
 
 ## Rules
-1. Detect stack FIRST. Cache result.
-2. One skill at a time. Read its SKILL.md. Follow it.
-3. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Track `current_iteration`. No counter = not looping.
-4. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
-5. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
-6. Log iterations to `.godmode/<skill>-results.tsv` (columns defined per skill), sessions to `.godmode/session-log.tsv`: timestamp, skill, iterations, outcome.
-7. Stuck (>5 discards): re-read all, try opposite, try radical.
-8. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
-9. Chain: `think → plan → build → test → fix → review → optimize → secure → ship`. Auto-advance when current skill completes.
+1. Detect stack FIRST. Cache result. One skill at a time — read its SKILL.md, follow it.
+2. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Track `current_iteration`. No counter = not looping.
+3. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
+4. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
+5. Log iterations to `.godmode/<skill>-results.tsv` (columns defined per skill), sessions to `.godmode/session-log.tsv`: timestamp, skill, iterations, outcome.
+6. Stuck (>5 discards): re-read all, try opposite, try radical.
+7. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
+8. Chain: `think → plan → build → test → fix → review → optimize → secure → ship`. Auto-advance when current skill completes.
