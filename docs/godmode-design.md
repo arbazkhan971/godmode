@@ -10468,3 +10468,80 @@ Orchestrate:
 | `commands/godmode/multimodal.md` | Command | Usage reference for `/godmode:multimodal` |
 
 **Iterations 411-418 (4 skills created, 4 command files created, 1 design doc updated)**
+
+## 93. Compliance Deep-Dive Skills
+
+### Overview
+
+Three deep compliance skills extend Godmode beyond the general `/godmode:comply` surface-level audit into regulation-specific implementation depth. Where `comply` identifies gaps across all frameworks, these skills produce implementable database schemas, API endpoints, middleware patterns, encryption configurations, evidence collection automation, and operational procedures for each specific regulation.
+
+These skills are designed to be invoked after `/godmode:comply` identifies which regulations apply, or directly when the user knows their compliance target.
+
+### Skill: `/godmode:gdpr` — GDPR Compliance
+
+**Purpose:** Implement comprehensive GDPR compliance with production-ready code and operational procedures.
+
+**Capabilities:**
+- **Data mapping and classification:** Inventories all personal data fields across the codebase, classifies by GDPR category (identity, financial, behavioral, special category under Article 9), and builds the Article 30 processing activity register with lawful basis for each activity
+- **Consent management implementation:** Designs and implements granular per-purpose consent with database schemas (consent_records, consent_types, consent_audit_log), REST API endpoints (record, query, update, withdraw, history, proof), and enforcement middleware that gates processing on valid consent
+- **Right to deletion (data erasure workflows):** Implements Article 17 with cascading erasure across primary database, caches, search indices, file storage, CDN, email services, analytics, and third-party systems with tracking, verification, and erasure certificates
+- **Data portability exports:** Creates Article 20 compliant export API producing machine-readable JSON/CSV with profile, transaction, content, and consent data, plus direct controller-to-controller transfer endpoint
+- **Privacy impact assessments:** Produces Article 35 DPIA templates covering processing description, necessity/proportionality, risk identification, mitigation measures, DPO consultation, and supervisory authority consultation workflow
+- **DPO notification procedures:** Documents when and how to notify the DPO, breach notification timelines (72-hour authority, data subject if high risk), breach register maintenance, and notification content requirements under Articles 33-34
+- **Cross-border data transfer:** Assesses all data transfers outside the EEA, maps transfer mechanisms (adequacy decisions, SCCs with module selection, BCRs, derogations), and produces Transfer Impact Assessments for Schrems II compliance
+
+### Skill: `/godmode:hipaa` — HIPAA Compliance
+
+**Purpose:** Implement comprehensive HIPAA compliance covering all three safeguard categories with production-ready code and operational procedures.
+
+**Capabilities:**
+- **PHI identification and classification:** Scans codebase for all 18 HIPAA identifiers, classifies PHI by category (clinical, demographic, financial, operational) and risk level, maps ePHI flows from collection through storage, processing, transmission, and disposal
+- **Encryption requirements (at rest, in transit):** Assesses encryption across all storage locations (database, backups, cache, file storage, mobile, workstations) and transmission channels (client-server, service-to-service, API, email, VPN), with approved algorithm guidance (AES-256-GCM, TLS 1.2+, RSA-2048+) and key management requirements (KMS, rotation, separation of duties)
+- **Access control and audit logging:** Implements role-based access control with minimum necessary standard enforcement per job function, break-glass emergency access procedures, automatic session timeout, unique user identification, and comprehensive immutable audit logging with cryptographic chaining and 6-year retention
+- **BAA (Business Associate Agreement) technical requirements:** Inventories all PHI-handling vendors, verifies BAA status, documents technical requirements for each business associate, tracks subcontractor BAA chains, and monitors vendor security posture with review schedules
+- **Breach notification procedures:** Implements the 4-factor risk assessment for breach determination, documents the 60-day notification timeline (individual, HHS/OCR, media for 500+), tracks breach investigation from discovery through corrective action, and maintains the mandatory breach log
+
+### Skill: `/godmode:soc2` — SOC 2 Compliance
+
+**Purpose:** Prepare for SOC 2 Type I and Type II audits with comprehensive control implementation, evidence automation, and continuous monitoring.
+
+**Capabilities:**
+- **Trust Service Criteria (all five categories):** Evaluates all 64 criteria across Security (CC1-CC9 Common Criteria covering control environment, communication, risk assessment, monitoring, control activities, access controls, system operations, change management, risk mitigation), Availability (capacity, environmental protections, recovery), Processing Integrity (input validation, processing accuracy, error handling), Confidentiality (classification, disposal), and Privacy (notice, consent, collection, use, retention, access, disclosure, quality)
+- **Evidence collection automation:** Builds automated evidence collection scripts for IAM user/role exports, MFA enrollment, PR approval audit trails, deployment history, uptime metrics, vulnerability scan results, encryption configurations, backup status, and access review records with centralized timestamped evidence repository
+- **Control implementation and testing:** Designs controls mapped to identified risks, implements technical and process controls, tests using auditor methodology (inquiry, observation, inspection, reperformance) with appropriate sample sizes, documents results, and tracks remediation of ineffective controls
+- **Continuous monitoring setup:** Builds three-layer monitoring across infrastructure (uptime, performance, capacity), security (failed logins, privilege escalation, vulnerability discovery), and compliance (overdue reviews, policy updates, training completion, evidence gaps) with compliance dashboard metrics
+- **Audit preparation workflow:** Produces system description narrative, organizes evidence packages by TSC category, prepares Information Request response workflow, and guides through pre-audit, during-audit, and post-audit phases
+
+### Relationship to `/godmode:comply`
+
+| Aspect | `/godmode:comply` | `/godmode:gdpr` / `hipaa` / `soc2` |
+|--------|-------------------|--------------------------------------|
+| Scope | All regulations, surface-level | Single regulation, implementation depth |
+| Output | Findings and checklists | Schemas, APIs, configs, procedures |
+| Use case | "Which regulations apply?" | "How do I implement this regulation?" |
+| Depth | Gap identification | Gap remediation with code |
+| Typical flow | Run comply first | Then run specific regulation skill |
+
+### Principles
+
+| # | Principle | Rationale |
+|---|-----------|-----------|
+| 1 | Regulation-specific precision | Every finding cites the exact article/section (GDPR Art. 17.1, HIPAA section 164.312(a)(2)(iv), SOC 2 CC6.1) |
+| 2 | Implementable output | Produce database schemas, API designs, and middleware patterns, not just checklists |
+| 3 | Evidence-based assessment | Every finding references actual code, configuration, or system behavior |
+| 4 | Cascading completeness | Compliance across all systems — primary DB, caches, backups, logs, third parties |
+| 5 | Continuous over point-in-time | Build monitoring and automation, not just one-time assessments |
+| 6 | No legal advice | Identify technical gaps and provide implementation guidance; recommend legal counsel for interpretation |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/gdpr/SKILL.md` | Skill | Deep GDPR compliance — data mapping, consent, erasure, portability, DPIAs, transfers |
+| `skills/hipaa/SKILL.md` | Skill | Deep HIPAA compliance — PHI classification, encryption, access control, BAAs, breach notification |
+| `skills/soc2/SKILL.md` | Skill | Deep SOC 2 compliance — Trust Service Criteria, evidence automation, control testing, audit prep |
+| `commands/godmode/gdpr.md` | Command | Usage reference for `/godmode:gdpr` |
+| `commands/godmode/hipaa.md` | Command | Usage reference for `/godmode:hipaa` |
+| `commands/godmode/soc2.md` | Command | Usage reference for `/godmode:soc2` |
+
+**Iterations 375-380 (6 files, 3 skills, 3 commands)**
