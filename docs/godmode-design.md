@@ -7389,6 +7389,142 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Iterations 165-174 (10 files, 5 skills, 5 commands)**
 
+## 73. Search, Queue & Real-time Skills
+
+### Overview
+
+Three new skills extend Godmode into search engineering, asynchronous job processing, and real-time communication — the backbone of modern production applications. These skills address the full lifecycle from technology selection through production scaling, ensuring developers have structured workflows for features that are notoriously easy to get wrong.
+
+### Skill: `/godmode:search` — Search Implementation & Relevance Engineering
+
+**Purpose:** Design, build, and optimize full-text search functionality with measurable relevance.
+
+**Capabilities:**
+- **Engine selection:** Decision framework for Elasticsearch, Algolia, Meilisearch, Typesense, PostgreSQL FTS, and OpenSearch based on data volume, latency, and operational constraints
+- **Index design:** Field mappings with searchable/filterable/sortable/facetable classification, weight boosting, and multi-field analysis (search analyzer, autocomplete analyzer, exact match)
+- **Text analysis pipeline:** Configurable tokenizer, stemmer, stop words, synonyms, ASCII folding, and edge n-grams for autocomplete — with PostgreSQL tsvector setup and GIN index creation
+- **Relevance tuning:** BM25/TF-IDF scoring combined with field boosting, recency decay, popularity signals, and personalization — with function_score queries and measurable test suites
+- **Autocomplete:** Query suggestions, instant search (search-as-you-type), completion suggesters with context, and "did you mean" phrase suggestions — all with sub-50ms latency targets
+- **Faceted search:** Terms, range, and hierarchical facets with aggregation queries, dynamic facet visibility, URL-encoded filter state, and OR-within/AND-across logic
+- **Fuzzy matching:** AUTO fuzziness with prefix length constraints, transposition support, and max expansion limits to balance recall and performance
+- **Index optimization:** Shard sizing (10-50GB target), replica management, refresh intervals, bulk indexing, query caching, and hot-warm-cold lifecycle management
+- **Search analytics:** Zero-result rate, click-through rate, click position, NDCG, precision@k, and automated zero-result query analysis for continuous improvement
+
+**Workflow:** Requirements Assessment -> Engine Selection -> Index Design -> Analyzer Configuration -> Relevance Tuning -> Autocomplete -> Faceted Search -> Fuzzy/Synonyms -> Optimization -> Analytics -> Artifacts
+
+**Artifacts produced:**
+- `search/mappings/<index>-mapping.json` — Index schema and mappings
+- `search/analyzers/<index>-analyzers.json` — Text analysis configuration
+- `search/synonyms/synonyms.txt` — Synonym dictionary
+- `search/tests/relevance-tests.json` — Relevance test suite with expected results
+
+**Flags:** `--engine <name>`, `--tune`, `--autocomplete`, `--facets`, `--index <name>`, `--analyze`, `--synonyms`, `--benchmark`, `--migrate`
+
+### Skill: `/godmode:queue` — Message Queue & Job Processing
+
+**Purpose:** Design, build, and debug asynchronous processing systems with correct delivery guarantees.
+
+**Capabilities:**
+- **Technology selection:** Decision framework for Kafka, RabbitMQ, SQS, BullMQ, Celery, Sidekiq, Redis Streams, and PostgreSQL SKIP LOCKED based on volume, ordering, and delivery needs
+- **Queue architecture:** Multi-queue topology design with producer routing, priority levels (P0 critical through P4 background), separate worker pools, and dead letter queues
+- **Retry strategies:** Exponential backoff with jitter (min(base * 2^attempt + random, max)), retryable vs non-retryable error classification, and configurable attempt limits
+- **Dead letter handling:** Structured DLQ with original payload, attempt history, error details, and four processing options (replay, replay-with-fix, skip, escalate)
+- **Delivery guarantees:** At-most-once, at-least-once, and exactly-once implementations with idempotency key pattern, distributed locks, and deduplication windows
+- **Priority queues:** Separate queues and worker pools per priority level with SLA targets (P0 < 10s through P4 < 24h)
+- **Rate limiting:** Token bucket, sliding window, concurrency limits, and leaky bucket patterns for external API call throttling
+- **Worker pool design:** Min/max scaling, scale-up/down triggers, concurrency per worker, memory limits, health checks, and graceful shutdown with SIGTERM handling
+- **Backpressure handling:** Escalating responses — warn at 1K depth, auto-scale at 10K, load-shed at 100K, circuit-break on downstream failures
+- **Job scheduling:** Cron-based recurring jobs with distributed locks, overlap protection, idempotent creation, and timezone-safe UTC scheduling
+
+**Workflow:** Requirements Assessment -> Technology Selection -> Queue Architecture -> Retry Strategy -> Dead Letter Handling -> Delivery Guarantees -> Priority Queues -> Rate Limiting -> Worker Pools -> Monitoring -> Artifacts
+
+**Artifacts produced:**
+- `config/queues/<queue-name>.ts` — Queue configuration
+- `workers/<queue-name>-worker.ts` — Worker definitions
+- `config/queues/retry-policy.ts` — Retry and DLQ configuration
+- `config/queues/schedules.ts` — Scheduled job definitions
+
+**Flags:** `--tech <name>`, `--diagnose`, `--dlq`, `--schedule`, `--retry`, `--scale`, `--monitor`, `--migrate`, `--benchmark`
+
+### Skill: `/godmode:realtime` — Real-time Communication & Collaboration
+
+**Purpose:** Design, build, and scale real-time features from notifications to collaborative editing.
+
+**Capabilities:**
+- **Protocol selection:** Decision framework for WebSocket, SSE, long polling, WebTransport, and gRPC streaming based on direction, concurrency, and browser support
+- **Technology selection:** Socket.io, Pusher, Ably, Supabase Realtime, raw ws, and Redis pub/sub with trade-off analysis for features, cost, and operational complexity
+- **Connection architecture:** Full lifecycle design — authentication during handshake, channel subscription with access control, heartbeat/keepalive, graceful disconnect, and multi-server fan-out via Redis pub/sub
+- **Pub/sub channels:** Structured channel naming (user:<id>, room:<id>, document:<id>, feed:<type>, presence:<scope>), authorization levels (public, private, presence, user), and standard message format with event type, channel, timestamp, and sender
+- **Presence system:** Redis-backed presence tracking with join/leave events, 5-second debounce for reconnections, multi-device support (online if ANY device connected), auto-away after idle, and heartbeat-based expiration
+- **Typing indicators:** Debounced client-side emission (2s intervals), 5s server-side auto-expiry, rate limiting, and ephemeral broadcast with no persistence
+- **Real-time collaboration:** CRDT (Yjs) and Operational Transform selection framework, Yjs implementation with shared text/map types, awareness API for live cursors and selections, offline editing with automatic merge, and undo/redo per user
+- **Client-side resilience:** Exponential backoff reconnection (1s to 30s with 20% jitter), message queuing during disconnection, last-message-ID tracking for gap recovery, token refresh on auth failure, and tab-backgrounding optimization
+- **Horizontal scaling:** Redis adapter for Socket.io, sticky sessions via Nginx IP hash or cookie, stateless server design, connection-based auto-scaling (not CPU), and per-instance connection limits with monitoring
+
+**Workflow:** Requirements Assessment -> Protocol Selection -> Connection Architecture -> Channel Design -> Presence System -> Typing Indicators -> Collaboration (CRDT/OT) -> Client Reconnection -> Scaling -> Monitoring -> Artifacts
+
+**Artifacts produced:**
+- `realtime/server.ts` — WebSocket/SSE server configuration
+- `realtime/channels.ts` — Channel definitions and authorization
+- `realtime/presence.ts` — Presence tracking system
+- `realtime/client.ts` — Client connection manager with reconnection
+- `realtime/infra/` — Nginx config, Redis adapter, scaling configuration
+
+**Flags:** `--protocol <name>`, `--tech <name>`, `--presence`, `--collab`, `--notifications`, `--scale`, `--chat`, `--typing`, `--audit`
+
+### Integration with Existing Skills
+
+The search, queue, and real-time skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:think  ->  /godmode:search   ->  /godmode:plan  ->  /godmode:build
+     |                   |                      |                  |
+  Brainstorm        Design search          Decompose into     Implement
+  the feature       index + relevance      tasks with TDD     search API
+
+/godmode:think  ->  /godmode:queue    ->  /godmode:plan  ->  /godmode:build
+     |                   |                      |                  |
+  Brainstorm        Design queue           Decompose into     Implement
+  async needs       architecture           tasks with TDD     workers
+
+/godmode:think  ->  /godmode:realtime ->  /godmode:plan  ->  /godmode:build
+     |                   |                      |                  |
+  Brainstorm        Design WS/SSE          Decompose into     Implement
+  live features     architecture           tasks with TDD     real-time
+```
+
+- **From `/godmode:think`:** After brainstorming, invoke the appropriate skill to formalize the architecture
+- **From `/godmode:queue` to `/godmode:realtime`:** Queue events can trigger real-time notifications via pub/sub
+- **From `/godmode:search` to `/godmode:queue`:** Index updates can be queued as background jobs for large datasets
+- **From `/godmode:observe`:** Monitoring covers search latency, queue depth, WebSocket connection counts
+- **From `/godmode:ship`:** Pre-ship checks verify search index health, queue worker status, and WebSocket scaling readiness
+- **From `/godmode:secure`:** Security audit covers search input sanitization, queue message validation, and WebSocket authentication
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Simplest tool that works | PostgreSQL FTS before Elasticsearch; SSE before WebSocket; pg SKIP LOCKED before Kafka |
+| 2 | Measure before tuning | Search relevance needs NDCG scores; queue health needs depth metrics; real-time needs latency P95 |
+| 3 | Design for failure | Retry with backoff, dead letter queues, client reconnection, message recovery on reconnect |
+| 4 | Idempotency everywhere | At-least-once delivery means handlers run twice; search re-indexing must be safe to repeat |
+| 5 | Scale horizontally | Redis pub/sub for WebSocket fan-out; partitioned queues; sharded search indices |
+| 6 | Ephemeral state is not data | Typing indicators, presence, cursor positions — broadcast and forget, never persist |
+| 7 | Monitor the leading indicators | Queue depth (not throughput), zero-result rate (not query count), connection count (not CPU) |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/search/SKILL.md` | Skill | Search implementation and relevance engineering workflow |
+| `skills/queue/SKILL.md` | Skill | Message queue and job processing workflow |
+| `skills/realtime/SKILL.md` | Skill | Real-time communication and collaboration workflow |
+| `commands/godmode/search.md` | Command | Usage reference for `/godmode:search` |
+| `commands/godmode/queue.md` | Command | Usage reference for `/godmode:queue` |
+| `commands/godmode/realtime.md` | Command | Usage reference for `/godmode:realtime` |
+
+**Iterations 191-196 (6 files, 3 skills, 3 commands)**
+
 ## 74. Testing Mastery Skills
 
 Three new skills extend Godmode's testing arsenal into deep unit testing mastery, real-dependency integration testing, and output verification through snapshots — covering the full testing spectrum from isolated functions to complex serialized outputs.
