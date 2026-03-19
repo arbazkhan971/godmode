@@ -5947,3 +5947,96 @@ The following artifacts have been created as production-ready implementations:
 **Total iterations: 100 (50 design + 50 implementation)**
 
 **Godmode: Turn on Godmode for Claude Code.**
+
+---
+
+## 52. API Design & Integration Skills
+
+### Overview
+
+Two new skills extend Godmode into the API design and integration testing domain. These skills address the full API lifecycle: from initial design and specification through consumer contract verification and breaking change detection.
+
+### Skill: `/godmode:api` — API Design & Specification
+
+**Purpose:** Design, document, and validate APIs with production-quality specifications.
+
+**Capabilities:**
+- **Multi-protocol design:** REST, GraphQL, and gRPC API design with protocol-specific conventions and idioms
+- **OpenAPI/Swagger generation:** Produces complete OpenAPI 3.1 specifications with schemas, security definitions, parameters, and example request/response pairs
+- **Versioning strategies:** Supports URL path versioning, header versioning, query parameter versioning, and content negotiation — with deprecation policy and sunset headers
+- **Rate limiting design:** Tiered rate limiting with token bucket/sliding window algorithms, response headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset), and 429 error responses
+- **Pagination patterns:** Offset/limit, cursor-based, and keyset pagination with configurable defaults and maximums
+- **Error response standardization:** Consistent error schema with machine-readable codes, field-level validation details, request IDs, and documentation URLs
+- **Design validation:** 15-point checklist covering naming conventions, HTTP method usage, status codes, auth, idempotency, and more
+
+**Workflow:** Discovery -> Resource Modeling -> Endpoint Design -> Versioning -> Pagination -> Error Responses -> Rate Limiting -> OpenAPI Generation -> Validation -> Artifacts
+
+**Artifacts produced:**
+- `docs/api/<service>-openapi.yaml` — Complete OpenAPI 3.1 specification
+- `docs/api/<service>-api-design.md` — Human-readable API design document
+
+**Flags:** `--type rest|graphql|grpc`, `--validate`, `--spec`, `--versioning <strategy>`, `--pagination <strategy>`, `--diff <v1> <v2>`, `--mock`
+
+### Skill: `/godmode:contract` — Contract Testing
+
+**Purpose:** Verify API compatibility between producers and consumers using consumer-driven contract testing.
+
+**Capabilities:**
+- **Consumer-driven contracts:** Define what each consumer expects from the producer using Pact, Spring Cloud Contract, or custom frameworks
+- **Mock server generation:** Generate mock servers from contracts so consumers can test against realistic stubs without a running provider
+- **Provider verification:** Verify that the producer satisfies all consumer contracts with provider state handlers for precondition setup
+- **Breaking change detection:** Compare API versions (OpenAPI diff, buf breaking for gRPC, graphql-inspector for GraphQL) and identify removed endpoints, renamed fields, changed types
+- **Compatibility matrix:** Cross-consumer/cross-version matrix showing which consumers are compatible with which provider versions
+- **CI/CD integration:** Pipeline configuration for automated contract testing with Pact Broker can-i-deploy checks before every deployment
+- **Deployment safety:** Block deployments that would break existing consumers
+
+**Workflow:** Discovery -> Consumer Contract Definition -> Mock Server Generation -> Provider Verification -> Breaking Change Detection -> Compatibility Matrix -> Report -> CI/CD Integration
+
+**Artifacts produced:**
+- `tests/contracts/<consumer>-<provider>.pact.spec.ts` — Consumer contract test files
+- `tests/mocks/<provider>-stubs/` — Mock server configuration
+- `docs/api/compatibility-matrix.md` — Cross-consumer compatibility matrix
+- `docs/api/<provider>-contract-report.md` — Verification report
+
+**Flags:** `--consumer <name>`, `--provider <name>`, `--breaking`, `--mock`, `--matrix`, `--publish`, `--can-i-deploy`, `--framework pact|spring`, `--ci`
+
+### Integration with Existing Skills
+
+The API skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:think  ->  /godmode:api  ->  /godmode:contract  ->  /godmode:plan  ->  /godmode:build
+     |                   |                    |                     |                  |
+  Brainstorm        Design the          Define consumer       Decompose into     Implement
+  the API idea      API spec            contracts & mocks     tasks with TDD     the endpoints
+```
+
+- **From `/godmode:think`:** After brainstorming an API approach, invoke `/godmode:api` to formalize the design
+- **From `/godmode:api` to `/godmode:contract`:** After designing the API, define consumer contracts and generate mocks
+- **From `/godmode:contract` to `/godmode:plan`:** After contracts are defined, plan the implementation tasks
+- **From `/godmode:secure`:** The security audit validates auth, rate limiting, and input validation designed by `/godmode:api`
+- **From `/godmode:ship`:** The ship workflow checks contract compatibility (can-i-deploy) before deployment
+- **From `/godmode:review`:** Code review flags API inconsistencies and refers to `/godmode:api --validate`
+
+### Design Principles for API Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Spec before code | Never implement an API without a validated specification |
+| 2 | Consumer-driven contracts | Consumers define expectations; providers prove compliance |
+| 3 | Consistency across endpoints | One error format, one naming convention, one auth pattern |
+| 4 | Version from day one | Every API is versioned from the first endpoint |
+| 5 | Contracts are tests, not docs | Contracts run in CI, fail builds, and block deployments |
+| 6 | Matchers over exact values | Contracts use type/regex matchers, never hardcoded values |
+| 7 | Breaking changes are visible | Every PR that touches API routes gets a breaking change check |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/api/SKILL.md` | Skill | API design and specification workflow |
+| `skills/contract/SKILL.md` | Skill | Contract testing workflow |
+| `commands/godmode/api.md` | Command | Usage reference for `/godmode:api` |
+| `commands/godmode/contract.md` | Command | Usage reference for `/godmode:contract` |
+
+**Iterations 107-110 (4 files, 2 skills, 2 commands)**
