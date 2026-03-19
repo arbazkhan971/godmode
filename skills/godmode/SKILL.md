@@ -9,7 +9,7 @@ description: Orchestrator. Routes to skills, detects stack/phase, dispatches mul
 - Natural language request → match to skill
 
 ## Step 1: Detect Stack (once, cache)
-Scan root for indicator files. First match wins.
+Check root for these files. First match wins. Cache as `stack`, `test_cmd`, `lint_cmd`, `build_cmd`.
 ```
 package.json + next.config.*  → Next.js    | npm test      | eslint --fix  | npm run build
 package.json + tsconfig.json  → TypeScript | npx vitest    | eslint --fix  | tsc --noEmit
@@ -50,12 +50,12 @@ code exists, tests passing → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute
-Read the skill's SKILL.md. Follow it.
+Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass cached stack vars.
 
 ## Rules
 1. Detect stack FIRST. Cache result.
 2. One skill at a time. Read its SKILL.md. Follow it.
-3. Iterative skills define `WHILE` loops. Track `current_iteration`. No counter = not looping.
+3. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Track `current_iteration`. No counter = not looping.
 4. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
 5. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
 6. Log iterations to `.godmode/<skill>-results.tsv`, skills to `.godmode/session-log.tsv`.

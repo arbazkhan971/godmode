@@ -17,13 +17,13 @@ Read the spec/proposal. Summarize in one sentence.
 | SRE (10yr) | Reliability, monitoring, failure modes |
 | Security Researcher (11yr) | Attack surface, data exposure, auth |
 | Product Manager (13yr) | User value, scope, timeline |
-Each persona outputs: Verdict (YES / YES WITH CHANGES / NO), Confidence (1-10 with justification), Biggest risk (one sentence), Evidence (file:line — mandatory), One thing I'd change.
+Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + file:line), Change (one concrete code suggestion).
 ### 3. Synthesize Consensus
-Average confidence, unanimous concerns (raised by 3+), disagreements (with reasons), recommendation: PROCEED / REVISE / RETHINK.
+Avg confidence, concerns raised by 3+ personas, key disagreements, recommendation: PROCEED / REVISE (with specific changes) / RETHINK.
 ### 4. Gate
 IF average confidence < 7 → loop back to `/godmode:think` with all risks attached.
 
 ## Rules
-1. Every persona cites code evidence. No generic advice.
+1. Every persona cites file:line. No finding without code evidence.
 2. Disagreements are valuable. Don't smooth them over.
 3. Confidence < 7 = go back to think. Don't build on shaky designs.
