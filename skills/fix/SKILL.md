@@ -18,7 +18,7 @@ WHILE error_count > 0:
     # 3. FIX — smallest change for ONE error. Prefer fixing root cause over suppressing symptoms.
     # 4. COMMIT "fix: {description}" BEFORE verify
     # 5. VERIFY: new_count = run_all_checks()
-    IF new_count > error_count: git reset --hard HEAD~1 (max 3 retries)
+    IF new_count > error_count: git reset --hard HEAD~1 (max 3, then skip this error, move to next)
     ELSE: error_count = new_count
     # 6. LOG to .godmode/fix-log.tsv
     # 7. STATUS every 5: "{error_count} remaining (from {original})"
@@ -27,5 +27,5 @@ Print: "{original} → 0 in {N} iterations"
 
 ## Rules
 1. Loop until zero errors. One fix per commit.
-2. Max 3 attempts per error. Then flag for human.
+2. Max 3 attempts per error. Skip and move to next. Print skipped errors at end.
 3. Never modify tests. Regression test for every fix.

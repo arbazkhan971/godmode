@@ -30,4 +30,4 @@ WHILE failing_count > 0:
 ## Rules
 1. Reproduce first. Never investigate unseen bugs.
 2. Evidence required: file:line + data proof. No guesses.
-3. One bug at a time. Don't fix during debug (trivial one-liners excepted).
+3. One bug at a time. Don't fix during debug (one-line fixes excepted). If stuck 3 iterations on same bug, skip it.

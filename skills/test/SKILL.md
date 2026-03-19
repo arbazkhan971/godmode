@@ -15,7 +15,7 @@ WHILE coverage < target:
     current_iteration += 1
     # 1. FIND — highest-impact uncovered path. Priority: happy path > error path > edge case > integration
     # 2. RED — write test that FAILS
-    # 3. GREEN — run test → confirm RED (fails). Write minimum code → confirm GREEN (passes).
+    # 3. GREEN — run test → must FAIL. If passes: test is wrong, rewrite. Write minimum code → must PASS.
     # 4. REFACTOR — remove duplication in test code, re-run ALL tests (not just new one)
     # 5. COMMIT: git commit -m "test: {description}"
     # 6. MEASURE: coverage = measure_coverage()
