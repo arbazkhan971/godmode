@@ -1,0 +1,675 @@
+---
+name: cicd
+description: |
+  CI/CD pipeline design skill. Activates when user needs to create, optimize, or troubleshoot continuous integration and delivery pipelines. Supports GitHub Actions, GitLab CI, CircleCI, and Jenkins. Handles stage optimization, caching strategies, artifact management, pipeline templating, and matrix builds. Triggers on: /godmode:cicd, "create pipeline", "optimize CI", "add GitHub Actions", "fix pipeline", or when shipping requires CI/CD configuration.
+---
+
+# CICD — CI/CD Pipeline Design
+
+## When to Activate
+- User invokes `/godmode:cicd`
+- User says "create pipeline", "set up CI/CD", "add GitHub Actions"
+- User says "optimize CI", "pipeline is slow", "fix failing pipeline"
+- User says "add deployment stage", "set up matrix builds"
+- Project has no CI/CD configuration
+- Shipping workflow requires automated pipeline
+- Pipeline performance needs improvement
+
+## Workflow
+
+### Step 1: Discover Pipeline Context
+Identify the project's CI/CD requirements and existing configuration:
+
+```
+PIPELINE CONTEXT:
+┌──────────────────────────────────────────────────────────┐
+│  Platform: <GitHub Actions | GitLab CI | CircleCI |       │
+│            Jenkins | None detected>                       │
+│  Language: <detected language/framework>                  │
+│  Package Manager: <npm | pip | go mod | maven | etc.>     │
+│  Test Framework: <jest | pytest | go test | junit | etc.> │
+│  Linter: <eslint | ruff | golangci-lint | etc.>          │
+│  Container: <Dockerfile present? Y/N>                     │
+│  Deploy Target: <K8s | ECS | Lambda | Vercel | etc.>     │
+│  Existing Pipeline: <path to config or "none">            │
+│  Branch Strategy: <trunk-based | gitflow | github flow>  │
+└──────────────────────────────────────────────────────────┘
+```
+
+If no pipeline exists: "No CI/CD configuration found. Shall I create one? Specify your preferred platform (GitHub Actions, GitLab CI, CircleCI, Jenkins)."
+
+### Step 2: Pipeline Architecture Design
+Design the pipeline stages based on project needs:
+
+```
+PIPELINE ARCHITECTURE:
+┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
+│  Lint   │ -> │  Test   │ -> │  Build  │ -> │ Security│ -> │ Deploy  │
+│         │    │         │    │         │    │         │    │         │
+│ Format  │    │ Unit    │    │ Docker  │    │ SAST    │    │ Staging │
+│ Lint    │    │ Integ.  │    │ Assets  │    │ Deps    │    │ Prod    │
+│ Types   │    │ E2E     │    │ Publish │    │ Secrets │    │ Verify  │
+└─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
+     |              |              |              |              |
+   ~30s          ~2-5m          ~1-3m          ~1-2m          ~2-5m
+                                                         (manual gate
+                                                          for prod)
+```
+
+### Step 3: Generate Pipeline Configuration
+
+#### GitHub Actions
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '20'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run tests (shard ${{ matrix.shard }}/3)
+        run: npm test -- --shard=${{ matrix.shard }}/3
+        env:
+          DATABASE_URL: postgres://postgres:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.shard }}
+          path: coverage/
+
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Merge and report coverage
+        run: |
+          npx nyc merge coverage/ merged-coverage.json
+          npx nyc report --reporter=text --reporter=lcov
+
+      - name: Check coverage threshold
+        run: npx nyc check-coverage --lines 80 --branches 75 --functions 80
+
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+
+      - id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build.outputs.image-tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, security]
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying ${{ needs.build.outputs.image-tag }} to staging"
+          # helm upgrade or kubectl apply or aws ecs update-service
+
+      - name: Verify deployment
+        run: |
+          # Health check, smoke tests
+          curl -sf https://staging.example.com/health || exit 1
+
+      - name: Run smoke tests
+        run: npm run test:smoke -- --base-url=https://staging.example.com
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying ${{ needs.build.outputs.image-tag }} to production"
+          # Production deployment with canary or blue-green
+
+      - name: Verify deployment
+        run: |
+          curl -sf https://api.example.com/health || exit 1
+
+      - name: Post-deploy notification
+        if: always()
+        run: |
+          # Notify Slack, PagerDuty, etc.
+          echo "Deployment ${{ job.status }}"
+```
+
+#### GitLab CI
+```yaml
+stages:
+  - lint
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+  DOCKER_TLS_CERTDIR: "/certs"
+
+default:
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - node_modules/
+    policy: pull
+
+.node-setup:
+  image: node:${NODE_VERSION}
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+
+lint:
+  extends: .node-setup
+  stage: lint
+  script:
+    - npm run format:check
+    - npm run lint
+    - npm run type-check
+
+test:
+  extends: .node-setup
+  stage: test
+  parallel: 3
+  services:
+    - postgres:16
+    - redis:7
+  variables:
+    POSTGRES_PASSWORD: test
+    POSTGRES_DB: test
+    DATABASE_URL: "postgres://postgres:test@postgres:5432/test"
+    REDIS_URL: "redis://redis:6379"
+  script:
+    - npm test -- --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  artifacts:
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - main
+
+deploy-staging:
+  stage: deploy
+  script:
+    - echo "Deploying to staging"
+  environment:
+    name: staging
+    url: https://staging.example.com
+  only:
+    - main
+
+deploy-production:
+  stage: deploy
+  script:
+    - echo "Deploying to production"
+  environment:
+    name: production
+    url: https://api.example.com
+  when: manual
+  only:
+    - main
+```
+
+### Step 4: Caching Strategies
+Optimize pipeline speed with intelligent caching:
+
+```
+CACHING STRATEGY:
+┌──────────────────────────────────────────────────────────┐
+│  Cache Type        │ Key                │ Savings         │
+│  ─────────────────────────────────────────────────────── │
+│  Dependencies      │ lockfile hash      │ 30-90s          │
+│  (node_modules,    │ (package-lock.json │                 │
+│   .venv, vendor)   │  Pipfile.lock)     │                 │
+│                    │                    │                 │
+│  Build cache       │ source hash        │ 60-180s         │
+│  (Docker layers,   │ (Dockerfile +      │                 │
+│   compiled assets) │  source files)     │                 │
+│                    │                    │                 │
+│  Test cache        │ test file hash     │ 10-30s          │
+│  (jest cache,      │                    │                 │
+│   pytest cache)    │                    │                 │
+│                    │                    │                 │
+│  Tool cache        │ version string     │ 20-60s          │
+│  (Go, Node, Python │                    │                 │
+│   runtime install) │                    │                 │
+└──────────────────────────────────────────────────────────┘
+
+Total estimated savings: 2-6 minutes per pipeline run
+```
+
+#### Docker Layer Caching
+```dockerfile
+# Optimized Dockerfile for CI caching
+FROM node:20-slim AS base
+
+# Dependencies layer (cached unless lockfile changes)
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production=false
+
+# Build layer (cached unless source changes)
+FROM deps AS build
+COPY . .
+RUN npm run build
+
+# Production layer (minimal image)
+FROM base AS production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY --from=build /app/dist ./dist
+USER node
+CMD ["node", "dist/index.js"]
+```
+
+### Step 5: Pipeline Optimization
+Analyze and improve pipeline performance:
+
+```
+PIPELINE PERFORMANCE ANALYSIS:
+┌──────────────────────────────────────────────────────────┐
+│  Stage          │ Current │ Optimized │ Savings           │
+│  ─────────────────────────────────────────────────────── │
+│  Checkout       │ 15s     │ 8s        │ Shallow clone     │
+│  Install deps   │ 90s     │ 5s        │ Cache hit         │
+│  Lint           │ 30s     │ 30s       │ —                 │
+│  Type check     │ 45s     │ 45s       │ —                 │
+│  Unit tests     │ 180s    │ 65s       │ 3x sharding       │
+│  Integration    │ 120s    │ 120s      │ Parallel with unit│
+│  Build image    │ 180s    │ 45s       │ Layer caching     │
+│  Security scan  │ 60s     │ 60s       │ —                 │
+│  Deploy staging │ 120s    │ 90s       │ Parallel verify   │
+├──────────────────────────────────────────────────────────┤
+│  TOTAL          │ 14m 0s  │ 7m 48s    │ -44%              │
+│  Serial path    │ 14m 0s  │ 5m 30s    │ With parallelism  │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### Optimization Techniques
+```
+OPTIMIZATION CHECKLIST:
+- [ ] Shallow clone (--depth 1) for CI builds
+- [ ] Dependency caching with lockfile hash key
+- [ ] Docker layer caching (BuildKit, GitHub cache)
+- [ ] Test sharding (split tests across parallel workers)
+- [ ] Parallel stages (lint + type check concurrently)
+- [ ] Conditional stages (skip deploy on PRs)
+- [ ] Incremental builds (only rebuild changed packages)
+- [ ] Concurrency limits (cancel redundant runs)
+- [ ] Timeout enforcement (prevent hung builds)
+- [ ] Artifact size limits (don't upload unnecessary files)
+- [ ] Matrix builds for multi-version testing
+- [ ] Self-hosted runners for heavy workloads
+```
+
+### Step 6: Matrix Builds
+Configure multi-version and multi-platform testing:
+
+```yaml
+# GitHub Actions matrix example
+strategy:
+  fail-fast: false
+  matrix:
+    os: [ubuntu-latest, macos-latest]
+    node-version: [18, 20, 22]
+    exclude:
+      - os: macos-latest
+        node-version: 18
+    include:
+      - os: ubuntu-latest
+        node-version: 20
+        coverage: true
+```
+
+```
+MATRIX EXECUTION:
+┌──────────────────────────────────────────────────────────┐
+│  Combination              │ Status  │ Duration │ Result  │
+│  ─────────────────────────────────────────────────────── │
+│  ubuntu / node-18         │ PASS    │ 2m 15s   │ 42/42   │
+│  ubuntu / node-20         │ PASS    │ 2m 08s   │ 42/42   │
+│  ubuntu / node-22         │ PASS    │ 2m 22s   │ 42/42   │
+│  macos / node-20          │ PASS    │ 3m 01s   │ 42/42   │
+│  macos / node-22          │ PASS    │ 3m 12s   │ 42/42   │
+├──────────────────────────────────────────────────────────┤
+│  Total: 5/5 passing (all combinations green)              │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Step 7: Pipeline Templating
+Create reusable pipeline components:
+
+#### GitHub Actions — Composite Action
+```yaml
+# .github/actions/setup/action.yml
+name: 'Project Setup'
+description: 'Install dependencies with caching'
+inputs:
+  node-version:
+    description: 'Node.js version'
+    default: '20'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+    - run: npm ci
+      shell: bash
+```
+
+#### GitHub Actions — Reusable Workflow
+```yaml
+# .github/workflows/reusable-deploy.yml
+name: Deploy
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+    secrets:
+      DEPLOY_TOKEN:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Deploy
+        run: |
+          echo "Deploying ${{ inputs.image-tag }} to ${{ inputs.environment }}"
+```
+
+### Step 8: Artifact Management
+Handle build outputs, test results, and deployment packages:
+
+```
+ARTIFACT STRATEGY:
+┌──────────────────────────────────────────────────────────┐
+│  Artifact           │ Retention │ Size Limit │ Purpose    │
+│  ─────────────────────────────────────────────────────── │
+│  Test results (JUnit)│ 30 days  │ 10 MB      │ PR checks  │
+│  Coverage reports   │ 30 days   │ 50 MB      │ Tracking   │
+│  Docker images      │ 90 days   │ —          │ Deployment │
+│  Build logs         │ 90 days   │ —          │ Debugging  │
+│  SBOM               │ 365 days  │ 5 MB       │ Compliance │
+│  SARIF (security)   │ 365 days  │ 10 MB      │ Audit      │
+│  Release binaries   │ Permanent │ 500 MB     │ Distribution│
+└──────────────────────────────────────────────────────────┘
+```
+
+### Step 9: Commit and Report
+```
+1. Save pipeline configuration in `.github/workflows/`, `.gitlab-ci.yml`, or equivalent
+2. Save reusable components in `.github/actions/` or equivalent
+3. Commit: "cicd: <description> — <platform> pipeline (<N> stages, <estimated time>)"
+4. If pipeline exists: Show optimization recommendations with estimated savings
+5. If new pipeline: "Pipeline created. Push to trigger first run."
+6. If fixing pipeline: Show root cause and fix applied
+```
+
+## Key Behaviors
+
+1. **Fast feedback first.** Lint and type check run before tests. Fail fast on the cheapest checks.
+2. **Cache aggressively.** Dependencies, Docker layers, build artifacts. Every second saved multiplies across every developer and every push.
+3. **Parallelize where possible.** Lint, type check, and security scan have no dependencies on each other. Run them concurrently.
+4. **Test sharding for speed.** Split test suites across parallel workers. A 6-minute test suite becomes 2 minutes on 3 shards.
+5. **Environments as gates.** Staging deploys automatically. Production requires manual approval. No exceptions.
+6. **Concurrency control.** Cancel redundant pipeline runs when new commits push. Do not waste compute on stale commits.
+7. **Timeouts are mandatory.** Every job must have a timeout. A hung pipeline that runs for 6 hours costs money and blocks deployments.
+8. **Secrets are injected, not stored.** Use platform-native secret management (GitHub Secrets, GitLab CI variables). Never echo secrets in logs.
+
+## Example Usage
+
+### Creating a new pipeline
+```
+User: /godmode:cicd Set up GitHub Actions for our Node.js API
+
+CICD: Analyzing project...
+
+PIPELINE CONTEXT:
+  Platform: GitHub Actions (new)
+  Language: TypeScript / Node.js 20
+  Package Manager: npm
+  Test Framework: Jest (42 tests)
+  Linter: ESLint + Prettier
+  Container: Dockerfile present
+  Deploy Target: AWS ECS
+
+Generating pipeline...
+
+Created: .github/workflows/ci.yml
+  Stages: lint -> test -> build -> security -> deploy
+  Caching: npm dependencies (lockfile hash)
+  Sharding: 3-way test parallelism
+  Docker: BuildKit with GHA cache
+  Environments: staging (auto), production (manual)
+
+Estimated run time: ~5 minutes (with caching)
+
+Created: .github/actions/setup/action.yml
+  Reusable setup composite action
+
+Pipeline ready. Push to main to trigger first run.
+```
+
+### Optimizing a slow pipeline
+```
+User: /godmode:cicd Our CI takes 18 minutes, make it faster
+
+CICD: Analyzing pipeline performance...
+
+BOTTLENECKS FOUND:
+  1. npm install: 95s (no caching)
+  2. Tests: 8m serial (no sharding)
+  3. Docker build: 4m (no layer caching)
+  4. Sequential stages that could parallelize
+
+OPTIMIZATIONS APPLIED:
+  1. Added dependency caching — saves 85s
+  2. Added 3-way test sharding — saves 5m 20s
+  3. Added Docker BuildKit + GHA cache — saves 3m
+  4. Parallelized lint + type-check — saves 45s
+
+RESULT:
+  Before: 18m 0s
+  After:  5m 30s
+  Savings: -69%
+```
+
+## Flags & Options
+
+| Flag | Description |
+|------|-------------|
+| (none) | Analyze existing pipeline and suggest improvements |
+| `--create` | Generate new pipeline from scratch |
+| `--optimize` | Focus on performance optimization |
+| `--platform <name>` | Target platform (github, gitlab, circleci, jenkins) |
+| `--add-stage <name>` | Add a specific stage (security, deploy, e2e, etc.) |
+| `--matrix` | Set up matrix builds for multi-version testing |
+| `--template` | Create reusable pipeline components |
+| `--fix` | Diagnose and fix failing pipeline |
+| `--dry-run` | Show pipeline changes without writing files |
+
+## Anti-Patterns
+
+- **Do NOT install dependencies without caching.** Running `npm install` from scratch on every build wastes minutes. Cache with lockfile hash.
+- **Do NOT run all tests serially.** If your test suite takes over 3 minutes, shard it across parallel workers.
+- **Do NOT skip security scanning.** Dependency audits and container scanning catch vulnerabilities before they reach production.
+- **Do NOT deploy to production without a staging gate.** Staging is where you catch deployment issues. Skipping it means finding them in production.
+- **Do NOT use `latest` for action versions.** Pin to specific versions or SHA digests. `uses: actions/checkout@latest` can break without warning.
+- **Do NOT echo secrets in pipeline logs.** Mask sensitive values. Use `::add-mask::` in GitHub Actions. Never `echo $SECRET` for debugging.
+- **Do NOT run pipelines without timeouts.** A single hung test can block deployments for hours and waste compute budget.
+- **Do NOT build the same thing twice.** If lint and test both need `npm ci`, share the setup via a composite action or job dependency.
+- **Do NOT ignore flaky tests.** A test that passes "most of the time" erodes confidence in the entire pipeline. Fix or quarantine it.
