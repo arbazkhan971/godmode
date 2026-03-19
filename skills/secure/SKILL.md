@@ -17,7 +17,7 @@ categories = OWASP_TOP_10 + STRIDE  # 16 total
 current_iteration = 0
 WHILE untested categories remain:
     current_iteration += 1
-    Pick next category (Critical first).
+    Pick next untested category. Order: Injection, Auth, XSS, SSRF, then remaining.
     Test as 4 personas: External (no auth), Insider (valid session), Supply Chain (malicious dep), Infra (server access).
     Each finding: file:line + exploit steps + severity (Critical/High/Med/Low) + fix (code snippet).
     Log to .godmode/security-findings.tsv.
@@ -27,6 +27,6 @@ WHILE untested categories remain:
 7. **Auto-Fix** (if `--fix`) — For Critical/High: fix → commit → test → revert if broken.
 
 ## Rules
-1. Every finding: file:line + attack scenario. No theory.
+1. Every finding: file:line + exploit steps (reproducible). No theoretical risks.
 2. All OWASP Top 10. 4 personas per category. Critical/High first.
 3. Never approve with Critical findings.

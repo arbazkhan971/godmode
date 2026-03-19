@@ -18,7 +18,7 @@ WHILE current_round < max_rounds:
     # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
     IF >5 consecutive discards: try OPPOSITE
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
-    Each: ONE change → commit → guard → verify 3x median
+    Each agent: ONE change → commit → run guard (test_cmd) → verify 3x → report median
     # 4. PICK WINNER — largest improvement
     improved + guard passed → cherry-pick, update baseline
     improved + guard failed → rework (max 2), else discard
@@ -31,7 +31,7 @@ STOP: target | max rounds | diminishing returns | guard broken
 Print: baseline → final (delta%), keeps/discards, best round.
 
 ## Rules
-1. Mechanical metric only. Must output a number.
+1. Metric must be a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.
 3. Never modify tests to pass optimization.
 4. +0.1% with added complexity → discard. Same metric + fewer lines → keep.

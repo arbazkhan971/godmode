@@ -8,7 +8,7 @@ description: TDD loop. RED-GREEN-REFACTOR until coverage target met.
 
 ## The Loop
 ```
-coverage = measure_coverage()
+coverage = measure_coverage()  # test_cmd --coverage (from stack detection)
 target = user_target OR 80
 current_iteration = 0
 WHILE coverage < target:
@@ -28,5 +28,5 @@ Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 
 ## Rules
 1. RED first. Test must fail before code.
-2. One test per iteration. Test behavior, not implementation.
+2. One test per iteration. Assert observable behavior (return values, side effects), not internal calls.
 3. No mocking unless external services. Every test has an assertion.
