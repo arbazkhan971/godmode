@@ -471,4 +471,118 @@ When `--visual` is active:
 
 ---
 
-## Status: ITERATION 6 — Think skill spec complete
+## 7. `/godmode:predict` — Multi-Persona Prediction Skill Spec
+
+**Origin:** Autoresearch (multi-persona expert panel)
+**Phase:** THINK
+**Purpose:** Evaluate a design decision or approach through 5 expert personas, reaching consensus before committing to implementation.
+
+### Trigger Conditions
+
+- User says "will this work?", "what could go wrong?", "evaluate this approach"
+- Before a major architectural decision
+- After `/godmode:think` produces a spec that needs validation
+- Explicitly invoked with `/godmode:predict`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--personas` | 5 | Number of expert personas (3-7) |
+| `--domain` | auto | Domain for persona selection (web, ml, systems, mobile, etc.) |
+| `--decision` | — | Specific decision to evaluate (overrides auto-detect) |
+| `--format` | table | Output format: `table`, `prose`, `json` |
+
+### The 5 Expert Personas
+
+| Persona | Perspective | Evaluates |
+|---------|-------------|-----------|
+| **The Architect** | System design, scalability, maintainability | Does the architecture hold up at 10x scale? |
+| **The Skeptic** | Risk, failure modes, hidden complexity | What will break? What's being overlooked? |
+| **The User** | UX, developer experience, usability | Is this actually pleasant to use? |
+| **The Operator** | Deployment, monitoring, debugging in prod | Can I run this at 3am when it breaks? |
+| **The Newcomer** | Onboarding, documentation, learning curve | Can someone new understand this in 30 min? |
+
+Personas rotate based on `--domain`:
+- **ML domain:** Adds "The Data Scientist" (data quality, model drift, reproducibility)
+- **Security domain:** Adds "The Attacker" (exploit paths, abuse scenarios)
+- **Frontend domain:** Adds "The Accessibility Expert" (a11y, screen readers, keyboard nav)
+
+### Workflow
+
+**Step 1: Frame the Decision**
+- Identify the specific decision being evaluated
+- Summarize the context (what exists, what's proposed, what alternatives were considered)
+- State the decision clearly: "We're deciding whether to X or Y"
+
+**Step 2: Persona Evaluation**
+- Each persona evaluates independently
+- Each persona produces:
+  - **Verdict:** APPROVE / CONCERN / REJECT
+  - **Confidence:** 1-5
+  - **Key insight:** One sentence
+  - **Evidence:** Specific technical reasoning
+
+**Step 3: Consensus Matrix**
+
+```
+┌─────────────┬─────────┬────────────┬──────────────────────────────┐
+│ Persona     │ Verdict │ Confidence │ Key Insight                  │
+├─────────────┼─────────┼────────────┼──────────────────────────────┤
+│ Architect   │ APPROVE │ 4/5        │ Clean separation of concerns │
+│ Skeptic     │ CONCERN │ 3/5        │ Redis SPOF needs failover    │
+│ User        │ APPROVE │ 5/5        │ Simple API, good defaults    │
+│ Operator    │ CONCERN │ 4/5        │ Need metrics dashboard       │
+│ Newcomer    │ APPROVE │ 4/5        │ Good docs, clear examples    │
+├─────────────┼─────────┼────────────┼──────────────────────────────┤
+│ CONSENSUS   │ PROCEED │ 4.0 avg    │ Proceed with 2 mitigations   │
+└─────────────┴─────────┴────────────┴──────────────────────────────┘
+```
+
+**Step 4: Synthesis**
+- Aggregate verdicts into a final recommendation
+- Consensus rules:
+  - All APPROVE → **PROCEED**
+  - Any CONCERN → **PROCEED WITH MITIGATIONS** (list them)
+  - Any REJECT → **RECONSIDER** (list blocking issues)
+  - Majority REJECT → **STOP** (fundamental problems)
+
+**Step 5: Action Items**
+- List specific mitigations to address concerns
+- Each mitigation becomes a task in the plan (if `/godmode:plan` runs next)
+- Commit the prediction report: `git commit -m "predict: DECISION-NAME consensus"`
+
+### Key Behaviors
+
+1. **Personas argue independently** — Don't let one persona's view contaminate another
+2. **Evidence-based** — Each verdict must cite specific technical reasoning, not vibes
+3. **Concerns are gifts** — A CONCERN verdict is more valuable than a rubber-stamp APPROVE
+4. **Actionable output** — Every concern must have a corresponding mitigation
+5. **Not a gate** — The user decides whether to proceed; the prediction informs, not blocks
+
+### Example Usage
+
+```
+User: /godmode:predict --decision "Use Redis for rate limiting vs in-memory"
+
+Agent:
+┌─────────────┬─────────┬────────────┬─────────────────────────────────┐
+│ Persona     │ Verdict │ Confidence │ Key Insight                     │
+├─────────────┼─────────┼────────────┼─────────────────────────────────┤
+│ Architect   │ APPROVE │ 5/5        │ Redis enables horizontal scale  │
+│ Skeptic     │ CONCERN │ 4/5        │ Redis connection pool can leak  │
+│ User        │ APPROVE │ 4/5        │ Transparent to API consumers    │
+│ Operator    │ CONCERN │ 3/5        │ Another service to monitor      │
+│ Newcomer    │ APPROVE │ 3/5        │ Redis is well-documented        │
+├─────────────┼─────────┼────────────┼─────────────────────────────────┤
+│ CONSENSUS   │ PROCEED │ 3.8 avg    │ Proceed with 2 mitigations      │
+└─────────────┴─────────┴────────────┴─────────────────────────────────┘
+
+Mitigations:
+1. Add connection pool health check and auto-reconnect
+2. Add Redis metrics to monitoring dashboard
+```
+
+---
+
+## Status: ITERATION 7 — Predict skill spec complete
