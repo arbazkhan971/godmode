@@ -1,317 +1,377 @@
-# Godmode
+<div align="center">
+
+# GODMODE
+
+### Turn on Godmode for Claude Code.
+
+**108 skills. Zero configuration. One command.**
+
+Your AI writes code. Godmode makes it write *great* code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-16-green.svg)](.claude-plugin/marketplace.json)
-[![Commands](https://img.shields.io/badge/commands-9-orange.svg)](commands/)
+[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](package.json)
+[![Skills](https://img.shields.io/badge/skills-108-ff6b6b.svg)](skills/)
+[![Commands](https://img.shields.io/badge/commands-40-orange.svg)](commands/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet.svg)](https://claude.ai)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Turn on Godmode for Claude Code.**
+[Quick Start](#quick-start) · [All 108 Skills](#the-skill-map-108-skills) · [Examples](#real-world-examples) · [Contributing](#contributing)
 
-A skill plugin that gives your AI agent a complete, disciplined development workflow — from idea to shipped, optimized product. Every claim is verified. Every experiment is committed. Every decision has evidence.
-
-```
-/godmode
-```
-
-> "Godmode turned my 2-hour debugging session into a 15-minute automated investigation. The optimization loop found a 76% performance improvement I never would have found manually." — Exactly the kind of thing we want users to say.
+</div>
 
 ---
 
-## The Problem
-
-AI coding tools are good at generating code. They're bad at:
-- Knowing **when** to write code (vs. when to design first)
-- Writing **tests before** implementation (not after)
-- **Measuring** whether their changes actually improved anything
-- **Reverting** bad changes instead of piling more code on top
-- Running a **complete workflow** from idea to production
-
-Godmode fixes all of these.
-
-## The Solution: A Disciplined Development Loop
+## See it in action
 
 ```
-THINK  ──▶  BUILD  ──▶  OPTIMIZE  ──▶  SHIP
-  │           │            │              │
-  ▼           ▼            ▼              ▼
-Design     TDD +       Autonomous     Pre-flight
-first    parallel      iteration      checks +
-         agents        loops          monitoring
+$ /godmode I need to optimize our API response time
+
+  GODMODE ─── Detecting phase...
+  ┌──────────────────────────────────────────────────────┐
+  │  Phase: OPTIMIZE                                     │
+  │  Goal:  Reduce API response time                     │
+  │  Plan:  measure → hypothesize → modify → verify      │
+  └──────────────────────────────────────────────────────┘
+
+  ▸ BASELINE    847ms (median of 3 runs)
+  ▸ ITERATION 1 Added index on category_id      → 554ms ✓ KEPT  (-34.5%)
+  ▸ ITERATION 2 Enabled gzip compression        → 382ms ✓ KEPT  (-31.0%)
+  ▸ ITERATION 3 Switched to eager loading        → 276ms ✓ KEPT  (-27.7%)
+  ▸ ITERATION 4 Reduced N+1 with batch loader   → 290ms ✗ REVERTED
+  ▸ ITERATION 5 Increased connection pool to 20  → 226ms ✓ KEPT  (-18.2%)
+  ▸ ITERATION 6 Added Redis response cache       → 198ms ✓ KEPT  (-12.4%)
+
+  ────────────────────────────────────────────────────────
+  RESULT  847ms → 198ms  (76.6% improvement)
+  COMMITS 9 iterations · 5 kept · 3 reverted · 1 guard rail
+  ────────────────────────────────────────────────────────
 ```
 
-**THINK** — Design before you code. Brainstorm 2-3 approaches, evaluate with expert personas, explore edge cases, write a spec.
+Every improvement is **measured**. Every bad change is **reverted**. Every experiment is **committed**. No vibes. Just evidence.
 
-**BUILD** — Plan before you implement. Break the spec into 2-5 minute tasks. Execute with TDD (RED-GREEN-REFACTOR). Run parallel agents for independent tasks. Code review at every phase boundary.
+---
 
-**OPTIMIZE** — Measure before you claim. Run an autonomous loop: hypothesize, modify one thing, verify mechanically, keep if better or revert if worse. Git-as-memory. Every experiment tracked.
+## Why Godmode?
 
-**SHIP** — Verify before you deploy. Pre-flight checklist. Dry run. Deploy. Smoke test. Monitor for 15 minutes. Rollback plan ready.
+| The Problem | The Godmode Fix |
+|---|---|
+| Your AI generates code, then you spend hours fixing it | Godmode enforces TDD — tests first, implementation second, zero rework |
+| "Make it faster" produces guesswork, not results | The autonomous loop measures, experiments, and proves every change |
+| You need 10 different tools for design, build, test, deploy | 108 skills, one plugin — from brainstorm to production |
+| AI changes break things and you don't notice until prod | Git-as-memory: every experiment committed, bad changes auto-reverted |
+| Security review means "looks fine to me" | STRIDE + OWASP + red-team audit finds what humans miss |
+
+---
+
+## The Godmode Loop
+
+```
+    ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+    │          │     │          │     │          │     │          │
+    │  THINK   │────▸│  BUILD   │────▸│ OPTIMIZE │────▸│   SHIP   │
+    │          │     │          │     │          │     │          │
+    └──────────┘     └──────────┘     └──────────┘     └──────────┘
+         │                │                │                │
+    ┌────┴────┐     ┌────┴────┐     ┌────┴────┐     ┌────┴────┐
+    │ Design  │     │ TDD +   │     │ Measure │     │Preflight│
+    │ first.  │     │parallel │     │ + auto  │     │+ deploy │
+    │ Explore │     │ agents. │     │ iterate │     │+ monitor│
+    │ options.│     │ Review. │     │ + prove.│     │+ verify.│
+    └─────────┘     └─────────┘     └─────────┘     └─────────┘
+```
+
+**THINK** — Brainstorm approaches. Get expert predictions. Explore edge cases. Write a spec before a single line of code.
+
+**BUILD** — Break the spec into atomic tasks. Execute with TDD (RED-GREEN-REFACTOR). Run parallel agents. Code review at every boundary.
+
+**OPTIMIZE** — The autonomous loop: measure baseline, hypothesize, modify one thing, verify mechanically, keep if better or revert if worse. Repeat.
+
+**SHIP** — Pre-flight checklist. Dry run. Deploy. Smoke test. Monitor. Rollback plan ready. Every time.
+
+---
 
 ## Quick Start
 
-### Install
 ```bash
-# Install the Godmode plugin for Claude Code
+# 1. Install
 claude plugin install godmode
-```
 
-### Use
-```bash
-# Let Godmode figure out what you need
+# 2. Run
 /godmode I want to build a rate limiter for our API
 
-# Or go directly to a skill
-/godmode:think Design a caching layer
-/godmode:plan
-/godmode:build
-/godmode:optimize --goal "reduce response time" --target "< 200ms"
-/godmode:ship --pr
+# 3. That's it. Godmode handles the rest.
 ```
 
-### The Full Workflow
+Or go directly to any skill:
+
 ```bash
-# 1. Design the feature
+/godmode:think     # Design before you code
+/godmode:build     # Build with TDD + parallel agents
+/godmode:optimize  # Autonomous performance iteration
+/godmode:ship      # Ship with pre-flight checks
+```
+
+---
+
+## The Skill Map (108 Skills)
+
+### Core Workflow
+| Skill | Description |
+|-------|-------------|
+| `godmode` | Auto-detect phase, orchestrate the full loop |
+| `think` | Brainstorm 2-3 approaches, produce a spec |
+| `predict` | 5 expert personas evaluate your design |
+| `scenario` | Explore edge cases across 12 dimensions |
+| `plan` | Decompose spec into 2-5 min atomic tasks |
+| `build` | Execute with TDD + parallel agents |
+| `test` | Write tests, enforce RED-GREEN-REFACTOR |
+| `review` | 2-stage code review (automated + agent) |
+| `optimize` | Autonomous iteration loop with mechanical verification |
+| `debug` | Scientific bug investigation (7 techniques) |
+| `fix` | Autonomous error remediation loop |
+| `ship` | 8-phase shipping workflow |
+| `finish` | Branch finalization (merge/PR/keep/discard) |
+| `setup` | Configure Godmode for your project |
+| `verify` | Evidence gate — prove claims with commands |
+
+### Architecture & Design
+| Skill | Description |
+|-------|-------------|
+| `architect` | System architecture design and review |
+| `rfc` | Write and review RFCs |
+| `adr` | Architecture Decision Records |
+| `ddd` | Domain-Driven Design patterns |
+| `pattern` | Design pattern selection and implementation |
+| `schema` | Database/API schema design |
+| `contract` | API contract testing and validation |
+
+### API & Backend
+| Skill | Description |
+|-------|-------------|
+| `api` | REST API design, implementation, and testing |
+| `graphql` | GraphQL schema, resolvers, and optimization |
+| `grpc` | gRPC service definition and implementation |
+| `orm` | ORM setup, migrations, and query optimization |
+| `query` | Database query optimization and analysis |
+| `cache` | Caching strategy design and implementation |
+| `queue` | Message queue setup and management |
+| `event` | Event-driven architecture patterns |
+| `realtime` | WebSocket / real-time communication |
+| `edge` | Edge computing and CDN optimization |
+| `micro` | Microservices architecture and patterns |
+| `search` | Full-text search implementation |
+
+### Security & Compliance
+| Skill | Description |
+|-------|-------------|
+| `secure` | STRIDE + OWASP security audit with red-team |
+| `auth` | Authentication flow design and implementation |
+| `rbac` | Role-based access control |
+| `secrets` | Secrets management and rotation |
+| `crypto` | Cryptographic implementation review |
+| `pentest` | Penetration testing workflows |
+| `devsecops` | Security pipeline integration |
+| `comply` | Compliance framework implementation |
+
+### Testing & Quality
+| Skill | Description |
+|-------|-------------|
+| `unittest` | Unit test generation and coverage |
+| `e2e` | End-to-end test orchestration |
+| `loadtest` | Load and stress testing |
+| `quality` | Code quality metrics and enforcement |
+| `lint` | Linter configuration and custom rules |
+| `type` | Type system design and migration |
+| `perf` | Performance profiling and benchmarking |
+| `webperf` | Web vitals and frontend performance |
+| `eval` | LLM evaluation and benchmarking |
+| `snapshot` | Snapshot testing workflows |
+| `chaos` | Chaos engineering experiments |
+
+### DevOps & Infrastructure
+| Skill | Description |
+|-------|-------------|
+| `deploy` | Deployment automation and strategies |
+| `k8s` | Kubernetes manifests and operations |
+| `infra` | Infrastructure as Code (Terraform, Pulumi) |
+| `cicd` | CI/CD pipeline design and optimization |
+| `pipeline` | Data and build pipeline orchestration |
+| `release` | Release management and versioning |
+| `backup` | Backup strategy and disaster recovery |
+| `incident` | Incident response runbooks |
+| `observe` | Observability stack setup (metrics, traces, logs) |
+| `logging` | Structured logging implementation |
+| `errortrack` | Error tracking and alerting |
+| `errorhandling` | Error handling patterns and strategies |
+| `network` | Network configuration and troubleshooting |
+| `resilience` | Circuit breakers, retries, fallbacks |
+| `config` | Configuration management |
+| `cost` | Cloud cost optimization |
+
+### Frontend & UI
+| Skill | Description |
+|-------|-------------|
+| `ui` | Component design and implementation |
+| `visual` | Visual regression testing |
+| `a11y` | Accessibility audit and remediation |
+| `seo` | SEO optimization and metadata |
+| `pwa` | Progressive Web App setup |
+| `mobile` | Mobile development patterns |
+| `desktop` | Desktop app development (Electron, Tauri) |
+| `chart` | Data visualization and charting |
+| `state` | State management architecture |
+| `wasm` | WebAssembly integration |
+
+### AI & ML
+| Skill | Description |
+|-------|-------------|
+| `ml` | Machine learning pipeline design |
+| `mlops` | ML model deployment and monitoring |
+| `rag` | Retrieval-Augmented Generation setup |
+| `prompt` | Prompt engineering and optimization |
+| `analytics` | Analytics instrumentation and dashboards |
+
+### Developer Experience
+| Skill | Description |
+|-------|-------------|
+| `docs` | Documentation generation and maintenance |
+| `onboard` | Developer onboarding automation |
+| `learn` | Interactive learning and codebase exploration |
+| `dx` | Developer experience improvements |
+| `scaffold` | Project scaffolding and boilerplate |
+| `refactor` | Safe, incremental refactoring workflows |
+| `pair` | AI pair programming sessions |
+| `standup` | Automated standup report generation |
+| `report` | Project status and metrics reports |
+| `git` | Git workflow automation |
+| `pr` | Pull request creation and review |
+| `monorepo` | Monorepo tooling and management |
+
+### Integrations & Specialized
+| Skill | Description |
+|-------|-------------|
+| `i18n` | Internationalization and localization |
+| `email` | Email template design and delivery |
+| `pay` | Payment integration (Stripe, etc.) |
+| `web3` | Web3 / blockchain development |
+| `iot` | IoT device communication patterns |
+| `cli` | CLI tool development |
+| `extension` | Browser/IDE extension development |
+| `automate` | Task automation and scripting |
+| `migrate` | Database and system migrations |
+| `storage` | Storage strategy (S3, blob, local) |
+| `agent` | AI agent design and orchestration |
+
+---
+
+## Feature Highlights
+
+| # | Feature | What It Does |
+|---|---------|-------------|
+| 1 | **Autonomous Optimization Loop** | Measures, experiments, proves — no guesswork, just data |
+| 2 | **TDD Enforcement** | RED-GREEN-REFACTOR on every build, every time |
+| 3 | **Parallel Agent Dispatch** | Independent tasks run simultaneously across agents |
+| 4 | **Git-as-Memory** | Every experiment committed, every revert tracked |
+| 5 | **Mechanical Verification** | Real commands, real output — never "it should work" |
+| 6 | **STRIDE + OWASP Security** | Structured security audit, not a vibes check |
+| 7 | **5 Expert Personas** | Your design reviewed by simulated domain experts |
+| 8 | **108 Skills, Zero Config** | Install once, use everything — no setup required |
+| 9 | **8-Phase Ship Workflow** | Pre-flight, dry run, deploy, smoke test, monitor, rollback |
+| 10 | **Language Agnostic** | JS/TS, Python, Rust, Go, Ruby, Java — auto-detected |
+
+---
+
+## Godmode vs. The Rest
+
+| Capability | Godmode | Cursor | GitHub Copilot | Autoresearch | Superpowers |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Code generation | Yes | Yes | Yes | Yes | Yes |
+| Full workflow (idea to production) | **Yes** | No | No | No | No |
+| Autonomous optimization loop | **Yes** | No | No | No | No |
+| Mechanical verification | **Yes** | No | No | No | No |
+| 108 specialized skills | **Yes** | No | No | No | No |
+| TDD enforcement | **Yes** | No | No | No | No |
+| Security audit framework | **Yes** | No | No | No | No |
+| Git-as-memory (auto-revert) | **Yes** | No | No | No | No |
+| Parallel agent dispatch | **Yes** | No | No | No | No |
+| Evidence-based claims | **Yes** | No | No | No | No |
+| Works inside your existing editor | **Yes** | Built-in | Built-in | Yes | Yes |
+
+---
+
+## Real-World Examples
+
+```bash
+# Design a feature from scratch
 /godmode:think I need WebSocket support for real-time notifications
 
-# 2. Get expert opinions (optional)
-/godmode:predict
+# Optimize a slow endpoint — hands-free
+/godmode:optimize --goal "reduce /api/products response time" --target "< 200ms"
 
-# 3. Break into tasks
-/godmode:plan
+# Security audit before launch
+/godmode:secure Run a full STRIDE + OWASP audit on the auth module
 
-# 4. Build with TDD
-/godmode:build
+# Debug a production issue scientifically
+/godmode:debug Users report intermittent 502 errors on the checkout endpoint
 
-# 5. Optimize autonomously
-/godmode:optimize --goal "reduce latency" --target "< 50ms"
-
-# 6. Security audit
-/godmode:secure
-
-# 7. Ship it
+# Ship with confidence
 /godmode:ship --pr
 ```
 
-## All 16 Skills
+---
 
-### THINK Phase
-| Command | What It Does |
-|---------|-------------|
-| `/godmode:think` | Brainstorm 2-3 approaches, produce a spec |
-| `/godmode:predict` | 5 expert personas evaluate your design |
-| `/godmode:scenario` | Explore edge cases across 12 dimensions |
+## Supported Platforms
 
-### BUILD Phase
-| Command | What It Does |
-|---------|-------------|
-| `/godmode:plan` | Decompose spec into 2-5 min atomic tasks |
-| `/godmode:build` | Execute with TDD + parallel agents |
-| `/godmode:test` | Write tests, enforce RED-GREEN-REFACTOR |
-| `/godmode:review` | 2-stage code review (automated + agent) |
+Godmode is a skill plugin. It works anywhere Claude Code runs.
 
-### OPTIMIZE Phase
-| Command | What It Does |
-|---------|-------------|
-| `/godmode:optimize` | Autonomous iteration loop with mechanical verification |
-| `/godmode:debug` | Scientific bug investigation (7 techniques) |
-| `/godmode:fix` | Autonomous error remediation loop |
-| `/godmode:secure` | STRIDE + OWASP security audit with red-team |
+| Platform | Status |
+|----------|--------|
+| **Claude Code** | Full support |
+| **Cursor** | Compatible |
+| **Codex** | Compatible |
+| **OpenCode** | Compatible |
+| **Gemini CLI** | Compatible |
 
-### SHIP Phase
-| Command | What It Does |
-|---------|-------------|
-| `/godmode:ship` | 8-phase shipping workflow |
-| `/godmode:finish` | Branch finalization (merge/PR/keep/discard) |
-
-### Meta
-| Command | What It Does |
-|---------|-------------|
-| `/godmode` | Auto-detect phase, suggest next action |
-| `/godmode:setup` | Configure Godmode for your project |
-| `/godmode:verify` | Evidence gate — prove claims with commands |
-
-## What Makes Godmode Different
-
-### vs. "Just using Claude Code"
-
-| Capability | Claude Code | Claude Code + Godmode |
-|-----------|-------------|----------------------|
-| Generate code | Yes | Yes, with TDD |
-| Design first | Sometimes | Always (spec required) |
-| Test first | Rarely | Always (RED-GREEN-REFACTOR) |
-| Measure improvements | Never | Every iteration (mechanical verification) |
-| Revert bad changes | Never | Automatically (git-as-memory) |
-| Security audit | If asked | Structured STRIDE + OWASP |
-| Ship workflow | Manual | 8-phase with monitoring |
-| Track experiments | No | TSV log with every result |
-| Parallel agents | No | Yes, for independent tasks |
-| Code review | If asked | Automated at phase boundaries |
-
-### vs. Other AI Coding Tools
-
-| Feature | Cursor | Copilot | Windsurf | Godmode |
-|---------|--------|---------|----------|---------|
-| Code generation | Good | Good | Good | Good |
-| Full workflow (idea→ship) | No | No | No | **Yes** |
-| Autonomous optimization | No | No | No | **Yes** |
-| Mechanical verification | No | No | No | **Yes** |
-| Security audit framework | No | No | No | **Yes** |
-| Git-as-memory | No | No | No | **Yes** |
-| Parallel agent dispatch | No | No | No | **Yes** |
-| Evidence-based claims | No | No | No | **Yes** |
-
-## Three Guiding Principles
-
-### 1. Discipline Before Speed
-Design before code. Tests before implementation. Evidence before claims. Godmode will slow you down at first and save you weeks later.
-
-### 2. Autonomy Within Constraints
-The agent works independently — but within guardrails. Tests must pass. Metrics must be measured. Guard rails are sacred. The agent has freedom to experiment, but not freedom to break things.
-
-### 3. Git Is Memory
-Every experiment is committed. Every revert is committed. The git log IS the experiment log. Three weeks from now, you can see exactly what was tried, what worked, and what didn't.
-
-## The Autonomous Loop (The Core Feature)
-
-The `/godmode:optimize` skill is the heart of Godmode. It runs a disciplined experimental loop:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                  THE AUTONOMOUS LOOP                    │
-│                                                         │
-│  1. MEASURE baseline (3 runs, median)                   │
-│  2. HYPOTHESIZE (analyze code, form theory)             │
-│  3. MODIFY (one change only)                            │
-│  4. VERIFY (run command, read output, compare)          │
-│  5. KEEP if better, REVERT if not                       │
-│  6. LOG results (every iteration)                       │
-│  7. REPEAT until target reached                         │
-│                                                         │
-│  Seven Principles:                                      │
-│  - Mechanical verification only                         │
-│  - One change per iteration                             │
-│  - Git is memory                                        │
-│  - Evidence before claims                               │
-│  - Guard rails are sacred                               │
-│  - Reverts are data                                     │
-│  - Know when to stop                                    │
-└─────────────────────────────────────────────────────────┘
-```
-
-Example output from a real optimization run:
-```
-OPTIMIZATION COMPLETE
-Goal: Reduce /api/products response time
-Baseline:  847ms → Final: 198ms (76.6% improvement)
-
-Top improvements:
-1. Add database index on category_id    -34.5%
-2. Enable gzip compression              -31.0%
-3. Add eager loading for relations       -27.7%
-4. Increase connection pool              -18.2%
-
-9 iterations: 5 kept, 3 reverted, 1 guard rail failure
-```
-
-## Project Structure
-
-```
-godmode/
-├── commands/
-│   ├── godmode.md              # Main command
-│   └── godmode/
-│       ├── think.md            # Subcommands
-│       ├── plan.md
-│       ├── build.md
-│       ├── optimize.md
-│       ├── debug.md
-│       ├── fix.md
-│       ├── secure.md
-│       └── ship.md
-├── skills/
-│   ├── godmode/SKILL.md        # Orchestrator
-│   ├── think/SKILL.md          # 16 skill definitions
-│   ├── predict/SKILL.md
-│   ├── scenario/SKILL.md
-│   ├── plan/SKILL.md
-│   ├── build/SKILL.md
-│   ├── test/SKILL.md
-│   ├── review/SKILL.md
-│   ├── optimize/SKILL.md
-│   ├── debug/SKILL.md
-│   ├── fix/SKILL.md
-│   ├── secure/SKILL.md
-│   ├── ship/SKILL.md
-│   ├── finish/SKILL.md
-│   ├── setup/SKILL.md
-│   └── verify/SKILL.md
-├── agents/
-│   ├── code-reviewer.md        # Review agent
-│   └── spec-reviewer.md        # Spec review agent
-├── hooks/
-│   ├── hooks.json              # Hook configuration
-│   └── session-start           # Session initialization
-├── docs/
-│   ├── godmode-design.md       # Design document
-│   ├── getting-started.md      # First-time guide
-│   ├── architecture.md         # System architecture
-│   ├── domain-guide.md         # Domain-specific usage
-│   ├── chaining.md             # Skill chaining guide
-│   └── ci-cd.md                # CI/CD integration
-└── .claude-plugin/
-    └── marketplace.json        # Plugin metadata
-```
-
-## Real-World Results
-
-These are the kinds of results Godmode enables:
-
-| Scenario | Before Godmode | With Godmode | Improvement |
-|----------|---------------|-------------|-------------|
-| API response time | 2.4s at p95 | 348ms at p95 | 85% faster |
-| Bug investigation | 2 hours manual debugging | 15 min automated | 8x faster |
-| Feature delivery | Build then test then fix | TDD from start, no rework | Zero post-build fixes |
-| Security audit | "Looks fine to me" | STRIDE + OWASP + red-team | 4 critical findings caught |
-| Code review | Informal skim | 7-dimension scored review | Consistent, thorough |
-| Optimization | "Should be faster now" | 847ms to 198ms, measured | Evidence-based, not vibes |
-
-## Frequently Asked Questions
-
-**Q: Do I have to use every skill for every feature?**
-No. Use what you need. A quick bug fix might only use `debug + fix + ship`. A major feature benefits from the full chain. See the [chaining guide](docs/chaining.md).
-
-**Q: Does this work with any programming language?**
-Yes. Godmode's skills are language-agnostic. The session-start hook auto-detects JavaScript/TypeScript, Python, Rust, Go, Ruby, and Java. See the [domain guide](docs/domain-guide.md).
-
-**Q: How is the optimization loop different from just asking Claude to "make it faster"?**
-Three ways: (1) It measures before and after with a real command, not vibes. (2) It makes one change at a time so you know what helped. (3) It automatically reverts changes that don't improve the metric. See [the autonomous loop explanation](#the-autonomous-loop-the-core-feature).
-
-**Q: Can I add my own skills?**
-Yes. See [CONTRIBUTING.md](CONTRIBUTING.md). Every skill is a Markdown file following a standard structure.
-
-**Q: Does Godmode replace my existing tools?**
-No. Godmode uses your existing test runner, linter, and deployment tools. It wraps them in a disciplined workflow.
+---
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
 | [Getting Started](docs/getting-started.md) | First-time walkthrough |
-| [Domain Guide](docs/domain-guide.md) | Backend, frontend, ML, content, DevOps |
-| [Skill Chaining](docs/chaining.md) | How to chain skills together |
-| [CI/CD Integration](docs/ci-cd.md) | GitHub Actions, GitLab CI |
 | [Architecture](docs/architecture.md) | System design overview |
-| [Examples](docs/examples/) | End-to-end workflow examples |
+| [Skill Chaining](docs/chaining.md) | How to chain skills together |
+| [Domain Guide](docs/domain-guide.md) | Backend, frontend, ML, DevOps |
+| [CI/CD Integration](docs/ci-cd.md) | GitHub Actions, GitLab CI |
 | [Design Document](docs/godmode-design.md) | Full design specification |
+
+---
+
+## Contributing
+
+We welcome contributions. Every skill is a Markdown file — if you can write clear instructions, you can add a skill.
+
+```bash
+# Fork, clone, create a skill
+cp -r skills/_template skills/your-skill
+# Edit skills/your-skill/SKILL.md
+# Submit a PR
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+
+---
 
 ## License
 
 MIT — see [LICENSE](LICENSE).
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add new skills, improve existing ones, or contribute to the core plugin.
-
 ---
 
-**Godmode: Discipline before speed. Evidence before claims. Git is memory.**
+<div align="center">
+
+**Discipline before speed. Evidence before claims. Git is memory.**
+
+**[Install Godmode](https://github.com/godmode-team/godmode)** · **[Read the Docs](docs/getting-started.md)** · **[Join the Discussion](https://github.com/godmode-team/godmode/discussions)**
+
+</div>
