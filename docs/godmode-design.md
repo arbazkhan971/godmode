@@ -8840,3 +8840,150 @@ License selection, compliance, and attribution.
 ```
 
 **Iterations 389-394 (3 skills created, 3 command files created, 1 design doc updated)**
+
+---
+
+## 81. Workflow Automation & Productivity Skills
+
+### Overview
+
+Four new skills extend Godmode into workflow automation, system migration, legacy code modernization, and effort estimation. These skills address the full lifecycle of development productivity: from automating repetitive tasks and planning large-scale technology transitions to safely modernizing legacy codebases and producing accurate effort estimates for planning.
+
+### Skill: `/godmode:automate` — Task Automation
+
+**Purpose:** Automate repetitive workflows with cron jobs, webhooks, GitHub Actions, scripts, and Makefiles/Taskfiles.
+
+**Capabilities:**
+- **Cron job design:** Create scheduled jobs with proper lock files, error handling, logging, and failure notifications for crontab, systemd timers, Kubernetes CronJobs, and GitHub Actions schedules
+- **Webhook automation:** Design event-driven webhook handlers with signature verification, event routing, and idempotent processing
+- **GitHub Actions workflows:** Generate CI/CD workflows for releases, PR automation, dependency updates, and custom automation triggers
+- **Script automation:** Create robust Bash and Python automation scripts with argument parsing, dry-run support, logging, and error handling
+- **Makefile/Taskfile design:** Generate task runners with help targets, dependency management, and CI helper targets
+- **Git hooks:** Create pre-commit, pre-push, and other git hooks for quality enforcement
+
+**Workflow:** Discover Automation Context -> Classify Automation Type -> Design (Cron | Webhook | Workflow | Script | Taskfile) -> Generate with Error Handling -> Report
+
+**Artifacts produced:**
+- `.github/workflows/*.yml` — GitHub Actions workflow files
+- `Makefile` or `Taskfile.yml` — Task runner configuration
+- `scripts/*.sh` or `scripts/*.py` — Automation scripts
+- `.githooks/*` — Git hook scripts
+
+**Flags:** `--cron <expression>`, `--webhook <event>`, `--workflow <name>`, `--script <name>`, `--makefile`, `--taskfile`, `--hook <git-hook>`, `--list`, `--audit`, `--dry-run`
+
+### Skill: `/godmode:migration` — System Migration
+
+**Purpose:** Plan and execute large-scale technology migrations with zero-downtime strategies, parallel verification, and documented rollback plans.
+
+**Capabilities:**
+- **Migration assessment:** Analyze source state, target state, constraints (downtime budget, timeline, data volume, compliance), and classify migration type (language, framework, API paradigm, architecture, data, infrastructure)
+- **Strategy selection:** Choose between strangler fig (incremental replacement via facade), big bang (full rewrite with cutover), parallel run (shadow traffic comparison), and branch by abstraction (interface-based swap)
+- **Language/framework migration:** Detailed phased plans for JS-to-TS, REST-to-GraphQL, monolith-to-microservices with conversion order, tracking, and strictness ramp-up
+- **Zero-downtime data migration:** Dual-write, backfill, shadow reads, cutover, and cleanup phases with data integrity verification (row counts, checksums, spot checks)
+- **Parallel run verification:** Compare old and new system outputs with match rate tracking, latency comparison, and confidence thresholds
+- **Rollback planning:** Document trigger conditions, rollback steps, data reconciliation, feature flags, time estimates, and point of no return
+
+**Workflow:** Migration Assessment -> Strategy Selection -> Migration Planning (language/framework/architecture specific) -> Data Migration Design -> Parallel Run Verification -> Rollback Planning -> Tracking & Reporting
+
+**Artifacts produced:**
+- `docs/migrations/<name>.md` — Migration plan and tracking document
+- Migration code (adapters, abstractions, feature flags, comparison scripts)
+
+**Flags:** `--assess`, `--plan`, `--track`, `--verify`, `--rollback`, `--strategy <name>`, `--phase <N>`, `--report`, `--dry-run`
+
+### Skill: `/godmode:legacy` — Legacy Code Modernization
+
+**Purpose:** Safely understand, stabilize, and incrementally modernize legacy codebases through characterization testing, dependency auditing, and prioritized refactoring.
+
+**Capabilities:**
+- **Legacy code characterization:** Assess codebase age, contributors, test coverage, linter config, documentation, type safety, dependency health, code quality signals (dead code, god classes, circular dependencies), and change confidence level
+- **Code archaeology:** Understand legacy code through git blame analysis, dependency tracing, runtime behavior observation, comment/naming analysis, and test reverse-engineering
+- **Characterization testing:** Add tests that capture current behavior (not intended behavior) as a safety net for refactoring, using inline snapshots and explicit edge case documentation
+- **Golden master testing:** Save complex outputs (HTML, PDFs, reports) as golden master files and compare against them on every test run, with UPDATE_GOLDEN support
+- **Approval testing:** Snapshot-based verification using Jest snapshots or pytest equivalents for automated behavior documentation
+- **Dependency auditing:** Categorize updates (patch/minor/major), identify deprecated and EOL packages, detect known vulnerabilities, and produce upgrade recommendations with priority ordering
+- **Technology obsolescence assessment:** Evaluate runtime versions, framework status, and library lifecycle against EOL dates and LTS schedules
+- **Dead code removal:** Detect unused code through static analysis, coverage analysis, dependency analysis, git history, and runtime tracking, with safe removal process
+- **Incremental modernization:** Prioritize P0 (security) through P4 (modernization) with safe refactoring techniques (extract method, extract class, sprout method, wrap external dependency)
+
+**Workflow:** Legacy Code Characterization -> Understanding (Code Archaeology) -> Adding Tests (Characterization / Golden Master / Approval) -> Incremental Modernization -> Dependency Upgrades -> Obsolescence Assessment -> Dead Code Removal -> Roadmap & Report
+
+**Artifacts produced:**
+- `docs/legacy/<project>-assessment.md` — Codebase health assessment
+- `docs/legacy/<project>-roadmap.md` — Modernization roadmap
+- `tests/` — Characterization tests
+- `tests/golden-masters/` — Golden master output files
+
+**Flags:** `--assess`, `--characterize <path>`, `--golden-master <path>`, `--deps`, `--obsolescence`, `--dead-code`, `--roadmap`, `--coverage`, `--understand <path>`, `--dry-run`
+
+### Skill: `/godmode:estimate` — Effort Estimation
+
+**Purpose:** Produce accurate effort estimates using complexity analysis, risk assessment, three-point estimation with confidence intervals, and historical comparison.
+
+**Capabilities:**
+- **Complexity analysis:** Analyze tasks across 6 dimensions (code complexity, domain complexity, technical uncertainty, integration complexity, testing complexity, deployment complexity) with LOW/MEDIUM/HIGH ratings
+- **Risk factor assessment:** Identify and quantify risks (unclear requirements, legacy code, external dependencies, technology unfamiliarity, cross-team coordination, scope creep) with probability-weighted impact multipliers
+- **Three-point estimation:** Produce optimistic, most likely, and pessimistic estimates with PERT weighted average and confidence intervals (68%, 90%, 95%)
+- **Task decomposition:** Break large tasks into 1-3 day subtasks with individual estimates, overhead multiplier, and risk adjustment
+- **Reference class forecasting:** Compare against similar historical tasks to anchor estimates in reality rather than intuition
+- **Sprint planning:** Calculate team capacity (developers, focus factor, PTO), size multiple tasks, assess sprint load, and recommend fit/tight/overloaded status
+- **Story point calibration:** Fibonacci scale reference with example tasks at each level and decomposition rules for tasks above 13 points
+
+**Workflow:** Understand Task -> Complexity Analysis -> Risk Factor Assessment -> Three-Point Estimation -> Task Decomposition -> Reference Class Comparison -> Sprint Planning (if applicable) -> Report
+
+**Artifacts produced:**
+- Estimation reports (not committed to git — planning artifacts only)
+- Sprint planning summaries with capacity and load analysis
+
+**Flags:** `--sprint`, `--quick`, `--decompose`, `--risk`, `--compare <task>`, `--capacity <N>`, `--confidence <N>`, `--points`, `--batch`
+
+### Integration with Existing Skills
+
+The workflow automation and productivity skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:plan  ->  /godmode:estimate  ->  /godmode:build  ->  /godmode:automate
+     |                    |                     |                    |
+  Decompose          Estimate effort       Implement            Automate
+  into tasks         for each task         with TDD             repetitive tasks
+
+/godmode:legacy  ->  /godmode:migration  ->  /godmode:plan  ->  /godmode:build
+     |                    |                      |                    |
+  Assess and          Plan system            Decompose            Execute
+  stabilize           migration              migration tasks      phase by phase
+```
+
+- **From `/godmode:plan`:** After decomposing work, invoke `/godmode:estimate` to size tasks for sprint planning
+- **From `/godmode:estimate` to `/godmode:plan`:** If estimation reveals a task is too large, decompose further with `/godmode:plan`
+- **From `/godmode:build` to `/godmode:automate`:** After implementing, automate repetitive workflows (CI, deployment, maintenance)
+- **From `/godmode:legacy` to `/godmode:migration`:** After assessing legacy code, plan the system migration strategy
+- **From `/godmode:legacy` to `/godmode:test`:** After adding characterization tests, use `/godmode:test` to expand coverage
+- **From `/godmode:migration` to `/godmode:plan`:** After migration planning, decompose each phase into implementable tasks
+- **From `/godmode:automate` to `/godmode:cicd`:** Automation workflows often integrate with CI/CD pipeline configuration
+
+### Design Principles for Workflow & Productivity Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Ranges over point estimates | Never give a single number; always provide confidence intervals |
+| 2 | Tests before refactoring | Add characterization tests before modifying any legacy code |
+| 3 | Incremental over big bang | Strangler fig and incremental migration over full rewrites |
+| 4 | Error handling is mandatory | Every automation script must handle errors, log, and notify |
+| 5 | Reversibility required | Every migration step and automation must have a rollback plan |
+| 6 | Evidence over intuition | Use reference class forecasting, not gut feelings, for estimates |
+| 7 | Security first | Patch vulnerabilities before modernizing; never hardcode secrets |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/automate/SKILL.md` | Skill | Task automation and workflow orchestration |
+| `skills/migration/SKILL.md` | Skill | System migration and technology transition |
+| `skills/legacy/SKILL.md` | Skill | Legacy code modernization |
+| `skills/estimate/SKILL.md` | Skill | Effort estimation and complexity analysis |
+| `commands/godmode/automate.md` | Command | Usage reference for `/godmode:automate` |
+| `commands/godmode/migration.md` | Command | Usage reference for `/godmode:migration` |
+| `commands/godmode/legacy.md` | Command | Usage reference for `/godmode:legacy` |
+| `commands/godmode/estimate.md` | Command | Usage reference for `/godmode:estimate` |
+
+**Iterations 252-259 (8 files, 4 skills, 4 commands)**
