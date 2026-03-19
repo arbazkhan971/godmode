@@ -9978,3 +9978,116 @@ Flags: `--audit`, `--django`, `--fastapi`, `--drf`, `--admin`, `--async`, `--orm
 | `commands/godmode/django.md` | Command | Usage reference for `/godmode:django` |
 
 **Iterations 381-388 (4 skills created, 4 command files created, 1 design doc updated)**
+
+---
+
+## 97. Backend Framework Skills
+
+Four framework-specific mastery skills that provide deep, opinionated guidance for the most popular backend frameworks — covering architecture, ORM patterns, authentication, testing, and production configuration.
+
+### 97.1 Spring — Spring Boot Mastery (`skills/spring/SKILL.md`)
+
+**Purpose:** Build production-grade Spring Boot applications with auto-configuration best practices, Spring Security, Spring Data JPA, Actuator monitoring, and Spring Cloud microservices.
+
+**Key capabilities:**
+- **Starter selection:** Matches project requirements to the correct Spring Boot starters with version-managed BOM dependencies.
+- **Auto-configuration audit:** Enforces critical production settings — OSIV disabled, `ddl-auto: validate`, graceful shutdown, HikariCP pool tuning, actuator endpoint restriction, and 12-factor externalized config.
+- **Spring Security:** Component-based `SecurityFilterChain` with deny-by-default, JWT/OAuth2 resource server, method-level security, CORS, and security event auditing.
+- **Spring Data JPA:** Entity design with lazy fetching, JOIN FETCH for N+1 prevention, optimistic locking, Specifications for dynamic queries, projections for lightweight reads, and Flyway migrations.
+- **Actuator & monitoring:** Health probes for Kubernetes (liveness/readiness), custom health indicators, Micrometer metrics with Prometheus endpoint, and custom business metrics.
+- **Spring Cloud:** API Gateway, service discovery (Eureka/Consul), Resilience4j circuit breakers, distributed tracing, and event-driven communication patterns.
+- **Testing:** Unit tests with Mockito, controller tests with MockMvc, integration tests with TestContainers, security testing with `SecurityMockMvcConfigurers`, and ArchUnit for architecture rules.
+
+**Workflow:** Assess requirements -> Select starters -> Configure properties -> Security setup -> Data layer -> Actuator -> Spring Cloud (if microservices) -> Testing -> Validation (15 checks).
+
+**Command:** `/godmode:spring` (`commands/godmode/spring.md`)
+
+### 97.2 Rails — Ruby on Rails Mastery (`skills/rails/SKILL.md`)
+
+**Purpose:** Build production-grade Rails applications following the Rails Way — ActiveRecord patterns, Hotwire for modern interactivity, background jobs, and comprehensive RSpec testing.
+
+**Key capabilities:**
+- **Rails conventions:** Enforces naming, structure, RESTful routes, and project organization including service objects, query objects, and concerns.
+- **ActiveRecord optimization:** Eager loading with `includes`/`preload`/`eager_load`, `strict_loading` for N+1 detection, scopes, counter caches, `find_each` for batch processing, and database indexes on all foreign keys.
+- **Hotwire (Turbo + Stimulus):** Turbo Drive for SPA-like navigation, Turbo Frames for partial page updates, Turbo Streams for real-time broadcasts, and Stimulus controllers for JavaScript behavior. Includes decision guide for when to use each.
+- **Background jobs:** Solid Queue (Rails 8 default) and Sidekiq configuration with queue priorities, retry policies, idempotency rules, and monitoring.
+- **Testing:** RSpec with FactoryBot factories (traits, transients), Shoulda Matchers, request specs, system specs with Capybara, job testing with `have_enqueued_job`, and VCR/WebMock for external APIs.
+
+**Workflow:** Assess requirements -> Architecture decision -> Rails conventions -> ActiveRecord patterns -> Hotwire setup -> Background jobs -> RSpec testing -> Validation (15 checks).
+
+**Command:** `/godmode:rails` (`commands/godmode/rails.md`)
+
+### 97.3 Laravel — Laravel Mastery (`skills/laravel/SKILL.md`)
+
+**Purpose:** Build production-grade Laravel applications with Eloquent ORM mastery, service container patterns, queue-driven architecture, and Pest testing.
+
+**Key capabilities:**
+- **Eloquent ORM:** Models with relationships, scopes, PHP 8.1+ backed enum casts, accessor/mutator syntax, API Resources for response shaping, eager loading with `preventLazyLoading()`, and query optimization patterns (`withWhereHas`, `chunkById`, `cursor`).
+- **Service container:** Contracts (interfaces) bound in service providers, Action classes for single-responsibility operations, DTOs for typed data transfer, and pipeline pattern for sequential processing.
+- **Queue system:** Jobs with retry policies and exponential backoff, `WithoutOverlapping` and `ShouldBeUnique` middleware, events with queued listeners, broadcasting via Laravel Reverb for real-time, and multi-queue priority management.
+- **Authentication:** Sanctum for SPA + mobile token auth, Passport for full OAuth2, Policies for model-level authorization, Gates for non-model actions, and token abilities for fine-grained API permissions.
+- **Testing:** Pest with expressive syntax, factory states and `afterCreating` hooks, fake facades (`Queue::fake()`, `Event::fake()`, `Mail::fake()`), `Sanctum::actingAs()` for auth, and `assertDatabaseHas` for persistence verification.
+
+**Workflow:** Assess requirements -> Architecture decision -> Eloquent models -> Service container -> Queue + events -> Authentication -> Pest testing -> Validation (15 checks).
+
+**Command:** `/godmode:laravel` (`commands/godmode/laravel.md`)
+
+### 97.4 FastAPI — FastAPI Mastery (`skills/fastapi/SKILL.md`)
+
+**Purpose:** Build production-grade FastAPI applications with Pydantic schemas, async-first architecture, dependency injection, and pytest/HTTPX testing.
+
+**Key capabilities:**
+- **Pydantic model design:** Separate Create/Update/Response schemas, field validators and model validators, generic `PaginatedResponse[T]`, discriminated unions, `from_attributes=True` for ORM conversion, and Python 3.12+ type syntax.
+- **Dependency injection:** `Annotated` type aliases for clean signatures, yield dependencies for resource lifecycle, nested dependency chains, parameterized dependencies for role-based access, and `dependency_overrides` for testing.
+- **Async database access:** SQLAlchemy 2.0 with asyncpg driver, `Mapped[]` type annotations, `selectin` loading for async-safe eager loading, repository pattern for query encapsulation, and Alembic async migrations.
+- **Background tasks & WebSockets:** FastAPI `BackgroundTasks` for simple fire-and-forget, Celery/ARQ for complex workflows, `ConnectionManager` for WebSocket channel management, and Redis Pub/Sub for multi-process broadcasting.
+- **Testing:** pytest with HTTPX `AsyncClient` and `ASGITransport` (no server needed), async fixtures with transaction rollback, `dependency_overrides` for dependency swapping, Pydantic schema validation tests, and `respx` for mocking external HTTP.
+
+**Workflow:** Assess requirements -> Project structure -> Pydantic schemas -> Dependency injection -> Async database -> Background tasks/WebSockets -> pytest/HTTPX testing -> Validation (15 checks).
+
+**Command:** `/godmode:fastapi` (`commands/godmode/fastapi.md`)
+
+### Integration with Existing Skills
+
+```
+/godmode:spring   ->  /godmode:test  ->  /godmode:secure  ->  /godmode:deploy
+/godmode:rails    ->  /godmode:test  ->  /godmode:optimize ->  /godmode:ship
+/godmode:laravel  ->  /godmode:test  ->  /godmode:observe  ->  /godmode:deploy
+/godmode:fastapi  ->  /godmode:test  ->  /godmode:loadtest ->  /godmode:deploy
+     |                     |                    |                     |
+  Framework-specific    Add coverage      Production checks      Ship it
+  best practices        and edge cases    and monitoring
+```
+
+- **From `/godmode:scaffold`:** After scaffolding a project, invoke the framework skill for production-grade configuration.
+- **From `/godmode:api`:** After designing the API spec, invoke the framework skill to implement it with framework-specific best practices.
+- **From framework skill to `/godmode:secure`:** Framework skill configures auth; security skill audits it for vulnerabilities.
+- **From framework skill to `/godmode:loadtest`:** Framework skill builds the service; load test validates it handles production traffic.
+- **From framework skill to `/godmode:optimize`:** Framework skill establishes patterns; optimize skill tunes queries, caching, and throughput.
+
+### Design Principles for Backend Framework Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Convention over configuration | Each framework has a "right way" — follow it, document deviations |
+| 2 | Production from day one | Every setting is production-grade; dev convenience is a profile, not a default |
+| 3 | ORM discipline | Eager loading, N+1 prevention, and query optimization are non-negotiable |
+| 4 | Security is structural | Authentication and authorization are framework features, not afterthoughts |
+| 5 | Test at every layer | Unit, integration, and end-to-end tests use framework-specific tooling |
+| 6 | Async when async | FastAPI is async-first; Spring offers reactive; Rails and Laravel are request-per-thread — respect each model |
+| 7 | Framework-specific tooling | Use MockMvc not generic HTTP clients; use FactoryBot not raw SQL; use Pest not generic PHPUnit |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/spring/SKILL.md` | Skill | Spring Boot mastery — auto-config, Security, JPA, Actuator, Cloud, TestContainers |
+| `skills/rails/SKILL.md` | Skill | Ruby on Rails mastery — ActiveRecord, Hotwire, Sidekiq/Solid Queue, RSpec |
+| `skills/laravel/SKILL.md` | Skill | Laravel mastery — Eloquent, service container, queues, events, Sanctum, Pest |
+| `skills/fastapi/SKILL.md` | Skill | FastAPI mastery — Pydantic, DI, async SQLAlchemy, WebSockets, pytest/HTTPX |
+| `commands/godmode/spring.md` | Command | Usage reference for `/godmode:spring` |
+| `commands/godmode/rails.md` | Command | Usage reference for `/godmode:rails` |
+| `commands/godmode/laravel.md` | Command | Usage reference for `/godmode:laravel` |
+| `commands/godmode/fastapi.md` | Command | Usage reference for `/godmode:fastapi` |
+
+**Iterations 403-410 (8 files, 4 skills, 4 commands)**
