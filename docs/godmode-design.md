@@ -7246,3 +7246,240 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 | `commands/godmode/ddd.md` | Command | Usage reference for `/godmode:ddd` |
 
 **Iterations 175-180 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 65. Cost Optimization Skills
+
+### `/godmode:cost` — Cloud Cost Optimization
+
+**Purpose:** Analyze, reduce, and govern cloud spending across AWS, GCP, and Azure with evidence-based recommendations backed by actual utilization data and projected dollar savings.
+
+**Core capabilities:**
+- **Resource inventory:** Discover all provisioned resources across compute, storage, database, network, containers, and serverless with current monthly costs and month-over-month trends
+- **Utilization analysis:** Measure actual CPU, memory, storage, and network usage versus provisioned capacity with IDLE/OVERSIZE/UNDERSIZE/OK verdicts based on 14-day P95 data
+- **Waste detection:** Identify resources costing money but providing no value — unattached volumes, old snapshots, idle load balancers, unused Elastic IPs, orphaned ENIs, dev environments running 24/7
+- **Right-sizing recommendations:** For each oversized or undersized resource, recommend optimal size with projected monthly savings and percentage reduction, leaving 40%+ headroom above P95 utilization
+- **Pricing optimization:** Recommend reserved instances, savings plans, and spot/preemptible instances for stable workloads with 3+ months of predictable usage; identify CI/CD runners and batch jobs eligible for 60-70% spot savings
+- **Cost allocation tagging:** Audit tag coverage (team, environment, project, cost-center, owner), identify untagged resources, recommend enforcement via AWS Config / GCP Organization Policy / Azure Policy
+- **Budget alerts:** Configure proactive cost monitoring with tiered alerts (50/80/100% of budget), anomaly detection (2x rolling average, $500/day single resource), and weekly cost digests
+- **Optimization report:** Produce prioritized action list with savings breakdown (waste elimination, right-sizing, pricing optimization, scheduling), implementation effort (quick wins, medium, long-term), and annual impact projection
+
+**Invocation:** `/godmode:cost`, "reduce cloud costs", "optimize spending", "why is our bill so high?", "right-sizing", "reserved instances"
+
+**Key principle:** Every recommendation must include the projected dollar savings. "This instance is oversized" is not actionable. "$180/month savings by downsizing from m5.2xl to m5.large" is actionable. Production optimizations are conservative; dev/staging can be aggressive.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/cost/SKILL.md` | Skill | Cloud cost optimization workflow |
+| `commands/godmode/cost.md` | Command | Usage reference for `/godmode:cost` |
+
+---
+
+## 66. Compliance & Governance Skills
+
+### `/godmode:comply` — Compliance & Governance
+
+**Purpose:** Systematically evaluate codebase and data flows against regulatory frameworks (GDPR, HIPAA, SOC2, PCI-DSS), validate audit trails, review data retention policies, and audit license compliance across dependencies.
+
+**Core capabilities:**
+- **GDPR compliance:** Lawful basis assessment for each data processing activity, data subject rights implementation check (access, rectification, erasure, portability, restriction, objection), consent management validation (freely given, specific, informed, unambiguous, withdrawable, recorded)
+- **HIPAA compliance:** Administrative safeguards (risk analysis, workforce controls, incident response, BAAs), physical safeguards (facility access, workstation security), technical safeguards (access control, audit controls, integrity, transmission security, encryption at rest), minimum necessary principle, de-identification, PHI access logging
+- **SOC2 compliance:** Trust services criteria assessment across security, availability, processing integrity, confidentiality, and privacy with control counts and gap identification for change management, logical access, encryption, monitoring, incident response, vendor risk, backup, and vulnerability scanning
+- **PCI-DSS compliance:** All 12 requirements checked (network security, secure configuration, stored data protection, transmission encryption, malware protection, secure development, access restriction, user identification, physical access, logging, security testing, organizational policies), CDE scope reduction verification, PAN/CVV storage validation
+- **Audit trail validation:** Event coverage matrix (authentication, authorization, data access/modification/deletion/export, configuration changes, system errors, admin operations), tamper resistance, retention, searchability, PII redaction, UTC timestamps, correlation IDs
+- **Data retention & deletion:** Retention periods per data category with auto-delete status, deletion workflow validation (request, verification, execution, confirmation), cascade to backups/caches/replicas, verifiability, regulatory timeline compliance
+- **License compliance:** Dependency license inventory with commercial compatibility assessment (MIT/Apache/BSD: OK; LGPL: conditional; GPL: risk; AGPL: high risk; unlicensed: unknown), attribution requirements, replacement recommendations
+
+**Invocation:** `/godmode:comply`, "GDPR compliance", "audit trail", "are we compliant?", "privacy review", "license audit"
+
+**Key principle:** Each finding must reference the specific regulation article or requirement it violates. "Deletion missing" is not a finding. "GDPR Article 17 violation: deleteUser() sets deleted_at but data persists in backups indefinitely" is a finding.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/comply/SKILL.md` | Skill | Compliance and governance audit workflow |
+| `commands/godmode/comply.md` | Command | Usage reference for `/godmode:comply` |
+
+---
+
+## 67. Deployment Strategy Skills
+
+### `/godmode:deploy` — Advanced Deployment Strategies
+
+**Purpose:** Design and orchestrate sophisticated deployment strategies including blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and zero-downtime migrations.
+
+**Core capabilities:**
+- **Deployment assessment:** Characterize change type (code, migration, infrastructure, config), risk level, rollback complexity, backward/forward compatibility, and recommend appropriate strategy with justification
+- **Blue-green deployment:** Two identical environments with instant switchover — deploy to idle environment, smoke test, switch load balancer, monitor, keep old environment for instant rollback (< 30 seconds)
+- **Canary release:** Percentage-based traffic splitting with automated gates — 1% to 5% to 25% to 50% to 100% with success criteria (error rate, P99 latency, business metrics) and automatic rollback triggers at each stage
+- **Progressive rollout:** Multi-stage deployment with configurable gates (auto and manual) — smoke test at 0%, seed at 1%, low at 5%, medium at 25%, high at 50%, full at 100%, each with defined duration and gate criteria
+- **Automated rollback:** Trigger matrix (HTTP 5xx rate > 1%, P99 latency > 2x baseline, error log rate > 3x, health check failures, business metric drop > 10%, memory > 90%, CPU > 95%) with detection, decision, execution, investigation, and communication phases
+- **Feature flag orchestration:** Coordinated flag rollout plan with dependencies, kill switches (30-second disable without deployment), lifecycle management (create, enable internal, progressive rollout, 100%, cleanup, delete), stale flag detection (100% for 30+ days, 0% for 14+ days)
+- **Zero-downtime migrations:** Expand-contract pattern for database schema changes (add nullable column, dual-write, backfill, switch reads, drop old column), strangler fig pattern for service migrations with shadow traffic and bidirectional sync
+- **Pre-deployment checklist:** Tests passing, security audit passed, migration tested in staging, rollback procedure tested, monitoring dashboards ready, on-call confirmed, communication sent
+
+**Invocation:** `/godmode:deploy`, "deploy with zero downtime", "canary release", "blue-green deployment", "rollback strategy", "feature flag rollout"
+
+**Key principle:** Strategy matches risk. Low-risk changes use rolling deploys. High-risk changes need canary with automated rollback. Rollback is always planned — if you cannot define rollback, the deployment is not ready.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/deploy/SKILL.md` | Skill | Advanced deployment strategies workflow |
+| `commands/godmode/deploy.md` | Command | Usage reference for `/godmode:deploy` |
+
+---
+
+## 68. Learning & Teaching Skills
+
+### `/godmode:learn` — Learning & Teaching
+
+**Purpose:** Provide interactive, codebase-grounded learning experiences including tutorials, design pattern recommendations, best practices enforcement, codebase knowledge bases, and personalized learning paths.
+
+**Core capabilities:**
+- **Interactive code tutorials:** Step-by-step tutorials using actual project code with context, explanations, key insights, and hands-on "TRY IT" exercises; checkpoints with comprehension questions; calibrated to beginner/intermediate/advanced level
+- **Design pattern recommendations:** Problem-specific pattern selection with trade-offs (Strategy, Observer, Factory, Repository, CQRS, Circuit Breaker, etc.); ASCII diagrams; before/after code from the actual codebase; real-world examples already in the project; "when NOT to use" guidance
+- **Best practices enforcement:** Language- and framework-specific practices (TypeScript, React, Go, Python, etc.) with MUST/SHOULD/MAY levels (RFC 2119); good/bad code examples; codebase compliance audit showing which files follow or violate each practice; prioritized adoption list
+- **Codebase knowledge base:** Architecture overview (pattern, entry points, data flow), module map with purposes and key files, dependency graph, conventions (naming, file structure, error handling, testing, configuration), key domain concepts, gotchas and tribal knowledge for new team members
+- **Skill assessment and learning path:** 10-dimension assessment (language basics, design patterns, error handling, testing, performance, security, architecture, readability, debugging, tools) scored 1-5 with evidence; personalized 6-week learning path with weekly goals, resources (tutorials, practice tasks, code to study), and verifiable milestones
+
+**Invocation:** `/godmode:learn`, "teach me", "how does this work?", "best practices for", "what pattern should I use?", "explain this code"
+
+**Key principle:** Use the actual codebase. "Here's how YOUR code uses the Observer pattern" is 10x more effective than a textbook example. One concept at a time, hands-on over theory, trade-offs always mentioned.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/learn/SKILL.md` | Skill | Learning and teaching workflow |
+| `commands/godmode/learn.md` | Command | Usage reference for `/godmode:learn` |
+
+---
+
+## 69. Backup & Disaster Recovery Skills
+
+### `/godmode:backup` — Backup & Disaster Recovery
+
+**Purpose:** Design comprehensive backup strategies, define RPO/RTO targets, automate backup verification, test recovery procedures, verify data integrity, and generate disaster recovery runbooks.
+
+**Core capabilities:**
+- **Data asset inventory:** Catalog all data stores (databases, file storage, caches, logs, configuration, secrets, queues, search indices) with type, size, growth rate, and criticality classification; identify rebuild-from-source assets that do not need backup
+- **RPO/RTO definition:** Three-tier recovery objectives — Tier 1 critical (RPO < 1 min, RTO < 15 min for business-critical data), Tier 2 important (RPO < 1 hour, RTO < 1 hour for tolerant data), Tier 3 operational (RPO < 24 hours, RTO < 4 hours for rebuildable data)
+- **Tiered backup strategy:** Tier 1 gets streaming replication + continuous WAL archiving + daily full backups; Tier 2 gets periodic snapshots + cross-region replication + versioning; Tier 3 gets daily backups + rebuild procedures; all encrypted at rest (AES-256) with separate key management
+- **Backup verification:** Automated schedule — per-run job completion and size checks, daily file readability and checksum verification, weekly restore test to test environment, monthly full restore with application smoke tests, weekly cross-region accessibility and encryption verification
+- **Data integrity verification:** Row count consistency, SHA-256 checksum verification, foreign key integrity checks, application smoke tests against restored data, point-in-time accuracy validation (quarterly), cross-region consistency checks
+- **Recovery procedures:** Step-by-step runbooks for primary database failure (automated failover + manual fallback), data corruption (point-in-time recovery, snapshot restore, selective restore), complete region failure (DR activation, DNS failover, return-to-primary procedure), with post-recovery actions and incident reporting
+- **DR runbook generation:** Comprehensive document with recovery objectives, scenario index, backup status dashboard, escalation contacts, last test dates, and procedures executable by any on-call engineer
+
+**Invocation:** `/godmode:backup`, "backup strategy", "disaster recovery", "what's our RPO?", "can we recover from", "what if we lose the database?"
+
+**Key principle:** Backups that are not tested are not backups. A backup you have never restored is a hope, not a plan. Separate backup storage from production (different region, different account). Automate verification with alerting.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/backup/SKILL.md` | Skill | Backup and disaster recovery workflow |
+| `commands/godmode/backup.md` | Command | Usage reference for `/godmode:backup` |
+
+**Iterations 165-174 (10 files, 5 skills, 5 commands)**
+
+## 74. Testing Mastery Skills
+
+Three new skills extend Godmode's testing arsenal into deep unit testing mastery, real-dependency integration testing, and output verification through snapshots — covering the full testing spectrum from isolated functions to complex serialized outputs.
+
+### 74.1 Unit Test — Unit Testing Mastery (`skills/unittest/SKILL.md`)
+
+**Purpose:** Write high-quality, isolated unit tests with proper structure, mocking strategies, property-based testing, and mutation testing validation. Goes beyond basic test writing into testing craftsmanship.
+
+**Key capabilities:**
+- **Test structure patterns:** Arrange-Act-Assert (AAA) for input/output tests and Given-When-Then (GWT) for behavior-focused BDD-style tests, with framework-specific examples for Jest, Vitest, pytest, Go testing, and JUnit.
+- **Mocking decision framework:** A systematic flowchart for choosing when to mock (external services, non-deterministic code) vs when to use real implementations. Covers all five test double types: stubs, mocks, spies, fakes, and dummies with clear use cases for each.
+- **Property-based testing:** Identifies and implements property patterns — roundtrip/inverse, invariant preservation, idempotence, oracle/reference, and commutativity — using fast-check (JS/TS) and Hypothesis (Python). Includes shrinking interpretation for minimal failure reproduction.
+- **Mutation testing:** Uses Stryker (JS/TS), mutmut (Python), PIT (Java), and go-mutesting (Go) to inject bugs and measure whether tests catch them. Analyzes surviving mutants and generates targeted tests to kill them.
+- **Coverage vs confidence:** Distinguishes line coverage, branch coverage, and mutation score as signals of different quality. Sets pragmatic targets: >90% branch + >80% mutation score for critical logic, >80% branch for standard code.
+- **Test naming and organization:** Enforces behavior-describing names, file organization mirroring source structure, and within-file ordering (happy path, alternatives, edge cases, errors, concurrency).
+
+**Workflow:** Analyze unit under test -> Map dependencies -> Choose test structure -> Apply mocking strategy -> Write example-based tests -> Write property-based tests -> Run mutation testing -> Report coverage and confidence.
+
+**Command:** `/godmode:unittest` (`commands/godmode/unittest.md`)
+
+### 74.2 Integration — Integration Testing (`skills/integration/SKILL.md`)
+
+**Purpose:** Test how components work together across real boundaries — databases, APIs, message queues, and caches — using disposable containerized infrastructure for isolation and reproducibility.
+
+**Key capabilities:**
+- **Testcontainers setup:** Full configuration for PostgreSQL, MySQL, MongoDB, Redis, Kafka, Elasticsearch, and LocalStack containers across Node.js, Python, Go, and Java with proper startup, connection, and teardown patterns.
+- **Database seeding strategies:** Three approaches — migration-based seeding for schema, fixture factories with overridable defaults for test data, and SQL file seeding for large reference datasets. Includes Factory Boy (Python), custom builder patterns (TypeScript), and table-driven fixtures (Go).
+- **Cleanup strategies:** Four options ranked by trade-off — transaction rollback (fastest, zero cleanup), TRUNCATE (fast, simple), unique data per test (no cleanup needed, best for parallel), and fresh container per test class (most isolated, slowest). Decision matrix for choosing the right strategy.
+- **API integration testing:** Real HTTP request/response testing with supertest (Node.js), httpx (Python), httptest (Go), and MockMvc (Java). Covers authenticated endpoints, error responses, and persistence verification.
+- **Service-level patterns:** Four integration patterns — service-to-database (transactional integrity), service-to-service (multi-service flows with mock servers for externals), message queue (producer/consumer through real brokers), and cache (hit/miss/invalidation behavior).
+- **CI configuration:** Test tagging and separation (unit vs integration), GitHub Actions with service containers, and parallel execution strategies.
+
+**Workflow:** Map integration boundaries -> Set up Testcontainers -> Create seed data and fixtures -> Choose cleanup strategy -> Write integration tests -> Configure CI separation -> Report.
+
+**Command:** `/godmode:integration` (`commands/godmode/integration.md`)
+
+### 74.3 Snapshot — Snapshot & Approval Testing (`skills/snapshot/SKILL.md`)
+
+**Purpose:** Verify complex outputs against known-good baselines using snapshot testing, approval testing, and golden file patterns — with proper stabilization for non-deterministic values and update policies to prevent snapshot rot.
+
+**Key capabilities:**
+- **Suitability assessment:** Decision framework for when snapshot testing helps (complex deterministic output, infrequent changes) vs when it harms (non-deterministic output, too-large snapshots, constant changes). Prevents inappropriate snapshot usage.
+- **Four strategies:** File-based snapshots for large outputs, inline snapshots for small reviewable outputs (<20 lines), approval testing for human-reviewed baselines, and golden file testing for deterministic artifacts (Go idiom with `-update` flag).
+- **Non-deterministic handling:** Four stabilization approaches — value replacement before snapshot, custom serializers, property matchers (Jest), and deterministic injection via dependency inversion. Ensures flake-free snapshots.
+- **Update policies:** Strict review-before-update policy with checklist. CI enforcement that fails on outdated snapshots and prevents `.received` file commits. Guards against blind `--updateSnapshot` runs.
+- **Domain-specific patterns:** React/UI component snapshots (targeted over full-tree), API response snapshots (with structure stabilization), CLI output snapshots, and configuration/code generation snapshots.
+- **Snapshot hygiene:** Detection of snapshot rot (blind updates, massive files, rubber-stamped reviews) with remediation strategies. Maximum size policies, inline migration, and obsolete snapshot cleanup.
+
+**Workflow:** Evaluate suitability -> Choose strategy -> Stabilize non-deterministic values -> Write snapshot tests -> Configure CI enforcement -> Audit for rot -> Report.
+
+**Command:** `/godmode:snapshot` (`commands/godmode/snapshot.md`)
+
+### Integration with Existing Skills
+
+The Testing Mastery skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:test  ->  /godmode:unittest  ->  /godmode:integration  ->  /godmode:snapshot
+     |                    |                       |                        |
+  TDD workflow       Deep unit tests         Real-dependency         Output baseline
+  & strategy         with mocking            boundary tests          verification
+```
+
+- **From `/godmode:test`:** The TDD skill delegates to `/godmode:unittest` for deep unit testing and to `/godmode:integration` for boundary tests
+- **From `/godmode:unittest` to `/godmode:integration`:** When unit tests require heavy mocking, integration tests with real dependencies provide higher confidence
+- **From `/godmode:integration` to `/godmode:contract`:** After integration tests pass, contract tests verify API compatibility across services
+- **From `/godmode:snapshot`:** Snapshot tests complement behavioral tests from `/godmode:unittest` by verifying output structure
+- **From `/godmode:quality`:** Quality analysis identifies test debt that these skills address
+- **From `/godmode:review`:** Code review flags test quality issues and refers to specific testing skills
+
+### Design Principles for Testing Mastery Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Test behavior, not implementation | Tests verify what code does, not how it does it |
+| 2 | Mock at the boundary | Mock external services, use real implementations for internal logic |
+| 3 | Property tests find what you miss | Generative testing discovers edge cases manual tests never cover |
+| 4 | Mutation score over line coverage | Killing mutants proves tests actually verify correctness |
+| 5 | Snapshots are assertions, not recordings | Every snapshot update is a deliberate behavior change |
+| 6 | Real dependencies in integration tests | Testcontainers provide isolated, disposable, real infrastructure |
+| 7 | Fast unit tests, thorough integration tests | Seconds for units, minutes for integration, separated in CI |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/unittest/SKILL.md` | Skill | Unit testing mastery with mocking, property testing, mutation testing |
+| `skills/integration/SKILL.md` | Skill | Integration testing with Testcontainers and real dependencies |
+| `skills/snapshot/SKILL.md` | Skill | Snapshot, approval, and golden file testing |
+| `commands/godmode/unittest.md` | Command | Usage reference for `/godmode:unittest` |
+| `commands/godmode/integration.md` | Command | Usage reference for `/godmode:integration` |
+| `commands/godmode/snapshot.md` | Command | Usage reference for `/godmode:snapshot` |
+
+**Iterations 197-202 (6 files, 3 skills, 3 commands)**
