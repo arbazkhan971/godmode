@@ -936,4 +936,124 @@ Branch: godmode/task-003-rate-limiter
 
 ---
 
-## Status: ITERATION 10 — Build skill spec complete
+## 11. `/godmode:test` — TDD Skill Spec
+
+**Origin:** Superpowers (test-driven development enforcement)
+**Phase:** BUILD
+**Purpose:** Enforce the RED-GREEN-REFACTOR cycle as a standalone skill, usable outside of `/godmode:build` for adding tests to existing code or writing test suites from scratch.
+
+### Trigger Conditions
+
+- User says "write tests", "add test coverage", "TDD"
+- Code exists without tests
+- User wants to add tests for a specific function/module
+- Explicitly invoked with `/godmode:test`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--target` | auto | File or function to test (auto-detects untested code) |
+| `--framework` | auto | Test framework: `jest`, `pytest`, `go test`, `vitest`, etc. |
+| `--coverage` | false | Run coverage report after tests pass |
+| `--style` | unit | Test style: `unit`, `integration`, `e2e`, `snapshot` |
+| `--cases` | auto | Number of test cases to write (auto based on complexity) |
+
+### Workflow
+
+**Step 1: Analyze Target**
+- Read the target file/function
+- Identify: inputs, outputs, side effects, error paths, edge cases
+- List all behaviors that need testing
+
+**Step 2: RED — Write Failing Tests**
+- Write test file with descriptive test names
+- Test naming convention: `should [expected behavior] when [condition]`
+- Include tests for:
+  - Happy path (normal operation)
+  - Edge cases (empty, null, boundary)
+  - Error cases (invalid input, failures)
+  - Side effects (database writes, API calls)
+- Run the tests — they MUST fail
+- If any test passes, it's testing nothing useful (remove or rewrite)
+
+**Step 3: GREEN — Implement (if target doesn't exist yet)**
+- If testing new code: write minimum implementation to pass
+- If testing existing code: skip this step (tests should pass against existing code)
+- Run tests — they MUST all pass
+- If tests fail against existing code: either the code has a bug (good, you found it) or the test is wrong (fix the test)
+
+**Step 4: REFACTOR**
+- Clean up both tests and implementation
+- Remove duplication in tests (but keep tests readable — some duplication is OK)
+- Extract test helpers/fixtures if patterns repeat
+- Run tests — they MUST still pass
+
+**Step 5: Coverage Report (if `--coverage`)**
+- Run coverage tool for the test framework
+- Report uncovered lines/branches
+- Suggest additional tests for uncovered paths
+
+### Test File Template
+
+```typescript
+// tests/rate-limiter.test.ts
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { RateLimiter } from '../src/middleware/rate-limiter';
+
+describe('RateLimiter', () => {
+  let limiter: RateLimiter;
+
+  beforeEach(() => {
+    limiter = new RateLimiter({ limit: 100, window: 60 });
+  });
+
+  describe('allow()', () => {
+    it('should allow requests under the limit', () => { /* ... */ });
+    it('should reject requests over the limit', () => { /* ... */ });
+    it('should reset after the window expires', () => { /* ... */ });
+    it('should track limits per IP address', () => { /* ... */ });
+  });
+
+  describe('edge cases', () => {
+    it('should handle empty IP address', () => { /* ... */ });
+    it('should handle concurrent requests', () => { /* ... */ });
+    it('should handle Redis connection failure gracefully', () => { /* ... */ });
+  });
+});
+```
+
+### Key Behaviors
+
+1. **Test names are documentation** — Someone should understand the feature just from reading test names
+2. **RED is mandatory** — If the test doesn't fail first, it proves nothing
+3. **One assertion per test** (preferred) — Multiple assertions make failures ambiguous
+4. **No mocking unless necessary** — Prefer real dependencies; mock only external services
+5. **Tests must be deterministic** — No random data, no time-dependent assertions, no network calls
+
+### Example Usage
+
+```
+User: /godmode:test --target src/middleware/rate-limiter.ts --coverage
+
+Agent: Analyzing rate-limiter.ts...
+  Found: 3 exported functions, 2 error paths, 4 edge cases
+
+[RED] Writing 9 test cases in tests/rate-limiter.test.ts
+  ✗ 9/9 tests FAIL (no implementation stub)
+
+[GREEN] Implementation exists — running against existing code
+  ✓ 7/9 tests PASS
+  ✗ 2/9 tests FAIL:
+    - "should handle Redis connection failure gracefully" — throws unhandled error
+    - "should handle concurrent requests" — race condition detected
+
+  ⚠ Found 2 bugs! These tests reveal real issues in the implementation.
+
+[COVERAGE] 84% line coverage, 71% branch coverage
+  Uncovered: error handling in reconnect(), edge case in slidingWindow()
+```
+
+---
+
+## Status: ITERATION 11 — Test skill spec complete
