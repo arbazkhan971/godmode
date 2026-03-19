@@ -4715,4 +4715,122 @@ Agent: Done. Primary metric: Lighthouse performance score. Target: 90.
 
 ---
 
-## Status: ITERATION 41 — Metric Discovery Phase complete
+## 42. Chain System
+
+**Purpose:** Chain skills together with the `--chain` flag so one skill's output feeds directly into the next skill.
+
+### Syntax
+
+```
+/godmode:debug --chain fix          # Debug, then auto-fix what was found
+/godmode:secure --chain fix         # Audit, then auto-fix findings
+/godmode:test --chain fix           # Write tests, then fix failures they reveal
+/godmode:build --chain review       # Build task, then review it
+/godmode:fix --chain optimize       # Fix all errors, then optimize
+/godmode:review --chain secure      # Review, then security audit
+```
+
+### How Chains Work
+
+```
+/godmode:secure --chain fix
+
+Step 1: Run /godmode:secure
+  → Produces security audit report with findings
+  → Each finding has severity and recommended fix
+
+Step 2: Automatically invoke /godmode:fix
+  → Reads the security report
+  → Converts findings into an error list
+  → Fixes them one at a time (CRITICAL first, then HIGH, etc.)
+  → Verifies each fix doesn't break guards
+```
+
+### Chain Compatibility Matrix
+
+Not all skills can chain to all other skills. Valid chains:
+
+| From | Can Chain To | What Passes |
+|------|-------------|-------------|
+| `debug` | `fix` | Root cause and recommended fix |
+| `secure` | `fix` | Security findings as error list |
+| `test` | `fix` | Failing test results |
+| `fix` | `optimize` | Clean codebase (zero errors) |
+| `fix` | `verify` | Fix results for verification |
+| `build` | `review` | Task diff for review |
+| `build` | `test` | Implementation for test writing |
+| `review` | `secure` | Reviewed code for security audit |
+| `review` | `fix` | Review findings (BLOCK items) |
+| `think` | `plan` | Spec document |
+| `plan` | `build` | Plan with tasks |
+| `optimize` | `ship` | Optimized code |
+
+Invalid chains are rejected with explanation:
+```
+/godmode:ship --chain think
+Error: Cannot chain ship → think. Shipping is the end of the cycle.
+Suggestion: Use /godmode --pipeline full to start a new cycle.
+```
+
+### Multi-Chains
+
+Chain multiple skills in sequence:
+
+```
+/godmode:secure --chain fix --chain optimize
+```
+
+This runs: secure → fix (findings) → optimize (clean code)
+
+### Chain Context Passing
+
+When skills chain, context is passed through `.godmode/chain-context.json`:
+
+```json
+{
+  "chain_id": "chain-20250115-001",
+  "source_skill": "secure",
+  "target_skill": "fix",
+  "context": {
+    "findings": [
+      {
+        "id": "SEC-001",
+        "severity": "CRITICAL",
+        "file": "src/routes/users.ts",
+        "line": 45,
+        "description": "SQL injection in user search",
+        "fix": "Use parameterized queries"
+      }
+    ],
+    "total_findings": 6,
+    "critical_count": 1,
+    "high_count": 2
+  }
+}
+```
+
+The target skill reads this context to understand what to do:
+- `fix` reads findings and converts them to its error format
+- `optimize` reads the clean state and sets up its baseline
+- `review` reads the task diff and starts reviewing
+
+### Chain vs Pipeline
+
+| Feature | Chain (`--chain`) | Pipeline (`--pipeline`) |
+|---------|-------------------|------------------------|
+| Scope | 2-3 skills | Full phase or custom |
+| Context | Passed explicitly | Through handoff artifacts |
+| Use case | Quick ad-hoc linking | Standard workflows |
+| Example | `debug --chain fix` | `--pipeline harden` |
+
+### Key Behaviors
+
+1. **Chains are optional** — Every skill works standalone
+2. **Context is explicit** — The chain-context.json file makes data flow visible
+3. **Invalid chains are caught** — Not every combination makes sense
+4. **Multi-chain is linear** — A → B → C, not branching
+5. **Chains respect budgets** — Each skill in the chain uses its own iteration budget
+
+---
+
+## Status: ITERATION 42 — Chain System complete
