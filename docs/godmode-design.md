@@ -2559,4 +2559,120 @@ During setup, Godmode can auto-suggest guards:
 
 ---
 
-## Status: ITERATION 24 — Guard System complete
+## 25. Results Logging
+
+**Purpose:** Track every iteration's results in a structured, machine-readable format that enables progress summaries, trend analysis, and final reports.
+
+### TSV Format
+
+Results are logged in `.godmode/results.tsv` — tab-separated values for easy parsing.
+
+```tsv
+iteration	timestamp	skill	description	metric_name	metric_before	metric_after	delta	delta_pct	kept	guard_status	duration_s
+1	2025-01-15T10:30:00Z	optimize	add Redis caching for user lookups	p95_response_time	340	285	-55	-16.2%	true	pass	45
+2	2025-01-15T10:32:00Z	optimize	batch database queries	p95_response_time	285	241	-44	-15.4%	true	pass	62
+3	2025-01-15T10:34:00Z	optimize	add connection pooling	p95_response_time	241	238	-3	-1.2%	false	pass	38
+4	2025-01-15T10:36:00Z	optimize	fast-json-stringify	p95_response_time	241	198	-43	-17.8%	true	pass	51
+5	2025-01-15T10:38:00Z	fix	resolve type error in config	errors	5	3	-2	-40.0%	true	pass	12
+6	2025-01-15T10:39:00Z	fix	fix test timeout with fake timers	errors	3	2	-1	-33.3%	true	pass	18
+```
+
+### Column Definitions
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `iteration` | int | Sequential iteration number |
+| `timestamp` | ISO 8601 | When the iteration completed |
+| `skill` | string | Which skill produced this result |
+| `description` | string | One-line description of the change |
+| `metric_name` | string | Name of the metric being tracked |
+| `metric_before` | number | Metric value before the change |
+| `metric_after` | number | Metric value after the change |
+| `delta` | number | Absolute change (after - before) |
+| `delta_pct` | string | Percentage change |
+| `kept` | boolean | Whether the change was kept (true) or reverted (false) |
+| `guard_status` | string | Guard check result: `pass`, `fail:guard_name`, `skip` |
+| `duration_s` | int | How long the iteration took in seconds |
+
+### Progress Summaries
+
+After each iteration, print a compact progress summary:
+
+```
+── Optimization Progress ──────────────────────────────────────
+  Iteration:  4 / 25
+  Metric:     p95 response time
+  Current:    198ms (target: 200ms)
+  Baseline:   340ms
+  Total Δ:    -142ms (-41.8%)
+  Kept:       3 / 4
+  Trend:      ↓↓↓ (improving rapidly)
+  ETA:        Target reached! ✓
+────────────────────────────────────────────────────────────────
+```
+
+### Trend Indicators
+
+| Symbol | Meaning |
+|--------|---------|
+| `↓↓↓` or `↑↑↑` | Rapidly improving (>10% per iteration) |
+| `↓↓` or `↑↑` | Steadily improving (3-10% per iteration) |
+| `↓` or `↑` | Slowly improving (<3% per iteration) |
+| `→` | Flat (within tolerance) |
+| `↑` or `↓` (wrong direction) | Regressing |
+| `~` | Oscillating (inconsistent) |
+
+### Final Report
+
+When a loop completes (optimize, fix, debug), generate a final report:
+
+```markdown
+## Optimization Report: Rate Limiter Performance
+
+### Summary
+- **Goal:** Reduce p95 response time to under 200ms
+- **Result:** 198ms (target: 200ms) ✓ ACHIEVED
+- **Baseline:** 340ms → 198ms (-41.8% improvement)
+- **Iterations:** 4 used / 25 budgeted
+- **Duration:** 3 minutes 16 seconds
+- **Efficiency:** 75% kept (3/4 iterations)
+
+### What Worked
+1. Redis caching for user lookups (-16.2%)
+2. Batch database queries (-15.4%)
+3. Fast-json-stringify for serialization (-17.8%)
+
+### What Didn't Work
+1. Connection pooling (-1.2%, reverted — not worth complexity)
+
+### Guards
+- Tests passing: 47/47 ✓ (no regressions)
+- Coverage: 84% → 84% ✓ (maintained)
+
+### Metric Progression
+  340ms ████████████████████████████████████ baseline
+  285ms █████████████████████████████       iteration 1
+  241ms ████████████████████████            iteration 2
+  241ms ████████████████████████            iteration 3 (reverted)
+  198ms ████████████████████                iteration 4 ✓ target
+  200ms ─────────────────────               target line
+```
+
+### Archival
+
+When a cycle completes, results are archived:
+- Copy `results.tsv` to `.godmode/archive/YYYY-MM-DD-feature-name.tsv`
+- Generate final report to `.godmode/archive/YYYY-MM-DD-feature-name-report.md`
+- Clear `results.tsv` for the next cycle
+
+### Key Behaviors
+
+1. **Log every iteration** — Including reverts (they're data too)
+2. **TSV for machines, summaries for humans** — Both formats serve different needs
+3. **Trend detection** — Don't just show the number; show the trajectory
+4. **Visual progress** — Bar charts and progress summaries make it easy to scan
+5. **Archive, don't delete** — Historical data might be useful for future optimization
+
+---
+
+## Status: ITERATION 25 — Results Logging complete
