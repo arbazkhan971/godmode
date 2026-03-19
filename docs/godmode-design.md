@@ -3701,4 +3701,116 @@ A Python ML project might override:
 
 ---
 
-## Status: ITERATION 33 — Configuration Schema complete
+## 34. README.md Draft
+
+The GitHub README that sells Godmode. Designed for developers scanning quickly.
+
+```markdown
+# Godmode
+
+**Turn on Godmode for Claude Code.**
+
+Godmode is a skill plugin that gives your AI agent a complete development
+workflow — from idea to optimized, shipped product.
+
+[demo.gif placeholder — showing /godmode:think → plan → build → optimize → ship]
+
+## The Godmode Loop
+
+    THINK → BUILD → OPTIMIZE → SHIP → REPEAT
+
+Most AI tools do one thing. Godmode does the full cycle.
+
+| Phase | What happens | Skills |
+|-------|-------------|--------|
+| THINK | Brainstorm, predict outcomes, explore edge cases | think, predict, scenario |
+| BUILD | Plan tasks, TDD, parallel build, code review | plan, build, test, review |
+| OPTIMIZE | Autonomous iteration with mechanical metrics | optimize, debug, fix, secure |
+| SHIP | Pre-flight checks, deploy, verify, finalize | ship, finish |
+
+## Quick Start
+
+    claude install godmode
+    /godmode
+
+That's it. Godmode detects your project and suggests what to do next.
+
+## Feature Highlights
+
+**Structured Brainstorming**
+One question at a time. 2-3 approach proposals. Written spec output.
+Optional visual companion in your browser.
+
+**TDD Enforcement**
+Write the test first. See it fail. Then implement. Every task.
+
+**Autonomous Optimization**
+Tell it what to measure. It modifies code, measures results, keeps
+improvements, reverts failures. Git is memory. Metrics are truth.
+
+**Guard System**
+Optimize response time without breaking tests. Guards prevent regressions.
+
+**Parallel Agent Dispatch**
+Independent tasks run in parallel across agents and git worktrees.
+Model matching: Haiku for boilerplate, Sonnet for features, Opus for
+architecture.
+
+**Security Audit**
+STRIDE + OWASP + 4 red-team personas. Every finding includes the fix.
+
+**Git-as-Memory**
+Every experiment is committed. Reverts are lessons. The agent reads its
+own history to avoid repeating mistakes.
+
+**8-Phase Shipping**
+Inventory → checklist → changelog → version → build → dry-run → ship → verify.
+Supports npm, PyPI, Docker, GitHub Releases, Vercel, Cloudflare, and custom.
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `/godmode` | Auto-detect phase and suggest next skill |
+| `/godmode:think` | Brainstorm and write a spec |
+| `/godmode:predict` | Multi-persona expert evaluation |
+| `/godmode:scenario` | Edge case exploration (12 dimensions) |
+| `/godmode:plan` | Decompose spec into 2-5 min tasks |
+| `/godmode:build` | Execute plan with TDD and parallel agents |
+| `/godmode:test` | Write tests (RED-GREEN-REFACTOR) |
+| `/godmode:review` | Code review with severity levels |
+| `/godmode:optimize` | Autonomous optimization loop |
+| `/godmode:debug` | Scientific bug hunting (7 techniques) |
+| `/godmode:fix` | One fix per iteration until zero errors |
+| `/godmode:secure` | Security audit (STRIDE + OWASP) |
+| `/godmode:ship` | 8-phase shipping workflow |
+| `/godmode:finish` | Branch finalization (merge/PR/keep/discard) |
+| `/godmode:setup` | Configuration wizard |
+| `/godmode:verify` | Evidence-before-claims gate |
+
+## Pipelines
+
+    /godmode --pipeline full      # THINK → BUILD → OPTIMIZE → SHIP
+    /godmode --pipeline harden    # test → secure → fix → optimize
+    /godmode --pipeline ship      # review → secure → ship → finish
+
+## Philosophy
+
+1. **Discipline before speed** — Design before code, tests before implementation
+2. **Autonomy within constraints** — Agent works independently within guardrails
+3. **Git is memory** — Every experiment committed, every decision traceable
+
+## Built On
+
+Godmode combines the best ideas from:
+- [autoresearch](https://github.com/uditgoenka/autoresearch) — Autonomous iteration loops
+- [superpowers](https://github.com/obra/superpowers) — Structured development workflows
+
+## License
+
+MIT
+```
+
+---
+
+## Status: ITERATION 34 — README.md Draft complete
