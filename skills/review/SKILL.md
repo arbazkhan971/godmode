@@ -10,11 +10,11 @@ description: 4-agent code review. Correctness, security, performance, style. Aut
 ### 1. Gather Diff
 Run `git diff main...HEAD --stat` and `git log main..HEAD --oneline`.
 ### 2. Multi-Agent Review (4 agents, parallel)
-- **Correctness** — logic errors, edge cases, off-by-ones, null handling
+- **Correctness** — logic errors, off-by-ones, null/undefined, unhandled promise rejections, missing returns
 - **Security** — injection, auth bypass, data exposure, OWASP
-- **Performance** — N+1 queries, unnecessary re-renders, memory leaks
+- **Performance** — N+1 queries, O(n²) loops, unnecessary re-renders, unbounded growth, memory leaks
 - **Style** — naming, dead code, inconsistent patterns, missing types
-Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX`
+Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX (code snippet)`
 Severities: MUST-FIX, SHOULD-FIX, NIT.
 ### 3. Merge & Deduplicate
 Combine all findings. Remove duplicates. Sort by severity.

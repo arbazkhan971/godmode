@@ -13,10 +13,10 @@ target = user_target OR 80
 current_iteration = 0
 WHILE coverage < target:
     current_iteration += 1
-    # 1. FIND — highest-impact uncovered path (unit > integration > edge > error)
+    # 1. FIND — highest-impact uncovered path. Priority: happy path > error path > edge case > integration
     # 2. RED — write test that FAILS
-    # 3. GREEN — verify fail, then verify pass (write minimum code if needed)
-    # 4. REFACTOR — clean up, re-run all tests
+    # 3. GREEN — run test → confirm RED (fails). Write minimum code → confirm GREEN (passes).
+    # 4. REFACTOR — remove duplication in test code, re-run ALL tests (not just new one)
     # 5. COMMIT: git commit -m "test: {description}"
     # 6. MEASURE: coverage = measure_coverage()
     # 7. LOG to .godmode/test-results.tsv:

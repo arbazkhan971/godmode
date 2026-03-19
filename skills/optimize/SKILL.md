@@ -13,9 +13,9 @@ Detect test/bench/build outputs → suggest metric + verify + guard. Collect: Go
 ```
 WHILE current_round < max_rounds:
     current_round += 1
-    # 1. REVIEW — in-scope files, results.tsv (last 10), git log -10
+    # 1. REVIEW — in-scope files + results.tsv (last 10) + git log -10. Identify bottleneck.
     IF bounded AND remaining < 3: exploit > explore
-    # 2. HYPOTHESIZE — 3 independent untested changes
+    # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
     IF >5 consecutive discards: try OPPOSITE
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
     Each: ONE change → commit → guard → verify 3x median
@@ -34,5 +34,5 @@ Print: baseline → final (delta%), keeps/discards, best round.
 1. Mechanical metric only. Must output a number.
 2. One change per agent per round. Max 3 agents. Only winner kept.
 3. Never modify tests to pass optimization.
-4. +0.1% with ugly code → discard. Same metric + simpler → keep.
+4. +0.1% with added complexity → discard. Same metric + fewer lines → keep.
 5. Diminishing returns: 3 consecutive <1% keeps → radical → compound → stop.
