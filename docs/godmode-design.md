@@ -3166,4 +3166,97 @@ Events are written to `.godmode/events.jsonl` (JSON Lines format):
 
 ---
 
-## Status: ITERATION 29 — Integration Points complete
+## 30. Platform Support
+
+**Purpose:** Godmode is designed for Claude Code first, but the architecture supports other AI coding tools. This section defines the compatibility layer.
+
+### Primary Platform: Claude Code
+
+Godmode is a native Claude Code skill plugin. It uses:
+- `SKILL.md` file format (Claude Code's skill discovery)
+- `@references/` directive (Claude Code's reference loading)
+- Slash commands (`/godmode:*`)
+- Agent dispatch (via `SendMessage` / `TaskCreate` tools)
+- Git worktrees (via `EnterWorktree` / `ExitWorktree` tools)
+
+### Compatibility Matrix
+
+| Platform | Skill Discovery | Slash Commands | Agent Dispatch | Worktrees | Visual Companion |
+|----------|----------------|----------------|----------------|-----------|-----------------|
+| **Claude Code** | Native SKILL.md | Native | Native (SendMessage) | Native (EnterWorktree) | Via browser open |
+| **Cursor** | Rules file import | Chat commands | Background agents | Manual git worktree | Via browser open |
+| **Codex (OpenAI)** | System prompt injection | Chat prefix | Not supported | Manual git worktree | Not supported |
+| **OpenCode** | Plugin system | Slash commands | Not supported | Manual git worktree | Via browser open |
+| **Gemini CLI** | System prompt injection | Chat commands | Not supported | Manual git worktree | Not supported |
+
+### Adaptation Strategy
+
+For non-Claude Code platforms, provide adapter files:
+
+```
+godmode/
+├── adapters/
+│   ├── cursor/
+│   │   ├── .cursorrules          # Cursor rules file that loads Godmode skills
+│   │   └── install.sh            # Copies rules to project
+│   ├── codex/
+│   │   ├── system-prompt.md      # System prompt that includes Godmode workflows
+│   │   └── install.sh
+│   ├── opencode/
+│   │   ├── plugin.json           # OpenCode plugin manifest
+│   │   └── install.sh
+│   └── gemini/
+│       ├── system-prompt.md
+│       └── install.sh
+```
+
+### Platform-Specific Limitations
+
+**Cursor:**
+- No native SKILL.md support — workflows are injected via `.cursorrules`
+- Agent dispatch uses Cursor's background agent feature (different API)
+- Slash commands become `@godmode think` style invocations
+- All skill content must be condensed into rules format
+
+**Codex (OpenAI):**
+- No skill system — entire workflow is a system prompt
+- No agent dispatch — all work is single-threaded
+- No interactive features — Codex runs in batch mode
+- Parallel tasks degrade to sequential execution
+
+**OpenCode:**
+- Plugin system is compatible but uses different manifest format
+- No agent dispatch — single-threaded
+- Slash commands work natively
+
+**Gemini CLI:**
+- No skill system — system prompt injection only
+- No agent dispatch — single-threaded
+- Limited tool use compared to Claude Code
+
+### Core vs Platform-Specific Features
+
+| Feature | Core (all platforms) | Claude Code only |
+|---------|---------------------|-----------------|
+| Brainstorming workflow | Yes | Visual companion |
+| TDD cycle | Yes | — |
+| Optimization loop | Yes | — |
+| Git-as-memory | Yes | — |
+| Mechanical verification | Yes | — |
+| Guard system | Yes | — |
+| Parallel agent dispatch | — | Yes (native) |
+| Worktree isolation | Manual command | Automatic (tool) |
+| Skill discovery | Varies | Native |
+| Real-time visual dashboard | — | Yes |
+
+### Key Behaviors
+
+1. **Claude Code is the reference** — Design for Claude Code first, adapt for others
+2. **Core workflows are portable** — The 8-phase optimize loop works anywhere
+3. **Advanced features gracefully degrade** — No parallel dispatch? Run sequentially.
+4. **Adapters are thin** — They translate, not re-implement
+5. **Test on Claude Code first** — Other platforms are community-contributed
+
+---
+
+## Status: ITERATION 30 — Platform Support complete
