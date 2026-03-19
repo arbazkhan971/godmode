@@ -288,4 +288,91 @@ Fill in each section based on the brainstorming session.
 
 ---
 
-## Status: ITERATION 4 — Skill File Format complete
+## 5. The Orchestrator — `/godmode`
+
+The `/godmode` command is the entry point. It detects where you are in the development cycle and routes you to the right skill.
+
+### Auto-Detection Algorithm
+
+When the user types `/godmode` without a sub-command, the orchestrator inspects project state:
+
+```
+1. Check for .godmode/state.json          → Resume in-progress workflow
+2. Check git log for recent commits        → Detect current phase
+3. Check for failing tests                 → Route to /godmode:fix or /godmode:debug
+4. Check for uncommitted changes           → Route to /godmode:review or /godmode:ship
+5. Check for TODO/FIXME in codebase        → Route to /godmode:plan
+6. Check if spec exists but no code        → Route to /godmode:build
+7. Check if code exists but no tests       → Route to /godmode:test
+8. Check if code exists but no spec        → Route to /godmode:think
+9. Default                                 → Start fresh with /godmode:think
+```
+
+### State File (`.godmode/state.json`)
+
+```json
+{
+  "phase": "BUILD",
+  "active_skill": "build",
+  "iteration": 3,
+  "plan_file": ".godmode/plan.md",
+  "current_task": "task-003",
+  "metrics": {
+    "tests_passing": 42,
+    "test_coverage": 0.78,
+    "lint_errors": 0
+  },
+  "history": [
+    { "skill": "think", "completed": "2025-01-15T10:00:00Z" },
+    { "skill": "plan", "completed": "2025-01-15T10:15:00Z" },
+    { "skill": "build", "started": "2025-01-15T10:20:00Z" }
+  ]
+}
+```
+
+### Smart Routing Table
+
+| Detected State | Routed To | Reason |
+|---------------|-----------|--------|
+| No project context | `/godmode:setup` | Need to configure first |
+| Fresh start, no spec | `/godmode:think` | Start with design |
+| Spec exists, no plan | `/godmode:plan` | Decompose the spec |
+| Plan exists, tasks remain | `/godmode:build` | Execute next task |
+| All tasks done, tests pass | `/godmode:optimize` | Improve what exists |
+| Optimization plateau | `/godmode:ship` | Time to deliver |
+| Failing tests | `/godmode:fix` | Fix before continuing |
+| Security review pending | `/godmode:secure` | Audit before shipping |
+| Ready to merge | `/godmode:finish` | Finalize the branch |
+
+### User Override
+
+The user can always bypass auto-detection:
+
+```
+/godmode:think           # Force brainstorming
+/godmode:optimize        # Jump straight to optimization
+/godmode --phase BUILD   # Force a specific phase
+/godmode --reset         # Clear state, start fresh
+```
+
+### Orchestrator Output
+
+When invoked, the orchestrator prints:
+
+```
+🔍 Godmode — Analyzing project state...
+
+Phase:     BUILD (task 3 of 7)
+Last skill: /godmode:build (15 min ago)
+Tests:     42 passing, 0 failing
+Coverage:  78%
+
+→ Recommended: /godmode:build (continue task 4: "Add auth middleware")
+→ Alternatives: /godmode:test, /godmode:review
+
+Proceed with recommendation? [Y/n/choose]
+```
+
+---
+
+## Status: ITERATION 5 — Orchestrator complete
