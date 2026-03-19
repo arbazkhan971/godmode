@@ -802,4 +802,138 @@ Phase D (sequential):
 
 ---
 
-## Status: ITERATION 9 — Plan skill spec complete
+## 10. `/godmode:build` — Execute Plan Skill Spec
+
+**Origin:** Superpowers (parallel agent dispatch, TDD enforcement, code review)
+**Phase:** BUILD
+**Purpose:** Execute the plan task-by-task with TDD enforcement, parallel agent dispatch for independent tasks, and 2-stage code review.
+
+### Trigger Conditions
+
+- A plan exists with remaining tasks
+- User says "build it", "start building", "execute the plan"
+- Orchestrator routes here when plan exists and tasks remain
+- Explicitly invoked with `/godmode:build`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--task` | next | Specific task ID to execute, or "next" for auto-selection |
+| `--parallel` | true | Dispatch parallel tasks to separate agents |
+| `--tdd` | true | Enforce TDD (write test first, then implement) |
+| `--review` | true | Run 2-stage code review after each task |
+| `--continue` | false | Auto-continue to next task after completion |
+| `--model` | auto | Model for parallel agents (auto-selects based on task complexity) |
+
+### Workflow
+
+**Step 1: Select Task**
+- Read the plan from `.godmode/plan.md`
+- If `--task next`: select the next task whose dependencies are all complete
+- If parallel group has multiple ready tasks and `--parallel` is on: dispatch all of them
+
+**Step 2: Create Branch**
+- Create a git branch for the task: `godmode/task-003-rate-limiter`
+- This isolates each task's changes for clean review
+
+**Step 3: TDD Cycle (per task)**
+
+```
+RED:    Write the test first → run it → confirm it FAILS
+GREEN:  Write minimum code to pass the test → run it → confirm it PASSES
+REFACTOR: Clean up the code → run tests → confirm still PASSES
+```
+
+- The agent MUST write the test file before writing any implementation
+- The agent MUST run the test and see it fail before implementing
+- The agent MUST run the test and see it pass after implementing
+- If TDD is skipped (`--tdd false`), the agent still writes tests but doesn't enforce the RED step
+
+**Step 4: 2-Stage Code Review**
+
+*Stage 1: Self-Review*
+- The building agent reviews its own changes
+- Checks: code quality, test coverage, edge cases, naming, documentation
+- Fixes any issues found
+
+*Stage 2: Reviewer Agent*
+- Dispatch a separate agent (or the same agent in reviewer mode) to review
+- Reviewer gets: the task description, the diff, the test results
+- Reviewer produces feedback with severity levels:
+  - **BLOCK:** Must fix before merging (bugs, security issues)
+  - **WARN:** Should fix, but not blocking (style, minor improvements)
+  - **NOTE:** Optional improvement (nice-to-have)
+- BLOCK issues loop back to the building agent for fixes
+- After all BLOCKs resolved: merge task branch into working branch
+
+**Step 5: Update State**
+- Mark task as complete in `.godmode/state.json`
+- Update progress: "Task 3/7 complete"
+- Commit: `git commit -m "build: task-003 rate limiter middleware (RED-GREEN-REFACTOR)"`
+- If `--continue`: proceed to Step 1 for next task
+
+### Parallel Agent Dispatch
+
+When multiple tasks in the same parallel group are ready:
+
+```
+Main Agent (coordinator):
+  ├── Agent A → Task 003 (rate limiter)      [worktree: .godmode/worktrees/task-003]
+  ├── Agent B → Task 004 (logging)           [worktree: .godmode/worktrees/task-004]
+  └── Agent C → Task 005 (error handler)     [worktree: .godmode/worktrees/task-005]
+
+  Wait for all → Merge all → Resolve conflicts → Run full test suite
+```
+
+- Each parallel agent works in its own git worktree
+- Coordinator waits for all agents to complete
+- Coordinator merges results and resolves any conflicts
+- Full test suite runs after merge to catch integration issues
+
+### Model Selection Strategy
+
+| Task Complexity | Recommended Model | Reasoning |
+|----------------|-------------------|-----------|
+| Simple (create test, add config) | Haiku/Flash | Fast, cheap, sufficient |
+| Medium (implement feature, add endpoint) | Sonnet | Good balance |
+| Complex (architecture change, algorithm) | Opus | Needs deep reasoning |
+| Review tasks | Sonnet | Reviewing needs less creativity, more rigor |
+
+### Key Behaviors
+
+1. **Tests come first** — No implementation without a failing test
+2. **One task at a time** — Focus on one task, complete it, review it, then move on
+3. **Branch per task** — Isolation enables clean review and easy rollback
+4. **Review is not optional** — Every task gets reviewed, even if the user trusts the agent
+5. **Progress is visible** — Status updates after each task completion
+
+### Example Usage
+
+```
+User: /godmode:build --continue
+
+Agent: Starting Task 003: Add rate limit middleware
+Branch: godmode/task-003-rate-limiter
+
+[RED] Writing test: tests/rate-limiter.test.ts
+  ✗ "should return 429 after 100 requests" — FAIL (expected, no impl yet)
+
+[GREEN] Writing implementation: src/middleware/rate-limiter.ts
+  ✓ "should return 429 after 100 requests" — PASS
+  ✓ "should reset after window expires" — PASS
+  ✓ "should track per-IP limits" — PASS
+
+[REFACTOR] Cleaning up...
+  ✓ All 3 tests still passing
+
+[REVIEW Stage 1] Self-review: 0 issues found
+[REVIEW Stage 2] Reviewer: 1 WARN (add JSDoc to exported function), 0 BLOCK
+  → Applied WARN fix
+
+✅ Task 003 complete (3/7). Proceeding to Task 004...
+```
+
+---
+
+## Status: ITERATION 10 — Build skill spec complete
