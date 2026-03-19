@@ -8717,6 +8717,158 @@ Three new skills extend Godmode into production hardening — building systems t
 
 **Iterations 278-283 (6 files, 3 skills, 3 commands)**
 
+## 77. AI & LLM Development Skills
+
+### Overview
+
+Four new skills extend Godmode into the AI/LLM application development domain. These skills cover the full lifecycle of building production AI systems: prompt engineering, retrieval-augmented generation, agent development, and systematic evaluation. Together they form a cohesive toolkit for teams building LLM-powered applications.
+
+### Skill: `/godmode:prompt` — Prompt Engineering
+
+**Purpose:** Design, test, version, and optimize prompts for LLMs with production-grade rigor.
+
+**Capabilities:**
+- **Prompt design patterns:** Zero-shot, few-shot, chain-of-thought, ReAct, tree-of-thought, self-consistency, least-to-most, meta-prompting — with selection guidance based on task requirements
+- **System prompt design:** Structured 7-section system prompt template (role, task, input format, output format, constraints, examples, edge case handling)
+- **Few-shot example design:** Example selection criteria, diversity requirements, token cost analysis, and format demonstration
+- **Structured output:** JSON mode, function calling, prompt-based enforcement, and constrained decoding with validation layers and retry strategies
+- **Prompt injection prevention:** 4-layer defense model (input sanitization, prompt structure with delimiters, output validation, monitoring) with adversarial testing
+- **Prompt testing:** Test suites covering golden set, edge cases, format compliance, safety, injection resistance, consistency, regression, and performance
+- **Versioning and A/B testing:** Prompt version registry, A/B test design with traffic splits, sample size calculation, and statistical significance criteria
+- **Evaluation:** Accuracy, format compliance, safety rate, injection resistance, consistency score, latency, and cost metrics
+
+**Workflow:** Discovery -> Pattern Selection -> System Prompt Design -> Few-Shot Examples -> Reasoning Design -> Structured Output -> Injection Prevention -> Testing -> Versioning/A/B -> Artifacts
+
+**Artifacts produced:**
+- `prompts/<task>/prompt-spec.yaml` — Versioned prompt specification
+- `prompts/<task>/system-prompt.md` — System prompt content
+- `prompts/<task>/examples.yaml` — Few-shot examples
+- `prompts/<task>/tests.yaml` — Test suite
+
+**Flags:** `--pattern <name>`, `--model <name>`, `--optimize`, `--test`, `--compare <v1> <v2>`, `--harden`, `--version`, `--export`, `--json`, `--eval`
+
+### Skill: `/godmode:rag` — Retrieval-Augmented Generation
+
+**Purpose:** Build, optimize, and evaluate RAG systems from document ingestion through retrieval and generation.
+
+**Capabilities:**
+- **Embedding model selection:** Comparison matrix of OpenAI, Cohere, Voyage, BGE, GTE, E5, Nomic models with dimensions, MTEB scores, latency, cost, and context window
+- **Chunking strategies:** Fixed-size, recursive character, semantic, sentence-based, document-level, hierarchical, code-aware (AST), markdown/HTML headers, sliding window, parent-child — with parameter tuning guidance
+- **Vector store design:** Pinecone, Weaviate, Chroma, pgvector, Qdrant, Milvus, LanceDB, Elasticsearch — with selection criteria (scale, latency, filtering, multi-tenancy, cost) and index configuration (HNSW parameters, distance metrics)
+- **Ingestion pipeline:** 5-stage pipeline (load, clean, chunk, embed, index) with document loaders for PDF, HTML, Markdown, Docx, code, databases, and APIs
+- **Retrieval optimization:** Hybrid search (dense + BM25 with RRF), query preprocessing (expansion, decomposition, routing), reranking (Cohere, Voyage, BGE, ColBERT, LLM-based), advanced patterns (parent-child, contextual compression, multi-index, self-RAG, agentic RAG)
+- **Context assembly:** Token budgeting across system prompt, context, history, and output — with citation strategies (inline, footnote)
+- **Evaluation:** Retrieval metrics (hit rate, MRR, NDCG, precision, recall) and generation metrics (faithfulness, relevance, completeness, correctness, hallucination rate, citation accuracy)
+
+**Workflow:** Discovery -> Embedding Selection -> Chunking Strategy -> Vector Store -> Ingestion Pipeline -> Retrieval Optimization -> Context Assembly -> Evaluation -> Artifacts
+
+**Artifacts produced:**
+- `config/rag/<pipeline>-config.yaml` — Pipeline configuration
+- `src/rag/<pipeline>/` — Ingestion and retrieval code
+- `tests/rag/<pipeline>/eval.py` — Evaluation suite
+- `docs/rag/<pipeline>-eval-results.md` — Evaluation results report
+
+**Flags:** `--ingest <source>`, `--chunk <strategy>`, `--store <name>`, `--embed <model>`, `--eval`, `--diagnose`, `--compare`, `--reindex`, `--hybrid`, `--rerank <model>`, `--stats`
+
+### Skill: `/godmode:agent` — AI Agent Development
+
+**Purpose:** Design, build, and evaluate AI agents with structured architecture, safe tool use, and comprehensive guardrails.
+
+**Capabilities:**
+- **Agent architecture patterns:** ReAct, plan-and-execute, reflexion, multi-agent (collaboration and debate), hierarchical, state machine, router — with selection guidance based on task complexity
+- **Agent loop design:** Detailed loop templates for each pattern with termination conditions, replanning triggers, error handling, and checkpointing
+- **Tool design:** Tool inventory with specifications, risk levels (LOW/MEDIUM/HIGH/CRITICAL), typed parameters, structured returns, rate limits, side effects, and confirmation requirements
+- **Memory systems:** Working memory (context window management), conversation memory (session store with summarization), episodic memory (past task retrieval), semantic memory (learned facts), procedural memory (learned workflows)
+- **Guardrails:** 5-layer safety model — input guardrails (injection, PII, malice), execution guardrails (steps, tokens, cost, time, loop detection), tool guardrails (risk-based access control), output guardrails (PII, harmful content, hallucination), monitoring guardrails (logging, alerting, kill switch)
+- **NEVER list:** Hardcoded, non-overridable safety prohibitions for high-risk actions
+- **Multi-agent design:** Agent roster, specialization, communication graph (pipeline vs mesh), and conflict resolution
+- **Evaluation:** Task completion rate, tool selection accuracy, error recovery, safety violation rate, efficiency (steps per task), trajectory analysis
+
+**Workflow:** Discovery -> Architecture Selection -> Loop Design -> Tool Design -> Memory Design -> Guardrails -> Evaluation -> Artifacts
+
+**Artifacts produced:**
+- `config/agents/<agent>-config.yaml` — Agent configuration
+- `src/agents/<agent>/` — Agent implementation
+- `src/agents/<agent>/tools/` — Tool definitions
+- `src/agents/<agent>/guardrails.py` — Safety guardrails
+- `tests/agents/<agent>/` — Test suite
+- `docs/agents/<agent>-architecture.md` — Architecture documentation
+
+**Flags:** `--pattern <name>`, `--tools`, `--memory`, `--guardrails`, `--eval`, `--trace <task>`, `--debug`, `--multi`, `--roster`, `--optimize`, `--cost`
+
+### Skill: `/godmode:eval` — AI/LLM Evaluation
+
+**Purpose:** Evaluate, benchmark, and regression-test AI systems with statistical rigor.
+
+**Capabilities:**
+- **Evaluation dataset design:** Hand-curated golden sets, production log sampling, synthetic generation, adversarial examples, domain benchmarks, and regression sets — with quality checks (deduplication, expert review, balance, leakage detection, PII handling)
+- **Evaluation frameworks:** RAGAS, DeepEval, Promptfoo, LangSmith, Braintrust, Arize Phoenix, Humanloop, and custom frameworks — with pipeline architecture
+- **LLM-as-judge:** Scoring rubrics for correctness, relevance, faithfulness, safety, and format compliance — with judge calibration against human scores (Cohen's kappa >= 0.7), bias mitigation (position, verbosity, self-preference, anchoring)
+- **Human evaluation protocols:** Evaluator selection and training, blind evaluation, side-by-side comparison, inter-annotator agreement (Fleiss' kappa), adjudication process
+- **Benchmark creation:** Category-weighted benchmarks with baseline tracking, saturation detection, and append-only versioning
+- **Regression testing:** Production failure collection, CI/CD integration with merge blocking, comparison strategies (exact, semantic, LLM judge, assertion-based, rubric-based), and regression dashboards
+- **Statistical significance:** Paired bootstrap, McNemar's, Wilcoxon signed-rank, Mann-Whitney U tests — with sample size requirements, confidence intervals, and Bonferroni correction
+
+**Workflow:** Discovery -> Dataset Design -> Framework Selection -> LLM-as-Judge -> Human Evaluation -> Benchmark Creation -> Regression Testing -> Statistical Analysis -> Report
+
+**Artifacts produced:**
+- `evals/<system>/eval-config.yaml` — Evaluation configuration
+- `evals/<system>/dataset/` — Versioned evaluation dataset
+- `evals/<system>/judges/` — LLM judge prompts
+- `evals/<system>/regression/` — Regression test set
+- `evals/<system>/results/` — Historical results
+- `docs/evals/<system>-eval-report.md` — Evaluation report
+
+**Flags:** `--dataset`, `--judge`, `--human`, `--benchmark`, `--regression`, `--compare <a> <b>`, `--report`, `--ci`, `--calibrate`, `--significance`, `--history`, `--quick`, `--full`
+
+### Integration with Existing Skills
+
+The AI/LLM development skills form a cohesive pipeline and integrate with existing Godmode skills:
+
+```
+/godmode:think  ->  /godmode:prompt  ->  /godmode:rag  ->  /godmode:agent  ->  /godmode:eval
+     |                    |                   |                   |                   |
+  Brainstorm         Design the          Add retrieval       Build agent          Evaluate
+  the AI feature     prompts             context             with tools           everything
+```
+
+- **From `/godmode:think`:** After brainstorming an AI feature, invoke `/godmode:prompt` to design the core prompts
+- **From `/godmode:prompt` to `/godmode:rag`:** After prompt design, add retrieval context for knowledge-grounded generation
+- **From `/godmode:rag` to `/godmode:agent`:** After building RAG, wrap it in an agent with tools and memory
+- **From `/godmode:agent` to `/godmode:eval`:** After building the agent, evaluate task completion, safety, and efficiency
+- **From `/godmode:eval` back to skills:** Evaluation results drive improvements to prompts, retrieval, and agent behavior
+- **From `/godmode:ml`:** Fine-tuned models feed into prompts and agents; evaluation metrics shared
+- **From `/godmode:mlops`:** Deployed models are evaluated continuously; regression tests run in CI/CD
+- **From `/godmode:secure`:** Security audit validates agent guardrails and prompt injection defenses
+- **From `/godmode:ship`:** Ship workflow checks evaluation metrics before deployment
+
+### Design Principles for AI/LLM Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Test before shipping | No AI component goes to production without evaluation. Metrics, not vibes. |
+| 2 | Version everything | Prompts, datasets, embeddings, and eval results are versioned artifacts. |
+| 3 | Defense in depth | Prompt injection, guardrails, output validation — layer defenses, never rely on one. |
+| 4 | Evaluate the components | Measure retrieval and generation separately. Diagnose before fixing. |
+| 5 | Statistical rigor | Report significance, confidence intervals, and baselines. Do not ship on noise. |
+| 6 | Regression tests only grow | Every production failure becomes a regression test. The test set never shrinks. |
+| 7 | Safety is non-negotiable | Agent guardrails, prompt injection defenses, and output validation are not optional. |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/prompt/SKILL.md` | Skill | Prompt engineering workflow |
+| `skills/rag/SKILL.md` | Skill | RAG pipeline design and optimization |
+| `skills/agent/SKILL.md` | Skill | AI agent development workflow |
+| `skills/eval/SKILL.md` | Skill | AI/LLM evaluation and benchmarking |
+| `commands/godmode/prompt.md` | Command | Usage reference for `/godmode:prompt` |
+| `commands/godmode/rag.md` | Command | Usage reference for `/godmode:rag` |
+| `commands/godmode/agent.md` | Command | Usage reference for `/godmode:agent` |
+| `commands/godmode/eval.md` | Command | Usage reference for `/godmode:eval` |
+
+**Iterations 217-224 (8 files, 4 skills, 4 commands)**
+
 ## 95. Open Source & Community Skills
 
 Three skills for managing open source projects end-to-end: from license selection through community scaffolding to changelog automation.
@@ -9237,3 +9389,99 @@ License selection, compliance, and attribution.
 ```
 
 **Iterations 389-394 (3 skills created, 3 command files created, 1 design doc updated)**
+
+---
+
+## 90. Game & Creative Development Skills
+
+### `/godmode:gamedev` — Game Development Architecture
+
+**Purpose:** Architect, build, and optimize games across engines and frameworks with production-grade game loops, physics, asset pipelines, and performance profiling.
+
+**Core capabilities:**
+- **Architecture patterns:** Entity-Component-System (ECS) with archetype storage and system scheduling, component-based architecture (Unity MonoBehaviour, Godot Node), and scene graph hierarchies. Decision matrix comparing cache performance, iteration speed, designer-friendliness, and parallelism across patterns.
+- **Game loop design:** Fixed timestep with interpolation — physics at 60Hz deterministic, rendering at VSync with alpha blending between states. Frame time capped at 250ms to prevent spiral of death. Input polling once per frame, fixed update N times per frame, late update for camera/UI, render with interpolation.
+- **Physics & collision detection:** Three-phase pipeline — broad phase (spatial hash, quadtree, sweep-and-prune, BVH), narrow phase (AABB, circle, SAT, GJK+EPA), resolution (position correction, impulse-based velocity, iterative constraint solver). Collision layers with bitmask filtering.
+- **Asset pipeline management:** Source-to-runtime conversion for sprites (atlas), models (GLTF/GLB), textures (KTX2/Basis), audio (OGG/WebM), levels (JSON), fonts (MSDF), shaders (SPIRV). Loading strategies: eager, level-based, streaming, on-demand, predictive. Git LFS for source assets, hot-reload for development.
+- **Engine/framework selection:** Decision matrix across Unity, Unreal, Godot, Bevy, Three.js, Phaser, PixiJS, Babylon.js, PlayCanvas, Excalibur — comparing 2D/3D support, learning curve, performance, language, platform targets, cost, VR/AR, and ideal use cases.
+- **Performance optimization:** Frame budget allocation (input, physics, AI, animation, render, post-process). CPU: object pooling, spatial partitioning, LOD for logic, job systems, cache-friendly layout. GPU: draw call batching, texture atlasing, mesh LOD, frustum/occlusion culling, shader audit, resolution scaling. Memory: streaming, compression, budgets per category, leak detection. Network: delta compression, client prediction, entity interpolation.
+- **Game-specific patterns:** FSM, HFSM, and behavior trees for AI and game states. Common systems checklist: input (rebindable), camera (follow/shake/zoom), audio (spatial/layers/pooling), save/load (versioned serialization), UI, particles, tweens, events, localization, achievements, debug tools.
+
+**Invocation:** `/godmode:gamedev`, "game architecture", "game loop", "ECS", "entity component system", "collision detection", "game performance", "game engine"
+
+**Key principle:** Fixed timestep is non-negotiable for deterministic physics. Profile before optimizing — the bottleneck is never where you think. Object pooling for anything created at runtime. Separate game logic from rendering to enable headless testing, replays, and multiplayer. Budget every resource at project start and enforce continuously.
+
+---
+
+### `/godmode:animation` — Animation & Motion Design
+
+**Purpose:** Create, audit, and optimize web animations with CSS, Framer Motion, GSAP, and Lottie, ensuring performance, accessibility, and cohesive motion design.
+
+**Core capabilities:**
+- **CSS animation foundations:** Transitions for state changes (hover, focus, toggle) with timing guide per interaction type. Keyframe animations for multi-step and looping effects. CSS scroll-driven animations (animation-timeline: scroll()/view()) for native scroll-linked motion. Easing reference: ease-out for entering, ease-in for exiting, spring overshoot via cubic-bezier.
+- **Animation library selection:** Decision matrix across Framer Motion, GSAP, Lottie, and CSS-only — comparing React integration, bundle size, spring physics, gesture support, layout animation, SVG, scroll-driven, timeline, performance, designer handoff, and licensing.
+- **Framer Motion patterns:** AnimatePresence for enter/exit, staggered lists with variants, layout animations with layoutId for shared elements, whileInView for scroll-triggered, whileHover/whileTap for gestures, drag with constraints and velocity-based swipe detection.
+- **GSAP patterns:** Basic tweens, choreographed timelines with overlap control, ScrollTrigger with scrub/pin/markers, stagger with distribution control, DrawSVG for path animation, SplitText for character-level text animation.
+- **Lottie integration:** lottie-react and lottie-web setup, playback control, dotLottie compression (50-80% smaller), optimization guidelines (layer limits, keyframe limits, renderer selection).
+- **Page transitions & micro-interactions:** Transition patterns (crossfade, slide, shared element, cover, zoom, stagger reveal). View Transition API for modern browsers. Micro-interaction catalog for buttons, form fields, toggles, navigation, and feedback.
+- **Performance optimization:** Compositor-only properties (transform, opacity) mandatory. will-change applied sparingly and removed after animation. requestAnimationFrame for JS animations. Layout thrashing prevention. contain:layout paint for animated containers. GPU compositing diagnosis via DevTools.
+- **Reduced motion accessibility:** prefers-reduced-motion media query (global), parallax and auto-play disabled, page transitions simplified, loading spinners kept (functional), user toggle in app settings, tested with OS reduced motion enabled.
+
+**Invocation:** `/godmode:animation`, "animate", "motion design", "page transition", "scroll animation", "micro-interaction", "Framer Motion", "GSAP", "Lottie"
+
+**Key principle:** CSS first, libraries second — most hover effects and toggles need zero JavaScript. Compositor-only properties (transform, opacity) are mandatory for 60 FPS. Reduced motion is not optional — it is an accessibility requirement. Exit animations should be faster than entrances. Every animation must serve a UX purpose: indicate state, guide attention, provide feedback, or communicate spatial relationships.
+
+---
+
+### `/godmode:three` — 3D Web Development
+
+**Purpose:** Build, optimize, and ship 3D web experiences with Three.js, React Three Fiber, WebGL/WebGPU, custom shaders, and WebXR for VR/AR.
+
+**Core capabilities:**
+- **Three.js / React Three Fiber architecture:** Scene setup with renderer configuration (antialias, pixel ratio capped at 2, color space, tone mapping, shadows). R3F declarative scene graph with Canvas, useFrame, useThree, useLoader, drei helpers. Component patterns with refs, per-frame updates, pointer events, and Suspense-based loading.
+- **WebGL/WebGPU fundamentals:** Rendering pipeline (vertex shader, rasterization, fragment shader, depth test, blending). WebGL 2 vs WebGPU comparison: GLSL vs WGSL, compute shaders, multi-threaded command buffers, bind groups, browser support. Selection guidance based on requirements.
+- **3D asset optimization:** GLTF optimization pipeline with gltf-transform — cleanup, mesh simplification, Draco compression (80-90% geometry savings), Meshopt (GPU-decodable), KTX2/Basis texture compression (75% GPU memory savings), GLB packing, gzip transfer. Texture format guide per map type. Size budgets for mobile and desktop.
+- **Shader programming:** Vertex and fragment shader fundamentals with Three.js ShaderMaterial. Uniform management and animation loop integration. Common techniques: UV scrolling, Fresnel, noise, normal mapping, dissolve, toon shading, screen-space effects, ray marching, PBR custom, instanced shaders. R3F integration with drei shaderMaterial helper.
+- **Lighting & materials:** Light type reference (ambient, directional, point, spot, hemisphere, rect area, environment map) with shadow cost and use cases. Three-point and environment-based lighting setups. PBR material property guide with real-world references (plastic, metal, wood, glass, ceramic, fabric, water).
+- **VR/AR web experiences (WebXR):** Session types (immersive-vr, immersive-ar, inline). Three.js XR setup with VRButton/ARButton. R3F XR via @react-three/xr with Controllers, Hands, and interaction hooks. Checklist: feature detection, fallback, locomotion, controller/hand models, hit testing, foveated rendering, stereo rendering, accessibility.
+- **Performance optimization:** Geometry (LOD, instancing, merged static geometry, frustum/occlusion culling). Textures (KTX2, power-of-2, mipmaps, max 2048). Materials (sharing, transparency avoidance). Draw call budgets (mobile <50, desktop <200). Shadows (map size, cascade, bias, baking). Post-processing (resolution scaling, pass limits, FXAA). Monitoring with renderer.info and r3f-perf.
+
+**Invocation:** `/godmode:three`, "three.js", "react three fiber", "R3F", "3D web", "WebGL", "WebGPU", "WebXR", "shader", "GLTF", "3D"
+
+**Key principle:** GLTF is the standard for web 3D — use GLB for all assets. Compress everything: Draco for geometry, KTX2 for textures, gzip for transfer. Dispose resources explicitly or leak GPU memory. Cap pixel ratio at 2. Use instancing for repeated geometry. Test on mobile — desktop GPUs are 10-50x more powerful.
+
+---
+
+### Integration with Existing Skills
+
+```
+/godmode:gamedev  ->  /godmode:three  ->  /godmode:animation
+     |                     |                     |
+  Game architecture   3D rendering        Motion polish
+
+/godmode:three  ->  /godmode:perf  ->  /godmode:ship
+     |                   |                  |
+  3D scene          Profile FPS        Deploy to web
+
+/godmode:animation  ->  /godmode:a11y  ->  /godmode:ship
+     |                       |                  |
+  Motion design       Reduced motion      Ship accessible
+```
+
+- **From `/godmode:gamedev` to `/godmode:three`:** Game architecture defines the systems; Three.js implements the 3D rendering layer. ECS or scene graph architecture maps directly to Three.js scene management.
+- **From `/godmode:three` to `/godmode:animation`:** 3D scene structure is built first; animation adds motion, transitions, and interaction polish to the 3D experience.
+- **From `/godmode:animation` to `/godmode:a11y`:** Motion design implements animations; accessibility audit ensures all animations respect prefers-reduced-motion and do not cause vestibular issues.
+- **From `/godmode:gamedev` to `/godmode:perf`:** Game performance profiling with frame timing analysis. Perf skill provides CPU/memory profiling that complements game-specific GPU profiling.
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/gamedev/SKILL.md` | Skill | Game development architecture workflow |
+| `skills/animation/SKILL.md` | Skill | Animation and motion design workflow |
+| `skills/three/SKILL.md` | Skill | 3D web development workflow |
+| `commands/godmode/gamedev.md` | Command | Usage reference for `/godmode:gamedev` |
+| `commands/godmode/animation.md` | Command | Usage reference for `/godmode:animation` |
+| `commands/godmode/three.md` | Command | Usage reference for `/godmode:three` |
+
+**Iterations 332-337 (3 skills created, 3 command files created, 1 design doc updated)**
