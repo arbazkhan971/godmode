@@ -1,6 +1,6 @@
 # AGENTS.md — Godmode for AI Coding Agents
 
-Godmode is a skill plugin with 153 specialized skills that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
+Godmode is a skill plugin with 165 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
 
 ## Core Workflow: The Godmode Loop
 
@@ -34,7 +34,31 @@ Example: if the user says `/godmode:secure`, read `./skills/secure/SKILL.md` and
 
 If the user says `/godmode` without a specific skill, read `./skills/godmode/SKILL.md` — the orchestrator will detect the right phase and route to the appropriate skills.
 
-## Skill Catalog (153 Skills)
+## Subagents (7 Built-in)
+
+Godmode ships with 7 specialized subagents. Spawn them for complex tasks that benefit from parallel execution.
+
+| Agent | Role | Mode |
+|-------|------|------|
+| **planner** | Decomposes goals into parallel tasks, maps each to a skill, builds dependency graph | Read-only |
+| **builder** | Executes implementation tasks following a skill's workflow exactly | Read-write |
+| **reviewer** | Reviews code for correctness, security, and skill adherence | Read-only |
+| **optimizer** | Runs the autonomous measure → modify → verify → keep/revert loop | Read-write |
+| **explorer** | Maps codebase structure, traces code paths, gathers context | Read-only |
+| **security** | STRIDE + OWASP security audit with code evidence | Read-only |
+| **tester** | Writes unit/integration/e2e tests following TDD | Read-write |
+
+**Agent definitions:** `agents/*.md` (Claude Code), `.codex/agents/*.toml` (Codex)
+
+**Usage pattern:**
+1. Spawn `planner` to decompose a goal into rounds of parallel tasks
+2. Spawn `explorer` to map the codebase before builders start
+3. Spawn multiple `builder` agents in parallel (one per task, each following a skill)
+4. Spawn `reviewer` to check each builder's work
+5. Spawn `optimizer` to improve the merged result
+6. Spawn `security` for a final audit before shipping
+
+## Skill Catalog (165 Skills)
 
 | Skill | Description |
 |-------|-------------|

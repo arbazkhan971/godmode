@@ -21,7 +21,7 @@ When a skill says "use Read to examine the file," use `read_file`. When it says 
 
 ## How to Use Skills
 
-Godmode has **153 skills**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
+Godmode has **165 skills** and **7 subagents**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
 
 **When a user invokes a skill** (e.g., `/godmode:secure`), read the full skill file before executing:
 ```
@@ -34,7 +34,23 @@ Then follow that skill's workflow exactly.
 read_file("./skills/<skill-name>/SKILL.md")
 ```
 
-## Skill Catalog (153 skills)
+## Subagents (7 Built-in)
+
+Godmode ships with 7 specialized agents. For complex tasks, use the planner to decompose, then dispatch builders in parallel.
+
+| Agent | Role | Read agents/*.md for full instructions |
+|---|---|---|
+| **planner** | Decomposes goals → parallel tasks mapped to skills | `read_file("./agents/planner.md")` |
+| **builder** | Implements a task following a skill workflow | `read_file("./agents/builder.md")` |
+| **reviewer** | Reviews code for correctness + security | `read_file("./agents/reviewer.md")` |
+| **optimizer** | Autonomous measure → modify → verify loop | `read_file("./agents/optimizer.md")` |
+| **explorer** | Read-only codebase recon | `read_file("./agents/explorer.md")` |
+| **security** | STRIDE + OWASP audit | `read_file("./agents/security.md")` |
+| **tester** | TDD test generation | `read_file("./agents/tester.md")` |
+
+Note: Gemini CLI does not support parallel subagent dispatch. Execute agent roles sequentially: plan → explore → build → review → optimize.
+
+## Skill Catalog (165 skills)
 
 | Skill | Description |
 |---|---|
