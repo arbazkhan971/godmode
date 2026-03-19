@@ -5950,6 +5950,112 @@ The following artifacts have been created as production-ready implementations:
 
 ---
 
+## 53. Frontend & UI Skills
+
+Three new skills extend Godmode's capabilities into frontend quality, visual consistency, and UI architecture.
+
+### 53.1 Accessibility Testing & Auditing (`/godmode:a11y`)
+
+**Purpose:** Ensure WCAG 2.1 AA/AAA compliance through automated scanning and manual audit.
+
+**Workflow:**
+1. Define audit scope (pages, components, interactive flows)
+2. Run automated scanners (Axe-core, Pa11y, Lighthouse accessibility)
+3. Execute WCAG 2.1 manual checklist across all four principles:
+   - **Perceivable** — text alternatives, color contrast (4.5:1 AA, 7:1 AAA), adaptable content
+   - **Operable** — keyboard navigation, no traps, skip links, focus visibility, touch targets
+   - **Understandable** — lang attributes, predictable behavior, input assistance, error messages
+   - **Robust** — valid HTML, correct ARIA roles/states/properties, assistive technology compatibility
+4. Deep-dive color contrast analysis (every foreground/background pair)
+5. Keyboard navigation audit (tab order, keyboard patterns per component type)
+6. Screen reader testing (landmarks, headings, form labels, live regions, dynamic content)
+7. Auto-fix common issues (missing alt, orphaned labels, heading gaps, lang attribute)
+8. Produce findings with severity, WCAG criterion, code evidence, and remediation
+
+**Severity model:** CRITICAL (complete blocker for AT users), HIGH (significant barrier), MEDIUM (degraded experience), LOW (minor inconvenience).
+
+**Verdict:** PASS (no CRITICAL/HIGH, Lighthouse >= 90), CONDITIONAL PASS (no CRITICAL, HIGH with mitigation plan), FAIL (any CRITICAL or Lighthouse < 70).
+
+**Integration points:**
+- Pre-ship gate in `/godmode:ship`
+- Post-build check after UI changes
+- Storybook addon validation via `/godmode:ui`
+
+**Flags:** `--aaa`, `--component <name>`, `--page <url>`, `--contrast-only`, `--keyboard-only`, `--screen-reader`, `--fix`, `--ci`
+
+### 53.2 Visual Regression Testing (`/godmode:visual`)
+
+**Purpose:** Detect unintended visual changes through screenshot comparison, cross-browser testing, and design compliance validation.
+
+**Workflow:**
+1. Assess visual testing infrastructure (Playwright, BackstopJS, Chromatic, Percy)
+2. Identify components under test with variant/state/breakpoint matrix
+3. Capture baseline screenshots or load existing baselines
+4. Run pixel-level visual diff against baselines with configurable threshold (default 1%)
+5. Cross-browser comparison (Chromium, Firefox, WebKit) — flag unexpected rendering differences
+6. Responsive breakpoint testing (320px through 1920px) — catch layout breaks
+7. Design compliance validation (token usage vs hardcoded values, spacing, colors, typography)
+8. Produce diff report with before/after screenshots and root cause analysis
+
+**Threshold model:** 0-1% diff = PASS, 1-5% diff = REVIEW, >5% diff = FAIL. Dimension mismatches always fail.
+
+**Verdict:** PASS (all within threshold), REVIEW NEEDED (minor changes require human confirmation), FAIL (significant unexpected regressions).
+
+**Integration points:**
+- Pre-ship gate for UI-heavy projects
+- Post-CSS-refactor validation
+- Design system update verification
+- CI pipeline with exit code on failure
+
+**Flags:** `--changed-only`, `--component <name>`, `--browser <name>`, `--breakpoint <width>`, `--update-baselines`, `--design-check`, `--threshold <N>`, `--ci`
+
+### 53.3 UI Component Architecture (`/godmode:ui`)
+
+**Purpose:** Analyze and improve component library design, design system consistency, Storybook integration, and CSS architecture.
+
+**Workflow:**
+1. Analyze current UI architecture (framework, styling, component count, Storybook status)
+2. Audit component composition using Atomic Design hierarchy (atoms, molecules, organisms, templates, pages)
+3. Evaluate CSS architecture fit (CSS Modules vs Tailwind vs CSS-in-JS vs SCSS) with decision matrix
+4. Audit design token coverage — detect hardcoded colors, spacing, z-index, shadows
+5. Assess Storybook coverage (stories, docs, controls, a11y addon per component)
+6. Validate component quality (typing, ref forwarding, display names, loading/error/empty states)
+7. Enforce naming conventions and API consistency (variant, size, children, on<Event>)
+8. Auto-fix common violations (token replacement, ref forwarding, display names)
+9. Generate component scaffolding with all standard files
+
+**Design token audit:** Scans for hardcoded values that should use tokens. Reports violations by category (colors, typography, spacing, border-radius, shadows, z-index, transitions).
+
+**CSS architecture recommendation:** Based on project context (framework, SSR requirements, team size, theming needs), recommends the optimal CSS approach with justification.
+
+**Storybook audit:** Measures coverage across stories, autodocs, controls, and a11y addon. Components without stories are flagged.
+
+**Integration points:**
+- Feeds into `/godmode:a11y` for accessibility validation
+- Feeds into `/godmode:visual` for visual regression baselines
+- Component generation via `--generate <name>`
+- Design system initialization via `--init`
+
+**Flags:** `--component <name>`, `--tokens`, `--storybook`, `--css-decision`, `--structure`, `--patterns`, `--fix`, `--init`, `--generate <name>`
+
+### 53.4 Skill Interactions
+
+The three Frontend & UI skills form a quality pipeline:
+
+```
+/godmode:ui ──→ /godmode:a11y ──→ /godmode:visual ──→ /godmode:ship
+(architecture)   (accessibility)    (visual fidelity)   (deployment)
+```
+
+- **UI** establishes the component structure and design system
+- **A11y** ensures every component is accessible
+- **Visual** ensures every component renders correctly across browsers
+- **Ship** uses all three as pre-flight quality gates
+
+Each skill can run independently or as part of the pipeline. The orchestrator (`/godmode`) routes to the appropriate skill based on context.
+
+---
+
 ## 52. API Design & Integration Skills
 
 ### Overview
