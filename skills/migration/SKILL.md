@@ -1,0 +1,615 @@
+---
+name: migration
+description: |
+  System migration skill. Activates when a developer needs to plan or execute large-scale technology migrations: language/framework transitions (JS to TS, REST to GraphQL, monolith to microservices), data migrations with zero downtime, strangler fig pattern implementation, parallel run verification, and rollback planning. Distinct from /godmode:migrate (database schema changes) — this skill handles system-level architecture migrations. Triggers on: /godmode:migration, "migrate from X to Y", "convert to TypeScript", "move to microservices", "rewrite in", "modernize the stack", or when a project needs systematic technology transition planning.
+---
+
+# Migration -- System Migration & Technology Transition
+
+## When to Activate
+- User invokes `/godmode:migration`
+- User says "migrate from X to Y", "convert to TypeScript", "move to microservices"
+- User says "rewrite the API in Go", "switch from REST to GraphQL"
+- User says "break up the monolith", "modernize the stack"
+- User says "upgrade from React 17 to 19", "move from CRA to Vite"
+- User needs zero-downtime data migration between systems
+- Project requires gradual technology transition without stopping development
+- User says "strangler fig", "parallel run", "feature flag migration"
+
+## Workflow
+
+### Step 1: Migration Assessment
+Identify the current state, target state, and constraints:
+
+```
+MIGRATION ASSESSMENT:
++---------------------------------------------------------+
+|  Source State:                                            |
+|    Language/Framework: <current tech stack>               |
+|    Architecture:       <monolith | modular monolith |    |
+|                         microservices | serverless>       |
+|    Data stores:        <databases, caches, queues>       |
+|    Code size:          <files, LOC, modules>             |
+|    Test coverage:      <percentage, if known>            |
+|    Team size:          <number of developers>            |
++---------------------------------------------------------+
+|  Target State:                                           |
+|    Language/Framework: <target tech stack>                |
+|    Architecture:       <target architecture>              |
+|    Rationale:          <why migrate>                      |
++---------------------------------------------------------+
+|  Constraints:                                            |
+|    Downtime budget:    <zero | minutes | hours | days>   |
+|    Timeline:           <weeks, months, quarters>         |
+|    Parallel dev:       <must continue shipping features> |
+|    Data volume:        <size of data to migrate>         |
+|    Compliance:         <regulatory requirements>         |
++---------------------------------------------------------+
+```
+
+Classification of migration types:
+```
+MIGRATION TYPE CLASSIFICATION:
++---------------------------------------------------------+
+|  Type                    | Examples                      |
+|  --------------------------------------------------------|
+|  Language migration      | JS -> TS, Python 2 -> 3,     |
+|                          | Java -> Kotlin                |
+|  --------------------------------------------------------|
+|  Framework migration     | Express -> Fastify,           |
+|                          | CRA -> Vite, Angular -> React |
+|  --------------------------------------------------------|
+|  API paradigm migration  | REST -> GraphQL,              |
+|                          | REST -> gRPC, SOAP -> REST    |
+|  --------------------------------------------------------|
+|  Architecture migration  | Monolith -> microservices,    |
+|                          | Monolith -> modular monolith, |
+|                          | Server -> serverless           |
+|  --------------------------------------------------------|
+|  Data migration          | PostgreSQL -> Aurora,         |
+|                          | MongoDB -> PostgreSQL,        |
+|                          | On-prem -> cloud              |
+|  --------------------------------------------------------|
+|  Infrastructure migration| Heroku -> AWS, VMs -> K8s,   |
+|                          | Self-hosted -> managed        |
++---------------------------------------------------------+
+```
+
+### Step 2: Migration Strategy Selection
+Choose the appropriate migration strategy based on type and constraints:
+
+#### Strategy: Big Bang
+```
+BIG BANG MIGRATION:
++---------------------------------------------------------+
+|  How:     Rewrite everything at once, switch over        |
+|  When:    Small codebase, low traffic, acceptable        |
+|           downtime, clean break needed                    |
+|  Risk:    HIGH — all-or-nothing, no gradual rollback     |
+|  Timeline: Short but concentrated                        |
++---------------------------------------------------------+
+|  Steps:                                                  |
+|  1. Build new system in parallel                         |
+|  2. Freeze feature development on old system             |
+|  3. Migrate all data in a maintenance window             |
+|  4. Switch DNS/routing to new system                     |
+|  5. Verify and monitor                                   |
+|  6. Decommission old system after stability period       |
++---------------------------------------------------------+
+|  AVOID WHEN:                                             |
+|  - Codebase > 50K LOC                                   |
+|  - Zero-downtime requirement                            |
+|  - Must continue shipping features during migration     |
+|  - Team cannot dedicate 100% to migration               |
++---------------------------------------------------------+
+```
+
+#### Strategy: Strangler Fig
+```
+STRANGLER FIG PATTERN:
++---------------------------------------------------------+
+|  How:     Incrementally replace old system piece by      |
+|           piece, routing traffic through a facade        |
+|  When:    Large codebase, zero-downtime, must continue   |
+|           shipping features alongside migration          |
+|  Risk:    LOW — each piece is independently deployable   |
+|           and reversible                                 |
+|  Timeline: Long but sustainable                          |
++---------------------------------------------------------+
+|                                                          |
+|  Phase 1: Facade                                        |
+|  +---------+     +---------+                             |
+|  | Client  | --> | Facade  | --> | Old System |          |
+|  +---------+     +---------+     +------------+          |
+|                                                          |
+|  Phase 2: Partial migration                              |
+|  +---------+     +---------+     +------------+          |
+|  | Client  | --> | Facade  | --> | Old System |          |
+|  +---------+     +---------+     +------------+          |
+|                      |                                   |
+|                      +---------> | New System |          |
+|                                  +------------+          |
+|                                  (feature A, B)          |
+|                                                          |
+|  Phase 3: Mostly migrated                                |
+|  +---------+     +---------+     +------------+          |
+|  | Client  | --> | Facade  | --> | Old System |          |
+|  +---------+     +---------+     +------------+          |
+|                      |           (feature Z only)        |
+|                      +---------> | New System |          |
+|                                  +------------+          |
+|                                  (A, B, C, ..., Y)       |
+|                                                          |
+|  Phase 4: Complete                                       |
+|  +---------+     +------------+                          |
+|  | Client  | --> | New System |                          |
+|  +---------+     +------------+                          |
+|                  (facade removed, old system             |
+|                   decommissioned)                         |
++---------------------------------------------------------+
+```
+
+#### Strategy: Parallel Run
+```
+PARALLEL RUN:
++---------------------------------------------------------+
+|  How:     Run old and new systems simultaneously,        |
+|           compare outputs, switch when confident         |
+|  When:    Data integrity critical, need to verify        |
+|           correctness before switching                   |
+|  Risk:    MEDIUM — double infrastructure cost, but       |
+|           high confidence in correctness                 |
++---------------------------------------------------------+
+|  Steps:                                                  |
+|  1. Build new system alongside old                       |
+|  2. Send traffic to BOTH systems (shadow traffic or      |
+|     dual-write)                                          |
+|  3. Compare outputs/results automatically                |
+|  4. Fix discrepancies until match rate > 99.9%           |
+|  5. Switch primary to new system                         |
+|  6. Keep old system as fallback for N days               |
+|  7. Decommission old system                              |
++---------------------------------------------------------+
+```
+
+#### Strategy: Branch by Abstraction
+```
+BRANCH BY ABSTRACTION:
++---------------------------------------------------------+
+|  How:     Introduce abstraction layer, swap              |
+|           implementation behind it                       |
+|  When:    Internal component replacement, same API       |
+|           contract, feature-flag controlled               |
+|  Risk:    LOW — abstraction isolates change              |
++---------------------------------------------------------+
+|  Steps:                                                  |
+|  1. Create abstraction layer (interface/adapter)         |
+|  2. Route existing code through abstraction              |
+|  3. Build new implementation behind same abstraction     |
+|  4. Feature flag between old and new implementation      |
+|  5. Gradually roll out new implementation                |
+|  6. Remove old implementation and abstraction layer      |
++---------------------------------------------------------+
+```
+
+### Step 3: Language/Framework Migration Planning
+
+For JS -> TS, Python 2 -> 3, React class -> hooks, etc.:
+
+#### TypeScript Migration (JS -> TS)
+```
+JS -> TS MIGRATION PLAN:
++---------------------------------------------------------+
+|  Phase 1: Setup (Day 1)                                  |
+|  - Install typescript, @types/* packages                 |
+|  - Create tsconfig.json with allowJs: true               |
+|  - Configure strict: false initially                     |
+|  - Add ts-check to build pipeline                        |
++---------------------------------------------------------+
+|  Phase 2: Incremental conversion (Ongoing)               |
+|  - Rename .js -> .ts one file at a time                  |
+|  - Start with leaf modules (no dependents)               |
+|  - Add types to function signatures                      |
+|  - Use 'any' as escape hatch, track with lint rule       |
+|  - Convert test files alongside source files             |
+|                                                          |
+|  Conversion order:                                       |
+|    1. Shared types/interfaces (create types/ directory)  |
+|    2. Utility functions (pure functions, easy to type)   |
+|    3. Data models / entities                             |
+|    4. Services / business logic                          |
+|    5. Controllers / route handlers                       |
+|    6. Middleware                                          |
+|    7. Configuration files                                |
+|    8. Entry points (index.ts, server.ts)                 |
++---------------------------------------------------------+
+|  Phase 3: Strictness ramp-up                             |
+|  - Enable strict: true                                   |
+|  - Enable noImplicitAny                                  |
+|  - Enable strictNullChecks                               |
+|  - Replace all 'any' with proper types                   |
+|  - Add eslint rule: @typescript-eslint/no-explicit-any   |
++---------------------------------------------------------+
+|  Phase 4: Cleanup                                        |
+|  - Remove allowJs: true                                  |
+|  - Remove all @ts-ignore comments                        |
+|  - Full type coverage audit                              |
++---------------------------------------------------------+
+
+TRACKING:
+  Total files:        <N>
+  Converted:          <N> (<percentage>%)
+  Remaining:          <N>
+  'any' count:        <N> (target: 0)
+```
+
+#### REST -> GraphQL Migration
+```
+REST -> GRAPHQL MIGRATION PLAN:
++---------------------------------------------------------+
+|  Phase 1: GraphQL alongside REST                         |
+|  - Add GraphQL server (Apollo, Mercurius, etc.)          |
+|  - Create schema types matching existing REST responses  |
+|  - Resolvers call existing service layer                 |
+|  - Both REST and GraphQL serve the same data             |
++---------------------------------------------------------+
+|  Phase 2: Client migration                               |
+|  - Migrate one client feature at a time to GraphQL      |
+|  - REST endpoints remain available                       |
+|  - Track which endpoints are still called via REST       |
++---------------------------------------------------------+
+|  Phase 3: REST deprecation                               |
+|  - Add deprecation headers to REST endpoints             |
+|  - Log REST usage to find remaining consumers            |
+|  - Notify consumers of migration timeline                |
++---------------------------------------------------------+
+|  Phase 4: REST removal                                   |
+|  - Remove REST endpoints with zero traffic               |
+|  - Keep REST for external/public APIs if needed          |
+|  - Clean up dual-serving code                            |
++---------------------------------------------------------+
+```
+
+#### Monolith -> Microservices Migration
+```
+MONOLITH -> MICROSERVICES PLAN:
++---------------------------------------------------------+
+|  Phase 0: Prepare the monolith                           |
+|  - Identify bounded contexts (DDD analysis)              |
+|  - Draw dependency graph between modules                 |
+|  - Introduce module boundaries (interfaces, not direct   |
+|    function calls)                                       |
+|  - Add integration tests at module boundaries            |
++---------------------------------------------------------+
+|  Phase 1: Extract first service (pick the easiest)       |
+|  - Choose a module with minimal dependencies             |
+|  - Create service with its own repo, CI/CD, database     |
+|  - Implement API (REST/gRPC) matching module interface   |
+|  - Deploy behind feature flag                            |
+|  - Parallel run: monolith module + new service           |
+|  - Compare outputs, fix discrepancies                    |
+|  - Switch traffic to new service                         |
+|  - Remove module from monolith                           |
++---------------------------------------------------------+
+|  Phase 2: Extract next service (repeat)                  |
+|  - Each extraction gets easier as patterns emerge        |
+|  - Establish service templates and shared libraries      |
+|  - Build out infrastructure (service mesh, observability)|
++---------------------------------------------------------+
+|  Phase N: Decommission monolith                          |
+|  - Last module extracted                                 |
+|  - Monolith becomes thin routing layer, then removed     |
++---------------------------------------------------------+
+
+EXTRACTION ORDER (by risk):
+  1. Stateless services first (notifications, email)
+  2. Read-heavy services next (search, reporting)
+  3. Write-heavy services (core business logic) last
+  4. Shared data services (auth, user management) very last
+```
+
+### Step 4: Data Migration with Zero Downtime
+
+For migrating data between systems without downtime:
+
+```
+ZERO-DOWNTIME DATA MIGRATION:
++---------------------------------------------------------+
+|  Phase 1: Dual-write                                     |
+|  - Application writes to BOTH old and new data stores   |
+|  - Old store remains source of truth for reads           |
+|  - Verify writes land correctly in new store             |
++---------------------------------------------------------+
+|  Phase 2: Backfill                                       |
+|  - Migrate historical data from old to new store         |
+|  - Run in batches with rate limiting                     |
+|  - Track progress: migrated / total records              |
+|  - Verify data integrity after each batch                |
+|                                                          |
+|  Backfill script pattern:                                |
+|  ```                                                     |
+|  BATCH_SIZE = 1000                                       |
+|  last_id = 0                                             |
+|  while true:                                             |
+|    batch = SELECT * FROM old WHERE id > last_id          |
+|            ORDER BY id LIMIT BATCH_SIZE                  |
+|    if batch is empty: break                              |
+|    INSERT INTO new VALUES batch                          |
+|    last_id = batch[-1].id                                |
+|    log("Migrated up to id={last_id}")                    |
+|    sleep(100ms)  # rate limit                            |
+|  ```                                                     |
++---------------------------------------------------------+
+|  Phase 3: Shadow reads                                   |
+|  - Read from BOTH stores, compare results                |
+|  - Log discrepancies, do not fail requests               |
+|  - Fix discrepancies until match rate > 99.99%           |
++---------------------------------------------------------+
+|  Phase 4: Cutover                                        |
+|  - Switch reads to new store                             |
+|  - Keep dual-write for rollback safety                   |
+|  - Monitor error rates and latency                       |
++---------------------------------------------------------+
+|  Phase 5: Cleanup                                        |
+|  - Stop writing to old store                             |
+|  - Remove dual-write code                                |
+|  - Decommission old store after retention period         |
++---------------------------------------------------------+
+
+DATA INTEGRITY VERIFICATION:
+  Row count match:      old.count() == new.count()
+  Checksum match:       MD5(old.data) == MD5(new.data)
+  Spot check:           Random sample comparison (1000 rows)
+  Edge cases:           NULLs, empty strings, unicode, dates
+  Referential integrity: Foreign keys resolve correctly
+```
+
+### Step 5: Parallel Run Verification
+
+For validating correctness before full cutover:
+
+```
+PARALLEL RUN SETUP:
++---------------------------------------------------------+
+|  Traffic routing:                                        |
+|  +---------+     +-----------+     +------------+        |
+|  | Client  | --> | Router /  | --> | Old System |        |
+|  |         |     | Proxy     |     +------------+        |
+|  +---------+     |           |          |                |
+|                  |           |     (primary response)    |
+|                  |           |                            |
+|                  |           | --> +------------+         |
+|                  |           |     | New System |         |
+|                  +-----------+     +------------+         |
+|                                         |                |
+|                                    (shadow response,     |
+|                                     compared but not     |
+|                                     returned to client)  |
++---------------------------------------------------------+
+|  Comparison metrics:                                     |
+|    Response match rate:    <percentage>                   |
+|    Latency difference:     <old p99> vs <new p99>        |
+|    Error rate difference:  <old> vs <new>                |
+|    Data consistency:       <percentage of matching data> |
++---------------------------------------------------------+
+|  Confidence thresholds:                                  |
+|    Response match:   > 99.9%  -> READY for cutover      |
+|    Response match:   > 99.0%  -> INVESTIGATE mismatches  |
+|    Response match:   < 99.0%  -> NOT READY              |
++---------------------------------------------------------+
+```
+
+#### Comparison Script Template
+```python
+import json
+import logging
+from dataclasses import dataclass
+
+@dataclass
+class ComparisonResult:
+    endpoint: str
+    match: bool
+    old_status: int
+    new_status: int
+    old_latency_ms: float
+    new_latency_ms: float
+    diff: str | None = None
+
+def compare_responses(old_response, new_response) -> ComparisonResult:
+    """Compare responses from old and new systems."""
+    # Normalize responses (ignore timestamps, request IDs, etc.)
+    old_body = normalize(old_response.json())
+    new_body = normalize(new_response.json())
+
+    match = old_body == new_body
+    diff = None
+    if not match:
+        diff = compute_diff(old_body, new_body)
+
+    return ComparisonResult(
+        endpoint=old_response.url,
+        match=match,
+        old_status=old_response.status_code,
+        new_status=new_response.status_code,
+        old_latency_ms=old_response.elapsed.total_seconds() * 1000,
+        new_latency_ms=new_response.elapsed.total_seconds() * 1000,
+        diff=diff,
+    )
+```
+
+### Step 6: Rollback Planning
+
+Every migration must have a documented rollback plan:
+
+```
+ROLLBACK PLAN:
++---------------------------------------------------------+
+|  Trigger conditions (when to roll back):                 |
+|  - Error rate exceeds <threshold> for > 5 minutes        |
+|  - Latency p99 exceeds <threshold> for > 5 minutes       |
+|  - Data inconsistency detected                           |
+|  - Critical bug in new system with no quick fix          |
++---------------------------------------------------------+
+|  Rollback steps:                                         |
+|  1. Switch traffic back to old system (DNS/routing)      |
+|  2. Stop dual-writes to new system                       |
+|  3. Reconcile any data written only to new system        |
+|  4. Notify stakeholders of rollback                      |
+|  5. Post-mortem: why did the migration fail?             |
++---------------------------------------------------------+
+|  Rollback time estimate: <minutes>                       |
+|  Data reconciliation needed: <yes/no>                    |
+|  Feature flags to flip: <list>                           |
+|  Runbook location: <path>                                |
++---------------------------------------------------------+
+|  Point of no return:                                     |
+|  After <condition>, rollback is no longer possible.      |
+|  Example: "After old database is decommissioned" or      |
+|  "After old API contract is removed from consumers."     |
++---------------------------------------------------------+
+```
+
+### Step 7: Migration Tracking and Reporting
+
+```
+MIGRATION PROGRESS:
++---------------------------------------------------------+
+|  Migration:    <source> -> <target>                      |
+|  Strategy:     <big bang | strangler fig | parallel run  |
+|                 | branch by abstraction>                 |
+|  Status:       <planning | in-progress | verifying |    |
+|                 complete | rolled-back>                  |
++---------------------------------------------------------+
+|  Progress:                                               |
+|    Components migrated:  <N> / <total> (<percentage>)    |
+|    Data migrated:        <N> / <total> records           |
+|    Tests passing:        <N> / <total>                   |
+|    Parallel run match:   <percentage>                    |
++---------------------------------------------------------+
+|  Timeline:                                               |
+|    Started:     <date>                                   |
+|    Phase:       <current phase>                          |
+|    Est. complete: <date>                                 |
++---------------------------------------------------------+
+|  Risks:                                                  |
+|    - <risk 1 with mitigation>                            |
+|    - <risk 2 with mitigation>                            |
++---------------------------------------------------------+
+```
+
+Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
+
+### Step 8: Commit and Report
+
+```
+1. Save migration plan and any generated code
+2. Create tracking document at docs/migrations/<name>.md
+3. Commit: "migration: <source> -> <target> -- <phase> (<strategy>)"
+4. Report progress and next steps
+```
+
+## Key Behaviors
+
+1. **Assess before migrating.** Never start a migration without understanding the full scope: code size, dependencies, data volume, team capacity, and timeline. Underestimating scope is the number one cause of failed migrations.
+2. **Strangler fig by default.** Unless the codebase is small and downtime is acceptable, always prefer incremental migration over big bang rewrites. The strangler fig pattern allows continuous feature development alongside migration.
+3. **Parallel run for data integrity.** When data correctness is critical, run old and new systems side by side and compare outputs. Do not trust the new system until the match rate exceeds 99.9%.
+4. **Every migration is reversible.** Document the rollback plan before starting. If you cannot describe how to roll back, you are not ready to migrate forward.
+5. **Feature flags control the cutover.** Never switch traffic with a deployment. Use feature flags to control which system handles requests. Flags can be flipped instantly; deployments cannot.
+6. **Migrate tests first.** Before migrating application code, migrate or create tests. Tests are the safety net that proves the migration preserves behavior.
+7. **Track and report progress.** Large migrations span weeks or months. Without visible progress tracking, stakeholders lose confidence and teams lose momentum.
+8. **One boundary at a time.** Extract one module, one endpoint, one component at a time. Each extraction is a self-contained unit of work that can be shipped, verified, and rolled back independently.
+
+## Example Usage
+
+### TypeScript migration
+```
+User: /godmode:migration Convert our Express.js app to TypeScript
+
+Migration: Assessing project...
+
+MIGRATION ASSESSMENT:
+  Source: JavaScript (Express.js, 142 files, ~18K LOC)
+  Target: TypeScript (strict mode)
+  Strategy: Incremental conversion with allowJs
+
+JS -> TS MIGRATION PLAN:
+  Phase 1: Setup (today)
+    - Install typescript, @types/express, @types/node
+    - Create tsconfig.json with allowJs: true, strict: false
+    - Verify build works with zero changes
+
+  Phase 2: Incremental conversion
+    Conversion order (leaf-first):
+    1. src/types/ (create shared interfaces) — 0 files to convert
+    2. src/utils/ — 12 files
+    3. src/models/ — 8 files
+    4. src/services/ — 15 files
+    5. src/controllers/ — 22 files
+    6. src/middleware/ — 6 files
+    7. src/config/ — 4 files
+    8. src/index.js -> src/index.ts
+
+  Phase 3: Strict mode
+    Enable strict: true, eliminate all 'any' types
+
+  Estimated timeline: 3-4 weeks at 5 files/day
+
+Start with Phase 1 setup? [Y/n]
+```
+
+### Monolith decomposition
+```
+User: /godmode:migration Break our monolith into microservices
+
+Migration: Assessing architecture...
+
+MIGRATION ASSESSMENT:
+  Source: Node.js monolith (312 files, 45K LOC, 8 modules)
+  Target: Microservices
+  Strategy: Strangler fig (zero-downtime requirement)
+
+Bounded contexts identified:
+  1. Auth (user management, sessions) — HIGH coupling
+  2. Notifications (email, SMS, push) — LOW coupling *
+  3. Payments (billing, invoices) — MEDIUM coupling
+  4. Search (product search, indexing) — LOW coupling *
+  5. Orders (cart, checkout, fulfillment) — HIGH coupling
+  6. Inventory (stock, warehouses) — MEDIUM coupling
+  7. Reporting (analytics, exports) — LOW coupling *
+  8. Admin (dashboard, config) — MEDIUM coupling
+
+Recommended extraction order (* = good first candidates):
+  1. Notifications (fewest dependencies, stateless)
+  2. Search (read-only, can use eventual consistency)
+  3. Reporting (read-only, can tolerate stale data)
+  4. Inventory -> Payments -> Orders -> Auth -> Admin
+
+Shall I create the detailed plan for extracting Notifications first?
+```
+
+## Flags & Options
+
+| Flag | Description |
+|------|-------------|
+| (none) | Interactive migration assessment and planning |
+| `--assess` | Assessment only — analyze scope without planning |
+| `--plan` | Generate detailed migration plan |
+| `--track` | Show migration progress dashboard |
+| `--verify` | Run parallel comparison / verification |
+| `--rollback` | Execute rollback plan |
+| `--strategy <name>` | Force a specific strategy (strangler, bigbang, parallel, abstraction) |
+| `--phase <N>` | Show details for a specific migration phase |
+| `--dry-run` | Show migration plan without making changes |
+| `--report` | Generate migration progress report |
+
+## Anti-Patterns
+
+- **Do NOT start a big bang rewrite of a large system.** Rewrites that exceed 3 months almost always fail. The business cannot pause feature development that long, and requirements drift makes the rewrite a moving target.
+- **Do NOT migrate without tests.** If the old system has no tests, add characterization tests (golden master, approval tests) before migrating. Without tests, you cannot prove the migration preserves behavior.
+- **Do NOT migrate everything at once.** Extract one module, deploy it, verify it, stabilize it. Then extract the next. Trying to extract five services simultaneously creates five integration problems simultaneously.
+- **Do NOT skip the parallel run.** "It works in staging" is not sufficient proof for a data-critical migration. Run both systems in production, compare outputs, and fix discrepancies before switching.
+- **Do NOT forget the rollback plan.** Every migration step must be reversible. If you deploy the new service and it fails, you need to route traffic back to the old system within minutes, not hours.
+- **Do NOT underestimate data migration.** Data migration is always harder than code migration. Edge cases in data (NULLs, encoding issues, orphaned records, corrupted entries) will surface during migration and must be handled.
+- **Do NOT migrate the most coupled module first.** Start with the module that has the fewest dependencies. Success with the first extraction builds confidence and establishes patterns for subsequent extractions.
+- **Do NOT remove the old system too soon.** Keep the old system running as a fallback for at least 2 weeks after full cutover. Decommission only after monitoring confirms the new system is stable.
+- **Do NOT ignore the team.** A migration is a people problem as much as a technical problem. The team needs training on the new technology, clear documentation, and time to ramp up.
