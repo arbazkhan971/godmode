@@ -1,7 +1,6 @@
 ---
 name: secure
-description: |
-  Security audit. STRIDE + OWASP Top 10 + 4 red-team personas. Every finding has code evidence.
+description: Security audit. STRIDE + OWASP + 4 red-team personas. Code evidence required.
 ---
 
 # Secure — Security Audit

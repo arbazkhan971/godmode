@@ -1,7 +1,6 @@
 ---
 name: finish
-description: |
-  Branch finalization. Merge, PR, keep, or discard. Ensures clean state.
+description: Branch finalization. Merge, PR, keep, or discard.
 ---
 
 # Finish — Branch Finalization

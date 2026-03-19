@@ -1,7 +1,6 @@
 ---
 name: optimize
-description: |
-  Autonomous iteration loop. Measure → modify → verify → keep/revert → repeat. 3 parallel agents per round in worktrees.
+description: Autonomous optimization loop. 3 parallel agents per round, mechanical metrics only.
 ---
 
 # Optimize — Autonomous Iteration Loop

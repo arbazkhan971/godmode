@@ -1,7 +1,6 @@
 ---
 name: review
-description: |
-  Code review. Multi-layer: correctness, security, performance, style. Structured findings with severity. Auto-fixes NITs.
+description: 4-agent code review. Correctness, security, performance, style. Auto-fixes NITs.
 ---
 
 # Review — Code Review

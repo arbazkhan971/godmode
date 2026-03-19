@@ -1,7 +1,6 @@
 ---
 name: predict
-description: |
-  Multi-persona evaluation. 5 expert personas independently assess a proposal, then consensus is synthesized.
+description: 5-persona evaluation. Independent assessment then consensus.
 ---
 
 # Predict — Multi-Persona Evaluation

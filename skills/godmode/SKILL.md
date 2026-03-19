@@ -1,7 +1,6 @@
 ---
 name: godmode
-description: |
-  Orchestrator. Routes to 126 skills. Auto-detects stack and phase. Dispatches multi-agent execution in worktrees.
+description: Orchestrator. Routes to skills, detects stack/phase, dispatches multi-agent worktrees.
 ---
 
 # Godmode — Orchestrator

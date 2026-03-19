@@ -1,7 +1,6 @@
 ---
 name: test
-description: |
-  TDD enforcement. RED-GREEN-REFACTOR. Generates tests from specs, measures coverage, loops until target met.
+description: TDD loop. RED-GREEN-REFACTOR until coverage target met.
 ---
 
 # Test — TDD Enforcement

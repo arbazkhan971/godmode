@@ -1,7 +1,6 @@
 ---
 name: scenario
-description: |
-  Edge case exploration. Stress-test a design across 12 dimensions. Score by likelihood x impact. Generate test skeletons.
+description: Edge case exploration. 12 dimensions, scored by likelihood x impact.
 ---
 
 # Scenario — Edge Case Exploration

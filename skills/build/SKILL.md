@@ -1,7 +1,6 @@
 ---
 name: build
-description: |
-  Implementation engine. Takes a plan, dispatches parallel agents in worktrees, merges, verifies.
+description: Implementation engine. Parallel agents in worktrees from plan.
 ---
 
 # Build — Implementation Engine

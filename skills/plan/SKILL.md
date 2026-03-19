@@ -1,7 +1,6 @@
 ---
 name: plan
-description: |
-  Decomposes a spec or goal into ordered tasks with file paths, dependencies, and agent assignments. Outputs YAML that build skill can parse.
+description: Decompose spec into tasks with deps, files, agents. Output .godmode/plan.yaml.
 ---
 
 # Plan — Task Decomposition

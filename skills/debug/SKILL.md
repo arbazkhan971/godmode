@@ -1,7 +1,6 @@
 ---
 name: debug
-description: |
-  Scientific debugging. Reproduce → investigate → prove root cause with evidence. Finds ALL bugs, not just one.
+description: Scientific debugging. Reproduce → investigate → prove root cause. Finds all bugs.
 ---
 
 # Debug — Scientific Bug Investigation

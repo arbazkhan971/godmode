@@ -1,7 +1,6 @@
 ---
 name: fix
-description: |
-  Autonomous error fixing. Loops until zero errors. One fix per commit, auto-revert on regression.
+description: Fix loop. One fix per commit, auto-revert on regression, until zero errors.
 ---
 
 # Fix — Autonomous Error Remediation

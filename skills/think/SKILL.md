@@ -1,7 +1,6 @@
 ---
 name: think
-description: |
-  Design and brainstorming. Explore approaches, evaluate trade-offs, produce a spec. Output: .godmode/spec.md
+description: Design session. Explore approaches, produce .godmode/spec.md.
 ---
 
 # Think — Design Session
