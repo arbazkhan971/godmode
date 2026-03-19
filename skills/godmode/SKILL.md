@@ -61,4 +61,4 @@ Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass cached stack vars.
 6. Log iterations to `.godmode/<skill>-results.tsv`, skills to `.godmode/session-log.tsv`.
 7. Stuck (>5 discards): re-read all, try opposite, try radical.
 8. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
-9. Chain auto-transitions: `think → plan → build → test → fix → optimize → secure → ship`. Skip completed.
+9. Chain: `think → plan → build → test → fix → review → optimize → secure → ship`. Auto-advance when current skill completes.

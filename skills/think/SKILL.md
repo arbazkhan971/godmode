@@ -22,7 +22,7 @@ Lead with recommendation. One sentence justification.
 Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out of Scope, Edge Cases, Files Affected. Commit: `"spec: {feature name}"`
 
 ## Rules
-1. Always produce a spec file. Think without output is wasted.
+1. Always produce `.godmode/spec.md`. Next step: `/godmode:plan` reads it.
 2. 2-3 approaches, then pick one. Not 7 options.
 3. Measurable success criteria. "Works well" is not a criterion.
 4. Scan existing code first. Don't propose conflicting patterns.
