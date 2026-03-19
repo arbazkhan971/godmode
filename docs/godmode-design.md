@@ -1926,4 +1926,122 @@ gh pr create --title "feat: add rate limiting middleware" \
 
 ---
 
-## Status: ITERATION 18 — Finish skill spec complete
+## 19. `/godmode:setup` — Configuration Wizard Skill Spec
+
+**Origin:** Autoresearch (interactive configuration with dry-run validation)
+**Phase:** META
+**Purpose:** 7-step interactive wizard that configures Godmode for the current project, with dry-run validation at each step.
+
+### Trigger Conditions
+
+- First time using Godmode in a project (no `.godmode/` directory)
+- User says "set up godmode", "configure", "initialize"
+- Orchestrator detects no project configuration
+- Explicitly invoked with `/godmode:setup`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--quick` | false | Skip optional steps, use smart defaults |
+| `--reset` | false | Re-run setup even if config exists |
+| `--template` | — | Use a preset template: `node`, `python`, `go`, `rust`, `fullstack` |
+
+### The 7 Setup Steps
+
+**Step 1: Project Detection**
+- Auto-detect project type from files:
+  - `package.json` → Node.js
+  - `pyproject.toml` / `setup.py` → Python
+  - `go.mod` → Go
+  - `Cargo.toml` → Rust
+  - `Makefile` → generic
+- Auto-detect test framework, linter, build tool
+- Present findings: "I detected a Node.js project using Vitest and ESLint. Correct?"
+
+**Step 2: Goal Definition**
+- Ask: "What are you building or improving?"
+- The answer becomes the `goal` in state — used by the orchestrator for context
+- Example: "Add rate limiting to the Express API"
+
+**Step 3: Scope Definition**
+- Ask: "Which files/directories are in scope?"
+- Auto-suggest based on project structure
+- User can narrow or expand
+- Saves to `scope` in settings — limits what the agent modifies
+
+**Step 4: Primary Metric**
+- Ask: "What does success look like, mechanically?"
+- Must be a command that outputs a measurable number
+- Examples:
+  - `npm test 2>&1 | grep 'passing' | awk '{print $1}'` → test count
+  - `wrk -t4 -c100 -d10s http://localhost:3000 | grep Latency` → response time
+  - `wc -l src/**/*.ts | tail -1 | awk '{print $1}'` → lines of code
+- **Dry-run validation:** Run the command, confirm it produces a number
+
+**Step 5: Verification Command**
+- Ask: "What command verifies everything still works?"
+- Usually the test suite: `npm test`, `pytest`, `go test ./...`
+- **Dry-run validation:** Run the command, confirm it exits 0
+
+**Step 6: Guard Metrics (optional)**
+- Ask: "Any metrics that must NOT regress?"
+- Examples: test count, coverage percentage, bundle size, response time
+- Each guard = a command + a threshold + a direction (must not go below/above)
+- **Dry-run validation:** Run each guard command, confirm baseline values
+
+**Step 7: Review & Save**
+- Display the complete configuration
+- User confirms or edits
+- Save to `.godmode/settings.json`
+- Create `.godmode/state.json` with initial state
+- Commit: `git commit -m "setup: godmode configured for [GOAL]"`
+
+### Generated Configuration
+
+```json
+// .godmode/settings.json
+{
+  "project": {
+    "type": "node",
+    "test_command": "npm test",
+    "lint_command": "npx eslint src/",
+    "build_command": "npm run build"
+  },
+  "goal": "Add rate limiting to the Express API",
+  "scope": ["src/middleware/", "src/routes/", "tests/"],
+  "metric": {
+    "name": "p95 response time",
+    "command": "wrk -t4 -c100 -d10s http://localhost:3000/api | grep '99%'",
+    "baseline": "340ms",
+    "target": "200ms",
+    "direction": "lower_is_better"
+  },
+  "verify": "npm test",
+  "guards": [
+    {
+      "name": "tests passing",
+      "command": "npm test 2>&1 | grep -c 'passing'",
+      "baseline": 42,
+      "direction": "must_not_decrease"
+    }
+  ],
+  "iterations": {
+    "optimize_max": 25,
+    "fix_max": 15,
+    "debug_max": 10
+  }
+}
+```
+
+### Key Behaviors
+
+1. **Dry-run everything** — Never save a config with commands that don't work
+2. **Smart defaults** — Detect as much as possible, ask only what's needed
+3. **Quick mode** — For experienced users who don't want 7 questions
+4. **Templates** — Pre-built configs for common project types
+5. **Re-runnable** — `--reset` lets you reconfigure without losing history
+
+---
+
+## Status: ITERATION 19 — Setup skill spec complete
