@@ -1,0 +1,352 @@
+---
+name: refactor
+description: |
+  Large-scale refactoring skill. Activates when code needs structural transformation — extracting, inlining, moving, renaming, or reorganizing code at scale. Performs impact analysis before changes, uses a pattern library of proven refactoring techniques, plans migration strategies for large changes, and verifies correctness with test suites after every transformation. Triggers on: /godmode:refactor, "refactor this", "extract", "rename", "move", "reorganize", or when /godmode:review identifies maintainability issues.
+---
+
+# Refactor — Large-Scale Code Transformation
+
+## When to Activate
+- User invokes `/godmode:refactor`
+- User says "refactor this", "clean this up", "reorganize"
+- User asks to "extract", "inline", "move", "rename" code
+- Review skill identifies maintainability score < 6/10
+- Optimize skill identifies structural issues blocking performance
+- User says "this code is messy", "tech debt", "needs cleanup"
+
+## Workflow
+
+### Step 1: Assess Refactoring Scope
+Understand what needs to change and how risky it is:
+
+```bash
+# Measure current state
+find . -name "*.ts" -o -name "*.js" -o -name "*.py" | xargs wc -l | sort -rn | head -20
+
+# Find the target code
+grep -rn "<pattern>" --include="*.ts" --include="*.js"
+
+# Check test coverage for target code
+npx jest --coverage --collectCoverageFrom="<target-path>" 2>&1 | tail -20
+
+# Check how many files import/depend on target
+grep -rl "<target-module>" --include="*.ts" --include="*.js" | wc -l
+```
+
+```
+REFACTORING ASSESSMENT:
+┌──────────────────────────────────────────────────────┐
+│  Target: <file or module>                             │
+├──────────────────┬───────────────────────────────────┤
+│  Lines of code   │  <N>                              │
+│  Complexity      │  <cyclomatic complexity if avail> │
+│  Test coverage   │  <N%>                             │
+│  Dependents      │  <N files import this>            │
+│  Dependencies    │  <N modules this imports>         │
+│  Last modified   │  <date and by whom>               │
+│  Risk level      │  <LOW | MEDIUM | HIGH | CRITICAL> │
+└──────────────────┴───────────────────────────────────┘
+```
+
+Risk assessment:
+```
+LOW:     <10 dependents, >80% test coverage, isolated module
+MEDIUM:  10-30 dependents, 50-80% test coverage
+HIGH:    30+ dependents, <50% test coverage
+CRITICAL: Core module, <30% test coverage, many dependents
+```
+
+### Step 2: Select Refactoring Pattern
+Choose from the pattern library:
+
+```
+REFACTORING PATTERN LIBRARY:
+
+EXTRACT PATTERNS:
+├── Extract Function    — Pull code block into named function
+├── Extract Class       — Split class responsibilities
+├── Extract Interface   — Define contract from implementation
+├── Extract Module      — Split file into multiple modules
+├── Extract Variable    — Name complex expressions
+└── Extract Parameter   — Make hardcoded value configurable
+
+INLINE PATTERNS:
+├── Inline Function     — Replace function with its body (too simple to be useful)
+├── Inline Variable     — Replace variable with expression (unnecessary indirection)
+└── Inline Class        — Merge class that does too little
+
+MOVE PATTERNS:
+├── Move Function       — Relocate to more appropriate module
+├── Move Field          — Relocate data to better owner
+├── Move Module         — Reorganize file/directory structure
+└── Move to Parameter   — Replace dependency with injection
+
+RENAME PATTERNS:
+├── Rename Variable     — Improve clarity
+├── Rename Function     — Better describe behavior
+├── Rename File         — Match naming conventions
+└── Rename Module       — Restructure namespace
+
+SIMPLIFY PATTERNS:
+├── Replace Conditional with Polymorphism
+├── Replace Nested Conditional with Guard Clauses
+├── Replace Loop with Pipeline (map/filter/reduce)
+├── Replace Temp with Query
+├── Replace Magic Number with Named Constant
+└── Consolidate Duplicate Conditional Fragments
+
+COMPOSITION PATTERNS:
+├── Compose Method      — Break long method into steps
+├── Replace Inheritance with Composition
+├── Introduce Parameter Object — Group related params
+├── Replace Constructor with Factory
+└── Introduce Null Object — Eliminate null checks
+
+ARCHITECTURE PATTERNS:
+├── Split Monolith Module — Break god-module into focused modules
+├── Introduce Repository Pattern — Separate data access
+├── Introduce Service Layer — Separate business logic
+├── Extract Middleware — Separate cross-cutting concerns
+└── Introduce Facade — Simplify complex subsystem interface
+```
+
+### Step 3: Impact Analysis
+Before making any changes, analyze the blast radius:
+
+```bash
+# Find all files that will be affected
+grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
+
+# Map the dependency graph
+# For each affected file, check what ELSE depends on it
+
+# Check for dynamic references (string-based imports, reflection)
+grep -rn "require.*<module>" --include="*.ts" --include="*.js"
+grep -rn "import.*<module>" --include="*.ts" --include="*.js"
+```
+
+```
+IMPACT ANALYSIS:
+┌──────────────────────────────────────────────────────────────┐
+│  Refactoring: Extract UserService from UserController        │
+├──────────────────────────────────────────────────────────────┤
+│  DIRECTLY AFFECTED:                                           │
+│  ✎ src/controllers/user.controller.ts  — extract methods     │
+│  + src/services/user.service.ts         — new file            │
+│  ✎ src/controllers/user.controller.spec.ts — update imports  │
+│  + src/services/user.service.spec.ts    — new test file       │
+│                                                               │
+│  INDIRECTLY AFFECTED:                                         │
+│  ✎ src/routes/user.routes.ts  — may need new injection       │
+│  ✎ src/middleware/auth.ts     — uses UserController method   │
+│                                                               │
+│  NOT AFFECTED:                                                │
+│  - src/controllers/product.controller.ts (no shared code)    │
+│  - src/models/ (no interface changes)                        │
+│                                                               │
+│  TOTAL: 4 files modified, 2 files created, 2 files unchanged │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Step 4: Ensure Safety Net
+Verify tests exist and pass BEFORE refactoring:
+
+```bash
+# Run all tests
+npm test 2>&1 | tail -10
+
+# Run tests specific to the target
+npx jest --testPathPattern="<target>" 2>&1
+
+# If coverage is low, write characterization tests first
+```
+
+```
+SAFETY NET:
+┌──────────────────────────────────────────────────────┐
+│  Pre-Refactoring Test Status                          │
+├──────────────────┬───────────────────────────────────┤
+│  Total tests     │  147 passing, 0 failing           │
+│  Target coverage │  78% (src/controllers/user.*)     │
+│  Gaps identified │  No test for error path line 89   │
+├──────────────────┴───────────────────────────────────┤
+│  RECOMMENDATION: Write 1 characterization test for   │
+│  the error path before proceeding                    │
+└──────────────────────────────────────────────────────┘
+```
+
+If coverage is below 60% for the target code:
+1. STOP refactoring
+2. Write characterization tests that capture current behavior
+3. Commit the tests: `"test: characterization tests for <target> before refactoring"`
+4. Then proceed with the refactoring
+
+### Step 5: Execute Refactoring
+Apply the transformation in small, verifiable steps:
+
+**Rule: One transformation per commit.** Never combine multiple refactoring patterns in a single commit.
+
+For each step:
+1. Apply the transformation
+2. Run the full test suite
+3. If tests pass, commit: `"refactor: <pattern> — <description>"`
+4. If tests fail, revert and investigate
+
+```
+EXECUTION LOG:
+Step 1: Extract getUserById, createUser, updateUser into UserService
+  → Tests: 147 passing ✓
+  → Commit: "refactor: extract UserService from UserController"
+
+Step 2: Update UserController to inject UserService
+  → Tests: 147 passing ✓
+  → Commit: "refactor: inject UserService into UserController"
+
+Step 3: Update auth middleware to use UserService directly
+  → Tests: 147 passing ✓
+  → Commit: "refactor: update auth middleware to use UserService"
+
+Step 4: Move user validation to UserService
+  → Tests: 145 passing, 2 failing ✗
+  → REVERT — validation depends on request context
+  → Revised approach: keep validation in controller, pass clean data to service
+  → Tests: 147 passing ✓
+  → Commit: "refactor: clarify validation boundary between controller and service"
+```
+
+### Step 6: Migration Strategy (for large refactors)
+For refactoring that affects many dependents, use a phased migration:
+
+```
+MIGRATION STRATEGY: Strangler Pattern
+
+Phase 1: CREATE new structure alongside old
+  - Create UserService with methods extracted from UserController
+  - Both old and new paths work
+  - Commit and deploy
+
+Phase 2: MIGRATE dependents one at a time
+  - Update auth middleware to use UserService
+  - Update admin routes to use UserService
+  - Each migration is a separate commit
+  - Tests pass after each migration
+
+Phase 3: REMOVE old code paths
+  - Delete extracted methods from UserController
+  - Remove unused imports
+  - Final cleanup commit
+
+TIMELINE:
+Phase 1: 1 commit  (foundation)
+Phase 2: 3 commits (one per dependent)
+Phase 3: 1 commit  (cleanup)
+Total:   5 commits, fully bisectable
+```
+
+### Step 7: Post-Refactoring Verification
+After all transformations are complete:
+
+```bash
+# Run full test suite
+npm test
+
+# Check that no functionality changed
+# Compare test count: should be same or higher
+# Compare coverage: should be same or higher
+
+# Verify no dead code was left behind
+npx ts-prune 2>&1 | head -20  # TypeScript
+# or equivalent for the project's language
+```
+
+```
+POST-REFACTORING REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Refactoring Complete                                 │
+├──────────────────┬───────────────────────────────────┤
+│  Pattern used    │  Extract Service                  │
+│  Commits         │  5 (all atomic, all green)        │
+│  Tests before    │  147 passing                      │
+│  Tests after     │  152 passing (+5 new)             │
+│  Coverage before │  78%                              │
+│  Coverage after  │  82%                              │
+│  Files modified  │  4                                │
+│  Files created   │  2                                │
+│  Files deleted   │  0                                │
+│  Dead code       │  None detected                    │
+│  Behavior change │  None (refactor only)             │
+└──────────────────┴───────────────────────────────────┘
+```
+
+## Key Behaviors
+
+1. **Tests MUST pass after every step.** Refactoring means changing structure without changing behavior. If tests fail, the behavior changed. Revert.
+2. **One pattern per commit.** "Extract and rename and move" is three commits, not one. Each commit should be independently revertable.
+3. **Impact analysis before touching code.** Know the blast radius before you start. Surprises during refactoring mean you didn't analyze well enough.
+4. **Low coverage = write tests first.** Never refactor code with <60% test coverage. Write characterization tests first.
+5. **Strangler over big bang.** For large refactors, migrate incrementally. Never rewrite a module in one commit.
+6. **Revert fast.** If a step breaks tests and the fix isn't obvious in 5 minutes, revert. Think more, then try again.
+
+## Example Usage
+
+### Extracting a service from a controller
+```
+User: /godmode:refactor Extract business logic from UserController into a service
+
+Refactor: Analyzing UserController...
+
+ASSESSMENT:
+- UserController: 340 lines, cyclomatic complexity 24
+- Mixed concerns: HTTP handling + business logic + validation
+- Test coverage: 78% (missing error paths)
+- 3 files depend on UserController
+
+IMPACT: 4 files affected, 2 new files
+PATTERN: Extract Service
+
+SAFETY NET: 147 tests passing, but missing error path coverage.
+I'll write 2 characterization tests first, then proceed.
+
+[Writes tests, commits]
+[Executes 5-step extraction]
+[Reports: 152 tests passing, 82% coverage, no behavior change]
+```
+
+### Renaming across codebase
+```
+User: /godmode:refactor Rename "getUser" to "findUserById" everywhere
+
+Refactor: Scanning for all references...
+
+IMPACT: 14 files reference "getUser"
+- 3 function definitions
+- 11 call sites
+- 0 dynamic/string references
+
+Executing rename...
+All 14 files updated. 147 tests passing.
+Commit: "refactor: rename getUser to findUserById (14 files)"
+```
+
+## Flags & Options
+
+| Flag | Description |
+|------|-------------|
+| (none) | Interactive refactoring with full analysis |
+| `--extract <type>` | Extract function/class/module/interface |
+| `--inline <target>` | Inline function/variable/class |
+| `--move <target> <dest>` | Move code to a new location |
+| `--rename <old> <new>` | Rename symbol across codebase |
+| `--analyze-only` | Impact analysis without making changes |
+| `--dry-run` | Show planned changes without applying them |
+| `--no-verify` | Skip pre-refactoring test verification (dangerous) |
+| `--strangler` | Use strangler pattern for incremental migration |
+
+## Anti-Patterns
+
+- **Do NOT refactor without tests.** Refactoring untested code is rewriting code while hoping nothing breaks. Write tests first.
+- **Do NOT combine refactoring with feature work.** Refactoring changes structure; features change behavior. Mixing them makes failures impossible to diagnose.
+- **Do NOT do "big bang" refactors.** A 50-file commit that "reorganizes everything" is un-reviewable and un-revertable. Small steps.
+- **Do NOT rename for style preference alone.** Renaming `getData` to `fetchData` because you prefer "fetch" is noise, not refactoring. Rename when the current name is misleading.
+- **Do NOT refactor without impact analysis.** "I'll just move this function" and then discovering 30 files break is preventable with 2 minutes of analysis.
+- **Do NOT ignore failing tests.** "The tests were probably wrong anyway" is never true during refactoring. If tests fail, your transformation changed behavior. Fix it or revert.
