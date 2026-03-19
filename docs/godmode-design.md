@@ -5474,4 +5474,95 @@ Total: 45 minutes, 12 iterations, 18 tests added.
 
 ---
 
-## Status: ITERATION 46 — Example Workflows complete
+## 47. Comparison Matrix
+
+**Purpose:** Feature-by-feature comparison showing what Godmode takes from Autoresearch, what it takes from Superpowers, and what's new.
+
+### Feature Comparison
+
+| Feature | Autoresearch | Superpowers | Godmode |
+|---------|:----------:|:-----------:|:-------:|
+| **THINK Phase** | | | |
+| Structured brainstorming | - | Yes | Yes |
+| One question at a time | - | Yes | Yes |
+| Visual companion | - | Yes | Yes |
+| Multi-persona prediction | Yes | - | Yes |
+| Edge case exploration | Yes | - | Yes |
+| Spec writing | - | Yes | Yes |
+| Metric discovery during thinking | - | - | **NEW** |
+| **BUILD Phase** | | | |
+| Task decomposition (2-5 min) | - | Yes | Yes |
+| Dependency graph | - | Yes | Yes |
+| TDD enforcement | - | Yes | Yes |
+| Parallel agent dispatch | - | Yes | Yes |
+| Git worktrees | - | Yes | Yes |
+| 2-stage code review | - | Yes | Yes |
+| Model matching for agents | - | - | **NEW** |
+| **OPTIMIZE Phase** | | | |
+| Autonomous iteration loop | Yes | - | Yes |
+| Git-as-memory | Yes | - | Yes |
+| Mechanical metrics only | Yes | - | Yes |
+| Guard system | Yes | - | Yes (enhanced) |
+| Auto-revert on failure | Yes | - | Yes |
+| Results logging (TSV) | Yes | - | Yes |
+| Scientific debugging | Yes | - | Yes |
+| One fix per iteration | Yes | - | Yes |
+| STRIDE threat modeling | Yes | - | Yes |
+| OWASP Top 10 checks | Yes | - | Yes |
+| Red-team personas | Yes | - | Yes |
+| Soft guards | - | - | **NEW** |
+| Plateau detection | - | - | **NEW** |
+| Strategy switching | - | - | **NEW** |
+| **SHIP Phase** | | | |
+| 8-phase shipping | Yes | - | Yes |
+| 9 shipment types | Yes | - | Yes |
+| Branch finalization | - | Yes | Yes |
+| 4 completion options | - | Yes | Yes |
+| Post-ship verification | Yes | - | Yes |
+| Auto-changelog | - | - | **NEW** |
+| **META** | | | |
+| Orchestrator / auto-detection | - | - | **NEW** |
+| Configuration wizard | Yes | - | Yes (enhanced) |
+| Evidence-before-claims | - | Yes | Yes |
+| Hook system | - | - | **NEW** |
+| Chain system | - | - | **NEW** |
+| Pipeline definitions | - | - | **NEW** |
+| CI/CD integration | - | - | **NEW** |
+| Iteration budgets | - | - | **NEW** |
+| **CROSS-CUTTING** | | | |
+| Platform support | Claude Code | Claude Code | Multi-platform |
+| Handoff protocol | - | - | **NEW** |
+| Crash recovery | Partial | - | **NEW** |
+| Skill discovery | - | - | **NEW** |
+| Visual dashboard | - | Partial | Enhanced |
+| Domain adaptation | - | - | **NEW** |
+
+### What Godmode Adds Beyond Both
+
+| New Feature | Why It Matters |
+|-------------|---------------|
+| **Orchestrator** | Users don't have to know which skill to use; Godmode figures it out |
+| **Handoff protocol** | Seamless transitions between phases; no context lost |
+| **Chain system** | Ad-hoc skill linking without full pipelines |
+| **Metric discovery** | Success criteria defined before code is written |
+| **Soft guards** | Flexible protection without over-constraining |
+| **Iteration budgets** | Predictable time and cost |
+| **CI/CD mode** | Use Godmode in pipelines, not just interactive |
+| **Platform adapters** | Works beyond Claude Code |
+| **Crash recovery** | Agent can resume after failures |
+| **Hook system** | Customizable automation at lifecycle events |
+
+### Philosophy Comparison
+
+| Aspect | Autoresearch | Superpowers | Godmode |
+|--------|-------------|-------------|---------|
+| **Focus** | Optimization | Creation | Full cycle |
+| **Autonomy** | High (autonomous loops) | Guided (user drives) | Adaptive (auto or guided) |
+| **Memory** | Git commits | Session context | Git + state files |
+| **Verification** | Mechanical metrics | Evidence gate | Both |
+| **Organization** | Single skill file | Multiple skill files | Plugin with 16 skills |
+| **Iteration** | Endless until target | Task-based | Budgeted with stopping conditions |
+
+---
+
+## Status: ITERATION 47 — Comparison Matrix complete
