@@ -1313,4 +1313,119 @@ Agent: Starting optimization loop...
 
 ---
 
-## Status: ITERATION 13 — Optimize skill spec complete
+## 14. `/godmode:debug` — Bug Hunter Skill Spec
+
+**Origin:** Autoresearch (scientific debugging method)
+**Phase:** OPTIMIZE
+**Purpose:** Systematically hunt bugs using the scientific method — hypothesize, test, narrow, repeat — with 7 investigation techniques.
+
+### Trigger Conditions
+
+- Tests are failing
+- User reports a bug: "there's a bug", "this doesn't work", "something's wrong"
+- Orchestrator detects failing tests
+- Explicitly invoked with `/godmode:debug`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--bug` | — | Description of the bug (or auto-detect from failing tests) |
+| `--technique` | auto | Investigation technique (1-7, or "auto" to try in order) |
+| `--max-iterations` | 10 | Max investigation cycles |
+| `--fix` | false | Auto-fix the bug after finding it (chains to `/godmode:fix`) |
+| `--verbose` | false | Show detailed investigation reasoning |
+
+### The 7 Investigation Techniques
+
+| # | Technique | When to Use | Method |
+|---|-----------|-------------|--------|
+| 1 | **Stack Trace Analysis** | Error with stack trace | Read the trace bottom-up, identify the faulting line, trace data flow to it |
+| 2 | **Binary Search (git bisect)** | "It used to work" | Use git bisect to find the exact commit that introduced the bug |
+| 3 | **Minimal Reproduction** | Complex bug, unclear trigger | Reduce the reproduction case to the absolute minimum input |
+| 4 | **State Inspection** | Wrong output, no error | Add logging/assertions at key points to inspect intermediate state |
+| 5 | **Dependency Audit** | "It works locally" | Check dependency versions, environment variables, config differences |
+| 6 | **Concurrency Analysis** | Intermittent failures | Look for race conditions, shared mutable state, missing locks |
+| 7 | **Boundary Analysis** | Edge-case failures | Test at boundaries: 0, 1, max, empty, null, negative |
+
+### Workflow
+
+**Step 1: Reproduce**
+- Run the failing test or reproduce the reported bug
+- If the bug can't be reproduced: gather more information, check environment
+- Record the exact error message, stack trace, and input that triggers it
+- STOP if reproduction fails after 3 attempts — ask the user for more info
+
+**Step 2: Hypothesize**
+- Based on the error and codebase knowledge, form 1-3 hypotheses
+- Each hypothesis has:
+  - **Statement:** "The bug is caused by X"
+  - **Evidence for:** Why this seems likely
+  - **Evidence against:** Why this might be wrong
+  - **Test:** How to confirm or deny this hypothesis
+
+**Step 3: Investigate**
+- Apply the appropriate technique (auto-selected or specified)
+- For each hypothesis, run the test to confirm or deny
+- Narrow down: eliminate hypotheses, form new ones based on findings
+- Track the investigation in a structured log:
+
+```
+Investigation Log:
+  H1: "Redis timeout causes null return" — DENIED (Redis responds in 2ms)
+  H2: "Race condition in counter increment" — CONFIRMED
+    Evidence: Adding 100ms delay between requests makes bug disappear
+    Root cause: increment() reads then writes without atomic lock
+```
+
+**Step 4: Identify Root Cause**
+- State the root cause clearly and specifically
+- Show the exact line(s) of code responsible
+- Explain the mechanism: what happens step-by-step that leads to the bug
+- Differentiate root cause from symptoms
+
+**Step 5: Recommend Fix**
+- Propose 1-2 fix strategies
+- For each: description, code change, risk assessment, test to verify
+- If `--fix` is on: chain to `/godmode:fix` with the identified root cause
+- Commit investigation: `git commit -m "debug: identified root cause of [BUG]"`
+
+### Key Behaviors
+
+1. **Reproduce first** — Never hypothesize about a bug you can't reproduce
+2. **Scientific method** — Hypothesize, test, narrow. Don't guess and patch.
+3. **One variable at a time** — Change one thing per investigation step
+4. **Root cause, not symptoms** — Fixing the symptom creates a new bug later
+5. **Investigation log** — Every step is documented for future reference
+6. **Know when to stop** — If 10 iterations haven't found it, escalate to the user
+
+### Example Usage
+
+```
+User: /godmode:debug --bug "Rate limiter allows 101 requests when limit is 100"
+
+Agent: Reproducing...
+  ✓ Reproduced: 101st request returns 200 instead of 429
+
+Hypotheses:
+  H1: Off-by-one in comparison (>= vs >) — Confidence: HIGH
+  H2: Race condition in counter increment — Confidence: MEDIUM
+  H3: Counter reset timing issue — Confidence: LOW
+
+Investigating H1 (Stack Trace Analysis):
+  src/middleware/rate-limiter.ts:34: `if (count > limit)`
+  Should be: `if (count >= limit)`
+
+  ✓ H1 CONFIRMED — off-by-one error
+
+Root cause: Line 34 uses `>` instead of `>=`, allowing exactly limit+1 requests.
+
+Fix: Change `count > limit` to `count >= limit`
+Test: Verify 100th request succeeds and 101st request returns 429.
+
+Chain to /godmode:fix? [Y/n]
+```
+
+---
+
+## Status: ITERATION 14 — Debug skill spec complete
