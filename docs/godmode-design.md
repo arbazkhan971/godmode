@@ -689,4 +689,117 @@ Generated 23 test stubs → saved to tests/rate-limiter.scenario.test.ts
 
 ---
 
-## Status: ITERATION 8 — Scenario skill spec complete
+## 9. `/godmode:plan` — Planning Skill Spec
+
+**Origin:** Superpowers + Autoresearch (task decomposition)
+**Phase:** BUILD
+**Purpose:** Decompose a spec into small (2-5 minute), actionable tasks with exact file paths, code samples, dependencies, and test criteria.
+
+### Trigger Conditions
+
+- A spec exists but no plan has been created
+- User says "plan this", "break this down", "create tasks"
+- Orchestrator routes here after THINK phase completes
+- Explicitly invoked with `/godmode:plan`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--spec` | auto | Path to spec file (auto-detects from `.godmode/specs/`) |
+| `--max-tasks` | 20 | Maximum number of tasks to generate |
+| `--task-size` | 5min | Target task duration: `2min`, `5min`, `10min` |
+| `--review` | true | Present plan to user for review before saving |
+| `--parallel` | true | Identify which tasks can run in parallel |
+
+### Workflow
+
+**Step 1: Read the Spec**
+- Load the spec from `.godmode/specs/` or the path provided
+- Also load scenario results if they exist (unhandled edge cases become tasks)
+- Also load prediction mitigations if they exist (concerns become tasks)
+
+**Step 2: Identify Components**
+- Map the spec to concrete code components:
+  - Files to create
+  - Files to modify
+  - Dependencies to install
+  - Configuration to add
+
+**Step 3: Decompose into Tasks**
+- Each task is 2-5 minutes of agent work
+- Each task has:
+
+```markdown
+### Task 003: Add rate limit middleware
+
+**Files:** `src/middleware/rate-limiter.ts` (CREATE), `src/app.ts` (MODIFY)
+**Dependencies:** `ioredis` (INSTALL)
+**Depends on:** Task 001 (Redis connection), Task 002 (config schema)
+**Parallel group:** B (can run alongside Task 004)
+**Test:** `tests/rate-limiter.test.ts` — "should return 429 after 100 requests"
+**Acceptance:** Rate limiter middleware exists, passes 3 test cases
+**Estimated time:** 4 min
+
+**Implementation notes:**
+- Use token bucket algorithm from spec section 3.2
+- Default: 100 requests per 60-second window
+- Key format: `ratelimit:{ip}:{endpoint}`
+```
+
+**Step 4: Build Dependency Graph**
+- Map task dependencies into execution order
+- Identify parallel groups (tasks with no interdependencies)
+- Produce a visual execution plan:
+
+```
+Phase A (sequential):
+  Task 001: Redis connection module
+  Task 002: Config schema
+
+Phase B (parallel):          Phase C (parallel):
+  Task 003: Rate limiter       Task 004: Logging
+  Task 005: Error handler      Task 006: Health check
+
+Phase D (sequential):
+  Task 007: Integration tests
+  Task 008: Documentation
+```
+
+**Step 5: Plan Review**
+- Present the complete plan to the user
+- Show: task count, estimated total time, dependency graph, parallel opportunities
+- User can: approve, reorder, split tasks, merge tasks, remove tasks, add tasks
+- Iterate until approved
+
+**Step 6: Save Plan**
+- Save to `.godmode/plan.md`
+- Update `.godmode/state.json` with plan reference
+- Commit: `git commit -m "plan: FEATURE-NAME — N tasks, estimated Xmin"`
+
+### Task Schema
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | Yes | Task identifier (e.g., `task-003`) |
+| `title` | Yes | Short description |
+| `files` | Yes | Files to create/modify with action (CREATE/MODIFY/DELETE) |
+| `dependencies` | No | Package dependencies to install |
+| `depends_on` | No | Task IDs that must complete first |
+| `parallel_group` | No | Letter indicating parallel execution group |
+| `test` | Yes | Test file and description of what to test |
+| `acceptance` | Yes | Clear criteria for task completion |
+| `estimated_time` | Yes | Estimated agent time in minutes |
+| `notes` | No | Implementation hints, code samples, gotchas |
+
+### Key Behaviors
+
+1. **2-5 minute tasks** — If a task takes longer, it should be split
+2. **Every task has a test** — No task is complete without a passing test
+3. **File paths are exact** — Not "add a middleware" but "create `src/middleware/rate-limiter.ts`"
+4. **Dependencies are explicit** — No hidden coupling between tasks
+5. **User approves the plan** — The plan is a contract; don't start building without approval
+
+---
+
+## Status: ITERATION 9 — Plan skill spec complete
