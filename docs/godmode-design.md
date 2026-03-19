@@ -1823,4 +1823,107 @@ Phase 8: Verify → npm view rate-limiter@1.3.0 ✓
 
 ---
 
-## Status: ITERATION 17 — Ship skill spec complete
+## 18. `/godmode:finish` — Branch Finalization Skill Spec
+
+**Origin:** Superpowers (branch finalization with verification)
+**Phase:** SHIP
+**Purpose:** Finalize a feature branch with 4 completion options, each gated by a verification step.
+
+### Trigger Conditions
+
+- Feature is complete and shipped (or ready to ship)
+- User says "finish this", "wrap up", "merge", "close this branch"
+- Explicitly invoked with `/godmode:finish`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--action` | prompt | Completion action: `merge`, `pr`, `keep`, `discard` |
+| `--base` | main | Base branch for merge/PR |
+| `--verify` | true | Run verification gate before finalizing |
+| `--cleanup` | true | Delete branch after merge, clean up worktrees |
+
+### 4 Completion Options
+
+| Option | Command | What Happens |
+|--------|---------|-------------|
+| **Merge** | `--action merge` | Squash-merge into base branch, delete feature branch |
+| **PR** | `--action pr` | Create pull request with auto-generated description |
+| **Keep** | `--action keep` | Leave the branch as-is (for later) |
+| **Discard** | `--action discard` | Delete the branch and all its changes |
+
+### Workflow
+
+**Step 1: Verification Gate**
+- Run all tests
+- Check for uncommitted changes
+- Check for unresolved merge conflicts
+- Check for TODO/FIXME items added during this branch
+- Verify the feature works (run user-defined verification command if set)
+
+```
+Verification Gate:
+  ✓ All tests pass (47/47)
+  ✓ No uncommitted changes
+  ✓ No merge conflicts
+  ⚠ 2 TODO items found (non-blocking)
+  ✓ Feature verification: /api/rate-limit returns 429 correctly
+```
+
+**Step 2: Generate Summary**
+- Summarize what was done on this branch:
+  - Commits: count and key changes
+  - Files: created, modified, deleted
+  - Tests: added, coverage change
+  - Time: first commit to now
+
+```
+Branch Summary: godmode/rate-limiter
+  Commits: 12 (7 tasks, 3 optimizations, 2 fixes)
+  Files: 8 created, 3 modified, 0 deleted
+  Tests: 15 added (coverage: 62% → 84%)
+  Duration: 2h 15m
+```
+
+**Step 3: Execute Action**
+
+*Merge:*
+```bash
+git checkout main
+git merge --squash godmode/rate-limiter
+git commit -m "feat: add rate limiting middleware (#45)\n\n[auto-generated summary]"
+git branch -d godmode/rate-limiter
+```
+
+*PR:*
+```bash
+git push -u origin godmode/rate-limiter
+gh pr create --title "feat: add rate limiting middleware" \
+  --body "[auto-generated description with summary, test results, and review notes]"
+```
+
+*Keep:*
+- No action, just report the current state
+
+*Discard:*
+- Confirm with user (destructive action)
+- `git checkout main && git branch -D godmode/rate-limiter`
+
+**Step 4: Cleanup**
+- Delete worktrees if any exist
+- Remove `.godmode/state.json` (reset state)
+- Archive results to `.godmode/archive/`
+- Final commit on main: `git commit -m "finish: rate-limiter branch finalized (merged)"`
+
+### Key Behaviors
+
+1. **Verification is mandatory** — Cannot finalize without passing the gate (unless `--verify false`)
+2. **Discard requires confirmation** — Destructive action, must confirm twice
+3. **Summary is always generated** — Even for discard, so there's a record of what was tried
+4. **Cleanup is thorough** — No dangling branches, worktrees, or state files
+5. **PR descriptions are rich** — Include summary, test results, review notes, and screenshots if applicable
+
+---
+
+## Status: ITERATION 18 — Finish skill spec complete
