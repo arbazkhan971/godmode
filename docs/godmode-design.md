@@ -9485,3 +9485,248 @@ License selection, compliance, and attribution.
 | `commands/godmode/three.md` | Command | Usage reference for `/godmode:three` |
 
 **Iterations 332-337 (3 skills created, 3 command files created, 1 design doc updated)**
+
+## 91. Design System & UI Architecture Skills
+
+Three new skills extend Godmode's frontend capabilities into design system architecture, form engineering, and responsive design — the foundation of every production-quality user interface.
+
+### 91.1 Design System — Design System Architecture (`skills/designsystem/SKILL.md`)
+
+**Purpose:** Build, maintain, and audit design systems with token architecture, component API standards, theme systems, design-to-code pipelines, and versioned distribution.
+
+**Key capabilities:**
+- **Three-tier token architecture:** Primitives (raw values) -> Semantic tokens (meaning) -> Component tokens (component-specific). This layering enables theming without touching component code.
+- **Token categories:** Colors (neutral scales, brand scales, feedback), spacing (4px base unit, 16-step scale), typography (modular scale 1.25, font stacks, composite text styles), shadows (xs through 2xl + focus ring), borders, motion, z-index.
+- **Component API standards:** Enforced prop naming (variant, size, children, className), TypeScript typing (extend native HTML attributes), ref forwarding, compound component pattern, controlled/uncontrolled modes, sensible defaults.
+- **Theme system:** Light/dark via CSS custom properties with `data-theme` attribute, system preference detection via `prefers-color-scheme`, localStorage persistence, flash-free SSR, multi-brand theming via `data-brand` attribute.
+- **Design-to-code pipeline:** Figma Variables/Tokens Studio export -> W3C Design Token Format -> Style Dictionary transformer -> CSS variables + TypeScript constants + Tailwind config. CI automation via Figma webhook triggers.
+- **Versioning and distribution:** Semantic versioning (major = breaking, minor = new features, patch = fixes), conventional changelog, npm publish, Storybook deploy via Chromatic, consumer PR automation.
+- **Storybook documentation:** Foundation pages (colors, typography, spacing, shadows), component catalog with autodocs, interactive controls, a11y addon, viewport addon, design addon for Figma links.
+- **Maturity scoring:** NONE (0-25) / STARTER (26-50) / GROWING (51-75) / MATURE (76-100) across token coverage, API compliance, theme support, pipeline automation, documentation, and distribution.
+
+**Workflow:** Assess maturity -> Build token architecture -> Define API standards -> Implement theme system -> Configure pipeline -> Set up versioning -> Document in Storybook -> Audit and report.
+
+**Command:** `/godmode:designsystem` (`commands/godmode/designsystem.md`)
+
+### 91.2 Forms — Form Architecture (`skills/forms/SKILL.md`)
+
+**Purpose:** Build complex, accessible, validated forms with state management, multi-step wizards, async validation, file uploads, and focus management.
+
+**Key capabilities:**
+- **State management selection:** Decision matrix comparing React Hook Form, Formik, native useState, and server actions across re-renders, bundle size, TypeScript support, complexity handling, and learning curve.
+- **Validation patterns:** Zod schemas shared between client and server. Client-side validation on blur (first visit) and onChange (re-validation). Server-side validation with same schema. Async validation with debounce for uniqueness checks.
+- **Multi-step wizard forms:** Step-level schema validation, sessionStorage persistence (survives refresh), URL-synced step navigation, visual progress indicator with accessibility (aria-current="step"), back navigation preserving data.
+- **File upload handling:** Drag-and-drop zone with keyboard accessibility, file type/size/count validation before upload, upload progress tracking, image preview with URL.createObjectURL, accessible file list with remove buttons.
+- **Accessible form design:** Visible labels (never placeholder-as-label), aria-describedby for error messages, aria-invalid on error fields, error summary component linked to fields, focus-on-first-error on submit failure, required field indication (visual + screen reader).
+- **Advanced patterns:** Conditional fields (show/hide based on other field values), dynamic field arrays (add/remove rows), autosave with debounce and status indicator, controlled/uncontrolled component modes.
+- **Error display strategy:** Show on blur (first visit), re-validate on change (after error), focus first error on submit, inline errors with role="alert", error summary at form top, specific actionable messages.
+
+**Workflow:** Assess requirements -> Choose state management -> Build validation schemas -> Implement form (single-page or wizard) -> Add file uploads -> Ensure accessibility -> Audit and report.
+
+**Command:** `/godmode:forms` (`commands/godmode/forms.md`)
+
+### 91.3 Responsive — Responsive & Adaptive Design (`skills/responsive/SKILL.md`)
+
+**Purpose:** Build interfaces that work across every viewport using CSS Grid, Flexbox, container queries, fluid typography, responsive images, print stylesheets, and touch/pointer adaptation.
+
+**Key capabilities:**
+- **Layout strategies:** Mobile-first (min-width, progressive enhancement), desktop-first (max-width, graceful degradation), intrinsic (container queries, component-level responsiveness). Decision matrix for strategy selection.
+- **CSS Grid mastery:** Auto-fit/minmax for responsive card grids, named grid areas for complex dashboard layouts, subgrid for cross-card alignment, responsive grid area reassignment at breakpoints.
+- **Container queries:** Component-level responsive design independent of viewport. Container query units (cqi). Combined with Grid for sidebar-aware components. Named containers for targeted queries.
+- **Flexbox patterns:** Responsive navigation (hamburger on mobile, horizontal on desktop), holy grail layout, wrapping card rows with flex-basis minimum widths.
+- **Fluid typography:** clamp()-based type scale that scales continuously between mobile and desktop without breakpoints. Fluid spacing using the same approach.
+- **Responsive images:** srcset for resolution switching, `<picture>` for art direction, modern format serving (avif -> webp -> jpg fallback), lazy loading, fetchpriority for LCP images, responsive CSS background images with retina support.
+- **Print stylesheets:** Hide navigation and non-essential elements, show link URLs, control page breaks (avoid orphaned headings), repeat table headers, ink-conservation color reset, @page margin control.
+- **Touch vs pointer:** Pointer media queries (fine/coarse) for hit target sizing, hover media queries for hover-dependent features, touch-action control, scroll-snap for touch carousels, manipulation hint for double-tap prevention.
+- **Responsive data tables:** Horizontal scroll pattern with fade indicator, stack-to-cards pattern on mobile using data-label attributes, column priority hiding.
+
+**Workflow:** Assess requirements -> Choose strategy -> Implement breakpoints -> Build Grid/Flex layouts -> Add container queries -> Implement fluid type -> Optimize images -> Add print styles -> Handle touch/pointer -> Audit all viewports -> Report.
+
+**Command:** `/godmode:responsive` (`commands/godmode/responsive.md`)
+
+### Integration with Existing Skills
+
+```
+/godmode:designsystem  ->  /godmode:ui  ->  /godmode:a11y
+        |                       |                |
+  Build token system     Audit components   Verify accessibility
+        |                       |                |
+        v                       v                v
+/godmode:forms  ->  /godmode:responsive  ->  /godmode:visual
+        |                  |                       |
+  Build forms        Make responsive       Visual regression test
+```
+
+- **From `/godmode:designsystem` to `/godmode:ui`:** Design system provides tokens and API standards; UI skill audits component compliance against those standards.
+- **From `/godmode:designsystem` to `/godmode:forms`:** Form components consume design tokens for consistent styling. Form field components follow API standards.
+- **From `/godmode:forms` to `/godmode:a11y`:** Forms are the most accessibility-critical UI pattern. Form skill ensures labels, errors, and focus; a11y skill verifies with automated tools and manual checklists.
+- **From `/godmode:responsive` to `/godmode:visual`:** Responsive layouts need visual regression testing across viewports. Visual skill captures screenshots at each breakpoint.
+- **From `/godmode:responsive` to `/godmode:perf`:** Responsive images and fluid design affect Core Web Vitals (LCP, CLS). Perf skill measures the impact.
+
+### Design Principles for UI Architecture Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Tokens are the single source of truth | Every visual value comes from a token; hardcoded values are violations |
+| 2 | Components follow uniform APIs | Same prop naming, typing, composition, and ref forwarding everywhere |
+| 3 | Accessibility is a baseline, not a feature | Every form has labels, every error has focus management, every component has keyboard support |
+| 4 | Mobile-first forces content prioritization | Start with the smallest viewport to force decisions about what matters |
+| 5 | Container queries make components truly reusable | Components respond to their container, not the viewport |
+| 6 | Validation runs on both sides | Client validation for UX, server validation for security, shared schema for consistency |
+| 7 | The design system is a product | Version it, document it, distribute it, maintain it like any other dependency |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/designsystem/SKILL.md` | Skill | Design system architecture with tokens, themes, pipeline |
+| `skills/forms/SKILL.md` | Skill | Form architecture with validation, wizards, uploads |
+| `skills/responsive/SKILL.md` | Skill | Responsive design with Grid, container queries, images |
+| `commands/godmode/designsystem.md` | Command | Usage reference for `/godmode:designsystem` |
+| `commands/godmode/forms.md` | Command | Usage reference for `/godmode:forms` |
+| `commands/godmode/responsive.md` | Command | Usage reference for `/godmode:responsive` |
+
+**Iterations 338-343 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 88. Platform-Specific Development Skills
+
+Platform-specific development skills bring specialized capabilities for emerging and niche development platforms to Godmode. These five skills cover blockchain/Web3, IoT and embedded systems, desktop applications, CLI tools, and browser extensions — each with deep, production-grade guidance that goes far beyond general-purpose coding advice.
+
+### Skills Overview
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| Web3 | `/godmode:web3` | Blockchain & Web3 — Smart contracts (Solidity, Rust/Anchor), security auditing, token standards, DApp architecture, gas optimization |
+| IoT | `/godmode:iot` | IoT & Embedded Systems — Firmware architecture (FreeRTOS, Zephyr), MQTT/CoAP protocols, OTA updates, power optimization, fleet management |
+| Desktop | `/godmode:desktop` | Desktop Applications — Electron, Tauri, Qt architecture, auto-update, cross-platform builds, native API integration, code signing |
+| CLI | `/godmode:cli` | CLI Tool Development — Argument parsing (Commander, Clap, Cobra, Click), TUI frameworks, config management, shell completions, distribution |
+| Extension | `/godmode:extension` | Browser Extensions — Manifest V3, content scripts, background workers, cross-browser compatibility, store submission, security |
+
+### Web3 — Blockchain & Web3 Development
+
+The `web3` skill covers the full lifecycle of blockchain development from smart contract architecture to mainnet deployment. It supports Solidity (Hardhat/Foundry) and Rust/Anchor (Solana) with deep security auditing.
+
+**Core workflow:**
+1. Assess project requirements (chain, language, contract type, upgradeability)
+2. Set up smart contract architecture with proper project structure
+3. Implement token standards (ERC-20, ERC-721, ERC-1155) with security-first approach
+4. Conduct security audit against critical vulnerabilities (reentrancy, access control, oracle manipulation, flash loans, DoS, front-running)
+5. Optimize gas consumption (storage packing, calldata, custom errors, unchecked blocks)
+6. Design DApp architecture with wallet integration (wagmi, RainbowKit, WalletConnect)
+7. Deploy with testnet rehearsal, source verification, multisig transfer, and monitoring
+
+**Key principles:**
+- Security is non-negotiable — every contract handles real value
+- Audit before deploy — internal minimum, external for significant value
+- Gas costs are user costs — measure and optimize every public function
+- Events are the indexing API — emit for every state change
+- Pin Solidity versions — no floating pragma in production
+
+### IoT — IoT & Embedded Systems
+
+The `iot` skill handles firmware development for constrained devices, from architecture design through fleet-scale deployment. It covers RTOS and bare-metal approaches with production-grade communication and update systems.
+
+**Core workflow:**
+1. Assess hardware and connectivity requirements (MCU, RTOS, protocols, power budget)
+2. Design firmware architecture (RTOS task model with queues/events, or bare-metal super-loop)
+3. Configure communication protocols (MQTT topic hierarchy and QoS, CoAP resource design, BLE GATT services)
+4. Implement OTA update system (A/B partitioning, signed firmware, automatic rollback)
+5. Optimize power consumption (sleep modes, duty cycling, peripheral gating, battery estimation)
+6. Design fleet management (provisioning, device shadow/twin, monitoring, staged rollout)
+
+**Key principles:**
+- Memory is scarce — static allocation, no malloc in production
+- Power determines product viability — measure from day one
+- OTA is not optional — devices without it become permanent liabilities
+- Security is hardware-rooted — secure boot, hardware crypto, mTLS
+- Connectivity will fail — buffer locally, retry with backoff, never block on network
+
+### Desktop — Desktop Application Development
+
+The `desktop` skill builds production-ready desktop applications for Windows, macOS, and Linux. It covers framework selection, auto-update, native integration, code signing, and distribution.
+
+**Core workflow:**
+1. Assess project requirements and select framework (Electron, Tauri, Qt)
+2. Set up framework architecture with proper process isolation and security
+3. Configure auto-update mechanism (electron-updater, Tauri updater, Sparkle)
+4. Set up cross-platform build pipeline with CI/CD
+5. Integrate native APIs (system tray, file system, notifications, shortcuts, protocol handlers)
+6. Configure code signing (Windows Authenticode, macOS notarization) and create installers
+7. Establish distribution channels (direct download, app stores, package managers)
+
+**Key principles:**
+- Platform conventions matter — respect each OS's idioms
+- Code signing is mandatory — unsigned apps trigger scary warnings
+- Auto-update is expected — implement from day one
+- Test on all target platforms — rendering and behavior vary significantly
+- Bundle size impacts perception — choose the right framework for the complexity
+
+### CLI — CLI Tool Development
+
+The `cli` skill creates professional command-line tools with excellent UX, from argument parsing through package manager distribution. It supports all major CLI ecosystems.
+
+**Core workflow:**
+1. Assess project requirements (language, complexity, distribution targets)
+2. Set up CLI architecture with chosen parser (Commander, Clap, Cobra, Click)
+3. Design argument interface (commands, subcommands, flags, positional args, standard flags)
+4. Implement interactive features (prompts, progress bars, spinners, tables, TUI)
+5. Configure management (TOML/YAML config files, env vars, XDG compliance, precedence chain)
+6. Generate shell completions (bash, zsh, fish, PowerShell)
+7. Set up distribution (npm, Homebrew, cargo, pip/pipx, GitHub Releases, Docker)
+
+**Key principles:**
+- Error messages are UX — show what went wrong, why, and how to fix it
+- Defaults should be safe — destructive commands require confirmation
+- Machine-readable output is a feature — always support --json
+- Shell completions are expected — generate for all major shells
+- Exit codes are meaningful — 0 success, 1 error, 2 usage error
+- Respect the terminal — check TTY before colors, support NO_COLOR
+
+### Extension — Browser Extension Development
+
+The `extension` skill builds browser extensions with Manifest V3 for Chrome, Firefox, and Safari. It covers the full extension lifecycle from architecture through store submission.
+
+**Core workflow:**
+1. Assess extension requirements (browsers, type, UI surfaces, permissions)
+2. Set up MV3 architecture (service worker, content scripts, popup, options, side panel)
+3. Implement messaging patterns (typed messages, long-lived connections, external messaging)
+4. Handle cross-browser compatibility (polyfills, feature detection, manifest patches)
+5. Conduct security audit (permission minimization, CSP, input validation, no eval)
+6. Prepare store submissions (Chrome Web Store, Firefox Add-ons, Safari Extensions via Xcode)
+
+**Key principles:**
+- Manifest V3 is mandatory — Chrome requires it for all new extensions
+- Permissions are trust — request the minimum set, use optional permissions
+- Service workers are ephemeral — never rely on in-memory state
+- Content scripts are guests — namespace everything, use Shadow DOM
+- Store reviews are gatekeepers — follow guidelines before submission
+
+### Guiding Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Platform expertise over generic advice | Each skill provides deep, platform-specific guidance rather than surface-level recommendations |
+| 2 | Security is non-negotiable | Smart contract audits, firmware signing, extension CSP, code signing — security is baked into every workflow |
+| 3 | Distribution is part of the product | From gas deployment to app stores to package managers — the skill guides you through getting your software to users |
+| 4 | Test on the real target | Real hardware for IoT, real browsers for extensions, real OS for desktop — simulators miss critical issues |
+| 5 | Standards compliance | ERC token standards, Manifest V3, XDG paths, semver — follow established standards rather than inventing custom approaches |
+| 6 | Power users are first-class | Gas optimization, power budgets, shell completions, keyboard shortcuts — expert-level features are not afterthoughts |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/web3/SKILL.md` | Skill | Blockchain & Web3 development workflow |
+| `skills/iot/SKILL.md` | Skill | IoT & Embedded Systems development workflow |
+| `skills/desktop/SKILL.md` | Skill | Desktop Application development workflow |
+| `skills/cli/SKILL.md` | Skill | CLI Tool development workflow |
+| `skills/extension/SKILL.md` | Skill | Browser Extension development workflow |
+| `commands/godmode/web3.md` | Command | Usage reference for `/godmode:web3` |
+| `commands/godmode/iot.md` | Command | Usage reference for `/godmode:iot` |
+| `commands/godmode/desktop.md` | Command | Usage reference for `/godmode:desktop` |
+| `commands/godmode/cli.md` | Command | Usage reference for `/godmode:cli` |
+| `commands/godmode/extension.md` | Command | Usage reference for `/godmode:extension` |
+
+**Iterations 298-307 (10 files, 5 skills, 5 commands)**
