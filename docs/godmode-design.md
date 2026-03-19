@@ -3259,4 +3259,132 @@ godmode/
 
 ---
 
-## Status: ITERATION 30 — Platform Support complete
+## 31. Installation & Setup
+
+**Purpose:** Three installation paths — marketplace (one click), manual (git clone), and first-run wizard.
+
+### Path 1: Claude Code Marketplace (Recommended)
+
+```bash
+# Install from the Claude Code skill marketplace
+claude install godmode
+
+# Or install a specific version
+claude install godmode@1.3.0
+```
+
+This places the plugin in `~/.claude/skills/godmode/` and makes all `/godmode:*` commands available globally.
+
+### Path 2: Manual Installation
+
+```bash
+# Clone into the Claude Code skills directory
+git clone https://github.com/godmode-ai/godmode.git ~/.claude/skills/godmode
+
+# Or for project-local installation
+git clone https://github.com/godmode-ai/godmode.git .claude/skills/godmode
+```
+
+**Global vs. Local installation:**
+
+| Location | Scope | Use Case |
+|----------|-------|----------|
+| `~/.claude/skills/godmode/` | All projects | Default, recommended |
+| `.claude/skills/godmode/` | This project only | Custom per-project config |
+| `.claude/skills/godmode/` (in repo) | Shared with team | Team standardization |
+
+### Path 3: Quick Start (One Command)
+
+```bash
+# Install and configure in one step
+claude install godmode && claude /godmode:setup --quick
+```
+
+### First-Run Wizard
+
+On first use of `/godmode` in a project, the agent automatically runs setup:
+
+```
+Welcome to Godmode! Let's configure for this project.
+
+Detected: Node.js project (package.json found)
+  Test command: npm test (47 tests passing ✓)
+  Lint command: npx eslint src/ (clean ✓)
+  Build command: npm run build (succeeds ✓)
+
+What are you building? > Add rate limiting to the API
+
+Created .godmode/settings.json
+Created .godmode/state.json
+
+Ready! Try:
+  /godmode:think    — Start brainstorming
+  /godmode:plan     — Jump to planning (if you have a spec)
+  /godmode:optimize — Start optimizing (if code exists)
+  /godmode           — Let me figure out what's next
+```
+
+### Updating
+
+```bash
+# Update to latest version
+claude update godmode
+
+# Update to specific version
+claude update godmode@1.4.0
+
+# Check for updates
+claude outdated
+```
+
+### Uninstalling
+
+```bash
+# Remove the plugin
+claude uninstall godmode
+
+# Remove project-local config (optional)
+rm -rf .godmode/
+```
+
+### Verifying Installation
+
+```bash
+# Check that Godmode is installed and working
+claude /godmode --version
+
+# Output:
+# Godmode v1.3.0
+# Skills: 16 loaded
+# Platform: Claude Code
+# Config: ~/.claude/skills/godmode/settings.json
+```
+
+### Directory Structure After Installation
+
+```
+~/.claude/skills/godmode/      # Plugin files (skills, references, shared)
+.godmode/                       # Project-local state (created on first use)
+  ├── settings.json             # Project configuration
+  ├── state.json                # Current state (phase, iteration, etc.)
+  ├── results.tsv               # Optimization results log
+  ├── events.jsonl              # Event log
+  ├── specs/                    # Generated specs
+  ├── predictions/              # Prediction reports
+  ├── scenarios/                # Scenario reports
+  ├── security/                 # Security audit reports
+  ├── archive/                  # Completed cycle archives
+  └── worktrees/                # Git worktrees for parallel tasks
+```
+
+### Key Behaviors
+
+1. **One command install** — No manual file copying or configuration
+2. **Auto-detect project** — First-run wizard figures out the project type
+3. **Global by default** — Install once, use everywhere
+4. **Project state is separate** — Plugin files and project state live in different places
+5. **Gitignore-friendly** — `.godmode/` should be added to `.gitignore` (it's local state)
+
+---
+
+## Status: ITERATION 31 — Installation & Setup complete
