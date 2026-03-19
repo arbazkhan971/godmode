@@ -77,4 +77,113 @@ Godmode organizes skills into **4 phases** matching the core loop: THINK → BUI
 
 ---
 
-## Status: ITERATION 2 — Skill Architecture complete
+## 3. Plugin File Structure
+
+Godmode ships as a single Claude Code skill plugin directory. Every file has a purpose; no config sprawl.
+
+```
+godmode/
+├── SKILL.md                          # Orchestrator skill (the /godmode command)
+├── settings.json                     # Plugin-level defaults (iterations, model, etc.)
+├── hooks/
+│   ├── session-start.md              # Hook: runs on session start
+│   └── lifecycle.md                  # Hook: phase transition events
+├── skills/
+│   ├── think/
+│   │   ├── SKILL.md                  # /godmode:think (brainstorm)
+│   │   ├── references/
+│   │   │   ├── brainstorm-protocol.md
+│   │   │   └── visual-companion.md
+│   │   └── templates/
+│   │       └── spec-template.md
+│   ├── predict/
+│   │   ├── SKILL.md                  # /godmode:predict
+│   │   └── references/
+│   │       └── persona-definitions.md
+│   ├── scenario/
+│   │   ├── SKILL.md                  # /godmode:scenario
+│   │   └── references/
+│   │       └── 12-dimensions.md
+│   ├── plan/
+│   │   ├── SKILL.md                  # /godmode:plan
+│   │   └── references/
+│   │       └── task-decomposition.md
+│   ├── build/
+│   │   ├── SKILL.md                  # /godmode:build
+│   │   └── references/
+│   │       ├── parallel-dispatch.md
+│   │       └── review-protocol.md
+│   ├── test/
+│   │   ├── SKILL.md                  # /godmode:test
+│   │   └── references/
+│   │       └── tdd-cycle.md
+│   ├── review/
+│   │   ├── SKILL.md                  # /godmode:review
+│   │   └── references/
+│   │       └── severity-levels.md
+│   ├── optimize/
+│   │   ├── SKILL.md                  # /godmode:optimize
+│   │   └── references/
+│   │       ├── loop-protocol.md
+│   │       ├── metrics-database.md
+│   │       └── guard-system.md
+│   ├── debug/
+│   │   ├── SKILL.md                  # /godmode:debug
+│   │   └── references/
+│   │       └── investigation-techniques.md
+│   ├── fix/
+│   │   ├── SKILL.md                  # /godmode:fix
+│   │   └── references/
+│   │       └── fix-protocol.md
+│   ├── secure/
+│   │   ├── SKILL.md                  # /godmode:secure
+│   │   └── references/
+│   │       ├── stride-owasp.md
+│   │       └── red-team-personas.md
+│   ├── ship/
+│   │   ├── SKILL.md                  # /godmode:ship
+│   │   └── references/
+│   │       └── shipping-workflow.md
+│   ├── finish/
+│   │   ├── SKILL.md                  # /godmode:finish
+│   │   └── references/
+│   │       └── completion-options.md
+│   ├── setup/
+│   │   ├── SKILL.md                  # /godmode:setup
+│   │   └── references/
+│   │       └── wizard-steps.md
+│   └── verify/
+│       ├── SKILL.md                  # /godmode:verify
+│       └── references/
+│           └── evidence-protocol.md
+├── shared/
+│   ├── git-memory.md                 # Git-as-memory conventions (shared across skills)
+│   ├── results-format.md            # TSV logging format
+│   ├── handoff-protocol.md          # Phase transition protocol
+│   └── crash-recovery.md            # Error handling & recovery
+└── .claude-plugin/
+    ├── manifest.json                 # Plugin manifest for Claude Code marketplace
+    └── marketplace.json              # Marketplace metadata (icon, description, tags)
+```
+
+### Key design decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| One `SKILL.md` per skill | Claude Code discovers skills by finding `SKILL.md` files — one file = one command |
+| `references/` directories | Heavy content lives here — keeps SKILL.md focused on workflow, references hold deep knowledge |
+| `shared/` directory | Cross-cutting concerns (git conventions, logging, handoff) stay DRY |
+| `templates/` where needed | Skills that produce artifacts (specs, plans, reports) include output templates |
+| `hooks/` at root level | Session and lifecycle hooks run automatically, not invoked as skills |
+| `settings.json` at root | Single config file, overridable per-project via `.godmode/settings.json` in project root |
+
+### File count
+
+- **16 SKILL.md files** (one per skill, plus the root orchestrator)
+- **~20 reference files** (deep knowledge, protocols, databases)
+- **~4 shared files** (cross-cutting concerns)
+- **~50 total files** — small enough to ship, large enough to be comprehensive
+
+---
+
+## Status: ITERATION 3 — Plugin File Structure complete
