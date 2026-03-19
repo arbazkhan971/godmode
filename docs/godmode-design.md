@@ -4591,4 +4591,128 @@ The plan includes budget information:
 
 ---
 
-## Status: ITERATION 40 — Iteration Budget System complete
+## 41. Metric Discovery Phase
+
+**Purpose:** Integrate metric discovery into the brainstorming phase so that "what does success look like mechanically?" is answered before any code is written.
+
+### The Question
+
+During `/godmode:think`, after understanding the problem and before writing the spec, the agent asks:
+
+> "What does success look like, mechanically? What number would prove this feature works well?"
+
+This is not an optional question. It's the bridge between THINK and OPTIMIZE.
+
+### Metric Discovery Workflow
+
+**Step 1: Ask the User**
+- "If this feature is successful, what would we measure to prove it?"
+- Listen for: performance goals, quality targets, capacity requirements, user experience metrics
+
+**Step 2: Suggest from Database**
+Based on the feature description, suggest relevant metrics from the metric database (Section 23):
+
+```
+Your feature "rate limiter" suggests these metrics:
+  1. Requests correctly rate-limited (accuracy)
+  2. Latency overhead added by the limiter (performance)
+  3. Memory usage under load (efficiency)
+  4. False positive rate (quality)
+
+Which matters most? Or suggest your own.
+```
+
+**Step 3: Validate the Metric**
+- Is it mechanical? (command-based, not vibes-based)
+- Is it measurable right now? (or after a specific build task)
+- Is it fast? (<60 seconds to measure)
+- Does the user agree on direction? (higher/lower is better)
+
+**Step 4: Define Guards**
+- "What must NOT get worse while we optimize this metric?"
+- Suggest default guards based on project type (tests passing, lint clean)
+- Validate each guard command
+
+**Step 5: Include in Spec**
+
+The spec template gets a "Metrics" section:
+
+```markdown
+## Metrics
+
+### Primary Metric
+- **Name:** Requests correctly rate-limited
+- **Command:** `npm test -- --grep "rate-limit" | grep passing | awk '{print $1}'`
+- **Target:** 100% accuracy (all test cases pass)
+- **Direction:** higher_is_better
+
+### Guards
+- Tests passing: `npm test` (hard, must not fail)
+- Latency overhead: `wrk ... | grep p99` (soft, must not exceed 50ms added)
+
+### When to Measure
+- After build: verify accuracy against test cases
+- During optimize: measure latency overhead, minimize it
+```
+
+### Integration Points
+
+| Phase | How Metrics Are Used |
+|-------|---------------------|
+| **THINK** | Discover the metric, include in spec |
+| **BUILD** | Verify metric baseline after implementation |
+| **OPTIMIZE** | Primary metric drives the loop, guards protect |
+| **SHIP** | Final metric value included in ship report |
+
+### Metric Evolution
+
+Metrics can change as understanding deepens:
+
+```
+Think phase:  "Requests correctly limited" (accuracy)
+Build phase:  Baseline measured → 95% accuracy (some edge cases fail)
+Optimize phase: Primary metric shifts to "latency overhead" after accuracy reaches 100%
+Ship phase:   Both metrics reported in release notes
+```
+
+The agent can suggest metric changes:
+```
+"Accuracy is now 100% and stable. Should we switch the primary
+ metric to latency overhead for the optimization phase?"
+```
+
+### Common Metric Discovery Conversations
+
+**Backend feature:**
+```
+Agent: What does success look like mechanically?
+User:  It should handle 10K requests per second.
+Agent: Got it. We'll measure requests/sec with wrk. What's the baseline?
+User:  Currently 8K without rate limiting.
+Agent: So the guard is: throughput must not decrease below 8K. And we'll
+       add a metric for rate limiting accuracy. Sound right?
+```
+
+**Frontend feature:**
+```
+Agent: What does success look like mechanically?
+User:  The page should load fast.
+Agent: "Fast" means different things. Which matters most?
+       1. First Contentful Paint (perceived speed)
+       2. Lighthouse score (overall performance)
+       3. Bundle size (payload efficiency)
+User:  Lighthouse score above 90.
+Agent: Done. Primary metric: Lighthouse performance score. Target: 90.
+```
+
+### Key Behaviors
+
+1. **Metrics are discovered, not imposed** — Ask the user; don't assume
+2. **Discovered early** — During brainstorming, not after building
+3. **Validated immediately** — Run the metric command during discovery
+4. **Included in the spec** — The spec is incomplete without a metrics section
+5. **Evolve over time** — Metrics can change as the project progresses
+
+---
+
+## Status: ITERATION 41 — Metric Discovery Phase complete
