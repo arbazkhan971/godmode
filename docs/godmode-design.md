@@ -8987,3 +8987,253 @@ The workflow automation and productivity skills integrate into the Godmode workf
 | `commands/godmode/estimate.md` | Command | Usage reference for `/godmode:estimate` |
 
 **Iterations 252-259 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 79. Specialized Domain Skills
+
+### Overview
+
+Skills for specialized infrastructure and application domains that are common across modern SaaS and web applications. These skills encode deep operational knowledge for networking, file storage, payment processing, and communication systems — domains where getting the details wrong leads to outages, security breaches, compliance violations, or revenue loss.
+
+### Skills in this Category
+
+#### `/godmode:network` — Network & DNS
+
+**Purpose:** Configure, troubleshoot, and secure networking infrastructure across DNS, SSL/TLS, CDN, load balancers, and VPC design.
+
+**Core capabilities:**
+- **DNS configuration:** Record design (A, CNAME, MX, TXT), propagation validation across multiple resolvers, email DNS (SPF, DKIM, DMARC), troubleshooting resolution failures
+- **SSL/TLS management:** Let's Encrypt with certbot, Kubernetes cert-manager with ClusterIssuers, certificate monitoring and auto-renewal, TLS version and cipher suite configuration, HSTS enforcement
+- **CDN configuration:** CloudFront distributions with cache behaviors, Cloudflare zones with WAF and bot protection, Fastly VCL configuration, cache strategy by asset type (HTML no-cache, hashed assets immutable, API bypass)
+- **Load balancer setup:** AWS ALB/NLB with target groups and routing rules, Nginx upstream configuration with least-conn and connection pooling, HAProxy with stick tables and rate limiting, health check design (interval, thresholds, timeout)
+- **Network security:** Three-tier VPC architecture (public/private/isolated), security group design with least privilege, Network ACLs for subnet-level deny rules, VPC endpoints for private AWS API access, VPC Flow Logs for forensic analysis
+- **Troubleshooting:** 502 Bad Gateway diagnosis (backend health, security groups, port conflicts), DNS resolution failures (propagation, DNSSEC, nameserver delegation), certificate expiry detection and remediation, latency investigation (traceroute, connection timing)
+
+**Invocation:** `/godmode:network`, "configure DNS", "set up SSL", "CDN setup", "load balancer", "firewall rules", "VPC design", "fix 502"
+
+**Output:** Network configuration files in `infra/` with commit `"network: <description> — <components configured>"`
+
+**Flags:** `--dns`, `--ssl`, `--cdn`, `--lb`, `--vpc`, `--security`, `--troubleshoot`, `--domain <name>`, `--provider <name>`
+
+#### `/godmode:storage` — File Storage & CDN
+
+**Purpose:** Design and implement file storage systems with upload architecture, media processing pipelines, cost optimization, and disaster recovery.
+
+**Core capabilities:**
+- **Object storage configuration:** S3/GCS/Azure Blob bucket design with folder structure, encryption (SSE-S3, KMS), versioning, block public access, bucket policies enforcing SSL and encryption
+- **File upload architecture:** Presigned URL direct-to-storage uploads (card data never touches server pattern for files), multipart uploads for large files with concurrent chunk uploads and retry, resumable uploads via tus protocol for unstable connections, server-side validation (MIME sniffing, file header inspection, virus scanning)
+- **Image processing pipeline:** Validation and malware scanning, EXIF stripping for privacy, variant generation (thumbnail, medium, large) with Sharp, WebP/AVIF conversion for size reduction, blur placeholder generation for progressive loading
+- **Video processing pipeline:** Transcoding to multiple quality levels (720p, 1080p, 4K), HLS adaptive bitrate streaming with segment-based delivery, thumbnail and preview GIF generation, subtitle extraction and waveform visualization
+- **Storage cost optimization:** Lifecycle policies (Standard -> IA -> Glacier -> Deep Archive), incomplete multipart upload cleanup, orphaned file detection and deletion, CDN egress optimization, WebP conversion savings analysis, cost projection with before/after comparison
+- **Backup and replication:** Cross-region replication with Replication Time Control, cross-account backup with S3 Object Lock (immutable), RPO/RTO target definition, monthly restore testing protocol
+
+**Invocation:** `/godmode:storage`, "file upload", "S3 bucket", "image processing", "storage costs", "backup strategy"
+
+**Output:** Storage configuration and upload service code with commit `"storage: <description> — <components configured>"`
+
+**Flags:** `--upload`, `--process`, `--optimize`, `--backup`, `--lifecycle`, `--migrate`, `--provider <name>`, `--audit`
+
+#### `/godmode:pay` — Payment & Billing Integration
+
+**Purpose:** Implement payment processing, subscription billing, invoicing, and tax calculation with PCI-DSS compliance and reliable webhook handling.
+
+**Core capabilities:**
+- **Payment gateway integration:** Stripe PaymentIntents with client-side card collection (PCI SAQ-A), PayPal Orders API v2 with server-side capture, Braintree drop-in UI, idempotency keys on all write operations, 3D Secure for SCA compliance
+- **Subscription billing:** Plan definition with monthly/annual pricing, trial periods with automatic conversion, proration on plan upgrades and downgrades, metered/usage-based billing with usage record reporting, dunning flow with escalating notifications (Day 0-3-7-14-21)
+- **Invoice generation:** Sequential invoice numbering (never reused, no gaps), line items with subtotal/tax/discount/total, PDF generation and S3 storage, customer portal for invoice history, multi-entity support with regional prefixes
+- **Tax calculation:** US sales tax with nexus tracking and economic nexus rules, EU VAT with B2C rates by country and B2B reverse charge, VAT ID collection and VIES validation, integration with Stripe Tax, TaxJar, or Avalara
+- **PCI-DSS compliance:** SAQ-A architecture (card data never touches your server), Stripe.js Elements iframe for card input, API key management via secrets manager, no card data in logs/errors/analytics, 3D Secure enforcement
+- **Webhook handling:** Stripe webhook signature verification, idempotent event processing with deduplication, database transaction wrapping, handling for 9+ event types (payment success/failure, subscription lifecycle, disputes), daily reconciliation between provider and database
+
+**Invocation:** `/godmode:pay`, "integrate Stripe", "subscription billing", "payment processing", "invoice system", "PCI compliance", "tax calculation"
+
+**Output:** Payment service code and webhook handlers with commit `"pay: <description> — <components implemented>"`
+
+**Flags:** `--checkout`, `--subscription`, `--invoice`, `--tax`, `--webhooks`, `--pci`, `--migrate`, `--provider <name>`, `--dunning`, `--reconcile`
+
+#### `/godmode:email` — Email & Notification Systems
+
+**Purpose:** Build email delivery and multi-channel notification systems with deliverability monitoring, bounce handling, and user preference management.
+
+**Core capabilities:**
+- **Email service integration:** SendGrid, SES, Postmark, and Resend with domain verification and API setup, provider comparison by use case (Resend for DX, Postmark for deliverability, SendGrid for marketing, SES for volume/cost)
+- **Email template design:** React Email components with TypeScript props for type-safe templates, MJML for maximum cross-client compatibility (Outlook, Gmail, Apple Mail), responsive single-column layout, blur-up image loading, plain text fallback for every HTML email
+- **Notification system architecture:** Event-driven multi-channel routing (email, push, SMS, in-app), per-user per-channel preference management, rate limiting per user (max N notifications/hour), digest batching for low-priority notifications, queue-based async delivery with retry
+- **Delivery tracking and bounce handling:** Email lifecycle tracking (queued -> sent -> delivered -> opened -> clicked), hard bounce detection with immediate suppression, soft bounce tracking with escalation after 3 bounces in 30 days, spam complaint handling with automatic unsubscribe and team alerting, deliverability metrics dashboard (delivery rate, bounce rate, spam complaint rate)
+- **Email DNS authentication:** SPF, DKIM, and DMARC configuration with progressive DMARC policy (none -> quarantine -> reject over 30 days), bounce domain alignment, subdomain strategy for transactional vs marketing isolation
+- **Transactional vs marketing separation:** Separate subdomains (notifications.* vs marketing.*), separate IPs or provider accounts, isolated sender reputation, IP warm-up schedule for new dedicated IPs (50/day to full volume over 30 days)
+
+**Invocation:** `/godmode:email`, "send emails", "notification system", "email templates", "push notifications", "bounce handling", "deliverability"
+
+**Output:** Notification service code and email templates with commit `"email: <description> — <components implemented>"`
+
+**Flags:** `--email`, `--templates`, `--push`, `--sms`, `--inapp`, `--deliverability`, `--provider <name>`, `--dns`, `--preferences`, `--digest`
+
+### Skill Interactions
+
+The specialized domain skills integrate with the core Godmode workflow and each other:
+
+```
+/godmode:network ──→ /godmode:storage ──→ /godmode:pay ──→ /godmode:email
+(infrastructure)     (file serving)       (billing)        (receipts/alerts)
+```
+
+Cross-skill integration:
+- **Network -> Storage:** CDN configuration for serving stored files (CloudFront + S3)
+- **Network -> Pay:** SSL/TLS for payment pages, WAF rules for checkout protection
+- **Storage -> Email:** Email attachments (invoices, receipts) stored in object storage
+- **Pay -> Email:** Payment receipts, subscription confirmations, dunning emails all flow through the email system
+- **Secure -> All:** Security audit validates each domain (TLS config, bucket policies, PCI compliance, email authentication)
+- **Deploy -> Network:** Deployment updates DNS, CDN invalidation, load balancer target groups
+
+### Design Principles for Specialized Domain Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Security by default | TLS everywhere, presigned URLs, PCI SAQ-A, email authentication |
+| 2 | Never proxy what you can direct | Direct-to-storage uploads, client-side card tokenization, CDN serving |
+| 3 | Cost awareness from day one | Lifecycle policies, CDN egress optimization, provider cost comparison |
+| 4 | Compliance is not optional | PCI-DSS for payments, CAN-SPAM/GDPR for email, data residency for storage |
+| 5 | Monitor everything | VPC Flow Logs, delivery metrics, payment reconciliation, CDN cache hit ratio |
+| 6 | Graceful degradation | Dunning for failed payments, soft bounce retry, CDN origin failover |
+| 7 | Separate concerns | Transactional vs marketing email, hot vs cold storage, auth vs application traffic |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/network/SKILL.md` | Skill | Network & DNS workflow |
+| `skills/storage/SKILL.md` | Skill | File Storage & CDN workflow |
+| `skills/pay/SKILL.md` | Skill | Payment & Billing Integration workflow |
+| `skills/email/SKILL.md` | Skill | Email & Notification Systems workflow |
+| `commands/godmode/network.md` | Command | Usage reference for `/godmode:network` |
+| `commands/godmode/storage.md` | Command | Usage reference for `/godmode:storage` |
+| `commands/godmode/pay.md` | Command | Usage reference for `/godmode:pay` |
+| `commands/godmode/email.md` | Command | Usage reference for `/godmode:email` |
+
+**Iterations 236-243 (8 files, 4 skills, 4 commands)**
+
+## 95. Open Source & Community Skills
+
+Three skills for managing open source projects end-to-end: from license selection through community scaffolding to changelog automation.
+
+### 95.1 Open Source Project Management (`/godmode:opensource`)
+
+Repository setup and community management for open source projects.
+
+**Repository Scaffolding** — generates or audits all community health files:
+- LICENSE, CODE_OF_CONDUCT.md (Contributor Covenant 2.1), CONTRIBUTING.md, SECURITY.md
+- `.github/ISSUE_TEMPLATE/` (bug report YAML, feature request YAML, config)
+- `.github/PULL_REQUEST_TEMPLATE.md`
+- `.github/CODEOWNERS`, `.github/FUNDING.yml`
+
+**GitHub Actions Automation** — workflows for project management:
+- `labeler.yml` — auto-labels PRs by file path
+- `stale.yml` — marks and closes inactive issues/PRs (60 days stale, 14 days to close)
+- `welcome.yml` — greets first-time contributors on issues and PRs
+- `release-drafter.yml` — auto-drafts release notes from merged PRs
+
+**Maintainer Workflows** — structured processes:
+- Triage: new issue → bot labels → maintainer triage (48h SLA) → categorize → assign/label
+- Review: PR opened → CI runs → CODEOWNERS auto-assigns → code review → merge
+- Release: scope determination → changelog → version bump → tag → publish → announce
+
+**Governance Models** — three models matched to project size:
+- BDFL (1-20 contributors): single decision authority, fast iteration
+- Consensus (10-50 contributors): core team with 72-hour discussion periods
+- Steering Committee (50+ contributors): elected committee, working groups, RFC process
+
+| Flag | Description |
+|------|-------------|
+| `--audit` | Audit only, no file creation |
+| `--governance <model>` | Set governance model (bdfl, consensus, committee) |
+| `--templates` | Issue and PR templates only |
+| `--automation` | GitHub Actions workflows only |
+| `--community` | Community channels only |
+| `--minimal` | LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT only |
+
+### 95.2 Changelog & Release Notes (`/godmode:changelog`)
+
+Changelog generation and release communication.
+
+**Keep a Changelog Format** — standard sections: Added, Changed, Deprecated, Removed, Fixed, Security. Latest version first, release dates, comparison links.
+
+**Conventional Commits Integration** — commit types (feat, fix, perf, refactor, docs, test, chore, ci, build, style, revert) parsed into changelog entries. Setup includes commitlint, Commitizen, and Husky hooks.
+
+**Auto-Generation Tooling**:
+- `conventional-changelog` for local generation
+- `release-please` GitHub Action for automated release PRs
+- `standard-version` for local bump + changelog + tag
+
+**Audience-Specific Release Notes**:
+- Developer-facing: breaking changes with before/after code, new APIs, bug fixes with issue refs
+- User-facing: highlights in plain language, capability improvements, upgrade notices
+
+**Breaking Change Communication**:
+- Advance notice via deprecation warnings (1-2 releases before)
+- Migration guide with step-by-step instructions, codemods, rollback steps
+- Release communication across changelog, GitHub Release, blog, community channels
+- Support window for previous major version
+
+| Flag | Description |
+|------|-------------|
+| `--setup` | Configure Conventional Commits + auto-changelog |
+| `--release <version>` | Generate changelog for specific version |
+| `--migration <from> <to>` | Generate migration guide |
+| `--notes` | User-facing release notes |
+| `--dev-notes` | Developer-facing release notes |
+| `--breaking` | Breaking changes only |
+| `--full` | Regenerate from full git history |
+
+### 95.3 License Management (`/godmode:license`)
+
+License selection, compliance, and attribution.
+
+**License Selection Guidance** — comparison matrix covering MIT, Apache 2.0, GPL v3, AGPL v3, MPL 2.0, BSL 1.1, and proprietary. Each profile includes SPDX identifier, permissions, conditions, limitations, best-for scenarios, risks, and notable users.
+
+**License Compatibility Checking** — dependency scanner that cross-references every dependency's license against the project license. Produces compatibility matrix: OK, OK with NOTICE, WARN (consult legal), FAIL (incompatible).
+
+**SPDX Identifiers and File Headers** — standardized `// SPDX-License-Identifier: <id>` headers for all source files with language-specific templates (JS/TS, Python, Go, Rust, Java, HTML, Shell). CI enforcement via `skywalking-eyes` or `addlicense`.
+
+**Third-Party Attribution** — NOTICE file and THIRD_PARTY_LICENSES generation from dependency trees. Covers attribution requirements per license type (MIT needs copyright, Apache 2.0 needs NOTICE file, etc.).
+
+**CLA / DCO Setup**:
+- Developer Certificate of Origin (DCO): lightweight, `Signed-off-by` line, used by CNCF/Linux Foundation
+- Individual CLA: contributor signs via GitHub bot comment
+- Corporate CLA: company signs on behalf of employees
+- Automated enforcement via GitHub Actions
+
+| Flag | Description |
+|------|-------------|
+| `--select` | Interactive license selection |
+| `--check` | Dependency compatibility check |
+| `--headers` | Add SPDX headers to source files |
+| `--attribution` | Generate NOTICE and attribution files |
+| `--cla` | Set up CLA enforcement |
+| `--dco` | Set up DCO enforcement |
+| `--apply <license>` | Apply specific license |
+| `--audit` | Report without changes |
+
+### 95.4 Skill Interconnections
+
+```
+/godmode:opensource ──→ /godmode:license    (license selection during scaffolding)
+/godmode:opensource ──→ /godmode:changelog  (changelog setup during scaffolding)
+/godmode:opensource ──→ /godmode:cicd       (CI/CD pipeline after project setup)
+/godmode:changelog  ──→ /godmode:ship       (publish release after changelog)
+/godmode:license    ──→ /godmode:opensource (full setup after licensing)
+/godmode:license    ──→ /godmode:secure     (security audit includes license check)
+```
+
+**Open Source Launch Chain:**
+```
+/godmode:license → /godmode:opensource → /godmode:changelog --setup → /godmode:cicd
+```
+
+**Release Chain:**
+```
+/godmode:changelog → /godmode:ship → /godmode:deploy
+```
+
+**Iterations 389-394 (3 skills created, 3 command files created, 1 design doc updated)**
