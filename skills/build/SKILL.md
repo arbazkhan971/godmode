@@ -15,7 +15,7 @@ Plan from `/godmode:plan` with tasks, deps, file scope. No plan → suggest plan
 tasks = load_plan()
 WHILE tasks remain:
     round = pick_tasks_with_no_unmet_deps(tasks, completed)[:5]
-    FOR each task: Agent("Implement: {task}", files: {scope}, isolation: "worktree")
+    FOR each task: Agent("Implement: {task.title}\nFiles: {task.files}\nDone when: {task.done_when}", isolation: "worktree")
     FOR each completed agent:
         merge → conflict: resolve or discard → test fail: fix or revert
     VERIFY: test_cmd && lint_cmd && build_cmd → fail: /godmode:fix (max 3)
@@ -27,5 +27,5 @@ WHILE tasks remain:
 2. Scope files strictly. No touching outside scope.
 3. Test after every merge. Broken builds don't proceed.
 4. Max 5 agents per round. Dependency order always.
-5. Build what the plan says. No refactoring.
+5. Build what the plan says. No unplanned refactoring or scope creep.
 6. Log everything to TSV.

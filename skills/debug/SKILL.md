@@ -12,14 +12,14 @@ failing_count = run_tests()
 current_iteration = 0
 WHILE failing_count > 0:
     current_iteration += 1
-    # 1. REPRODUCE — run failing command, observe output
+    # 1. REPRODUCE — run failing command, capture FULL output (stdout+stderr)
     # 2. SELECT TECHNIQUE:
          Stack trace → Trace Analysis | "Used to work" → git bisect
          Intermittent → State Inspection | Wrong results → State Inspection
          Unknown → Binary Search (eliminate half)
-    # 3. INVESTIGATE — collect evidence using technique
+    # 3. INVESTIGATE — collect evidence: variable values, call stack, input/output at failure point
     # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
-         Chain: Symptom → Proximate → Root cause → Fix (file:line + change)
+         Chain: Symptom → Proximate cause → Root cause → Fix (file:line + exact change)
     # 5. FIX if trivial, else → /godmode:fix
     # 6. VERIFY — re-run tests
     # 7. LOG to .godmode/debug-findings.tsv
