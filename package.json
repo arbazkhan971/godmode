@@ -1,0 +1,55 @@
+{
+  "name": "@godmode/claude-code-plugin",
+  "version": "1.0.0",
+  "description": "Turn on Godmode for Claude Code. Complete development workflow from idea to shipped, optimized product.",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "skill",
+    "development-workflow",
+    "tdd",
+    "autonomous",
+    "optimization",
+    "security-audit",
+    "code-review",
+    "debugging"
+  ],
+  "author": "godmode-team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/godmode-team/godmode.git"
+  },
+  "homepage": "https://github.com/godmode-team/godmode",
+  "bugs": {
+    "url": "https://github.com/godmode-team/godmode/issues"
+  },
+  "files": [
+    "skills/",
+    "commands/",
+    "agents/",
+    "hooks/",
+    ".claude-plugin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "validate": "node scripts/validate-plugin.js",
+    "lint:md": "markdownlint '**/*.md' --ignore node_modules",
+    "test": "node scripts/validate-plugin.js && echo 'All validations passed'"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.12.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "claude-plugin": {
+    "manifest": ".claude-plugin/marketplace.json",
+    "skills": 16,
+    "commands": 9,
+    "agents": 2
+  }
+}
