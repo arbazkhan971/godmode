@@ -2446,4 +2446,117 @@ Metric: p95 response time (lower is better)
 
 ---
 
-## Status: ITERATION 23 — Mechanical Verification Framework complete
+## 24. Guard System
+
+**Purpose:** Prevent regressions during optimization. Guards are metrics that must NOT get worse, even while the primary metric is being improved.
+
+### The Problem
+
+Optimizing one metric often regresses another:
+- Faster response time, but tests now fail
+- Smaller bundle, but features are missing
+- Better coverage, but tests are flaky
+
+Guards prevent this by defining boundaries that must never be crossed.
+
+### Guard Definition
+
+```json
+{
+  "name": "tests passing",
+  "command": "npm test 2>&1 | grep -oP '\\d+ passing' | grep -oP '\\d+'",
+  "baseline": 47,
+  "direction": "must_not_decrease",
+  "tolerance": 0,
+  "severity": "hard"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `name` | Human-readable guard name |
+| `command` | Shell command to measure the guard metric |
+| `baseline` | Value at the start (or minimum acceptable) |
+| `direction` | `must_not_decrease` or `must_not_increase` |
+| `tolerance` | Acceptable variance (0 = strict) |
+| `severity` | `hard` (mandatory revert) or `soft` (warning, user decides) |
+
+### Guard + Metric Interaction
+
+```
+Primary Metric: p95 response time (optimize: lower is better)
+Guard 1: tests passing (must not decrease from 47)
+Guard 2: test coverage (must not decrease from 84%)
+Guard 3: bundle size (must not increase above 150KB)
+
+Iteration 4:
+  Primary metric: 241ms → 198ms ✓ IMPROVED
+  Guard 1: 47 → 47 ✓ PASS
+  Guard 2: 84% → 83% ✗ FAIL (hard guard)
+  Guard 3: 142KB → 145KB ✓ PASS
+
+  Verdict: REVERT (guard 2 failed, even though primary metric improved)
+```
+
+### Guard Severity
+
+| Severity | On Failure | Use Case |
+|----------|-----------|----------|
+| **Hard** | Mandatory revert, no exceptions | Tests passing, no security vulnerabilities |
+| **Soft** | Warning shown, user decides keep/revert | Coverage %, bundle size, complexity score |
+
+### Common Guard Patterns
+
+| Guard | Command | Direction | Typical Severity |
+|-------|---------|-----------|-----------------|
+| Tests passing | `npm test` (exit code) | must not fail | Hard |
+| Test count | `npm test \| grep passing \| awk '{print $1}'` | must_not_decrease | Hard |
+| Test coverage | `npx vitest --coverage \| grep 'All files'` | must_not_decrease | Soft |
+| Lint clean | `npx eslint src/` (exit code) | must not fail | Hard |
+| Type check | `npx tsc --noEmit` (exit code) | must not fail | Hard |
+| Bundle size | `du -sb dist/ \| awk '{print $1}'` | must_not_increase | Soft |
+| Build succeeds | `npm run build` (exit code) | must not fail | Hard |
+
+### Max Retry Logic
+
+When a guard fails:
+
+```
+Guard "tests passing" FAILED after optimization change.
+
+Retry 1: Revert change, try different approach
+  → New approach also fails guard?
+
+Retry 2: Revert, try a more conservative approach
+  → Still fails?
+
+Retry 3: Revert, try minimal change
+  → Still fails?
+
+STOP: Guard has failed 3 consecutive times.
+  This area may be fundamentally constrained.
+  Report to user: "Cannot improve [metric] without regressing [guard]."
+  Suggestion: Relax the guard threshold, or change the optimization strategy.
+```
+
+### Guard Auto-Discovery
+
+During setup, Godmode can auto-suggest guards:
+
+1. Detect test suite → suggest "tests passing" guard
+2. Detect linter → suggest "lint clean" guard
+3. Detect type checker → suggest "type check" guard
+4. Detect build command → suggest "build succeeds" guard
+5. Detect coverage tool → suggest "coverage" guard (soft)
+
+### Key Behaviors
+
+1. **Hard guards are non-negotiable** — If tests fail, revert. Period.
+2. **Soft guards inform, don't block** — Show the warning, let the user decide
+3. **Guards run after every iteration** — Not just at the end
+4. **Guards are separate from the primary metric** — They measure different things
+5. **Guard failure is a signal** — It means the optimization is approaching a constraint boundary
+
+---
+
+## Status: ITERATION 24 — Guard System complete
