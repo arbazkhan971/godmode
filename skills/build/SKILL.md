@@ -19,7 +19,7 @@ WHILE tasks remain:
     FOR each completed agent:
         merge worktree → conflict: discard worktree, retry → test fail: `/godmode:fix` or revert
     VERIFY: test_cmd && lint_cmd && build_cmd → fail: /godmode:fix (max 3)
-    Log to .godmode/build-log.tsv. Print "Round {N}: {done}/{total}"
+    Log to .godmode/build-log.tsv: round, task_id, status(merged/reverted/conflict). Print "Round {N}: {done}/{total}"
 ```
 
 ## Rules

@@ -20,7 +20,7 @@ WHILE error_count > 0:
     # 5. VERIFY: new_count = run_all_checks()
     IF new_count > error_count: git reset --hard HEAD~1 (max 3, then skip this error, move to next)
     ELSE: error_count = new_count
-    # 6. LOG to .godmode/fix-log.tsv
+    # 6. LOG to .godmode/fix-log.tsv: iteration, error, file, fix_description, status(kept/reverted)
     # 7. STATUS every 5: "{error_count} remaining (from {original})"
 Print: "{original} → 0 in {N} iterations"
 ```

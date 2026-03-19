@@ -22,7 +22,7 @@ WHILE failing_count > 0:
          Chain: Symptom → Proximate cause → Root cause → Fix (file:line + exact change)
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4
     # 6. VERIFY — re-run tests
-    # 7. LOG to .godmode/debug-findings.tsv
+    # 7. LOG to .godmode/debug-findings.tsv: iteration, symptom, root_cause, file:line, status(fixed/skipped)
     # 8. STATUS every 3: "{found} found, {failing_count} remaining"
     failing_count = run_tests()
 ```
