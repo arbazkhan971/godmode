@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Godmode Session Start Hook
+# Initializes the Godmode environment for the current project.
+# This runs automatically when a Claude Code session begins.
+
+set -euo pipefail
+
+GODMODE_DIR=".godmode"
+CONFIG_FILE="${GODMODE_DIR}/config.yaml"
+
+# Create .godmode directory if it doesn't exist
+if [ ! -d "$GODMODE_DIR" ]; then
+    mkdir -p "$GODMODE_DIR"
+fi
+
+# Detect project type if no config exists
+if [ ! -f "$CONFIG_FILE" ]; then
+    PROJECT_NAME=$(basename "$(pwd)")
+    LANGUAGE="unknown"
+    TEST_CMD=""
+    LINT_CMD=""
+
+    # Detect language and tools
+    if [ -f "package.json" ]; then
+        LANGUAGE="javascript"
+        if grep -q '"typescript"' package.json 2>/dev/null || [ -f "tsconfig.json" ]; then
+            LANGUAGE="typescript"
+        fi
+        if grep -q '"test"' package.json 2>/dev/null; then
+            TEST_CMD="npm test"
+        fi
+        if grep -q '"lint"' package.json 2>/dev/null; then
+            LINT_CMD="npm run lint"
+        fi
+    elif [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; then
+        LANGUAGE="python"
+        if command -v pytest &>/dev/null; then
+            TEST_CMD="pytest"
+        fi
+        if command -v ruff &>/dev/null; then
+            LINT_CMD="ruff check ."
+        elif command -v flake8 &>/dev/null; then
+            LINT_CMD="flake8"
+        fi
+    elif [ -f "Cargo.toml" ]; then
+        LANGUAGE="rust"
+        TEST_CMD="cargo test"
+        LINT_CMD="cargo clippy"
+    elif [ -f "go.mod" ]; then
+        LANGUAGE="go"
+        TEST_CMD="go test ./..."
+        LINT_CMD="golangci-lint run"
+    elif [ -f "Gemfile" ]; then
+        LANGUAGE="ruby"
+        TEST_CMD="bundle exec rspec"
+        LINT_CMD="bundle exec rubocop"
+    elif [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+        LANGUAGE="java"
+        if [ -f "pom.xml" ]; then
+            TEST_CMD="mvn test"
+        else
+            TEST_CMD="./gradlew test"
+        fi
+    fi
+
+    # Write initial config
+    cat > "$CONFIG_FILE" << YAML
+# Godmode Configuration
+# Generated automatically. Edit as needed.
+# Run /godmode:setup for interactive configuration.
+
+project:
+  name: "${PROJECT_NAME}"
+  language: "${LANGUAGE}"
+
+commands:
+  test: "${TEST_CMD}"
+  lint: "${LINT_CMD}"
+
+# Optimization config (set via /godmode:setup --optimize)
+# optimization:
+#   goal: ""
+#   metric: ""
+#   verify: ""
+#   target: ""
+#   max_iterations: 25
+
+scope:
+  include:
+    - "src/"
+    - "lib/"
+    - "tests/"
+  exclude:
+    - "node_modules/"
+    - "dist/"
+    - "build/"
+    - ".git/"
+    - "vendor/"
+    - "__pycache__/"
+    - "target/"
+YAML
+
+    echo "Godmode initialized for ${PROJECT_NAME} (${LANGUAGE})"
+    echo "Config: ${CONFIG_FILE}"
+    echo "Run /godmode:setup for full configuration."
+else
+    echo "Godmode ready. Config: ${CONFIG_FILE}"
+fi
+
+# Ensure results files exist
+touch "${GODMODE_DIR}/optimize-results.tsv" 2>/dev/null || true
+touch "${GODMODE_DIR}/fix-log.tsv" 2>/dev/null || true
+touch "${GODMODE_DIR}/ship-log.tsv" 2>/dev/null || true
