@@ -18,20 +18,13 @@ description: |
 - What does success look like? (measurable criteria)
 
 ### 2. Scan Codebase
-```bash
-git ls-files | head -50  # project structure
-# Look for: existing patterns, conventions, related code
-```
+Scan project structure and existing patterns/conventions via `git ls-files`.
 
 ### 3. Generate 2-3 Approaches
-For each approach:
-- Description (2-3 sentences)
-- Pros / Cons
-- Complexity (Low/Medium/High)
-- Files affected
+Per approach: description (2-3 sentences), pros/cons, complexity (Low/Med/High), files affected.
 
 ### 4. Recommend One
-Lead with your recommendation. Explain why in one sentence.
+Lead with recommendation. One sentence justification.
 
 ### 5. Write Spec
 Output to `.godmode/spec.md`:
@@ -47,9 +40,8 @@ Output to `.godmode/spec.md`:
 Commit: `"spec: {feature name}"`
 
 ## Rules
-
-1. **Always produce a spec file.** Think without output is wasted.
-2. **2-3 approaches, then pick one.** Don't present 7 options.
-3. **Measurable success criteria.** "Works well" is not a criterion.
-4. **Scan existing code first.** Don't propose patterns that conflict with the codebase.
-5. **Keep it short.** Spec should be under 100 lines. If longer, the feature needs decomposition.
+1. Always produce a spec file. Think without output is wasted.
+2. 2-3 approaches, then pick one. Not 7 options.
+3. Measurable success criteria. "Works well" is not a criterion.
+4. Scan existing code first. Don't propose conflicting patterns.
+5. Spec under 100 lines. If longer, decompose the feature.

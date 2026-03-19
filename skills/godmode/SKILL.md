@@ -1,7 +1,7 @@
 ---
 name: godmode
 description: |
-  Orchestrator. Routes to 171 skills. Auto-detects project stack and phase. Runs autonomous iteration loops. Dispatches multi-agent parallel execution in worktrees. Never stops. Never asks.
+  Orchestrator. Routes to 126 skills. Auto-detects project stack and phase. Runs autonomous iteration loops. Dispatches multi-agent parallel execution in worktrees. Never stops. Never asks.
 ---
 
 # Godmode — Orchestrator
@@ -60,21 +60,17 @@ IF code exists, tests passing    → OPTIMIZE or SHIP
 
 ## Step 4: Execute
 
-Read the matched skill's SKILL.md. Follow its workflow. That's it.
+Read the matched skill's SKILL.md. Follow its workflow.
 
-For chain execution (full lifecycle):
-```
-think → plan → build → test → fix → optimize → secure → ship
-```
-
-Between steps, print one line: `── chain: build ✓ → test ──`
+For chain execution: `think → plan → build → test → fix → optimize → secure → ship`
+Between steps, print: `── chain: build ✓ → test ──`
 Never ask "should I continue?" between chain steps.
 
 ---
 
 ## The Loop — Core Engine
 
-Every iterative skill (optimize, fix, debug, test, secure) runs this loop. This is pseudocode. Follow it literally.
+Every iterative skill (optimize, fix, debug, test, secure) runs this loop literally:
 
 ```
 current_iteration = 0
@@ -127,29 +123,6 @@ FOR each task group (max 5 agents per round):
 ```
 
 When NOT to parallelize: single file, single skill, user says "sequential".
-
----
-
-## Recovery
-
-- **Checkpoint**: Save `.godmode/checkpoint.json` at each skill start (skill, chain_index, branch, commit)
-- **`--resume`**: Load checkpoint, resume from last skill
-- **`--rollback`**: `git reset --hard` to pre-failure commit
-- **Auto-recovery in `--loop`**: If skill fails, try fix (3 attempts), then skip and continue chain. Halt after 3 consecutive failures.
-
----
-
-## Flags
-
-| Flag | What it does |
-|------|-------------|
-| `--loop` | Continuous mode: run full chain, never stop, never ask |
-| `--loop=N` | Run N cycles then stop |
-| `--resume` | Resume from checkpoint |
-| `--rollback` | Revert to pre-failure state |
-| `--chain "a,b,c"` | Custom skill chain |
-| `--status` | Print session summary from `.godmode/session-log.tsv` |
-| `Iterations: N` | Run exactly N loop iterations (on any skill) |
 
 ---
 
