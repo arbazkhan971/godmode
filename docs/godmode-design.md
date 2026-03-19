@@ -6956,6 +6956,99 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 
 **Iterations 131-136 (6 files, 3 skills, 3 commands)**
 
+## 72. Authentication & Identity Skills
+
+### Overview
+
+Two new skills extend Godmode into the authentication, authorization, and identity domain. These skills address the full identity lifecycle: from authentication strategy selection and implementation through permission model design, access control enforcement, and audit logging.
+
+### Skill: `/godmode:auth` — Authentication & Authorization
+
+**Purpose:** Design and implement production-grade authentication systems with security best practices.
+
+**Capabilities:**
+- **Auth strategy design:** JWT (RS256/ES256 with refresh token rotation), OAuth2/OIDC (Authorization Code + PKCE), SAML 2.0 federation, API key management (prefixed, hashed, scoped), and mTLS for zero-trust service-to-service authentication
+- **Session management:** Stateful (server-side with Redis/PostgreSQL) and stateless (JWT-based) session designs with HttpOnly/Secure/SameSite cookie configuration, idle and absolute timeouts, concurrent session limits, and session fixation prevention
+- **Multi-factor authentication:** TOTP (RFC 6238 compatible with authenticator apps), WebAuthn/passkeys (FIDO2 with platform and roaming authenticator support), SMS OTP (fallback only), email magic links, and single-use recovery codes
+- **Passwordless auth:** Magic link flows, WebAuthn/passkey-first authentication with conditional mediation, and one-time password delivery
+- **Token lifecycle:** Complete issuance, validation, refresh (with rotation), revocation, and cleanup pipeline with per-client-type storage guidance (SPA, SSR, mobile, server, microservice)
+- **Social login integration:** Google, GitHub, Apple, Microsoft, Facebook via OIDC/OAuth2 with email-based account linking, verified-email enforcement, and account takeover prevention
+- **Security hardening:** Password policy (argon2id/bcrypt), brute force protection (rate limiting, lockout, CAPTCHA), transport security (HTTPS, HSTS, CORS), and account enumeration prevention
+
+**Workflow:** Identity Requirements Discovery -> Auth Strategy Selection -> Session Management Design -> MFA Design -> Passwordless Design -> Token Lifecycle -> Social Login -> Security Hardening -> Implementation Artifacts -> Architecture Report
+
+**Artifacts produced:**
+- `docs/auth/<feature>-auth-architecture.md` — Authentication architecture decision document
+- `src/auth/` — Implementation code (strategies, middleware, controllers, services, models)
+- `tests/auth/` — Integration and unit tests
+
+**Flags:** `--strategy jwt|oauth|saml|session|apikey|mtls`, `--mfa`, `--passwordless`, `--social`, `--tokens`, `--sessions`, `--audit`, `--harden`, `--migrate`
+
+### Skill: `/godmode:rbac` — Permission & Access Control
+
+**Purpose:** Design and implement authorization models that enforce least-privilege access across resources.
+
+**Capabilities:**
+- **RBAC (Role-Based Access Control):** Role hierarchy design (strict tree, lattice DAG, scoped roles), permission format (`resource:action`), role inheritance, role assignment with scope and expiry, and constraint rules (separation of duties, prerequisites, cardinality)
+- **ABAC (Attribute-Based Access Control):** Policy evaluation over subject, resource, action, and environment attributes with support for Open Policy Agent (Rego), AWS Cedar, or custom policy languages, configurable evaluation order (deny-override), and policy versioning
+- **ReBAC (Relationship-Based Access Control):** Google Zanzibar-inspired relationship tuples, type definitions with computed permissions, transitive relationship resolution, and integration with SpiceDB, Auth0 FGA, Ory Keto, or AWS Verified Permissions
+- **Resource-based access control:** Resource ownership model, permission evaluation chains (owner -> explicit grant -> role-based -> relationship-based -> default deny), resource-level sharing with grants, and field-level access control with response filtering
+- **Permission inheritance and delegation:** Organizational hierarchy inheritance (org -> team -> project -> resource), grant delegation with depth limits, admin impersonation with time limits and audit, temporary privilege elevation with approval workflow, and API key delegation scoped to granting user's permissions
+- **Policy engine design:** Authorization decision engine with deny-override evaluation, sub-5ms p99 latency targets, compiled policy caching, middleware integration patterns (Express, NestJS, decorator-based), and programmatic permission checks
+- **Audit logging:** Every ALLOW and DENY decision logged with structured schema (subject, resource, action, context), alert rules for repeated denials and privilege escalation, immutable append-only storage, SIEM integration, and automated periodic access reviews
+
+**Workflow:** Requirements Discovery -> Permission Model Selection -> Role Hierarchy Design -> Resource-Based Access Control -> Permission Inheritance & Delegation -> Policy Engine Design -> Audit Logging -> Implementation Artifacts -> Access Control Report
+
+**Artifacts produced:**
+- `docs/auth/<feature>-access-control.md` — Access control model documentation
+- `src/auth/` — Implementation code (models, middleware, policy engine, audit logger)
+- Database migrations for roles, permissions, grants, and audit tables
+- `tests/auth/authorization/` — Authorization test suite
+
+**Flags:** `--model rbac|abac|rebac`, `--hierarchy`, `--permissions`, `--delegation`, `--audit`, `--policies`, `--review`, `--migrate`, `--test`, `--matrix`
+
+### Integration with Existing Skills
+
+The identity skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:think  ->  /godmode:auth  ->  /godmode:rbac  ->  /godmode:plan  ->  /godmode:build
+     |                   |                   |                  |                  |
+  Brainstorm        Design auth          Design access      Decompose into     Implement
+  the identity      strategy & MFA       control model      tasks with TDD     the system
+```
+
+- **From `/godmode:think`:** After brainstorming identity requirements, invoke `/godmode:auth` to formalize the authentication strategy
+- **From `/godmode:auth` to `/godmode:rbac`:** After authentication is designed, design the authorization model with roles, permissions, and policies
+- **From `/godmode:rbac` to `/godmode:plan`:** After access control is defined, plan the implementation tasks
+- **From `/godmode:api`:** API design references `/godmode:auth` for endpoint authentication and `/godmode:rbac` for endpoint authorization
+- **From `/godmode:secure`:** Security audit validates authentication controls, session management, and access control enforcement
+- **From `/godmode:comply`:** Compliance audit checks auth logging, access reviews, and data access controls against regulatory requirements
+- **From `/godmode:ship`:** Ship workflow verifies authentication and authorization are properly configured before deployment
+
+### Design Principles for Identity Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Security by default | Every design choice defaults to the most secure option; weaker options require explicit justification |
+| 2 | Default deny | If no policy explicitly grants access, the answer is DENY |
+| 3 | Least privilege | Every role has the minimum permissions needed; start with zero and add |
+| 4 | Authentication is not authorization | Knowing WHO someone is does not determine WHAT they can do; design both explicitly |
+| 5 | Audit everything | Every ALLOW and DENY decision is logged with enough context for investigation |
+| 6 | Tokens have lifecycles | Every token has issuance, validation, refresh, revocation, and cleanup |
+| 7 | Check permissions, not roles | Code checks `can(user, "delete", resource)`, never `user.role === "admin"` |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/auth/SKILL.md` | Skill | Authentication and authorization design workflow |
+| `skills/rbac/SKILL.md` | Skill | Permission and access control design workflow |
+| `commands/godmode/auth.md` | Command | Usage reference for `/godmode:auth` |
+| `commands/godmode/rbac.md` | Command | Usage reference for `/godmode:rbac` |
+
+**Iterations 187-190 (4 files, 2 skills, 2 commands)**
+
 ## 78. Cross-Reference & Navigation
 
 Godmode now includes four cross-referencing documents to help developers navigate the 48 implemented skills efficiently.
