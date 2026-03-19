@@ -3813,4 +3813,114 @@ MIT
 
 ---
 
-## Status: ITERATION 34 — README.md Draft complete
+## 35. CHANGELOG Template
+
+**Purpose:** Standardize version history format and semantic versioning strategy for Godmode releases.
+
+### Versioning Strategy
+
+Godmode follows [Semantic Versioning](https://semver.org/):
+
+| Version Part | When to Bump | Example |
+|-------------|-------------|---------|
+| **MAJOR** (X.0.0) | Breaking changes to skill format, config schema, or command interface | Skill frontmatter schema change |
+| **MINOR** (1.X.0) | New skills, new features in existing skills, new flags | Add `/godmode:refactor` skill |
+| **PATCH** (1.0.X) | Bug fixes, documentation updates, metric database additions | Fix guard tolerance calculation |
+
+### CHANGELOG Format
+
+```markdown
+# Changelog
+
+All notable changes to Godmode are documented in this file.
+Format based on [Keep a Changelog](https://keepachangelog.com/).
+
+## [Unreleased]
+
+### Added
+- New metric suggestions for Rust projects
+
+## [1.3.0] - 2025-02-15
+
+### Added
+- `/godmode:scenario` skill — explore edge cases across 12 dimensions
+- `--chain` flag for linking skills (e.g., `/godmode:debug --chain fix`)
+- Metric suggestion database with 15 common metrics
+- Support for Cloudflare Workers in `/godmode:ship`
+
+### Changed
+- `/godmode:optimize` now auto-selects strategy based on metric history
+- Guard system supports soft guards (warnings instead of mandatory reverts)
+- Parallel dispatch now uses model matching for cost optimization
+
+### Fixed
+- Fix: guard tolerance calculation was ignoring negative deltas
+- Fix: visual companion WebSocket reconnection loop
+- Fix: session start hook not detecting existing state on Windows paths
+
+### Deprecated
+- `--simple` flag on `/godmode:review` (use `--severity note` instead)
+
+## [1.2.0] - 2025-01-20
+
+### Added
+- `/godmode:predict` skill — multi-persona expert evaluation
+- Visual companion brainstorm canvas mode
+- Pipeline support: `--pipeline full`, `--pipeline harden`
+
+### Changed
+- `/godmode:build` now enforces TDD by default (use `--tdd false` to disable)
+- Results TSV format adds `duration_s` column
+
+### Fixed
+- Fix: optimize loop not reading revert history correctly
+- Fix: plan dependency graph cycle detection
+
+## [1.1.0] - 2025-01-10
+
+### Added
+- `/godmode:secure` skill — STRIDE + OWASP security audit
+- Git-as-memory commit convention documentation
+- Configuration hierarchy (global → project → CLI flags)
+
+### Fixed
+- Fix: worktree cleanup leaving dangling branches
+
+## [1.0.0] - 2025-01-01
+
+### Added
+- Initial release with 16 skills
+- Core loop: THINK → BUILD → OPTIMIZE → SHIP
+- Orchestrator with auto-detection
+- Git-as-memory system
+- Mechanical verification framework
+- Guard system
+- Results logging (TSV)
+- Visual companion (brainstorm + dashboard modes)
+- Configuration wizard (/godmode:setup)
+- Platform adapters for Cursor, Codex, OpenCode
+```
+
+### Categories Used
+
+| Category | Meaning |
+|----------|---------|
+| **Added** | New features, skills, flags, integrations |
+| **Changed** | Behavior changes to existing features |
+| **Fixed** | Bug fixes |
+| **Deprecated** | Features that will be removed in a future version |
+| **Removed** | Features removed in this version |
+| **Security** | Security-related changes |
+
+### Auto-Generation
+
+The `/godmode:ship` skill auto-generates changelog entries from git commits:
+- Commits with `feat:` prefix → **Added**
+- Commits with `fix:` prefix → **Fixed**
+- Commits with `BREAKING:` in body → **Changed** (with breaking change note)
+- Commits with `deprecate:` prefix → **Deprecated**
+- Commits with `secure:` prefix → **Security**
+
+---
+
+## Status: ITERATION 35 — CHANGELOG Template complete
