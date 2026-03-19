@@ -6760,3 +6760,90 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 | `commands/godmode/chaos.md` | Command | Usage reference for `/godmode:chaos` |
 
 **Iterations 131-136 (6 files, 3 skills, 3 commands)**
+
+## 78. Cross-Reference & Navigation
+
+Godmode now includes four cross-referencing documents to help developers navigate the 48 implemented skills efficiently.
+
+### 78.1 Master Skill Index (`docs/skill-index.md`)
+
+Complete alphabetical listing of all 48 skills with one-line descriptions. Organized three ways:
+
+- **By phase:** THINK (5 skills), BUILD (6 skills), OPTIMIZE (7 skills), SHIP (3 skills), META (3 skills)
+- **By domain:** API/Backend, Frontend/UI, Infrastructure/DevOps, Quality/Security, ML, Mobile, Documentation/Knowledge, Testing, Incident Management
+- **Cross-reference table:** Shows which skills feed into and receive from every other skill
+- **"I want to..." mapping:** 48 developer scenarios mapped to the correct skill and command
+
+### 78.2 Skill Chaining Reference (`docs/skill-chains.md`)
+
+All valid skill chains documented with concrete examples:
+
+| Named Chain | Skills | Use Case |
+|-------------|--------|----------|
+| full-stack | think > plan > build > test > review > optimize > ship | New feature, full quality |
+| hotfix | debug > fix > verify > ship | Production bug, fast resolution |
+| security-hardening | secure > fix > verify > review > ship | Pre-launch security review |
+| performance | optimize > loadtest > verify > ship | Code performance improvement |
+| new-api | api > contract > build > test > docs > ship | New API endpoint development |
+| incident | incident > debug > fix > verify > deploy | Production incident response |
+| ml-pipeline | ml > pipeline > mlops > observe > ship | ML model to production |
+| design-exploration | think > predict > scenario > think | Deep architecture exploration |
+| test-coverage | scenario > test > e2e > review | Improve test coverage |
+| infrastructure | think > infra > k8s > config > secure > deploy | Cloud infrastructure setup |
+| mobile-release | think > plan > build > mobile > a11y > visual > ship | Mobile app release |
+| data-migration | think > migrate > test > verify > deploy | Database schema changes |
+| compliance-audit | comply > secure > secrets > fix > verify > ship | Regulatory compliance |
+| frontend-quality | ui > a11y > visual > i18n > e2e > review > ship | Frontend quality sweep |
+| onboarding | onboard > docs > pair | New team member ramp-up |
+| cost-optimization | cost > infra > config > verify > deploy | Cloud bill reduction |
+| observability-setup | observe > loadtest > errortrack > config > deploy | Monitoring setup |
+
+Also includes: conditional transitions, loop patterns, and custom chain definition syntax (YAML).
+
+### 78.3 Decision Tree (`docs/decision-tree.md`)
+
+Flowchart-style "What skill do I need?" navigator with 5 top-level branches:
+
+1. **CREATE** something new — routes through think, plan, build, and domain-specific skills
+2. **IMPROVE** existing code — branches into performance, quality, security, testing, observability
+3. **FIX/DEBUG** something — routes through debug, fix, incident, errortrack based on symptoms
+4. **SHIP** something — routes through ship, deploy, and pre-ship quality gates
+5. **LEARN** something — routes through onboard, docs, adr, predict, pair
+
+Each branch terminates at a specific `/godmode:<skill>` command with the exact flags needed.
+
+### 78.4 Quick Reference Card (`docs/quick-reference.md`)
+
+Every command on a single page, organized by use case:
+
+- Orchestrator, Design/Planning, Building/Coding, Testing
+- Code Review/Quality, Optimization/Performance, Debugging/Fixing
+- Security/Compliance, Accessibility/i18n, API Design
+- Infrastructure/DevOps, Monitoring/Incidents, ML, Database
+- Mobile, UI/Frontend, Documentation/Knowledge, Shipping/Deployment
+- Configuration/Verification, Named Chains
+
+### Navigation Map
+
+```
+docs/
+├── skill-index.md      "What skills exist?"        → Complete catalog
+├── skill-chains.md     "How do skills connect?"    → Named workflows
+├── decision-tree.md    "What skill do I need?"     → Interactive navigator
+├── quick-reference.md  "What's the command?"       → All flags, one page
+├── architecture.md     "How does it work inside?"  → System internals
+├── chaining.md         "How do artifacts flow?"    → Artifact pipeline
+├── domain-guide.md     "How does my domain use it?" → Domain-specific
+└── godmode-design.md   "What's the full design?"   → This document
+```
+
+### Cross-Links Between Documents
+
+| Starting From | Links To |
+|--------------|----------|
+| skill-index.md | skill-chains.md, decision-tree.md, quick-reference.md, architecture.md, chaining.md, domain-guide.md |
+| skill-chains.md | skill-index.md, decision-tree.md, quick-reference.md, chaining.md |
+| decision-tree.md | skill-index.md, skill-chains.md, quick-reference.md |
+| quick-reference.md | skill-index.md, skill-chains.md, decision-tree.md, domain-guide.md |
+
+**Iterations 225-229 (4 files created, 1 file updated)**
