@@ -2044,4 +2044,110 @@ gh pr create --title "feat: add rate limiting middleware" \
 
 ---
 
-## Status: ITERATION 19 — Setup skill spec complete
+## 20. `/godmode:verify` — Evidence Gate Skill Spec
+
+**Origin:** Superpowers (evidence-before-claims protocol)
+**Phase:** META
+**Purpose:** 5-step verification protocol that prevents the agent from claiming success without mechanical evidence. Run command, read output, confirm result, then claim.
+
+### Trigger Conditions
+
+- Called automatically by other skills before claiming success
+- User says "verify this", "prove it works", "show me evidence"
+- Before any state transition (THINK→BUILD, BUILD→OPTIMIZE, etc.)
+- Explicitly invoked with `/godmode:verify`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--command` | auto | Command to run for verification |
+| `--expect` | pass | Expected result: `pass`, `fail`, `contains:STRING`, `value:RANGE` |
+| `--retries` | 1 | Number of retry attempts |
+| `--timeout` | 60s | Max time for command execution |
+
+### The 5-Step Verification Protocol
+
+**Step 1: Declare What You're Verifying**
+- State the claim: "I'm verifying that all 47 tests pass"
+- State the command: `npm test`
+- State the expected result: "Exit code 0, output contains '47 passing'"
+
+**Step 2: Run the Command**
+- Execute the verification command
+- Capture: stdout, stderr, exit code, execution time
+- Do NOT summarize the output — capture it raw
+
+**Step 3: Read the Output**
+- Parse the full output
+- Extract the relevant metric/result
+- Compare against expected result
+
+**Step 4: Confirm or Deny**
+
+| Result | Action |
+|--------|--------|
+| Expected result matches | **VERIFIED** — proceed with claim |
+| Expected result doesn't match | **FAILED** — do NOT claim success |
+| Command times out | **INCONCLUSIVE** — retry or escalate |
+| Command crashes | **ERROR** — investigate |
+
+**Step 5: Report**
+```
+VERIFICATION RESULT: ✓ VERIFIED
+  Claim: "All 47 tests pass"
+  Command: npm test
+  Exit code: 0
+  Key output: "47 passing (3.2s)"
+  Duration: 3.2s
+```
+
+Or on failure:
+```
+VERIFICATION RESULT: ✗ FAILED
+  Claim: "All 47 tests pass"
+  Command: npm test
+  Exit code: 1
+  Key output: "45 passing, 2 failing"
+  Failed tests:
+    - "should handle Redis timeout" — AssertionError
+    - "should reset window" — Timeout
+  Action: DO NOT claim success. Fix failing tests first.
+```
+
+### Integration with Other Skills
+
+The verify protocol is embedded in other skills:
+
+| Skill | Verification Point |
+|-------|-------------------|
+| `/godmode:build` | After each TDD cycle — verify tests pass |
+| `/godmode:optimize` | Phase 5 — verify metric after each change |
+| `/godmode:fix` | After each fix — verify error count decreased |
+| `/godmode:ship` | Pre-flight and post-ship — verify everything works |
+| `/godmode:finish` | Verification gate — verify before finalizing |
+
+### Anti-Pattern: Claiming Without Evidence
+
+The verify skill exists to prevent this anti-pattern:
+
+```
+BAD:  "I've fixed the bug and all tests should pass now."
+      (No evidence. "Should pass" is not "passes.")
+
+GOOD: "I've fixed the bug. Running verification..."
+      VERIFICATION: ✓ npm test → 47 passing (0 failing)
+      "All 47 tests pass. The bug is fixed."
+```
+
+### Key Behaviors
+
+1. **Never claim without running** — "It should work" is not acceptable
+2. **Raw output, not summaries** — Show the actual output, not your interpretation
+3. **Mechanical only** — Verification must be a command, not a judgment call
+4. **Retry before failing** — Flaky tests get one retry before reporting failure
+5. **Failure is information** — A failed verification is more valuable than a false positive
+
+---
+
+## Status: ITERATION 20 — Verify skill spec complete
