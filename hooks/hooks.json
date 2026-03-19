@@ -1,0 +1,18 @@
+{
+  "hooks": [
+    {
+      "name": "session-start",
+      "event": "on_session_start",
+      "script": "hooks/session-start",
+      "description": "Initialize Godmode for the current project. Detects project type, validates configuration, and sets up the .godmode directory if needed.",
+      "timeout_ms": 10000,
+      "required": false
+    }
+  ],
+  "configuration": {
+    "config_dir": ".godmode",
+    "config_file": ".godmode/config.yaml",
+    "results_dir": ".godmode",
+    "log_format": "tsv"
+  }
+}
