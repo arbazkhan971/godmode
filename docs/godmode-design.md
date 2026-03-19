@@ -7483,3 +7483,128 @@ The Testing Mastery skills integrate into the Godmode workflow at these points:
 | `commands/godmode/snapshot.md` | Command | Usage reference for `/godmode:snapshot` |
 
 **Iterations 197-202 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 71. Microservices & Distributed Systems Skills
+
+### Overview
+
+Three new skills extend Godmode into the microservices and distributed systems domain. These skills address the full spectrum of distributed architecture: from service decomposition and inter-service communication through event-driven patterns, caching strategies, and distributed transaction management.
+
+### Skill: `/godmode:micro` — Microservices Design & Management
+
+**Purpose:** Decompose monoliths, design service boundaries, and manage distributed service architectures.
+
+**Capabilities:**
+- **Service decomposition:** Domain-driven bounded context analysis with decomposition decision framework scoring business domain alignment, data ownership, team structure, and scaling needs
+- **Inter-service communication:** Design sync (REST, gRPC) and async (events, messages) communication patterns with a decision matrix for pattern selection per interaction
+- **Service mesh configuration:** Full Istio (VirtualService, DestinationRule, PeerAuthentication, AuthorizationPolicy) and Linkerd (ServiceProfile, TrafficSplit) configuration generation
+- **Service discovery & load balancing:** DNS-based, client-side, server-side, and service mesh discovery patterns with load balancing strategy selection (round robin, least request, consistent hash, weighted)
+- **Saga pattern:** Choreography-based (event-driven) and orchestration-based (central coordinator) saga design with compensation flows, state machines, and persistence schemas
+- **Resilience patterns:** Circuit breaker, timeout, retry with backoff, bulkhead, rate limiting, and fallback configuration per downstream service
+- **Architecture validation:** 14-point checklist covering bounded contexts, data ownership, communication patterns, mesh configuration, health checks, and independent deployability
+
+**Workflow:** System Assessment -> Decomposition -> Communication Design -> Service Mesh -> Service Discovery -> Saga Design -> Topology -> Resilience -> Validation -> Artifacts
+
+**Artifacts produced:**
+- `docs/architecture/<system>-topology.md` — Service topology diagram
+- `docs/architecture/<system>-services.md` — Service catalog and registry
+- `docs/architecture/<system>-communication.md` — Communication contracts
+- `docs/architecture/<system>-sagas.md` — Saga definitions with compensation flows
+- `k8s/mesh/` or `infra/mesh/` — Service mesh configuration
+
+**Flags:** `--decompose`, `--communication`, `--saga <name>`, `--mesh istio|linkerd`, `--topology`, `--validate`, `--resilience`, `--migrate`
+
+### Skill: `/godmode:event` — Event-Driven Architecture
+
+**Purpose:** Design event sourcing, CQRS, message broker topologies, and event processing pipelines with production-grade reliability patterns.
+
+**Capabilities:**
+- **Event sourcing:** Event store schema design with aggregate reconstruction, snapshot optimization, and full state replay from immutable event history
+- **CQRS implementation:** Separate write model (command handlers + event store) and read model (projections + denormalized query databases) with projection lifecycle management
+- **Message broker design:** Complete topology configuration for Kafka (topics, partitions, consumer groups, producer/consumer configs), RabbitMQ (exchanges, queues, bindings, routing), SQS/SNS (topics, queues, filters, visibility), and NATS (subjects, JetStream streams, consumers)
+- **Event schema design:** Standard event envelope with correlation/causation IDs, schema registry integration (Avro, JSON Schema, Protobuf), and backward/forward compatibility versioning
+- **Dead letter queues:** DLQ design with enriched failure metadata, retry policies with exponential backoff (5 attempts: immediate -> 5 minutes), and replay tooling
+- **Idempotency patterns:** Deduplication table design, idempotency key processing, natural idempotency identification, and transactional consume-and-mark-processed
+
+**Workflow:** Assessment -> Event Sourcing -> CQRS -> Broker Design -> Schema Versioning -> DLQ & Retry -> Idempotency -> Validation -> Artifacts
+
+**Artifacts produced:**
+- `docs/events/<system>-event-catalog.md` — Event catalog with all event types
+- `schemas/<domain>/<event>.avsc` — Schema definitions (Avro, JSON Schema, or Protobuf)
+- `docs/events/<system>-broker-topology.md` — Broker topology documentation
+- `docs/events/<system>-cqrs.md` — CQRS design with projections
+- `infra/messaging/` — DLQ and retry configuration
+
+**Flags:** `--sourcing`, `--cqrs`, `--broker kafka|rabbitmq|sqs|nats`, `--schema`, `--dlq`, `--idempotency`, `--catalog`, `--validate`
+
+### Skill: `/godmode:cache` — Caching Strategy
+
+**Purpose:** Design and implement multi-layer caching with proper invalidation, stampede prevention, and operational monitoring.
+
+**Capabilities:**
+- **Cache layer design:** Multi-layer architecture (CDN/edge, application/Redis, database query cache) with hot path analysis identifying cacheable endpoints, QPS, latency, and TTL recommendations
+- **Cache invalidation strategies:** TTL-based (per data volatility), event-based (near-real-time via domain events), write-through (synchronous cache + DB write), and write-behind (async flush for write-heavy workloads) with a decision matrix for strategy selection
+- **Redis configuration:** Cluster topology (masters + replicas), memory eviction policies (allkeys-lru, volatile-lru, allkeys-lfu), connection pooling, key naming conventions, and data structure selection (strings, hashes, sorted sets, HyperLogLog, etc.)
+- **Memcached configuration:** Consistent hashing, multi-node deployment, and side-by-side comparison with Redis for technology selection
+- **Varnish / CDN configuration:** VCL rules for HTTP acceleration, CDN cache headers (Cache-Control, Surrogate-Control, Surrogate-Key), conditional requests (ETag), and tag-based purge
+- **Cache stampede prevention:** Four patterns — mutex locking, probabilistic early expiration (PER), stale-while-revalidate (background refresh), and proactive pre-warming — with complexity and latency trade-off comparison
+- **Cache monitoring:** Hit rate, latency, eviction, memory, and connection metrics with alert thresholds and dashboard layout
+
+**Workflow:** Assessment -> Layer Design -> Invalidation Strategy -> Redis/Memcached Config -> CDN/Varnish Config -> Stampede Prevention -> Monitoring -> Validation -> Artifacts
+
+**Artifacts produced:**
+- `docs/caching/<system>-cache-strategy.md` — Cache design documentation
+- `infra/cache/` — Redis or Memcached configuration
+- `src/lib/cache.ts` — Cache utility module
+- `infra/cdn/` or `infra/varnish/` — CDN/Varnish configuration
+- `monitoring/dashboards/cache.json` — Cache monitoring dashboard
+
+**Flags:** `--assess`, `--redis`, `--memcached`, `--cdn`, `--varnish`, `--invalidation`, `--stampede`, `--monitor`, `--warmup`, `--validate`, `--benchmark`
+
+### Integration with Existing Skills
+
+The microservices and distributed systems skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:architect -> /godmode:micro -> /godmode:event -> /godmode:cache -> /godmode:api -> /godmode:build
+       |                   |                  |                |                |               |
+  Choose arch.        Decompose         Design event      Add caching     Define APIs     Implement
+  style (micro)       services          layer             layers          per service     endpoints
+```
+
+- **From `/godmode:architect`:** After choosing a microservices architecture style, invoke `/godmode:micro` to design service boundaries
+- **From `/godmode:micro` to `/godmode:event`:** After defining services, design the async event layer for inter-service communication
+- **From `/godmode:event` to `/godmode:cache`:** After event infrastructure, add caching layers to reduce load and latency
+- **From `/godmode:micro` to `/godmode:api`:** Design REST/gRPC APIs for each service's synchronous interfaces
+- **From `/godmode:cache` to `/godmode:perf`:** After caching, benchmark to verify performance improvement
+- **From `/godmode:micro` to `/godmode:k8s`:** Deploy the designed services to Kubernetes
+- **From `/godmode:observe`:** Monitor service communication latency, event consumer lag, and cache hit rates
+- **From `/godmode:micro` to `/godmode:contract`:** Define contracts between services for compatibility testing
+
+### Design Principles for Microservices & Distributed Systems Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Decompose by business capability | Services map to bounded contexts, not technical layers |
+| 2 | Each service owns its data | No shared databases — services communicate via APIs or events |
+| 3 | Default to asynchronous | Use events unless the caller genuinely needs an immediate response |
+| 4 | Events are immutable facts | Once published, events cannot be changed — publish corrective events instead |
+| 5 | Every consumer is idempotent | At-least-once delivery means duplicates will happen — handle them |
+| 6 | Cache the right things | High-read, low-write data with clear invalidation strategy |
+| 7 | Always set a TTL | No cache key lives forever — staleness and memory leaks are inevitable without expiry |
+| 8 | Resilience is infrastructure | Circuit breakers, retries, and mTLS belong in the service mesh, not application code |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/micro/SKILL.md` | Skill | Microservices design and management workflow |
+| `skills/event/SKILL.md` | Skill | Event-driven architecture workflow |
+| `skills/cache/SKILL.md` | Skill | Caching strategy workflow |
+| `commands/godmode/micro.md` | Command | Usage reference for `/godmode:micro` |
+| `commands/godmode/event.md` | Command | Usage reference for `/godmode:event` |
+| `commands/godmode/cache.md` | Command | Usage reference for `/godmode:cache` |
+
+**Iterations 181-186 (6 files, 3 skills, 3 commands)**
