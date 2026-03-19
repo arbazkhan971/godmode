@@ -10091,3 +10091,268 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 | `commands/godmode/fastapi.md` | Command | Usage reference for `/godmode:fastapi` |
 
 **Iterations 403-410 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 99. Developer Tooling Skills
+
+### Overview
+Skills for mastering the developer tooling ecosystem: containerization, terminal productivity, IDE configuration, and package management. This category focuses on the tools and environments developers use daily, optimizing workflows and eliminating friction from development to deployment.
+
+### Skills in this Category
+
+#### `/godmode:docker` — Docker Mastery
+**Purpose:** Create, optimize, and secure Docker configurations for containerized applications.
+
+**Core capabilities:**
+- **Dockerfile best practices:** Multi-stage builds with proper layer caching, language-specific patterns for Node.js, Python, Go, Rust, Java, and .NET
+- **Docker Compose:** Local development environments with health checks, volume management, service dependencies, and profile-based optional services
+- **Image size optimization:** Base image selection (Alpine, distroless, scratch), .dockerignore, layer reduction, dependency pruning — targeting 50-90% size reduction
+- **Security scanning:** Trivy, Snyk, Docker Scout, and Grype integration with CI pipeline. Non-root users, capability dropping, read-only filesystems, secret mount handling
+- **Networking and volumes:** Bridge, overlay, and macvlan networks. Named volumes, bind mounts, tmpfs for secrets, backup strategies
+- **BuildKit features:** Cache mounts for fast rebuilds, secret mounts for secure builds, heredocs, multi-platform builds with buildx
+
+**Invocation:** `/godmode:docker`, "Dockerfile", "docker compose", "container image", "multi-stage build", "image size", "docker security"
+
+**Output:** Dockerfile, docker-compose.yml, .dockerignore with commit `"build(docker): Dockerfile — multi-stage <language> with <base image>"`
+
+**Flags:** `--init`, `--optimize`, `--compose`, `--security`, `--scan`, `--slim`, `--buildkit`, `--multi-platform`, `--ci`, `--audit`
+
+#### `/godmode:terminal` — Terminal & Shell Productivity
+**Purpose:** Optimize command-line workflows with shell scripting best practices, dotfile management, multiplexers, and modern CLI tools.
+
+**Core capabilities:**
+- **Shell scripting:** Strict mode (set -euo pipefail), proper quoting, argument parsing, error handling, trap-based cleanup, ShellCheck linting
+- **Dotfile management:** Git bare repo, GNU Stow, chezmoi, and yadm strategies for portable, version-controlled configurations
+- **Terminal multiplexers:** tmux configuration with vim-style navigation, development layout scripts, session management
+- **Aliases and functions:** Git aliases, modern tool aliases, utility functions (mkcd, extract, killport, fzf-powered branch switching and file opening)
+- **Modern CLI tools:** fd (find), ripgrep (grep), bat (cat), eza (ls), delta (diff), zoxide (cd), fzf (fuzzy finder), jq/yq (JSON/YAML), starship (prompt)
+
+**Invocation:** `/godmode:terminal`, "shell script", "bash script", "dotfiles", "tmux", "terminal setup", "CLI tools", "shell alias"
+
+**Output:** Shell configuration files, tmux config, shell scripts with commit `"config: shell — <N aliases, N functions, dotfile management>"`
+
+**Flags:** `--shell`, `--dotfiles`, `--tmux`, `--aliases`, `--tools`, `--script <name>`, `--audit`, `--fzf`, `--prompt`, `--completions`
+
+#### `/godmode:vscode` — IDE & Editor Configuration
+**Purpose:** Configure VS Code, Neovim, and JetBrains IDEs for maximum productivity with project-specific settings, debugging, and extensions.
+
+**Core capabilities:**
+- **VS Code settings:** Performance optimization, formatting on save, file exclusions, search configuration, language-specific overrides
+- **Extension recommendations:** Curated extension sets by project type (TypeScript, React, Python, Go, Rust, Docker/DevOps) with workspace-level recommendations
+- **Debug configurations:** Launch.json templates for Node.js, Next.js, Python/Django, Go, Jest, pytest with compound (full-stack) configurations
+- **Tasks and automation:** Build, test, lint, type-check, Docker tasks with keyboard shortcuts and problem matchers
+- **Workspace management:** Multi-root workspaces for monorepos, settings precedence, shared vs personal configuration
+- **Cross-editor support:** Neovim (lazy.nvim, LSP, treesitter, telescope), JetBrains optimization, .editorconfig for universal formatting
+
+**Invocation:** `/godmode:vscode`, "VS Code settings", "editor config", "debug configuration", "launch.json", "IDE setup", "extensions", "Neovim config"
+
+**Output:** .vscode/ directory (settings, launch, tasks, extensions), .editorconfig with commit `"config(ide): VS Code — settings, debug, tasks, extensions"`
+
+**Flags:** `--settings`, `--extensions`, `--debug`, `--tasks`, `--workspace`, `--neovim`, `--jetbrains`, `--editorconfig`, `--snippets`, `--keybindings`, `--performance`
+
+#### `/godmode:npm` — Package Management
+**Purpose:** Manage JavaScript/TypeScript dependencies with the right package manager, secure lock files, workspace configuration, and vulnerability remediation.
+
+**Core capabilities:**
+- **Package manager selection:** Detailed comparison of npm, yarn, pnpm, and bun with recommendation matrix by project type (application, library, monorepo, CLI)
+- **Lock file management:** Commit strategy, CI frozen installs, conflict resolution, regeneration. Rules for never mixing lock files
+- **Workspace/monorepo configuration:** pnpm workspaces, Turborepo task orchestration, workspace protocol for internal references, shared dependency management
+- **Package publishing:** Dual ESM/CJS exports, TypeScript declarations, semver versioning, dry-run verification, automated publishing with changesets
+- **Security auditing:** npm audit with severity-based action plans, override strategies for transitive vulnerabilities, supply chain security with provenance
+- **Version resolution:** Peer dependency conflict resolution, deduplication, dependency tree analysis, maintenance routines (weekly, monthly, quarterly)
+
+**Invocation:** `/godmode:npm`, "npm install", "package manager", "lock file", "monorepo workspace", "publish package", "npm audit", "dependency conflict"
+
+**Output:** Package manager configuration, workspace setup, audit report with commit `"deps: <add|update|remove> <package> — <reason>"`
+
+**Flags:** `--audit`, `--outdated`, `--dedupe`, `--workspace`, `--publish`, `--migrate <to>`, `--compare`, `--cleanup`, `--lockfix`, `--overrides`, `--ci`
+
+### Skill Interactions
+| From | To | When |
+|------|----|------|
+| `/godmode:docker` | `/godmode:k8s` | Container ready for orchestration |
+| `/godmode:docker` | `/godmode:deploy` | Image ready for deployment |
+| `/godmode:docker` | `/godmode:secure` | Security scan finds vulnerabilities |
+| `/godmode:terminal` | `/godmode:vscode` | Shell configured, optimize IDE next |
+| `/godmode:terminal` | `/godmode:setup` | Terminal part of project setup |
+| `/godmode:vscode` | `/godmode:build` | IDE configured, start coding |
+| `/godmode:vscode` | `/godmode:terminal` | IDE configured, optimize shell next |
+| `/godmode:npm` | `/godmode:build` | Dependencies configured, start coding |
+| `/godmode:npm` | `/godmode:secure` | Audit finds vulnerabilities |
+| `/godmode:npm` | `/godmode:monorepo` | Workspace setup feeds monorepo config |
+| `/godmode:setup` | `/godmode:docker` | Project setup includes containerization |
+| `/godmode:setup` | `/godmode:terminal` | Project setup includes shell config |
+| `/godmode:setup` | `/godmode:vscode` | Project setup includes IDE config |
+| `/godmode:setup` | `/godmode:npm` | Project setup includes dependency management |
+
+### Design Principles
+1. **Tools should be invisible** — The best tooling configuration is one you never think about. Format on save, lint on commit, build on push.
+2. **Reproducibility is paramount** — Lock files, pinned versions, committed configurations. Every developer gets the same experience.
+3. **Security is continuous** — Dependency auditing and container scanning are not one-time tasks. They run in CI on every commit.
+4. **Start with defaults, optimize later** — Get a working setup first. Tune performance, add advanced features, and customize after the project is running.
+5. **Share team configurations** — .vscode/, .editorconfig, Dockerfile, docker-compose.yml, and workspace configs belong in version control.
+
+### Developer Tooling Chains
+
+**New Project Setup:**
+```
+/godmode:npm --> /godmode:vscode --> /godmode:docker --> /godmode:terminal
+```
+
+**Containerization Pipeline:**
+```
+/godmode:docker --init --> /godmode:docker --security --> /godmode:k8s
+```
+
+**Full Environment Setup:**
+```
+/godmode:terminal --tools --> /godmode:vscode --settings --> /godmode:npm --workspace --> /godmode:docker --compose
+```
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/docker/SKILL.md` | Skill | Docker mastery workflow |
+| `skills/terminal/SKILL.md` | Skill | Terminal and shell productivity workflow |
+| `skills/vscode/SKILL.md` | Skill | IDE and editor configuration workflow |
+| `skills/npm/SKILL.md` | Skill | Package management workflow |
+| `commands/godmode/docker.md` | Command | Usage reference for `/godmode:docker` |
+| `commands/godmode/terminal.md` | Command | Usage reference for `/godmode:terminal` |
+| `commands/godmode/vscode.md` | Command | Usage reference for `/godmode:vscode` |
+| `commands/godmode/npm.md` | Command | Usage reference for `/godmode:npm` |
+
+**Iterations 419-426 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 80. Advanced Protocol & Runtime Skills
+
+Four new skills extend Godmode into advanced protocol development and modern runtime environments. These skills address the growing need for high-performance APIs beyond REST, portable computation with WebAssembly, and globally distributed edge computing.
+
+### Skill: `/godmode:graphql` — GraphQL API Development
+
+**Purpose:** Design, build, optimize, and test production-quality GraphQL APIs.
+
+**Capabilities:**
+- **Schema design:** SDL-first and code-first approaches with Relay-style pagination, mutation payloads, and proper nullability
+- **Resolver architecture:** Thin resolvers delegating to service layer, with clear separation of concerns
+- **N+1 detection and DataLoader patterns:** Automatic detection of N+1 queries with batched DataLoader implementations for all relation fields
+- **Subscription implementation:** WebSocket and SSE transport with Redis/Kafka/NATS pub/sub backends, connection authentication, and heartbeat management
+- **Schema federation:** Apollo Federation v2 with subgraph design, entity references, composition validation, and gateway query planning
+- **Performance hardening:** Query complexity analysis, depth limiting, persisted queries, automatic persisted queries (APQ), response caching with @cacheControl, and production allowlisting
+- **Testing:** Schema snapshot tests, resolver unit tests, N+1 regression tests, and breaking change detection with graphql-inspector
+
+**Workflow:** Discovery -> Schema Design (SDL or Code-first) -> Resolver Architecture -> N+1 Detection + DataLoaders -> Subscriptions -> Federation -> Performance Hardening -> Testing -> Artifacts
+
+**Flags:** `--sdl`, `--code-first`, `--federation`, `--subscriptions`, `--n+1`, `--perf`, `--test`, `--validate`, `--diff <old> <new>`, `--allowlist`
+
+### Skill: `/godmode:grpc` — gRPC & Protocol Buffers
+
+**Purpose:** Design, build, and optimize gRPC services with production-grade proto file design and code generation.
+
+**Capabilities:**
+- **Proto file design:** Proto3 best practices including package naming, enum zero values, field number permanence, FieldMask for partial updates, and idempotency keys
+- **Code generation:** buf-based pipeline with linting, breaking change detection, and multi-language generation (Go, TypeScript, Rust, Python, Java)
+- **Streaming patterns:** Unary, server-streaming, client-streaming, and bidirectional streaming with flow control, backpressure, and reconnection strategies
+- **gRPC-Web:** Browser client access via Envoy proxy, gRPC-Web middleware, or Buf Connect protocol (recommended for new projects)
+- **Load balancing:** L7 proxy-based, client-side look-aside, and xDS-based strategies for proper HTTP/2 request distribution
+- **Service mesh integration:** Istio, Linkerd, and Consul Connect with per-RPC load balancing, retry policies, circuit breaking, mTLS, and distributed tracing
+- **Error handling:** Correct status code usage (16 codes), rich error details with google.rpc.Status, and observability interceptors
+- **Testing:** buf lint, buf breaking, grpcurl, ghz load testing, and comprehensive streaming edge case coverage
+
+**Workflow:** Discovery -> Proto File Design -> Proto Best Practices -> Code Generation Pipeline -> Streaming Patterns -> gRPC-Web -> Load Balancing -> Error Handling + Observability -> Testing -> Artifacts
+
+**Flags:** `--proto`, `--generate`, `--streaming`, `--web`, `--mesh`, `--lb`, `--validate`, `--breaking`, `--test`, `--bench`
+
+### Skill: `/godmode:wasm` — WebAssembly Development
+
+**Purpose:** Compile, integrate, optimize, and test WebAssembly modules across browser and server environments.
+
+**Capabilities:**
+- **Rust to WASM:** wasm-pack and wasm-bindgen pipeline with release optimizations (LTO, size optimization, panic=abort, wasm-opt)
+- **C/C++ to WASM:** Emscripten compilation with memory management, threading, and filesystem configuration
+- **Go to WASM:** TinyGo for dramatically smaller binaries (50-500 KB vs 2-10 MB with standard Go)
+- **WASI:** WebAssembly System Interface with capability-based security, component model (Preview 2), and WIT interface definitions
+- **Browser integration:** Streaming compilation, wasm-bindgen for automatic memory management, Web Workers for non-blocking execution, and bundler configuration (Webpack, Vite, Rollup)
+- **Server-side runtimes:** Wasmtime, Wasmer, wazero, and WasmEdge for plugin systems, serverless functions, and embedded computation with sandboxing
+- **Performance profiling:** Binary size analysis with twiggy, execution profiling with Chrome DevTools, memory monitoring, and SIMD/threads optimization
+- **Testing:** Native unit tests, WASM browser tests (wasm-bindgen-test), integration tests, size regression CI gates, and performance benchmarks
+
+**Workflow:** Discovery -> Compilation Setup -> WASI Configuration -> Browser/Server Integration -> Performance Profiling -> Size Optimization -> Testing -> Artifacts
+
+**Flags:** `--rust`, `--cpp`, `--go`, `--wasi`, `--browser`, `--server`, `--plugin`, `--optimize`, `--profile`, `--test`, `--size`
+
+### Skill: `/godmode:edge` — Edge Computing & Serverless
+
+**Purpose:** Design, build, deploy, and optimize edge functions and serverless applications across global platforms.
+
+**Capabilities:**
+- **Edge function design:** Cloudflare Workers (V8 isolates, <1ms cold start), Vercel Edge Functions, Deno Deploy, and Fastly Compute (WASM) with platform-specific constraint awareness
+- **Serverless architecture:** AWS Lambda, GCP Cloud Functions, Azure Functions with event-driven patterns, proper IAM, and Infrastructure as Code
+- **Cold start optimization:** Bundle size minimization, lazy initialization, provisioned concurrency, runtime selection, SnapStart (Java), and edge runtime migration for latency-critical paths
+- **Edge caching:** Cache-first (stale-while-revalidate), network-first (cache fallback), tiered caching (browser + CDN + origin), cache key design, and invalidation strategies (TTL, purge-on-write, versioned URLs)
+- **Distributed state:** KV stores for eventually consistent read-heavy data, Durable Objects for strongly consistent coordination, edge SQL (D1/Turso) for relational data, and decision framework for state solution selection
+- **Infrastructure as Code:** SAM templates, Serverless Framework, wrangler.toml, and deployment checklists
+- **Observability:** Structured logging at edge, key metrics (cold start rate, cache hit rate, cost per invocation), and distributed tracing across edge-to-origin chains
+- **Testing:** Local emulators (Miniflare, sam local, vercel dev), unit tests with mocked environments, and chaos testing for origin failure scenarios
+
+**Workflow:** Discovery -> Edge/Serverless Design -> Cold Start Optimization -> Caching Strategy -> Distributed State -> Infrastructure as Code -> Observability -> Testing -> Artifacts
+
+**Flags:** `--cloudflare`, `--vercel`, `--lambda`, `--gcp`, `--deno`, `--cold-start`, `--cache`, `--state`, `--cost`, `--migrate`, `--test`
+
+### Integration with Existing Skills
+
+The protocol and runtime skills integrate into the Godmode workflow:
+
+```
+/godmode:think  ->  /godmode:graphql  ->  /godmode:test  ->  /godmode:deploy
+     |                   |                      |                    |
+  Brainstorm        Design GraphQL          Test resolvers       Deploy with
+  the API           schema + resolvers      and N+1 coverage     subscriptions
+
+/godmode:micro  ->  /godmode:grpc  ->  /godmode:deploy  ->  /godmode:observe
+     |                   |                   |                     |
+  Design             Define proto        Deploy with           Monitor RPC
+  microservices      files + streaming   mesh integration      metrics + traces
+
+/godmode:perf  ->  /godmode:wasm  ->  /godmode:edge  ->  /godmode:deploy
+     |                   |                 |                    |
+  Identify           Compile hot        Deploy WASM to       Ship to
+  CPU bottleneck     path to WASM       edge runtime         production
+```
+
+- **From `/godmode:api`:** After REST API design, use `/godmode:graphql` or `/godmode:grpc` for alternative protocols
+- **From `/godmode:micro`:** Use `/godmode:grpc` for inter-service communication in microservice architectures
+- **From `/godmode:perf`:** When performance profiling identifies CPU-bound bottlenecks, use `/godmode:wasm` to offload to WebAssembly
+- **From `/godmode:deploy`:** Use `/godmode:edge` for edge deployment strategies and cold start optimization
+- **From `/godmode:cache`:** Use `/godmode:edge --cache` for edge-specific caching strategies
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Schema/proto is the contract | GraphQL schemas and proto files are designed before implementation |
+| 2 | Performance defenses are mandatory | Every GraphQL API has complexity limits; every gRPC service has health checks |
+| 3 | DataLoaders are not optional | Every GraphQL relation field uses a DataLoader — N+1 queries are bugs |
+| 4 | L7 load balancing for gRPC | HTTP/2 multiplexing requires application-layer load balancing |
+| 5 | Binary size is a feature | WASM binaries have size budgets enforced in CI |
+| 6 | Edge for latency, serverless for scale | Choose the right tool based on the actual requirement |
+| 7 | State consistency is explicit | Every edge state solution documents its consistency model |
+| 8 | Test at every layer | Native + compiled + integrated tests for WASM; local emulators for edge |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/graphql/SKILL.md` | Skill | GraphQL API development workflow |
+| `skills/grpc/SKILL.md` | Skill | gRPC and Protocol Buffers workflow |
+| `skills/wasm/SKILL.md` | Skill | WebAssembly development workflow |
+| `skills/edge/SKILL.md` | Skill | Edge computing and serverless workflow |
+| `commands/godmode/graphql.md` | Command | Usage reference for `/godmode:graphql` |
+| `commands/godmode/grpc.md` | Command | Usage reference for `/godmode:grpc` |
+| `commands/godmode/wasm.md` | Command | Usage reference for `/godmode:wasm` |
+| `commands/godmode/edge.md` | Command | Usage reference for `/godmode:edge` |
+
+**Iterations 244-251 (8 files, 4 skills, 4 commands)**
