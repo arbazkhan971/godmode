@@ -8253,3 +8253,143 @@ The Developer Experience skills integrate into the Godmode workflow at these poi
 | `commands/godmode/type.md` | Command | Usage reference for `/godmode:type` |
 
 **Iterations 203-210 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 87. Web Performance & SEO Skills
+
+Web Performance & SEO skills bring production-grade web optimization capabilities to Godmode. These three skills cover the full lifecycle of making web applications fast, discoverable, and installable — from Lighthouse auditing and bundle optimization to structured data implementation and offline-first architecture.
+
+### Skills Overview
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| SEO | `/godmode:seo` | SEO Optimization — meta tags, structured data, Core Web Vitals, Open Graph, sitemap/robots.txt |
+| Webperf | `/godmode:webperf` | Web Performance — Lighthouse, bundle analysis, image optimization, critical CSS, fonts, caching |
+| PWA | `/godmode:pwa` | Progressive Web Apps — service workers, offline-first, manifest, push notifications, background sync |
+
+### SEO — SEO Optimization & Technical Auditing
+
+The `seo` skill audits and optimizes search engine visibility. It covers the complete technical SEO stack from crawlability to rich search results.
+
+**Core workflow:**
+1. Discover site SEO infrastructure (sitemap, robots.txt, meta tags, rendering mode)
+2. Audit meta tags across all pages (title, description, canonical, robots directives)
+3. Validate and implement Schema.org structured data (JSON-LD) for rich results
+4. Measure Core Web Vitals (LCP, INP, CLS) with optimization recommendations
+5. Audit Open Graph and Twitter Card meta for social sharing
+6. Validate sitemap.xml completeness and robots.txt correctness
+7. Auto-fix common issues (missing meta, canonical tags, image dimensions)
+8. Set up Lighthouse CI monitoring for ongoing SEO tracking
+
+**Structured data types:**
+- Organization, Article, Product, FAQPage, BreadcrumbList, SearchAction, LocalBusiness, Review
+
+**Key principles:**
+- Crawlability is the foundation — fix robots.txt, sitemap, and canonical tags first
+- Core Web Vitals directly affect search ranking — they are not optional
+- Structured data earns rich results that dramatically improve click-through rates
+- Meta tags are the sales pitch — write for humans with natural keyword inclusion
+- SSR/SSG is mandatory for SEO-critical pages — do not rely on client-side rendering
+
+### Webperf — Web Performance Optimization
+
+The `webperf` skill measures and optimizes web application performance across the entire delivery stack, from server response to paint completion.
+
+**Core workflow:**
+1. Establish performance baseline (Lighthouse scores, Core Web Vitals, bundle sizes)
+2. Run Lighthouse diagnostics with opportunity/savings analysis
+3. Analyze JavaScript bundles and recommend code splitting strategies
+4. Optimize images (WebP/AVIF conversion, responsive srcset, lazy loading)
+5. Extract critical CSS and remove unused styles
+6. Optimize font loading (subsetting, font-display, preload, fallback metrics)
+7. Configure service worker caching strategies (Cache First, Network First, Stale While Revalidate)
+8. Set up CDN and HTTP cache headers for optimal delivery
+
+**Optimization areas:**
+- **Bundle:** Route-based splitting, tree shaking, lighter library alternatives
+- **Images:** WebP/AVIF, responsive srcset, lazy loading, fetchpriority
+- **CSS:** Critical CSS extraction, PurgeCSS unused removal
+- **Fonts:** Subsetting, font-display: swap, size-adjust fallbacks, woff2
+- **Caching:** Service worker strategies, HTTP Cache-Control, CDN edge caching
+
+**Key principles:**
+- Measure before optimizing — data drives decisions, not intuition
+- JavaScript is the most expensive resource — reduce JS payload first
+- Images are the lowest-hanging fruit — format conversion saves the most bytes
+- Critical CSS eliminates the biggest cause of slow First Contentful Paint
+- Cache everything possible — every cache miss is wasted time
+
+### PWA — Progressive Web App Development
+
+The `pwa` skill builds production-grade Progressive Web Apps with offline support, installability, and native-like capabilities.
+
+**Core workflow:**
+1. Assess PWA readiness (HTTPS, service worker, manifest, responsive design)
+2. Create web app manifest with icons, screenshots, shortcuts, and share target
+3. Implement service worker with Workbox caching strategies
+4. Build offline-first architecture with IndexedDB data storage
+5. Set up push notifications (VAPID keys, subscription, handler, click routing)
+6. Implement background sync for offline mutations with retry queue
+7. Handle install prompt with engagement-based timing
+8. Test across Chrome, Safari, Firefox, and Edge
+
+**PWA capabilities:**
+- **Installability:** Web app manifest, icons (192/512/maskable), install prompt
+- **Offline:** Service worker precaching, network-first HTML, offline fallback page
+- **Data:** IndexedDB for structured data, sync queue for offline mutations
+- **Push:** VAPID-based web push notifications with click actions
+- **Sync:** Background sync for offline writes, periodic sync for content updates
+
+**Key principles:**
+- Service worker is the foundation — without it, there is no PWA
+- Offline is not optional — at minimum serve a branded offline fallback page
+- Cache with intention — every strategy is a trade-off between freshness and speed
+- Never request notification permission on first visit — ask after engagement
+- Update service workers carefully — a broken update can take down the entire app
+
+### Workflow Integration
+
+The Web Performance & SEO skills integrate with the existing Godmode workflow:
+
+```
+/godmode:build   -> Implement the feature
+/godmode:test    -> Verify correctness
+/godmode:a11y    -> Accessibility audit
+/godmode:seo     -> SEO optimization
+/godmode:webperf -> Performance optimization
+/godmode:pwa     -> Progressive Web App features
+/godmode:visual  -> Visual regression testing
+/godmode:ship    -> Ship to production
+```
+
+- **From `/godmode:build`:** After building the feature, run SEO and performance audits
+- **From `/godmode:seo` to `/godmode:webperf`:** Core Web Vitals issues found in SEO audit are resolved by webperf
+- **From `/godmode:webperf` to `/godmode:pwa`:** Service worker caching strategies bridge into full PWA implementation
+- **From `/godmode:pwa` to `/godmode:ship`:** PWA installability and offline support verified before deployment
+- **From `/godmode:a11y`:** Accessibility and SEO share concerns (semantic HTML, alt text, headings)
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Measure before optimizing | Every optimization requires before/after metrics |
+| 2 | SEO and performance are inseparable | Fast sites rank better, slow sites lose users |
+| 3 | Offline is a feature, not an edge case | PWAs must handle network absence gracefully |
+| 4 | Structured data earns visibility | Schema.org markup produces rich search results |
+| 5 | Cache with intention | Every caching strategy has explicit TTL and eviction |
+| 6 | Progressive enhancement | Core content works without JS, features enhance with it |
+| 7 | Test on real devices and networks | Lab scores approximate but field data reflects reality |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/seo/SKILL.md` | Skill | SEO optimization and technical auditing workflow |
+| `skills/webperf/SKILL.md` | Skill | Web performance optimization workflow |
+| `skills/pwa/SKILL.md` | Skill | Progressive Web App development workflow |
+| `commands/godmode/seo.md` | Command | Usage reference for `/godmode:seo` |
+| `commands/godmode/webperf.md` | Command | Usage reference for `/godmode:webperf` |
+| `commands/godmode/pwa.md` | Command | Usage reference for `/godmode:pwa` |
+
+**Iterations 292-297 (6 files, 3 skills, 3 commands)**
