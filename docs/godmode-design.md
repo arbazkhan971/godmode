@@ -9730,3 +9730,152 @@ The `extension` skill builds browser extensions with Manifest V3 for Chrome, Fir
 | `commands/godmode/extension.md` | Command | Usage reference for `/godmode:extension` |
 
 **Iterations 298-307 (10 files, 5 skills, 5 commands)**
+
+---
+
+## 89. Concurrency, Distribution & Scale Skills
+
+Concurrency, distribution, and scale skills bring systems engineering capabilities to Godmode. These four skills cover the full spectrum of building and operating high-performance, fault-tolerant distributed systems.
+
+### Skills Overview
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| Concurrent | `/godmode:concurrent` | Concurrency & Parallelism -- thread safety, race detection, async patterns, actor model, deadlocks |
+| Distributed | `/godmode:distributed` | Distributed Systems Design -- CAP theorem, consensus (Raft, Paxos), distributed locks, sharding, consistency |
+| Scale | `/godmode:scale` | Scalability Engineering -- auto-scaling, read replicas, connection pooling, rate limiting, capacity planning |
+| Reliability | `/godmode:reliability` | Site Reliability Engineering -- SLOs, error budgets, toil elimination, on-call, runbooks, incident management |
+
+### Concurrent -- Concurrency & Parallelism
+
+The `concurrent` skill ensures safe, correct concurrent code across languages and runtimes.
+
+**Core workflow:**
+1. Assess concurrency context (language, runtime, workload profile)
+2. Inventory all shared mutable state and classify access patterns
+3. Detect race conditions (check-then-act, read-modify-write, TOCTOU)
+4. Design async/await patterns for the target runtime (Node.js, Python, Go, Rust)
+5. Recommend lock-free data structures when locks are measured bottlenecks
+6. Design actor systems with supervision trees (Erlang/OTP, Akka)
+7. Prevent deadlocks through lock ordering, timeouts, and resource hierarchies
+8. Create concurrent testing strategies (race detectors, stress tests, property tests)
+
+**Key principles:**
+- Identify shared mutable state before writing concurrent code
+- Prefer message passing over shared state
+- Always run the race detector -- no exceptions
+- Lock ordering prevents deadlocks -- document the order
+- Test concurrency with stress and chaos, not single runs
+- Every concurrent operation must support cancellation
+
+### Distributed -- Distributed Systems Design
+
+The `distributed` skill designs correct distributed architectures with explicit trade-off analysis.
+
+**Core workflow:**
+1. Assess distributed system context (topology, consistency needs, data model)
+2. Analyze CAP theorem trade-offs and PACELC classification
+3. Select consensus protocols (Raft for most systems, Paxos for leaderless)
+4. Design distributed locking (Redlock for efficiency, ZooKeeper/etcd for correctness)
+5. Plan sharding with consistent hashing or range partitioning
+6. Implement eventual consistency patterns (CRDTs, vector clocks, read repair)
+7. Configure leader election with fencing tokens for split-brain prevention
+8. Design network partition handling and post-partition reconciliation
+
+**Key principles:**
+- CAP is the first conversation -- consistency vs availability during partitions
+- Consistency is per-operation, not per-system
+- Network partitions are inevitable -- design for them
+- Fencing tokens prevent split-brain data corruption
+- Prefer Raft over Paxos for new systems (simpler, equally correct)
+- Test with real partitions using chaos engineering
+
+### Scale -- Scalability Engineering
+
+The `scale` skill designs systems that handle growth efficiently and cost-effectively.
+
+**Core workflow:**
+1. Assess current capacity and identify bottlenecks (CPU, memory, I/O, database)
+2. Analyze horizontal vs vertical scaling trade-offs per component
+3. Configure auto-scaling (AWS ASG, Kubernetes HPA, KEDA)
+4. Design database read replicas with write splitting and lag monitoring
+5. Optimize connection pooling at all layers (PgBouncer, RDS Proxy)
+6. Implement rate limiting (token bucket) and backpressure patterns
+7. Create capacity planning projections with runway dates
+8. Design caching layers with invalidation strategies
+
+**Key principles:**
+- Measure before scaling -- profile the bottleneck first
+- Stateless application tier is a prerequisite for horizontal scaling
+- Connection pools are often the hidden bottleneck
+- Rate limiting is protection, not punishment
+- Capacity planning is continuous -- review quarterly
+- Load test at 2x projected peak before relying on the plan
+
+### Reliability -- Site Reliability Engineering
+
+The `reliability` skill implements SRE practices that balance velocity with production stability.
+
+**Core workflow:**
+1. Assess service reliability context and business criticality
+2. Define SLOs with measurable SLIs (availability, latency, correctness)
+3. Calculate error budgets and establish budget policies
+4. Configure multi-window burn rate alerts (critical through low severity)
+5. Inventory toil and create elimination plan (target: < 50% of team time)
+6. Design sustainable on-call rotations with escalation and health metrics
+7. Create runbooks for every pageable alert with automation levels
+8. Establish incident management process with blameless post-mortems
+9. Run production readiness review checklist
+10. Assess operational maturity and set improvement targets
+
+**Key principles:**
+- SLOs drive every reliability decision
+- Error budgets balance velocity and reliability
+- Toil is the enemy of engineering -- track and eliminate it
+- On-call must be sustainable -- measure health metrics
+- Runbooks are mandatory for every pageable alert
+- Incidents are learning opportunities -- blameless post-mortems
+
+### Workflow Integration
+
+The Concurrency, Distribution & Scale skills integrate with the existing Godmode workflow:
+
+```
+/godmode:plan        -> Design the feature
+/godmode:build       -> Implement with TDD
+/godmode:concurrent  -> Ensure thread safety and correct concurrency
+/godmode:distributed -> Design distributed architecture
+/godmode:scale       -> Plan capacity and auto-scaling
+/godmode:reliability -> Define SLOs and operational practices
+/godmode:chaos       -> Validate fault tolerance
+/godmode:loadtest    -> Verify performance at scale
+/godmode:observe     -> Monitor SLIs and error budgets
+/godmode:ship        -> Ship to production
+```
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Safety before speed | Thread safety analysis before concurrent code |
+| 2 | Explicit trade-offs | CAP theorem and consistency level per operation |
+| 3 | Measure before scaling | Profile bottlenecks, do not guess |
+| 4 | SLOs drive reliability | Error budgets determine velocity vs stability |
+| 5 | Automate operations | Runbooks and toil elimination reduce human error |
+| 6 | Test at the edges | Chaos testing, stress testing, partition testing |
+| 7 | Document decisions | Every architectural choice has written rationale |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/concurrent/SKILL.md` | Skill | Concurrency & Parallelism workflow |
+| `skills/distributed/SKILL.md` | Skill | Distributed Systems Design workflow |
+| `skills/scale/SKILL.md` | Skill | Scalability Engineering workflow |
+| `skills/reliability/SKILL.md` | Skill | Site Reliability Engineering workflow |
+| `commands/godmode/concurrent.md` | Command | Usage reference for `/godmode:concurrent` |
+| `commands/godmode/distributed.md` | Command | Usage reference for `/godmode:distributed` |
+| `commands/godmode/scale.md` | Command | Usage reference for `/godmode:scale` |
+| `commands/godmode/reliability.md` | Command | Usage reference for `/godmode:reliability` |
+
+**Iterations 318-325 (8 files, 4 skills, 4 commands)**
