@@ -3387,4 +3387,149 @@ claude /godmode --version
 
 ---
 
-## Status: ITERATION 31 — Installation & Setup complete
+## 32. Hook System
+
+**Purpose:** Hooks let Godmode inject behavior at session start and lifecycle events, with user-configurable hooks for custom automation.
+
+### Built-in Hooks
+
+**Session Start Hook (`hooks/session-start.md`)**
+
+Runs when a new Claude Code session starts in a project with Godmode installed:
+
+```markdown
+# Session Start Hook
+
+## Check for existing Godmode state
+If .godmode/state.json exists:
+  1. Read the state file
+  2. Summarize where the user left off:
+     "Godmode: You're in the [PHASE] phase, working on [GOAL].
+      Last action: [LAST_SKILL] at [TIME].
+      Progress: [SUMMARY]."
+  3. Suggest next action
+
+If .godmode/state.json does not exist:
+  1. Mention Godmode is available: "Godmode is installed. Use /godmode to start."
+```
+
+**Lifecycle Hook (`hooks/lifecycle.md`)**
+
+Runs on phase transitions and key events:
+
+```markdown
+# Lifecycle Hook
+
+## On Phase Transition
+When phase changes (e.g., THINK → BUILD):
+  1. Verify handoff artifacts exist
+  2. Update state.json
+  3. Emit phase.transition event
+  4. Print transition message
+
+## On Skill Completion
+When any skill completes:
+  1. Update state.json history
+  2. Emit skill.complete event
+  3. Suggest next action (unless in auto mode)
+
+## On Error
+When an unrecoverable error occurs:
+  1. Save crash state to .godmode/crash-dump.json
+  2. Emit error event
+  3. Print recovery instructions
+```
+
+### User-Configurable Hooks
+
+Users can add custom hooks in `.godmode/hooks/`:
+
+```
+.godmode/hooks/
+  ├── pre-build.md       # Runs before /godmode:build starts
+  ├── post-build.md      # Runs after /godmode:build completes
+  ├── pre-ship.md        # Runs before /godmode:ship starts
+  ├── post-optimize.md   # Runs after each optimization iteration
+  └── on-error.md        # Runs when any error occurs
+```
+
+### Hook Naming Convention
+
+| Pattern | When it Runs |
+|---------|-------------|
+| `pre-{skill}.md` | Before the named skill starts |
+| `post-{skill}.md` | After the named skill completes |
+| `on-{event}.md` | When the named event occurs |
+
+### Hook File Format
+
+```markdown
+---
+hook: pre-build
+description: Run linting before starting build
+timeout: 30s
+required: true  # If true, hook failure blocks the skill
+---
+
+# Pre-Build Hook
+
+## Steps
+1. Run the linter: `npx eslint src/`
+2. If lint errors exist:
+   - Print: "Fix lint errors before building"
+   - Block the build
+3. If lint is clean:
+   - Print: "Lint clean ✓"
+   - Proceed
+```
+
+### Hook Execution
+
+```
+User: /godmode:build
+
+[Hook] Running pre-build hook...
+  → npx eslint src/ ✓ clean
+
+[Skill] Starting /godmode:build...
+  ... (build happens) ...
+
+[Hook] Running post-build hook...
+  → Sending Slack notification (custom hook) ✓
+
+[Skill] /godmode:build complete
+```
+
+### Hook Configuration in settings.json
+
+```json
+{
+  "hooks": {
+    "enabled": true,
+    "timeout": "30s",
+    "custom_dir": ".godmode/hooks/",
+    "disabled_hooks": ["post-optimize"]  // Skip specific hooks
+  }
+}
+```
+
+### Built-in vs Custom Hooks
+
+| Aspect | Built-in Hooks | Custom Hooks |
+|--------|---------------|-------------|
+| Location | `godmode/hooks/` (plugin dir) | `.godmode/hooks/` (project dir) |
+| Modifiable | No (plugin code) | Yes (user owns them) |
+| Required | Always run | Configurable |
+| Examples | Session start, lifecycle | Slack notifications, custom checks |
+
+### Key Behaviors
+
+1. **Hooks are markdown** — Same format as skills, readable and editable
+2. **Pre-hooks can block** — `required: true` means the skill won't start if the hook fails
+3. **Post-hooks are informational** — They run after the skill, but don't affect its result
+4. **Timeouts prevent hangs** — Hooks that run too long are killed
+5. **Disabled by default for performance** — Custom hooks must be explicitly enabled
+
+---
+
+## Status: ITERATION 32 — Hook System complete
