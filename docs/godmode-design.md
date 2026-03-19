@@ -2932,4 +2932,123 @@ Messages are JSON objects with a `type` field:
 
 ---
 
-## Status: ITERATION 27 — Visual Companion complete
+## 28. Crash Recovery & Error Handling
+
+**Purpose:** Define failure modes, recovery strategies, and max retry limits so the agent can recover gracefully from any failure.
+
+### Failure Taxonomy
+
+| Failure Mode | Severity | Detection | Recovery |
+|-------------|----------|-----------|----------|
+| **Agent crash** (context lost) | High | Session ends unexpectedly | Resume from git history + state file |
+| **Command timeout** | Medium | Command exceeds timeout | Retry once, then skip/escalate |
+| **Metric command fails** | High | Non-zero exit, no parseable output | Retry once, then halt loop |
+| **Guard command fails** | High | Non-zero exit code | Treat as guard failure (revert) |
+| **Git conflict** | Medium | Merge fails | Auto-resolve or escalate |
+| **Disk full** | Critical | Write fails | Alert user, stop all work |
+| **Network failure** | Medium | Fetch/push fails | Retry 3x, then work offline |
+| **Test flakiness** | Low | Intermittent test failures | Retry test 2x before treating as real failure |
+| **Infinite loop** | High | Iteration count exceeds max | Hard stop at max iterations |
+| **Worktree corruption** | Medium | Git worktree commands fail | Remove and recreate worktree |
+
+### Recovery Strategy: Session Resume
+
+When the agent starts a new session in a project with existing `.godmode/` state:
+
+```
+1. Read .godmode/state.json
+   → Determine: what phase, what skill, what iteration
+
+2. Read .godmode/results.tsv
+   → Determine: what was tried, what worked, what failed
+
+3. Read git log (last 50 commits)
+   → Determine: last action, uncommitted changes
+
+4. Check for uncommitted changes
+   → If dirty: stash or commit as "recovery: uncommitted changes from crashed session"
+
+5. Resume from last known good state
+   → Print: "Recovered from crashed session. Resuming at [phase], iteration [N]"
+```
+
+### Recovery Strategy: Stuck Loops
+
+When the optimization loop appears stuck:
+
+| Condition | Detection | Action |
+|-----------|-----------|--------|
+| 5 consecutive reverts | results.tsv shows 5 `kept=false` in a row | Switch strategy (explore → surgical, etc.) |
+| Same error 3 fix attempts | Fix log shows same error ID 3 times | Escalate to user |
+| Metric oscillating | Up-down-up-down pattern in results.tsv | Increase tolerance or change approach |
+| Guard always failing | Guard fails on every attempt | Ask user to relax guard or change scope |
+| No improvement after 10 iterations | All deltas within tolerance | Declare plateau, suggest different metric |
+
+### Max Retry Limits
+
+| Operation | Max Retries | On Exceed |
+|-----------|------------|-----------|
+| Command execution | 2 | Report failure, skip operation |
+| Test run (flaky) | 2 | Treat as real failure |
+| Git merge conflict | 1 | Escalate to coordinator/user |
+| Network operation | 3 | Work offline mode |
+| Optimization iteration | configurable (default 25) | Stop, report best result |
+| Fix iteration | configurable (default 15) | Stop, report remaining errors |
+| Debug iteration | configurable (default 10) | Stop, escalate to user |
+| Guard failure in a row | 3 | Stop loop, ask user |
+
+### State Checkpointing
+
+To enable recovery, state is checkpointed frequently:
+
+```
+Checkpoint triggers:
+  - After every successful iteration (results.tsv + state.json updated)
+  - After every git commit (git is inherently checkpointed)
+  - After every phase transition (state.json phase field updated)
+  - Before any destructive operation (git stash or branch backup)
+```
+
+### Dirty State Handling
+
+| State | Detection | Action |
+|-------|-----------|--------|
+| Uncommitted changes | `git status --porcelain` non-empty | Stash or commit as recovery |
+| Partial merge | `.git/MERGE_HEAD` exists | Abort merge, retry |
+| Detached HEAD | `git symbolic-ref HEAD` fails | Checkout the feature branch |
+| Missing worktree | Worktree directory doesn't exist | Recreate from branch |
+| Corrupted state.json | JSON parse fails | Rebuild from git history |
+
+### Error Reporting
+
+When an unrecoverable error occurs:
+
+```
+⚠ GODMODE ERROR — Unrecoverable
+
+  Phase: OPTIMIZE (iteration 7)
+  Error: Metric command timeout after 120s
+  Command: wrk -t4 -c100 -d10s http://localhost:3000/api
+
+  Attempted recovery:
+    1. Retry command → timed out again
+    2. Check if server is running → port 3000 not listening
+
+  Root cause: The development server crashed during optimization.
+
+  To resume:
+    1. Start the dev server: npm run dev
+    2. Run: /godmode:optimize --resume
+```
+
+### Key Behaviors
+
+1. **Always recoverable** — No failure should require starting over
+2. **State is on disk** — Not in memory; crashes don't lose progress
+3. **Git is the ultimate backup** — Even if state files corrupt, git history tells the story
+4. **Retry before failing** — One retry is cheap; immediate failure is frustrating
+5. **Clear error messages** — Tell the user what happened, why, and how to fix it
+
+---
+
+## Status: ITERATION 28 — Crash Recovery & Error Handling complete
