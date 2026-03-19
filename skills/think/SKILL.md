@@ -11,21 +11,16 @@ description: |
 - New feature with no spec
 
 ## Workflow
-
 ### 1. Understand the Problem
 - What does the user want? (one sentence)
 - What are the constraints? (time, tech, team)
 - What does success look like? (measurable criteria)
-
 ### 2. Scan Codebase
 Scan project structure and existing patterns/conventions via `git ls-files`.
-
 ### 3. Generate 2-3 Approaches
 Per approach: description (2-3 sentences), pros/cons, complexity (Low/Med/High), files affected.
-
 ### 4. Recommend One
 Lead with recommendation. One sentence justification.
-
 ### 5. Write Spec
 Output to `.godmode/spec.md`:
 ```markdown
@@ -36,7 +31,6 @@ Output to `.godmode/spec.md`:
 ## Out of Scope: {what we're NOT building}
 ## Edge Cases: {known gotchas}
 ```
-
 Commit: `"spec: {feature name}"`
 
 ## Rules

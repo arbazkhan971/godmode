@@ -11,7 +11,6 @@ description: |
 - Build phase needs test writing
 
 ## The Loop
-
 ```
 coverage = measure_coverage()
 target = user_target OR 80

@@ -12,9 +12,7 @@ description: |
 - Natural language request → match to skill (see table below)
 
 ## Step 1: Detect Stack (once, cache result)
-
 Scan root for indicator files. First match wins.
-
 ```
 package.json + next.config.*  → Next.js    | npm test      | eslint --fix  | npm run build
 package.json + tsconfig.json  → TypeScript | npx vitest    | eslint --fix  | tsc --noEmit
@@ -25,12 +23,10 @@ go.mod                        → Go         | go test ./... | golangci-lint | g
 Gemfile                       → Ruby       | rspec         | rubocop -A    | —
 pom.xml                       → Java       | mvn test      | checkstyle    | mvn package
 ```
-
 Check lockfiles for package manager: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
 If `package.json` has `"test"` script → use `npm test`. If it has `"lint"` → use that.
 
 ## Step 2: Match Skill
-
 | Trigger | Skill |
 |---------|-------|
 | "make faster", "optimize", "improve" | optimize |
@@ -45,11 +41,9 @@ If `package.json` has `"test"` script → use `npm test`. If it has `"lint"` →
 | "ship", "release", "deploy" | ship |
 | "refactor", "clean up", "simplify" | refactor |
 | "document", "add docs" | docs |
-
 If no match → fall through to phase detection (Step 3).
 
 ## Step 3: Detect Phase
-
 ```
 IF no spec AND no plan           → THINK  (invoke think)
 IF spec exists BUT no plan       → PLAN   (invoke plan)
@@ -59,75 +53,30 @@ IF code exists, tests passing    → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute
-
 Read the matched skill's SKILL.md. Follow its workflow.
-
 For chain execution: `think → plan → build → test → fix → optimize → secure → ship`
 Between steps, print: `── chain: build ✓ → test ──`
 Never ask "should I continue?" between chain steps.
 
 ---
 
-## The Loop — Core Engine
-
-Every iterative skill (optimize, fix, debug, test, secure) runs this loop literally:
-
-```
-current_iteration = 0
-max_iterations = N  # from "Iterations: N", or Infinity
-
-WHILE current_iteration < max_iterations:
-    current_iteration += 1
-
-    # 1. REVIEW — read state, results log, git log
-    # 2. IDEATE — pick next change (fix crashes > exploit wins > explore new > radical)
-    # 3. MODIFY — ONE atomic change, explainable in one sentence
-    # 4. COMMIT — git commit BEFORE verify
-    # 5. VERIFY — run metric command + guard command
-    # 6. DECIDE:
-         IF improved AND guard passed → keep
-         IF improved AND guard failed → revert, rework (max 2 tries)
-         IF same/worse → git reset --hard HEAD~1, discard
-         IF crashed → fix (max 3 tries), else discard
-    # 7. LOG — append to .godmode/<skill>-results.tsv
-    # 8. STATUS — every 5 iterations: "Iter {N}: metric={val}, {keeps}/{discards}"
-    # 9. STUCK — >5 discards: re-read all files, try opposite, try radical
-
-=== Summary (N/N iterations) ===
-Baseline: {start} → Final: {end} ({delta})
-Keeps: X | Discards: Y | Crashes: Z
-```
-
-**If you are not tracking `current_iteration`, you are not running godmode.**
+## The Loop — Core Principle
+Every iterative skill (optimize, fix, debug, test, secure) defines its own `WHILE` loop. Follow it literally. The universal invariants:
+- Track `current_iteration`. If you're not counting, you're not looping.
+- Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
+- Log every iteration to `.godmode/<skill>-results.tsv`.
+- `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
+- Stuck (>5 discards): re-read all files, try opposite, try radical.
 
 ---
 
 ## Multi-Agent Dispatch
-
-When goal decomposes into 2+ independent tasks touching different files:
-
-```
-FOR each task group (max 5 agents per round):
-    Dispatch Agent with:
-      - Task description (1 sentence)
-      - Skill to follow: skills/<name>/SKILL.md
-      - File scope (which files this agent can touch)
-      - Test/lint/build commands from Step 1
-      - isolation: "worktree"
-
-    After all agents complete:
-      Merge branches sequentially (--no-edit)
-      Run full test suite on merged result
-      If conflict → resolve or discard losing agent, retry
-      If tests fail → fix inline or revert last merge
-```
-
+When 2+ independent tasks touch different files: dispatch up to 5 agents per round, each with task description, skill reference, file scope, and `isolation: "worktree"`. Merge sequentially. Test after each merge. Conflict or test fail → resolve or discard, retry.
 When NOT to parallelize: single file, single skill, user says "sequential".
 
 ---
 
 ## Rules
-
 1. Detect stack FIRST. Never hardcode `npm test` on a Rust project.
 2. One skill at a time. Read its SKILL.md. Follow it.
 3. Never ask "should I continue?" in loop mode.

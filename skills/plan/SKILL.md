@@ -11,23 +11,18 @@ description: |
 - Spec exists but no plan
 
 ## Workflow
-
 ### 1. Read Context
 - Read spec: `.godmode/spec.md` or user-provided
 - Scan codebase: `git ls-files`, directory structure, existing patterns
 - Detect stack (from orchestrator Step 1)
-
 ### 2. Decompose into Tasks
 Each task is a YAML entry with fields: `id`, `title`, `skill` (godmode skill to follow), `files` (exact paths), `depends_on` (task IDs), `agent: true/false`, `test` (command), `done_when` (verifiable criterion).
-
 ### 3. Build Dependency Graph
 Sort tasks topologically. Group tasks with no unmet deps into rounds for parallel execution. Continue until all tasks assigned.
-
 ### 4. Validate Plan
 - `files[]` must be real paths or new files in existing directories
 - `depends_on[]` must reference valid task IDs, no circular deps
 - Every file appears in at most 2 tasks (avoid merge conflicts)
-
 ### 5. Output
 Write to `.godmode/plan.yaml`. Print summary: `Plan: {N} tasks in {M} rounds` with per-round breakdown.
 

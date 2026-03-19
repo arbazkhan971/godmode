@@ -12,25 +12,19 @@ description: |
 - Before shipping
 
 ## Workflow
-
 ### 1. Gather Diff
 Run `git diff main...HEAD --stat` and `git log main..HEAD --oneline`.
-
 ### 2. Multi-Agent Review (4 agents, parallel)
 - **Correctness** — logic errors, edge cases, off-by-ones, null handling
 - **Security** — injection, auth bypass, data exposure, OWASP
 - **Performance** — N+1 queries, unnecessary re-renders, memory leaks
 - **Style** — naming, dead code, inconsistent patterns, missing types
-
 Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX`
 Severities: MUST-FIX, SHOULD-FIX, NIT.
-
 ### 3. Merge & Deduplicate
 Combine all findings. Remove duplicates. Sort by severity.
-
 ### 4. Auto-Fix NITs
 For each NIT: if safe (unused imports, whitespace, reorder), apply and commit `"review: fix {description}"`. Else leave for human.
-
 ### 5. Verdict
 - 0 MUST-FIX → APPROVE (score 8-10)
 - Any MUST-FIX → REQUEST CHANGES (score 5-7)

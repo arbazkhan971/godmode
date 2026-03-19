@@ -12,7 +12,6 @@ description: |
 - After any change that claims an improvement or fix
 
 ## Workflow
-
 1. **IDENTIFY** — Extract the claim, choose the verify command, define expected output.
 2. **RUN** — Execute the exact command with `2>&1`. Capture full stdout+stderr. No filtering, no truncation.
 3. **READ** — Read the entire output. Do not skim or assume.
@@ -28,7 +27,6 @@ description: |
 - Exit codes matter. Prints "success" but exits non-zero = failure.
 
 ## HARD RULES
-
 1. NEVER accept a claim without running the verification command.
 2. NEVER verify in your head. "Code looks correct" is not verification. Run the command.
 3. NEVER ignore partial failures. 47/48 passing = failure.

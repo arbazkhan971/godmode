@@ -12,7 +12,6 @@ description: |
 - Build produces failures
 
 ## The Loop
-
 ```
 error_count = run_all_checks()  # tests + lint + types
 original_count = error_count

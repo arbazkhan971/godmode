@@ -12,7 +12,6 @@ description: |
 - Tests failing with unclear reasons
 
 ## The Loop
-
 ```
 failing_count = run_tests()
 current_iteration = 0

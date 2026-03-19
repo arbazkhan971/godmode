@@ -12,15 +12,11 @@ description: |
 - After build completes and quality improvement is desired
 
 ## Setup (do once)
-
 **1. Auto-Detect Metrics** — Scan for test frameworks, benchmarks, build output. Suggest metric + verify command + guard.
-
 **2. Collect Config** — Goal (one sentence), Metric (command outputting a NUMBER — reject if not numeric), Direction (higher|lower), Verify (dry-run before accepting), Guard (must-pass command, optional), Scope (file globs), Iterations (N or unlimited).
-
 **3. Measure Baseline** — Run verify 3x, take median. Commit: `"optimize: baseline — {metric} = {value}"`
 
 ## The Loop
-
 ```
 baseline = median(verify() x 3)
 
@@ -53,11 +49,9 @@ WHILE current_round < max_rounds:
 
 STOP: target reached | max rounds | diminishing returns exhausted | guard broken
 ```
-
 Print final summary: baseline → final (delta%), keeps/discards, best round, log path.
 
 ## Rules
-
 1. **NEVER STOP. NEVER ASK.** Unbounded: loop forever. Bounded: loop N times.
 2. **Commit BEFORE verify.** Rollback is `git reset --hard HEAD~1`.
 3. **Mechanical metric only.** Must output a number. No subjective judgments.
