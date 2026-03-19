@@ -5756,4 +5756,163 @@ Contributors to Godmode agree that their contributions are released under the sa
 
 ---
 
-## Status: ITERATION 49 — License & Legal complete
+## 50. Design Summary & Architecture Diagram
+
+### The Complete Picture
+
+Godmode is a 16-skill Claude Code plugin organized into 4 phases. Every skill is a markdown file. Skills communicate through files on disk. Git is memory. Metrics are truth.
+
+### Architecture Diagram (ASCII)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        GODMODE ORCHESTRATOR                         │
+│                          /godmode command                            │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
+│  │ Auto-Detect   │ │ Smart Route  │ │ State Manager│ │ Hook System│ │
+│  │ Project state │ │ Phase→Skill  │ │ .godmode/    │ │ Pre/Post   │ │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
+└──────────────────────────────┬───────────────────────────────────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          ▼                    ▼                    ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   THINK PHASE   │ │   BUILD PHASE   │ │ OPTIMIZE PHASE  │
+│                 │ │                 │ │                 │
+│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ ┌─────────────┐ │
+│ │   think     │ │ │ │    plan     │ │ │ │  optimize   │ │
+│ │ (brainstorm)│ │ │ │ (decompose) │ │ │ │ (8-phase    │ │
+│ └─────────────┘ │ │ └─────────────┘ │ │ │  loop)      │ │
+│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ └─────────────┘ │
+│ │  predict    │ │ │ │   build     │ │ │ ┌─────────────┐ │
+│ │ (5 personas)│ │ │ │ (TDD+review)│ │ │ │   debug     │ │
+│ └─────────────┘ │ │ └─────────────┘ │ │ │ (7 methods) │ │
+│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ └─────────────┘ │
+│ │  scenario   │ │ │ │    test     │ │ │ ┌─────────────┐ │
+│ │ (12 dims)   │ │ │ │ (RED-GREEN) │ │ │ │    fix      │ │
+│ └─────────────┘ │ │ └─────────────┘ │ │ │ (1 per iter)│ │
+│                 │ │ ┌─────────────┐ │ │ └─────────────┘ │
+│                 │ │ │   review    │ │ │ ┌─────────────┐ │
+│                 │ │ │ (severity)  │ │ │ │   secure    │ │
+│                 │ │ └─────────────┘ │ │ │ (STRIDE+    │ │
+│                 │ │                 │ │ │  OWASP)     │ │
+│                 │ │                 │ │ └─────────────┘ │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                    │
+         │    Handoff        │    Handoff         │    Handoff
+         │    Protocol       │    Protocol        │    Protocol
+         ▼                   ▼                    ▼
+                    ┌─────────────────┐
+                    │   SHIP PHASE    │
+                    │                 │
+                    │ ┌─────────────┐ │
+                    │ │    ship     │ │
+                    │ │ (8 phases)  │ │
+                    │ └─────────────┘ │
+                    │ ┌─────────────┐ │
+                    │ │   finish    │ │
+                    │ │ (4 options) │ │
+                    │ └─────────────┘ │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  META SKILLS    │
+                    │ (always active) │
+                    │                 │
+                    │ • setup         │
+                    │ • verify        │
+                    │ • hooks         │
+                    └─────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                     CROSS-CUTTING SYSTEMS                           │
+│                                                                      │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
+│  │ Git-as-Memory│ │  Mechanical  │ │ Guard System │ │  Results   │ │
+│  │              │ │ Verification │ │              │ │  Logging   │ │
+│  │ • Commits as │ │              │ │ • Hard guards│ │            │ │
+│  │   memory     │ │ • Metrics    │ │ • Soft guards│ │ • TSV log  │ │
+│  │ • History    │ │ • Validation │ │ • Max retry  │ │ • Progress │ │
+│  │   learning   │ │ • Tolerance  │ │ • Auto-revert│ │ • Reports  │ │
+│  │ • Reverts as │ │ • Database   │ │              │ │ • Archive  │ │
+│  │   lessons    │ │              │ │              │ │            │ │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
+│                                                                      │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
+│  │   Parallel   │ │   Visual     │ │    Crash     │ │ Iteration  │ │
+│  │   Dispatch   │ │  Companion   │ │   Recovery   │ │  Budgets   │ │
+│  │              │ │              │ │              │ │            │ │
+│  │ • Worktrees  │ │ • Canvas     │ │ • Resume     │ │ • Auto-est │ │
+│  │ • Model match│ │ • Dashboard  │ │ • Checkpoint │ │ • Track    │ │
+│  │ • Merge      │ │ • WebSocket  │ │ • Dirty state│ │ • Overrun  │ │
+│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow Summary
+
+```
+User Input
+    │
+    ▼
+Orchestrator (auto-detect phase, route to skill)
+    │
+    ▼
+Skill Execution (follows SKILL.md workflow)
+    │
+    ├── Reads: state.json, git history, references
+    ├── Produces: artifacts (specs, plans, reports, code)
+    ├── Verifies: mechanical metrics, guards
+    └── Commits: everything to git
+    │
+    ▼
+Handoff (artifacts + state → next skill)
+    │
+    ▼
+Next Phase
+```
+
+### Design Principles Recap
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Discipline before speed | TDD, review gates, security audits before shipping |
+| 2 | Autonomy within constraints | Agent works alone, bounded by guards, budgets, and max iterations |
+| 3 | Git is memory | Every action committed, reverts are lessons, history informs decisions |
+| 4 | Mechanical metrics only | No vibes; every claim backed by a command that outputs a number |
+| 5 | One change per iteration | Atomic changes enable learning and safe rollback |
+| 6 | Evidence before claims | Run the command, read the output, then claim success |
+| 7 | Skills communicate through files | No hidden state; everything is on disk and in git |
+| 8 | Graceful degradation | Missing features fall back safely; no hard crashes |
+
+### By the Numbers
+
+| Metric | Value |
+|--------|-------|
+| Total skills | 16 |
+| Phases | 4 (THINK, BUILD, OPTIMIZE, SHIP) + META |
+| Reference files | ~20 |
+| Shared files | ~4 |
+| Total plugin files | ~50 |
+| Configuration fields | ~30 |
+| Exploration dimensions | 12 (scenario) |
+| Expert personas | 5 (predict) |
+| Investigation techniques | 7 (debug) |
+| Shipping phases | 8 (ship) |
+| Shipment types | 9 (ship) |
+| Anti-patterns documented | 12 |
+| Example workflows | 5 |
+| Design sections | 50 |
+
+---
+
+## Status: ITERATION 50 — Design Summary & Architecture Diagram complete
+
+## Document Complete
+
+This design document covers all 50 sections of the Godmode Claude Code skill plugin.
+It is intended to be a complete implementation guide — someone should be able to build
+Godmode from this document alone.
+
+**Godmode: Turn on Godmode for Claude Code.**
