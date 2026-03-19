@@ -3,8 +3,6 @@ name: godmode
 description: Orchestrator. Routes to skills, detects stack/phase, dispatches multi-agent worktrees.
 ---
 
-# Godmode — Orchestrator
-
 ## Activate When
 - `/godmode` without subcommand
 - `/godmode:<skill>` — read `skills/<skill>/SKILL.md`, follow it

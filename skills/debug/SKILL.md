@@ -3,8 +3,6 @@ name: debug
 description: Scientific debugging. Reproduce → investigate → prove root cause. Finds all bugs.
 ---
 
-# Debug — Scientific Bug Investigation
-
 ## Activate When
 - `/godmode:debug`, "why is this happening?", "this doesn't work"
 

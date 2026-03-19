@@ -3,8 +3,6 @@ name: predict
 description: 5-persona evaluation. Independent assessment then consensus.
 ---
 
-# Predict — Multi-Persona Evaluation
-
 ## Activate When
 - `/godmode:predict`, "will this work?", "evaluate this approach"
 

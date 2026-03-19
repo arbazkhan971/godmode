@@ -3,8 +3,6 @@ name: build
 description: Implementation engine. Parallel agents in worktrees from plan.
 ---
 
-# Build — Implementation Engine
-
 ## Activate When
 - `/godmode:build`, "build", "implement", "create"
 - Plan exists with unimplemented tasks

@@ -4,8 +4,6 @@ description: |
   Evidence gate. Run command, read output, confirm or deny claim.
 ---
 
-# Verify — Evidence Before Claims
-
 ## Activate When
 - `/godmode:verify`, "prove it", "verify this"
 

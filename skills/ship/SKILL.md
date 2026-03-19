@@ -3,8 +3,6 @@ name: ship
 description: Ship workflow. Checklist → dry-run → ship → verify. PR, deploy, or release.
 ---
 
-# Ship — Shipping Workflow
-
 ## Activate When
 - `/godmode:ship`, "ship it", "deploy", "release", "merge"
 

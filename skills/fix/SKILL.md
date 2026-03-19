@@ -3,8 +3,6 @@ name: fix
 description: Fix loop. One fix per commit, auto-revert on regression, until zero errors.
 ---
 
-# Fix — Autonomous Error Remediation
-
 ## Activate When
 - `/godmode:fix`, "fix this", "tests failing", "fix errors"
 

@@ -3,8 +3,6 @@ name: review
 description: 4-agent code review. Correctness, security, performance, style. Auto-fixes NITs.
 ---
 
-# Review — Code Review
-
 ## Activate When
 - `/godmode:review`, "review this", "check my code"
 

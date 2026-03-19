@@ -3,8 +3,6 @@ name: plan
 description: Decompose spec into tasks with deps, files, agents. Output .godmode/plan.yaml.
 ---
 
-# Plan — Task Decomposition
-
 ## Activate When
 - `/godmode:plan`, "break down", "plan this", "create tasks"
 - Spec exists but no plan

@@ -3,8 +3,6 @@ name: think
 description: Design session. Explore approaches, produce .godmode/spec.md.
 ---
 
-# Think — Design Session
-
 ## Activate When
 - `/godmode:think`, "design", "brainstorm", "what's the best approach"
 - New feature with no spec

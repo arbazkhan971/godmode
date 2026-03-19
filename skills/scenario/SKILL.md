@@ -3,8 +3,6 @@ name: scenario
 description: Edge case exploration. 12 dimensions, scored by likelihood x impact.
 ---
 
-# Scenario — Edge Case Exploration
-
 ## Activate When
 - `/godmode:scenario`, "what could go wrong?", "edge cases", "failure modes"
 

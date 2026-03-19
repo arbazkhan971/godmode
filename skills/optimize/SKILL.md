@@ -3,8 +3,6 @@ name: optimize
 description: Autonomous optimization loop. 3 parallel agents per round, mechanical metrics only.
 ---
 
-# Optimize — Autonomous Iteration Loop
-
 ## Activate When
 - `/godmode:optimize`, "make faster", "improve", "optimize"
 

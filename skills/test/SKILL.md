@@ -3,8 +3,6 @@ name: test
 description: TDD loop. RED-GREEN-REFACTOR until coverage target met.
 ---
 
-# Test — TDD Enforcement
-
 ## Activate When
 - `/godmode:test`, "write tests", "test coverage", "add tests"
 

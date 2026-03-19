@@ -3,8 +3,6 @@ name: secure
 description: Security audit. STRIDE + OWASP + 4 red-team personas. Code evidence required.
 ---
 
-# Secure — Security Audit
-
 ## Activate When
 - `/godmode:secure`, "security audit", "vulnerabilities", "harden"
 

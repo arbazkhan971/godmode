@@ -3,8 +3,6 @@ name: finish
 description: Branch finalization. Merge, PR, keep, or discard.
 ---
 
-# Finish — Branch Finalization
-
 ## Activate When
 - `/godmode:finish`, "done with branch", "merge", "clean up"
 
