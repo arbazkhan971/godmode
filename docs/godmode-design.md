@@ -2150,4 +2150,95 @@ GOOD: "I've fixed the bug. Running verification..."
 
 ---
 
-## Status: ITERATION 20 — Verify skill spec complete
+## 21. The Handoff Protocol
+
+**Purpose:** Define how skills transition between phases (THINK → BUILD → OPTIMIZE → SHIP) so the workflow feels seamless, not disjointed.
+
+### The Problem
+
+Without a handoff protocol, phase transitions are jarring:
+- The brainstorm produces a spec, but the planner doesn't know it exists
+- The builder finishes, but the optimizer doesn't know what to measure
+- The optimizer hits a plateau, but the shipper doesn't know what's ready
+
+### Handoff Contract
+
+Every skill that completes a phase must produce a **handoff artifact** — a structured file that the next phase can consume.
+
+| Transition | Handoff Artifact | Location | Key Contents |
+|-----------|-----------------|----------|-------------|
+| THINK → BUILD | Spec document | `.godmode/specs/*.md` | Problem, approach, components, API surface |
+| THINK → BUILD | Prediction report | `.godmode/predictions/*.md` | Consensus, mitigations |
+| THINK → BUILD | Scenario report | `.godmode/scenarios/*.md` | Edge cases, unhandled risks |
+| BUILD → OPTIMIZE | Completed plan | `.godmode/plan.md` (all tasks ✓) | What was built, test results |
+| BUILD → OPTIMIZE | Metric definition | `.godmode/settings.json` | What to measure, baseline, target |
+| OPTIMIZE → SHIP | Optimization log | `.godmode/results.tsv` | All iterations, final metric |
+| OPTIMIZE → SHIP | Security report | `.godmode/security/*.md` | Findings, fixes applied |
+| SHIP → (next cycle) | Ship record | `.godmode/archive/*.json` | What was shipped, when, where |
+
+### Handoff Sequence
+
+```
+THINK Phase Completion:
+  1. Spec written and reviewed              → .godmode/specs/rate-limiter.md
+  2. Predictions evaluated (optional)       → .godmode/predictions/rate-limiter.md
+  3. Scenarios explored (optional)          → .godmode/scenarios/rate-limiter.md
+  4. State updated: phase = "BUILD"
+  5. Handoff message: "THINK complete. Ready for /godmode:plan"
+
+BUILD Phase Completion:
+  1. All plan tasks complete
+  2. All tests pass
+  3. Code reviewed
+  4. State updated: phase = "OPTIMIZE"
+  5. Handoff message: "BUILD complete. 7/7 tasks done, 47 tests passing. Ready for /godmode:optimize"
+
+OPTIMIZE Phase Completion:
+  1. Target metric reached (or plateau)
+  2. Security audit passed
+  3. State updated: phase = "SHIP"
+  4. Handoff message: "OPTIMIZE complete. p95: 198ms (target: 200ms). Ready for /godmode:ship"
+
+SHIP Phase Completion:
+  1. Shipped and verified
+  2. Branch finalized
+  3. State archived
+  4. Handoff message: "SHIP complete. v1.3.0 published to npm. Cycle complete."
+```
+
+### Automatic vs Manual Transitions
+
+| Mode | Behavior |
+|------|----------|
+| **Auto** (`/godmode --auto`) | Skills chain automatically; orchestrator routes to next skill after each handoff |
+| **Guided** (default) | Orchestrator suggests next skill; user confirms |
+| **Manual** | User invokes each skill explicitly; no automatic transitions |
+
+### Handoff Verification
+
+Before transitioning, the orchestrator verifies:
+
+1. **Artifact exists** — The handoff artifact was produced
+2. **Artifact is valid** — It contains the required fields (not empty/placeholder)
+3. **State is clean** — No uncommitted changes, no failing tests
+4. **User approves** — In guided/manual mode, user confirms the transition
+
+If any check fails, the transition is blocked with a clear message:
+
+```
+⚠ Cannot transition THINK → BUILD:
+  ✓ Spec exists: .godmode/specs/rate-limiter.md
+  ✗ Spec review not completed (Step 5 of /godmode:think)
+  → Run /godmode:think to complete the review loop
+```
+
+### Key Behaviors
+
+1. **Artifacts are the contract** — Skills communicate through files, not implicit state
+2. **Verification at every gate** — Don't assume the previous phase completed properly
+3. **Nothing is lost** — Every artifact is committed to git, creating a complete record
+4. **Graceful degradation** — If an optional artifact is missing (e.g., no prediction), the transition still works
+
+---
+
+## Status: ITERATION 21 — Handoff Protocol complete
