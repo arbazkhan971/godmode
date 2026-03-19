@@ -3051,4 +3051,119 @@ When an unrecoverable error occurs:
 
 ---
 
-## Status: ITERATION 28 — Crash Recovery & Error Handling complete
+## 29. Integration Points
+
+**Purpose:** Define how skills chain together, pipeline definitions, and cross-skill communication patterns.
+
+### Skill Communication Model
+
+Skills communicate through three channels:
+
+1. **Files** — Artifacts on disk (specs, plans, reports, results)
+2. **State** — The `.godmode/state.json` file (current phase, active skill, progress)
+3. **Git** — Commit history (what was done, what worked, what failed)
+
+There is no direct function-call interface between skills. This is intentional: any skill can run independently, and the "integration" is the shared filesystem.
+
+### Skill Chaining
+
+Skills can chain to other skills at completion:
+
+```
+/godmode:think → completes → suggests /godmode:plan
+/godmode:plan  → completes → suggests /godmode:build
+/godmode:build → completes → suggests /godmode:optimize
+/godmode:debug → finds bug → chains to /godmode:fix
+/godmode:fix   → all fixed → suggests /godmode:optimize
+/godmode:secure → finds issues → chains to /godmode:fix
+```
+
+### Pipeline Definitions
+
+Common pipelines (sequences of skills) can be invoked as a single command:
+
+| Pipeline | Skills | Use Case |
+|----------|--------|----------|
+| `--pipeline full` | think → plan → build → optimize → ship | Complete feature from scratch |
+| `--pipeline build` | plan → build → review | Build from existing spec |
+| `--pipeline harden` | test → secure → fix → optimize | Harden existing code |
+| `--pipeline fix-all` | debug → fix → verify | Find and fix all bugs |
+| `--pipeline ship` | review → secure → ship → finish | Ship existing feature |
+
+Usage:
+```
+/godmode --pipeline full    # Run complete THINK→BUILD→OPTIMIZE→SHIP cycle
+/godmode --pipeline harden  # Test, audit, fix, optimize existing code
+```
+
+### Cross-Skill Data Flow
+
+```
+┌─────────┐     spec.md      ┌──────────┐     plan.md      ┌─────────┐
+│  think   │ ──────────────→  │   plan   │ ──────────────→  │  build  │
+└─────────┘                   └──────────┘                   └─────────┘
+     │                              ↑                             │
+     │  prediction.md          scenario.md                        │
+     ↓                              │                             │
+┌─────────┐                   ┌──────────┐                   ┌─────────┐
+│ predict  │                   │ scenario │                   │ review  │
+└─────────┘                   └──────────┘                   └─────────┘
+                                                                  │
+                                                            state.json
+                                                                  ↓
+┌─────────┐   results.tsv    ┌──────────┐    findings.md    ┌─────────┐
+│ optimize │ ←──────────────  │   fix    │ ←──────────────  │ secure  │
+└─────────┘                   └──────────┘                   └─────────┘
+     │
+     │  results.tsv + state.json
+     ↓
+┌─────────┐   ship-record    ┌──────────┐
+│  ship   │ ──────────────→  │  finish  │
+└─────────┘                   └──────────┘
+```
+
+### Shared State Fields
+
+Skills read and write specific fields in `.godmode/state.json`:
+
+| Field | Written By | Read By |
+|-------|-----------|---------|
+| `phase` | Orchestrator, each skill on completion | Orchestrator, all skills |
+| `active_skill` | Each skill on start | Orchestrator |
+| `iteration` | optimize, fix, debug | All loop-based skills |
+| `plan_file` | plan | build |
+| `current_task` | build | review |
+| `metrics.baseline` | setup, optimize (first iteration) | optimize |
+| `metrics.current` | optimize, fix (each iteration) | All skills |
+| `history[]` | Each skill on completion | Orchestrator |
+
+### Event System
+
+Skills emit events that other skills (or the visual companion) can observe:
+
+| Event | Emitted By | Consumed By |
+|-------|-----------|-------------|
+| `phase.transition` | Orchestrator | Visual companion, hooks |
+| `skill.start` | Each skill | Visual companion, logging |
+| `skill.complete` | Each skill | Orchestrator, next skill in chain |
+| `iteration.complete` | Loop skills | Visual companion, logging |
+| `metric.measured` | Verify, optimize | Visual companion, results log |
+| `guard.pass` / `guard.fail` | Guard system | Optimize, visual companion |
+| `task.complete` | Build | Plan tracker, visual companion |
+
+Events are written to `.godmode/events.jsonl` (JSON Lines format):
+```json
+{"time":"2025-01-15T10:30:00Z","event":"iteration.complete","data":{"iteration":4,"metric":198,"kept":true}}
+```
+
+### Key Behaviors
+
+1. **File-based communication** — Skills don't call each other; they read/write files
+2. **Pipelines are syntactic sugar** — They just invoke skills in sequence
+3. **State.json is the coordination point** — Every skill reads and writes it
+4. **Events are fire-and-forget** — No skill blocks on event delivery
+5. **Any skill can run standalone** — Integration is optional, not required
+
+---
+
+## Status: ITERATION 29 — Integration Points complete
