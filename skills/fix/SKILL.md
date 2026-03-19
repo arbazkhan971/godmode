@@ -285,17 +285,46 @@ These are mechanical constraints, not suggestions.
 Do NOT stop after one fix. Do NOT ask "should I continue?" Do NOT summarize after each fix.
 
 ```
-LOOP:
-  1. Inventory errors (run tests + lint + types)
-  2. If zero errors → STOP, print final summary
-  3. Pick highest-priority error
-  4. Analyze root cause
-  5. Apply minimum fix
-  6. git commit BEFORE verification
-  7. Verify (full suite)
-  8. If fix introduced new errors → git reset --hard HEAD~1, re-analyze
-  9. If fix worked → log to .godmode/fix-log.tsv
-  10. GOTO 1
+current_iteration = 0
+error_count = inventory_errors()  # run tests + lint + types
+
+WHILE error_count > 0:
+    current_iteration += 1
+
+    # 1. Pick highest-priority error (by severity x blast_radius x fixability)
+    error = pick_highest_priority(errors)
+
+    # 2. Analyze root cause (if not from /godmode:debug)
+    root_cause = analyze(error)
+
+    # 3. Apply minimum fix — ONE error, ONE change
+    apply_fix(error, root_cause)
+
+    # 4. Commit BEFORE verification
+    git add <changed-files>
+    git commit -m "fix: {error.description}"
+
+    # 5. Verify — run FULL suite (tests + lint + types)
+    new_error_count = inventory_errors()
+
+    # 6. Decide
+    IF new_error_count > error_count:
+        git reset --hard HEAD~1  # fix introduced new errors
+        log_tsv(iteration=current_iteration, status="reverted")
+        # Re-analyze, try different approach (max 3 attempts per error)
+    ELSE:
+        error_count = new_error_count
+        log_tsv(iteration=current_iteration, status="fixed")
+
+    # 7. Status print every 5 iterations
+    IF current_iteration % 5 == 0:
+        Print: "Fix iteration {current_iteration}: {error_count} remaining (from {original}), {fixed} fixed, {reverted} reverted"
+
+    # 8. REPEAT — go to top of WHILE
+    # DO NOT ask "should I continue?"
+    # DO NOT summarize between fixes
+
+Print final summary. STOP.
 ```
 
 ### RULE 2: Git Commit BEFORE Verify

@@ -288,16 +288,44 @@ Debug is an iteration loop. It does NOT find one bug and stop. It finds ALL bugs
 ### RULE 1: LOOP UNTIL NO MORE BUGS
 
 ```
-LOOP:
-  1. Run reproduce command / test suite
-  2. If all passing → STOP, print summary
-  3. Pick next failing test / bug symptom
-  4. Apply debugging technique (pick best one)
-  5. Isolate root cause with evidence (file:line + data)
-  6. Log finding to .godmode/debug-findings.tsv
-  7. Hand off to fix skill OR fix inline if trivial
-  8. Verify fix didn't introduce new bugs
-  9. GOTO 1
+current_iteration = 0
+failing_count = run_test_suite()  # count of failing tests / bugs
+
+WHILE failing_count > 0:
+    current_iteration += 1
+
+    # 1. Pick next failing test / bug symptom (highest severity first: P0 > P1 > P2 > P3)
+    bug = pick_highest_severity(failures)
+
+    # 2. Select best debugging technique (auto-select from table in Step 3)
+    technique = auto_select_technique(bug.signal)
+
+    # 3. Apply technique — isolate root cause with EVIDENCE
+    root_cause = investigate(bug, technique)
+    # root_cause MUST have: file:line, data evidence, reproduce command
+
+    # 4. Log finding
+    Append to .godmode/debug-findings.tsv:
+    iteration  bug  file  line  root_cause  technique_used  fix_applied  commit
+
+    # 5. Hand off to fix skill OR fix inline if trivial
+    IF trivial (one-line fix):
+        Apply fix, commit, verify.
+    ELSE:
+        Invoke /godmode:fix with root_cause.
+
+    # 6. Re-count failures
+    failing_count = run_test_suite()
+
+    # 7. Status print every 3 bugs
+    IF current_iteration % 3 == 0:
+        Print: "Debug iteration {current_iteration}: {found} bugs found, {failing_count} remaining"
+
+    # 8. REPEAT — go to top of WHILE
+    # DO NOT ask "should I continue?"
+    # DO NOT stop after finding one bug
+
+Print summary. STOP.
 ```
 
 ### RULE 2: NEVER GUESS — PROVE

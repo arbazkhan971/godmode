@@ -46,6 +46,81 @@ This is the most important skill in Godmode. Everything else exists to support t
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
+### THE LOOP — EXACT EXECUTION PROTOCOL
+
+This is the loop body. Follow it literally. Not the phases below — THIS.
+
+```
+current_round = 0
+max_rounds = N  # from "Iterations: N" or Infinity if unbounded
+baseline = run_verify_command_3x_take_median()
+log_tsv(round=0, status="baseline", metric=baseline)
+
+WHILE current_round < max_rounds:
+    current_round += 1
+
+    # 1. REVIEW (30 seconds max)
+    Read in-scope files. Read last 10 entries from .godmode/optimize-results.tsv.
+    Read git log --oneline -10.
+    IF bounded AND (max_rounds - current_round) < 3: prioritize exploitation over exploration.
+
+    # 2. SELECT 3 HYPOTHESES from playbook (Phase 3)
+    Pick 3 independent, untested hypotheses.
+    IF all playbook entries exhausted: generate new ones from codebase analysis.
+    IF >5 consecutive discards: trigger RADICAL MODE (opposite of what failed).
+
+    # 3. DISPATCH 3 AGENTS IN PARALLEL (Phase 4)
+    FOR agent_id IN [1, 2, 3]:
+        Create worktree: git worktree add .worktree-agent-{agent_id}
+        Agent makes ONE change, commits: "optimize: round {current_round} agent {agent_id} — {description}"
+        Agent runs guard command. Agent runs verify 3x, takes median.
+        Agent reports: {metric, commit_sha, description, guard_pass}
+
+    # 4. PICK WINNER
+    Sort agents by metric improvement (descending).
+    best_agent = agents[0]  # best metric
+    IF best_agent.metric_improved AND best_agent.guard_passed:
+        Cherry-pick best_agent.commit onto main branch.
+        baseline = best_agent.metric  # new baseline
+        STATUS = "keep"
+    ELIF best_agent.metric_improved AND NOT best_agent.guard_passed:
+        Rework (max 2 attempts). IF still fails: STATUS = "discard"
+    ELSE:
+        STATUS = "discard"  # no agent improved
+
+    # 5. CLEANUP worktrees
+    Remove all worktrees.
+
+    # 6. LOG
+    FOR each agent: append row to .godmode/optimize-results.tsv
+    Append to .godmode/session-log.tsv
+
+    # 7. STATUS PRINT (every 5 rounds)
+    IF current_round % 5 == 0:
+        Print: "Round {current_round}: metric at {baseline} (from {original}, {delta}%), {keeps}/{discards}"
+        Print ASCII bar chart.
+
+    # 8. DIMINISHING RETURNS CHECK
+    IF last 3 KEEP deltas are all < 1%:
+        Trigger RADICAL MODE (Phase 6)
+    IF radical mode exhausted:
+        Trigger COMPOUND OPTIMIZATION (Phase 7)
+    IF compound exhausted:
+        Print summary and STOP.
+
+    # 9. STOP CONDITIONS
+    IF target_reached: Print summary. STOP.
+    IF max_rounds reached: Print summary. STOP.
+    IF guard permanently broken: Print summary. STOP.
+
+    # 10. REPEAT — go to top of WHILE loop
+    # DO NOT ask "should I continue?"
+    # DO NOT summarize between rounds
+    # DO NOT pause for feedback
+```
+
+**If you are not tracking `current_round` and comparing against `max_rounds`, you are not running this skill.** The phases below are reference documentation for each step. The loop above is the execution protocol.
+
 ---
 
 ## Phase 0: Automatic Metric Detection

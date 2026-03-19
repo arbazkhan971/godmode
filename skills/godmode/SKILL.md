@@ -419,37 +419,85 @@ For simple tasks that don't warrant decomposition:
 
 ## Autonomous Iteration — The Core Engine
 
-Every Godmode skill that involves iterative work (optimize, fix, debug, build) runs the same autonomous loop engine inherited from autoresearch:
+Every Godmode skill that involves iterative work (optimize, fix, debug, build) runs the same autonomous loop engine. This is not prose. This is pseudocode. Follow it literally.
+
+### THE LOOP — EXACT EXECUTION PROTOCOL
 
 ```
-LOOP (FOREVER or N iterations):
-  1. Review: Read current state + git history + results log
-  2. Ideate: Pick next change based on goal and past results
-  3. Modify: Make ONE focused change
-  4. Commit: git commit BEFORE verification
-  5. Verify: Run mechanical metric (tests, benchmark, etc.)
-  6. Guard: Run guard command if set (tests must pass)
-  7. Decide:
-     - IMPROVED + guard passed → KEEP
-     - IMPROVED + guard failed → Revert, rework (max 2 attempts)
-     - SAME/WORSE → git reset --hard HEAD~1, DISCARD
-     - CRASHED → Fix (max 3 attempts), else DISCARD
-  8. Log: Append to .godmode/<skill>-results.tsv
-  9. Track: Append to .godmode/session-log.tsv (see Results Tracking)
-  10. Repeat: NEVER STOP. NEVER ASK "should I continue?"
+current_iteration = 0
+max_iterations = N  # from "Iterations: N", or Infinity if unbounded
+
+WHILE current_iteration < max_iterations:
+    current_iteration += 1
+
+    # Phase 1: REVIEW (30 seconds)
+    Read current state of in-scope files.
+    Read last 10-20 entries from .godmode/<skill>-results.tsv.
+    Read git log --oneline -10.
+    IF bounded AND (max_iterations - current_iteration) < 3: exploit > explore.
+
+    # Phase 2: IDEATE
+    Pick NEXT change. Priority: fix crashes > exploit successes > explore new > combine > simplify > radical.
+    Do NOT repeat a previously discarded change.
+
+    # Phase 3: MODIFY
+    ONE atomic change. Explainable in one sentence.
+
+    # Phase 4: COMMIT (before verification)
+    git add <changed-files>
+    git commit -m "experiment: <one-sentence description>"
+
+    # Phase 5: VERIFY
+    Run verify command. Capture metric.
+    IF guard defined: run guard command (must pass, exit code 0).
+
+    # Phase 6: DECIDE (no ambiguity)
+    IF metric_improved AND (no guard OR guard_passed):
+        STATUS = "keep"  # commit stays
+    ELIF metric_improved AND guard_failed:
+        git reset --hard HEAD~1
+        Rework (max 2 attempts, adapt implementation NOT tests)
+        IF still failing: STATUS = "discard"
+    ELIF metric_same_or_worse:
+        git reset --hard HEAD~1
+        STATUS = "discard"
+    ELIF crashed:
+        Attempt fix (max 3 tries). IF unfixable: git reset --hard HEAD~1, STATUS = "crash"
+
+    # Phase 7: LOG
+    Append to .godmode/<skill>-results.tsv:
+    iteration  commit   metric   status   description
+    Append to .godmode/session-log.tsv
+
+    # Phase 8: REPEAT
+    IF unbounded: go to top of WHILE. NEVER STOP. NEVER ASK.
+    IF bounded AND current_iteration >= max_iterations:
+        Print final summary. STOP.
+    IF >5 consecutive discards: re-read all files, try opposite approach.
+
+    # STATUS PRINT every 5 iterations:
+    IF current_iteration % 5 == 0:
+        Print: "Iteration {current_iteration}: metric at {value}, {keeps}/{discards}/{crashes}"
 ```
 
-**This is not a suggestion. This is the execution protocol.** Skills that skip the loop, skip commits, skip verification, or ask permission to continue are NOT running godmode — they're just generating text.
+```
+=== Final Summary (N/N iterations) ===
+Baseline: {baseline} → Final: {current} ({delta})
+Keeps: X | Discards: Y | Crashes: Z
+Best iteration: #{n} — {description}
+```
+
+**This is not a suggestion. This is the execution protocol.** If you are not tracking `current_iteration` and comparing against `max_iterations`, you are not running godmode. Skills that skip the loop, skip commits, skip verification, or ask permission to continue are NOT running godmode — they're just generating text.
 
 ### Bounded Iterations
 
-Add `Iterations: N` to any skill invocation to run exactly N iterations:
+Add `Iterations: N` to any skill invocation:
 ```
 /godmode:optimize
 Iterations: 20
 ```
 
-After N iterations, print a final summary with baseline → current, keeps/discards/crashes.
+The loop runs exactly 20 iterations, then prints a final summary with baseline → current, keeps/discards/crashes. The counter is mandatory — do not lose track of `current_iteration`.
 
 ---
 
