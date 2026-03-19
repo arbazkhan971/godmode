@@ -20,6 +20,5 @@ Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}"`.
 
 ## Rules
 1. Clean state before finalize. No uncommitted changes, tests must pass.
-2. Squash-merge: `git checkout main && git merge --squash {branch} && git commit`. One commit per feature.
-3. Never force-delete without confirmation.
-4. PR body from git log. Auto-generate from commit history.
+2. One commit per feature on main (squash-merge). Never force-delete without confirmation.
+3. PR body auto-generated from `git log`. No manual summaries.
