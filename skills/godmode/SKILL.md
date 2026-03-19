@@ -73,8 +73,47 @@ Output a brief status card:
 └─────────────────────────────────────────┘
 ```
 
-### Step 4: Execute or Await
+### Step 4: Multi-Agent Execution (Default)
 
+When the goal involves multiple skills or substantial work, **default to multi-agent execution**:
+
+1. **Decompose** — Use the planner agent's approach: break the goal into independent tasks, map each to a skill
+2. **Dependency graph** — Identify which tasks depend on others. Group independent tasks into rounds.
+3. **Dispatch in parallel** — For each round, spawn agents simultaneously:
+   - Use `Agent` tool with `isolation: "worktree"` so each agent works on its own branch
+   - Each agent receives: task description + skill name + files in scope
+   - Tell each agent: "Read `skills/<name>/SKILL.md` and follow its workflow for this task: <description>"
+4. **Collect & merge** — When all agents in a round complete, review their output and merge branches
+5. **Next round** — Dispatch dependent tasks that were waiting. Repeat until done.
+6. **Verify** — Run tests/build/lint across the merged result
+
+**Example decomposition:**
+```
+User: /godmode Build a SaaS billing system with Stripe
+
+GODMODE — Parallel Execution Plan
+Round 1 (parallel — 3 agents):
+  Agent 1: Design database schema    → skill: schema,  worktree: wt-schema
+  Agent 2: Design API contracts       → skill: api,     worktree: wt-api
+  Agent 3: Set up Stripe webhooks    → skill: webhook,  worktree: wt-webhook
+
+Round 2 (parallel — 2 agents, depends on Round 1):
+  Agent 4: Implement auth + RBAC     → skill: auth,    worktree: wt-auth
+  Agent 5: Build payment endpoints   → skill: pay,     worktree: wt-pay
+
+Round 3 (sequential, depends on Round 2):
+  Agent 6: Write integration tests   → skill: integration
+  Agent 7: Security audit            → skill: secure
+```
+
+**When to use single-agent instead:**
+- Simple, focused tasks (one skill, one file)
+- User explicitly says "don't parallelize" or "just do it"
+- The task can't be meaningfully decomposed
+
+### Step 5: Single-Agent Fallback
+
+For simple tasks that don't warrant decomposition:
 - If the user confirms the recommendation, immediately invoke that skill
 - If the user picks an alternative, invoke that instead
 - If the user provides new context, re-evaluate from Step 1

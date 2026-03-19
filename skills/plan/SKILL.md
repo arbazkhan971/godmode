@@ -75,35 +75,36 @@ Task format:
 **Done when:** <Specific, verifiable condition>
 ```
 
-### Step 4: Order and Group Tasks
-Organize tasks into implementation phases:
+### Step 4: Order and Group for Parallel Execution
+Organize tasks into rounds optimized for multi-agent dispatch. Tasks within a round have NO dependencies on each other and CAN run in parallel:
 
 ```markdown
-## Phase 1: Foundation (Tasks 1-3)
-Set up data structures, interfaces, and configuration.
-No business logic yet — just the skeleton.
+## Round 1: Foundation (parallel — 3 agents)
+No dependencies. All tasks run simultaneously via separate agents.
 
-### Task 1: ...
-### Task 2: ...
-### Task 3: ...
+### Task 1: ... [agent: builder, skill: schema, worktree: wt-1]
+### Task 2: ... [agent: builder, skill: config, worktree: wt-2]
+### Task 3: ... [agent: builder, skill: type, worktree: wt-3]
 
-## Phase 2: Core Logic (Tasks 4-7)
-Implement the main functionality with tests.
-RED-GREEN-REFACTOR for each task.
+## Round 2: Core Logic (parallel — depends on Round 1)
+All Round 1 branches merged before these start.
 
-### Task 4: ...
-### Task 5: ...
+### Task 4: ... [agent: builder, skill: api, worktree: wt-4]
+### Task 5: ... [agent: builder, skill: auth, worktree: wt-5]
 
-## Phase 3: Integration (Tasks 8-10)
-Connect to existing systems, add API endpoints, wire up UI.
+## Round 3: Integration (parallel — depends on Round 2)
+### Task 8: ... [agent: builder, skill: integration, worktree: wt-8]
+### Task 9: ... [agent: tester, skill: e2e, worktree: wt-9]
 
-### Task 8: ...
-
-## Phase 4: Polish (Tasks 11-13)
-Error handling, edge cases, logging, documentation.
-
-### Task 11: ...
+## Round 4: Verify (sequential — depends on Round 3)
+### Task 11: ... [agent: reviewer]
+### Task 12: ... [agent: security]
 ```
+
+Each task includes:
+- **agent**: which Godmode agent to dispatch (builder, tester, reviewer, security)
+- **skill**: which skill the agent follows
+- **worktree**: isolated git worktree name (agents don't conflict)
 
 Rules:
 - **Maximum 15 tasks.** If you have more, the feature is too big — split it into multiple plans.

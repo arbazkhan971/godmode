@@ -78,26 +78,55 @@ For each task, follow the RED-GREEN-REFACTOR cycle:
 5. If no refactoring needed, skip this step
 ```
 
-### Step 4: Parallel Agent Dispatch
-When multiple tasks have no dependency on each other, dispatch them in parallel:
+### Step 4: Multi-Agent Execution (Default)
+
+**This is the default execution mode.** When a plan has independent tasks in a round, dispatch them as parallel agents automatically.
+
+#### How to dispatch:
+For each round in the plan, spawn agents simultaneously:
 
 ```
-PARALLEL EXECUTION:
-Dispatching 3 agents for independent tasks:
+ROUND 1 — Dispatching 3 agents in parallel:
 
-Agent 1 → Task 4: Create user service
-Agent 2 → Task 5: Create email service
-Agent 3 → Task 6: Create notification service
+Agent 1 [worktree: wt-task4] → Task 4: Create user service
+  Skill: api | Scope: src/services/user.ts, tests/services/user.test.ts
+  Instruction: "Read skills/api/SKILL.md. Implement: <task description>. Follow RED-GREEN-REFACTOR."
 
-Each agent follows the same RED-GREEN-REFACTOR cycle.
-Waiting for all agents to complete...
+Agent 2 [worktree: wt-task5] → Task 5: Create email service
+  Skill: email | Scope: src/services/email.ts, tests/services/email.test.ts
+  Instruction: "Read skills/email/SKILL.md. Implement: <task description>. Follow RED-GREEN-REFACTOR."
+
+Agent 3 [worktree: wt-task6] → Task 6: Create notification service
+  Skill: notify | Scope: src/services/notify.ts, tests/services/notify.test.ts
+  Instruction: "Read skills/notify/SKILL.md. Implement: <task description>. Follow RED-GREEN-REFACTOR."
+
+Waiting for all agents...
 ```
 
-Rules for parallel dispatch:
-- Only tasks with no shared file dependencies can run in parallel
-- Each agent gets its own context with the task details
-- After all agents complete, run the FULL test suite to catch integration issues
-- If any agent's tests fail in combination with others, resolve conflicts sequentially
+#### Agent dispatch mechanics:
+- **Claude Code**: Use `Agent` tool with `isolation: "worktree"` for each task
+- **Codex**: Spawn `godmode_builder` subagents — one per task
+- **Other CLIs**: Execute tasks sequentially (fallback when parallel dispatch unavailable)
+
+#### After each round completes:
+1. Review each agent's output (files changed, tests written, commits)
+2. Merge worktree branches into the main feature branch
+3. Run the FULL test suite across merged code
+4. If merge conflicts exist, resolve them before next round
+5. If any agent failed, retry that task or flag for manual intervention
+6. Proceed to next round
+
+#### Rules:
+- Only tasks with no shared file dependencies run in parallel
+- Each agent works in an isolated git worktree (no conflicts during work)
+- Failed agents don't block others — their work is logged and can be retried
+- After all rounds complete, dispatch the `reviewer` agent for final review
+- After review, dispatch the `security` agent for audit
+
+#### When to fall back to single-agent:
+- Only 1 task in the round
+- User says "don't parallelize"
+- The task modifies a single file that other tasks also need
 
 ### Step 5: Code Review Gate
 After every 3-5 tasks (or at the end of a phase), trigger a review:
