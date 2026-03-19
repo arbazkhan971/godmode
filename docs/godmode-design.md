@@ -4469,4 +4469,126 @@ GOOD: Always run /godmode:secure before /godmode:ship.
 
 ---
 
-## Status: ITERATION 39 — Anti-Patterns complete
+## 40. Iteration Budget System
+
+**Purpose:** How to allocate iterations across plan tasks and optimize loops, with auto-budgeting based on complexity.
+
+### Why Budget Iterations?
+
+Without budgeting:
+- Simple tasks consume the same iteration count as complex tasks
+- Optimization runs forever on diminishing returns
+- The user has no sense of "how long will this take?"
+
+With budgeting:
+- Each task gets an iteration allowance proportional to complexity
+- Optimization stops when the budget runs out (or the target is met)
+- The user sees: "Estimated: 45 iterations across 7 tasks"
+
+### Budget Allocation Algorithm
+
+```
+Total budget = user-configured max (default: 25 for optimize, 15 for fix)
+
+For optimization:
+  Budget = min(user_max, complexity_estimate)
+
+For plan execution:
+  Per-task budget = task_estimated_time / 2  (2 min = 1 iteration, 5 min = 2-3)
+  Parallel group budget = max(task budgets in group)
+  Total budget = sum(group budgets)
+```
+
+### Complexity Estimation
+
+The planner estimates task complexity based on:
+
+| Signal | Low (1) | Medium (2-3) | High (4-5) |
+|--------|---------|-------------|-----------|
+| Files to modify | 1 file | 2-3 files | 4+ files |
+| Lines of code | <50 | 50-200 | >200 |
+| New dependencies | 0 | 1 | 2+ |
+| Has tests | Simple assertions | Multiple scenarios | Mocking, integration |
+| Cross-module | Within one module | 2 modules | 3+ modules |
+
+**Budget formula:** `iterations = complexity_score * 2`
+
+### Budget Tracking
+
+During execution, budget is tracked in real-time:
+
+```
+Task Budget Tracker:
+  Task 001: Redis connection    [████░░] 2/3 iterations (1 remaining)
+  Task 002: Config schema       [██████] 1/1 iterations (complete ✓)
+  Task 003: Rate limiter        [██░░░░] 2/5 iterations (3 remaining)
+  Task 004: Logging             [░░░░░░] 0/2 iterations (not started)
+  ─────────────────────────────────────────────────
+  Total:                        5/11 iterations used (6 remaining)
+```
+
+For optimization:
+
+```
+Optimization Budget:
+  Used:      4 / 25 iterations
+  Kept:      3 (75%)
+  Remaining: 21
+  Target:    200ms (current: 198ms) — TARGET MET ✓
+  Estimated remaining: 0 (target already achieved)
+```
+
+### Auto-Budget Based on Complexity
+
+When no explicit iteration limit is set, auto-budget estimates:
+
+```
+Auto-Budget Calculation:
+  Project size: medium (150 files, 8K LOC)
+  Task count: 7
+  Average complexity: 2.5
+  Optimization scope: 3 files
+
+  Plan execution budget: 14 iterations (7 tasks × 2 avg)
+  Optimization budget: 15 iterations (medium scope, reasonable target)
+  Fix budget: 10 iterations (based on current error count × 2)
+
+  Total estimated: 39 iterations
+  Estimated time: ~20 minutes (at 30s per iteration)
+```
+
+### Budget Overruns
+
+When a task or loop exceeds its budget:
+
+| Situation | Action |
+|-----------|--------|
+| Task exceeds budget by 1 | Allow (soft limit) |
+| Task exceeds budget by 2+ | Pause, ask user: "Task 003 has used 7/5 iterations. Continue?" |
+| Optimization exceeds budget | Hard stop, report best result |
+| Fix loop exceeds budget | Hard stop, report remaining errors |
+| Total plan exceeds estimate by 50% | Pause, re-estimate, ask user |
+
+### Budget Display in Plan
+
+The plan includes budget information:
+
+```markdown
+### Task 003: Add rate limit middleware
+
+**Budget:** 5 iterations (complexity: high)
+**Files:** 3 files (CREATE: 2, MODIFY: 1)
+**Estimated time:** 4-6 minutes
+```
+
+### Key Behaviors
+
+1. **Budget is a guide, not a prison** — Soft limits allow flexibility; hard limits prevent waste
+2. **Complexity drives budget** — Simple tasks get fewer iterations; complex ones get more
+3. **Track and display** — Users should always see how much budget remains
+4. **Auto-budget is conservative** — Better to underestimate and extend than overestimate and waste
+5. **Budget includes reverts** — A reverted iteration still counts against the budget
+
+---
+
+## Status: ITERATION 40 — Iteration Budget System complete
