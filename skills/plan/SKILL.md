@@ -21,7 +21,7 @@ Sort tasks topologically. Group tasks with no unmet deps into rounds for paralle
 - `depends_on[]` must reference valid task IDs, no circular deps
 - Every file appears in at most 2 tasks (avoid merge conflicts)
 ### 5. Output
-Write to `.godmode/plan.yaml`. Print summary: `Plan: {N} tasks in {M} rounds` with per-round breakdown.
+Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks in {M} rounds`. For complex plans, suggest `/godmode:predict` before `/godmode:build`.
 
 ## Rules
 1. Every task has exact file paths that exist (or will be created). No globs, no "somewhere in".

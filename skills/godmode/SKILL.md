@@ -35,8 +35,8 @@ Lockfiles: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
 | "plan", "break down" | plan |
 | "think", "design" | think |
 | "ship", "deploy" | ship |
-| "refactor", "simplify" | refactor |
-| "document", "docs" | docs |
+| "refactor", "simplify" | optimize |
+| "predict", "will this work" | predict |
 
 No match → phase detection (Step 3).
 

@@ -17,7 +17,7 @@ Run `git ls-files` → identify relevant modules, naming conventions, existing a
 ### 3. Generate 2-3 Approaches
 Per approach: description (2-3 sentences), trade-offs, complexity (Low/Med/High), files to create/modify.
 ### 4. Recommend One
-Lead with recommendation. One sentence justification.
+Lead with recommendation + justification. State: chosen approach, why others rejected, key risk.
 ### 5. Write Spec
 Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out of Scope, Edge Cases, Files Affected. Commit: `"spec: {feature name}"`
 
