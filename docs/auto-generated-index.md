@@ -4,7 +4,7 @@
 
 # Godmode Skill Index
 
-**Total skills: 134**
+**Total skills: 153**
 
 ---
 
@@ -15,7 +15,9 @@
 | **a11y** | `skills/a11y/` | Accessibility testing and auditing skill. |
 | **adr** | `skills/adr/` | Architecture Decision Records skill. |
 | **agent** | `skills/agent/` | AI agent development skill. |
+| **aiops** | `skills/aiops/` | AI Operations and safety skill. |
 | **analytics** | `skills/analytics/` | Analytics implementation skill. |
+| **angular** | `skills/angular/` | Angular architecture skill. |
 | **animation** | `skills/animation/` | Animation and motion design skill. |
 | **api** | `skills/api/` | API design and specification skill. |
 | **architect** | `skills/architect/` | Software architecture skill. |
@@ -42,17 +44,21 @@
 | **desktop** | `skills/desktop/` | Desktop application development skill. |
 | **devsecops** | `skills/devsecops/` | DevSecOps pipeline skill. |
 | **distributed** | `skills/distributed/` | Distributed systems design skill. |
+| **django** | `skills/django/` | Django and FastAPI development skill. |
 | **docker** | `skills/docker/` | Docker mastery skill. |
 | **docs** | `skills/docs/` | Documentation generation and maintenance skill. |
 | **dx** | `skills/dx/` | Developer experience optimization skill. |
 | **e2e** | `skills/e2e/` | End-to-end testing skill. |
+| **edge** | `skills/edge/` | Edge computing and serverless development skill. |
 | **email** | `skills/email/` | Email and notification systems skill. |
 | **embeddings** | `skills/embeddings/` | Embeddings and semantic search skill. |
 | **errorhandling** | `skills/errorhandling/` | Error handling architecture skill. |
 | **errortrack** | `skills/errortrack/` | Error tracking and analysis skill. |
 | **estimate** | `skills/estimate/` | Effort estimation skill. |
+| **eval** | `skills/eval/` | AI/LLM evaluation skill. |
 | **event** | `skills/event/` | Event-driven architecture skill. |
 | **extension** | `skills/extension/` | Browser extension development skill. |
+| **fastapi** | `skills/fastapi/` | FastAPI mastery skill. |
 | **finetune** | `skills/finetune/` | Model fine-tuning skill. |
 | **finish** | `skills/finish/` | Branch finalization skill. |
 | **fix** | `skills/fix/` | Autonomous error fixing skill. |
@@ -63,14 +69,17 @@
 | **godmode** | `skills/godmode/` | Orchestrator skill. |
 | **graphql** | `skills/graphql/` | GraphQL API development skill. |
 | **grpc** | `skills/grpc/` | gRPC and Protocol Buffers development skill. |
+| **hipaa** | `skills/hipaa/` | HIPAA deep compliance skill. |
 | **i18n** | `skills/i18n/` | Internationalization & localization skill. |
 | **incident** | `skills/incident/` | Incident response and post-mortem skill. |
 | **infra** | `skills/infra/` | Infrastructure as Code skill. |
 | **integration** | `skills/integration/` | Integration testing skill. |
 | **iot** | `skills/iot/` | IoT and embedded systems development skill. |
 | **k8s** | `skills/k8s/` | Kubernetes and container orchestration skill. |
+| **laravel** | `skills/laravel/` | Laravel mastery skill. |
 | **learn** | `skills/learn/` | Learning and teaching skill. |
 | **legacy** | `skills/legacy/` | Legacy code modernization skill. |
+| **license** | `skills/license/` | License management skill. |
 | **lint** | `skills/lint/` | Linting and code standards skill. |
 | **loadtest** | `skills/loadtest/` | Load testing and performance testing skill. |
 | **logging** | `skills/logging/` | Logging and structured logging skill. |
@@ -81,8 +90,12 @@
 | **mlops** | `skills/mlops/` | MLOps and model deployment skill. |
 | **mobile** | `skills/mobile/` | Mobile app development skill. |
 | **monorepo** | `skills/monorepo/` | Monorepo management skill. |
+| **multimodal** | `skills/multimodal/` | Multimodal AI skill. |
 | **network** | `skills/network/` | Network and DNS skill. |
 | **nextjs** | `skills/nextjs/` | Next.js mastery skill. |
+| **node** | `skills/node/` | Node.js backend development skill. |
+| **nosql** | `skills/nosql/` | NoSQL database design skill. |
+| **npm** | `skills/npm/` | Package management skill. |
 | **observe** | `skills/observe/` | Monitoring and observability skill. |
 | **onboard** | `skills/onboard/` | Codebase onboarding skill. |
 | **opensource** | `skills/opensource/` | Open source project management skill. |
@@ -109,8 +122,10 @@
 | **rbac** | `skills/rbac/` | Permission and access control skill. |
 | **react** | `skills/react/` | React architecture skill. |
 | **realtime** | `skills/realtime/` | Real-time communication skill. |
+| **redis** | `skills/redis/` | Redis architecture and design skill. |
 | **refactor** | `skills/refactor/` | Large-scale refactoring skill. |
 | **release** | `skills/release/` | Release management skill. |
+| **reliability** | `skills/reliability/` | Site reliability engineering skill. |
 | **report** | `skills/report/` | Report generation skill. |
 | **resilience** | `skills/resilience/` | System resilience skill. |
 | **responsive** | `skills/responsive/` | Responsive and adaptive design skill. |
@@ -129,10 +144,13 @@
 | **setup** | `skills/setup/` | Configuration wizard skill. |
 | **ship** | `skills/ship/` | Shipping workflow skill. |
 | **snapshot** | `skills/snapshot/` | Snapshot and approval testing skill. |
+| **soc2** | `skills/soc2/` | SOC 2 deep compliance skill. |
 | **spring** | `skills/spring/` | Spring Boot mastery skill. |
 | **standup** | `skills/standup/` | Daily standup and progress tracking skill. |
 | **state** | `skills/state/` | State management design and implementation skill. |
 | **storage** | `skills/storage/` | File storage and CDN skill. |
+| **svelte** | `skills/svelte/` | Svelte and SvelteKit mastery skill. |
+| **tailwind** | `skills/tailwind/` | Tailwind CSS mastery skill. |
 | **terminal** | `skills/terminal/` | Terminal and shell productivity skill. |
 | **test** | `skills/test/` | TDD enforcement skill. |
 | **think** | `skills/think/` | Brainstorming and design skill. |
@@ -142,6 +160,7 @@
 | **unittest** | `skills/unittest/` | Unit testing mastery skill. |
 | **verify** | `skills/verify/` | Evidence gate skill. |
 | **visual** | `skills/visual/` | Visual regression testing skill. |
+| **vscode** | `skills/vscode/` | IDE and editor configuration skill. |
 | **vue** | `skills/vue/` | Vue.js mastery skill. |
 | **wasm** | `skills/wasm/` | WebAssembly development skill. |
 | **web3** | `skills/web3/` | Blockchain and Web3 development skill. |
@@ -278,18 +297,19 @@
 | **visual** | `skills/visual/` | Visual regression testing skill. |
 | **webperf** | `skills/webperf/` | Web performance optimization skill. |
 
-### Data & AI (6 skills)
+### Data & AI (7 skills)
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
 | **analytics** | `skills/analytics/` | Analytics implementation skill. |
+| **eval** | `skills/eval/` | AI/LLM evaluation skill. |
 | **ml** | `skills/ml/` | ML development and experimentation skill. |
 | **mlops** | `skills/mlops/` | MLOps and model deployment skill. |
 | **query** | `skills/query/` | Query optimization and data analysis skill. |
 | **rag** | `skills/rag/` | RAG (Retrieval-Augmented Generation) skill. |
 | **search** | `skills/search/` | Search implementation skill. |
 
-### Specialized Domains (28 skills)
+### Specialized Domains (29 skills)
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
@@ -299,6 +319,7 @@
 | **cache** | `skills/cache/` | Caching strategy skill. |
 | **chart** | `skills/chart/` | Data visualization skill. |
 | **cli** | `skills/cli/` | CLI tool development skill. |
+| **edge** | `skills/edge/` | Edge computing and serverless development skill. |
 | **email** | `skills/email/` | Email and notification systems skill. |
 | **errorhandling** | `skills/errorhandling/` | Error handling architecture skill. |
 | **extension** | `skills/extension/` | Browser extension development skill. |
@@ -322,39 +343,56 @@
 | **wasm** | `skills/wasm/` | WebAssembly development skill. |
 | **web3** | `skills/web3/` | Blockchain and Web3 development skill. |
 
-### Other (28 skills)
+### Other (45 skills)
 
 | Skill | Directory | Description |
 |-------|-----------|-------------|
+| **aiops** | `skills/aiops/` | AI Operations and safety skill. |
+| **angular** | `skills/angular/` | Angular architecture skill. |
 | **animation** | `skills/animation/` | Animation and motion design skill. |
 | **changelog** | `skills/changelog/` | Changelog and release notes management skill. |
 | **concurrent** | `skills/concurrent/` | Concurrency and parallelism skill. |
 | **designsystem** | `skills/designsystem/` | Design system architecture skill. |
 | **distributed** | `skills/distributed/` | Distributed systems design skill. |
+| **django** | `skills/django/` | Django and FastAPI development skill. |
 | **docker** | `skills/docker/` | Docker mastery skill. |
 | **embeddings** | `skills/embeddings/` | Embeddings and semantic search skill. |
 | **estimate** | `skills/estimate/` | Effort estimation skill. |
+| **fastapi** | `skills/fastapi/` | FastAPI mastery skill. |
 | **finetune** | `skills/finetune/` | Model fine-tuning skill. |
 | **forms** | `skills/forms/` | Form architecture skill. |
 | **gamedev** | `skills/gamedev/` | Game development skill. |
 | **gdpr** | `skills/gdpr/` | GDPR deep compliance skill. |
+| **hipaa** | `skills/hipaa/` | HIPAA deep compliance skill. |
+| **laravel** | `skills/laravel/` | Laravel mastery skill. |
 | **legacy** | `skills/legacy/` | Legacy code modernization skill. |
+| **license** | `skills/license/` | License management skill. |
 | **migration** | `skills/migration/` | System migration skill. |
+| **multimodal** | `skills/multimodal/` | Multimodal AI skill. |
 | **nextjs** | `skills/nextjs/` | Next.js mastery skill. |
+| **node** | `skills/node/` | Node.js backend development skill. |
+| **nosql** | `skills/nosql/` | NoSQL database design skill. |
+| **npm** | `skills/npm/` | Package management skill. |
 | **opensource** | `skills/opensource/` | Open source project management skill. |
 | **postgres** | `skills/postgres/` | PostgreSQL mastery skill. |
 | **prioritize** | `skills/prioritize/` | Task prioritization skill using structured frameworks. |
 | **rails** | `skills/rails/` | Ruby on Rails mastery skill. |
 | **react** | `skills/react/` | React architecture skill. |
+| **redis** | `skills/redis/` | Redis architecture and design skill. |
+| **reliability** | `skills/reliability/` | Site reliability engineering skill. |
 | **responsive** | `skills/responsive/` | Responsive and adaptive design skill. |
 | **retro** | `skills/retro/` | Retrospective and team health skill. |
 | **scale** | `skills/scale/` | Scalability engineering skill. |
 | **scope** | `skills/scope/` | Scope management skill for feature decomposition, MVP definition, scope creep detection, requirements validation, and user story writing. |
+| **soc2** | `skills/soc2/` | SOC 2 deep compliance skill. |
 | **spring** | `skills/spring/` | Spring Boot mastery skill. |
+| **svelte** | `skills/svelte/` | Svelte and SvelteKit mastery skill. |
+| **tailwind** | `skills/tailwind/` | Tailwind CSS mastery skill. |
 | **terminal** | `skills/terminal/` | Terminal and shell productivity skill. |
 | **three** | `skills/three/` | 3D web development skill. |
+| **vscode** | `skills/vscode/` | IDE and editor configuration skill. |
 | **vue** | `skills/vue/` | Vue.js mastery skill. |
 
 ---
 
-*Generated on 2026-03-19 10:47:46 UTC by `scripts/generate-index.sh`*
+*Generated on 2026-03-19 10:58:50 UTC by `scripts/generate-index.sh`*

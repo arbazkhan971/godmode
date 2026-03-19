@@ -4,18 +4,18 @@
 
 ### Turn on Godmode for Claude Code.
 
-**108 skills. Zero configuration. One command.**
+**153 skills. Zero configuration. One command.**
 
 Your AI writes code. Godmode makes it write *great* code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](package.json)
-[![Skills](https://img.shields.io/badge/skills-108-ff6b6b.svg)](skills/)
-[![Commands](https://img.shields.io/badge/commands-40-orange.svg)](commands/)
+[![Skills](https://img.shields.io/badge/skills-153-ff6b6b.svg)](skills/)
+[![Commands](https://img.shields.io/badge/commands-146-orange.svg)](commands/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet.svg)](https://claude.ai)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-[Quick Start](#quick-start) · [All 108 Skills](#the-skill-map-108-skills) · [Examples](#real-world-examples) · [Contributing](#contributing)
+[Quick Start](#quick-start) · [All 153 Skills](#the-skill-map-153-skills) · [Examples](#real-world-examples) · [Contributing](#contributing)
 
 </div>
 
@@ -57,7 +57,7 @@ Every improvement is **measured**. Every bad change is **reverted**. Every exper
 |---|---|
 | Your AI generates code, then you spend hours fixing it | Godmode enforces TDD — tests first, implementation second, zero rework |
 | "Make it faster" produces guesswork, not results | The autonomous loop measures, experiments, and proves every change |
-| You need 10 different tools for design, build, test, deploy | 108 skills, one plugin — from brainstorm to production |
+| You need 10 different tools for design, build, test, deploy | 153 skills, one plugin — from brainstorm to production |
 | AI changes break things and you don't notice until prod | Git-as-memory: every experiment committed, bad changes auto-reverted |
 | Security review means "looks fine to me" | STRIDE + OWASP + red-team audit finds what humans miss |
 
@@ -113,7 +113,7 @@ Or go directly to any skill:
 
 ---
 
-## The Skill Map (108 Skills)
+## The Skill Map (153 Skills)
 
 ### Core Workflow
 | Skill | Description |
@@ -144,6 +144,11 @@ Or go directly to any skill:
 | `pattern` | Design pattern selection and implementation |
 | `schema` | Database/API schema design |
 | `contract` | API contract testing and validation |
+| `concurrent` | Concurrency and parallelism patterns |
+| `distributed` | Distributed systems design |
+| `scale` | Scalability engineering |
+| `legacy` | Legacy code modernization |
+| `migration` | System migration and technology transition |
 
 ### API & Backend
 | Skill | Description |
@@ -161,6 +166,29 @@ Or go directly to any skill:
 | `micro` | Microservices architecture and patterns |
 | `search` | Full-text search implementation |
 
+### Frameworks
+| Skill | Description |
+|-------|-------------|
+| `angular` | Angular architecture |
+| `django` | Django development |
+| `fastapi` | FastAPI mastery |
+| `laravel` | Laravel mastery |
+| `nextjs` | Next.js mastery |
+| `node` | Node.js backend development |
+| `rails` | Ruby on Rails mastery |
+| `react` | React architecture |
+| `spring` | Spring Boot mastery |
+| `svelte` | Svelte/SvelteKit mastery |
+| `tailwind` | Tailwind CSS mastery |
+| `vue` | Vue.js mastery |
+
+### Databases
+| Skill | Description |
+|-------|-------------|
+| `postgres` | PostgreSQL mastery |
+| `redis` | Redis architecture and system design |
+| `nosql` | NoSQL database design |
+
 ### Security & Compliance
 | Skill | Description |
 |-------|-------------|
@@ -172,12 +200,16 @@ Or go directly to any skill:
 | `pentest` | Penetration testing workflows |
 | `devsecops` | Security pipeline integration |
 | `comply` | Compliance framework implementation |
+| `gdpr` | Deep GDPR compliance |
+| `hipaa` | Deep HIPAA compliance |
+| `soc2` | Deep SOC 2 compliance |
 
 ### Testing & Quality
 | Skill | Description |
 |-------|-------------|
 | `unittest` | Unit test generation and coverage |
 | `e2e` | End-to-end test orchestration |
+| `integration` | Integration testing |
 | `loadtest` | Load and stress testing |
 | `quality` | Code quality metrics and enforcement |
 | `lint` | Linter configuration and custom rules |
@@ -187,6 +219,7 @@ Or go directly to any skill:
 | `eval` | LLM evaluation and benchmarking |
 | `snapshot` | Snapshot testing workflows |
 | `chaos` | Chaos engineering experiments |
+| `reliability` | Site reliability engineering |
 
 ### DevOps & Infrastructure
 | Skill | Description |
@@ -221,6 +254,12 @@ Or go directly to any skill:
 | `chart` | Data visualization and charting |
 | `state` | State management architecture |
 | `wasm` | WebAssembly integration |
+| `animation` | Animation and motion design |
+| `designsystem` | Design system architecture |
+| `forms` | Form architecture |
+| `responsive` | Responsive and adaptive design |
+| `three` | 3D web development |
+| `gamedev` | Game development architecture |
 
 ### AI & ML
 | Skill | Description |
@@ -230,6 +269,10 @@ Or go directly to any skill:
 | `rag` | Retrieval-Augmented Generation setup |
 | `prompt` | Prompt engineering and optimization |
 | `analytics` | Analytics instrumentation and dashboards |
+| `aiops` | AI operations and safety |
+| `embeddings` | Embeddings and semantic search |
+| `finetune` | Model fine-tuning |
+| `multimodal` | Multimodal AI |
 
 ### Developer Experience
 | Skill | Description |
@@ -246,6 +289,17 @@ Or go directly to any skill:
 | `git` | Git workflow automation |
 | `pr` | Pull request creation and review |
 | `monorepo` | Monorepo tooling and management |
+| `docker` | Docker mastery |
+| `npm` | Package management |
+| `terminal` | Terminal and shell productivity |
+| `vscode` | IDE and editor configuration |
+| `changelog` | Changelog and release notes |
+| `estimate` | Effort estimation and complexity analysis |
+| `prioritize` | Task prioritization |
+| `scope` | Scope management |
+| `retro` | Retrospective and team health |
+| `opensource` | Open source project management |
+| `license` | License management |
 
 ### Integrations & Specialized
 | Skill | Description |
@@ -275,7 +329,7 @@ Or go directly to any skill:
 | 5 | **Mechanical Verification** | Real commands, real output — never "it should work" |
 | 6 | **STRIDE + OWASP Security** | Structured security audit, not a vibes check |
 | 7 | **5 Expert Personas** | Your design reviewed by simulated domain experts |
-| 8 | **108 Skills, Zero Config** | Install once, use everything — no setup required |
+| 8 | **153 Skills, Zero Config** | Install once, use everything — no setup required |
 | 9 | **8-Phase Ship Workflow** | Pre-flight, dry run, deploy, smoke test, monitor, rollback |
 | 10 | **Language Agnostic** | JS/TS, Python, Rust, Go, Ruby, Java — auto-detected |
 
@@ -289,7 +343,7 @@ Or go directly to any skill:
 | Full workflow (idea to production) | **Yes** | No | No | No | No |
 | Autonomous optimization loop | **Yes** | No | No | No | No |
 | Mechanical verification | **Yes** | No | No | No | No |
-| 108 specialized skills | **Yes** | No | No | No | No |
+| 153 specialized skills | **Yes** | No | No | No | No |
 | TDD enforcement | **Yes** | No | No | No | No |
 | Security audit framework | **Yes** | No | No | No | No |
 | Git-as-memory (auto-revert) | **Yes** | No | No | No | No |
