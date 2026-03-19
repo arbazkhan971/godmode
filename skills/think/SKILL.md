@@ -19,16 +19,7 @@ Per approach: description (2-3 sentences), pros/cons, complexity (Low/Med/High),
 ### 4. Recommend One
 Lead with recommendation. One sentence justification.
 ### 5. Write Spec
-Output to `.godmode/spec.md`:
-```markdown
-# Spec: {feature name}
-## Problem: {one sentence}
-## Approach: {chosen approach}
-## Success Criteria: {measurable}
-## Out of Scope: {what we're NOT building}
-## Edge Cases: {known gotchas}
-```
-Commit: `"spec: {feature name}"`
+Output `.godmode/spec.md` with sections: Problem, Approach, Success Criteria, Out of Scope, Edge Cases. Commit: `"spec: {feature name}"`
 
 ## Rules
 1. Always produce a spec file. Think without output is wasted.
