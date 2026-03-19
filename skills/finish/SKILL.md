@@ -72,52 +72,153 @@ CLEANUP:
 ✓ Types clean
 ```
 
+### Step 2b: Pre-Completion Checklist (Automated)
+Before any finalization action (except DISCARD), run this automated checklist:
+
+```
+PRE-COMPLETION CHECKLIST:
+[✓] All tests pass              → <test command> exited 0 (214/214 passing)
+[✓] No lint errors              → <lint command> exited 0 (0 errors)
+[✓] No type errors              → <type check command> exited 0 (0 errors)
+[✓] Coverage >= target           → 87% (target: 80%)
+[✓] Security audit clean        → /godmode:secure found 0 issues
+[✓] Code review approved        → gh pr reviews shows APPROVED (or N/A if no PR yet)
+[✓] Changelog updated           → CHANGELOG.md has entry for this branch's changes
+```
+
+If any item fails:
+```
+PRE-COMPLETION CHECKLIST:
+[✓] All tests pass
+[✗] No lint errors              → 3 lint errors in src/services/user.ts
+[✓] No type errors
+[✗] Coverage >= target           → 72% (target: 80%) — 8% below target
+[✓] Security audit clean
+[ ] Code review approved        → No PR exists yet (skipped)
+[✗] Changelog updated           → No CHANGELOG.md entry found
+
+BLOCKED: 3 items failed. Fix before finalizing:
+  → Run /godmode:fix --lint-only to fix lint errors
+  → Add tests to increase coverage above 80%
+  → Update CHANGELOG.md with this branch's changes
+```
+
+The checklist is enforced for MERGE and PR actions. KEEP and DISCARD skip the checklist.
+
 ### Step 3: Choose Finalization Action
-Present options to the user:
+Present options with a **decision tree** to help the user choose:
 
 ```
 Branch feat/rate-limiter is ready to finalize.
 
 Options:
-1. MERGE  — Merge directly into main (for small, reviewed changes)
-2. PR     — Create a pull request for review (recommended)
-3. KEEP   — Keep the branch for later work
-4. DISCARD — Delete the branch and all changes
+1. MERGE   — Squash-merge into main, delete branch
+             Best for: small changes, already reviewed, ready to ship
+2. PR      — Create pull request via gh pr create
+             Best for: needs review, team collaboration, CI checks
+3. KEEP    — Keep branch for more work
+             Best for: work in progress, pausing to context-switch
+4. DISCARD — Delete branch, revert all changes
+             Best for: abandoned experiments, wrong approach
+
+Decision tree:
+  Is the work complete?
+    NO  → KEEP (push to remote, resume later)
+    YES → Is code review needed?
+      YES → PR (create pull request)
+      NO  → Has it been reviewed/approved?
+        YES → MERGE (squash-merge to main)
+        NO  → PR (get review first)
+  Do you want to throw it away?
+    YES → DISCARD (confirm first — this is permanent)
 ```
 
 ### Action: MERGE
 ```bash
-# Switch to main
+# Switch to main and update
 git checkout main
 git pull origin main
 
-# Merge the feature branch
-git merge feat/<feature> --no-ff -m "Merge feat/<feature>: <description>"
+# Squash-merge the feature branch (single clean commit on main)
+git merge --squash feat/<feature>
+git commit -m "feat(<feature>): <description>
 
-# Delete the feature branch
-git branch -d feat/<feature>
+Squash-merged from feat/<feature> (<N> commits).
+<summary of changes>"
 
-# Push
+# Delete the feature branch (local + remote)
+git branch -D feat/<feature>
 git push origin main
-git push origin --delete feat/<feature>  # delete remote branch
+git push origin --delete feat/<feature>
 ```
 
 Pre-merge checks:
+- [ ] Pre-completion checklist passed (Step 2b)
 - [ ] Tests pass on the branch
 - [ ] Branch is rebased on latest main
 - [ ] No merge conflicts
 - [ ] Code review completed (or not required)
 
 ### Action: PR
+Auto-generate a rich pull request from the branch's history:
+
 ```bash
 # Push the branch
 git push -u origin feat/<feature>
 
+# Auto-generate PR title from branch name
+# feat/rate-limiter → "Rate limiter: <description from first commit>"
+TITLE="$(git log main..HEAD --format=%s | head -1)"
+
+# Auto-generate PR body from git log + task descriptions
+BODY="$(cat <<'PRBODY'
+## Summary
+<Generated from git log — one bullet per commit>
+- <commit 1 description>
+- <commit 2 description>
+- <commit N description>
+
+## Changes
+<Generated from git diff --stat>
+- <N> files changed, <+added> insertions, <-removed> deletions
+
+## References
+- Plan: `.godmode/plan.md` (if exists)
+- Spec: `.godmode/spec.md` (if exists)
+- Fix log: `.godmode/fix-log.tsv` (if exists)
+
+## Testing
+- All <N> tests passing
+- Coverage: <X>%
+- Security audit: clean
+- Lint/types: clean
+
+## Checklist
+- [x] Tests passing
+- [x] Lint clean
+- [x] Type check clean
+- [x] Coverage >= target
+- [x] Security audit passed
+- [x] Changelog updated
+PRBODY
+)"
+
 # Create PR
 gh pr create \
-  --title "<feature>: <brief description>" \
-  --body "<generated PR description>"
+  --title "$TITLE" \
+  --body "$BODY"
+
+# Auto-assign reviewers (from CODEOWNERS or git log)
+# Extract top contributors to modified files
+REVIEWERS="$(git log --format='%ae' -- $(git diff --name-only main..HEAD) | sort | uniq -c | sort -rn | head -3 | awk '{print $2}')"
+gh pr edit <PR_NUMBER> --add-reviewer "$REVIEWERS"
 ```
+
+PR auto-generation rules:
+- **Title**: Derived from branch name, cleaned up (e.g., `feat/rate-limiter` becomes `Rate limiter: sliding window with Redis store`)
+- **Body**: Built from `git log main..HEAD` with task-level descriptions
+- **References**: Links to `.godmode/plan.md`, `.godmode/spec.md`, and other artifacts
+- **Reviewers**: Auto-assigned from CODEOWNERS file, or from top contributors to the modified files
 
 Then transition to `/godmode:ship --pr` for the full PR workflow.
 

@@ -43,6 +43,32 @@ Priority order:
 3. Test failures (most complex — one at a time)
 ```
 
+### Step 1b: Fix Priority Scoring
+
+After inventory, score each error using this formula:
+
+```
+PRIORITY SCORE = severity x blast_radius x fixability
+```
+
+| Factor | 1 (Low) | 2 (Medium) | 3 (High) |
+|--------|---------|------------|----------|
+| **severity** | Cosmetic / warning | Incorrect behavior | Crash / data loss |
+| **blast_radius** | 1 file affected | 1 module affected | Cross-module / whole app |
+| **fixability** | Unknown cause, complex | Known cause, multi-file | Known cause, single line |
+
+```
+PRIORITY SCORING:
+#  Error                                      Sev  Blast  Fix  Score
+1  Type 'string' != 'number' (user.ts:12)      2    3     3    18   ← FIX FIRST
+2  Missing null check (api.ts:45)               3    2     3    18   ← FIX FIRST (tie)
+3  Unused import (utils.ts:1)                   1    1     3     3   ← FIX LAST
+4  Test "creates user" fails (user.test.ts:30)  2    2     2     8
+5  ESLint no-any violation (types.ts:15)        1    1     3     3
+```
+
+Fix in descending score order. Ties are broken by: type errors > test failures > lint errors.
+
 ### Step 2: Fix Loop (One Error Per Iteration)
 For EACH error, run this cycle:
 
@@ -120,6 +146,47 @@ Error <M> of <total> fixed. <remaining> remaining.
 
 If the fix introduces new errors: revert and re-analyze.
 
+#### 2e-ii: Cascading Fix Detection
+
+After verifying a fix, **re-inventory all errors** and compare to the previous count:
+
+```
+CASCADING FIX CHECK:
+Before fix: 9 errors (2 type, 0 lint, 7 test failures)
+After fix:  6 errors (1 type, 0 lint, 5 test failures)
+Direct fix: 1 type error
+Cascade:    2 test failures resolved by type fix cascade
+
+Log: "3 errors resolved in iteration 2 (1 direct + 2 cascade)"
+```
+
+Cascading fixes are common when:
+- Fixing type errors resolves downstream test failures
+- Fixing a shared utility resolves errors in multiple consumers
+- Fixing a config error resolves multiple integration tests
+
+Always log cascades separately — they indicate the fix addressed a root cause, not just a symptom.
+
+#### 2e-iii: Max 3 Attempts Per Error
+
+If an error cannot be fixed in **3 attempts** (3 apply-verify-revert cycles), stop trying and flag it:
+
+```
+MAX ATTEMPTS REACHED:
+Error: "Race condition in WebSocket reconnection" (ws.test.ts:89)
+Attempts: 3/3
+  Attempt 1: Added mutex lock → new deadlock error → reverted
+  Attempt 2: Used event queue → still intermittent → reverted
+  Attempt 3: Added retry with backoff → still fails 1/10 runs → reverted
+
+FLAGGED FOR HUMAN REVIEW.
+Moving on to next error.
+
+Remaining: flagged in .godmode/fix-log.tsv with status=NEEDS_HUMAN_REVIEW
+```
+
+This prevents infinite loops on genuinely hard bugs. The fix skill is for mechanical remediation. If 3 attempts fail, the error likely needs architectural discussion or domain knowledge that the agent does not have.
+
 #### 2f: Log and Continue
 ```
 # File: .godmode/fix-log.tsv
@@ -129,6 +196,51 @@ iteration	error_type	error_message	file	fix_description	regression_test	commit_s
 ```
 
 Repeat from Step 2a until zero errors remain.
+
+### Step 2-parallel: Multi-Agent Parallel Fix
+
+When errors are **independent** (in different files/modules with no shared dependencies), dispatch parallel fix agents using worktrees:
+
+```
+MULTI-AGENT FIX DISPATCH:
+
+Condition: Errors span 3+ independent modules with no shared imports.
+
+Agent 1: Fix type errors in src/services/     (worktree: wt-fix-1)
+Agent 2: Fix lint errors in src/controllers/   (worktree: wt-fix-2)
+Agent 3: Fix test failures in tests/           (worktree: wt-fix-3)
+```
+
+Each agent:
+1. Creates a worktree from the current branch
+2. Fixes only errors in its assigned scope
+3. Commits fixes independently
+4. Reports results back
+
+After all agents complete, merge results:
+```bash
+# Merge agent worktree results back
+git merge wt-fix-1 --no-edit
+git merge wt-fix-2 --no-edit
+git merge wt-fix-3 --no-edit
+
+# Run full verification on merged result
+<test command> && <lint command> && <type check command>
+```
+
+```
+MULTI-AGENT FIX RESULTS:
+Agent 1 (types):  ✓ 4 type errors fixed in 2 files
+Agent 2 (lint):   ✓ 12 lint errors fixed (auto-fix)
+Agent 3 (tests):  ✓ 3 test failures fixed, 3 regression tests added
+Merge conflicts:  0
+Post-merge verify: ✓ All clean
+```
+
+**When NOT to parallelize:**
+- Errors share the same root cause (fix one, cascade fixes the rest)
+- Errors are in the same file (merge conflicts guaranteed)
+- Type errors exist (fix types first — they cascade into other categories)
 
 ### Step 3: Final Verification
 After all errors are fixed:

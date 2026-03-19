@@ -34,54 +34,87 @@ CONTEXT:
 ```
 
 ### Step 2: Assemble the Panel
-Select 5 expert personas relevant to the proposal domain. Each persona has a **name**, **expertise**, **bias** (what they care most about), and **perspective** (optimist/pessimist/pragmatist).
+Select 5 expert personas with specific backgrounds, experience, and battle scars. These are not generic titles — each persona has a **name** (role only, no real names), **specific background**, **years of experience**, **bias** (what they care most about), **perspective** (optimist/pessimist/pragmatist), and **notable past experience** that shapes their judgment.
 
-Default panel for backend decisions:
+Default panel (all decisions):
 ```
-1. Systems Architect  — Bias: scalability & maintainability — Pragmatist
-2. Security Engineer   — Bias: attack surface & data safety — Pessimist
-3. Performance Engineer — Bias: latency & throughput — Pragmatist
-4. Product Engineer     — Bias: shipping speed & user impact — Optimist
-5. Ops/SRE Engineer     — Bias: operability & failure modes — Pessimist
+1. Staff Backend Engineer (15yr)
+   Background: Built distributed systems at scale, migrated monoliths to microservices, debugged production incidents involving data loss. Has seen "clever" architectures collapse under real-world load.
+   Bias: correctness, data integrity, system boundaries
+   Perspective: Pragmatist
+   Shaped by: A migration that took 2 years instead of 6 months because the original design skipped edge cases
+
+2. Frontend Architect (12yr, Design Systems team)
+   Background: Led design system teams, built component libraries used by 200+ developers, optimized SPAs from 8s to 1.2s load times. Obsessed with developer ergonomics and user-perceived performance.
+   Bias: UX impact, client complexity, state management, bundle size
+   Perspective: Pragmatist
+   Shaped by: A redesign that shipped 3 months late because the backend API was designed without frontend input
+
+3. SRE / On-Call Engineer (10yr)
+   Background: Has been paged at 3am more times than they can count. Wrote postmortems for cascading failures, managed incidents during Black Friday traffic spikes, built alerting systems from scratch.
+   Bias: operability, failure modes, observability, rollback strategy, deployment safety
+   Perspective: Pessimist
+   Shaped by: A 6-hour outage caused by a config change with no rollback plan
+
+4. Security Researcher (11yr)
+   Background: Has found and reported CVEs. Performed penetration testing on production systems, discovered SSRF chains, exploited JWT misconfigurations. Thinks adversarially by default.
+   Bias: attack surface, credential management, input validation, compliance, data exposure
+   Perspective: Pessimist
+   Shaped by: A breach that started with a single unsanitized log message leaking PII
+
+5. Product Manager (13yr, shipped to 10M+ users)
+   Background: Shipped products used by millions. Managed launches that succeeded and launches that flopped. Knows that technical elegance means nothing if users don't adopt it. Thinks in terms of rollout risk, feature flags, and success metrics.
+   Bias: user value, iteration speed, rollout strategy, measurable outcomes, time-to-market
+   Perspective: Optimist
+   Shaped by: A technically perfect feature that nobody used because it solved the wrong problem
 ```
 
-For frontend decisions:
+For frontend-heavy decisions, the panel shifts emphasis but keeps the same depth:
 ```
-1. UX Engineer         — Bias: user experience & accessibility — Optimist
-2. Performance Engineer — Bias: bundle size & rendering speed — Pessimist
-3. Design Systems Lead  — Bias: consistency & reusability — Pragmatist
-4. Product Engineer     — Bias: shipping speed & iteration — Optimist
-5. Security Engineer    — Bias: XSS, CSRF, data leakage — Pessimist
+1. Frontend Architect (12yr) — same as above, takes lead
+2. UX Engineer (9yr) — Built accessibility-first products, ran A/B tests on interaction patterns
+3. Staff Backend Engineer (15yr) — same as above, focuses on API contract
+4. Security Researcher (11yr) — same as above, focuses on XSS/CSRF/client-side secrets
+5. Product Manager (13yr) — same as above
 ```
 
 For ML/data decisions:
 ```
-1. ML Engineer         — Bias: model quality & training efficiency — Pragmatist
-2. Data Engineer       — Bias: pipeline reliability & data quality — Pessimist
-3. Platform Engineer   — Bias: infrastructure cost & scaling — Pragmatist
-4. Product Scientist   — Bias: metrics impact & experiment design — Optimist
-5. Security/Privacy Engineer — Bias: PII handling & compliance — Pessimist
+1. ML Engineer (10yr) — Trained models at scale, dealt with data drift, model serving latency
+2. Data Engineer (12yr) — Built petabyte-scale pipelines, recovered from corrupt data incidents
+3. Staff Backend Engineer (15yr) — same as above, focuses on serving infrastructure
+4. Security Researcher (11yr) — same as above, focuses on PII/compliance/model poisoning
+5. Product Manager (13yr) — same as above, focuses on experiment design and metrics
 ```
 
-### Step 3: Independent Evaluations
-Each persona evaluates the proposal independently. For each:
+### Step 3: Independent Evaluations (Structured Prediction Format)
+Each persona evaluates the proposal independently using a strict structured format. For each:
 
 ```
-### <Persona Name> (<Role>)
+### <Persona Role> (<Years>yr experience)
+
+**Prediction:** <Will this work? YES / YES WITH CHANGES / NO — in 1 sentence>
 
 **Verdict:** <APPROVE | APPROVE WITH CONDITIONS | REJECT>
+
+**Confidence:** <1-10> — <specific justification rooted in experience>
 
 **Assessment:**
 <2-3 sentences from this persona's perspective>
 
-**Risks I see:**
-1. <Specific risk with severity: LOW/MEDIUM/HIGH/CRITICAL>
-2. <Specific risk with severity>
+**Biggest Risk:**
+<The single most important risk this persona sees, with severity: LOW/MEDIUM/HIGH/CRITICAL>
 
-**What I'd change:**
-- <Concrete suggestion>
+**Evidence from codebase:**
+<Reference to actual code, patterns, or architecture in this project that supports the assessment. Include file paths, function names, or patterns observed. If no relevant code exists, state what's missing.>
 
-**Confidence:** <1-10> — <why>
+**One Thing I'd Change:**
+- <The single highest-impact concrete suggestion>
+
+**Timeline Estimate:**
+- Optimistic: <best case>
+- Realistic: <expected>
+- Pessimistic: <if things go wrong>
 ```
 
 Rules:
@@ -89,43 +122,88 @@ Rules:
 - At least one persona MUST raise a concern (no unanimous rubber-stamping)
 - Risks must be SPECIFIC, not generic ("SQL injection via the search endpoint" not "security issues")
 - Suggestions must be ACTIONABLE ("add a rate limiter to the /api/search endpoint" not "improve security")
+- **Evidence is mandatory.** Every persona must reference actual code, files, or patterns in the project. Generic advice without project-specific evidence is forbidden. If a persona cannot find relevant code, they must state what they looked for and what was missing — that absence itself is evidence.
+- **Confidence must be justified.** "8/10 — I've seen this pattern work at similar scale" is good. "8/10" alone is not.
 
-### Step 4: Synthesize Consensus
+### Step 4: Consensus Scoring
+Aggregate all persona evaluations into a structured consensus:
 
 ```
-┌─────────────────────────────────────────────┐
-│  PREDICT — Expert Consensus                 │
-├─────────────────────────────────────────────┤
-│  Verdict:  <PROCEED | PROCEED WITH CHANGES  │
-│            | RECONSIDER | REJECT>            │
-│  Score:    <X/5 approvals>                  │
-│  Confidence: <average confidence>/10        │
-├─────────────────────────────────────────────┤
-│  Top Risks:                                 │
-│  1. <Most critical risk> — <mitigation>     │
-│  2. <Second risk> — <mitigation>            │
-│  3. <Third risk> — <mitigation>             │
-├─────────────────────────────────────────────┤
-│  Recommended Changes:                       │
-│  1. <Highest-impact change>                 │
-│  2. <Second change>                         │
-│  3. <Third change>                          │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  PREDICT — Expert Consensus                                        │
+├─────────────────────────────────────────────────────────────────────┤
+│  Verdict:    <PROCEED | PROCEED WITH CHANGES | RECONSIDER | REJECT>│
+│  Score:      <X/5 approvals>                                       │
+│  Avg Confidence: <average of all 5 confidence scores>/10           │
+│  Confidence Range: <lowest> to <highest>                           │
+│  Confidence Spread: <highest - lowest>                             │
+├─────────────────────────────────────────────────────────────────────┤
+│  DISAGREEMENT FLAGS:                                               │
+│  <If any two personas differ by >3 points in confidence,           │
+│   flag them here with both positions explained>                    │
+│  <If spread > 3, flag: "Wide disagreement — investigate before     │
+│   proceeding">                                                     │
+├─────────────────────────────────────────────────────────────────────┤
+│  UNANIMOUS CONCERNS:                                               │
+│  <List any risks or concerns raised by 3+ personas>               │
+│  <These are non-negotiable — must be addressed regardless of       │
+│   verdict>                                                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  Timeline Consensus:                                               │
+│  Optimistic: <min of optimistic estimates>                         │
+│  Realistic:  <median of realistic estimates>                       │
+│  Pessimistic: <max of pessimistic estimates>                       │
+├─────────────────────────────────────────────────────────────────────┤
+│  Top Risks:                                                        │
+│  1. <Most critical risk> — <mitigation> — raised by: <personas>    │
+│  2. <Second risk> — <mitigation> — raised by: <personas>           │
+│  3. <Third risk> — <mitigation> — raised by: <personas>            │
+├─────────────────────────────────────────────────────────────────────┤
+│  Recommended Changes:                                              │
+│  1. <Highest-impact change>                                        │
+│  2. <Second change>                                                │
+│  3. <Third change>                                                 │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 Verdict rules:
-- **PROCEED**: 4-5 approvals, no CRITICAL risks
+- **PROCEED**: 4-5 approvals, no CRITICAL risks, avg confidence >= 7
 - **PROCEED WITH CHANGES**: 3-4 approvals, or any HIGH risks with clear mitigations
-- **RECONSIDER**: 2-3 approvals, or any CRITICAL risk
+- **RECONSIDER**: 2-3 approvals, or any CRITICAL risk, or avg confidence < 5
 - **REJECT**: 0-1 approvals, or multiple CRITICAL risks
 
-### Step 5: Update and Transition
+### Step 5: Iteration Gate (Consensus Below Threshold)
+**HARD RULE: If average confidence is below 7/10, the design goes back to think for revision.**
+
+```
+ITERATION DECISION:
+
+Average confidence: <X>/10
+
+IF confidence >= 7:
+  → Proceed to Step 6 (Update and Transition)
+
+IF confidence < 7:
+  → LOOP BACK TO THINK.
+  → Include in the handback:
+    - All risks identified by the panel
+    - All disagreement flags
+    - All unanimous concerns
+    - Specific areas where confidence was lowest and why
+  → Message to user: "The expert panel is not confident enough in this design
+    (avg: <X>/10). Sending back to /godmode:think with the panel's feedback
+    for revision."
+```
+
+This loop is not optional. A design with low expert confidence ships bugs, not features.
+
+### Step 6: Update and Transition
 1. If a spec exists, append the prediction results to it under a "## Expert Review" section
-2. Commit: `"predict: <feature> — <verdict> (<score>/5)"`
+2. Commit: `"predict: <feature> — <verdict> (<score>/5, confidence <avg>/10)"`
 3. Based on verdict:
    - PROCEED → "Ready to build. Run `/godmode:plan` to decompose into tasks."
    - PROCEED WITH CHANGES → "Incorporate the recommended changes, then `/godmode:plan`."
-   - RECONSIDER → "Revisit the design. Run `/godmode:think` to explore alternatives."
+   - RECONSIDER → "Revisit the design. Run `/godmode:think` to explore alternatives." (auto-triggered if confidence < 7)
    - REJECT → "This approach has critical flaws. Run `/godmode:think` to start fresh."
 
 ## Key Behaviors
@@ -135,6 +213,10 @@ Verdict rules:
 3. **Concrete, not abstract.** "This could have performance issues" is useless. "The N+1 query in getUserPosts will add ~200ms per page load at 1000 users" is useful.
 4. **Honest confidence scores.** A confidence of 9/10 means "I'm almost certain." Don't inflate scores.
 5. **Risks need severity levels.** LOW = nice to fix, MEDIUM = should fix before shipping, HIGH = must fix, CRITICAL = blocks shipping.
+6. **Evidence is non-negotiable.** Every persona must reference actual code, files, or patterns from the project. No generic advice. If they can't find relevant code, they say what they looked for and what was missing.
+7. **Confidence below 7 means loop.** This is a hard rule. Do not present a "PROCEED" verdict with average confidence below 7. Send it back to think with the panel's feedback.
+8. **Disagreements are signal, not noise.** When personas disagree by more than 3 points, that's the most important part of the evaluation. Highlight it, don't smooth it over.
+9. **Personas have scars.** Each persona's judgment is shaped by past experience. Their "shaped by" context should visibly influence their assessment — the SRE who's been paged at 3am should be paranoid about rollback plans, the security researcher should see attack vectors others miss.
 
 ## Example Usage
 

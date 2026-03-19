@@ -266,6 +266,144 @@ Rollback complete. Investigate with /godmode:debug.
 └─────────────────────────────────────────────────────┘
 ```
 
+## Multi-Agent Pre-Ship Verification
+
+Before Phase 5 (Ship) proceeds, dispatch **four parallel verification agents**. ALL must pass.
+
+```
+MULTI-AGENT VERIFICATION:
+
+Agent 1: Run full test suite        → skill: test
+Agent 2: Run security audit         → skill: secure
+Agent 3: Run lint + type check      → skill: lint
+Agent 4: Performance benchmark      → skill: perf
+
+Status:
+  Agent 1 (test):   ✓ 214/214 passing     [completed 42s]
+  Agent 2 (secure): ✓ No vulnerabilities   [completed 38s]
+  Agent 3 (lint):   ✓ 0 errors, 0 warnings [completed 15s]
+  Agent 4 (perf):   ✓ p95 < 200ms          [completed 51s]
+
+VERDICT: ALL PASSED → Ship may proceed.
+```
+
+If ANY agent fails, ship is **blocked**. Fix the failures before retrying:
+```
+  Agent 2 (secure): ✗ 1 critical vulnerability in lodash@4.17.20
+  VERDICT: BLOCKED → Run /godmode:secure to remediate, then retry /godmode:ship.
+```
+
+Each agent runs in its own worktree so they execute in true parallel without interference.
+
+## Rollback Protocol
+
+Before shipping, prepare the rollback plan. Know exactly how to undo the ship.
+
+**For git merge rollbacks:**
+```bash
+# Revert the merge commit (keeps history, undoes changes)
+git revert <merge-commit> --no-edit
+git push origin main
+```
+
+**For Kubernetes deployments:**
+```bash
+# Roll back to the previous deployment revision
+kubectl rollout undo deployment/<name>
+# Verify rollback succeeded
+kubectl rollout status deployment/<name>
+```
+
+**For Vercel/Netlify/Serverless:**
+```bash
+# Vercel: promote the previous deployment
+vercel promote <previous-deployment-url>
+
+# Netlify: restore previous deploy
+netlify deploy --prod --dir=<previous-build-dir>
+
+# Or via dashboard: click "Publish deploy" on the previous deployment
+```
+
+**For npm/package releases:**
+```bash
+# Deprecate the broken version
+npm deprecate <package>@<broken-version> "Known issue, use <previous-version>"
+# Publish a patch with the revert
+npm publish
+```
+
+The rollback command MUST be determined and documented **before** Phase 5 executes. If you cannot define a rollback procedure, **do not ship**.
+
+## Post-Ship Monitoring Loop
+
+After shipping (deploy only, not PRs), enter an automated monitoring loop:
+
+```
+POST-SHIP MONITORING LOOP (10 iterations, ~1 minute apart):
+
+Iteration 1/10:
+  Health endpoint:  ✓ 200 OK (latency: 45ms)
+  Error rate:       ✓ 0.02% (baseline: 0.01%)
+  p95 latency:      ✓ 120ms (baseline: 115ms)
+  Status: HEALTHY
+
+Iteration 5/10:
+  Health endpoint:  ✓ 200 OK (latency: 48ms)
+  Error rate:       ⚠ 1.8% (baseline: 0.01%) — ELEVATED
+  p95 latency:      ⚠ 450ms (baseline: 115ms) — ELEVATED
+  Status: DEGRADED — monitoring closely
+
+Iteration 6/10:
+  Health endpoint:  ✗ 503 Service Unavailable
+  Error rate:       ✗ 5.2% — CRITICAL
+  p95 latency:      ✗ 2100ms — CRITICAL
+  Status: DEGRADED → AUTO-ROLLBACK TRIGGERED
+```
+
+**Auto-rollback thresholds:**
+- Error rate > 2x baseline → Warning
+- Error rate > 5x baseline → Auto-rollback
+- Health endpoint returns non-200 → Auto-rollback
+- p95 latency > 3x baseline → Auto-rollback
+
+On auto-rollback:
+```
+⚠ DEGRADATION DETECTED at T+6 min
+  Error rate: 5.2% (25x baseline)
+  Executing rollback...
+  <rollback command from Rollback Protocol>
+  Rollback complete. Verifying...
+  Health endpoint: ✓ 200 OK
+  Error rate: 0.01% (back to baseline)
+
+  SHIP ROLLED BACK. Investigate with /godmode:debug.
+```
+
+## Ship Log
+
+Every ship operation is appended to `.godmode/ship-log.tsv` for audit trail:
+
+```
+# File: .godmode/ship-log.tsv
+# Format: timestamp	branch	commit	type	outcome	url	notes
+2024-01-15T14:30:00Z	feat/rate-limiter	abc1234	PR	SUCCESS	https://github.com/org/repo/pull/123	Awaiting review
+2024-01-16T09:00:00Z	feat/rate-limiter	def5678	DEPLOY	SUCCESS	https://app.example.com	Stable after 10 min monitoring
+2024-01-17T11:15:00Z	feat/webhooks	ghi9012	DEPLOY	ROLLED_BACK	https://app.example.com	Error rate spike at T+6, auto-rollback
+2024-01-18T10:00:00Z	v2.1.0	jkl3456	RELEASE	SUCCESS	https://github.com/org/repo/releases/tag/v2.1.0	npm publish + GitHub release
+```
+
+Fields:
+- **timestamp** — ISO 8601 UTC
+- **branch** — branch name or tag
+- **commit** — short SHA of the shipped commit
+- **type** — `PR`, `DEPLOY`, or `RELEASE`
+- **outcome** — `SUCCESS`, `ROLLED_BACK`, `FAILED`, `PENDING`
+- **url** — PR URL, deploy URL, or release URL
+- **notes** — freeform context
+
+The ship log is written automatically at Phase 7. It is never manually edited.
+
 ## Key Behaviors
 
 1. **The checklist is non-negotiable.** Do not ship with failing tests, security issues, or missing documentation.
@@ -274,6 +412,8 @@ Rollback complete. Investigate with /godmode:debug.
 4. **Rollback plan ready.** Before deploying, know exactly how to roll back. If you can't roll back, don't deploy.
 5. **Monitor after deploy.** 15 minutes of monitoring catches the issues that tests don't.
 6. **Log everything.** The ship log is the history of what went to production and when.
+7. **Multi-agent verification is mandatory.** All four agents (test, secure, lint, perf) must pass before ship proceeds.
+8. **Auto-rollback on degradation.** Post-ship monitoring will automatically roll back if health degrades beyond thresholds.
 
 ## Example Usage
 

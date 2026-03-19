@@ -42,7 +42,31 @@ CODEBASE CONTEXT:
 - Related code: <file paths of relevant existing code>
 ```
 
-### Step 3: Generate 2-3 Approaches
+### Step 3: Multi-Persona Brainstorm
+Before generating approaches, simulate 5 expert personas who each independently brainstorm on the design problem. Each persona brings a different lens:
+
+```
+BRAINSTORM PANEL:
+
+1. Backend Architect — Focuses on data models, APIs, system boundaries, consistency guarantees
+2. Frontend Lead — Focuses on UX implications, state management, latency sensitivity, client complexity
+3. DevOps Engineer — Focuses on deployment, observability, infrastructure cost, rollback strategy
+4. Security Expert — Focuses on attack surface, data exposure, authentication flows, compliance
+5. Product Manager — Focuses on user value, iteration speed, feature flags, rollout risk, success metrics
+```
+
+For each persona, produce:
+```
+### <Persona> Perspective
+**Key concern:** <What matters most to this persona>
+**Proposed direction:** <1-2 sentence approach suggestion>
+**Dealbreaker if ignored:** <One thing that would make the design fail from their POV>
+**Question for the team:** <One open question this persona raises>
+```
+
+After all 5 perspectives are surfaced, synthesize common themes and divergences before moving to approaches.
+
+### Step 4: Generate 2-3 Approaches
 For each approach, provide:
 
 ```
@@ -69,27 +93,70 @@ Rules for approaches:
 - Back claims with evidence from the codebase, not theory
 - Be honest about tradeoffs — no "best of all worlds" fantasies
 
-### Step 4: Facilitate Decision
-Present a comparison matrix:
+### Step 5: Design Decision Matrix
+Score each approach across 5 dimensions on a 1-5 scale (1 = best, 5 = worst):
 
 ```
+DESIGN DECISION MATRIX:
+
 | Dimension        | Approach A | Approach B | Approach C |
 |-----------------|------------|------------|------------|
-| Complexity       | Low        | Medium     | High       |
-| Performance      | Good       | Best       | Good       |
-| Maintainability  | Best       | Good       | Fair       |
-| Effort           | 2 hours    | 4 hours    | 8 hours    |
-| Risk             | Low        | Medium     | High       |
+| Complexity (1-5) |            |            |            |
+| Risk (1-5)       |            |            |            |
+| Time (1-5)       |            |            |            |
+| Maintainability  |            |            |            |
+| Scalability (1-5)|            |            |            |
+|-----------------|------------|------------|------------|
+| TOTAL (lower=better) |        |            |            |
+
+AUTO-RECOMMENDATION: Approach <X> scores lowest (best) overall.
 ```
 
-Make a recommendation with reasoning, but let the user decide. Say:
+Scoring rules:
+- Complexity: 1 = trivial, 5 = requires PhD-level understanding
+- Risk: 1 = well-trodden path, 5 = untested/experimental in this codebase
+- Time: 1 = hours, 2 = a day, 3 = a few days, 4 = a week, 5 = weeks+
+- Maintainability: 1 = any dev can maintain, 5 = only the author understands it
+- Scalability: 1 = scales to 100x with no changes, 5 = will break at 2x load
+
+Auto-recommend the lowest-scoring approach, but flag if scores are within 2 points of each other (too close to call — user decides). Say:
 ```
 "I'd go with Approach B because [specific reason]. But Approach A is the safe bet if [condition]. What do you think?"
 ```
 
-### Step 5: Write the Spec
-Once the user confirms an approach, write a concrete spec:
+### Step 6: Anti-Pattern Detection
+Before finalizing the design, check the proposed approach against known anti-patterns for the detected project type. This is a mandatory gate — do not skip it.
 
+1. **Detect project type** from the codebase (e.g., REST API, CLI tool, SPA, microservice, data pipeline, mobile app)
+2. **Check against anti-patterns** relevant to that type:
+
+```
+ANTI-PATTERN CHECK:
+
+Project type detected: <type>
+
+| Anti-Pattern | Applies? | Details |
+|-------------|----------|---------|
+| <anti-pattern name> | YES/NO | <why it does or doesn't apply> |
+| <anti-pattern name> | YES/NO | <why it does or doesn't apply> |
+| ... | ... | ... |
+
+VIOLATIONS FOUND: <N>
+```
+
+Common anti-pattern libraries by project type:
+- **REST API:** God endpoint, chatty API, missing pagination, N+1 queries, no idempotency on mutations, synchronous long operations, leaking internal IDs
+- **SPA/Frontend:** Prop drilling, state bloat, waterfall requests, no error boundaries, client-side secrets, unthrottled event handlers
+- **Microservices:** Distributed monolith, shared database, synchronous chain calls, missing circuit breaker, no saga/compensation for failures
+- **CLI tools:** God command, no --help, silent failures, hard-coded paths, no exit codes
+- **Data pipelines:** No idempotency, no backpressure, unbounded queues, missing dead letter queue, no schema validation at boundaries
+
+If violations are found, revise the approach to eliminate them before proceeding to the spec.
+
+### Step 7: Write the Spec
+Once the user confirms an approach, write a concrete spec in two formats:
+
+#### Markdown Spec (for humans)
 ```markdown
 # <Feature Name> — Specification
 
@@ -122,19 +189,119 @@ Once the user confirms an approach, write a concrete spec:
 - <What we're explicitly NOT doing>
 ```
 
-### Step 6: Commit and Transition
-1. Save the spec as `docs/specs/<feature-name>.md`
-2. Commit: `"spec: <feature-name> — <one-line summary>"`
-3. Suggest: "Spec complete. Ready to plan? Run `/godmode:plan` to decompose this into tasks."
+#### Spec-as-Code (structured YAML)
+Also save a machine-readable version alongside the markdown spec:
+
+```yaml
+# <feature-name>.spec.yaml
+spec_version: "1.0"
+feature: "<Feature Name>"
+created: "<ISO 8601 date>"
+
+problem:
+  statement: "<One sentence problem description>"
+  context: "<Why this matters now>"
+
+constraints:
+  - "<Constraint 1>"
+  - "<Constraint 2>"
+
+approaches:
+  - name: "<Approach A>"
+    summary: "<2-3 sentences>"
+    scores:
+      complexity: <1-5>
+      risk: <1-5>
+      time: <1-5>
+      maintainability: <1-5>
+      scalability: <1-5>
+      total: <sum>
+  - name: "<Approach B>"
+    summary: "<2-3 sentences>"
+    scores:
+      complexity: <1-5>
+      risk: <1-5>
+      time: <1-5>
+      maintainability: <1-5>
+      scalability: <1-5>
+      total: <sum>
+
+selected_approach:
+  name: "<Selected Approach>"
+  rationale: "<Why this was chosen>"
+
+success_criteria:
+  - criterion: "<Measurable criterion 1>"
+    metric: "<How to measure>"
+  - criterion: "<Measurable criterion 2>"
+    metric: "<How to measure>"
+
+edge_cases:
+  - case: "<Edge case 1>"
+    handling: "<How we handle it>"
+  - case: "<Edge case 2>"
+    handling: "<How we handle it>"
+
+anti_patterns_checked:
+  - pattern: "<Anti-pattern name>"
+    status: "clear"  # or "mitigated"
+    notes: "<Details>"
+
+out_of_scope:
+  - "<What we're explicitly NOT doing>"
+```
+
+Save the YAML spec as `docs/specs/<feature-name>.spec.yaml` alongside the markdown spec.
+
+### Step 8: Iteration Gate (HARD RULE)
+**Before finalizing, audit the spec for completeness. This is non-negotiable.**
+
+Scan the spec (both markdown and YAML) for any of the following:
+- "TBD", "TODO", "to be determined", "to be decided"
+- Empty sections or placeholder text
+- Vague language: "appropriate", "as needed", "etc.", "and so on"
+- Missing edge case handling (edge cases listed without a handling strategy)
+- Success criteria that are not measurable
+- Unanswered questions from the multi-persona brainstorm
+
+```
+ITERATION GATE CHECK:
+
+| Check | Pass? | Issue |
+|-------|-------|-------|
+| No TBD/TODO items | YES/NO | <details> |
+| All sections filled | YES/NO | <details> |
+| No vague language | YES/NO | <details> |
+| All edge cases have handlers | YES/NO | <details> |
+| All success criteria measurable | YES/NO | <details> |
+| All persona questions answered | YES/NO | <details> |
+| Anti-pattern check passed | YES/NO | <details> |
+
+RESULT: <PASS — proceed to commit> or <FAIL — loop back to Step N>
+```
+
+**If ANY check fails:** Do NOT present the spec. Loop back to the relevant step, investigate, fill the gap, and re-run the iteration gate. Repeat until all checks pass.
+
+**There is no limit to the number of loops.** A spec with "TBD" items is not a spec — it is a draft. Drafts do not leave the think phase.
+
+### Step 9: Commit and Transition
+1. Save the markdown spec as `docs/specs/<feature-name>.md`
+2. Save the YAML spec as `docs/specs/<feature-name>.spec.yaml`
+3. Commit: `"spec: <feature-name> — <one-line summary>"`
+4. Suggest: "Spec complete. Ready to plan? Run `/godmode:plan` to decompose this into tasks."
 
 ## Key Behaviors
 
 1. **One question at a time.** Never ask more than one question per response. Let the conversation flow naturally.
 2. **Show, don't just tell.** Use code snippets, diagrams (ASCII), and concrete examples — not abstract descriptions.
 3. **Research before proposing.** Always search the codebase first. Proposals that ignore existing patterns are useless.
-4. **Spec is the deliverable.** Every think session MUST produce a written spec. A brainstorm without a spec is wasted time.
+4. **Spec is the deliverable.** Every think session MUST produce a written spec (markdown + YAML). A brainstorm without a spec is wasted time.
 5. **Stay neutral until asked.** Present options fairly. Only recommend when the user asks or when one option is clearly superior.
 6. **Time-box the exploration.** If the user is going in circles after 3 rounds, gently push toward a decision: "We've explored the space well. I'd suggest we go with X and iterate. We can always change direction later."
+7. **No TBDs allowed.** The iteration gate is a hard rule. If you find a gap, fill it. Do not present specs with placeholders, open questions, or vague language. Loop until the spec is complete.
+8. **Multi-persona brainstorm is mandatory.** Every design session runs through the 5 expert personas before generating approaches. This surfaces blind spots early.
+9. **Decision matrix drives the recommendation.** Quantitative scores, not gut feel. If the scores are close, say so — let the user break the tie.
+10. **Anti-patterns are a gate, not a suggestion.** If a violation is found, the approach must be revised before the spec is written.
 
 ## Example Usage
 
