@@ -186,4 +186,106 @@ godmode/
 
 ---
 
-## Status: ITERATION 3 — Plugin File Structure complete
+## 4. Skill File Format
+
+Every skill is a single `SKILL.md` file. Claude Code reads this file when the skill is invoked, so it must be self-contained (or reference files it can load).
+
+### SKILL.md Structure
+
+```markdown
+---
+name: skill-name
+description: One-line description (shown in skill discovery)
+triggers:
+  - /godmode:skillname
+  - natural language trigger phrases
+phase: THINK | BUILD | OPTIMIZE | SHIP | META
+requires: [list, of, prerequisite, skills]  # optional
+flags:
+  --flag-name: "description of flag"        # optional
+  --iterations: "max iteration count"       # optional
+---
+
+# Skill Name
+
+## When to Use
+[Trigger conditions — when does this skill activate?]
+
+## Workflow
+[Step-by-step instructions for the agent to follow]
+
+### Step 1: [Name]
+[Detailed instructions]
+
+### Step 2: [Name]
+[Detailed instructions]
+
+## Key Behaviors
+[Critical rules the agent must follow]
+
+## References
+[Links to files in the references/ directory]
+- @references/protocol-name.md
+
+## Example Usage
+[Concrete examples of invoking and using the skill]
+```
+
+### Frontmatter Schema
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Kebab-case skill identifier |
+| `description` | string | Yes | One-line description, max 120 chars |
+| `triggers` | string[] | Yes | Slash commands and natural language phrases |
+| `phase` | enum | Yes | Which phase this skill belongs to |
+| `requires` | string[] | No | Skills that must run before this one |
+| `flags` | map | No | CLI flags the skill accepts |
+
+### References Directory Pattern
+
+References are loaded on demand using the `@references/filename.md` directive. The agent reads these files only when the workflow step requires them.
+
+```markdown
+## Workflow
+
+### Step 3: Evaluate Security
+Load the threat model reference:
+@references/stride-owasp.md
+
+Apply each category from the reference to the current codebase.
+```
+
+**Why this pattern?**
+- Keeps SKILL.md small and scannable (~100-200 lines)
+- References can be shared across skills via symlinks or `@shared/filename.md`
+- Heavy knowledge (persona definitions, metric databases, protocol details) doesn't bloat the skill file
+- References are versioned with the plugin — no external dependencies
+
+### Templates Directory Pattern
+
+Skills that produce artifacts include templates:
+
+```markdown
+## Workflow
+
+### Step 5: Write the Spec
+Use the spec template:
+@templates/spec-template.md
+
+Fill in each section based on the brainstorming session.
+```
+
+### Naming Conventions
+
+| Item | Convention | Example |
+|------|-----------|---------|
+| Skill directory | lowercase, singular | `think/`, `build/`, `secure/` |
+| SKILL.md | Always uppercase | `SKILL.md` |
+| References | kebab-case | `brainstorm-protocol.md` |
+| Templates | kebab-case with `-template` suffix | `spec-template.md` |
+| Shared files | kebab-case | `git-memory.md` |
+
+---
+
+## Status: ITERATION 4 — Skill File Format complete
