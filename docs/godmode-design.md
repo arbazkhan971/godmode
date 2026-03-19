@@ -1547,4 +1547,129 @@ Agent: Scanning for errors...
 
 ---
 
-## Status: ITERATION 15 — Fix skill spec complete
+## 16. `/godmode:secure` — Security Audit Skill Spec
+
+**Origin:** Autoresearch (STRIDE + OWASP + red-team personas)
+**Phase:** OPTIMIZE
+**Purpose:** Comprehensive security audit combining STRIDE threat modeling, OWASP Top 10 checks, and 4 red-team personas, producing a structured report with code evidence.
+
+### Trigger Conditions
+
+- Before shipping any user-facing feature
+- User says "security review", "audit this", "is this secure?"
+- Orchestrator recommends before `/godmode:ship`
+- Explicitly invoked with `/godmode:secure`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--scope` | auto | Files/directories to audit (auto-detects from recent changes) |
+| `--framework` | all | Which framework: `stride`, `owasp`, `redteam`, `all` |
+| `--severity` | all | Minimum severity to report: `critical`, `high`, `medium`, `low` |
+| `--fix` | false | Auto-fix findings (chains to `/godmode:fix`) |
+| `--report` | markdown | Report format: `markdown`, `json`, `sarif` |
+
+### STRIDE Threat Model
+
+| Category | Question | Example Findings |
+|----------|----------|-----------------|
+| **S**poofing | Can someone pretend to be someone else? | Missing auth, weak session tokens |
+| **T**ampering | Can someone modify data they shouldn't? | No input validation, unsigned payloads |
+| **R**epudiation | Can someone deny their actions? | Missing audit logs, no timestamps |
+| **I**nformation Disclosure | Can someone see data they shouldn't? | Verbose errors, exposed stack traces |
+| **D**enial of Service | Can someone break availability? | No rate limiting, unbounded queries |
+| **E**levation of Privilege | Can someone gain unauthorized access? | Missing role checks, IDOR vulnerabilities |
+
+### OWASP Top 10 Checks
+
+| # | Category | Automated Check |
+|---|----------|----------------|
+| A01 | Broken Access Control | Grep for missing auth middleware, IDOR patterns |
+| A02 | Cryptographic Failures | Check for hardcoded secrets, weak hashing, HTTP links |
+| A03 | Injection | SQL string concatenation, unsanitized user input, eval() |
+| A04 | Insecure Design | Missing rate limits, no account lockout, no CSRF |
+| A05 | Security Misconfiguration | Default credentials, verbose errors, open CORS |
+| A06 | Vulnerable Components | Check dependency versions against known CVEs |
+| A07 | Auth Failures | Weak password rules, missing MFA, session fixation |
+| A08 | Data Integrity Failures | Unsigned updates, unverified deserialization |
+| A09 | Logging Failures | Missing security event logging, log injection |
+| A10 | SSRF | Unvalidated URL parameters, internal network access |
+
+### 4 Red-Team Personas
+
+| Persona | Motivation | Attack Style |
+|---------|------------|-------------|
+| **Script Kiddie** | Chaos, bragging | Automated tools, known exploits, brute force |
+| **Insider Threat** | Revenge, profit | Valid credentials, knows the system, subtle |
+| **APT (Nation-State)** | Espionage, disruption | Patient, sophisticated, multi-stage |
+| **Automated Bot** | Scraping, DDoS, spam | High volume, no creativity, persistent |
+
+Each persona "attacks" the system and reports what they could achieve.
+
+### Workflow
+
+**Step 1: Scope the Audit**
+- Identify files in scope (modified files, or full codebase)
+- Map the attack surface: endpoints, inputs, auth boundaries, data flows
+
+**Step 2: STRIDE Analysis**
+- For each STRIDE category, analyze the scoped code
+- Produce findings with code evidence (file path, line number, code snippet)
+
+**Step 3: OWASP Scan**
+- Run each OWASP check against the codebase
+- Cross-reference with STRIDE findings (avoid duplicates)
+
+**Step 4: Red-Team Simulation**
+- Each persona attempts to compromise the system
+- Report: attack path, success/failure, impact, difficulty
+
+**Step 5: Produce Report**
+
+```markdown
+## Security Audit Report
+
+### Summary
+- **Critical:** 1 | **High:** 2 | **Medium:** 3 | **Low:** 5
+- **Attack surface:** 12 endpoints, 4 auth boundaries
+- **Most vulnerable:** `/api/admin/users` (broken access control)
+
+### Critical Findings
+
+#### SEC-001: SQL Injection in user search [CRITICAL]
+**Category:** STRIDE-Tampering, OWASP-A03
+**File:** `src/routes/users.ts:45`
+**Code:** `db.query(\`SELECT * FROM users WHERE name = '\${req.query.name}'\`)`
+**Impact:** Full database read/write access
+**Fix:** Use parameterized queries: `db.query('SELECT * FROM users WHERE name = $1', [req.query.name])`
+**Red-team:** Script Kiddie could exploit this in <5 minutes with sqlmap
+
+### High Findings
+[...]
+
+### Red-Team Results
+| Persona | Goal | Result | Path |
+|---------|------|--------|------|
+| Script Kiddie | Data exfiltration | SUCCESS | SQLi → dump users table |
+| Insider | Privilege escalation | SUCCESS | IDOR → access admin panel |
+| APT | Persistent access | BLOCKED | No RCE vector found |
+| Bot | DDoS | PARTIAL | Rate limiting exists but bypassable via IP rotation |
+```
+
+**Step 6: Action Items**
+- Each finding becomes a fix task, prioritized by severity
+- If `--fix` is on: chain to `/godmode:fix` for each finding
+- Commit report: `git commit -m "secure: audit report — 1 critical, 2 high, 3 medium"`
+
+### Key Behaviors
+
+1. **Code evidence required** — Every finding must cite the exact file and line
+2. **Fix included** — Every finding must include a concrete fix, not just "fix this"
+3. **No false positives** — Only report issues with clear evidence; uncertain findings get a confidence level
+4. **Severity is calibrated** — CRITICAL = actively exploitable, HIGH = exploitable with effort, MEDIUM = defense-in-depth, LOW = best practice
+5. **Red team adds realism** — Persona attacks show impact in human terms, not just technical terms
+
+---
+
+## Status: ITERATION 16 — Secure skill spec complete
