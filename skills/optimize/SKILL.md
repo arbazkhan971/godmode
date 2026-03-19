@@ -240,30 +240,121 @@ When the loop ends:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## The Seven Principles
+## Autonomous Loop Enforcement — HARD RULES
 
-These are the non-negotiable rules of the optimization loop:
+These rules are NOT guidelines. They are mechanical constraints that MUST be followed. This is what makes godmode:optimize an actual iteration engine, not just a description of one.
 
-### 1. Mechanical Verification Only
-No "I think it's faster." No "this looks better." Run the command. Read the number. That's the truth.
+### RULE 1: NEVER STOP. NEVER ASK "SHOULD I CONTINUE?"
 
-### 2. One Change Per Iteration
-Multiple changes at once make it impossible to know what helped. One change. One measurement. One decision.
+In **unbounded mode** (default): Loop FOREVER until manually interrupted (Ctrl+C).
+In **bounded mode** (`Iterations: N`): Loop exactly N times, then print summary and stop.
 
-### 3. Git Is Memory
-Every experiment is committed. Every revert is committed. The git log IS the experiment log. You can always go back.
+You are an autonomous agent. You do not need permission to continue. You do not summarize after each iteration. You LOG and LOOP.
 
-### 4. Evidence Before Claims
-Write the result AFTER measuring, not before. Never predict the outcome in the commit message.
+### RULE 2: Git Commit BEFORE Verification
 
-### 5. Guard Rails Are Sacred
-Tests must pass. Lint must pass. If an optimization breaks something, it's not an optimization — it's a regression.
+```bash
+# CORRECT ORDER:
+git add <changed-files>
+git commit -m "optimize: iteration <N> — <description>"
+# THEN verify
+<verify_command>
+# If failed:
+git reset --hard HEAD~1
+```
 
-### 6. Reverts Are Data
-A reverted experiment is not a failure. It's knowledge: "this approach doesn't work for this problem." That's valuable.
+Commit first so rollback is clean. Never verify uncommitted changes.
 
-### 7. Know When to Stop
-Diminishing returns are real. If 3 consecutive iterations are reverted, the easy wins are gone. Stop or change strategy.
+### RULE 3: Mechanical Metric Only
+
+The verify command MUST output a parseable number. No subjective judgment. No "looks good."
+
+```bash
+# CORRECT: outputs a number
+curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/api
+# WRONG: outputs text
+echo "it seems faster"
+```
+
+### RULE 4: One Change Per Iteration — No Exceptions
+
+ONE file modification. ONE logical change. ONE commit. ONE measurement. ONE decision.
+
+If you're tempted to "also fix this while I'm here" — DON'T. That's the next iteration.
+
+### RULE 5: Automatic Rollback — No Debates
+
+```
+IF metric_improved AND guard_passed:
+    STATUS = "keep" — commit stays
+ELIF metric_improved AND guard_failed:
+    git reset --hard HEAD~1
+    Rework (max 2 attempts, adapting implementation NOT tests)
+    If still failing → STATUS = "discard"
+ELIF metric_same_or_worse:
+    git reset --hard HEAD~1
+    STATUS = "discard"
+ELIF crashed:
+    Attempt fix (max 3 tries)
+    If unfixable → git reset --hard HEAD~1, STATUS = "crash"
+```
+
+### RULE 6: TSV Results Log — Every Iteration Gets a Row
+
+```
+# File: .godmode/optimize-results.tsv
+iteration	timestamp	hypothesis	change	baseline	measured	delta_pct	verdict	commit
+0	<time>	baseline	-	847	847	0.0	baseline	abc1234
+1	<time>	"N+1 query"	"Add eager loading"	847	612	-27.7	keep	def5678
+2	<time>	"No index"	"Add category_id index"	612	401	-34.5	keep	ghi9012
+3	<time>	"JSON overhead"	"Switch to streaming"	401	415	+3.5	discard	-
+```
+
+### RULE 7: Status Print Every 5 Iterations
+
+Do NOT summarize after every iteration. Do NOT ask for feedback. Just loop.
+
+Every 5 iterations, print ONE line:
+```
+Iteration 15: metric at 312ms (from 847ms, -63.2%), 9 keeps / 6 discards
+```
+
+### RULE 8: When Stuck (>5 Consecutive Discards)
+
+1. Re-read ALL in-scope files from scratch
+2. Re-read the original goal
+3. Review entire results log for patterns
+4. Try combining 2-3 previously successful changes
+5. Try the OPPOSITE of what hasn't been working
+6. Try a radical architectural change
+
+### RULE 9: Guard Commands Are Read-Only
+
+NEVER modify test files, lint configs, or guard commands to make an optimization pass. Always adapt the implementation to pass the guard, not the other way around.
+
+### RULE 10: Simplicity Override
+
+- Metric barely improved (+<0.1%) but adds complexity → DISCARD
+- Metric unchanged but code is simpler → KEEP
+- Equal results + less code = always KEEP
+
+## Bounded Iterations
+
+Add `Iterations: N` to your invocation to run exactly N iterations:
+
+```
+/godmode:optimize
+Goal: Reduce API response time
+Iterations: 20
+```
+
+After N iterations, print a final summary:
+```
+=== Godmode Optimize Complete (20/20 iterations) ===
+Baseline: 847ms → Final: 198ms (-76.6%)
+Keeps: 8 | Discards: 10 | Crashes: 2
+Best iteration: #6 — Add database index (-34.5%)
+```
 
 ## Example Usage
 

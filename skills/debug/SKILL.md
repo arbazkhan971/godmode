@@ -173,6 +173,50 @@ add a regression test, and verify the solution.
 
 If the user wants to fix immediately, invoke `/godmode:fix` with the root cause analysis.
 
+## Autonomous Loop Enforcement — HARD RULES
+
+Debug is an iteration loop. It does NOT find one bug and stop. It finds ALL bugs.
+
+### RULE 1: LOOP UNTIL NO MORE BUGS
+
+```
+LOOP:
+  1. Run reproduce command / test suite
+  2. If all passing → STOP, print summary
+  3. Pick next failing test / bug symptom
+  4. Apply debugging technique (pick best one)
+  5. Isolate root cause with evidence (file:line + data)
+  6. Log finding to .godmode/debug-findings.tsv
+  7. Hand off to fix skill OR fix inline if trivial
+  8. Verify fix didn't introduce new bugs
+  9. GOTO 1
+```
+
+### RULE 2: NEVER GUESS — PROVE
+
+Every root cause must have:
+- **File and line number** where the bug lives
+- **Data evidence** (actual vs expected values, captured at runtime)
+- **Reproduce command** that triggers it
+
+"I think it's in auth.ts" → NOT ACCEPTABLE
+"auth.ts:47 — req.user is undefined because JWT middleware skipped (evidence: added console.log at line 46, output shows middleware chain is [cors, rateLimit] missing auth)" → ACCEPTABLE
+
+### RULE 3: Track Findings in TSV
+
+```
+# .godmode/debug-findings.tsv
+iteration	bug	file	line	root_cause	technique_used	fix_applied	commit
+1	"Cannot read 'id' of undefined"	auth.ts	47	"JWT middleware not in chain"	diff-analysis	"Added auth middleware"	abc123
+2	"Expected 200, got 500"	api.ts	112	"Missing null check on user.org"	state-inspection	"Added optional chaining"	def456
+```
+
+### RULE 4: Status Print Every 3 Bugs Found
+
+```
+Debug iteration 6: 4 bugs found and fixed, 2 remaining failures
+```
+
 ## Key Behaviors
 
 1. **Reproduce first.** Never investigate a bug you haven't seen yourself. Reproduce it.

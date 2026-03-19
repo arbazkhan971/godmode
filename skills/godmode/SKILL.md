@@ -118,6 +118,39 @@ For simple tasks that don't warrant decomposition:
 - If the user picks an alternative, invoke that instead
 - If the user provides new context, re-evaluate from Step 1
 
+## Autonomous Iteration — The Core Engine
+
+Every Godmode skill that involves iterative work (optimize, fix, debug, build) runs the same autonomous loop engine inherited from autoresearch:
+
+```
+LOOP (FOREVER or N iterations):
+  1. Review: Read current state + git history + results log
+  2. Ideate: Pick next change based on goal and past results
+  3. Modify: Make ONE focused change
+  4. Commit: git commit BEFORE verification
+  5. Verify: Run mechanical metric (tests, benchmark, etc.)
+  6. Guard: Run guard command if set (tests must pass)
+  7. Decide:
+     - IMPROVED + guard passed → KEEP
+     - IMPROVED + guard failed → Revert, rework (max 2 attempts)
+     - SAME/WORSE → git reset --hard HEAD~1, DISCARD
+     - CRASHED → Fix (max 3 attempts), else DISCARD
+  8. Log: Append to .godmode/<skill>-results.tsv
+  9. Repeat: NEVER STOP. NEVER ASK "should I continue?"
+```
+
+**This is not a suggestion. This is the execution protocol.** Skills that skip the loop, skip commits, skip verification, or ask permission to continue are NOT running godmode — they're just generating text.
+
+### Bounded Iterations
+
+Add `Iterations: N` to any skill invocation to run exactly N iterations:
+```
+/godmode:optimize
+Iterations: 20
+```
+
+After N iterations, print a final summary with baseline → current, keeps/discards/crashes.
+
 ## Key Behaviors
 
 1. **Never guess — investigate.** Always run `git status`, `git log --oneline -10`, and check for test files before recommending.
@@ -125,6 +158,7 @@ For simple tasks that don't warrant decomposition:
 3. **Remember the full loop.** The ideal flow is THINK → BUILD → OPTIMIZE → SHIP. Nudge users toward completing the full cycle.
 4. **Respect explicit requests.** If a user says "optimize this," don't redirect to THINK even if no spec exists. Honor their intent, but note what was skipped.
 5. **Track phase transitions.** When transitioning between phases, summarize what was accomplished in the previous phase.
+6. **Iterate autonomously.** When executing optimize/fix/debug, LOOP. Do not stop after one change. Do not ask for permission. Commit, verify, keep/revert, repeat.
 
 ## Example Usage
 

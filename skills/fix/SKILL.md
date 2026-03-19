@@ -164,6 +164,67 @@ After all errors are fixed:
 └─────────────────────────────────────────────────────┘
 ```
 
+## Autonomous Loop Enforcement — HARD RULES
+
+These are mechanical constraints, not suggestions.
+
+### RULE 1: LOOP UNTIL ZERO ERRORS REMAIN
+
+Do NOT stop after one fix. Do NOT ask "should I continue?" Do NOT summarize after each fix.
+
+```
+LOOP:
+  1. Inventory errors (run tests + lint + types)
+  2. If zero errors → STOP, print final summary
+  3. Pick highest-priority error
+  4. Analyze root cause
+  5. Apply minimum fix
+  6. git commit BEFORE verification
+  7. Verify (full suite)
+  8. If fix introduced new errors → git reset --hard HEAD~1, re-analyze
+  9. If fix worked → log to .godmode/fix-log.tsv
+  10. GOTO 1
+```
+
+### RULE 2: Git Commit BEFORE Verify
+
+```bash
+git add <changed-files>
+git commit -m "fix: <description>"
+# THEN run full test suite
+<test command>
+# If new errors introduced:
+git reset --hard HEAD~1
+```
+
+### RULE 3: One Fix Per Commit — No Exceptions
+
+ONE error. ONE fix. ONE commit. If you fix two things, you can't cleanly revert one.
+
+### RULE 4: Automatic Revert on Regression
+
+If your fix introduces ANY new errors that weren't there before:
+```bash
+git reset --hard HEAD~1
+```
+Then re-analyze. The fix was wrong.
+
+### RULE 5: Metric = Error Count (Lower is Better)
+
+```
+Verify: <test command> 2>&1 | grep -c "FAIL\|ERROR\|error"
+Direction: lower is better
+Target: 0
+```
+
+Track the error count after each iteration. Log it.
+
+### RULE 6: Status Print Every 5 Iterations
+
+```
+Fix iteration 10: 3 errors remaining (from 12), 7 fixed, 2 reverted
+```
+
 ## Key Behaviors
 
 1. **One fix per iteration.** Never fix multiple errors at once. One fix, one verify, one commit.
