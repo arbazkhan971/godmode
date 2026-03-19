@@ -4990,4 +4990,162 @@ claude /godmode:secure --pr-comment --non-interactive
 
 ---
 
-## Status: ITERATION 43 — CI/CD Integration complete
+## 44. Testing Strategy for Godmode Itself
+
+**Purpose:** How to test skills, integration flows, and ensure Godmode works correctly — despite being markdown instructions, not executable code.
+
+### The Challenge
+
+Godmode skills are markdown files that instruct an AI agent. You can't unit test a markdown file the way you'd test a function. Testing requires:
+1. **Session replay** — Record a session, verify it follows the workflow
+2. **Scenario testing** — Set up a project state, invoke a skill, verify outputs
+3. **Integration testing** — Run multiple skills in sequence, verify handoffs work
+
+### Test Levels
+
+| Level | What It Tests | How |
+|-------|--------------|-----|
+| **Schema** | SKILL.md frontmatter is valid | Parse YAML, validate against schema |
+| **Structure** | SKILL.md has required sections | Check for "When to Use", "Workflow", "Key Behaviors" |
+| **Scenario** | Skill produces correct output in a given context | Session replay in test project |
+| **Integration** | Skills chain/handoff correctly | Run pipeline in test project |
+| **Regression** | Changes don't break existing behavior | Re-run scenarios after changes |
+
+### Schema Tests
+
+Automated checks that every SKILL.md is well-formed:
+
+```bash
+# Test script: tests/validate-schemas.sh
+for skill in skills/*/SKILL.md; do
+  echo "Validating $skill..."
+
+  # Check frontmatter exists
+  grep -q "^---" "$skill" || echo "FAIL: No frontmatter in $skill"
+
+  # Check required frontmatter fields
+  for field in name description triggers phase; do
+    grep -q "^$field:" "$skill" || echo "FAIL: Missing $field in $skill"
+  done
+
+  # Check required sections
+  for section in "When to Use" "Workflow" "Key Behaviors"; do
+    grep -q "## $section" "$skill" || echo "FAIL: Missing '$section' in $skill"
+  done
+done
+```
+
+### Scenario Tests
+
+Each scenario tests a skill in a controlled environment:
+
+```
+tests/
+  scenarios/
+    think-basic.md          # Basic brainstorming flow
+    think-with-visual.md    # Brainstorming with visual companion
+    plan-from-spec.md       # Planning from an existing spec
+    build-tdd.md            # Build task with TDD enforcement
+    optimize-basic.md       # Basic optimization loop
+    optimize-plateau.md     # Optimization hitting a plateau
+    fix-cascading.md        # Fix with cascading errors
+    secure-critical.md      # Security audit finding critical issues
+    ship-npm.md             # Ship to npm
+    chain-debug-fix.md      # Debug → fix chain
+    pipeline-full.md        # Full THINK→BUILD→OPTIMIZE→SHIP
+```
+
+### Scenario File Format
+
+```markdown
+# Scenario: optimize-basic
+
+## Test Project
+Repository: tests/fixtures/express-api/
+State: .godmode/state.json has phase=OPTIMIZE, 47 tests passing
+
+## Setup Commands
+npm install
+npm test  # Verify baseline: 47 passing
+
+## Invocation
+/godmode:optimize --metric "npm test 2>&1 | grep passing | awk '{print $1}'" \
+  --guard "npm test" --iterations 5 --non-interactive
+
+## Expected Outcomes
+1. At least 1 iteration completes
+2. results.tsv has entries for each iteration
+3. Each entry has: iteration number, timestamp, description, metric values
+4. No guard failures (all kept or cleanly reverted)
+5. Final metric >= baseline (47)
+6. Git log shows "optimize: iteration N" commits
+
+## Verification Commands
+test -f .godmode/results.tsv                    # Results file exists
+wc -l < .godmode/results.tsv                    # Has at least 2 lines (header + 1)
+git log --oneline --grep="optimize:" | wc -l    # At least 1 optimize commit
+npm test                                         # Tests still pass
+```
+
+### Session Replay Testing
+
+Record a real session, then replay it to verify behavior:
+
+**Recording:**
+```bash
+# Record all tool calls and responses during a session
+claude --record .godmode/test-recordings/think-basic.json /godmode:think
+```
+
+**Replay Verification:**
+```bash
+# Replay and verify key behaviors
+python tests/verify-recording.py .godmode/test-recordings/think-basic.json \
+  --expect-questions 5 \          # At least 5 questions asked
+  --expect-one-at-a-time \        # Only one question per turn
+  --expect-approaches 3 \         # 3 approaches proposed
+  --expect-spec-written \         # Spec file created
+  --expect-commit "spec:"         # Commit with spec: prefix
+```
+
+### Integration Tests
+
+Test that skills chain together correctly:
+
+```markdown
+# Integration Test: THINK → PLAN → BUILD
+
+## Steps
+1. /godmode:think (provide canned answers for non-interactive testing)
+   → Verify: spec exists in .godmode/specs/
+2. /godmode:plan --spec .godmode/specs/test-spec.md
+   → Verify: plan exists in .godmode/plan.md, tasks have required fields
+3. /godmode:build --task task-001
+   → Verify: test file created before implementation, review run
+```
+
+### Test Fixtures
+
+Pre-built project fixtures for testing:
+
+```
+tests/fixtures/
+  express-api/          # Node.js Express API with tests
+  python-ml/            # Python ML project with pytest
+  go-cli/               # Go CLI tool with go test
+  empty-project/        # Empty project (for setup testing)
+  failing-tests/        # Project with known test failures (for fix testing)
+  insecure-code/        # Project with known vulnerabilities (for secure testing)
+```
+
+### Key Behaviors
+
+1. **Schema tests are automated** — Run on every PR, catch formatting issues early
+2. **Scenario tests are the primary test** — They verify the skill actually works
+3. **Integration tests catch handoff bugs** — The most common failure mode
+4. **Fixtures are maintained** — Broken fixtures break all tests
+5. **Session replay is gold** — A real recorded session is the best test of a skill
+
+---
+
+## Status: ITERATION 44 — Testing Strategy complete
