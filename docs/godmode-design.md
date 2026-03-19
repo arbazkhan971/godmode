@@ -5950,6 +5950,104 @@ The following artifacts have been created as production-ready implementations:
 
 ---
 
+## 59. Incident & Error Handling Skills
+
+Two new skills extend Godmode into production operations — managing incidents when things go wrong and tracking errors before they become incidents.
+
+### Incident Response & Post-Mortem (`/godmode:incident`)
+
+**Purpose:** Structured incident management from detection through post-mortem.
+
+**Workflow:**
+1. **Classify** — Severity levels SEV1-4 with defined response times and escalation rules
+2. **Timeline** — Precise, timestamped record of events with attached evidence (logs, dashboards, deploy records)
+3. **Impact** — Quantified blast radius: users affected, duration, revenue impact, SLA budget consumed
+4. **Root Cause** — 5 Whys technique to identify true root cause and contributing factors
+5. **Post-Mortem** — Blameless document covering What Went Well, What Went Wrong, and Where We Got Lucky
+6. **Action Items** — Concrete, assigned, deadline-bound items categorized as PREVENT, DETECT, MITIGATE, or PROCESS
+7. **Metrics** — MTTD, MTTA, MTTR, MTBF tracking over time
+
+**Severity Levels:**
+| Level | Impact | Response |
+|-------|--------|----------|
+| SEV1 | Complete outage, data loss, security breach | Immediate (< 15 min) |
+| SEV2 | Major degradation, critical feature broken | < 30 min |
+| SEV3 | Partial degradation, workaround exists | < 2 hours |
+| SEV4 | Cosmetic, minimal user impact | Next business day |
+
+**Key Principle:** Blameless or useless. Name systems, not people. Focus on process gaps, not human error.
+
+**Chaining:** `/godmode:incident` → `/godmode:plan` (schedule remediation) → `/godmode:build` (implement fixes)
+
+### Error Tracking & Analysis (`/godmode:errortrack`)
+
+**Purpose:** Aggregate, categorize, and analyze application errors at scale before they become incidents.
+
+**Workflow:**
+1. **Aggregate** — Collect errors from Sentry, Bugsnag, DataDog, CloudWatch, and application logs
+2. **Categorize** — Group into: unhandled exceptions, network/timeout, validation, auth, database, third-party, resource exhaustion, business logic
+3. **Stack Trace Grouping** — Normalize frames, group by exception type + top application frames (not by message text)
+4. **Root Cause Correlation** — Temporal, code, and statistical correlation with deploys, config changes, and upstream events
+5. **Trend Analysis** — New errors, resolved, regressions, fastest-growing error groups
+6. **Error Budgets** — Track against SLO targets with burn-rate alerts and policy (green/yellow/orange/red/exhausted)
+7. **Triage** — Prioritize by impact score: users affected, frequency, severity weight
+
+**Error Budget Policy:** When budget is green, ship freely. When red, deploy freeze. No judgment calls — the policy decides.
+
+**Chaining:** `/godmode:errortrack` → `/godmode:debug` (investigate P0 errors) → `/godmode:incident` (if active outage)
+
+---
+
+## 60. ML & Data Science Skills
+
+Two new skills bring structured machine learning workflows into Godmode — from experiment tracking through production model serving.
+
+### ML Development & Experimentation (`/godmode:ml`)
+
+**Purpose:** Manage the full ML experiment lifecycle with reproducibility, rigor, and bias awareness.
+
+**Workflow:**
+1. **Experiment Definition** — Hypothesis, objective, baseline, task type, dataset, framework, compute requirements
+2. **Hyperparameter Management** — Structured YAML configs with search strategies (grid, random, Bayesian, Hyperband, population-based)
+3. **Dataset Validation** — Schema checks, quality metrics, class distribution, data leakage detection, drift checks
+4. **Bias Detection** — Per-attribute performance analysis with fairness metrics (demographic parity, equalized odds, predictive parity)
+5. **Training Tracking** — Live metrics, checkpoint management, early stopping, GPU utilization
+6. **Model Evaluation** — Per-class metrics, calibration analysis, confidence analysis, error pattern categorization
+7. **Experiment Comparison** — Side-by-side metrics with statistical significance testing (paired bootstrap)
+
+**Key Principle:** Reproducibility is non-negotiable. Every experiment records: code version (git SHA), data version, hyperparameters, random seeds, and environment.
+
+**Bias Policy:** A model that performs well on average but poorly for a protected group is not ready to deploy. Bias is a deployment blocker, not a nice-to-have.
+
+**Chaining:** `/godmode:ml` → `/godmode:mlops` (deploy best model) → `/godmode:ml` (retrain when drift detected)
+
+### MLOps & Model Deployment (`/godmode:mlops`)
+
+**Purpose:** Move models from experimentation to reliable production serving with monitoring and automation.
+
+**Workflow:**
+1. **Readiness Assessment** — Functional (metrics, latency, size), operational (health check, validation, fallback), compliance (model card, data provenance, privacy)
+2. **Serving Infrastructure** — TensorFlow Serving, NVIDIA Triton, AWS SageMaker, or custom (FastAPI/Ray Serve)
+3. **Inference Optimization** — FP16/INT8 quantization, ONNX conversion, TensorRT, pruning, distillation with accuracy/latency tradeoff benchmarks
+4. **Batching Strategies** — Static, dynamic, and adaptive batching with benchmark-driven configuration
+5. **Model Versioning** — Lifecycle management: STAGED → CANARY → CHAMPION → SHADOW → ARCHIVED → RETIRED
+6. **A/B Testing** — Controlled experiments with traffic splitting, guardrail metrics, and statistical significance gates
+7. **Drift Detection** — Feature drift (KS test, PSI, chi-squared), concept drift (performance degradation), severity classification
+8. **Retraining Automation** — Scheduled, drift-based, or performance-based triggers with validation gates before promotion
+
+**Deployment Flow:**
+```
+Train → Readiness Check → Deploy Canary (5%) → A/B Test → Promote Champion
+                                                    ↓
+                                          Monitor → Drift → Retrain
+```
+
+**Key Principle:** Automate retraining, but gate deployment. The retraining pipeline can run automatically. The promotion to champion must pass validation (A/B test or human review).
+
+**Chaining:** `/godmode:mlops` → `/godmode:ml` (retrain) → `/godmode:mlops --promote` (promote new champion)
+
+---
+
 ## 53. Frontend & UI Skills
 
 Three new skills extend Godmode's capabilities into frontend quality, visual consistency, and UI architecture.
