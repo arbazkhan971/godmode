@@ -585,4 +585,108 @@ Mitigations:
 
 ---
 
-## Status: ITERATION 7 — Predict skill spec complete
+## 8. `/godmode:scenario` — Edge Case Explorer Skill Spec
+
+**Origin:** Autoresearch (scenario exploration)
+**Phase:** THINK
+**Purpose:** Systematically explore edge cases across 12 dimensions before writing code, so edge cases are designed for — not discovered in production.
+
+### Trigger Conditions
+
+- After a spec is written and before planning
+- User says "what could go wrong?", "edge cases", "what am I missing?"
+- Explicitly invoked with `/godmode:scenario`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--dimensions` | all | Which dimensions to explore (comma-separated, or "all") |
+| `--depth` | medium | Exploration depth: `shallow` (1 per dimension), `medium` (3), `deep` (5+) |
+| `--target` | auto | Target component/feature to explore |
+| `--output` | table | Output format: `table`, `checklist`, `test-cases` |
+
+### The 12 Exploration Dimensions
+
+| # | Dimension | Question | Examples |
+|---|-----------|----------|----------|
+| 1 | **Happy Path** | Does the normal case actually work? | Standard input, expected user, typical load |
+| 2 | **Empty/Null** | What happens with nothing? | Empty string, null, undefined, zero, empty array |
+| 3 | **Boundary** | What happens at the edges? | Max int, min int, exactly at limit, one over limit |
+| 4 | **Invalid Input** | What happens with garbage? | Wrong type, malformed JSON, SQL injection, XSS |
+| 5 | **Concurrency** | What happens when multiple things happen at once? | Race conditions, deadlocks, double-submit |
+| 6 | **Scale** | What happens at 10x/100x/1000x? | 1M rows, 10K concurrent users, 1GB payload |
+| 7 | **Failure** | What happens when dependencies fail? | DB down, API timeout, disk full, OOM |
+| 8 | **State** | What happens with unexpected state? | Stale cache, partial migration, corrupted data |
+| 9 | **Time** | What happens with time? | Timezone changes, DST, leap seconds, clock skew |
+| 10 | **Permission** | What happens with wrong access? | Unauthorized, expired token, role escalation |
+| 11 | **Abuse** | How could this be deliberately misused? | DDoS, scraping, data exfiltration, account takeover |
+| 12 | **Recovery** | Can the system recover? | Restart mid-operation, restore from backup, rollback |
+
+### Workflow
+
+**Step 1: Identify Target**
+- Read the spec or codebase to identify the component under exploration
+- List the key operations/endpoints/functions to explore
+
+**Step 2: Dimension Sweep**
+- For each dimension, generate concrete scenarios
+- Each scenario includes:
+  - **Scenario:** One-sentence description
+  - **Input:** What triggers this scenario
+  - **Expected:** What should happen
+  - **Risk:** LOW / MEDIUM / HIGH / CRITICAL
+  - **Handled?:** YES / NO / PARTIAL
+
+**Step 3: Produce Scenario Matrix**
+
+```
+Dimension: CONCURRENCY
+┌───┬────────────────────────────┬──────────┬──────────┐
+│ # │ Scenario                   │ Risk     │ Handled? │
+├───┼────────────────────────────┼──────────┼──────────┤
+│ 1 │ Two users claim same item  │ HIGH     │ NO       │
+│ 2 │ Rate limit counter race    │ MEDIUM   │ PARTIAL  │
+│ 3 │ Cache invalidation during  │ LOW      │ YES      │
+│   │ concurrent writes          │          │          │
+└───┴────────────────────────────┴──────────┴──────────┘
+```
+
+**Step 4: Risk Summary**
+- Count unhandled scenarios by risk level
+- Produce a risk heatmap across dimensions
+- Highlight the top 5 most dangerous unhandled scenarios
+
+**Step 5: Generate Artifacts**
+- If `--output test-cases`: Generate test stubs for each unhandled scenario
+- If `--output checklist`: Generate a TODO checklist for the plan
+- Commit scenario report: `git commit -m "scenario: TARGET-NAME edge case exploration"`
+
+### Key Behaviors
+
+1. **Concrete, not abstract** — "User submits form twice in 200ms" not "concurrency issues"
+2. **Every dimension gets attention** — Don't skip dimensions that seem irrelevant; that's where surprises hide
+3. **Risk-ranked** — Not all edge cases are equal; focus attention on HIGH/CRITICAL
+4. **Feeds into planning** — Unhandled scenarios become tasks in `/godmode:plan`
+5. **Test-case ready** — Each scenario should be specific enough to write a test for
+
+### Example Usage
+
+```
+User: /godmode:scenario --target "rate limiter" --depth deep --output test-cases
+
+Agent: Exploring 12 dimensions for "rate limiter"...
+
+TOP 5 UNHANDLED RISKS:
+1. [CRITICAL] Clock skew between servers causes inconsistent rate limits
+2. [HIGH] Redis connection dies mid-increment, counter stuck
+3. [HIGH] Distributed race: two servers both allow request #100 of 100
+4. [MEDIUM] User rotates API key to reset rate limit
+5. [MEDIUM] Burst of 10K requests in 1ms overwhelms token bucket refill
+
+Generated 23 test stubs → saved to tests/rate-limiter.scenario.test.ts
+```
+
+---
+
+## Status: ITERATION 8 — Scenario skill spec complete
