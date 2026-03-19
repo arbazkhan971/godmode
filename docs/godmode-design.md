@@ -10356,3 +10356,115 @@ The protocol and runtime skills integrate into the Godmode workflow:
 | `commands/godmode/edge.md` | Command | Usage reference for `/godmode:edge` |
 
 **Iterations 244-251 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 98. Advanced AI Skills
+
+Four new skills extend Godmode's AI/ML capabilities beyond experiment tracking and deployment into fine-tuning, embeddings, production operations, and multimodal processing.
+
+### 98.1 Model Fine-Tuning (`/godmode:finetune`)
+
+**Purpose:** Guide the full lifecycle of fine-tuning LLMs on custom data -- from method selection through deployment.
+
+**Workflow:**
+1. **Discovery** -- Goal, base model, hardware constraints, budget, and justification for fine-tuning vs prompting
+2. **Method Selection** -- Decision guide across Full FT, LoRA, QLoRA, DoRA, and Prefix Tuning based on model size and available VRAM
+3. **Dataset Preparation** -- Format validation (instruction, conversational, DPO), quality checks (duplicates, contradictions, PII), size guidance per task type
+4. **Training Configuration** -- Learning rate, scheduler, batch size, epochs, precision, gradient checkpointing, flash attention, packing
+5. **Evaluation During Training** -- Validation loss, perplexity, sample generation, catastrophic forgetting detection, early stopping
+6. **Post-Training Evaluation** -- Task metrics, comparison vs alternatives (base + prompting, larger model, RAG), safety evaluation
+7. **Model Merging & Export** -- Adapter merging (standard, TIES, DARE, SLERP), export to safetensors/GGUF/ONNX/AWQ, model card generation
+8. **Deployment** -- Serving on vLLM, Ollama, TGI, SageMaker, or serverless platforms with performance benchmarks
+
+**Key Principle:** Prompting before fine-tuning. Exhaust prompt engineering and few-shot learning first. Fine-tune only when prompting demonstrably cannot achieve the quality bar.
+
+**Chaining:** `/godmode:prompt` (exhaust first) -> `/godmode:finetune` -> `/godmode:eval` -> `/godmode:mlops` (deploy) -> `/godmode:aiops` (monitor)
+
+### 98.2 Embeddings & Semantic Search (`/godmode:embeddings`)
+
+**Purpose:** Build, optimize, and manage embedding pipelines for similarity search, clustering, classification, and retrieval.
+
+**Workflow:**
+1. **Discovery** -- Use case, data type, volume, languages, update frequency, quality and cost targets
+2. **Model Selection** -- Comparison across OpenAI, Cohere, Voyage, Jina, and open-source models with MTEB scores, latency, cost, and context window
+3. **Dimensionality Reduction** -- Matryoshka truncation, PCA, UMAP, quantization with quality retention measurements
+4. **Clustering & Analysis** -- K-Means/HDBSCAN clustering, embedding space diagnostics (isotropy, hubness, collapse), visualization
+5. **Search Optimization** -- HNSW/IVF index configuration, distance metric selection, pre/post filtering, caching strategies
+6. **Hybrid Search** -- Dense + sparse (BM25/SPLADE) with RRF or weighted fusion, reranking with cross-encoder models
+7. **Versioning & Refresh** -- Version registry, refresh triggers, incremental and full re-embedding, atomic index swapping with rollback
+
+**Key Principle:** Hybrid search is the default. Pure semantic search misses exact matches. Pure keyword search misses semantic matches. Combine both with reciprocal rank fusion.
+
+**Chaining:** `/godmode:embeddings` -> `/godmode:rag` (build RAG) -> `/godmode:aiops` (monitor quality) -> `/godmode:embeddings --refresh` (re-index when needed)
+
+### 98.3 AI Operations & Safety (`/godmode:aiops`)
+
+**Purpose:** Provide structured operational controls for AI/LLM applications in production -- guardrails, cost optimization, latency optimization, safety testing, and monitoring.
+
+**Workflow:**
+1. **Discovery** -- System architecture, traffic, pain points, priority (cost, latency, quality, safety)
+2. **Guardrails** -- Input guards (injection detection, PII redaction, topic restriction, rate limiting, jailbreak detection) and output guards (PII filtering, harmful content blocking, hallucination detection, format validation)
+3. **Hallucination Management** -- Detection methods (NLI source comparison, self-consistency, confidence calibration, LLM-as-judge) and mitigation strategies (grounding instructions, citations, temperature, chain-of-thought)
+4. **Cost Optimization** -- Model routing (cheap model for simple, expensive for complex), prompt compression, response caching, batch processing, fine-tuned smaller models, context window management
+5. **Latency Optimization** -- Streaming responses, semantic caching, parallel processing, smaller models, speculative decoding, KV-cache optimization, edge deployment
+6. **Safety Testing** -- Red-team framework covering prompt injection, jailbreaking, data extraction, harmful content, bias, DoS, multi-turn manipulation, tool misuse with safety scorecard
+7. **Monitoring** -- LLM-specific metrics (token usage, cost per request, hallucination rate, guardrail triggers), quality scoring (LLM-as-judge, NLI, user feedback), tracing, and alerting
+
+**Key Principle:** Guardrails before launch. No AI system goes to production without input and output guardrails. Even internal tools need basic safety controls.
+
+**Chaining:** `/godmode:rag` or `/godmode:agent` -> `/godmode:aiops` (harden) -> `/godmode:secure` (audit) -> `/godmode:observe` (integrate monitoring) -> `/godmode:deploy` (ship)
+
+### 98.4 Multimodal AI (`/godmode:multimodal`)
+
+**Purpose:** Build AI systems that process multiple data types -- images, audio, video, documents, and text -- together.
+
+**Workflow:**
+1. **Discovery** -- Modalities needed, processing types (understanding, extraction, generation, search, transformation), volume, latency, budget
+2. **Vision Integration** -- Model selection per use case (general understanding, OCR, object detection, classification, generation, chart understanding, image embedding) with pipeline design
+3. **Audio Processing** -- STT model selection (Whisper, Deepgram, Google, Azure) with features (streaming, diarization, timestamps), TTS selection (OpenAI, ElevenLabs, Coqui), streaming architecture
+4. **Document Understanding** -- PDF processing (PyMuPDF, pdfplumber, Unstructured, LlamaParse, marker, vision LLM), table extraction, form processing, document pipeline (classify, extract, structure, enrich)
+5. **Multi-Modal RAG** -- Embedding strategies (unified space with CLIP, caption + text embed, separate indexes, late fusion), context assembly with images and audio, document-level retrieval
+6. **Evaluation** -- Per-modality metrics (OCR accuracy, WER, table accuracy, image understanding) and end-to-end (cross-modal retrieval, latency, cost per modality)
+
+**Key Principle:** Caption first, embed second. For multi-modal RAG, generating text descriptions of images/audio and embedding those descriptions is simpler and often more effective than unified embedding spaces.
+
+**Chaining:** `/godmode:multimodal` -> `/godmode:rag` (integrate) -> `/godmode:embeddings` (optimize) -> `/godmode:aiops` (guardrails for media content) -> `/godmode:deploy` (ship)
+
+### AI Skills Ecosystem
+
+The four new skills complement the existing ML skills to form a complete AI development lifecycle:
+
+```
+Experiment & Train:
+  /godmode:ml         -- Experiment tracking, evaluation, bias detection
+  /godmode:finetune   -- Adapt pre-trained models to custom data
+
+Build & Retrieve:
+  /godmode:rag        -- Retrieval-augmented generation pipelines
+  /godmode:embeddings -- Embedding creation, search, and management
+  /godmode:multimodal -- Process images, audio, documents alongside text
+
+Deploy & Operate:
+  /godmode:mlops      -- Model serving, versioning, drift detection
+  /godmode:aiops      -- Guardrails, cost, latency, safety, monitoring
+
+Orchestrate:
+  /godmode:agent      -- Autonomous AI agents with tools and memory
+  /godmode:prompt     -- Prompt engineering and optimization
+```
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/finetune/SKILL.md` | Skill | Model fine-tuning with LoRA/QLoRA/full FT, dataset prep, training, merging, deployment |
+| `skills/embeddings/SKILL.md` | Skill | Embedding model selection, dimensionality reduction, hybrid search, versioning |
+| `skills/aiops/SKILL.md` | Skill | Guardrails, hallucination detection, cost/latency optimization, safety testing, monitoring |
+| `skills/multimodal/SKILL.md` | Skill | Vision, audio, document understanding, multi-modal RAG |
+| `commands/godmode/finetune.md` | Command | Usage reference for `/godmode:finetune` |
+| `commands/godmode/embeddings.md` | Command | Usage reference for `/godmode:embeddings` |
+| `commands/godmode/aiops.md` | Command | Usage reference for `/godmode:aiops` |
+| `commands/godmode/multimodal.md` | Command | Usage reference for `/godmode:multimodal` |
+
+**Iterations 411-418 (4 skills created, 4 command files created, 1 design doc updated)**
