@@ -14,11 +14,8 @@ description: Evidence gate. Run command, read output, confirm or deny claim.
 5. **REPORT** — `Claim | Verified: YES/NO | Command | Output | Details`
 
 ## Rules
-1. NEVER accept a claim without running the command.
-2. NEVER verify in your head. Run it.
-3. NEVER ignore partial failures. 47/48 passing = failure.
-4. NEVER accept stale verification. Changes since last run = re-run.
-5. NEVER filter output before reading it.
-6. ALWAYS use median of 3 runs for metrics.
-7. ALWAYS show full output alongside parsed result.
-8. Non-zero exit code = failure, regardless of stdout.
+1. Run the command. Never verify in your head or accept without execution.
+2. Read full output (stdout+stderr). Never filter or skim.
+3. Partial pass = failure. 47/48 passing ≠ success. Non-zero exit = failure.
+4. Stale results are invalid. Any code change since last run = re-run.
+5. Metrics: median of 3 runs. Boolean: single run. Show full output with verdict.

@@ -42,9 +42,9 @@ No match → phase detection (Step 3).
 
 ## Step 3: Detect Phase
 ```
-no spec, no plan           → THINK
-spec exists, no plan       → PLAN
-plan exists, tasks remain  → BUILD
+no .godmode/spec.md, no plan  → THINK
+.godmode/spec.md exists, no .godmode/plan.yaml → PLAN
+.godmode/plan.yaml exists, incomplete tasks  → BUILD
 code exists, tests failing → FIX
 code exists, tests passing → OPTIMIZE or SHIP
 ```
