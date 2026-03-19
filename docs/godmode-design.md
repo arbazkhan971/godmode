@@ -10651,3 +10651,123 @@ Three database specialization skills give Godmode deep, production-grade experti
 | `commands/godmode/nosql.md` | Command | Usage reference for `/godmode:nosql` |
 
 **Iterations 364-369 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 96. Frontend Framework Skills
+
+Four new skills provide deep, framework-specific mastery for the most popular frontend technologies. Each skill covers architecture decisions, state management, routing, rendering strategies, performance optimization, testing, and anti-pattern avoidance — giving developers a complete playbook for building production-grade applications.
+
+### 96.1 Vue — Vue.js Mastery (`skills/vue/SKILL.md`)
+
+**Purpose:** Build, architect, and optimize Vue.js applications with expert-level guidance on every aspect of the Vue ecosystem.
+
+**Key capabilities:**
+- **API style decision guide:** Composition API vs Options API — analyzes team experience, project scale, TypeScript needs, and Vue version to recommend the right approach. Defaults to Composition API with `<script setup>` for Vue 3.
+- **Composition API patterns:** Enforces a structured component ordering (imports, props, composables, state, computed, watchers, methods, lifecycle), typed `defineProps<T>` and `defineEmits<T>`, and composable extraction rules.
+- **Composable design:** `use*` prefix convention, `MaybeRef` arguments, internal loading/error handling, independent testability. Composables replace mixins completely.
+- **Pinia state management:** Setup store syntax (Composition API style), domain-scoped stores, selective persistence, `storeToRefs` for destructuring, inter-store communication without circular deps.
+- **Vue Router architecture:** Lazy-loaded route components, layout-based nested routing, centralized navigation guards, typed route params, scroll behavior restoration, and 404 catch-all.
+- **Nuxt 3 SSR/SSG patterns:** Hybrid rendering with per-route strategies (prerender, SSR, ISR, SPA), `useAsyncData`/`useFetch` data fetching, runtime config for env vars, Nitro server routes, and auto-imports.
+- **Vite optimization:** Dependency pre-bundling, manual chunk splitting for vendors, modern browser targeting, CSS code splitting, dev server proxy, and bundle analysis.
+- **Testing with Vitest:** Component testing with `@vue/test-utils`, composable testing with `flushPromises`, Pinia store testing with `createTestingPinia`, and coverage thresholds.
+
+**Workflow:** Project assessment -> API style decision -> Component architecture -> State management -> Routing -> Rendering strategy -> Vite optimization -> Testing -> Validation (17 checks) -> Deliverables.
+
+**Command:** `/godmode:vue` (`commands/godmode/vue.md`)
+
+### 96.2 Angular — Angular Architecture (`skills/angular/SKILL.md`)
+
+**Purpose:** Build, architect, and optimize Angular applications with expert-level guidance covering the full Angular platform from standalone components to NgRx.
+
+**Key capabilities:**
+- **Architecture decision:** NgModules vs standalone components — analyzes Angular version, existing codebase size, team conventions, and migration timeline. Defaults to standalone for Angular 17+.
+- **Component architecture:** OnPush change detection on all components, signal-based inputs/outputs (Angular 17+), smart vs presentational component separation, `inject()` over constructor injection.
+- **RxJS patterns:** switchMap for search, concatMap for sequential mutations, forkJoin for parallel loads, shareReplay for caching, takeUntilDestroyed for auto-unsubscribe. Pattern guide maps use cases to operators.
+- **State management decision:** Signals for component/local state (low complexity), Services+RxJS for shared state (medium), NgRx for enterprise-scale async flows (high), NgRx SignalStore as a middle ground.
+- **NgRx store design:** createActionGroup for typed actions, createEntityAdapter for normalized collections, createEffect for side effects, provideMockActions/provideMockStore for testing.
+- **Dependency injection:** `providedIn: 'root'` singletons, component-level providers for scoped services, InjectionTokens for configuration, abstract classes as interfaces.
+- **Lazy loading:** `loadChildren`/`loadComponent` for all feature routes, selective preloading strategy, bundle budgets (500kB warning, 1MB error).
+- **Testing:** Jest over Karma (recommended), TestBed for component tests, HttpTestingController for service tests, provideMockActions for effect tests.
+
+**Workflow:** Project assessment -> Architecture decision -> Component design -> RxJS patterns -> State management -> DI architecture -> Lazy loading -> CLI optimization -> Testing -> Validation (17 checks) -> Deliverables.
+
+**Command:** `/godmode:angular` (`commands/godmode/angular.md`)
+
+### 96.3 Svelte — Svelte/SvelteKit Mastery (`skills/svelte/SKILL.md`)
+
+**Purpose:** Build, architect, and optimize Svelte applications with expert-level guidance on Svelte 5 runes, SvelteKit routing, and deployment.
+
+**Key capabilities:**
+- **Reactivity model:** Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`, `$bindable`) vs legacy reactive declarations (`$:`). Decision guide based on Svelte version, migration timeline, and team readiness.
+- **State management:** Svelte 5 reactive classes (`.svelte.ts` files with `$state` and `$derived`) for new projects, classic `writable`/`readable`/`derived` stores for Svelte 4. Domain-scoped, minimal API surface.
+- **SvelteKit routing:** File-based routing with `+page.svelte`, `+page.server.ts` load functions, `+layout.svelte` for shared layouts, route groups `(name)` for URL-independent grouping, param matchers for type-safe params.
+- **Form actions:** Server-side mutations with `actions` in `+page.server.ts`, progressive enhancement via `use:enhance`, validation with `fail()`, multi-action forms with `?/actionName`.
+- **Rendering strategies:** Per-route configuration — `prerender: true` for static pages, SSR with cache headers for dynamic SEO pages, `ssr: false` for auth-gated dashboards, ISR for content that changes infrequently.
+- **Server hooks:** `hooks.server.ts` for auth session verification, request logging, error handling. `sequence()` for composing multiple hooks.
+- **Adapter configuration:** Platform-specific adapters (Vercel, Cloudflare, Netlify, Node, static) with per-platform features (edge functions, KV/D1/R2 bindings, precompression).
+- **Snippet pattern (Svelte 5):** Typed snippets replacing slots, `{@render}` for composition, conditional rendering of optional snippets.
+
+**Workflow:** Project assessment -> Reactivity model -> State management -> Routing with load functions -> Form actions -> Rendering strategy -> Hooks -> Adapter config -> Testing -> Validation (17 checks) -> Deliverables.
+
+**Command:** `/godmode:svelte` (`commands/godmode/svelte.md`)
+
+### 96.4 Tailwind — Tailwind CSS Mastery (`skills/tailwind/SKILL.md`)
+
+**Purpose:** Configure, optimize, and build with Tailwind CSS using production-grade patterns that avoid class soup and maintain design system consistency.
+
+**Key capabilities:**
+- **Configuration:** Tailwind 4.x CSS-first configuration (`@theme` block) and 3.x JS configuration. Extend-not-override philosophy, oklch color spaces, CSS custom properties for semantic tokens, typed config.
+- **Custom plugins:** `addComponents` for multi-property classes (`.btn`, `.card`), `addUtilities` for single-purpose utilities (`.text-balance`, `.scrollbar-hidden`), `addBase` for element defaults, `addVariant` for custom states (`hocus:`, `aria-selected:`).
+- **Responsive design:** Mobile-first breakpoint strategy, container queries for component-level responsiveness, fluid typography with `clamp()`, responsive grid/flexbox patterns, show/hide patterns by breakpoint.
+- **Dark mode:** Class-based strategy (recommended) with semantic color tokens via CSS custom properties. Components reference `bg-bg text-text` instead of `bg-white dark:bg-gray-900`. Three modes: light, dark, system. Flash-of-wrong-theme prevention.
+- **Performance:** JIT generates only used classes, content paths must cover all templates, no dynamic class name construction, minimal safelist, PostCSS optimization with cssnano in production.
+- **Component patterns (avoiding class soup):** Class Variance Authority (CVA) for variant management, `cn()` utility (tailwind-merge + clsx) for conditional classes and conflict resolution, extraction rules (when > 10 utilities or 3+ repetitions).
+- **Design system integration:** Figma token mapping, Style Dictionary pipeline, shared Tailwind presets for multi-repo consistency.
+
+**Workflow:** Project assessment -> Configuration -> Custom plugins -> Responsive patterns -> Dark mode -> Performance audit -> Component patterns -> Design system integration -> Validation (17 checks) -> Deliverables.
+
+**Command:** `/godmode:tailwind` (`commands/godmode/tailwind.md`)
+
+### Integration with Existing Skills
+
+```
+/godmode:vue      ->  /godmode:tailwind  ->  /godmode:a11y  ->  /godmode:e2e  ->  /godmode:ship
+/godmode:angular  ->  /godmode:tailwind  ->  /godmode:a11y  ->  /godmode:e2e  ->  /godmode:ship
+/godmode:svelte   ->  /godmode:tailwind  ->  /godmode:a11y  ->  /godmode:e2e  ->  /godmode:ship
+     |                      |                     |                  |                |
+  Framework            Styling              Accessibility      E2E tests         Deploy
+  architecture         system               audit              coverage
+```
+
+- **From `/godmode:vue|angular|svelte`:** Framework setup feeds into `/godmode:tailwind` for styling, then `/godmode:a11y` for accessibility, `/godmode:e2e` for testing, and `/godmode:ship` for deployment.
+- **From `/godmode:tailwind` to `/godmode:ui`:** Tailwind config establishes the design token foundation that `/godmode:ui` audits for consistency.
+- **From `/godmode:tailwind` to `/godmode:visual`:** Tailwind dark mode and responsive patterns need visual regression testing to prevent regressions.
+- **Cross-framework:** `/godmode:tailwind` works with all three framework skills — the same design tokens and patterns apply regardless of component framework.
+
+### Design Principles for Frontend Framework Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Framework conventions first | Follow each framework's official style guide and recommended patterns |
+| 2 | Type safety is non-negotiable | TypeScript strict mode, typed props/state/routes in every framework |
+| 3 | Test the right layer | Test logic (composables/services) independently, test components for rendering |
+| 4 | Lazy-load by default | Code splitting at route level in every framework — no eager-loading features |
+| 5 | State management scales | Start simple (local state), escalate only when complexity demands it |
+| 6 | SSR is a per-route decision | Not every page needs SSR; not every page should be client-only |
+| 7 | Design tokens drive styling | Tailwind config is the single source of truth — never hardcode values |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/vue/SKILL.md` | Skill | Vue.js mastery — Composition API, Pinia, Vue Router, Nuxt, Vite, Vitest |
+| `skills/angular/SKILL.md` | Skill | Angular architecture — standalone components, RxJS, NgRx, Signals, DI, Jest |
+| `skills/svelte/SKILL.md` | Skill | Svelte/SvelteKit mastery — runes, stores, load functions, form actions, adapters |
+| `skills/tailwind/SKILL.md` | Skill | Tailwind CSS mastery — config, plugins, responsive, dark mode, CVA, performance |
+| `commands/godmode/vue.md` | Command | Usage reference for `/godmode:vue` |
+| `commands/godmode/angular.md` | Command | Usage reference for `/godmode:angular` |
+| `commands/godmode/svelte.md` | Command | Usage reference for `/godmode:svelte` |
+| `commands/godmode/tailwind.md` | Command | Usage reference for `/godmode:tailwind` |
+
+**Iterations 395-402 (8 files, 4 skills, 4 commands)**
