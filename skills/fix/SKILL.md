@@ -7,7 +7,6 @@ description: Fix loop. One fix per commit, auto-revert on regression, until zero
 
 ## Activate When
 - `/godmode:fix`, "fix this", "tests failing", "fix errors"
-- After debug or build failures
 
 ## The Loop
 ```

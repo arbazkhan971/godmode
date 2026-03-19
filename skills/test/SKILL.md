@@ -7,7 +7,6 @@ description: TDD loop. RED-GREEN-REFACTOR until coverage target met.
 
 ## Activate When
 - `/godmode:test`, "write tests", "test coverage", "add tests"
-- Build phase needs test writing
 
 ## The Loop
 ```

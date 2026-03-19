@@ -7,7 +7,6 @@ description: Scientific debugging. Reproduce → investigate → prove root caus
 
 ## Activate When
 - `/godmode:debug`, "why is this happening?", "this doesn't work"
-- Stack trace or error message in conversation
 
 ## The Loop
 ```

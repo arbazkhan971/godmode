@@ -8,7 +8,6 @@ description: |
 
 ## Activate When
 - `/godmode:verify`, "prove it", "verify this"
-- Any skill claims success before reporting it
 
 ## Workflow
 1. **IDENTIFY** — Extract claim, choose verify command, define expected output.

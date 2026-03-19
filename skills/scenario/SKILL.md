@@ -7,7 +7,6 @@ description: Edge case exploration. 12 dimensions, scored by likelihood x impact
 
 ## Activate When
 - `/godmode:scenario`, "what could go wrong?", "edge cases", "failure modes"
-- Invoked by `/godmode:think` for robustness check
 
 ## Workflow
 ### 1. Read the Design

@@ -7,7 +7,6 @@ description: 5-persona evaluation. Independent assessment then consensus.
 
 ## Activate When
 - `/godmode:predict`, "will this work?", "evaluate this approach"
-- Invoked by `/godmode:think` for design validation
 
 ## Workflow
 ### 1. Define What's Being Evaluated

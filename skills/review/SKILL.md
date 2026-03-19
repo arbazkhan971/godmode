@@ -7,8 +7,6 @@ description: 4-agent code review. Correctness, security, performance, style. Aut
 
 ## Activate When
 - `/godmode:review`, "review this", "check my code"
-- After build phase completes
-- Before shipping
 
 ## Workflow
 ### 1. Gather Diff

@@ -7,7 +7,6 @@ description: Security audit. STRIDE + OWASP + 4 red-team personas. Code evidence
 
 ## Activate When
 - `/godmode:secure`, "security audit", "vulnerabilities", "harden"
-- Pre-ship check
 
 ## Workflow
 1. **Recon** — Scan tech stack, deps, configs, API routes, auth, secrets.

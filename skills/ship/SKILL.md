@@ -7,7 +7,6 @@ description: Ship workflow. Checklist → dry-run → ship → verify. PR, deplo
 
 ## Activate When
 - `/godmode:ship`, "ship it", "deploy", "release", "merge"
-- After optimize/secure phases complete
 
 ## Workflow
 ### 1. Inventory Changes
