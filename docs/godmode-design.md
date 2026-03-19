@@ -6597,6 +6597,201 @@ The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 
 ---
 
+## 57. Documentation & Knowledge Skills
+
+### Overview
+Skills for capturing, maintaining, and discovering technical decisions, project documentation, and proposals. This category ensures institutional knowledge is preserved and accessible.
+
+### Skills in this Category
+
+#### `/godmode:adr` — Architecture Decision Records
+**Purpose:** Document, discover, and maintain architectural decisions with structured records.
+
+**Core capabilities:**
+- **ADR creation:** Structured template with status, context, decision, alternatives considered (each with pros/cons/why rejected), and consequences (positive, negative, neutral)
+- **Status lifecycle:** Proposed -> Accepted -> Deprecated/Superseded. Accepted ADRs are immutable — supersede with a new ADR, never edit
+- **Discovery:** Search and list past decisions by keyword, status, or date. Answer "why did we choose X?" from the decision log
+- **Audit:** Review all ADRs for staleness by cross-referencing against current codebase. Flag decisions that conflict with actual code
+- **Supersession chain:** When replacing a decision, link new ADR to old one, update old ADR status to "Superseded by ADR-XXX"
+
+**Invocation:** `/godmode:adr`, "document this decision", "why did we choose", "architecture decision", "decision log"
+
+**Output:** `docs/adr/<NNN>-<kebab-case-title>.md` with commit `"adr: ADR-<NNN> — <title> (<status>)"`
+
+**Flags:** `--list`, `--audit`, `--status <status>`, `--search <keyword>`, `--supersede <NNN>`, `--template`
+
+#### `/godmode:docs` — Documentation Generation & Maintenance
+**Purpose:** Generate and maintain all forms of project documentation with staleness detection.
+
+**Core capabilities:**
+- **API documentation:** Scan routes/controllers to generate OpenAPI 3.0 specs with request/response schemas, auth requirements, and error responses
+- **Code documentation:** Generate JSDoc (TypeScript/JS) or docstrings (Python) for all public exports. Derive descriptions from actual code, examples from test files
+- **README generation:** Produce READMEs from package metadata, config files, and entry points with installation, quick start, API reference, and configuration sections
+- **Runbook creation:** Create operational runbooks from CI/CD configs, deploy scripts, and infrastructure code. Every step is a copy-pasteable command with expected output
+- **Quality audit:** Cross-reference all docs against codebase to detect stale references, broken links, outdated examples, and coverage gaps
+- **Obsolescence detection:** Compare doc modification dates against code modification dates, flag docs older than their subject
+
+**Invocation:** `/godmode:docs`, "generate docs", "update documentation", "write a README", "create runbook"
+
+**Output:** Documentation files in appropriate locations with commit `"docs: <scope> — <summary>"`
+
+**Flags:** `--api`, `--code`, `--readme`, `--runbook <topic>`, `--audit`, `--coverage`, `--fix-links`, `--format <fmt>`
+
+#### `/godmode:rfc` — RFC & Proposal Writing
+**Purpose:** Write, manage, and track technical proposals with stakeholder review and decision timelines.
+
+**Core capabilities:**
+- **Structured RFC template:** Metadata, summary, problem statement with evidence, proposed solution with implementation plan, alternatives (always including "Do Nothing"), risks with mitigations, security/performance considerations, testing strategy, open questions, decision log
+- **RFC classification:** Feature (3-day review), Architecture (5-day), Process (5-day), Deprecation (5-day), Migration (7-day), Standard (7-day)
+- **Stakeholder review:** Track reviewer status (pending/approved/concerns), comment counts, blocking issues, and resolution
+- **Decision timeline:** Log every event from creation through acceptance/rejection with dates and details
+- **Lifecycle management:** Draft -> In Review -> Accepted/Rejected/Withdrawn/Deferred. Accepted RFCs link to ADRs and implementation plans
+
+**Invocation:** `/godmode:rfc`, "write a proposal", "RFC for", "propose a change", "I need team buy-in"
+
+**Output:** `docs/rfcs/<NNN>-<kebab-case-title>.md` with commit `"rfc: RFC-<NNN> — <title> (<status>)"`
+
+**Flags:** `--list`, `--status`, `--template`, `--review <NNN>`, `--accept <NNN>`, `--reject <NNN>`, `--defer <NNN>`
+
+### Skill Interactions
+| From | To | When |
+|------|----|------|
+| `/godmode:think` | `/godmode:adr` | Significant design choice made |
+| `/godmode:think` | `/godmode:rfc` | Decision needs broader team input |
+| `/godmode:rfc` (accepted) | `/godmode:adr` | Create ADR from accepted RFC |
+| `/godmode:rfc` (accepted) | `/godmode:plan` | Create implementation plan |
+| `/godmode:ship` | `/godmode:docs` | Pre-ship documentation check |
+| `/godmode:review` | `/godmode:docs` | Undocumented public APIs detected |
+
+### Design Principles
+1. **Decisions are forever** — ADRs capture the reasoning at the time, not just the outcome
+2. **Documentation derives from code** — generated docs are always grounded in actual implementation
+3. **Proposals have deadlines** — RFCs without review deadlines never get decided
+4. **Staleness is the enemy** — all three skills include audit capabilities to detect rot
+5. **Structured templates reduce friction** — consistent formats make writing and reading faster
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/adr/SKILL.md` | Skill | Architecture Decision Records workflow |
+| `skills/docs/SKILL.md` | Skill | Documentation Generation & Maintenance workflow |
+| `skills/rfc/SKILL.md` | Skill | RFC & Proposal Writing workflow |
+| `commands/godmode/adr.md` | Command | Usage reference for `/godmode:adr` |
+| `commands/godmode/docs.md` | Command | Usage reference for `/godmode:docs` |
+| `commands/godmode/rfc.md` | Command | Usage reference for `/godmode:rfc` |
+
+**Iterations 137-142 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 58. Development Workflow Skills
+
+### Overview
+Skills for accelerating the daily development cycle: generating new code from patterns, transforming existing code safely, and collaborating through structured pair programming.
+
+### Skills in this Category
+
+#### `/godmode:scaffold` — Code Generation & Scaffolding
+**Purpose:** Generate boilerplate code for any framework by analyzing and matching existing project patterns.
+
+**Core capabilities:**
+- **Project scaffolding:** Generate full project skeletons for any framework with proper directory structure, configuration, and tooling
+- **CRUD generation:** Full resource CRUD (model, schema, repository, service, controller, routes, tests, migration) from a single command
+- **Pattern detection:** Analyze existing code for naming conventions, import style, error handling patterns, DI approach, and test organization before generating anything
+- **Template-based generation:** Use existing project files as templates to ensure generated code matches conventions exactly
+- **Verification:** Type check, lint, and run tests on generated code before committing. Broken scaffolds are rejected
+- **TODO tracking:** Clearly mark generated stubs that require manual business logic with TODO comments
+
+**Invocation:** `/godmode:scaffold`, "scaffold", "generate a new", "create boilerplate", "new component/service/endpoint"
+
+**Output:** Generated files matching project conventions with commit `"scaffold: <type> for <name> — <N> files generated"`
+
+**Flags:** `--crud <resource>`, `--endpoint <path>`, `--component <name>`, `--service <name>`, `--project <framework>`, `--dry-run`, `--from <template>`, `--no-tests`
+
+#### `/godmode:refactor` — Large-Scale Refactoring
+**Purpose:** Safely transform codebases using proven refactoring patterns with impact analysis and test verification.
+
+**Core capabilities:**
+- **Refactoring pattern library:** Extract (Function, Class, Interface, Module, Variable, Parameter), Inline (Function, Variable, Class), Move (Function, Field, Module), Rename (Variable, Function, File, Module), Simplify (Conditional to Polymorphism, Guards, Pipeline, Constants), Compose (Method, Replace Inheritance, Parameter Object, Factory, Null Object), Architecture (Split Monolith, Repository, Service Layer, Middleware, Facade)
+- **Impact analysis:** Map all directly and indirectly affected files, identify dynamic references, calculate blast radius before any changes
+- **Risk assessment:** LOW (<10 dependents, >80% coverage), MEDIUM (10-30, 50-80%), HIGH (30+, <50%), CRITICAL (core module, <30%). Never refactor below 60% coverage without writing characterization tests first
+- **Atomic execution:** One transformation per commit. Full test suite runs after every step. Tests fail -> revert immediately
+- **Migration strategy:** Strangler Pattern for large refactors — create alongside, migrate incrementally, remove old code
+- **Autonomous mode:** Chain of refactoring steps with automatic revert on failure and before/after metrics reporting
+
+**Invocation:** `/godmode:refactor`, "refactor this", "extract", "rename", "move", "reorganize", "tech debt"
+
+**Output:** Atomic commits `"refactor: <pattern> — <description>"` with post-refactoring report
+
+**Flags:** `--extract <type>`, `--inline <target>`, `--move <target> <dest>`, `--rename <old> <new>`, `--analyze-only`, `--dry-run`, `--strangler`
+
+#### `/godmode:pair` — Pair Programming Assistance
+**Purpose:** Structured pair programming with driver/navigator roles, real-time code review, and teaching capabilities.
+
+**Core capabilities:**
+- **Session modes:** Standard (user drives, agent navigates), Reverse (agent drives, user reviews), Teaching (explain concepts while building), Explorer (joint exploration of unfamiliar code), Ping-Pong (alternate test/implementation for TDD)
+- **Real-time navigation:** Triage observations by urgency — IMMEDIATE (bugs/security, interrupt), SOON (design, next pause), LATER (style, end of session)
+- **Knowledge transfer:** Graduated teaching protocol — SHOW (demonstrate), GUIDE (step-by-step), CHECK (user solo with review), SOLO (user independent)
+- **Session structure:** Setup (mode, goal, timebox), checkpoints every 10-15 minutes, wrap-up with summary of work, knowledge transferred, and TODOs
+- **Rubber duck enhancement:** Guide through questions before answers — "What should happen when the input is null?" before "Add a null check"
+- **Ping-pong TDD:** User writes test, agent implements (or vice versa), both verify, alternate roles
+
+**Invocation:** `/godmode:pair`, "pair with me", "let's code together", "help me learn", "teach me"
+
+**Output:** Session summary with commit `"pair: <what was built> — <N> tests passing"`
+
+**Flags:** `--reverse`, `--teach`, `--explore`, `--ping-pong`, `--timebox <min>`, `--review`
+
+### Skill Interactions
+| From | To | When |
+|------|----|------|
+| `/godmode:plan` | `/godmode:scaffold` | Plan identifies scaffolding tasks |
+| `/godmode:scaffold` | `/godmode:build` | Scaffold stubs need business logic |
+| `/godmode:review` | `/godmode:refactor` | Maintainability score < 6/10 |
+| `/godmode:optimize` | `/godmode:refactor` | Structural issues block performance |
+| `/godmode:refactor` | `/godmode:review` | Post-refactoring code review |
+| `/godmode:pair` | `/godmode:review` | Post-session code review |
+
+### Safety Guarantees
+| Skill | Safety Mechanism |
+|-------|-----------------|
+| Scaffold | Verification: type check + lint + tests pass before commit |
+| Refactor | Tests must pass before AND after every transformation step |
+| Pair | Real-time bug detection; session checkpoints every 10-15 min |
+
+### Design Principles
+1. **Pattern-match, don't invent** — generated and refactored code must match existing project conventions
+2. **Atomic changes** — every scaffold and refactoring step is a single, revertable commit
+3. **Tests are non-negotiable** — scaffolds include tests; refactors require tests; pairing produces tests
+4. **Verify before committing** — no generated or refactored code is committed without passing checks
+5. **Teach, don't just do** — pair programming transfers knowledge, not just produces code
+6. **Revert fast** — if any step breaks tests, revert immediately rather than trying to fix forward
+
+### Integration with Core Workflow
+```
+THINK → PLAN → SCAFFOLD → BUILD → REFACTOR → REVIEW → SHIP
+                  ↑                    ↑          ↑
+                  │                    │          │
+               Generate             Transform   Pair
+               boilerplate          structure   program
+```
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/scaffold/SKILL.md` | Skill | Code Generation & Scaffolding workflow |
+| `skills/refactor/SKILL.md` | Skill | Large-Scale Refactoring workflow |
+| `skills/pair/SKILL.md` | Skill | Pair Programming Assistance workflow |
+| `commands/godmode/scaffold.md` | Command | Usage reference for `/godmode:scaffold` |
+| `commands/godmode/refactor.md` | Command | Usage reference for `/godmode:refactor` |
+| `commands/godmode/pair.md` | Command | Usage reference for `/godmode:pair` |
+
+**Iterations 143-148 (6 files, 3 skills, 3 commands)**
+
+---
+
 ## 55. Configuration & Environment Skills
 
 Two new skills address the critical gap between code and deployment — managing the configuration and environments that determine how code behaves in each stage of the delivery pipeline.
