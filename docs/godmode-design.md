@@ -2241,4 +2241,101 @@ If any check fails, the transition is blocked with a clear message:
 
 ---
 
-## Status: ITERATION 21 — Handoff Protocol complete
+## 22. Git-as-Memory System
+
+**Purpose:** Use git commits as the agent's persistent memory — every experiment, every decision, every revert is traceable and learnable.
+
+### Why Git is Memory
+
+AI agents have no persistent memory between sessions. But git does. Every commit message is a note-to-future-self. Every diff shows what was tried. Every revert shows what failed. The git log becomes the agent's learning journal.
+
+### Commit Message Conventions
+
+All Godmode commits follow a strict prefix convention:
+
+| Prefix | Phase | Meaning | Example |
+|--------|-------|---------|---------|
+| `setup:` | META | Configuration change | `setup: godmode configured for rate-limiter` |
+| `spec:` | THINK | Spec created/updated | `spec: rate-limiter initial spec` |
+| `predict:` | THINK | Prediction report | `predict: rate-limiter approach consensus` |
+| `scenario:` | THINK | Scenario exploration | `scenario: rate-limiter edge case report` |
+| `plan:` | BUILD | Plan created/updated | `plan: rate-limiter — 7 tasks, estimated 25min` |
+| `build:` | BUILD | Task implementation | `build: task-003 rate limiter middleware (RED-GREEN-REFACTOR)` |
+| `review:` | BUILD | Code review result | `review: task-003 approved (1 block fixed)` |
+| `test:` | BUILD | Test addition | `test: add rate limiter edge case tests` |
+| `optimize:` | OPTIMIZE | Optimization iteration | `optimize: iteration 4 — fast-json-stringify (+17.8%)` |
+| `debug:` | OPTIMIZE | Debug investigation | `debug: identified root cause of off-by-one` |
+| `fix:` | OPTIMIZE | Error fix | `fix: resolve off-by-one in limit check` |
+| `secure:` | OPTIMIZE | Security audit | `secure: audit report — 1 critical, 2 high` |
+| `ship:` | SHIP | Shipment | `ship: v1.3.0 shipped to npm` |
+| `finish:` | SHIP | Branch finalization | `finish: rate-limiter merged to main` |
+| `revert:` | any | Reverted change | `revert: optimize iteration 3 — connection pooling (no improvement)` |
+
+### Reading History (Pattern Learning)
+
+Before each iteration, the agent reads git history to learn from past attempts:
+
+```bash
+# Read last 20 optimization commits to learn what worked
+git log --oneline --grep="optimize:" -20
+
+# Read reverts to avoid repeating mistakes
+git log --oneline --grep="revert:" -10
+
+# Read the full diff of a successful optimization
+git show <commit-hash>
+
+# Compare metric progression
+git log --oneline --grep="optimize:" --format="%s" | grep -oP '\([^)]+\)'
+```
+
+### What the Agent Learns from History
+
+| Pattern | What it Tells the Agent |
+|---------|------------------------|
+| `optimize: iteration 3 — caching (+16%)` | Caching worked well for this codebase |
+| `revert: optimize iteration 5 — connection pooling (no improvement)` | Connection pooling didn't help here |
+| `revert: revert: revert:` | Three reverts in a row = plateau, try a different strategy |
+| `fix: fix: fix:` then `build:` | Multiple fixes after build = initial implementation was rushed |
+| `optimize: ... (+0.5%)` | Diminishing returns = close to local optimum |
+
+### History-Informed Decisions
+
+The optimize loop uses history to make smarter decisions:
+
+1. **Never repeat a reverted approach** — If "connection pooling" was reverted, don't try it again
+2. **Double down on what works** — If "caching" improved things, look for more caching opportunities
+3. **Detect plateaus** — 3+ consecutive reverts means try a fundamentally different strategy
+4. **Track cumulative improvement** — Know the total improvement across all kept iterations
+5. **Resume across sessions** — A new session can read history and pick up where the last left off
+
+### Branch Strategy
+
+```
+main
+  └── godmode/rate-limiter          # Feature branch
+        ├── spec: ...                # THINK commits
+        ├── plan: ...                # BUILD commits
+        ├── build: task-001 ...
+        ├── build: task-002 ...
+        ├── optimize: iteration 1 ...
+        ├── optimize: iteration 2 ...
+        ├── revert: iteration 3 ...  # Reverted changes stay in history
+        ├── optimize: iteration 4 ...
+        ├── secure: audit ...
+        └── ship: v1.3.0 ...
+```
+
+The full story of the feature — from idea to optimization to shipping — lives in one branch, readable as a narrative.
+
+### Key Behaviors
+
+1. **Every action is committed** — Even reverts get committed (as revert commits)
+2. **Commit messages are structured** — Prefix convention makes history parseable
+3. **History is read before acting** — The agent always checks what's been tried before
+4. **Reverts are lessons, not failures** — They prevent the agent from repeating mistakes
+5. **Cross-session continuity** — Git history persists between agent sessions
+
+---
+
+## Status: ITERATION 22 — Git-as-Memory System complete
