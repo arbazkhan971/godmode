@@ -2338,4 +2338,112 @@ The full story of the feature — from idea to optimization to shipping — live
 
 ---
 
-## Status: ITERATION 22 — Git-as-Memory System complete
+## 23. Mechanical Verification Framework
+
+**Purpose:** Define how metrics work across Godmode — what counts as a valid metric, how to measure it, how to validate it, and a database of suggested metrics for common scenarios.
+
+### Core Principle: No Vibes
+
+The agent is never allowed to say:
+- "The code looks cleaner now" (not measurable)
+- "Performance should be better" (not verified)
+- "I think this is more maintainable" (not mechanical)
+
+Every claim must be backed by a command that produces a number.
+
+### What Makes a Valid Metric
+
+| Requirement | Explanation | Example |
+|------------|-------------|---------|
+| **Mechanical** | Produced by a command, not a judgment | `npm test \| grep passing` |
+| **Deterministic** | Same input → same output (within tolerance) | Not a random benchmark |
+| **Numeric** | Outputs a number (or parseable to a number) | `47`, `340ms`, `84.2%` |
+| **Directional** | Clear which direction is better | Lower response time = better |
+| **Fast** | Runs in <60 seconds (for iteration loops) | Not a 10-minute integration suite |
+
+### Metric Definition Schema
+
+```json
+{
+  "name": "p95 response time",
+  "command": "wrk -t4 -c100 -d5s http://localhost:3000/api | grep '99%' | awk '{print $2}'",
+  "parse": "duration_ms",
+  "direction": "lower_is_better",
+  "unit": "ms",
+  "tolerance": 5,
+  "baseline": null,
+  "target": 200
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `name` | Human-readable metric name |
+| `command` | Shell command to measure the metric |
+| `parse` | How to parse the output: `integer`, `float`, `duration_ms`, `percentage`, `last_number` |
+| `direction` | `lower_is_better` or `higher_is_better` |
+| `unit` | Display unit (ms, %, count, bytes, etc.) |
+| `tolerance` | Acceptable variance between runs (noise floor) |
+| `baseline` | Initial measurement (set by setup) |
+| `target` | Goal value (optional, for optimization) |
+
+### Metric Suggestion Database
+
+When the user can't think of a metric, suggest from this database:
+
+| Domain | Metric | Command Template |
+|--------|--------|-----------------|
+| **Testing** | Tests passing | `<test-cmd> 2>&1 \| grep -c 'pass'` |
+| **Testing** | Test coverage | `<coverage-cmd> \| grep 'All files' \| awk '{print $NF}'` |
+| **Performance** | Response time (p95) | `wrk -t4 -c100 -d5s <url> \| grep '99%'` |
+| **Performance** | Requests/sec | `wrk -t4 -c100 -d5s <url> \| grep 'Requests/sec'` |
+| **Performance** | Build time | `time <build-cmd> 2>&1 \| grep real \| awk '{print $2}'` |
+| **Size** | Bundle size | `du -sb dist/ \| awk '{print $1}'` |
+| **Size** | Lines of code | `find src -name '*.ts' \| xargs wc -l \| tail -1` |
+| **Size** | Docker image size | `docker images <name> --format '{{.Size}}'` |
+| **Quality** | Lint errors | `<lint-cmd> 2>&1 \| grep -c 'error'` |
+| **Quality** | Type errors | `<typecheck-cmd> 2>&1 \| grep -c 'error'` |
+| **Quality** | Cyclomatic complexity | `npx complexity-report src/ \| grep 'average'` |
+| **Security** | Known vulnerabilities | `npm audit 2>&1 \| grep -c 'vulnerability'` |
+| **Reliability** | Error rate | `<test-cmd> 2>&1 \| grep -c 'fail'` |
+
+### Validation Rules
+
+Before accepting a metric, validate:
+
+1. **Command runs** — Execute the command, confirm it exits without error
+2. **Output is parseable** — The output contains a number matching the parse rule
+3. **Result is stable** — Run twice, results are within tolerance
+4. **Direction is clear** — Confirm with user which direction is "better"
+5. **Fast enough** — Command completes in under 60 seconds
+
+### Metric Comparison
+
+When comparing metric values between iterations:
+
+```
+Metric: p95 response time (lower is better)
+  Before: 340ms
+  After:  285ms
+  Delta:  -55ms (-16.2%)
+  Tolerance: ±5ms
+  Verdict: IMPROVED (delta exceeds tolerance)
+```
+
+| Comparison | Verdict |
+|-----------|---------|
+| Delta exceeds tolerance in good direction | **IMPROVED** |
+| Delta within tolerance | **UNCHANGED** (noise) |
+| Delta exceeds tolerance in bad direction | **REGRESSED** |
+
+### Key Behaviors
+
+1. **Metrics are validated at setup** — Don't accept a metric that doesn't work
+2. **Tolerance prevents noise** — Small fluctuations are not "improvements"
+3. **Same conditions** — Metrics must be measured under the same conditions each time
+4. **Parse, don't guess** — Use structured parsing, not regex on prose output
+5. **Fail loudly** — If the metric command fails, stop the loop — don't continue with stale data
+
+---
+
+## Status: ITERATION 23 — Mechanical Verification Framework complete
