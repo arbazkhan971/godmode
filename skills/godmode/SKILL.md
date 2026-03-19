@@ -1,7 +1,7 @@
 ---
 name: godmode
 description: |
-  Orchestrator. Routes to 126 skills. Auto-detects project stack and phase. Runs autonomous iteration loops. Dispatches multi-agent parallel execution in worktrees. Never stops. Never asks.
+  Orchestrator. Routes to 126 skills. Auto-detects stack and phase. Dispatches multi-agent execution in worktrees.
 ---
 
 # Godmode — Orchestrator
@@ -9,9 +9,9 @@ description: |
 ## Activate When
 - `/godmode` without subcommand
 - `/godmode:<skill>` — read `skills/<skill>/SKILL.md`, follow it
-- Natural language request → match to skill (see table below)
+- Natural language request → match to skill
 
-## Step 1: Detect Stack (once, cache result)
+## Step 1: Detect Stack (once, cache)
 Scan root for indicator files. First match wins.
 ```
 package.json + next.config.*  → Next.js    | npm test      | eslint --fix  | npm run build
@@ -23,64 +23,54 @@ go.mod                        → Go         | go test ./... | golangci-lint | g
 Gemfile                       → Ruby       | rspec         | rubocop -A    | —
 pom.xml                       → Java       | mvn test      | checkstyle    | mvn package
 ```
-Check lockfiles for package manager: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
-If `package.json` has `"test"` script → use `npm test`. If it has `"lint"` → use that.
+Lockfiles: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
 
 ## Step 2: Match Skill
 | Trigger | Skill |
 |---------|-------|
 | "make faster", "optimize", "improve" | optimize |
-| "fix", "broken", "error", "doesn't work" | fix |
-| "debug", "why is this happening" | debug |
-| "test", "coverage", "write tests" | test |
-| "secure", "vulnerabilities", "harden" | secure |
+| "fix", "broken", "error" | fix |
+| "debug", "why is this" | debug |
+| "test", "coverage" | test |
+| "secure", "vulnerabilities" | secure |
 | "review", "check my code" | review |
 | "build", "implement", "create" | build |
-| "plan", "break down", "decompose" | plan |
-| "think", "design", "approach" | think |
-| "ship", "release", "deploy" | ship |
-| "refactor", "clean up", "simplify" | refactor |
-| "document", "add docs" | docs |
-If no match → fall through to phase detection (Step 3).
+| "plan", "break down" | plan |
+| "think", "design" | think |
+| "ship", "deploy" | ship |
+| "refactor", "simplify" | refactor |
+| "document", "docs" | docs |
+
+No match → phase detection (Step 3).
 
 ## Step 3: Detect Phase
 ```
-IF no spec AND no plan           → THINK  (invoke think)
-IF spec exists BUT no plan       → PLAN   (invoke plan)
-IF plan exists, tasks remaining  → BUILD  (invoke build)
-IF code exists, tests failing    → FIX    (invoke fix)
-IF code exists, tests passing    → OPTIMIZE or SHIP
+no spec, no plan           → THINK
+spec exists, no plan       → PLAN
+plan exists, tasks remain  → BUILD
+code exists, tests failing → FIX
+code exists, tests passing → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute
-Read the matched skill's SKILL.md. Follow its workflow.
-For chain execution: `think → plan → build → test → fix → optimize → secure → ship`
-Between steps, print: `── chain: build ✓ → test ──`
-Never ask "should I continue?" between chain steps.
-
----
+Read the skill's SKILL.md. Follow it. For chains: `think → plan → build → test → fix → optimize → secure → ship`. Print `── chain: build ✓ → test ──` between steps. Never ask "should I continue?"
 
 ## The Loop — Core Principle
-Every iterative skill (optimize, fix, debug, test, secure) defines its own `WHILE` loop. Follow it literally. The universal invariants:
-- Track `current_iteration`. If you're not counting, you're not looping.
-- Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`.
+Iterative skills (optimize, fix, debug, test, secure) define their own `WHILE` loop. Follow literally. Universal invariants:
+- Track `current_iteration`. No counter = not looping.
+- Commit BEFORE verify. Revert: `git reset --hard HEAD~1`.
 - Log every iteration to `.godmode/<skill>-results.tsv`.
-- `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
-- Stuck (>5 discards): re-read all files, try opposite, try radical.
-
----
+- `Iterations: N` = bounded. No number = loop forever.
+- Stuck (>5 discards): re-read all, try opposite, try radical.
 
 ## Multi-Agent Dispatch
-When 2+ independent tasks touch different files: dispatch up to 5 agents per round, each with task description, skill reference, file scope, and `isolation: "worktree"`. Merge sequentially. Test after each merge. Conflict or test fail → resolve or discard, retry.
-When NOT to parallelize: single file, single skill, user says "sequential".
-
----
+When 2+ independent tasks touch different files: up to 5 agents per round, each with task, skill, file scope, `isolation: "worktree"`. Merge sequentially. Test after each. Conflict/fail → discard, retry.
 
 ## Rules
-1. Detect stack FIRST. Never hardcode `npm test` on a Rust project.
+1. Detect stack FIRST.
 2. One skill at a time. Read its SKILL.md. Follow it.
-3. Never ask "should I continue?" in loop mode.
-4. Log every skill to `.godmode/session-log.tsv`: timestamp, skill, duration, outcome.
+3. Never ask "should I continue?" Loop until done or bounded.
+4. Log every skill to `.godmode/session-log.tsv`.
 5. Commit before verify. Revert on failure. One change per iteration.
-6. Multi-agent: max 5 per round. Scope files. Merge sequentially.
+6. Max 5 agents per round. Scope files. Merge sequentially.
 7. Chain auto-transitions. Skip completed phases.
