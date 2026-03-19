@@ -958,6 +958,54 @@ Collection scheduled via cron/GitHub Actions
 | `--report` | Generate report from last assessment |
 | `--quick` | Top gaps only, skip exhaustive criteria review |
 
+## HARD RULES
+
+1. **NEVER provide legal or audit advice.** This skill identifies technical compliance gaps and provides implementation guidance. For audit strategy and report interpretation, recommend a qualified CPA firm.
+2. **NEVER skip evidence collection for any control.** A control without evidence does not exist to the auditor. Every control must have documented proof.
+3. **NEVER assume cloud provider SOC 2 covers application-layer controls.** AWS SOC 2 covers their infrastructure. Your IAM, change management, and application security are your responsibility.
+4. **NEVER treat SOC 2 as a one-time project.** Type II requires continuous compliance over the audit period (minimum 3 months). Building controls the week before the audit means zero operating history.
+5. **NEVER over-scope the audit.** Include only systems that handle customer data. Adding unnecessary systems increases cost and control burden without benefit.
+6. **ALWAYS reference specific Trust Service Criteria** (e.g., CC6.1, A1.3) in every finding. Generic references like "access control" are insufficient.
+7. **ALWAYS collect evidence continuously**, not at audit time. Pre-organized evidence folders vs. last-minute scrambles.
+8. **ALWAYS verify change management controls first.** More SOC 2 exceptions come from change management (CC8.1) than any other area.
+
+## Iteration Protocol
+
+For large-scope SOC 2 assessments covering all 5 Trust Service Categories:
+
+```
+current_tsc = 0
+tsc_categories = [CC_Security, A_Availability, PI_ProcessingIntegrity, C_Confidentiality, P_Privacy]
+
+WHILE current_tsc < len(tsc_categories):
+  category = tsc_categories[current_tsc]
+  1. Assess all criteria in category
+  2. Identify gaps and document controls
+  3. Collect or flag missing evidence
+  4. Score category readiness (%)
+  current_tsc += 1
+  Report: "TSC {current_tsc}/{len(tsc_categories)}: {category} — {readiness}% ready, {gaps} gaps"
+
+AFTER all categories assessed:
+  Generate consolidated readiness report
+  Prioritize remediation by audit-blocker severity
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive SOC 2 assessments, dispatch parallel agents in worktrees:
+
+```
+DISPATCH 4 agents:
+  Agent 1 (worktree: soc2-security):     CC1-CC9 Security (Common Criteria) assessment
+  Agent 2 (worktree: soc2-availability):  A1 Availability + PI1 Processing Integrity
+  Agent 3 (worktree: soc2-confid):        C1 Confidentiality + P1-P8 Privacy
+  Agent 4 (worktree: soc2-evidence):      Evidence collection automation scripts
+
+MERGE order: Agent 4 first (infra), then Agents 1-3 (assessments)
+CONFLICT resolution: Each agent writes to separate TSC-scoped files
+```
+
 ## Anti-Patterns
 
 - **Do NOT treat SOC 2 as a one-time project.** SOC 2 Type II requires continuous compliance over the audit period. Building controls the week before the audit starts means you have no operating history.

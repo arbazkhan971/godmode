@@ -406,6 +406,55 @@ Cleanup: When at 100%, remove flag checks and delete legacy checkout code
 | `--schema` | Generate validation schema for all config keys |
 | `--drift` | Detect and report environment drift |
 
+## HARD RULES
+
+1. **NEVER commit secrets** to source control. If found, flag as CRITICAL immediately.
+2. **NEVER deploy to an environment with missing required config keys.** Fail fast.
+3. **EVERY config key MUST have a schema entry** with type, validation, and description.
+4. **EVERY feature flag MUST have an owner and expiry date.**
+5. **NEVER add a flag without a cleanup plan** — document removal conditions at creation time.
+6. **git commit BEFORE verify** — commit config changes, then validate against schema.
+7. **Automatic revert on regression** — if config change causes startup failure, revert immediately.
+8. **TSV logging** — log every config audit:
+   ```
+   timestamp	environments	total_keys	missing_keys	secret_issues	flags_stale	verdict
+   ```
+
+## Auto-Detection
+
+On activation, automatically detect all configuration without asking:
+
+```
+AUTO-DETECT:
+1. Config files:
+   find . -name "*.env*" -o -name "*.config.*" -o -name "*.yml" \
+     -o -name "*.yaml" -o -name "*.toml" -o -name "*.ini" \
+     | grep -v node_modules | grep -v .git
+
+2. Environment-specific files:
+   find . -name "*development*" -o -name "*staging*" -o -name "*production*" \
+     -o -name "*prod*" -o -name "*dev*" | grep -v node_modules
+
+3. Secret references:
+   grep -r "SECRET\|API_KEY\|PASSWORD\|TOKEN\|PRIVATE" \
+     --include="*.env*" --include="*.config.*" -l
+
+4. Feature flag provider:
+   grep -ri "launchdarkly\|unleash\|flagsmith\|split.io\|feature.flag" \
+     package.json requirements.txt go.mod 2>/dev/null
+
+5. Secret manager:
+   grep -ri "aws.ssm\|vault\|secret.manager\|key.vault" src/ 2>/dev/null
+
+6. Validation library:
+   grep -ri "zod\|joi\|yup\|pydantic\|envalid" package.json pyproject.toml 2>/dev/null
+
+-> Auto-inventory all config files and keys.
+-> Auto-detect which environments exist.
+-> Auto-identify secrets vs non-secrets.
+-> Only ask user about expected drift justification.
+```
+
 ## Anti-Patterns
 
 - **Do NOT store secrets in config files.** Use environment variables or a secret manager. `.env` files are for local dev only.

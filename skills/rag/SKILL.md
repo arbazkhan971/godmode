@@ -434,6 +434,97 @@ Next steps:
 
 Commit: `"rag: <pipeline> — <embedding model>, <vector store>, <N> chunks, faithfulness=<val>"`
 
+## Explicit Loop Protocol
+
+For iterative RAG quality improvement:
+
+```
+RAG IMPROVEMENT LOOP:
+current_iteration = 0
+max_iterations = 5
+baseline = evaluate_rag_pipeline(golden_set)  # hit_rate, faithfulness, hallucination_rate
+
+WHILE current_iteration < max_iterations AND quality < target:
+  current_iteration += 1
+
+  1. DIAGNOSE failure mode:
+     - Sample failed queries from evaluation
+     - Categorize: retrieval_failure | generation_failure | out_of_scope
+     - Retrieval failures: vocabulary mismatch, chunk boundary, missing doc
+     - Generation failures: context overload, contradicting chunks, ambiguity
+
+  2. APPLY single fix targeting top failure category:
+     - Retrieval: adjust chunk size/overlap, add reranker, enable hybrid search
+     - Generation: reduce top-K, improve prompt, add citation instructions
+     - Corpus: add missing documents, update stale content
+     - ONE change per iteration
+
+  3. RE-EVALUATE:
+     - Run same golden set against updated pipeline
+     - Record: { iteration, change, hit_rate, faithfulness, hallucination_rate, latency }
+
+  4. COMPARE:
+     - IF primary metric improved AND no regression: ACCEPT change
+     - IF hallucination rate increased: REJECT immediately
+     - IF plateau for 2 iterations: STOP
+
+  OUTPUT:
+  Iteration | Change | Hit@5 | Faithfulness | Hallucination | Latency
+  0         | baseline| 78%  | 0.82         | 8.5%          | 2.1s
+  1         | +rerank | 89%  | 0.88         | 5.2%          | 2.4s
+  ...
+```
+
+## Multi-Agent Dispatch
+
+For building complete RAG systems:
+
+```
+PARALLEL AGENTS:
+Agent 1 — Ingestion Pipeline (worktree: rag-ingest)
+  - Build document loaders for all source types
+  - Implement chunking strategy with metadata extraction
+  - Build embedding and indexing pipeline
+
+Agent 2 — Retrieval & Reranking (worktree: rag-retrieval)
+  - Configure vector store with HNSW index
+  - Implement hybrid search (dense + BM25)
+  - Add cross-encoder reranker
+  - Build query preprocessing (expansion, decomposition)
+
+Agent 3 — Generation & Prompting (worktree: rag-generation)
+  - Design context assembly strategy
+  - Build generation prompt with citation support
+  - Implement conversation memory for multi-turn
+  - Add hallucination guardrails
+
+Agent 4 — Evaluation Suite (worktree: rag-eval)
+  - Create golden set of question-answer-context triples
+  - Build evaluation harness (RAGAS metrics)
+  - Create failure analysis reports
+  - Set up regression testing for pipeline changes
+
+MERGE ORDER: Agent 1 first (data), Agent 2 (retrieval), Agent 3 (generation), Agent 4 (eval).
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER ship a RAG system without measuring hallucination rate.
+2. NEVER use vector search alone — always combine with BM25 (hybrid search).
+3. NEVER skip the reranking step for production systems.
+4. NEVER stuff the full context window — less context with higher relevance beats more.
+5. NEVER use default chunking (500 chars, no overlap) — design the strategy deliberately.
+6. ALWAYS evaluate retrieval and generation SEPARATELY to diagnose bottlenecks.
+7. ALWAYS include source attribution/citations in generated answers.
+8. ALWAYS test with real user queries, not just synthetic ones.
+9. NEVER assume one embedding model works for all content types.
+10. ALWAYS set chunk overlap >= 10% of chunk size to prevent boundary splits.
+11. ALWAYS have a fallback response for "I don't know" when context is insufficient.
+12. NEVER evaluate only end-to-end — measure retrieval metrics (hit rate, MRR) independently.
+```
+
 ## Key Behaviors
 
 1. **Chunking is the foundation.** Bad chunks produce bad retrieval. Spend more time on chunking strategy than on fancy retrieval algorithms. Garbage in, garbage out.

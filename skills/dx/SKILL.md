@@ -580,6 +580,88 @@ CLI DESIGN:
 | `--quick-wins` | Show only improvements under 1 hour effort |
 | `--before-after` | Compare DX scores before and after changes |
 
+## HARD RULES
+
+1. **Never skip the DX audit.** Optimizing without measuring first means you might optimize the wrong thing. Always measure setup time, feedback loop latency, and error message quality before changing anything.
+2. **Never ship a project without a one-command setup.** If `scripts/setup.sh` or equivalent does not exist and work end-to-end, the DX is broken. Non-negotiable.
+3. **Never leave broken npm/make scripts.** If `npm run test` or `make build` does not work, developers lose trust in all scripts. Every script in package.json/Makefile must be functional.
+4. **Never throw bare errors.** `throw new Error("fail")` is never acceptable. Every error needs WHAT happened, WHY, and HOW to fix it.
+5. **Never hardcode environment assumptions.** Setup scripts must detect OS (macOS/Linux/Windows) and adapt. No `brew install` without checking platform first.
+
+## Loop Protocol
+
+```
+dx_queue = [setup_audit, feedback_loops, error_messages, cli_tooling, documentation]
+current_iteration = 0
+
+WHILE dx_queue is not empty:
+  dimension = dx_queue.pop()
+  current_iteration += 1
+
+  1. Measure current state of {dimension} (time, count, percentage)
+  2. Identify top 3 improvements by impact/effort ratio
+  3. Implement quick wins (< 1 hour improvements)
+  4. Record before/after metrics
+
+  Log: "Iteration {current_iteration}: audited {dimension}, score improved from {before}/10 to {after}/10"
+
+  IF all dimensions scored:
+    Compute overall DX score
+    Generate improvement plan for remaining items
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "environment-setup":
+  EnterWorktree("environment-setup")
+  Create/update scripts/setup.sh (one-command setup)
+  Add .devcontainer/devcontainer.json if VS Code team detected
+  Configure .tool-versions or mise.toml for runtime management
+  Verify setup works end-to-end
+  ExitWorktree()
+
+Agent 2 — "feedback-loops":
+  EnterWorktree("feedback-loops")
+  Measure save-to-result latency for tests, types, lint
+  Configure watch modes (vitest, tsx watch, eslint --cache)
+  Optimize HMR config (Vite/webpack)
+  Add .watchmanconfig if needed
+  ExitWorktree()
+
+Agent 3 — "error-messages-and-cli":
+  EnterWorktree("error-messages-and-cli")
+  Audit all throw/Error sites — classify as GOOD/FAIR/POOR
+  Improve POOR error messages with context and remediation
+  Add --help, --json, --verbose flags to CLI scripts
+  ExitWorktree()
+
+MERGE: Combine all branches, run full DX audit, report before/after scores.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT developer experience context:
+  1. Check for setup scripts: scripts/setup.sh, scripts/bootstrap, bin/setup, Makefile
+  2. Check for environment definitions: Dockerfile, .devcontainer/, flake.nix, shell.nix
+  3. Detect package manager: package.json (npm/yarn/pnpm), pyproject.toml (pip/poetry), go.mod
+  4. Scan package.json scripts for dev/test/build/lint commands
+  5. Measure install time: time npm ci / pip install / go mod download
+  6. Check for .env.example → environment documentation exists
+  7. Grep throw/Error/raise/panic across codebase → count error sites
+  8. Check for CI config: .github/workflows/, .gitlab-ci.yml, Jenkinsfile
+  9. Detect editor config: .vscode/, .editorconfig, .prettierrc
+
+  USE detected context to:
+    - Prioritize the lowest-scoring DX dimension
+    - Match existing tooling conventions (don't introduce Makefile if project uses just)
+    - Skip dimensions already at 8+/10
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the audit.** Improving DX without measuring first means you might optimize the wrong thing. Audit, then prioritize, then improve.

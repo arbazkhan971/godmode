@@ -207,6 +207,38 @@ When `--team` flag is used, aggregate individual standups:
 | `--format <type>` | Output format: `markdown` (default), `slack`, `json` |
 | `--author <name>` | Filter activity to a specific author |
 
+## HARD RULES
+
+1. **NEVER fabricate activity.** If git shows no commits, report that honestly. An empty "Yesterday" is a signal, not a failure.
+2. **NEVER extrapolate burndown from fewer than 3 days of data.** Early trends are noise, not signal.
+3. **NEVER count velocity from incomplete sprints.** Only completed sprints contribute to rolling averages.
+4. **ALWAYS back every "Yesterday" item with evidence** -- a commit SHA, PR number, or review link.
+5. **ALWAYS classify blockers by severity** (MEDIUM/HIGH/CRITICAL) and include an escalation path.
+6. **NEVER treat all blockers equally.** A stale PR is not the same severity as a failing CI build on main.
+7. **ALWAYS include the "Planned Today" section**, even if it requires inference from assigned issues and open branches.
+
+## Auto-Detection
+
+On activation, detect the project context for standup generation:
+
+```bash
+# Detect git user for filtering
+git config user.name 2>/dev/null
+git config user.email 2>/dev/null
+
+# Detect recent activity window
+git log --oneline --since="24 hours ago" --author="$(git config user.email)" 2>/dev/null | head -20
+
+# Detect sprint/issue tracker references in commits
+git log --oneline --since="7 days ago" | grep -oE "(JIRA|LINEAR|GH)-[0-9]+" | sort -u 2>/dev/null
+
+# Detect open PRs
+gh pr list --author="@me" --state=open 2>/dev/null || echo "gh CLI not available"
+
+# Detect CI status
+gh run list --limit=3 2>/dev/null || echo "gh CLI not available"
+```
+
 ## Anti-Patterns
 
 - **Do NOT fabricate activity.** If git shows no commits, report that honestly. An empty "Yesterday" is a signal, not a failure.

@@ -873,6 +873,89 @@ Performance:
 | `--migrate` | Migrate from server to edge/serverless |
 | `--test` | Generate test suite with local emulators |
 
+## HARD RULES
+
+1. **Never put heavy computation in edge functions.** Edge runtimes have CPU time limits (10-50ms). Delegate CPU-intensive work to origin or a Lambda with higher limits.
+2. **Never cache authenticated responses in shared edge cache.** Private data in shared cache is a security vulnerability. Always use `Cache-Control: private` for per-user responses.
+3. **Never deploy edge functions without local testing.** Use Miniflare (Cloudflare), `sam local` (AWS), or `vercel dev` (Vercel). Untested edge functions affect all global traffic instantly.
+4. **Never store secrets in edge function source or environment variables in plain text.** Use platform secret managers (Wrangler secrets, AWS Secrets Manager, Vercel encrypted env vars).
+5. **Never use `latest` tag or unbounded dependencies in serverless deployments.** Pin all dependency versions. Reproducible builds prevent surprise cold start regressions.
+
+## Loop Protocol
+
+```
+function_queue = detect_edge_functions()  // list of functions/routes to build or optimize
+current_iteration = 0
+
+WHILE function_queue is not empty:
+  batch = function_queue.take(3)
+  current_iteration += 1
+
+  FOR each function in batch:
+    1. Analyze function: bundle size, cold start, CPU time, cache strategy
+    2. Implement or optimize the function (tree-shake, lazy init, cache headers)
+    3. Test locally with platform emulator (miniflare, sam local, vercel dev)
+    4. Measure: cold start ms, p99 latency, bundle size KB
+    5. IF cold start > budget → apply optimization (reduce bundle, lazy init, provisioned concurrency)
+
+  Log: "Iteration {current_iteration}: processed {batch.length} functions, {function_queue.remaining} remaining, avg cold start: {ms}ms"
+
+  IF function_queue is empty:
+    Run deployment checklist (secrets, IAM, monitoring)
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "edge-functions":
+  EnterWorktree("edge-functions")
+  Implement edge function handlers (routing, caching, auth)
+  Configure wrangler.toml / vercel.json / serverless.yml
+  Set up KV bindings, Durable Objects, or environment variables
+  ExitWorktree()
+
+Agent 2 — "cold-start-optimization":
+  EnterWorktree("cold-start-optimization")
+  Analyze bundle sizes with esbuild/webpack bundle analyzer
+  Tree-shake imports (modular SDK imports, remove unused deps)
+  Implement lazy initialization for DB/cache connections
+  Configure provisioned concurrency where needed
+  ExitWorktree()
+
+Agent 3 — "caching-and-observability":
+  EnterWorktree("caching-and-observability")
+  Design cache key strategy (include geo, exclude tracking params)
+  Set Cache-Control / Surrogate-Control headers per route
+  Add structured logging with trace IDs
+  Configure dashboards for latency, error rate, cache hit rate
+  ExitWorktree()
+
+MERGE: Combine all branches, run full deployment checklist, measure end-to-end latency.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT edge/serverless context:
+  1. Check for platform config: wrangler.toml (Cloudflare), vercel.json (Vercel),
+     serverless.yml (Serverless Framework), template.yaml (SAM), deno.json (Deno Deploy)
+  2. Detect runtime: V8 isolate (edge), Node.js (Lambda), Deno, WASM
+  3. Scan for existing edge functions: src/functions/, api/, workers/
+  4. Check package.json for platform CLIs: wrangler, vercel, serverless, aws-cdk
+  5. Detect state stores: KV bindings, Durable Objects, DynamoDB tables, R2 buckets
+  6. Check for cold start issues: measure bundle size (warn if > 5MB)
+  7. Detect CI/CD: .github/workflows/deploy*, Makefile deploy targets
+
+  USE detected context to:
+    - Target the correct platform and runtime
+    - Reuse existing infrastructure bindings
+    - Prioritize cold start optimization if bundle > 5MB
+    - Match existing deployment patterns
+```
+
 ## Anti-Patterns
 
 - **Do NOT put heavy computation in edge functions.** Edge runtimes have CPU time limits (10-50ms). Heavy work should go to origin or a Lambda with higher limits.

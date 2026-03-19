@@ -598,6 +598,91 @@ Regression baseline: 20/20 PASSING
 | `--quick` | Run lightweight evaluation (golden set only) |
 | `--full` | Run comprehensive evaluation (all categories) |
 
+## HARD RULES
+
+1. **Never evaluate without a baseline.** "Our model scores 4.2/5" is meaningless without comparison. Always report relative to a previous version, a naive baseline, or a published benchmark.
+2. **Never use the same model as judge and subject.** Self-evaluation is biased. Use a different, preferably stronger model as the judge. Never judge GPT-4 with GPT-4.
+3. **Never skip calibration of LLM judges.** An uncalibrated judge may consistently over-score or under-score. Validate against human ratings (Cohen's kappa >= 0.7) before trusting automated evaluation.
+4. **Never deploy AI changes without running the regression suite.** Every production bug becomes a regression test. The suite blocks deployment if regressions are detected.
+5. **Never delete regression tests.** Once a bug is caught and tested, that test stays forever. The regression set is the immune system of your AI system.
+
+## Loop Protocol
+
+```
+eval_dimension_queue = [correctness, relevance, faithfulness, safety, format, latency, cost]
+current_iteration = 0
+
+WHILE eval_dimension_queue is not empty:
+  batch = eval_dimension_queue.take(3)
+  current_iteration += 1
+
+  FOR each dimension in batch:
+    1. Load evaluation dataset (versioned, immutable)
+    2. Run system under test on all examples
+    3. Score outputs using LLM judge (calibrated) or automated metric
+    4. Compute aggregate metric with confidence interval
+    5. Compare against baseline — flag regressions
+    6. IF dimension fails threshold → add to remediation list
+
+  Log: "Iteration {current_iteration}: evaluated {batch.length} dimensions, {eval_dimension_queue.remaining} remaining"
+
+  IF eval_dimension_queue is empty:
+    Run statistical significance tests (paired bootstrap)
+    Run full regression test suite
+    Generate evaluation report with PASS/FAIL verdict
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "dataset-and-judges":
+  EnterWorktree("dataset-and-judges")
+  Curate or load evaluation dataset (golden set + production logs + adversarial)
+  Design LLM judge prompts with scoring rubrics
+  Calibrate judges against human ratings (measure Cohen's kappa)
+  ExitWorktree()
+
+Agent 2 — "automated-evaluation":
+  EnterWorktree("automated-evaluation")
+  Run system under test on all evaluation examples
+  Score with automated judges across all quality dimensions
+  Compute aggregate metrics, confidence intervals, per-category breakdowns
+  Compare against baseline with statistical significance tests
+  ExitWorktree()
+
+Agent 3 — "regression-and-reporting":
+  EnterWorktree("regression-and-reporting")
+  Run full regression test suite (exact match, semantic match, assertion-based)
+  Identify new failures and fixed regressions
+  Generate evaluation report with verdict (PASS/FAIL)
+  Store results for historical tracking
+  ExitWorktree()
+
+MERGE: Combine judge calibration, evaluation results, and regression status into unified report.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT AI evaluation context:
+  1. Check for existing eval framework: evals/ directory, eval-config.yaml, promptfoo.yaml
+  2. Scan for evaluation datasets: evals/dataset/, tests/golden_set/, fixtures/eval/
+  3. Detect AI framework: langchain, llamaindex, openai SDK, anthropic SDK
+  4. Check for existing judge prompts: evals/judges/, prompts/judge/
+  5. Scan for regression tests: evals/regression/, tests/ai_regression/
+  6. Detect model config: model name, provider, version in env vars or config
+  7. Check CI for existing eval jobs: eval workflow, benchmark step
+
+  USE detected context to:
+    - Reuse existing evaluation datasets and judges
+    - Match existing eval framework (DeepEval, RAGAS, Promptfoo, custom)
+    - Compare against most recent baseline run
+    - Add to existing CI pipeline rather than creating new one
+```
+
 ## Anti-Patterns
 
 - **Do NOT evaluate without a baseline.** "Our model scores 4.2/5" is meaningless. Compared to what? Always report relative to a baseline.

@@ -431,6 +431,70 @@ All 3 secrets migrated to AWS Secrets Manager.
 | `--hook` | Install pre-commit secret scanning hook |
 | `--provider <name>` | Target secret provider (vault, aws, gcp, azure) |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for .env files: .env, .env.local, .env.production (should be in .gitignore)
+2. Check .gitignore for .env entries: if missing, flag as CRITICAL
+3. Detect secret manager: vault config, AWS Secrets Manager SDK, GCP Secret Manager, Azure Key Vault
+4. Scan for hardcoded secrets: grep for API_KEY=, SECRET=, PASSWORD=, TOKEN= in source files
+5. Check for pre-commit hooks: .pre-commit-config.yaml with detect-secrets, gitleaks, trufflehog
+6. Detect CI/CD secrets: check .github/workflows for ${{ secrets.* }}, GitLab CI variables
+7. Check for .env.example: if .env exists but .env.example does not, flag as missing
+8. Scan git history: check for accidentally committed secrets (use gitleaks or trufflehog)
+```
+
+## Iterative Secret Audit Loop
+
+```
+current_iteration = 0
+max_iterations = 8
+audit_tasks = [inventory, scan_source, scan_history, check_rotation, check_access, remediate, automate, verify]
+
+WHILE audit_tasks is not empty AND current_iteration < max_iterations:
+    task = audit_tasks.pop(0)
+    1. IF inventory: catalog all secrets (DB creds, API keys, tokens, certs) with locations
+    2. IF scan_source: run gitleaks/trufflehog on current codebase for hardcoded secrets
+    3. IF scan_history: run gitleaks on full git history for previously committed secrets
+    4. IF check_rotation: verify rotation policy and last rotation date for each secret
+    5. IF check_access: audit who/what has access to each secret (least privilege check)
+    6. IF remediate: move hardcoded secrets to manager, rotate any exposed secrets
+    7. IF automate: install pre-commit hooks, configure CI secret scanning
+    8. IF verify: run full scan again to confirm zero hardcoded secrets
+    9. IF issues found → flag severity (CRITICAL: exposed, HIGH: hardcoded, MEDIUM: no rotation)
+    10. current_iteration += 1
+
+POST-LOOP: Generate secrets audit report with findings, remediations, and ongoing monitoring plan
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (2 worktrees):
+  Agent 1 — "secrets-scan": scan source + history, identify all hardcoded/exposed secrets
+  Agent 2 — "secrets-infra": set up secret manager, rotation policies, pre-commit hooks
+
+MERGE ORDER: scan → infra (scan identifies what to migrate, infra sets up the target)
+CONFLICT ZONES: config files referencing secrets (coordinate env var naming)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER hardcode secrets in source code, config files, Dockerfiles, or CI configs.
+2. .env files MUST be in .gitignore. Verify before first commit.
+3. NEVER share secrets via Slack, email, or chat. Use a secret manager or one-time links.
+4. EVERY environment (dev, staging, prod) must have unique credentials.
+5. NEVER log secrets. Sanitize all log output. Mask values in error messages.
+6. Prefer short-lived credentials over long-lived ones (IAM roles > access keys, short JWT > permanent tokens).
+7. EVERY repository must have a pre-commit secret scanning hook. No exceptions.
+8. IF a secret is exposed in git history, rotate it IMMEDIATELY. Then scrub history.
+9. Secret rotation MUST be automated. Manual rotation is forgotten rotation.
+10. NEVER store secrets in plain text at rest. Use encrypted storage (Vault, KMS, Secrets Manager).
+```
+
 ## Anti-Patterns
 
 - **Do NOT hardcode secrets.** Not in source code, not in config files, not in Dockerfiles, not in CI/CD configs. Never.

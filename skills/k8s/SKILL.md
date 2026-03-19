@@ -489,6 +489,106 @@ Checks:
 Fix: Update NetworkPolicy to allow egress to postgresql service on port 5432.
 ```
 
+## HARD RULES
+1. NEVER deploy without resource requests AND limits on every container — unbounded pods starve other workloads.
+2. NEVER skip health probes (liveness, readiness, startup) — without them, K8s sends traffic to broken pods.
+3. NEVER use the `latest` image tag — pin versions with SHA digests or semantic version tags. `latest` is not reproducible.
+4. NEVER put secrets in plain ConfigMaps or environment variables in manifests — use Kubernetes Secrets or external-secrets-operator.
+5. NEVER set CPU limits equal to CPU requests — this causes throttling even when the node has spare capacity.
+6. NEVER run containers as root — use `securityContext.runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
+7. NEVER deploy straight to production without validating in dev/staging first.
+8. ALWAYS create a PodDisruptionBudget for production workloads — without PDB, node drains take down all pods.
+9. ALWAYS validate manifests before applying: `kubectl apply --dry-run=server`, kubeval, kube-linter.
+10. ALWAYS use namespaces for isolation — each service/team gets its own namespace with resource quotas.
+
+## Auto-Detection
+On activation, detect Kubernetes context automatically:
+```
+AUTO-DETECT:
+1. Check kubectl context:
+   - kubectl config current-context
+   - kubectl cluster-info
+2. Scan for existing manifests:
+   - k8s/, manifests/, deploy/, kubernetes/ directories
+   - *.yaml files with apiVersion: apps/v1 or similar
+3. Scan for Helm:
+   - charts/ directory, Chart.yaml, values*.yaml
+   - helm list (if cluster accessible)
+4. Detect application:
+   - Dockerfile, docker-compose.yml → containerized app
+   - Parse Dockerfile for EXPOSE ports, CMD/ENTRYPOINT
+5. Detect deployment tooling:
+   - .github/workflows/ with kubectl/helm steps → GitHub Actions
+   - argocd-*.yaml → ArgoCD
+   - flux-system/ → Flux CD
+6. Detect existing workloads (if cluster accessible):
+   - kubectl get deployments,services,ingresses -A
+   - Check for existing HPA, PDB, NetworkPolicy
+7. Detect container registry:
+   - imagePullSecrets in existing manifests
+   - ECR, GCR, ACR, Docker Hub references
+```
+
+## Iterative Deployment Protocol
+Kubernetes deployments are validated iteratively:
+```
+current_step = 0
+steps = ["validate", "lint", "security", "dry-run", "deploy-dev", "deploy-staging", "deploy-prod"]
+
+WHILE current_step < len(steps):
+  step = steps[current_step]
+  1. EXECUTE step:
+     - validate: kubectl apply --dry-run=client
+     - lint: helm lint / kubeval / kube-linter
+     - security: kubesec scan, check securityContext
+     - dry-run: kubectl apply --dry-run=server
+     - deploy-*: helm upgrade --install --wait
+  2. VERIFY step passed:
+     - IF errors → REPORT and HALT (do not proceed)
+     - IF warnings → REPORT, continue if non-critical
+  3. POST-DEPLOY verification (for deploy-* steps):
+     - kubectl rollout status deployment/{name}
+     - Check all pods Ready and passing probes
+     - Check service endpoints responding
+     - Check no error logs in last 60 seconds
+  4. IF verification fails:
+     - ROLLBACK: helm rollback / kubectl rollout undo
+     - REPORT failure details
+     - HALT
+  5. current_step += 1
+
+EXIT when all steps pass OR user halts on failure
+```
+
+## Multi-Agent Dispatch
+For multi-service Kubernetes deployments:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: k8s-manifests):
+  - Generate/update deployment manifests and Helm charts
+  - Scope: charts/, k8s/ directories
+  - Output: Validated Helm charts with values per environment
+
+Agent 2 (worktree: k8s-security):
+  - Security audit: RBAC, NetworkPolicies, SecurityContexts
+  - Scope: all manifest files
+  - Output: Hardened manifests with least-privilege settings
+
+Agent 3 (worktree: k8s-scaling):
+  - HPA, PDB, resource sizing based on metrics
+  - Scope: autoscaling and resource configs
+  - Output: Right-sized resource requests/limits, HPA configs
+
+Agent 4 (worktree: k8s-observability):
+  - Service monitors, log collection, dashboard configs
+  - Scope: monitoring/, observability/ configs
+  - Output: Prometheus ServiceMonitor + Grafana dashboards
+
+MERGE ORDER: manifests → security → scaling → observability
+CONFLICT RESOLUTION: manifests branch is source of truth for base templates
+```
+
 ## Flags & Options
 
 | Flag | Description |

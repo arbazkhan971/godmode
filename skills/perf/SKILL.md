@@ -550,6 +550,112 @@ Next: /godmode:optimize for further improvements
 | `--flamegraph` | Generate flame graph from existing profile data |
 | `--leak-check` | Extended memory leak detection (longer observation) |
 
+## HARD RULES
+
+1. **NEVER optimize without profiling first.** Developers' intuition about performance is wrong more often than right. Profile, then optimize.
+2. **NEVER report benchmark results without confidence intervals.** "150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
+3. **NEVER benchmark on noisy/shared systems for final results.** CI runners with other jobs produce unreliable data. Control the environment.
+4. **NEVER skip warm-up iterations.** JIT-compiled languages (Java, Node.js, .NET) perform dramatically differently after warm-up. Discard initial runs.
+5. **NEVER profile debug/development builds.** Always profile release/production builds. Debug builds have different performance characteristics.
+6. **NEVER claim "no memory leak" from a test shorter than the expected runtime.** Some leaks only manifest over hours or days.
+7. **NEVER dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
+8. **ALWAYS generate a flame graph for CPU profiling.** No exceptions. It communicates more than pages of profiler output.
+9. **ALWAYS measure the fix.** Every remediation must include before/after measurements. Without measurement, you do not know if you helped or hurt.
+
+## Auto-Detection
+
+Before profiling, detect the runtime environment and existing instrumentation:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Runtime detection:
+   - ls package.json → Node.js (check for "type": "module")
+   - ls go.mod → Go
+   - ls Cargo.toml → Rust
+   - ls pyproject.toml / setup.py → Python
+   - ls pom.xml / build.gradle → Java/Kotlin
+   - ls *.xcodeproj / Package.swift → Swift
+
+2. Profiling tools already available:
+   - grep for "clinic\|0x\|pprof\|flamegraph\|criterion\|jmh" in dependencies
+   - Check for existing profiles: ls *.cpuprofile *.heapprofile *.prof *.jfr
+
+3. Build configuration:
+   - Detect release/debug mode from build scripts
+   - Check for optimization flags (-O2, --release, NODE_ENV=production)
+
+4. Existing benchmarks:
+   - ls **/*bench* **/*benchmark* tests/perf/
+   - Detect benchmark framework from imports
+
+5. Output: PROFILING PLAN auto-populated with detected tools and targets.
+```
+
+## Explicit Loop Protocol
+
+Performance optimization is iterative -- profile, fix, measure, repeat:
+
+```
+current_iteration = 0
+modules = [cpu_profiling, memory_profiling, concurrency_analysis, benchmarking]
+findings = []
+
+WHILE modules is not empty AND current_iteration < 12:
+    current_iteration += 1
+    module = modules.pop(0)
+
+    1. PROFILE: run the appropriate profiler for this module
+    2. ANALYZE: interpret flame graph / heap snapshot / thread dump
+    3. FOR each hotspot/leak/race found:
+       a. DIAGNOSE root cause with evidence
+       b. IMPLEMENT fix
+       c. RE-PROFILE to measure improvement
+       d. RECORD: before/after metrics with confidence intervals
+    4. IF fix introduces regression in another area:
+        modules.append(regressed_module)
+    5. IF improvement < 5% AND more hotspots exist:
+        CONTINUE to next hotspot
+    6. REPORT: "Module {module}: {N} findings, {total_improvement}% improvement -- iteration {current_iteration}"
+
+OUTPUT: Performance profile report with all findings and measured remediations.
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive performance analysis, dispatch parallel agents:
+
+```
+MULTI-AGENT PERFORMANCE ANALYSIS:
+Dispatch 3-4 agents in parallel worktrees.
+
+Agent 1 (worktree: perf-cpu):
+  - Run CPU profiler under representative load
+  - Generate flame graph
+  - Identify top 5 hotspots with evidence
+  - Implement and measure fixes for each
+
+Agent 2 (worktree: perf-memory):
+  - Take heap snapshots before/after load
+  - Identify memory leaks via snapshot diffing
+  - Trace retention chains for leaked objects
+  - Fix leaks and verify memory stabilizes
+
+Agent 3 (worktree: perf-concurrency):
+  - Run with race detector enabled (Go -race, TSan, etc.)
+  - Identify data races and deadlock risks
+  - Verify lock ordering consistency
+  - Fix races and verify under concurrent load
+
+Agent 4 (worktree: perf-benchmarks):
+  - Establish baseline benchmarks with statistical rigor
+  - Run comparison benchmarks for proposed optimizations
+  - Report with confidence intervals and p-values
+  - Create regression benchmark suite for CI
+
+MERGE ORDER: cpu -> memory -> concurrency -> benchmarks
+CONFLICT ZONES: Hot path code changes, lock/synchronization changes
+```
+
 ## Anti-Patterns
 
 - **Do NOT optimize without profiling.** "This loop looks slow" is not evidence. Profile it. The bottleneck is almost never where you think it is.

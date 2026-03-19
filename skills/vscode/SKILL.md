@@ -733,6 +733,17 @@ All files ready to commit.
 | `--keybindings` | Optimize keyboard shortcuts |
 | `--performance` | Diagnose and fix VS Code performance |
 
+## HARD RULES
+
+1. **NEVER configure user-level settings for project-specific needs.** Use workspace settings (`.vscode/`) so every team member gets the same experience.
+2. **NEVER leave `.vscode/` in `.gitignore`.** Settings, launch, tasks, and extension recommendations are project configuration and belong in version control.
+3. **ALWAYS set up debug configurations.** Console.log is not a debugging strategy. Spend 10 minutes on launch.json, save hours over the project lifetime.
+4. **ALWAYS enable format-on-save.** Pick one formatter (Prettier, Ruff, gofmt), configure it, and never manually format code again.
+5. **NEVER use deprecated extensions.** TSLint (use ESLint), Vetur (use Vue Official), etc. Check extension status before recommending.
+6. **ALWAYS use workspace extension recommendations** (`extensions.json`) so project-specific extensions are installed only when needed.
+7. **ALWAYS configure multi-root workspaces for monorepos** with per-folder settings to prevent configuration conflicts.
+8. **NEVER ignore keyboard shortcuts.** Reaching for the mouse for common actions costs minutes per hour. Configure keybindings for the most common operations.
+
 ## Anti-Patterns
 
 - **Do NOT configure user-level settings for project-specific needs.** Workspace settings (`.vscode/`) ensure every team member has the same experience without overriding personal preferences.

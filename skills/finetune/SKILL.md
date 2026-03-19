@@ -523,6 +523,102 @@ For minimal VRAM: QLoRA (r=16) -- 98.6% of full FT quality at 6GB VRAM.
 | `--cost` | Estimate training cost before starting |
 | `--card` | Generate model card for a fine-tuned model |
 
+## Auto-Detection
+
+On activation, automatically detect the fine-tuning environment:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for fine-tuning framework imports: transformers, peft, trl, unsloth, axolotl, torchtune, llama-factory
+2. Detect GPU hardware: run nvidia-smi, parse GPU model, VRAM, count
+3. Check for existing training configs: *.yaml in configs/, training_args in Python files
+4. Detect base model from config or code (AutoModelForCausalLM.from_pretrained calls)
+5. Scan for dataset files: *.jsonl, *.parquet, *.csv in data/ or datasets/
+6. Detect dataset format: instruction (instruction/input/output), conversational (messages), completion (text), DPO (chosen/rejected)
+7. Check for existing adapter weights: adapter_config.json, adapter_model.safetensors
+8. Detect package manager: uv, pip, conda — check for CUDA version compatibility
+9. Check available disk space for checkpoints and merged model
+10. Scan for evaluation scripts or metrics in code
+```
+
+## Explicit Loop Protocol
+
+When iterating on fine-tuning runs (hyperparameter search, dataset refinement):
+
+```
+FINE-TUNING ITERATION LOOP:
+current_iteration = 0
+max_iterations = N  // number of training runs or hyperparameter configs
+
+WHILE current_iteration < max_iterations AND NOT user_says_stop:
+  1. SELECT next configuration (hyperparameters, dataset version, or method variant)
+  2. VALIDATE dataset: check format, duplicates, quality, train/val split
+  3. CONFIGURE training run: set LR, batch size, epochs, LoRA rank/alpha
+  4. LAUNCH training with checkpoint saving and validation evaluation
+  5. MONITOR: training loss, validation loss, train/val gap, gradient norm
+  6. IF validation loss increasing for patience steps: STOP EARLY
+  7. EVALUATE best checkpoint: task metrics, catastrophic forgetting, safety
+  8. COMPARE against previous iterations and baselines (base model + prompting)
+  9. LOG results: { config, metrics, duration, cost, verdict }
+  10. current_iteration += 1
+  11. IF improvement plateaued for 2+ iterations:
+       RECOMMEND: stop iterating, use best checkpoint
+  12. REPORT: "Run <N>/<total>: <metric>=<val> (best so far: <best_val> from run <K>)"
+
+ON COMPLETION:
+  SELECT best checkpoint across all runs
+  MERGE adapter weights if LoRA/QLoRA
+  EXPORT in target format (safetensors, GGUF, AWQ)
+  REPORT: "<N> runs, best: <method> with <metric>=<val>, exported as <format>"
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive fine-tuning pipelines, dispatch parallel agents:
+
+```
+PARALLEL FINE-TUNING AGENTS:
+When running dataset preparation, training, and evaluation in parallel:
+
+Agent 1 (worktree: ft-data):
+  - Curate and clean training dataset
+  - Deduplicate, remove contradictions, validate format
+  - Generate train/val/test splits
+  - Create data quality report with statistics
+
+Agent 2 (worktree: ft-train):
+  - Configure and launch training runs
+  - Monitor training metrics and checkpoints
+  - Implement early stopping and best checkpoint selection
+  - Merge adapter weights and export model
+
+Agent 3 (worktree: ft-eval):
+  - Build evaluation pipeline (task metrics, catastrophic forgetting, safety)
+  - Create comparison tables against baselines
+  - Run safety evaluation with adversarial prompts
+  - Generate model card with evaluation results
+
+MERGE STRATEGY: Data agent completes first (training depends on dataset).
+  Training and evaluation can overlap — eval runs on completed checkpoints.
+  Final: merge all artifacts, generate comprehensive training report.
+```
+
+## Hard Rules
+
+```
+HARD RULES — FINETUNE:
+1. NEVER fine-tune before exhausting prompt engineering and few-shot learning. Fine-tuning is the expensive option.
+2. ALWAYS hold out at least 10% of data as validation set. Without it, you cannot detect overfitting.
+3. NEVER skip the manual data review. Inspect at least 50-100 examples before training. Bad data = bad model.
+4. ALWAYS start with the smallest viable model. Validate the approach on 7B before scaling to 70B.
+5. NEVER set learning rate above 5e-4 for LoRA or 5e-5 for full fine-tuning without justification.
+6. ALWAYS evaluate catastrophic forgetting after every training run. Test general capabilities alongside task metrics.
+7. ALWAYS run safety evaluation after fine-tuning. Models can lose safety training during adaptation.
+8. NEVER train for more than 3 epochs on small datasets (<5K examples). Overfitting happens fast.
+9. ALWAYS compare fine-tuned model against: (a) base model + prompting, (b) larger model + prompting, (c) RAG + base model.
+10. ALWAYS version everything: dataset version, base model version, adapter weights, training config, evaluation results.
+```
+
 ## Anti-Patterns
 
 - **Do NOT fine-tune before trying prompting.** Fine-tuning is expensive and hard to iterate. Prompt engineering, few-shot learning, and RAG should be exhausted first.

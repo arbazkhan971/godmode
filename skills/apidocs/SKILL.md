@@ -1165,6 +1165,38 @@ CI will:
 | `--bundle` | Bundle multi-file spec into single file |
 | `--export <format>` | Export spec as yaml, json, or html |
 
+## HARD RULES
+
+1. **NEVER write endpoint docs without realistic examples.** A schema without examples is a guessing game. Every request and response must have at least one realistic example.
+2. **NEVER duplicate schemas.** Extract shared shapes to `components/schemas` and use `$ref`. Duplicated schemas drift.
+3. **NEVER skip CI validation.** Lint and validate the OpenAPI spec on every PR. A spec that was valid last week can be broken today.
+4. **NEVER hand-edit generated specs in code-first workflows.** Modify annotations in code instead. Manual edits will be overwritten.
+5. **NEVER ignore breaking changes.** Use Optic or oasdiff in CI to catch removed endpoints, renamed parameters, and type changes.
+6. **NEVER skip security scheme documentation.** Undocumented auth forces every consumer to reverse-engineer your auth flow.
+7. **ALWAYS serve docs in all environments** or publish static docs. Docs behind `if (env === 'development')` are invisible to production consumers.
+8. **ALWAYS use `example:` with realistic values** -- `"jane.doe@example.com"` not `"string"`.
+
+## Auto-Detection
+
+On activation, detect the API documentation context:
+
+```bash
+# Detect existing OpenAPI specs
+find . -name "openapi.*" -o -name "swagger.*" -o -name "*.openapi.*" 2>/dev/null
+
+# Detect spec generation tools
+grep -r "swagger\|tsoa\|nestjs/swagger\|springdoc\|drf-spectacular" package.json pom.xml build.gradle requirements.txt 2>/dev/null
+
+# Detect doc rendering
+grep -r "redoc\|swagger-ui\|stoplight\|scalar" package.json 2>/dev/null
+
+# Detect validation tools
+grep -r "spectral\|redocly\|optic\|oasdiff" package.json .github/ 2>/dev/null
+
+# Detect API routes to document
+find src/ -name "*controller*" -o -name "*router*" -o -name "*route*" 2>/dev/null | head -10
+```
+
 ## Anti-Patterns
 
 - **Do NOT write docs without examples.** A schema without examples is a guessing game. Every request body and response must have at least one realistic example.

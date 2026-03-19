@@ -525,6 +525,51 @@ Responsive: simplified to top-N labeled points on mobile
 | `--export <format>` | Export chart as: `svg`, `png`, `pdf` |
 | `--perf` | Profile chart rendering performance |
 
+## HARD RULES
+
+1. **NEVER use pie charts for more than 5 categories.** No exceptions. Use bar charts instead.
+2. **NEVER use 3D charts.** They distort data and add no information.
+3. **NEVER ship without a data table alternative** for screen readers.
+4. **NEVER start bar chart y-axis above zero** unless explicitly documented with justification.
+5. **ALWAYS test at 320px, 768px, and 1440px** before marking responsive as done.
+6. **ALWAYS verify colorblind safety** with Chrome DevTools vision deficiency emulation.
+7. **git commit BEFORE verify** — commit the chart component, then run visual/a11y tests.
+8. **TSV logging** — log every chart creation:
+   ```
+   timestamp	chart_type	library	data_points	responsive	a11y_score	status
+   ```
+
+## Auto-Detection
+
+On activation, automatically detect project context without asking:
+
+```
+AUTO-DETECT:
+1. Framework:
+   ls package.json 2>/dev/null && grep -o '"react"\|"vue"\|"angular"\|"svelte"' package.json
+   # Determines component style and library compatibility
+
+2. Existing chart libraries:
+   grep -r "recharts\|chart.js\|d3\|plotly\|nivo\|victory" package.json 2>/dev/null
+   # Prefer existing library over introducing a new one
+
+3. Design system:
+   ls src/theme* src/styles/tokens* tailwind.config* 2>/dev/null
+   # Extract color palette, font family, spacing tokens
+
+4. Data source:
+   # Scan for API clients, GraphQL queries, or static data files
+   grep -r "useQuery\|fetch\|axios\|graphql" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | head -5
+
+5. Bundle budget:
+   grep -i "maxSize\|budget\|bundlesize" package.json .bundlerc* 2>/dev/null
+   # Affects library selection (Chart.js ~60KB vs Plotly ~1MB)
+
+-> Auto-select library based on framework + existing dependencies + bundle budget.
+-> Auto-extract color palette from design system tokens.
+-> Only ask user about data story and audience.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use pie charts for more than 5 categories.** Humans cannot accurately compare arc angles. Use a bar chart.

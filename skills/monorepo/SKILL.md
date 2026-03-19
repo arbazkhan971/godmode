@@ -570,6 +570,145 @@ RESULT:
 | `--migrate` | Migrate from multi-repo to monorepo |
 | `--ci` | Generate CI configuration for monorepo |
 
+## Auto-Detection
+
+```
+IF pnpm-workspace.yaml exists:
+  packages = parse workspace packages
+  DETECT tool = "pnpm workspaces"
+  SUGGEST "pnpm monorepo detected ({len(packages)} packages). Activate /godmode:monorepo?"
+
+IF turbo.json exists:
+  DETECT tool = "Turborepo"
+  SUGGEST "Turborepo monorepo detected. Activate /godmode:monorepo?"
+
+IF nx.json exists:
+  DETECT tool = "Nx"
+  SUGGEST "Nx monorepo detected. Activate /godmode:monorepo?"
+
+IF lerna.json exists:
+  DETECT tool = "Lerna"
+  SUGGEST "Lerna monorepo detected. Activate /godmode:monorepo?"
+
+IF package.json has "workspaces" field:
+  packages = parse workspaces glob
+  IF len(packages) > 1:
+    SUGGEST "npm/yarn workspaces detected ({len(packages)} packages). Activate /godmode:monorepo?"
+
+IF apps/ AND packages/ directories exist:
+  SUGGEST "Monorepo directory structure detected. Activate /godmode:monorepo?"
+
+IF multiple package.json files exist at depth 2+:
+  count = count_package_jsons()
+  IF count > 3:
+    SUGGEST "Multi-package project detected ({count} package.json files). Activate /godmode:monorepo?"
+```
+
+## Iterative Monorepo Health Protocol
+
+```
+WHEN auditing or improving an existing monorepo:
+
+current_check = 0
+checks = [
+  "circular_dependencies",
+  "boundary_violations",
+  "config_duplication",
+  "orphan_packages",
+  "hub_package_risk",
+  "ci_optimization",
+  "cache_configuration"
+]
+total_checks = len(checks)
+issues_found = []
+fixes_applied = []
+
+WHILE current_check < total_checks:
+  check = checks[current_check]
+
+  1. RUN diagnostic for {check}
+  2. IF issues detected:
+       issues_found.append({check: check, count: issue_count, details: details})
+       3. GENERATE fix for each issue
+       4. APPLY fix
+       5. VERIFY fix resolved the issue
+       fixes_applied.append({check: check, fix: fix_description})
+
+  current_check += 1
+  REPORT "Audit progress: {current_check}/{total_checks} checks complete"
+
+FINAL:
+  REPORT "Issues found: {len(issues_found)}, Fixes applied: {len(fixes_applied)}"
+  MEASURE CI time improvement: before vs after
+  GENERATE dependency graph visualization
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN setting up or restructuring a monorepo with many packages:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (structure):
+    - Design package directory layout
+    - Create package.json for each package
+    - Configure workspace references
+    - Output: directory structure + package.json files
+
+  Agent 2 (shared-config):
+    - Create shared TypeScript config (base, nextjs, library)
+    - Create shared ESLint config (base, react)
+    - Create shared Prettier config
+    - Output: packages/config/ with all shared configs
+
+  Agent 3 (ci-pipeline):
+    - Configure selective builds (affected-only)
+    - Set up remote caching (Turborepo/Nx Cloud)
+    - Create CI workflow with path-based triggers
+    - Output: .github/workflows/ + turbo.json/nx.json
+
+  Agent 4 (boundary-enforcement):
+    - Create boundary check script
+    - Configure lint rules for module boundaries
+    - Scan for and fix existing violations
+    - Output: tools/check-boundaries.ts + lint config
+
+MERGE:
+  - Verify shared configs are correctly extended by all packages
+  - Verify CI pipeline detects changes in all packages
+  - Verify boundary rules are consistent with package structure
+  - Run full build to validate everything works together
+```
+
+## HARD RULES
+
+```
+1. NEVER use a monorepo without a build orchestrator (Turborepo, Nx, Bazel).
+   Running sequential builds across 20 packages is not a monorepo strategy.
+
+2. EVERY package MUST declare its dependencies explicitly.
+   No phantom dependencies. Use pnpm strict mode.
+
+3. NEVER allow circular dependencies between packages.
+   If A imports B and B imports A, extract shared code into C.
+
+4. apps/ packages MUST NOT import other apps/ packages.
+   Only packages/ can be shared. Apps are deployment boundaries.
+
+5. ALWAYS commit the lock file. Use --frozen-lockfile in CI.
+   Non-reproducible installs cause "works on my machine" bugs.
+
+6. EVERY PR MUST only build and test affected packages.
+   Full rebuilds on every PR defeat the purpose of a monorepo.
+
+7. Shared configuration (tsconfig, eslint, prettier) MUST be centralized
+   in a packages/config/ package. No duplicated config files.
+
+8. NEVER hoist all dependencies to root. Hoisting causes phantom
+   dependency problems. Use strict node_modules (pnpm default).
+```
+
 ## Anti-Patterns
 
 - **Do NOT use a monorepo without a build orchestrator.** Running `npm run build` in 20 packages sequentially is not a monorepo strategy. Use Turborepo, Nx, or Bazel.

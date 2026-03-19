@@ -896,6 +896,17 @@ Lines of code eliminated: ~3,200 (reducers, actions, selectors, thunks)
 | `--selectors` | Optimize selectors to prevent unnecessary re-renders |
 | `--report` | Generate full state architecture report |
 
+## HARD RULES
+
+1. **NEVER put server data in Redux/Zustand/Pinia.** API data is server state. It belongs in React Query, SWR, or Apollo Client -- tools designed for cache management, staleness, and refetching.
+2. **NEVER store derived state.** If `totalPrice` can be computed from `items`, compute it in a selector. Storing it creates synchronization bugs.
+3. **NEVER use React Context for frequently-changing state.** Context re-renders ALL consumers on ANY change. Use Zustand, Jotai, or Signals instead.
+4. **NEVER subscribe to the entire store.** Always use selectors: `useStore((s) => s.count)`, not `useStore()`.
+5. **NEVER persist sensitive data in localStorage.** Auth tokens in localStorage are vulnerable to XSS. Use httpOnly cookies for auth.
+6. **NEVER use optimistic updates without a rollback path.** Every optimistic update must have `onError` rollback that restores the snapshot.
+7. **ALWAYS classify state before choosing a tool.** Server state vs client state is the single most important distinction. Get it right first.
+8. **NEVER mix more than one client state library** in the same project (e.g., Redux AND Zustand AND Jotai). Pick one.
+
 ## Anti-Patterns
 
 - **Do NOT put server data in Redux/Zustand/Pinia.** API data is server state. It belongs in React Query/SWR/Apollo. These tools handle caching, staleness, refetching, and garbage collection. Redux does not.

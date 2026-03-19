@@ -1018,6 +1018,69 @@ Scaling: y-websocket server with Redis pub/sub for multi-instance.
 | `--typing` | Design typing indicators |
 | `--audit` | Audit existing real-time implementation |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check package.json for ws, socket.io, @socket.io/*, pusher, ably, sse, eventsource
+2. Check for existing WebSocket server files: grep for "WebSocketServer", "Server({ port", "io("
+3. Detect framework: Next.js (api routes), Express (app.ws), Fastify (fastify-websocket)
+4. Check infrastructure: docker-compose.yml for redis (pub/sub), nginx.conf for proxy_pass upgrades
+5. Detect client libraries: socket.io-client, pusher-js, ably, @microsoft/signalr
+6. Check for CRDT libraries: yjs, y-websocket, automerge
+7. Scan for existing presence/notification systems in src/
+```
+
+## Iterative Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 12
+tasks_remaining = [list of realtime features to implement]
+
+WHILE tasks_remaining is not empty AND current_iteration < max_iterations:
+    task = tasks_remaining.pop(0)
+    1. Design the protocol message schema for this feature
+    2. Implement server-side handler (connection, message, disconnect)
+    3. Implement client-side hook/listener
+    4. Add reconnection + error handling
+    5. Test with simulated latency: verify < 100ms p95
+    6. Test with connection drop: verify reconnect + state sync
+    7. IF tests fail → fix handler logic, re-test
+    8. IF tests pass → commit: "realtime: implement <feature>"
+    9. current_iteration += 1
+
+POST-LOOP: Load test all features together at 10x expected concurrency
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "realtime-server": server-side handlers, rooms, auth middleware
+  Agent 2 — "realtime-client": client hooks, reconnection logic, UI indicators
+  Agent 3 — "realtime-infra": Redis pub/sub, scaling config, nginx WebSocket proxy
+
+MERGE ORDER: infra → server → client
+CONFLICT ZONES: message schema types (shared contract — define first, then dispatch)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER send user credentials in WebSocket messages. Auth happens at connection handshake only.
+2. NEVER trust client-sent data without server-side validation.
+3. NEVER store connection state only in application memory. Use Redis or equivalent.
+4. NEVER allow unbounded message queues. Set max queue depth per connection.
+5. NEVER skip heartbeat/ping-pong. Dead connections leak resources.
+6. NEVER broadcast without room/channel scoping. O(n) fan-out kills at scale.
+7. NEVER use WebSocket for request-response patterns. Use HTTP for that.
+8. NEVER deploy WebSocket without sticky sessions or Redis adapter for multi-instance.
+9. EVERY message schema must be versioned. Breaking changes require a new message type.
+10. EVERY connection must have an idle timeout. No immortal connections.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use WebSocket when SSE suffices.** If data flows only from server to client, SSE is simpler, auto-reconnects, works through HTTP/2, and needs no special proxy config. WebSocket adds complexity for no benefit.

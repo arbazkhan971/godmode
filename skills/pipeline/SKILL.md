@@ -940,6 +940,84 @@ Components:
 | `--streaming` | Design a streaming pipeline (Kafka, Flink, etc.) |
 | `--monitor` | Set up monitoring and alerting for the pipeline |
 
+## HARD RULES
+
+1. **NEVER build a pipeline without a data flow diagram first.** "Just read from A and write to B" leads to data quality nightmares. Map the full flow.
+2. **NEVER skip data quality checks.** "The source data is clean" is never true. Validate at every boundary between pipeline stages.
+3. **NEVER make a pipeline non-idempotent.** Running the pipeline twice must produce the same result as running it once. Use upserts, watermarks, deduplication.
+4. **NEVER silently drop records.** Every rejected record goes to a dead-letter queue with the original record, error message, and pipeline context.
+5. **NEVER hardcode connection strings or credentials.** Use environment variables or a secrets manager. Always.
+6. **NEVER put side effects in transformation functions.** Transformations must be pure: input DataFrame in, output DataFrame out. No DB calls, no API calls.
+7. **ALWAYS reconcile source and target counts after every load.** If counts do not match, the pipeline has a bug.
+8. **ALWAYS design for backfill from day one.** Parameterize by date range. Support idempotent re-runs.
+9. **ALWAYS set up monitoring for data freshness, not just pipeline success.** A pipeline that runs successfully but processes zero rows is not healthy.
+
+## Explicit Loop Protocol
+
+Pipeline development is iterative -- build each stage, test, verify, advance:
+
+```
+current_iteration = 0
+stages = [data_flow_design, extraction, staging, transformation,
+          quality_checks, loading, reconciliation, observability,
+          orchestrator_config, tests]
+
+WHILE stages is not empty AND current_iteration < 12:
+    current_iteration += 1
+    stage = stages.pop(0)
+
+    1. IMPLEMENT stage (extractor, transformer, loader, check, etc.)
+    2. TEST with sample data:
+       - Unit test: transformation function correctness
+       - Integration test: end-to-end with test fixtures
+       - Idempotency test: run twice, verify same result
+    3. VERIFY data quality:
+       - Row counts match expectations
+       - Schema matches contract
+       - No silent data loss
+    4. IF test fails OR quality check fails:
+        stages.insert(0, stage)  # retry this stage
+    5. REPORT: "Stage {stage}: {DONE|RETRY} -- iteration {current_iteration}"
+
+OUTPUT: Complete pipeline with all stages tested and quality verified.
+```
+
+## Multi-Agent Dispatch
+
+For complex multi-source pipelines, dispatch parallel agents:
+
+```
+MULTI-AGENT PIPELINE BUILD:
+Dispatch 2-4 agents in parallel worktrees.
+
+Agent 1 (worktree: pipeline-extract):
+  - Build extractors for each source (API, DB, files)
+  - Implement watermarking for incremental extraction
+  - Add retry logic with exponential backoff
+  - Write extraction unit tests
+
+Agent 2 (worktree: pipeline-transform):
+  - Build pure transformation functions
+  - Implement schema validation at each boundary
+  - Create data quality check suite
+  - Write transformation unit tests
+
+Agent 3 (worktree: pipeline-load):
+  - Implement loading strategies (upsert, swap, append, SCD2)
+  - Build reconciliation queries
+  - Set up dead-letter queue for rejected records
+  - Write loading integration tests
+
+Agent 4 (worktree: pipeline-orchestrate):
+  - Create orchestrator config (Airflow DAG / Dagster / dbt)
+  - Set up monitoring and alerting
+  - Implement logging for each stage
+  - Write end-to-end integration test
+
+MERGE ORDER: extract -> transform -> load -> orchestrate
+CONFLICT ZONES: Schema definitions, config files, shared utility functions
+```
+
 ## Anti-Patterns
 
 - **Do NOT build a pipeline without a data flow diagram.** "Just read from A and write to B" leads to data quality nightmares. Map the full flow first.

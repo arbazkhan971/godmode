@@ -394,6 +394,125 @@ Remediation options:
 3. If grade D/F: "Significant quality issues found. Run `/godmode:fix` to address priority items."
 4. If grade A/B/C: "Quality analysis complete. Run `/godmode:optimize` to improve hotspots or `/godmode:ship` to proceed."
 
+## Auto-Detection
+
+Before prompting the user, automatically detect project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect language and framework:
+   - package.json -> JavaScript/TypeScript (check for React, Vue, Next.js, etc.)
+   - Gemfile -> Ruby (check for Rails, Sinatra)
+   - requirements.txt / pyproject.toml -> Python (check for Django, Flask, FastAPI)
+   - go.mod -> Go
+   - Cargo.toml -> Rust
+2. Detect existing quality tools:
+   - ESLint, Prettier, Biome -> JS/TS linting
+   - Rubocop -> Ruby linting
+   - Ruff, flake8, black, mypy -> Python linting
+   - golangci-lint -> Go linting
+   - clippy -> Rust linting
+3. Detect test infrastructure:
+   - Jest, Vitest, Mocha -> JS/TS testing
+   - RSpec, Minitest -> Ruby testing
+   - pytest, unittest -> Python testing
+   - go test -> Go testing
+4. Measure baseline metrics:
+   - LOC count by language (cloc or tokei if available)
+   - Test coverage from CI artifacts or coverage config
+   - Existing complexity reports
+5. Detect dependency management:
+   - package-lock.json / yarn.lock / pnpm-lock.yaml
+   - Gemfile.lock / Pipfile.lock / poetry.lock
+   - go.sum / Cargo.lock
+```
+
+## Explicit Loop Protocol
+
+For iterative quality remediation:
+
+```
+QUALITY IMPROVEMENT LOOP:
+current_iteration = 0
+max_iterations = 5
+quality_grade = run_full_analysis()
+
+WHILE current_iteration < max_iterations AND quality_grade < target_grade:
+  current_iteration += 1
+
+  1. IDENTIFY top finding:
+     - Pick highest-priority item from quality report
+     - Priority order: CRITICAL > circular deps > complexity > duplication > debt
+
+  2. APPLY remediation:
+     - Extract function / break cycle / consolidate duplicate / add test
+     - One remediation per iteration (isolate impact)
+
+  3. RE-ANALYZE:
+     - Re-run affected analysis module (complexity, duplication, etc.)
+     - Verify fix did not introduce regressions
+
+  4. EVALUATE:
+     - Record: { iteration, finding, fix, metric_before, metric_after }
+     - IF quality_grade reached target: STOP
+     - IF diminishing returns (improvement < 5%): STOP
+     - ELSE: continue to next finding
+
+  OUTPUT:
+  Iteration | Finding | Fix | Before | After
+  1         | CC=34   | extract method | CC=34 | CC=8
+  2         | cycle   | DI pattern     | 2 cycles | 0 cycles
+  ...
+```
+
+## Multi-Agent Dispatch
+
+For large codebase quality analysis:
+
+```
+PARALLEL AGENTS:
+Agent 1 — Duplication & Complexity (worktree: quality-code)
+  - Run duplication detection across all source files
+  - Calculate cyclomatic and cognitive complexity per function
+  - Generate consolidated findings with remediation
+
+Agent 2 — Dependency Analysis (worktree: quality-deps)
+  - Map internal module dependency graph
+  - Detect circular dependencies
+  - Identify high fan-in/fan-out modules
+  - Check for license compliance
+
+Agent 3 — Technical Debt Inventory (worktree: quality-debt)
+  - Scan for TODO/FIXME/HACK comments
+  - Identify code smells (god class, long method, feature envy)
+  - Catalog architecture violations
+  - Score each item with Impact x Likelihood / Effort
+
+Agent 4 — Test Quality (worktree: quality-tests)
+  - Measure test coverage
+  - Identify untested critical paths
+  - Detect brittle tests
+  - Measure test suite execution time
+
+MERGE ORDER: All agents run independently, merge reports into unified quality grade.
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. EVERY finding MUST include exact file path and line number.
+2. EVERY finding MUST include a concrete remediation — not just "this is bad."
+3. NEVER report complexity without showing the specific lines that contribute.
+4. NEVER fix all debt at once — address one finding per iteration, verify, continue.
+5. NEVER treat all duplication as bad — evaluate if both copies serve the same purpose.
+6. NEVER reduce complexity by splitting into incoherent micro-functions.
+7. ALWAYS check license compliance — GPL in an MIT project is a legal emergency.
+8. ALWAYS measure before and after — no unverified quality claims.
+9. NEVER conflate test coverage percentage with test quality.
+10. ALWAYS prioritize circular dependency breakage before other refactoring.
+```
+
 ## Key Behaviors
 
 1. **Measure, don't guess.** Every complexity score is calculated, every duplication is located, every dependency is mapped. No subjective assessments.

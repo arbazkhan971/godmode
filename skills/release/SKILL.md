@@ -724,6 +724,71 @@ Setup complete. Next merge to main will trigger the first Release PR.
 | `--status` | Show release status and next scheduled release |
 | `--history` | Show release history and metrics |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check package.json for version field, scripts (prepublish, release, publish)
+2. Detect versioning tool: release-please, semantic-release, changesets, standard-version
+3. Check for CHANGELOG.md or CHANGES.md existence and format
+4. Detect commit convention: grep recent commits for feat:, fix:, BREAKING CHANGE
+5. Check CI/CD: .github/workflows for release jobs, npm publish steps
+6. Detect registry: .npmrc, pyproject.toml [tool.poetry], Cargo.toml, go.mod
+7. Check for monorepo release config: lerna.json version, changesets config
+8. Detect pre-release tags: grep git tags for alpha, beta, rc, canary
+```
+
+## Iterative Release Loop
+
+```
+current_iteration = 0
+max_iterations = 8
+release_steps = [pre-checks, changelog, version-bump, build, test, tag, publish, announce]
+
+WHILE release_steps is not empty AND current_iteration < max_iterations:
+    step = release_steps.pop(0)
+    1. Execute step with validation
+    2. IF pre-checks: verify clean working tree, all tests pass, no pending deps
+    3. IF changelog: generate from commits since last tag, review for accuracy
+    4. IF version-bump: apply semver rules, update all version references
+    5. IF build: build all artifacts, verify checksums
+    6. IF test: run full test suite against built artifacts (not source)
+    7. IF tag: create annotated tag, verify tag matches version
+    8. IF publish: publish to registry, verify availability
+    9. IF any step fails → STOP. Do not continue the release.
+    10. current_iteration += 1
+
+POST-LOOP: Verify published artifact is installable/downloadable
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (2 worktrees):
+  Agent 1 — "release-prep": changelog generation, version bumps, release notes
+  Agent 2 — "release-ci": CI/CD pipeline setup, publish automation, tag workflows
+
+MERGE ORDER: prep → ci
+CONFLICT ZONES: version fields, CI workflow files
+NOTE: Release is inherently sequential — parallelism is limited to preparation tasks
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER release without a green test suite on the exact commit being released.
+2. NEVER manually edit version numbers. Automate from commit messages or changesets.
+3. NEVER release without a changelog entry. Every release tells users what changed.
+4. NEVER delete or move published tags. Create a new corrected tag instead.
+5. NEVER publish from a dirty working tree. git status must be clean.
+6. EVERY breaking change must bump the MAJOR version (semver).
+7. EVERY release must have a documented rollback procedure.
+8. NEVER release on Friday. Tuesday-Wednesday preferred.
+9. Pre-release versions (alpha/beta/rc) MUST be used for major version bumps.
+10. NEVER skip the build verification step. Test the built artifact, not the source.
+```
+
 ## Anti-Patterns
 
 - **Do NOT release without a changelog.** Every release must have a human-readable summary of changes. "See git log" is not a changelog.

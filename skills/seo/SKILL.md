@@ -658,6 +658,73 @@ Generating JSON-LD for each page type...
 | `--monitor` | Set up ongoing SEO monitoring (Lighthouse CI) |
 | `--ci` | CI-friendly output (exit code 1 on failure) |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect framework: Next.js (app/ or pages/), Nuxt, Gatsby, Remix, SvelteKit, Astro
+2. Check for SSR/SSG: next.config.js (output: export?), generateStaticParams, getStaticPaths
+3. Detect meta tag management: next/head, @next/metadata, react-helmet, vue-meta
+4. Check for structured data: grep for application/ld+json, schema.org in templates
+5. Check for sitemap: public/sitemap.xml, sitemap generation in build scripts
+6. Check for robots.txt: public/robots.txt, middleware-generated robots
+7. Detect analytics: Google Analytics, Search Console, Lighthouse CI configs
+8. Check for canonical URLs: grep for rel="canonical", alternate hreflang tags
+9. Detect image optimization: next/image, sharp, imagemin, WebP/AVIF usage
+```
+
+## Iterative SEO Audit Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+pages_to_audit = [list of page types/routes to audit]
+
+WHILE pages_to_audit is not empty AND current_iteration < max_iterations:
+    page = pages_to_audit.pop(0)
+    1. Check meta tags: title (50-60 chars), description (150-160 chars), canonical URL
+    2. Check structured data: validate JSON-LD against schema.org, test with Rich Results Test
+    3. Check Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1
+    4. Check images: alt text, dimensions, srcset, lazy loading, modern formats
+    5. Check heading hierarchy: single H1, logical H2-H6 nesting
+    6. Check internal linking: orphan pages, broken links, anchor text quality
+    7. Auto-fix what's possible (missing dimensions, missing alt text placeholders)
+    8. Flag manual fixes required with priority (HIGH/MEDIUM/LOW)
+    9. IF Lighthouse SEO < 90 → identify and fix blocking issues
+    10. IF passing → commit: "seo: audit + fix <page> (Lighthouse SEO: <score>)"
+    11. current_iteration += 1
+
+POST-LOOP: Generate sitemap, verify robots.txt, submit to Search Console
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "seo-meta": meta tags, canonical URLs, Open Graph, Twitter Cards per page type
+  Agent 2 — "seo-schema": JSON-LD structured data for all page types
+  Agent 3 — "seo-performance": Core Web Vitals fixes, image optimization, Lighthouse CI setup
+
+MERGE ORDER: meta → schema → performance (meta and schema are content, performance is optimization)
+CONFLICT ZONES: head/metadata components, layout files (coordinate on head structure first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. EVERY page must have a unique title (50-60 chars) and meta description (150-160 chars).
+2. EVERY page must have a canonical URL. No duplicate content without canonicalization.
+3. EVERY image must have alt text. Decorative images get alt="" (empty, not missing).
+4. NEVER use client-side rendering for SEO-critical content. SSR/SSG for indexable pages.
+5. Structured data MUST match visible page content. Fake markup = manual penalty.
+6. Sitemap MUST be auto-generated and updated on deploy. Stale sitemaps waste crawl budget.
+7. EVERY page must have a single H1 tag. Multiple H1s confuse document structure.
+8. Core Web Vitals targets: LCP < 2.5s, INP < 200ms, CLS < 0.1. Non-negotiable.
+9. NEVER block CSS/JS in robots.txt. Search engines need to render pages.
+10. EVERY route change in SPA must update the document title and push to analytics.
+```
+
 ## Anti-Patterns
 
 - **Do NOT stuff keywords into meta tags.** "Buy cheap shoes online best shoes cheap shoes sale" is spam. Write naturally for humans with one primary keyword per page.

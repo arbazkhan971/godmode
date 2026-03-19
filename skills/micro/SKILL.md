@@ -752,6 +752,125 @@ SAGA: Booking Workflow
 | `--resilience` | Design resilience patterns (circuit breaker, retry, bulkhead) |
 | `--migrate` | Plan monolith-to-microservices migration |
 
+## Auto-Detection
+
+```
+IF directory contains docker-compose.yml OR docker-compose.yaml:
+  services_count = count services in compose file
+  IF services_count > 2:
+    SUGGEST "Detected multi-service Docker Compose with {services_count} services. Activate /godmode:micro?"
+
+IF directory contains k8s/ OR kubernetes/ OR helm/:
+  deployment_count = count Deployment manifests
+  IF deployment_count > 2:
+    SUGGEST "Detected {deployment_count} Kubernetes deployments. Activate /godmode:micro?"
+
+IF directory contains istio/ OR linkerd/ OR service-mesh/:
+  SUGGEST "Detected service mesh configuration. Activate /godmode:micro?"
+
+IF directory contains proto/ OR *.proto files:
+  SUGGEST "Detected gRPC proto definitions. Activate /godmode:micro?"
+
+IF package.json contains "@grpc" OR "@nestjs/microservices" OR "moleculer" OR "seneca":
+  SUGGEST "Detected microservice framework. Activate /godmode:micro?"
+```
+
+## Iterative Decomposition Protocol
+
+```
+WHEN decomposing a monolith OR designing multi-service architecture:
+
+current_service = 0
+total_services = len(identified_bounded_contexts)
+failed_validations = []
+
+WHILE current_service < total_services:
+  service = bounded_contexts[current_service]
+
+  1. DEFINE service boundary (entities, commands, events)
+  2. DESIGN communication pattern (sync/async)
+  3. DEFINE data ownership (which tables/collections)
+  4. VALIDATE boundary:
+     - No shared database with other services
+     - Single team ownership
+     - Independent deployability
+     - Clear API contract
+
+  IF validation_fails:
+    failed_validations.append(service)
+    LOG "Service {service.name} boundary invalid: {reason}"
+    MERGE with adjacent context OR re-split
+  ELSE:
+    current_service += 1
+
+  IF current_service % 3 == 0:
+    REPORT progress: "{current_service}/{total_services} services designed"
+
+FINAL: Generate topology diagram with all validated services
+IF len(failed_validations) > 0:
+  REPORT "Revisit: {failed_validations}"
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN designing a large microservice system (5+ services):
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (service-design):
+    - Design bounded contexts and service boundaries
+    - Define entity ownership per service
+    - Output: service-catalog.md
+
+  Agent 2 (communication-design):
+    - Design inter-service communication patterns
+    - Define event schemas and API contracts
+    - Output: communication-contracts.md
+
+  Agent 3 (infrastructure):
+    - Configure service mesh (Istio/Linkerd)
+    - Design resilience patterns (circuit breakers, retries)
+    - Output: k8s/mesh/ configs
+
+  Agent 4 (saga-design):
+    - Design saga workflows for distributed transactions
+    - Define compensating actions
+    - Output: saga-definitions.md
+
+MERGE: Validate all agents' outputs are consistent
+  - Service names match across all documents
+  - Event names in communication match saga definitions
+  - Mesh configs reference correct service names
+```
+
+## HARD RULES
+
+```
+1. NEVER design a microservice that shares a database with another service.
+   One service = one data store. No exceptions.
+
+2. NEVER decompose by technical layer (e.g., "database service", "auth library service").
+   Decompose by business domain ONLY.
+
+3. NEVER skip the modular monolith step for greenfield projects.
+   Build modular first. Extract when boundaries are proven.
+
+4. EVERY synchronous call between services MUST have a circuit breaker,
+   timeout (max 3s default), and retry with exponential backoff.
+
+5. EVERY service MUST have a health check endpoint and be independently deployable.
+
+6. NEVER use distributed transactions (2PC) across services.
+   Use sagas with compensating actions.
+
+7. EVERY event MUST include: event_id, event_type, version, timestamp,
+   source, correlation_id, and data payload.
+
+8. NEVER create a service with fewer than 2 bounded context entities.
+   That is a nano-service, not a microservice.
+```
+
 ## Anti-Patterns
 
 - **Do NOT decompose by technical layer.** A "database service", "logging service", or "auth library as a service" creates distributed coupling without business value. Decompose by business domain.

@@ -827,6 +827,109 @@ FIXES:
 Query time: 1200ms -> 8ms
 ```
 
+## HARD RULES
+1. NEVER return raw Eloquent models from controllers — always use API Resources (JsonResource).
+2. NEVER use `$guarded = []` — explicitly define `$fillable` on every model. Mass assignment vulnerabilities are real.
+3. NEVER put business logic in controllers — controllers receive requests and return responses. Logic belongs in Action/Service classes.
+4. NEVER use inline validation in controllers — use Form Request classes. They are reusable, testable, and self-documenting.
+5. NEVER process heavy work synchronously — email, PDF, payments, and external API calls MUST be queued.
+6. NEVER reference `env()` outside config files — use `config()` helper in application code.
+7. NEVER skip authorization — every endpoint must check Policies or Gates. No exceptions.
+8. ALWAYS enable `Model::preventLazyLoading()` in development — catch N+1 queries before production.
+9. ALWAYS use `DB::transaction()` for operations that must be atomic.
+10. ALWAYS use backed enums (PHP 8.1+) for status fields and `$casts` for type safety.
+
+## Auto-Detection
+On activation, detect Laravel project context automatically:
+```
+AUTO-DETECT:
+1. Confirm Laravel project:
+   - artisan file in project root
+   - composer.json with laravel/framework dependency
+   - Parse Laravel version from composer.lock
+2. Detect PHP version:
+   - composer.json → require.php version constraint
+   - php -v output
+3. Detect architecture:
+   - routes/web.php present → full-stack (Blade/Livewire/Inertia)
+   - routes/api.php present → API routes exist
+   - resources/views/ → Blade templates
+   - resources/js/ with Vue/React → Inertia
+4. Detect auth:
+   - config/sanctum.php → Sanctum
+   - config/passport.php → Passport
+   - laravel/breeze or laravel/jetstream in composer.json
+5. Detect queue/cache:
+   - config/queue.php → connection driver (redis, database, sqs)
+   - config/cache.php → cache driver
+   - config/horizon.php → Laravel Horizon
+6. Detect testing:
+   - tests/Feature/, tests/Unit/
+   - pestphp/pest in composer.json → Pest
+   - phpunit.xml → PHPUnit
+7. Detect deployment:
+   - forge.yml → Laravel Forge
+   - serverless.yml → Laravel Vapor
+   - docker-compose.yml → Docker/Sail
+```
+
+## Iterative Build Protocol
+Laravel features are built iteratively through the stack:
+```
+current_layer = 0
+layers = ["migration", "model", "policy", "formrequest", "controller", "resource", "routes", "tests"]
+
+WHILE current_layer < len(layers):
+  layer = layers[current_layer]
+  1. IMPLEMENT layer:
+     - migration: Create schema with proper indexes and foreign keys
+     - model: Relationships, scopes, casts, fillable, accessors
+     - policy: Authorization rules for every action
+     - formrequest: Validation rules with custom messages
+     - controller: Thin controller using Action/Service classes
+     - resource: API Resource with conditional relationships
+     - routes: Route registration with middleware
+     - tests: Pest tests for this layer
+  2. VALIDATE layer:
+     - Run: php artisan test --filter={layer}
+     - Check: No N+1 (preventLazyLoading catches these)
+     - Check: No mass assignment vulnerabilities
+  3. IF validation fails → fix before proceeding to next layer
+  4. COMMIT: "laravel: {feature} — {layer} layer"
+  5. current_layer += 1
+
+EXIT when all layers complete and tests pass
+```
+
+## Multi-Agent Dispatch
+For large Laravel features spanning multiple domains:
+```
+DISPATCH parallel agents (one per domain):
+
+Agent 1 (worktree: laravel-models):
+  - Models, migrations, factories, seeders
+  - Scope: app/Models/, database/
+  - Output: Eloquent models with relationships and factories
+
+Agent 2 (worktree: laravel-api):
+  - Controllers, Form Requests, API Resources, Routes
+  - Scope: app/Http/, routes/
+  - Output: Complete API layer
+
+Agent 3 (worktree: laravel-services):
+  - Action classes, Service classes, Events, Jobs, Listeners
+  - Scope: app/Actions/, app/Services/, app/Events/, app/Jobs/
+  - Output: Business logic with async processing
+
+Agent 4 (worktree: laravel-tests):
+  - Pest test suite covering all layers
+  - Scope: tests/
+  - Output: Feature + Unit tests with factories
+
+MERGE ORDER: models → services → api → tests
+CONFLICT RESOLUTION: models branch owns migrations and model definitions
+```
+
 ## Flags & Options
 
 | Flag | Description |

@@ -755,6 +755,99 @@ Setup:
 | `--test` | Generate test suite for gRPC handlers |
 | `--bench` | Run gRPC load tests with ghz |
 
+## Auto-Detection
+
+On activation, automatically detect gRPC project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for .proto files — determine package structure, proto version (proto2 vs proto3)
+2. Detect language: Go (go.mod with google.golang.org/grpc), Rust (Cargo.toml with tonic), Java (grpc-java deps), Python (grpcio), TypeScript (grpc-node/@grpc)
+3. Check for buf: buf.yaml, buf.gen.yaml, buf.lock — detect lint and generation config
+4. If no buf, check for protoc: Makefile with protoc commands, generate scripts
+5. Detect code generation targets: gen/ directory, generated stubs in source tree
+6. Scan for streaming patterns: stream keyword in .proto service definitions
+7. Check for health check implementation: grpc.health.v1 import or Health service definition
+8. Detect load balancing: Envoy config, Istio VirtualService, client-side LB config
+9. Check for observability: interceptor/middleware for logging, metrics (Prometheus), tracing (OpenTelemetry)
+10. Detect gRPC-Web or Connect: envoy grpc-web filter, connect-go imports, grpc-web npm package
+```
+
+## Explicit Loop Protocol
+
+When building multiple gRPC services or RPCs iteratively:
+
+```
+GRPC SERVICE BUILD LOOP:
+current_iteration = 0
+services = [service_1, service_2, ...]  // from discovery
+
+WHILE current_iteration < len(services) AND NOT user_says_stop:
+  1. SELECT next service by dependency order
+  2. DESIGN proto file: service definition, messages, enums, validation rules
+  3. RUN buf lint — fix any violations before proceeding
+  4. RUN buf breaking (against main branch) — ensure no breaking changes
+  5. GENERATE code: run buf generate for all target languages
+  6. IMPLEMENT server handlers: unary RPCs first, then streaming
+  7. ADD interceptors: recovery, logging, metrics, auth, validation
+  8. IMPLEMENT health check (grpc.health.v1.Health)
+  9. WRITE tests: handler unit tests, integration tests, streaming edge cases
+  10. current_iteration += 1
+  11. REPORT: "Service <N>/<total>: <name> — <X> RPCs (<Y> unary, <Z> streaming), buf lint PASS"
+
+ON COMPLETION:
+  RUN buf lint + buf breaking on full proto tree
+  VERIFY health checks on all services
+  REPORT: "<N> services, <M> RPCs total, buf lint PASS, buf breaking PASS"
+```
+
+## Multi-Agent Dispatch
+
+For multi-service gRPC architectures, dispatch parallel agents:
+
+```
+PARALLEL GRPC AGENTS:
+When building multiple gRPC services simultaneously:
+
+Agent 1 (worktree: grpc-protos):
+  - Design all proto files with consistent conventions
+  - Set up buf configuration (lint, breaking, generation)
+  - Create shared proto types (common messages, enums, well-known type imports)
+  - Run buf lint and buf breaking validation
+
+Agent 2 (worktree: grpc-server):
+  - Implement server handlers for all services
+  - Add interceptor chain (recovery, logging, metrics, auth, validation)
+  - Implement health check service
+  - Configure L7 load balancing (Envoy or client-side)
+
+Agent 3 (worktree: grpc-client):
+  - Generate typed client stubs for all consumer languages
+  - Implement client interceptors (retry, timeout, auth metadata)
+  - Set up gRPC-Web or Connect for browser clients
+  - Write integration tests using generated clients
+
+MERGE STRATEGY: Proto agent merges first (server and client depend on generated code).
+  Server and client merge independently.
+  Final: run full integration test suite with real client-server communication.
+```
+
+## Hard Rules
+
+```
+HARD RULES — GRPC:
+1. ALWAYS use proto3 syntax. Proto2 is legacy and should not be used for new services.
+2. EVERY enum MUST start with UNSPECIFIED = 0. This is how you detect unset fields.
+3. NEVER reuse a field number after removing a field. Reserve removed numbers and names.
+4. NEVER share request/response messages across RPCs. Each RPC gets its own messages.
+5. ALWAYS use buf (not raw protoc) for linting, breaking change detection, and code generation.
+6. NEVER commit generated code. Generate in CI from proto files. Committed stubs drift and cause conflicts.
+7. ALWAYS use L7 load balancing for gRPC. L4 balancers see one HTTP/2 connection and route everything to one backend.
+8. ALWAYS implement grpc.health.v1.Health on every gRPC server. Load balancers and orchestrators depend on it.
+9. ALWAYS set deadlines on all RPCs. RPCs without deadlines can hang forever and leak resources.
+10. ALWAYS use correct status codes. NOT_FOUND, INVALID_ARGUMENT, PERMISSION_DENIED give clients actionable information — INTERNAL does not.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use L4 load balancing for gRPC.** HTTP/2 multiplexes all RPCs over one connection. L4 balancers see one connection and route everything to one backend.

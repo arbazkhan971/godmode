@@ -572,6 +572,96 @@ New observability score: 9/10
 | `--audit` | Assess current observability coverage |
 | `--tool <name>` | Target specific tool (prometheus, datadog, cloudwatch, etc.) |
 
+## HARD RULES
+
+1. **NEVER ship without at least metrics + structured logging.** Tracing can be added later. Metrics and logs are day-one requirements.
+2. **NEVER use `console.log` / `print` in production code.** All logging goes through the structured logger with consistent fields.
+3. **NEVER put high-cardinality values in metric labels.** `user_id`, `request_id`, `trace_id` go in logs/traces, not metric labels. Violating this kills Prometheus/DataDog.
+4. **NEVER create alerts without a `for` duration.** Minimum 5 minutes for warnings, 2 minutes for critical. No flapping alerts.
+5. **NEVER log PII, tokens, passwords, or credit card numbers.** Sanitize before emission. This is non-negotiable.
+6. **NEVER create a dashboard without stating the question it answers.** If you cannot name the question, the dashboard is noise.
+7. **ALWAYS include `request_id` in every log entry.** Cross-request correlation is impossible without it.
+8. **ALWAYS verify webhook/exporter endpoints are reachable before declaring setup complete.**
+
+## Auto-Detection
+
+Before starting any observability work, detect the existing setup:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for existing instrumentation:
+   - grep for prom-client, datadog, statsd, opentelemetry, newrelic imports
+   - grep for winston, pino, bunyan, structlog, loguru, slog, zerolog
+   - grep for @opentelemetry, jaeger-client, zipkin, dd-trace
+   - check for /metrics endpoint in routes
+
+2. Detect monitoring infrastructure:
+   - ls prometheus.yml, docker-compose*monitoring*, grafana/
+   - check for OTEL_EXPORTER_*, DD_API_KEY, NEW_RELIC_LICENSE_KEY in .env*
+   - scan Kubernetes manifests for prometheus annotations
+
+3. Detect alerting:
+   - ls monitoring/alerts*, alertmanager*, pagerduty*
+   - grep for alert rules in yaml files
+
+4. Output: OBSERVABILITY ASSESSMENT table (Step 1) auto-populated
+```
+
+## Explicit Loop Protocol
+
+Observability instrumentation is iterative -- each pillar may need multiple passes:
+
+```
+current_iteration = 0
+pillars_remaining = [metrics, logging, tracing, alerts, slos, dashboards]
+
+WHILE pillars_remaining is not empty AND current_iteration < 6:
+    current_iteration += 1
+    pillar = pillars_remaining.pop(0)
+
+    1. ASSESS current state of this pillar
+    2. IMPLEMENT instrumentation for this pillar
+    3. VERIFY instrumentation produces output (curl /metrics, check logs, trace visible)
+    4. IF verification fails:
+        pillars_remaining.append(pillar)  # retry next round
+    5. REPORT: "Pillar {pillar}: {DONE|RETRY} -- iteration {current_iteration}/6"
+
+IF pillars_remaining is not empty:
+    REPORT: "Incomplete pillars: {pillars_remaining}. Manual intervention needed."
+```
+
+## Multi-Agent Dispatch
+
+For large systems with multiple services, dispatch parallel agents:
+
+```
+MULTI-AGENT OBSERVABILITY SETUP:
+Dispatch 2-4 agents in parallel worktrees when instrumenting multiple services.
+
+Agent 1 (worktree: observe-metrics):
+  - Instrument all services with metrics (RED/USE)
+  - Configure /metrics endpoints
+  - Set up Prometheus scrape targets
+
+Agent 2 (worktree: observe-logging):
+  - Replace unstructured logging with structured JSON
+  - Add request_id correlation middleware
+  - Configure log aggregation (ELK/Loki)
+
+Agent 3 (worktree: observe-tracing):
+  - Add OpenTelemetry auto-instrumentation
+  - Configure trace propagation headers
+  - Verify end-to-end trace visibility
+
+Agent 4 (worktree: observe-alerts):
+  - Define SLOs and error budgets
+  - Create Prometheus alert rules
+  - Build Grafana dashboards
+
+MERGE ORDER: metrics -> logging -> tracing -> alerts (each depends on prior)
+CONFLICT ZONES: middleware registration order, config files, docker-compose ports
+```
+
 ## Anti-Patterns
 
 - **Do NOT alert on symptoms without context.** "CPU is high" is not actionable. "CPU is high on api-server causing P95 latency > 500ms" is actionable.

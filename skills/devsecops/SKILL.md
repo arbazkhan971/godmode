@@ -842,6 +842,71 @@ Full scan (thorough): Weekly scheduled run
 | `--metrics` | Set up security metrics dashboard |
 | `--platform <name>` | Target CI platform (github, gitlab, jenkins, azure) |
 
+## HARD RULES
+
+- NEVER allow secrets to pass the security gate — secret scanning has ZERO exceptions and NO override process
+- NEVER use `:latest` for scanner images in CI — pin scanner versions to prevent silent policy changes
+- NEVER scan only on main branch — security issues MUST be caught in PRs before merge
+- NEVER deploy unsigned container images to production — sign with cosign/notation and verify before deploy
+- NEVER store scanner tokens as plain environment variables — use CI/CD secret management
+- ALL CRITICAL/HIGH severity findings MUST block merge (no silent pass-through)
+- ALL security gate overrides MUST have documented justification, an expiry date (max 30 days), and a reviewing team
+- ALL releases MUST include an SBOM in SPDX or CycloneDX format
+
+## Iterative Security Scan Loop Protocol
+
+When hardening a pipeline or auditing security posture:
+
+```
+current_iteration = 0
+scan_queue = [SAST, SCA, secret_scan, container_scan, IaC_scan, DAST]
+WHILE scan_queue is not empty:
+    current_iteration += 1
+    scan_type = scan_queue.pop(next)
+    configure and run scan_type
+    collect findings (CRITICAL, HIGH, MEDIUM, LOW)
+    FOR each CRITICAL/HIGH finding:
+        triage: true positive or false positive
+        if true positive: create fix or exception with expiry
+        if false positive: add to allowlist with justification
+    IF new scan type dependencies discovered (e.g., IaC scan reveals missing container scan):
+        add to scan_queue
+    report: "Iteration {current_iteration}: {scan_type} — {N} findings, {M} fixed, {remaining} scans queued"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 4 agents in separate worktrees:
+  Agent 1 (SAST+SCA):      Configure Semgrep/CodeQL + Snyk/npm audit, tune rulesets, set severity thresholds
+  Agent 2 (containers):     Configure Trivy container scanning + Dockerfile hardening + image signing with cosign
+  Agent 3 (secrets+IaC):    Configure gitleaks/trufflehog pre-commit + CI + Checkov/tfsec for IaC scanning
+  Agent 4 (gates+pipeline): Build orchestrator workflow with security gates, SBOM generation, deploy verification
+SYNC point: All agents complete
+  Merge worktrees
+  Run full security pipeline end-to-end on a test PR
+  Generate security posture report with maturity level assessment
+```
+
+## Auto-Detection
+
+```
+1. Check CI/CD platform:
+   - Scan for .github/workflows/ → GitHub Actions
+   - Scan for .gitlab-ci.yml → GitLab CI
+   - Scan for Jenkinsfile → Jenkins
+   - Scan for azure-pipelines.yml → Azure DevOps
+2. Check existing security controls:
+   - Scan workflows for semgrep, codeql, sonar, snyk, trivy, gitleaks, trufflehog, checkov, tfsec
+   - Check for .gitleaks.toml, .semgrep/, sonar-project.properties
+   - Check for cosign, notation references (artifact signing)
+   - Check for dependabot.yml or renovate.json (dependency updates)
+3. Check for container and IaC:
+   - Scan for Dockerfile*, docker-compose*, kubernetes/, terraform/, cloudformation/
+4. Assess maturity level (0-5) based on controls found
+5. Identify gaps and set scan_queue for the hardening loop
+```
+
 ## Anti-Patterns
 
 - **Do NOT add security scanning that blocks builds without tuning.** Untuned scanners produce hundreds of false positives, causing developers to ignore or disable them. Tune rules first, then enforce.

@@ -569,6 +569,97 @@ Next steps:
 
 Commit: `"rails: <app> — <N> models, <M> controllers, Hotwire, RSpec"`
 
+## Auto-Detection
+
+Before prompting the user, automatically detect Rails project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect Rails version:
+   - Gemfile: gem "rails", "~> 8.0" or specific version
+   - Gemfile.lock: rails version
+   - config/application.rb: Rails version constant
+2. Detect Ruby version:
+   - .ruby-version file
+   - Gemfile: ruby "3.3.x"
+3. Detect database:
+   - config/database.yml: adapter field (postgresql, mysql2, sqlite3)
+   - DATABASE_URL environment variable
+4. Detect architecture choices:
+   - config/application.rb: config.api_only? -> API mode
+   - app/views/ presence -> full-stack
+   - app/javascript/controllers/ -> Stimulus installed
+   - Gemfile: turbo-rails, stimulus-rails -> Hotwire
+5. Detect background job processor:
+   - Gemfile: sidekiq, good_job, solid_queue, delayed_job
+   - config/sidekiq.yml, config/queue.yml presence
+6. Detect testing framework:
+   - Gemfile: rspec-rails -> RSpec
+   - test/ directory -> Minitest (default)
+   - spec/ directory -> RSpec
+   - Gemfile: factory_bot_rails, shoulda-matchers, capybara
+7. Detect auth strategy:
+   - Gemfile: devise, rodauth-rails, or custom auth
+   - app/models/user.rb: has_secure_password
+   - Rails 8 generated auth: app/controllers/sessions_controller.rb
+8. Detect deployment:
+   - config/deploy.yml -> Kamal
+   - Procfile -> Heroku
+   - Dockerfile -> Docker-based
+   - .platform/ -> AWS Elastic Beanstalk
+```
+
+## Multi-Agent Dispatch
+
+For large Rails feature development:
+
+```
+PARALLEL AGENTS:
+Agent 1 — Models & Migrations (worktree: rails-models)
+  - Generate models with associations and validations
+  - Create database migrations with proper indexes
+  - Add scopes, enums, and callbacks
+  - Write model specs with FactoryBot
+
+Agent 2 — Controllers & Routes (worktree: rails-controllers)
+  - Generate RESTful controllers with strong params
+  - Configure routes with proper nesting
+  - Add authorization checks
+  - Write request specs
+
+Agent 3 — Views & Hotwire (worktree: rails-views)
+  - Build views with Turbo Frames for interactivity
+  - Add Turbo Streams for real-time updates
+  - Create Stimulus controllers for JS behavior
+  - Write system specs for critical flows
+
+Agent 4 — Jobs & Services (worktree: rails-services)
+  - Extract service objects for complex business logic
+  - Create background jobs with retry policies
+  - Build mailers and notification logic
+  - Write unit specs for services and jobs
+
+MERGE ORDER: Agent 1 first (models/schema), then Agent 2 + 4 in parallel, then Agent 3.
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. ALWAYS use PostgreSQL in production — SQLite is for dev/test only.
+2. NEVER leave N+1 queries — use includes/preload and strict_loading.
+3. NEVER use default_scope — it silently affects every query.
+4. NEVER put complex business logic in callbacks — use service objects.
+5. NEVER use update_attribute — it skips validations. Use update! instead.
+6. NEVER write raw SQL without parameterization — SQL injection is real.
+7. ALWAYS add database indexes on all foreign keys and WHERE/ORDER columns.
+8. ALWAYS make migrations reversible — never edit committed migrations.
+9. ALWAYS use strong parameters — no mass assignment vulnerabilities.
+10. NEVER use .all.each for large datasets — use find_each or in_batches.
+11. ALWAYS use build over create in factories when DB persistence is not needed.
+12. ALWAYS use request specs over controller specs (Rails recommendation).
+```
+
 ## Key Behaviors
 
 1. **Convention over configuration.** Follow the Rails Way. If you are fighting the framework, you are doing it wrong.

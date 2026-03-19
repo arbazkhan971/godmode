@@ -496,6 +496,52 @@ Run /godmode:api --diff v1 v2 to see full migration guide.
 | `--framework spring` | Use Spring Cloud Contract |
 | `--ci` | Generate CI/CD pipeline configuration for contract testing |
 
+## HARD RULES
+
+1. **NEVER STOP** until all consumer-provider pairs have contracts defined and verified.
+2. **Consumer-driven ALWAYS** — the consumer defines expectations, the provider proves compliance.
+3. **NEVER use exact value matching** — use type matchers, regex, and structural matchers.
+4. **NEVER deploy without can-i-deploy check.** No exceptions.
+5. **NEVER hand-write mock servers** — generate from contracts.
+6. **git commit BEFORE verify** — commit contracts, then run verification.
+7. **Automatic revert on regression** — if provider changes break consumer contracts, block deployment.
+8. **TSV logging** — log every contract test run:
+   ```
+   timestamp	provider	consumer	interactions	passed	failed	breaking_changes	verdict
+   ```
+
+## Multi-Agent Dispatch
+
+For systems with multiple consumers and providers, dispatch parallel agents:
+
+```
+MULTI-AGENT CONTRACT TESTING:
+
+Agent 1 (worktree: contract-consumer-frontend):
+  Scope: Frontend App consumer contracts
+  Task: Define/update consumer expectations for all API endpoints used
+  Output: pacts/frontend-*.pact.json
+
+Agent 2 (worktree: contract-consumer-mobile):
+  Scope: Mobile App consumer contracts
+  Task: Define/update consumer expectations for mobile-specific endpoints
+  Output: pacts/mobile-*.pact.json
+
+Agent 3 (worktree: contract-provider-verify):
+  Scope: Provider verification
+  Task: Set up provider states, verify ALL consumer pacts against running provider
+  Output: verification-results.md
+
+Agent 4 (worktree: contract-breaking-analysis):
+  Scope: Breaking change detection
+  Task: Diff current spec vs previous version, identify breaking changes,
+        generate compatibility matrix
+  Output: compatibility-matrix.md, breaking-changes.md
+
+MERGE: Combine all pacts, verify compatibility matrix,
+       produce unified can-i-deploy decision.
+```
+
 ## Anti-Patterns
 
 - **Do NOT write contracts that match exact values.** Use type matchers, regex matchers, and structural matchers. Exact value matching makes contracts brittle and noisy.

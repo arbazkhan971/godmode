@@ -256,6 +256,16 @@ Saved to .godmode/config.yaml
 | `--show` | Show current configuration |
 | `--validate` | Re-validate existing configuration |
 
+## HARD RULES
+
+1. **NEVER accept a test or lint command without running it first.** A misconfigured verify command wastes hours of downstream optimization.
+2. **NEVER store secrets in `.godmode/config.yaml`.** Passwords, API keys, and tokens go in environment variables or a secrets manager -- never in committed config files.
+3. **NEVER skip validation of the verify command.** Run it at least 3 times to confirm stable output before saving the baseline.
+4. **NEVER overwrite an existing `.godmode/config.yaml` without confirmation.** If config exists, show current config and ask before replacing.
+5. **NEVER create configuration for skills that do not need it.** `/godmode:think` and `/godmode:debug` work without setup. Only configure when a verify command or test command is required.
+6. **ALWAYS commit `.godmode/` to version control** so teammates get the same configuration.
+7. **ALWAYS use `--detect` mode first** before asking the user questions. Auto-detect everything possible.
+
 ## Anti-Patterns
 
 - **Do NOT accept commands without validation.** "npm test" might not work in this project. Run it.

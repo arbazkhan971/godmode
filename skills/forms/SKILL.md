@@ -1050,6 +1050,100 @@ Priority fixes:
 | `--migrate` | Migrate from manual state to React Hook Form |
 | `--autosave` | Add autosave to an existing form |
 
+## Auto-Detection
+
+On activation, automatically detect the form development context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect UI framework: React (react-dom), Vue, Angular, Svelte, vanilla
+2. Check for form library: react-hook-form, formik, @angular/forms, vee-validate
+3. Detect validation library: zod, yup, joi, class-validator, valibot
+4. Scan for existing form components: *Form.tsx, *Form.vue, *-form.component.ts
+5. Check for schema definitions: *.schema.ts, *.validation.ts files
+6. Detect Next.js server actions (useActionState, useFormState imports)
+7. Scan for file upload patterns: <input type="file">, drag-and-drop libraries
+8. Check for accessibility: aria-invalid, aria-describedby, role="alert" usage
+9. Detect multi-step patterns: step/wizard state management, sessionStorage usage
+10. Check for server-side validation: API route handlers with schema validation
+```
+
+## Explicit Loop Protocol
+
+When building or auditing multiple forms:
+
+```
+FORM BUILD/AUDIT LOOP:
+current_iteration = 0
+forms = [form_1, form_2, ...]  // discovered or requested forms
+
+WHILE current_iteration < len(forms) AND NOT user_says_stop:
+  1. ASSESS form: field count, complexity, multi-step, file uploads, async validation
+  2. IF building new form:
+       a. CREATE Zod schema (or chosen validation library)
+       b. IMPLEMENT form with chosen library (React Hook Form recommended)
+       c. ADD accessibility: labels, aria-invalid, aria-describedby, focus management
+       d. ADD server-side validation using shared schema
+       e. IF multi-step: implement wizard with session persistence
+       f. IF file upload: implement with validation, progress, preview
+  3. IF auditing existing form:
+       a. CHECK: every field has visible label (not just placeholder)
+       b. CHECK: errors use aria-describedby and role="alert"
+       c. CHECK: focus moves to first error on submit failure
+       d. CHECK: server-side validation exists with same schema
+       e. CHECK: keyboard navigation works (Tab order, Enter submit)
+       f. REPORT findings as SOLID / NEEDS WORK / FRAGILE
+  4. RUN accessibility checklist (Step 6)
+  5. current_iteration += 1
+  6. REPORT: "Form <N>/<total>: <name> — <verdict>"
+
+ON COMPLETION:
+  REPORT: "<N> forms processed, <M> SOLID, <K> NEEDS WORK, <J> FRAGILE"
+```
+
+## Multi-Agent Dispatch
+
+For large form-heavy applications, dispatch parallel agents:
+
+```
+PARALLEL FORM AGENTS:
+When building multiple complex forms simultaneously:
+
+Agent 1 (worktree: forms-schemas):
+  - Design all Zod schemas (shared between client and server)
+  - Create reusable validation patterns (email, phone, address, payment)
+  - Build schema tests (valid input, invalid input, edge cases)
+
+Agent 2 (worktree: forms-components):
+  - Build reusable form components (FormField, ErrorSummary, StepProgress, FileUpload)
+  - Implement useWizardForm, useAutosave, useAsyncValidation hooks
+  - Ensure WCAG 2.1 AA compliance on all components
+
+Agent 3 (worktree: forms-pages):
+  - Assemble page-level forms using schemas and components
+  - Implement server-side validation in API routes
+  - Write E2E tests for complete form flows (submit, validation, multi-step)
+
+MERGE STRATEGY: Schemas merge first. Components rebase onto schemas.
+  Pages rebase onto components. Final: run full accessibility audit and E2E tests.
+```
+
+## Hard Rules
+
+```
+HARD RULES — FORMS:
+1. EVERY input field MUST have a visible <label> associated via htmlFor/id. Placeholder is NOT a label.
+2. NEVER show validation errors before the user has interacted with the field. Validate on blur first, onChange after.
+3. ALWAYS validate on BOTH client and server. Client validation is UX; server validation is security.
+4. ALWAYS move focus to the first invalid field on submit failure. Lost focus = lost users.
+5. NEVER use alert() for form errors. Use inline errors with aria-describedby and error summary.
+6. ALWAYS persist multi-step form data across steps and on browser refresh (sessionStorage).
+7. ALWAYS validate file uploads: check MIME type, file extension, file size, and count before uploading.
+8. NEVER manage more than 5 fields with raw useState. Use React Hook Form or equivalent.
+9. ALWAYS use aria-invalid="true" on fields with errors and role="alert" on error messages.
+10. ALWAYS share the same schema (Zod) between client and server validation. Two schemas = two sources of bugs.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use placeholder as a label.** Placeholder text disappears on focus, is low contrast, and is not announced by all screen readers as a label. Every field needs a real `<label>`.

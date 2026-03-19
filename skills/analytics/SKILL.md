@@ -778,6 +778,70 @@ Run /godmode:report --type experiment when complete.
 | `--validate` | Validate that all events in taxonomy are instrumented and firing |
 | `--data-model` | Design analytics data model for warehouse |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect the analytics landscape:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect existing analytics SDKs:
+   - grep for '@segment/analytics', 'amplitude', 'mixpanel', 'posthog', 'plausible', 'umami'
+   - Check for gtag.js, analytics.js, GA4 measurement ID
+2. Detect framework and platform:
+   - React/Next.js → check for app router vs pages router (affects page tracking)
+   - Vue/Nuxt → check for vue-router integration
+   - Mobile → check for React Native, Flutter, Swift, Kotlin analytics SDKs
+3. Detect existing event tracking:
+   - grep for '.track(', '.capture(', 'analytics.track', 'gtag('
+   - Count existing tracked events and categorize them
+4. Detect consent management:
+   - grep for 'cookie-consent', 'cookiebot', 'onetrust', 'consent'
+   - Check for consent banners in HTML templates
+5. Detect data warehouse:
+   - Check for BigQuery, Snowflake, Redshift configs in codebase or infra
+6. Detect privacy requirements:
+   - Check for GDPR/CCPA references in docs or code
+   - Check deployment regions (EU → GDPR likely required)
+7. Auto-configure:
+   - No analytics → recommend platform based on framework and privacy needs
+   - Existing analytics → audit for taxonomy consistency and gaps
+```
+
+## Multi-Agent Dispatch
+
+For large-scale analytics implementations across multiple surfaces:
+
+```
+PARALLEL ANALYTICS IMPLEMENTATION:
+IF platform_count > 1 OR event_count > 30:
+  Agent 1 (worktree: analytics-taxonomy):
+    - Design complete event taxonomy
+    - Define property standards and validation rules
+    - Create event catalog documentation
+    - Build TypeScript types for all events
+
+  Agent 2 (worktree: analytics-implementation):
+    - Implement analytics abstraction layer
+    - Add provider-specific integrations
+    - Instrument all events from the taxonomy
+    - Add consent management integration
+
+  Agent 3 (worktree: analytics-funnels):
+    - Design conversion funnels
+    - Instrument A/B test framework
+    - Set up experiment assignment logic
+    - Create funnel visualization configs
+
+  Agent 4 (worktree: analytics-privacy):
+    - Implement consent manager
+    - Audit all events for PII
+    - Add data deletion API endpoint
+    - Verify DNT/opt-out behavior
+    - Test consent gate end-to-end
+
+  COORDINATOR validates all events fire correctly, taxonomy is consistent
+```
+
 ## Anti-Patterns
 
 - **Do NOT track events without a taxonomy.** Random event names like "click1", "button_pressed", "user_did_thing" are useless. Design the taxonomy first.

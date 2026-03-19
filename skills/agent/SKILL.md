@@ -536,6 +536,59 @@ EVALUATION (30 test PRs):
 | `--optimize` | Optimize agent (reduce steps, improve tool selection) |
 | `--cost` | Analyze and optimize agent cost per task |
 
+## Explicit Loop Protocol
+
+When building or debugging agent loops, use this tracking protocol:
+
+```
+AGENT BUILD/DEBUG LOOP:
+current_iteration = 0
+max_iterations = 20
+issues_remaining = total_issues
+
+WHILE issues_remaining > 0 AND current_iteration < max_iterations:
+    current_iteration += 1
+
+    1. IDENTIFY next issue (tool gap, guardrail weakness, test failure)
+    2. IMPLEMENT fix (code change, config update, prompt edit)
+    3. git commit with message: "agent: fix <issue> (iter {current_iteration})"
+    4. RUN evaluation suite against the fix
+    5. RECORD result:
+       - Pass/fail for each test category
+       - Regression check: did the fix break anything?
+    6. IF regression detected:
+       - git revert the commit
+       - Try alternative approach
+    7. UPDATE issues_remaining
+
+    IF current_iteration % 5 == 0:
+        PRINT STATUS:
+        "Iteration {current_iteration}/{max_iterations}"
+        "Issues fixed: {total_issues - issues_remaining}/{total_issues}"
+        "Test pass rate: {pass_rate}%"
+        "Safety violations: {safety_violations} (must be 0)"
+
+IF issues_remaining > 0:
+    PRINT "Remaining issues require manual review: {issues_remaining}"
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. NEVER deploy an agent without guardrails defined first — safety before capabilities.
+2. NEVER allow irreversible tool actions without explicit user confirmation gate.
+3. EVERY agent loop MUST have a max_steps termination — no unbounded loops.
+4. EVERY agent MUST have a cost budget (max tokens per task) — no runaway spending.
+5. git commit BEFORE running evaluation — if eval reveals regression, revert.
+6. Safety violation rate MUST be 0% — any safety failure is a blocking issue.
+7. Log every agent step in structured format:
+   STEP\tACTION\tTOOL\tRESULT\tTOKENS\tLATENCY
+8. Test trajectories, not just final outputs — correct answer via unsafe path is a failure.
+9. NEVER give agents tools they do not need — fewer tools = better tool selection.
+10. Observability is mandatory — if you cannot trace every step, do not deploy.
+```
+
 ## Anti-Patterns
 
 - **Do NOT build agents without guardrails.** An unbounded agent will loop forever, burn tokens, and potentially take destructive actions. Define limits before writing code.

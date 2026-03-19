@@ -631,6 +631,145 @@ Phase 6: Remove pages/ directory
 | `--api` | Design route handlers and API layer |
 | `--deploy <target>` | Configure for deployment target (vercel, docker, standalone) |
 
+## Auto-Detection
+
+```
+IF next.config.js OR next.config.mjs OR next.config.ts exists:
+  DETECT framework = "Next.js"
+  version = parse next version from package.json
+
+  IF app/ directory exists:
+    router = "App Router"
+  ELSE IF pages/ directory exists:
+    router = "Pages Router"
+  IF app/ AND pages/ both exist:
+    router = "Migration (both routers)"
+
+  page_count = count page.tsx/page.js in app/ + count *.tsx/*.jsx in pages/
+  SUGGEST "Next.js {version} ({router}) detected with {page_count} routes. Activate /godmode:nextjs?"
+
+IF package.json contains "next" in dependencies:
+  DETECT framework = "Next.js"
+  IF NOT next.config exists:
+    SUGGEST "Next.js dependency found but no config. Activate /godmode:nextjs for setup?"
+
+ON code review:
+  IF 'use client' found on page.tsx OR layout.tsx:
+    WARN "Anti-pattern: 'use client' on page/layout. Activate /godmode:nextjs --audit?"
+  IF useEffect + fetch pattern found in Server Component context:
+    WARN "Unnecessary client-side fetch. Use Server Component fetch instead."
+```
+
+## Iterative Route Build Protocol
+
+```
+WHEN building multiple routes for a Next.js application:
+
+current_route = 0
+total_routes = len(route_plan)
+built_routes = []
+audit_issues = []
+
+WHILE current_route < total_routes:
+  route = route_plan[current_route]
+
+  1. CREATE route directory and page.tsx
+  2. DETERMINE rendering strategy (SSG/ISR/SSR/Streaming)
+  3. IMPLEMENT data fetching (Server Component fetch / Server Action)
+  4. ADD loading.tsx skeleton for routes with data fetching
+  5. ADD error.tsx boundary (as 'use client' component)
+  6. PUSH 'use client' to smallest leaf components only
+  7. AUDIT:
+     - No 'use client' on page.tsx or layout.tsx
+     - No useEffect+fetch when Server Component fetch works
+     - next/image used for all images with sizes prop
+     - Metadata API used (not manual <head>)
+
+  IF audit_issues_found:
+    audit_issues.append({route: route.path, issues: issues})
+    FIX issues before proceeding
+
+  built_routes.append(route)
+  current_route += 1
+
+  IF current_route % 5 == 0:
+    REPORT "{current_route}/{total_routes} routes built"
+    RUN build to check for type errors and build failures
+
+FINAL:
+  RUN full Next.js best practices audit
+  REPORT: "{len(built_routes)} routes, {N} Server Components, {M} Client Components"
+  MEASURE: build time, bundle size, Lighthouse scores
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN building a large Next.js application with many route groups:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (marketing-routes):
+    - Build (marketing)/ route group (home, about, pricing, blog)
+    - SSG/ISR rendering strategy
+    - SEO metadata, Open Graph tags
+    - Output: app/(marketing)/ routes
+
+  Agent 2 (app-routes):
+    - Build (app)/ route group (dashboard, settings, workspace)
+    - SSR rendering with auth middleware
+    - Server Actions for mutations
+    - Output: app/(app)/ routes
+
+  Agent 3 (api-layer):
+    - Build route handlers (app/api/)
+    - Webhook handlers, external integrations
+    - tRPC or REST API setup
+    - Output: app/api/ route handlers
+
+  Agent 4 (shared-components):
+    - Build shared UI components (nav, sidebar, footer)
+    - Configure providers (theme, auth, query client)
+    - Optimize images, fonts, scripts
+    - Output: components/ + providers + optimization config
+
+MERGE:
+  - Verify all route groups use shared layout correctly
+  - Verify no 'use client' on pages or layouts
+  - Run full build and check for bundle size regressions
+  - Run Lighthouse on key routes
+```
+
+## HARD RULES
+
+```
+1. NEVER add 'use client' to page.tsx or layout.tsx.
+   This opts the entire tree out of server rendering.
+   Push client boundaries to the smallest leaf components.
+
+2. NEVER use useEffect + fetch when a Server Component async fetch works.
+   Server Components eliminate client-server waterfalls.
+
+3. NEVER create API routes to fetch data for your own UI.
+   Server Components can query databases directly.
+   Route handlers are for external consumers and webhooks.
+
+4. EVERY route with data fetching MUST have a loading.tsx.
+   Users see a blank screen without loading UI.
+
+5. ALWAYS use next/image with sizes prop for responsive images.
+   Without sizes, Next.js cannot select the right image variant.
+
+6. ALWAYS use the Metadata API (generateMetadata / metadata export)
+   instead of manual <head> tags. It handles deduplication and streaming.
+
+7. NEVER put heavy JavaScript in middleware.
+   Middleware runs on every request at the Edge. Keep it under 1MB.
+
+8. ALWAYS use parallel data fetching (Promise.all or Suspense boundaries).
+   Sequential awaits create waterfall requests that block rendering.
+```
+
 ## Anti-Patterns
 
 - **Do NOT add 'use client' to page.tsx or layout.tsx.** This opts the entire tree out of server rendering. Push client boundaries to the smallest leaf components.

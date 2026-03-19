@@ -552,6 +552,138 @@ Next: /godmode:build to implement first feature
 | `--arch <pattern>` | Use specific architecture (mvvm, mvi, clean) |
 | `--framework <name>` | Use specific framework (rn, flutter, swift, kotlin) |
 
+## Auto-Detection
+
+```
+IF directory contains ios/ OR *.xcodeproj OR *.xcworkspace:
+  DETECT platform = "iOS"
+  IF Podfile exists: dependency_manager = "CocoaPods"
+  IF Package.swift exists: dependency_manager = "SPM"
+  SUGGEST "iOS project detected ({dependency_manager}). Activate /godmode:mobile?"
+
+IF directory contains android/ OR build.gradle OR build.gradle.kts:
+  DETECT platform = "Android"
+  IF build.gradle contains "compose": ui_framework = "Jetpack Compose"
+  SUGGEST "Android project detected ({ui_framework}). Activate /godmode:mobile?"
+
+IF package.json contains "react-native":
+  DETECT platform = "React Native"
+  version = package.json.dependencies["react-native"]
+  SUGGEST "React Native {version} project detected. Activate /godmode:mobile?"
+
+IF pubspec.yaml exists AND contains "flutter":
+  DETECT platform = "Flutter"
+  SUGGEST "Flutter project detected. Activate /godmode:mobile?"
+
+IF directory contains *.swift AND *.kt:
+  SUGGEST "Multi-platform native mobile project detected. Activate /godmode:mobile?"
+```
+
+## Iterative Build & Ship Protocol
+
+```
+WHEN building features OR preparing for app store submission:
+
+current_feature = 0
+total_features = len(feature_list)
+completed = []
+performance_checks = []
+
+WHILE current_feature < total_features:
+  feature = feature_list[current_feature]
+
+  1. IMPLEMENT feature for primary platform
+  2. IMPLEMENT for secondary platform (if cross-platform)
+  3. TEST on simulator/emulator
+  4. TEST on physical device (minimum supported OS version)
+  5. MEASURE performance impact:
+     - Startup time delta
+     - Memory usage delta
+     - App size delta
+     - Battery impact (if applicable)
+
+  IF startup_time > 1000ms OR memory_peak > budget:
+    performance_checks.append({feature: feature, issue: "performance regression"})
+    OPTIMIZE before proceeding
+
+  completed.append(feature)
+  current_feature += 1
+
+  IF current_feature % 3 == 0:
+    REPORT "{current_feature}/{total_features} features built"
+    RUN full test suite on device
+
+FINAL:
+  RUN app store submission checklist
+  IF all_checks_pass: "Ready for submission"
+  ELSE: REPORT failing checks
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN building a cross-platform app with platform-specific features:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (ios-platform):
+    - Implement iOS-specific features (WidgetKit, Sign in with Apple, etc.)
+    - Configure signing and provisioning
+    - Test on iOS simulator and device
+    - Output: iOS platform code + signing config
+
+  Agent 2 (android-platform):
+    - Implement Android-specific features (App Widgets, Google Sign-In, etc.)
+    - Configure signing and build variants
+    - Test on Android emulator and device
+    - Output: Android platform code + signing config
+
+  Agent 3 (shared-logic):
+    - Implement shared business logic and UI components
+    - Write cross-platform tests
+    - Output: shared/ package code + tests
+
+  Agent 4 (store-preparation):
+    - Prepare App Store metadata (screenshots, descriptions, keywords)
+    - Prepare Play Store metadata (listings, feature graphic)
+    - Output: store assets + metadata files
+
+MERGE:
+  - Verify shared logic integrates with both platform agents
+  - Run full test suite on both platforms
+  - Verify store metadata is complete for both stores
+```
+
+## HARD RULES
+
+```
+1. NEVER store secrets (API keys, certificates) in the app binary.
+   App binaries are trivially decompiled. Use server-side validation.
+
+2. NEVER lose the Android release keystore. If lost, you must publish a new app
+   with a new package name. Back up the keystore in a secure location.
+
+3. ALWAYS test on the minimum supported OS version before submission.
+   APIs that exist on iOS 17 may not exist on iOS 15.
+
+4. NEVER skip ProGuard/R8 rules testing. Missing rules cause release builds
+   to crash while debug builds work fine. Test release builds on device.
+
+5. EVERY image MUST be resized to display size before rendering.
+   Never load a 4K image for a 100px thumbnail.
+
+6. ALWAYS implement offline support as a first-class feature.
+   Mobile devices lose connectivity regularly. Design for offline-first.
+
+7. Performance budgets are non-negotiable:
+   - Cold start: < 1 second
+   - Memory: within device memory class limit
+   - App size: < 50MB initial download (unless justified)
+
+8. NEVER commit signing certificates or keystores to version control.
+   Store in CI/CD secrets or secure vault.
+```
+
 ## Anti-Patterns
 
 - **Do NOT build native for simple apps.** If the app is content-focused with standard UI, cross-platform saves 40-60% effort. Save native for performance-critical or platform-deeply-integrated apps.

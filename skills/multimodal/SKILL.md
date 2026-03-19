@@ -573,6 +573,145 @@ AUDIO INTEGRATION:
 | `--cost` | Cost analysis across modalities |
 | `--stream` | Design streaming multimodal pipeline |
 
+## Auto-Detection
+
+```
+IF requirements.txt OR pyproject.toml contains:
+  "pillow" OR "opencv" OR "torchvision" OR "transformers":
+    SUGGEST "Vision/image processing libraries detected. Activate /godmode:multimodal?"
+
+IF code imports "whisper" OR "speechrecognition" OR "pyaudio" OR "soundfile":
+  SUGGEST "Audio processing libraries detected. Activate /godmode:multimodal?"
+
+IF code imports "pymupdf" OR "pdfplumber" OR "unstructured" OR "docling":
+  SUGGEST "Document processing libraries detected. Activate /godmode:multimodal?"
+
+IF code calls vision API (Claude vision, GPT-4o with images, Google Vision):
+  SUGGEST "Vision API usage detected. Activate /godmode:multimodal?"
+
+IF directory contains data/ with mixed file types (*.pdf, *.jpg, *.mp3, *.wav):
+  SUGGEST "Multi-format data directory detected. Activate /godmode:multimodal?"
+
+IF vector store code references image embeddings OR CLIP OR SigLIP:
+  SUGGEST "Multi-modal embedding usage detected. Activate /godmode:multimodal?"
+```
+
+## Iterative Pipeline Build Protocol
+
+```
+WHEN building a multi-modal processing pipeline:
+
+modalities_to_build = [m for m in required_modalities]  # e.g., ["text", "images", "audio", "documents"]
+current_modality = 0
+total_modalities = len(modalities_to_build)
+built_pipelines = []
+evaluation_results = {}
+
+WHILE current_modality < total_modalities:
+  modality = modalities_to_build[current_modality]
+
+  1. SELECT model/tool for this modality (see selection matrices)
+  2. BUILD processing pipeline (input handling, preprocessing, inference)
+  3. BUILD embedding pipeline (if multi-modal RAG)
+  4. EVALUATE per-modality metrics:
+     - Text: extraction accuracy
+     - Images: description quality, OCR accuracy
+     - Audio: WER for STT
+     - Documents: table extraction accuracy, layout preservation
+  5. MEASURE latency and cost per item
+
+  evaluation_results[modality] = {accuracy: acc, latency: lat, cost: cost}
+
+  IF accuracy < target_threshold:
+    OPTIMIZE: try alternative model, adjust preprocessing
+    CONTINUE  # retry same modality
+  ELSE:
+    built_pipelines.append(modality)
+    current_modality += 1
+
+  REPORT "{current_modality}/{total_modalities} modalities built"
+
+# After all modalities built:
+6. BUILD cross-modal integration (unified vector store, context assembly)
+7. RUN end-to-end evaluation across all modalities
+8. MEASURE total pipeline cost projection
+
+FINAL:
+  REPORT per-modality and end-to-end metrics
+  REPORT monthly cost estimate at expected volume
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN building a multi-modal system with multiple modalities:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (vision-pipeline):
+    - Implement image processing (resize, OCR, captioning)
+    - Integrate vision model (Claude/GPT-4o/CLIP)
+    - Build image embedding pipeline
+    - Output: src/multimodal/vision.py + tests
+
+  Agent 2 (audio-pipeline):
+    - Implement audio processing (noise reduction, VAD, chunking)
+    - Integrate STT (Whisper/Deepgram) and TTS
+    - Build audio transcription pipeline
+    - Output: src/multimodal/audio.py + tests
+
+  Agent 3 (document-pipeline):
+    - Implement PDF/document parsing (text, tables, images)
+    - Integrate document understanding tools
+    - Build document chunking and enrichment
+    - Output: src/multimodal/documents.py + tests
+
+  Agent 4 (rag-integration):
+    - Design multi-modal RAG architecture
+    - Build unified vector store with cross-modal search
+    - Implement context assembly for generation
+    - Output: src/multimodal/rag.py + configs
+
+MERGE:
+  - Verify all pipelines output compatible formats for RAG integration
+  - Run end-to-end tests across all modalities
+  - Measure combined latency and cost
+  - Generate unified evaluation report
+```
+
+## HARD RULES
+
+```
+1. NEVER use a vision LLM for every image task. Use specialized tools
+   (Tesseract for OCR, YOLO for detection) when they suffice.
+   Reserve vision LLMs for complex understanding tasks.
+
+2. ALWAYS preprocess audio before STT: noise reduction, VAD,
+   segmentation into 30-60s chunks. Raw audio degrades accuracy.
+
+3. NEVER embed images without text descriptions for RAG.
+   Raw CLIP embeddings are useful for similarity but insufficient
+   for question-answering. Generate captions first.
+
+4. ALWAYS validate table extraction accuracy on real documents.
+   Wrong numbers from extraction errors are worse than no answer.
+
+5. NEVER build real-time audio without streaming every stage.
+   Full transcription + full LLM + full TTS = unacceptable latency.
+   Stream STT, LLM generation, and TTS synthesis.
+
+6. ALWAYS track cost per modality at scale.
+   Image analysis costs 10-100x more per item than text.
+   Budget carefully and cache aggressively.
+
+7. NEVER process all document pages equally.
+   Classify pages first. Skip cover pages, TOC, and filler.
+   Process only content-rich pages.
+
+8. EVERY multi-modal pipeline MUST be evaluated per-modality AND
+   end-to-end. A system can fail in one modality while succeeding in others.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use vision LLMs for everything.** Sending every image to GPT-4o/Claude is expensive. Use specialized tools (Tesseract for OCR, YOLO for detection) when they suffice. Reserve vision LLMs for complex understanding.

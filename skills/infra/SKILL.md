@@ -374,6 +374,100 @@ All modules include:
   - Least-privilege IAM
 ```
 
+## HARD RULES
+1. NEVER apply infrastructure changes without reviewing the plan output first. No blind `terraform apply`.
+2. NEVER hardcode secrets, credentials, or API keys in IaC files — use secret managers or variable references.
+3. NEVER use local state in production — always use remote state backend with locking (S3, GCS, Terraform Cloud).
+4. NEVER use `*` in IAM policies — specify exact actions on exact resources (least privilege).
+5. NEVER skip mandatory resource tagging (environment, team, cost-center) — untagged resources become orphans.
+6. NEVER share state between environments — each environment gets its own state file and credentials.
+7. NEVER modify state files manually — use `terraform state` commands or equivalent tooling.
+8. ALWAYS run policy checks (OPA/Sentinel) before deployment — no exceptions for "quick fixes."
+9. ALWAYS include cost estimation with every infrastructure change.
+10. ALWAYS encrypt data at rest and in transit — TLS 1.2+ minimum, encryption enabled on all data stores.
+
+## Auto-Detection
+On activation, detect infrastructure context automatically:
+```
+AUTO-DETECT:
+1. Scan for IaC tool:
+   - *.tf, terraform.tfstate → Terraform
+   - template.yaml, *.cfn.yml → CloudFormation
+   - Pulumi.yaml, Pulumi.*.yaml → Pulumi
+   - cdk.json, cdk.context.json → AWS CDK
+2. Detect cloud provider:
+   - aws provider blocks, AWS:: resources, aws-cdk imports → AWS
+   - google provider blocks, gcp:: resources → GCP
+   - azurerm provider blocks, Microsoft.* resources → Azure
+3. Detect state backend:
+   - backend "s3", backend "gcs", backend "azurerm", cloud {} block
+4. Scan for environments:
+   - *.tfvars files, environments/ directories, workspace list
+5. Detect modules/stacks:
+   - modules/ directory, source references in .tf files
+6. Check for existing CI/CD:
+   - .github/workflows/ with terraform/cdk/pulumi steps
+   - Terraform Cloud/Enterprise workspace configuration
+7. Detect cost tooling:
+   - .infracost.yml, infracost-*.json
+```
+
+## Iterative Validation Protocol
+Infrastructure validation is iterative across environments:
+```
+current_env = 0
+environments = ["dev", "staging", "production"]
+
+WHILE current_env < len(environments):
+  env = environments[current_env]
+  1. INIT: terraform init -backend-config={env}.backend.hcl
+  2. VALIDATE: terraform validate
+  3. PLAN: terraform plan -var-file={env}.tfvars -out={env}.tfplan
+  4. POLICY CHECK: Run OPA/Sentinel against plan output
+  5. COST CHECK: infracost diff --path . --compare-to baseline
+  6. IF policy violations OR cost threshold exceeded:
+     - REPORT violations with remediation steps
+     - HALT — do not proceed to next environment
+     - WAIT for user to fix and re-run
+  7. IF all checks pass:
+     - REPORT: "{env} validated — {N} resources, ${cost}/mo"
+     - current_env += 1
+  8. DRIFT CHECK (production only):
+     - terraform plan -detailed-exitcode
+     - If drift detected → report and halt
+
+EXIT when all environments validated OR user halts
+```
+
+## Multi-Agent Dispatch
+For multi-environment or multi-module infrastructure work:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: infra-modules):
+  - Validate and test infrastructure modules
+  - Scope: modules/ directory
+  - Run: terraform validate + unit tests (Terratest)
+
+Agent 2 (worktree: infra-security):
+  - Security and policy audit
+  - Scope: all .tf files
+  - Run: OPA policy checks, tfsec, checkov scans
+
+Agent 3 (worktree: infra-cost):
+  - Cost analysis across all environments
+  - Scope: all *.tfvars + plan outputs
+  - Run: infracost breakdown for each environment
+
+Agent 4 (worktree: infra-drift):
+  - Drift detection for deployed environments
+  - Scope: staging + production state
+  - Run: terraform plan -detailed-exitcode per env
+
+MERGE ORDER: modules → security → cost → drift (read-only, no merge needed)
+CONFLICT RESOLUTION: modules branch is source of truth for .tf files
+```
+
 ## Flags & Options
 
 | Flag | Description |

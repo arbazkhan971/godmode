@@ -568,6 +568,60 @@ Recommended code splits:
 | `--fix` | Auto-apply optimizations after audit |
 | `--ci` | CI-friendly output (exit code 1 if below thresholds) |
 
+## HARD RULES
+
+1. **NEVER optimize without measuring first.** Run Lighthouse, analyze the bundle, measure Core Web Vitals. Data drives optimization, not intuition.
+2. **NEVER lazy-load the LCP element.** The Largest Contentful Paint image must load eagerly with `fetchpriority="high"`.
+3. **NEVER serve uncompressed assets.** Enable gzip or Brotli compression. Uncompressed text assets are 60-80% larger.
+4. **NEVER set `Cache-Control: no-store` on static assets with hashed filenames.** Hash-versioned assets are immutable -- cache them for a year.
+5. **ALWAYS code-split by route** and lazy load components not visible on initial render.
+6. **ALWAYS use responsive images with srcset.** A 4000px image on a 375px screen wastes 90% of bytes.
+7. **ALWAYS measure third-party script impact.** A single chat widget can add 200KB+ and block the main thread for seconds.
+8. **ALWAYS set a performance budget** and enforce it in CI. Without a budget, performance degrades one commit at a time.
+
+## Auto-Detection
+
+On activation, detect the web performance context:
+
+```bash
+# Detect build tool
+ls webpack.config.* vite.config.* next.config.* nuxt.config.* 2>/dev/null
+
+# Detect bundle analysis tools
+grep -r "webpack-bundle-analyzer\|source-map-explorer\|@next/bundle-analyzer" package.json 2>/dev/null
+
+# Detect image optimization
+grep -r "next/image\|sharp\|imagemin\|@sveltejs/enhanced-img" package.json src/ 2>/dev/null | head -5
+
+# Detect service worker
+find . -name "sw.*" -o -name "service-worker.*" -o -name "workbox-config.*" 2>/dev/null
+
+# Detect performance budget
+ls .lighthouserc.* budget.json performance-budget.* 2>/dev/null
+```
+
+## Iteration Protocol
+
+For iterative performance optimization:
+
+```
+current_iteration = 0
+max_iterations = 10
+
+WHILE current_iteration < max_iterations AND performance_budget_not_met:
+  1. Measure: Run Lighthouse audit, capture Core Web Vitals (LCP, FID, CLS)
+  2. Identify: Find the single largest bottleneck (bundle, images, fonts, 3rd party)
+  3. Optimize: Apply the targeted fix for that bottleneck
+  4. Verify: Re-measure to confirm improvement and no regressions
+  current_iteration += 1
+  Report: "Perf iteration {current_iteration}: {optimization_applied} -- LCP: {lcp}ms, CLS: {cls}, bundle: {size}KB"
+
+STOP when:
+  - All Core Web Vitals are in "Good" range (LCP < 2.5s, FID < 100ms, CLS < 0.1)
+  - OR performance budget thresholds are met
+  - OR no further optimizations yield meaningful improvement
+```
+
 ## Anti-Patterns
 
 - **Do NOT optimize without measuring.** "I think this is slow" is not actionable. Run Lighthouse, analyze the bundle, measure Core Web Vitals. Data drives optimization, not intuition.

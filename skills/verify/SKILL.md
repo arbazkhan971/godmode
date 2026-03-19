@@ -225,6 +225,17 @@ CLAIM REJECTED ✗
 | `--all` | Run all verification commands |
 | `--verbose` | Show full command output (not just parsed result) |
 
+## HARD RULES
+
+1. **NEVER accept a claim without running the verification command.** "The tests probably pass" is not evidence.
+2. **NEVER verify in your head.** "I read the code and it looks correct" is not verification. Run the command.
+3. **NEVER ignore partial failures.** "47 of 48 tests pass" is a failure, not a success.
+4. **NEVER accept stale verification.** If changes were made since the last run, run verification again.
+5. **NEVER filter output before reading it.** Piping test output through grep to find "passing" might hide failures.
+6. **ALWAYS use the median of 3 runs for metric verification.** Single measurements are unreliable.
+7. **ALWAYS show the full command output** alongside the parsed result so the user can verify the interpretation.
+8. **NEVER mark a claim as verified if the command exits with a non-zero status code**, regardless of stdout content.
+
 ## Anti-Patterns
 
 - **Do NOT skip verification.** "The tests probably pass" is not evidence. Run them.

@@ -669,6 +669,78 @@ Share this guide with users before releasing v2.0.
 | `--dry-run` | Preview changelog without writing files |
 | `--format <fmt>` | Output format (keepachangelog, conventional, github) |
 
+## HARD RULES
+
+1. **NEVER STOP** until all commits since last release are categorized and the changelog entry is written.
+2. **git commit BEFORE verify** — commit the changelog/release notes, then verify formatting.
+3. **Automatic revert on regression** — if the generated changelog has incorrect version numbers or dates, revert and regenerate.
+4. **TSV logging** — log every changelog generation run:
+   ```
+   timestamp	version	commits_analyzed	entries_generated	breaking_changes	status
+   ```
+5. **NEVER include internal-only changes** (refactor, test, chore, ci) in user-facing changelogs.
+6. **NEVER backdate release entries** — use the actual publication date.
+7. **ALWAYS link PRs/issues** — every entry must have a reference.
+
+## Explicit Loop Protocol
+
+When processing commits for changelog generation:
+
+```
+current_iteration = 0
+unprocessed_commits = all commits since last tag
+changelog_entries = []
+
+WHILE unprocessed_commits is not empty:
+    current_iteration += 1
+    batch = take next 20 commits from unprocessed_commits
+
+    FOR each commit in batch:
+        category = classify(commit)  # feat/fix/perf/breaking/skip
+        IF category != skip:
+            entry = format_entry(commit, category)
+            changelog_entries.append(entry)
+
+    IF current_iteration % 5 == 0:
+        print(f"Progress: {len(changelog_entries)} entries from {current_iteration * 20} commits")
+
+    IF all commits processed:
+        deduplicate(changelog_entries)  # merge commits that fix same issue
+        group_by_category(changelog_entries)
+        write_changelog()
+        git commit
+        BREAK
+```
+
+## Auto-Detection
+
+On activation, automatically detect project context without asking:
+
+```
+AUTO-DETECT:
+1. Last release tag:
+   git describe --tags --abbrev=0 2>/dev/null || echo "no tags"
+
+2. Commit convention:
+   git log --oneline -20 | head -5
+   # Detect: conventional commits? prefix-based? freeform?
+
+3. Existing changelog:
+   ls CHANGELOG.md CHANGES.md HISTORY.md NEWS.md 2>/dev/null
+   # Detect format: Keep a Changelog? Custom? None?
+
+4. Release tooling:
+   ls .github/workflows/release* release-please* .releaserc* 2>/dev/null
+   # Detect: release-please? semantic-release? standard-version? manual?
+
+5. Package registry:
+   ls package.json Cargo.toml pyproject.toml go.mod 2>/dev/null
+   # Detect version field and package type
+
+-> Configure skill automatically based on detected context.
+-> Only ask user if ambiguous (e.g., no tags AND no changelog exist).
+```
+
 ## Anti-Patterns
 
 - **Do NOT use git log as a changelog.** A list of commit messages is not a changelog. Changelogs summarize user-visible changes, not implementation details.

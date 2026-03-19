@@ -298,6 +298,55 @@ Save to `docs/scopes/<feature-name>-scope.md` and commit.
 | `--feature <name>` | Specify the feature to scope |
 | `--budget <points>` | Set a point budget and scope to fit |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for existing scope docs: docs/scope*, docs/requirements*, docs/prd*
+2. Detect project management tool: Jira, Linear, Shortcut, GitHub Projects references
+3. Check for user story templates: .github/ISSUE_TEMPLATE, story templates
+4. Detect sprint cadence: git tag dates, release frequency, milestone patterns
+5. Check for MVP/V2 markers: grep docs for "MVP", "Phase 1", "V1", "V2", "Out of Scope"
+6. Detect team size: CODEOWNERS, git shortlog for active contributors
+7. Scan for scope creep indicators: compare original PRD/issue count vs current
+```
+
+## Iterative Scoping Loop
+
+```
+current_iteration = 0
+max_iterations = 6
+scoping_phases = [problem_definition, requirements, mvp_cut, stories, estimation, validation]
+
+WHILE scoping_phases is not empty AND current_iteration < max_iterations:
+    phase = scoping_phases.pop(0)
+    1. IF problem_definition: articulate the problem with evidence (not "build X" but "users can't Y")
+    2. IF requirements: list all capabilities, tag as Must/Should/Could/Won't (MoSCoW)
+    3. IF mvp_cut: keep only "Must" items, verify MVP still delivers core value
+    4. IF stories: convert requirements to user stories with INVEST criteria + acceptance criteria
+    5. IF estimation: estimate each story (points or T-shirt sizes), total the budget
+    6. IF validation: verify scope fits timeline, identify assumptions, document Out of Scope
+    7. Validate: every requirement is testable, every assumption is documented
+    8. IF validation fails → refine requirements or cut scope further
+    9. current_iteration += 1
+
+POST-LOOP: Produce final scope document with In/Out sections, MVP definition, and timeline
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. EVERY scope document must have an explicit "Out of Scope" section. No ambiguous boundaries.
+2. MVP must be ruthlessly small. If you can remove an item and still deliver core value, remove it.
+3. EVERY requirement must be testable. "Fast" is not testable. "< 2 seconds on 3G" is testable.
+4. NEVER skip the assumptions section. Hidden assumptions cause scope surprises.
+5. EVERY user story must pass INVEST: Independent, Negotiable, Valuable, Estimable, Small, Testable.
+6. Scope creep is quantified, not just felt. Measure: original points vs current points.
+7. NEVER finalize scope without stakeholder sign-off on the Out of Scope section.
+8. Action item owners must be individuals. "The team" is not an owner.
+```
+
 ## Anti-Patterns
 
 - **Do NOT scope without understanding the problem.** "Build a dashboard" is not a problem statement. "Users cannot see their usage metrics, causing surprise billing" is a problem statement.

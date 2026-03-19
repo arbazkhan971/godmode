@@ -834,6 +834,72 @@ evolution is manageable with proper migration tooling.
 | `--seed` | Generate seed data for development and testing |
 | `--report` | Generate full schema design report |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect ORM/query builder: prisma, drizzle, typeorm, sequelize, sqlalchemy, gorm
+2. Check for existing schema files: prisma/schema.prisma, migrations/, models/, entities/
+3. Detect database type: PostgreSQL, MySQL, MongoDB, SQLite from connection strings/configs
+4. Check for migration tool: prisma migrate, knex, flyway, alembic, goose, dbmate
+5. Detect validation library: zod, joi, yup, class-validator, pydantic, JSON Schema files
+6. Check for existing ERD or schema docs: docs/schema*, docs/erd*, dbdiagram references
+7. Scan for schema issues: grep for VARCHAR(255) overuse, missing indexes on FK columns
+8. Check for seed data: prisma/seed.ts, seeds/, fixtures/, factories/
+```
+
+## Iterative Schema Design Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+entities_remaining = [list of entities/tables to design or evolve]
+
+WHILE entities_remaining is not empty AND current_iteration < max_iterations:
+    entity = entities_remaining.pop(0)
+    1. Define access patterns: list all queries this entity participates in
+    2. Design columns/fields with correct types (no VARCHAR(255) by default)
+    3. Add constraints: NOT NULL, UNIQUE, CHECK, foreign keys
+    4. Add indexes for query patterns identified in step 1
+    5. Generate migration file (up + down)
+    6. Run migration against dev database
+    7. Validate: run the expected queries, check EXPLAIN for index usage
+    8. IF query plan shows sequential scan on indexed column → fix index
+    9. IF migration fails → fix schema, re-generate
+    10. IF passing → commit: "schema: add/evolve <entity> (<columns>, <indexes>)"
+    11. current_iteration += 1
+
+POST-LOOP: Generate ERD, validate all foreign keys have indexes, check for orphan tables
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "schema-tables": table definitions, constraints, indexes, migrations
+  Agent 2 — "schema-validation": Zod/validation schemas derived from DB schema
+  Agent 3 — "schema-seed": seed data, factories, fixtures for dev/test
+
+MERGE ORDER: tables → validation → seed (validation mirrors tables, seed uses both)
+CONFLICT ZONES: migration order numbers, shared type definitions (assign migration sequence first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER design a schema without knowing the access patterns first.
+2. NEVER use FLOAT/DOUBLE for money. Use DECIMAL/NUMERIC or integer cents.
+3. ALWAYS use TIMESTAMPTZ (timestamp with time zone). Never bare TIMESTAMP.
+4. EVERY foreign key column must have an index. No exceptions.
+5. NEVER use natural keys as primary keys. Use surrogate keys (UUID or auto-increment).
+6. EVERY migration must have a rollback (down migration). No forward-only migrations.
+7. NEVER add a column with a default value in a way that locks the table (check your DB version).
+8. Schema definitions must have ONE source of truth. Derive all others (Zod, JSON Schema) from it.
+9. EVERY enum-like field must have a CHECK constraint or DB enum type. No unconstrained strings.
+10. NEVER embed unbounded arrays in documents (NoSQL). Use references for unbounded collections.
+```
+
 ## Anti-Patterns
 
 - **Do NOT design schemas without knowing access patterns.** A beautifully normalized schema that requires 8 joins for the most common query is a bad schema.

@@ -674,6 +674,37 @@ Implementation:
 | `--lottie` | Lottie integration and optimization |
 | `--spring` | Spring physics configuration guide |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect animation context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect framework:
+   - package.json → React, Vue, Angular, Svelte, vanilla
+2. Detect existing animation libraries:
+   - grep for 'framer-motion', 'gsap', 'lottie-web', 'lottie-react', 'animejs'
+   - grep for '@angular/animations' (Angular-specific)
+3. Detect CSS animation usage:
+   - grep for '@keyframes', 'animation:', 'transition:' in CSS/SCSS files
+   - Count existing animations and categorize (micro, transition, scroll, loading)
+4. Detect reduced motion support:
+   - grep for 'prefers-reduced-motion' in CSS/SCSS/JS/TS files
+   - Flag if animations exist but no reduced motion handling found
+5. Detect performance concerns:
+   - grep for 'will-change' usage (count and check for overuse)
+   - grep for layout-triggering animations: 'width', 'height', 'top', 'left' after 'transition:' or 'animation:'
+6. Detect scroll animation patterns:
+   - grep for 'IntersectionObserver', 'ScrollTrigger', 'animation-timeline'
+7. Detect Lottie files:
+   - Find .json files in assets/animations directories
+   - Find .lottie files
+8. Auto-configure:
+   - React + no animation lib → recommend Framer Motion or CSS-only
+   - Existing GSAP → extend with ScrollTrigger if scroll animations needed
+   - No reduced motion → flag as CRITICAL accessibility gap
+```
+
 ## Anti-Patterns
 
 - **Do NOT animate layout properties.** Animating `width`, `height`, `top`, `left`, `margin`, or `padding` triggers layout recalculation every frame. Use `transform: translate/scale` and `opacity` instead. If you need to animate height, use the `grid-template-rows: 0fr/1fr` technique.

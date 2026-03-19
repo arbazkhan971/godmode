@@ -974,6 +974,17 @@ Reduce anxiety with a one-click data migration tool.
 | `--segment <name>` | Focus research on a specific user segment |
 | `--compare <before> <after>` | Compare research findings before and after a change |
 
+## HARD RULES
+
+1. NEVER present qualitative findings as quantitative evidence. Five interview quotes are insights, not statistics. State sample sizes and confidence levels explicitly.
+2. NEVER write leading questions in surveys or interview guides. "How much do you love X?" is advocacy, not research. Use neutral phrasing and pilot-test with a colleague.
+3. ALWAYS screen participants for usability tests. Testing a consumer app with developers produces developer feedback, not user feedback. Define and enforce screening criteria.
+4. NEVER skip the research plan. Ad-hoc questions produce ad-hoc answers. Define objectives, methodology, sample size, and analysis approach before collecting data.
+5. ALWAYS record the research context (date, participant segment, product version). Findings without context become undatable opinions that mislead future decisions.
+6. NEVER cherry-pick findings to support a predetermined conclusion. Report contradictory evidence. If 3 of 5 participants succeeded but 2 failed critically, both facts matter.
+7. ALWAYS separate observations from interpretations in research notes. "User clicked the back button" is an observation. "User was confused" is an interpretation. Document both, labeled clearly.
+8. NEVER share raw participant data outside the research team. Anonymize transcripts, remove PII, and use participant codes. Research trust depends on confidentiality.
+
 ## Anti-Patterns
 
 - **Do NOT create fictional personas.** Personas must be grounded in data — interviews, analytics, surveys, support tickets. A persona based on assumptions is a character in a novel, not a research artifact.

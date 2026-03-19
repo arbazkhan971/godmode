@@ -968,6 +968,38 @@ Navigation: back button at each step, progress indicator (1/4, 2/4...).
 | `--grid` | Page structure and grid system definition |
 | `--inventory` | Screen inventory audit of existing application |
 
+## HARD RULES
+
+1. **NEVER add visual design to wireframes.** Wireframes show structure, not aesthetics. Use placeholder tokens like `[primary color]` and `body text`, not exact colors or fonts.
+2. **NEVER wireframe only the happy path.** Every screen must show zero-data, loading, error, and populated states.
+3. **NEVER skip the mobile wireframe.** Mobile constraints force prioritization decisions that improve the desktop design. Wireframe mobile first or simultaneously.
+4. **ALWAYS decompose wireframes into a component hierarchy.** A wireframe that is not broken into reusable components is a picture, not architecture.
+5. **ALWAYS define navigation flows before or alongside individual screens.** A screen makes no sense without knowing how the user arrived and where they can go.
+6. **ALWAYS audit existing patterns first.** If the app already has a sidebar layout and card grid, reuse those patterns. New structural patterns create inconsistency.
+7. **NEVER create wireframes that cannot be built.** Layouts requiring five nested scroll containers and three overlapping z-index layers are not helpful. Use standard layout techniques.
+8. **ALWAYS include screen state maps** showing all states per screen (default, loading, empty, error, success, partial).
+
+## Auto-Detection
+
+On activation, detect the wireframing context:
+
+```bash
+# Detect existing UI framework
+grep -r "react\|vue\|svelte\|@angular" package.json 2>/dev/null
+
+# Detect component library
+grep -r "radix\|shadcn\|chakra\|mantine\|headless" package.json 2>/dev/null
+
+# Detect existing routes/pages
+find src/ -path "*/pages/*" -o -path "*/routes/*" -o -path "*/views/*" 2>/dev/null | head -15
+
+# Detect design system files
+find . -name "*.figma" -o -name "tokens.*" -o -name "theme.*" 2>/dev/null
+
+# Count existing components
+find src/ -name "*.tsx" -o -name "*.vue" -o -name "*.svelte" 2>/dev/null | wc -l
+```
+
 ## Anti-Patterns
 
 - **Do NOT add visual design to wireframes.** Wireframes show structure, not aesthetics. The moment you specify exact colors, gradients, or font faces in a wireframe, you have crossed into visual design. Use placeholder tokens like `[primary color]` and `body text` instead.

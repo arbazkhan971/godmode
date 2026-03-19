@@ -394,6 +394,106 @@ Total timeline: 3-5 days (conservative, for payment system).
 | `--quick` | Simplified plan for low-risk changes |
 | `--checklist` | Pre-deployment checklist only |
 
+## HARD RULES
+
+1. **NEVER deploy without a tested rollback plan.** "Fix forward" is not a rollback strategy.
+2. **NEVER skip canary stages** — going from 1% to 100% without intermediate stages defeats canary.
+3. **NEVER run breaking database migrations during deploy** — use expand-contract pattern.
+4. **NEVER deploy during peak traffic** unless urgently needed.
+5. **NEVER deploy without monitoring dashboards open and ready.**
+6. **NEVER couple multiple risky changes** — deploy one risky change at a time.
+7. **ALWAYS clean up feature flags within 30 days** of full rollout.
+8. **git commit BEFORE verify** — commit deployment plan, then execute.
+9. **Automatic revert on regression** — if any rollback trigger fires, revert immediately.
+10. **TSV logging** — log every deployment:
+    ```
+    timestamp	feature	strategy	stages	duration	rollback_triggered	status
+    ```
+
+## Explicit Loop Protocol
+
+When executing a progressive rollout:
+
+```
+current_iteration = 0
+stages = [
+    {pct: 0, type: "smoke", duration: "5m", gate: "auto"},
+    {pct: 1, type: "seed",  duration: "10m", gate: "auto"},
+    {pct: 5, type: "low",   duration: "15m", gate: "auto"},
+    {pct: 25, type: "med",  duration: "30m", gate: "manual"},
+    {pct: 50, type: "high", duration: "30m", gate: "manual"},
+    {pct: 100, type: "full", duration: "monitor", gate: "manual"},
+]
+
+WHILE stages is not empty:
+    current_iteration += 1
+    stage = stages.pop(0)
+
+    # Deploy to percentage
+    set_traffic_split(stage.pct)
+
+    # Observe
+    observe(stage.duration)
+    metrics = collect_metrics()
+
+    # Check gates
+    IF metrics.error_rate > baseline + 1%:
+        ROLLBACK "Error rate exceeded threshold"
+        BREAK
+    IF metrics.p99_latency > baseline * 2:
+        ROLLBACK "Latency exceeded threshold"
+        BREAK
+    IF metrics.health_check_failures > 2:
+        ROLLBACK "Health check failures"
+        BREAK
+
+    IF stage.gate == "manual":
+        approval = request_approval()
+        IF NOT approval:
+            ROLLBACK "Manual approval denied"
+            BREAK
+
+    log_stage_result(stage, metrics)
+
+    IF current_iteration % 2 == 0:
+        print(f"Stage {current_iteration}/{len(stages) + current_iteration}: {stage.pct}% traffic, metrics healthy")
+
+print("Deployment complete — monitor for 24 hours, then clean up flags")
+```
+
+## Auto-Detection
+
+On activation, automatically detect deployment context:
+
+```
+AUTO-DETECT:
+1. Infrastructure:
+   kubectl cluster-info 2>/dev/null && echo "kubernetes"
+   aws ecs list-clusters 2>/dev/null && echo "ecs"
+   ls vercel.json netlify.toml 2>/dev/null && echo "jamstack"
+
+2. Load balancer:
+   kubectl get ingress -A 2>/dev/null
+   aws elbv2 describe-load-balancers 2>/dev/null
+
+3. Existing deployment strategy:
+   grep -ri "strategy\|canary\|blue.green\|rolling" k8s/ helm/ .github/workflows/ 2>/dev/null
+
+4. Feature flag provider:
+   grep -ri "launchdarkly\|unleash\|flagsmith" src/ package.json 2>/dev/null
+
+5. Database migrations:
+   ls migrations/ db/migrate/ alembic/ prisma/migrations/ 2>/dev/null
+   # Detect if schema changes are involved
+
+6. Monitoring:
+   grep -ri "datadog\|prometheus\|grafana\|newrelic\|sentry" docker-compose* k8s/ 2>/dev/null
+
+-> Auto-select deployment strategy based on risk + infrastructure.
+-> Auto-configure rollback triggers from existing monitoring.
+-> Only ask user about risk tolerance if change type is ambiguous.
+```
+
 ## Anti-Patterns
 
 - **Do NOT deploy without a rollback plan.** "We'll fix forward" is not a rollback strategy. Have a tested rollback procedure for every deployment.

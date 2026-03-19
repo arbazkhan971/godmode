@@ -485,6 +485,83 @@ Severity: HIGH
 | `--fix` | Auto-fix issues after audit (invokes remediation) |
 | `--ci` | Output in CI-friendly format (exit code 1 on failure) |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect the project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan package.json / requirements.txt for framework:
+   - React/Next.js → check for jsx/tsx files, component patterns
+   - Vue → check for .vue files
+   - Angular → check for angular.json
+   - Vanilla → check for .html files
+2. Detect UI library:
+   - grep for '@mui', 'antd', '@chakra-ui', 'tailwind', 'bootstrap'
+3. Detect existing a11y tooling:
+   - Check devDependencies for axe-core, pa11y, jest-axe, cypress-axe
+   - Check for .pa11yci.json, .axe config files
+4. Detect existing a11y patterns:
+   - grep for 'aria-', 'role=', 'alt=', 'sr-only', 'visually-hidden'
+   - grep for 'prefers-reduced-motion' in CSS/SCSS
+5. Detect testing infrastructure:
+   - Storybook? → can use @storybook/addon-a11y
+   - Jest? → can use jest-axe
+   - Playwright/Cypress? → can use axe integration
+6. Count components and pages in scope automatically
+```
+
+## Multi-Agent Dispatch
+
+For large applications, parallelize the audit across WCAG principles:
+
+```
+PARALLEL AUDIT DISPATCH:
+IF component_count > 20 OR page_count > 5:
+  Agent 1 (worktree: a11y-perceivable):
+    - WCAG 1.x Perceivable checks
+    - Color contrast deep dive
+    - Alt text audit across all images
+    - Media accessibility (captions, transcripts)
+
+  Agent 2 (worktree: a11y-operable):
+    - WCAG 2.x Operable checks
+    - Keyboard navigation audit for all interactive flows
+    - Focus management and tab order
+    - Touch target sizing
+
+  Agent 3 (worktree: a11y-understandable-robust):
+    - WCAG 3.x Understandable checks
+    - WCAG 4.x Robust checks
+    - Screen reader testing
+    - ARIA validation and semantic HTML audit
+
+  Agent 4 (worktree: a11y-autofix):
+    - Run automated scanners (axe, pa11y, lighthouse)
+    - Apply auto-fixes for straightforward issues
+    - Generate remediation code for complex issues
+
+  COORDINATOR merges findings, deduplicates, ranks by severity
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. NEVER skip the manual checklist even if automated tools report 0 violations.
+   Automated tools catch 30-40% of issues. The checklist catches the rest.
+2. NEVER mark PASS if any CRITICAL finding exists — regardless of Lighthouse score.
+3. NEVER auto-fix without verifying the fix does not break existing functionality.
+4. git commit BEFORE running verify — if verify reveals regression, revert the commit.
+5. Every finding MUST include: severity, WCAG criterion, location, evidence, remediation.
+6. Log all findings in TSV format for tracking:
+   SEVERITY\tWCAG\tLOCATION\tTOOL\tDESCRIPTION
+7. Color contrast failures are ALWAYS HIGH or CRITICAL — no exceptions.
+8. Keyboard traps are ALWAYS CRITICAL — no exceptions.
+9. If auto-fix changes > 10 files, split into separate commits per concern.
+10. Re-run automated scans AFTER applying fixes to confirm zero regressions.
+```
+
 ## Anti-Patterns
 
 - **Do NOT rely solely on automated tools.** Axe and Pa11y miss keyboard traps, reading order issues, and context-dependent problems. Automated = necessary but not sufficient.

@@ -942,6 +942,91 @@ Ship to 100% and schedule code cleanup for losing variant.
 | `--cleanup <name>` | Remove losing variant code and archive experiment |
 | `--multivariate` | Design a multivariate test (3+ variants) |
 
+## Auto-Detection
+
+On activation, automatically detect the experimentation context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for experimentation SDK imports (statsig, optimizely, growthbook, launchdarkly, posthog, vwo)
+2. Detect analytics platform (Amplitude, Mixpanel, Segment, PostHog) from package.json / requirements.txt
+3. Check for existing feature flag configuration files
+4. Identify data warehouse connection (BigQuery, Snowflake, Redshift) from env vars or config
+5. Scan for existing experiment configs or assignment logic
+6. Detect framework (React, Next.js, Vue, etc.) for client-side assignment patterns
+7. Check for existing A/B test infrastructure (hash-based assignment, exposure logging)
+```
+
+## Explicit Loop Protocol
+
+When running multiple experiments or iterating on experiment design:
+
+```
+EXPERIMENT ITERATION LOOP:
+current_iteration = 0
+max_iterations = N  // number of experiments in backlog or design rounds
+
+WHILE current_iteration < max_iterations AND NOT user_says_stop:
+  1. SELECT next experiment from backlog (highest expected impact first)
+  2. DESIGN experiment (hypothesis, metrics, sample size, assignment)
+  3. VALIDATE design against checklist (Step 12)
+  4. IF validation fails:
+       FIX issues, re-validate (do NOT skip to next experiment)
+  5. IMPLEMENT assignment + exposure logging + metrics
+  6. RUN validation tests (SRM check template, metric event verification)
+  7. REPORT design summary to user
+  8. current_iteration += 1
+  9. IF current_iteration < max_iterations:
+       PROMPT user: "Proceed to next experiment or stop?"
+
+ON COMPLETION:
+  REPORT: "<N> experiments designed, <M> ready to launch, <K> need revision"
+```
+
+## Multi-Agent Dispatch
+
+For teams running multiple experiments across surfaces, dispatch parallel agents:
+
+```
+PARALLEL EXPERIMENT AGENTS:
+When designing experiments for multiple surfaces or platforms simultaneously:
+
+Agent 1 (worktree: exp-frontend):
+  - Design client-side experiments (UI changes, copy tests, layout tests)
+  - Implement React/Vue hooks for variant assignment
+  - Add exposure logging to components
+
+Agent 2 (worktree: exp-backend):
+  - Design server-side experiments (pricing, algorithms, ranking)
+  - Implement server assignment logic and feature flags
+  - Add metric event tracking to API endpoints
+
+Agent 3 (worktree: exp-analysis):
+  - Build sample size calculators and power analysis scripts
+  - Create experiment results dashboards and SQL queries
+  - Set up SRM detection and guardrail monitoring
+
+MERGE STRATEGY: Each agent produces independent experiment configs.
+  Merge sequentially — no conflicts expected (separate surfaces).
+  Final validation: check mutual exclusion groups across all experiments.
+```
+
+## Hard Rules
+
+```
+HARD RULES — EXPERIMENT:
+1. NEVER skip sample size calculation. Underpowered experiments waste traffic and produce noise.
+2. NEVER launch without a written, falsifiable hypothesis.
+3. NEVER use more than ONE primary metric (OEC). Multiple primaries inflate false positive rates.
+4. NEVER peek at frequentist test results before reaching sample size. Use sequential testing if early stopping is needed.
+5. ALWAYS define guardrail metrics (latency, error rate, revenue) before launch.
+6. ALWAYS check for SRM on Day 1. If SRM detected, results are INVALID — do not interpret them.
+7. ALWAYS run experiments for full-week multiples (7, 14, 21 days) to avoid day-of-week bias.
+8. NEVER ship inconclusive results at partial traffic. Kill it or redesign.
+9. ALWAYS clean up losing variant code and delete feature flags after experiment concludes.
+10. NEVER skip the exposure deduplication — log ONE exposure per user per experiment per session.
+```
+
 ## Anti-Patterns
 
 - **Do NOT run experiments without a hypothesis.** "Let's just see what happens" is not an experiment. It is random change without learning.

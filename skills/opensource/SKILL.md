@@ -1136,6 +1136,105 @@ Next: Customize the governance document with team names and hold the first elect
 | `--minimal` | Create only LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT |
 | `--no-automation` | Skip GitHub Actions workflow creation |
 
+## HARD RULES
+
+1. **NEVER open source without a LICENSE file.** Code without a license is "all rights reserved" by default. No LICENSE = not open source.
+2. **NEVER skip Code of Conduct.** Every public project must have one. Use Contributor Covenant 2.1 as the default.
+3. **NEVER commit secrets to a public repository.** Audit all files with `grep -rn "sk_\|password\|secret\|token\|api_key" . --include="*.ts" --include="*.py" --include="*.env*"` before going public.
+4. **NEVER use blank issue templates.** All issues must use structured YAML templates. Disable blank issues in config.yml.
+5. **NEVER set stale bot to auto-close issues labeled `security` or `critical`.** These labels must be exempt.
+6. **ALWAYS include private vulnerability reporting.** Security issues must never be filed as public issues.
+7. **ALWAYS match governance model to project size.** Solo project = BDFL. 10+ contributors = consensus. 50+ = steering committee.
+8. **ALWAYS test CONTRIBUTING.md instructions on a clean machine.** If setup takes more than 15 minutes, contributors will leave.
+
+## Auto-Detection
+
+Before scaffolding, detect existing community health files:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for existing files:
+   - ls LICENSE* LICENCE* → license present?
+   - ls README* → readme present?
+   - ls CONTRIBUTING* → contributing guide?
+   - ls CODE_OF_CONDUCT* → code of conduct?
+   - ls SECURITY* → security policy?
+   - ls CHANGELOG* → changelog?
+   - ls .github/ISSUE_TEMPLATE/ → issue templates?
+   - ls .github/PULL_REQUEST_TEMPLATE* → PR template?
+   - ls .github/CODEOWNERS → code owners?
+   - ls .github/FUNDING.yml → funding config?
+   - ls .github/workflows/ → CI/CD workflows?
+
+2. Detect license type:
+   - grep -l "MIT License" LICENSE* → MIT
+   - grep -l "Apache License" LICENSE* → Apache 2.0
+   - grep -l "GNU GENERAL PUBLIC" LICENSE* → GPL
+
+3. Detect CI provider:
+   - ls .github/workflows/ → GitHub Actions
+   - ls .circleci/ → CircleCI
+   - ls .gitlab-ci.yml → GitLab CI
+   - ls Jenkinsfile → Jenkins
+
+4. Populate REPOSITORY HEALTH CHECK table from detection results.
+```
+
+## Explicit Loop Protocol
+
+Repository scaffolding is iterative -- create, verify, customize:
+
+```
+current_iteration = 0
+files_to_scaffold = [LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY,
+                     issue_templates, pr_template, CODEOWNERS, workflows,
+                     FUNDING, GOVERNANCE]
+
+WHILE files_to_scaffold is not empty AND current_iteration < 12:
+    current_iteration += 1
+    file = files_to_scaffold.pop(0)
+
+    1. CHECK if file already exists and assess quality
+    2. IF exists AND quality >= GOOD: skip
+    3. IF exists AND quality < GOOD: improve in-place
+    4. IF not exists: create with project-appropriate template
+    5. VERIFY: file is valid (YAML parses, Markdown renders, links work)
+    6. IF verification fails:
+        files_to_scaffold.append(file)  # retry
+    7. REPORT: "File {file}: {CREATED|IMPROVED|SKIPPED} -- iteration {current_iteration}"
+
+OUTPUT: Health score updated, all files present and verified.
+```
+
+## Multi-Agent Dispatch
+
+For large projects needing full open source setup, dispatch parallel agents:
+
+```
+MULTI-AGENT OPEN SOURCE SETUP:
+Dispatch 3 agents in parallel worktrees.
+
+Agent 1 (worktree: oss-community):
+  - Create LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY
+  - Set up GOVERNANCE.md with appropriate model
+  - Add CODEOWNERS based on git blame analysis
+
+Agent 2 (worktree: oss-templates):
+  - Create .github/ISSUE_TEMPLATE/ (bug, feature, config)
+  - Create .github/PULL_REQUEST_TEMPLATE.md
+  - Set up .github/FUNDING.yml
+  - Configure Discussions categories
+
+Agent 3 (worktree: oss-automation):
+  - Create labeler.yml workflow + label config
+  - Create stale.yml workflow
+  - Create welcome.yml workflow
+  - Create release-drafter.yml + config
+
+MERGE ORDER: community -> templates -> automation
+CONFLICT ZONES: .github/ directory structure (create in order)
+```
+
 ## Anti-Patterns
 
 - **Do NOT open source without a LICENSE.** Code without a license is not open source. It is "all rights reserved" by default. Always include a license file.

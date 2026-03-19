@@ -1181,6 +1181,37 @@ Recovery:
 | `--timezone` | Design timezone-aware user-facing schedules |
 | `--lock` | Design distributed locking for multi-instance |
 
+## HARD RULES
+
+1. **NEVER use `setInterval` or `setTimeout` for production scheduling.** They do not survive restarts, have no distributed locking, no monitoring, and drift over time.
+2. **NEVER schedule jobs in local timezones.** DST transitions skip the 2 AM job in March and double-fire the 1 AM job in November. Use UTC for all system schedules.
+3. **NEVER assume single-instance execution.** If the app runs on 2+ instances, every cron job fires N times without distributed locking. Add locking from day one.
+4. **ALWAYS make every scheduled handler idempotent.** Schedulers fire duplicates during restarts, failovers, and Redis reconnections.
+5. **ALWAYS guard against overlap.** A job that runs every hour but takes 90 minutes will stack up and OOM the system. Use locks or `max_instances`.
+6. **NEVER put heavy work in the scheduler tick.** The scheduler should enqueue a job, not execute it. Blocking the scheduler loop delays all other schedules.
+7. **ALWAYS verify registered job count on startup.** If registration fails silently, jobs stop running with no alert.
+8. **ALWAYS use IANA timezone names** (America/New_York), never fixed offsets (UTC-5). Fixed offsets are wrong for half the year.
+
+## Auto-Detection
+
+On activation, detect the scheduling context:
+
+```bash
+# Detect scheduler libraries
+grep -r "bullmq\|bull\|agenda\|node-cron\|bree\|croner" package.json 2>/dev/null
+grep -r "celery\|apscheduler\|django-cron\|huey" requirements.txt setup.py pyproject.toml 2>/dev/null
+grep -r "sidekiq\|sidekiq-cron\|whenever\|clockwork" Gemfile 2>/dev/null
+
+# Detect existing cron jobs
+grep -rl "cron\|schedule\|repeatable\|every\|interval" src/ --include="*.ts" --include="*.js" --include="*.py" --include="*.rb" 2>/dev/null | head -10
+
+# Detect queue infrastructure
+grep -r "redis\|rabbitmq\|sqs\|pubsub" package.json docker-compose.* 2>/dev/null
+
+# Detect existing scheduled workflows
+ls .github/workflows/*.yml 2>/dev/null | xargs grep -l "schedule:" 2>/dev/null
+```
+
 ## Anti-Patterns
 
 - **Do NOT use `setInterval` or `setTimeout` for production scheduling.** They do not survive restarts, have no distributed locking, no monitoring, and drift over time. Use a proper scheduler.

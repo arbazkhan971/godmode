@@ -499,6 +499,68 @@ Next: /godmode:build to implement editor features
 | `--platform <name>` | Target specific platform (windows, macos, linux) |
 | `--distribute` | Distribution channel setup only |
 
+## HARD RULES
+
+- NEVER set nodeIntegration: true in Electron renderer processes
+- NEVER store secrets in plain text config files — use OS keychain (macOS Keychain, Windows Credential Manager, libsecret)
+- NEVER ship without code signing on macOS (Gatekeeper blocks unnotarized apps) or Windows (SmartScreen warning)
+- NEVER use `:latest` tags for base images or dependency versions in production builds
+- NEVER skip auto-update implementation — desktop users expect it and retrofitting is painful
+- ALL IPC messages MUST be validated in the main/Rust process before processing
+- ALL desktop apps MUST handle single-instance lock or multi-window architecture explicitly
+- ALL apps MUST support high-DPI scaling on Retina/4K displays without blurry rendering
+
+## Iterative Build Loop Protocol
+
+When building or auditing a desktop application across platforms:
+
+```
+current_iteration = 0
+platform_queue = [all_target_platforms]  # e.g., [windows, macos, linux]
+WHILE platform_queue is not empty:
+    current_iteration += 1
+    platform = platform_queue.pop(next)
+    build application for platform
+    run code signing and notarization (if applicable)
+    run installer/packaging
+    test: launch, basic flows, auto-update, native API integration
+    run security scan (Trivy on containers, dependency audit)
+    IF build fails or tests fail:
+        fix issues, re-add platform to queue
+    report: "Iteration {current_iteration}: {platform} — build={status}, sign={status}, tests={N passed}/{M total}"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 3 agents in separate worktrees:
+  Agent 1 (app scaffold):  Set up framework architecture (main/renderer or Rust/web), IPC, menus, tray
+  Agent 2 (packaging):     Configure installers, code signing, notarization, CI/CD build matrix
+  Agent 3 (native APIs):   Implement system tray, file associations, notifications, global shortcuts, deep linking
+SYNC point: All agents complete
+  Merge worktrees
+  Run cross-platform build matrix (Windows + macOS + Linux)
+  Generate desktop project report with per-platform status
+```
+
+## Auto-Detection
+
+```
+1. Check for existing desktop framework:
+   - Scan for electron-builder.yml, forge.config.{js,ts} → Electron detected
+   - Scan for src-tauri/, tauri.conf.json → Tauri detected
+   - Scan for CMakeLists.txt with Qt references → Qt detected
+   - Scan for package.json scripts containing electron or tauri commands
+2. Check for platform targets:
+   - Scan CI/CD workflows for platform build matrices (windows-latest, macos-latest, ubuntu-latest)
+   - Check for code signing configs (entitlements.mac.plist, signtool references)
+   - Detect icon files (icon.icns, icon.ico, icon.png)
+3. Check for auto-update:
+   - Scan for electron-updater, tauri updater config, Sparkle/WinSparkle references
+4. Determine maturity: scaffold only | builds | signed | distributed
+5. Set assessment fields and proceed to Step 1
+```
+
 ## Anti-Patterns
 
 - **Do NOT use Electron for simple utilities.** A 150MB download for a calculator is not acceptable. Use Tauri (~5-10 MB) or native frameworks for lightweight tools.

@@ -893,6 +893,41 @@ Starting with Phase 1...
 | `--upgrade <from> <to>` | Upgrade Angular version migration guide |
 | `--ssr` | Set up Angular SSR (v17+ or Universal) |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect Angular project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect Angular version:
+   - Read @angular/core version from package.json
+   - Determine: < 14 (legacy), 14-16 (mixed), 17+ (modern/standalone-ready)
+2. Detect architecture style:
+   - Count .module.ts files → NgModule-based
+   - Check for standalone: true in components → Standalone
+   - Mixed if both patterns detected
+3. Detect state management:
+   - grep for '@ngrx/store' → NgRx
+   - grep for '@ngxs/store' → NGXS
+   - grep for 'signal(' in components → Signals
+   - None detected → Services + RxJS (or none)
+4. Detect build system:
+   - angular.json → Angular CLI
+   - nx.json → Nx workspace
+   - Check builder: application (esbuild) vs browser (webpack)
+5. Detect testing setup:
+   - grep for 'jest-preset-angular' → Jest
+   - Check karma.conf.js → Karma
+   - Check for playwright or cypress configs → E2E
+6. Detect SSR:
+   - grep for '@angular/ssr' or '@nguniversal' → SSR configured
+7. Detect UI library:
+   - grep for '@angular/material', 'primeng', 'ng-bootstrap', '@taiga-ui'
+8. Detect TypeScript strictness:
+   - Check tsconfig.json for "strict": true
+9. Auto-configure recommendations based on detected version and patterns
+```
+
 ## Anti-Patterns
 
 - **Do NOT use Default change detection.** OnPush is mandatory. Default change detection runs on every event, timer, and HTTP response in the entire app.

@@ -779,6 +779,17 @@ Verdict: NEEDS REVISION — mobile experience has 5 layout issues.
 | `--system-check` | Design system adherence audit only |
 | `--critique <screen>` | Focused design critique on a specific screen or component |
 
+## HARD RULES
+
+1. NEVER design screens without defining user flows first. Screens without flows are disconnected pictures that miss transitions, error paths, and edge cases.
+2. NEVER hand off designs with placeholder text ("lorem ipsum"). Developers will ship it. Finalize copy before handoff.
+3. ALWAYS design all interactive states: default, hover, focus, active, disabled, loading, error, empty, and success. An incomplete state matrix guarantees inconsistent implementation.
+4. NEVER specify colors or typography with raw values (hex, px). Use design tokens. Raw values drift from the design system and create maintenance debt.
+5. ALWAYS validate designs against WCAG 2.1 AA contrast ratios (4.5:1 for text, 3:1 for large text and UI components) before handoff. Accessibility retrofits cost 10x more than designing it in.
+6. NEVER design only the happy path. A form with no error states, a list with no empty state, a page with no loading skeleton are incomplete deliverables.
+7. ALWAYS document responsive behavior for every breakpoint in the design system. "It works on mobile" is not a responsive specification.
+8. NEVER skip usability testing with real users. Heuristic evaluation catches structural issues; only real users reveal actual confusion, hesitation, and workarounds.
+
 ## Anti-Patterns
 
 - **Do NOT design screens without defining user flows first.** Screens without flows are disconnected pictures. You will miss transitions, error paths, edge cases, and the actual user journey. Map the flow, then design the screens that support it.

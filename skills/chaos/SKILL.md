@@ -523,6 +523,90 @@ Team: 4 engineers + 1 facilitator
 | `--scorecard` | Generate resilience scorecard from past experiments |
 | `--production` | Flag for production experiments (requires extra safety checks) |
 
+## HARD RULES
+
+1. **NEVER STOP** until all planned experiments are executed or explicitly skipped with documented reason.
+2. **git commit BEFORE verify** — commit experiment definitions and results before running the next experiment.
+3. **Automatic revert on regression** — if an experiment causes unrecoverable state, execute rollback immediately. No exceptions.
+4. **TSV logging** — log every experiment run:
+   ```
+   timestamp	experiment_name	hypothesis	blast_radius	duration	result	surprises
+   ```
+5. **NEVER run production chaos without steady state verification first.**
+6. **NEVER inject failure without a tested rollback procedure.**
+7. **ALWAYS document surprises** — unexpected behavior is the most valuable output.
+
+## Explicit Loop Protocol
+
+When running a series of chaos experiments:
+
+```
+current_iteration = 0
+experiments = planned_experiment_list
+results = []
+
+WHILE experiments is not empty:
+    current_iteration += 1
+    experiment = experiments.pop(0)
+
+    # Pre-flight
+    steady_state = verify_steady_state()
+    IF NOT steady_state:
+        ABORT "System not healthy — cannot inject failure"
+
+    rollback_tested = test_rollback(experiment)
+    IF NOT rollback_tested:
+        SKIP experiment, log reason
+        CONTINUE
+
+    # Execute
+    inject_failure(experiment)
+    observe(experiment.duration)
+    result = capture_metrics()
+    execute_rollback(experiment)
+
+    # Verify recovery
+    post_steady_state = verify_steady_state()
+    IF NOT post_steady_state:
+        ESCALATE "System did not recover after rollback"
+        BREAK
+
+    results.append(result)
+    git commit experiment result
+
+    IF current_iteration % 5 == 0:
+        print(f"Progress: {current_iteration}/{len(experiments) + current_iteration} experiments complete")
+        print_scorecard(results)
+```
+
+## Auto-Detection
+
+On activation, automatically detect infrastructure context:
+
+```
+AUTO-DETECT:
+1. Container orchestration:
+   kubectl cluster-info 2>/dev/null && echo "kubernetes"
+   docker info 2>/dev/null && echo "docker"
+
+2. Cloud provider:
+   aws sts get-caller-identity 2>/dev/null && echo "aws"
+   gcloud config get-value project 2>/dev/null && echo "gcp"
+
+3. Service mesh / proxy:
+   kubectl get crd | grep -i istio && echo "istio"
+   linkerd check 2>/dev/null && echo "linkerd"
+
+4. Monitoring stack:
+   kubectl get svc -A | grep -i "grafana\|prometheus\|datadog"
+
+5. Chaos tooling already installed:
+   which toxiproxy-cli litmus chaostoolkit 2>/dev/null
+
+-> Auto-select injection method based on detected infrastructure.
+-> Auto-configure monitoring queries for the detected stack.
+```
+
 ## Anti-Patterns
 
 - **Do NOT inject failures without monitoring.** If you can't observe the impact, you can't learn from the experiment. Set up monitoring first.

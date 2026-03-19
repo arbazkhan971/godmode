@@ -375,6 +375,99 @@ Remediation: Introduce Value Objects (→ /godmode:ddd)
 | `--language <lang>` | Generate implementation in a specific language |
 | `--teach` | Extended explanation with underlying SOLID principles |
 
+## HARD RULES
+
+1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Always complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
+2. **NEVER stack multiple patterns at once.** Recommend ONE pattern, let the team implement it, then evaluate if another is needed.
+3. **NEVER recommend Singleton for dependency sharing.** Use dependency injection instead. Singleton is the last resort, not the first choice.
+4. **NEVER apply patterns prophylactically.** A pattern should solve a CURRENT problem, not a theoretical future one. YAGNI applies to patterns.
+5. **NEVER produce a recommendation without language-specific implementation code.** Abstract UML alone is insufficient. Show the actual code.
+6. **ALWAYS include trade-offs.** Every recommendation must list both benefits AND drawbacks.
+7. **ALWAYS show alternatives considered.** Explain why the recommended pattern was chosen over at least one alternative.
+8. **ALWAYS include a unit test demonstrating the pattern.** If the pattern cannot be tested, reconsider the recommendation.
+
+## Auto-Detection
+
+Before recommending patterns, detect the existing codebase context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Language and framework:
+   - Detect from package.json / go.mod / Cargo.toml / pyproject.toml / pom.xml
+   - Framework: Express, NestJS, Django, FastAPI, Gin, Actix, Spring, etc.
+
+2. Existing patterns in use:
+   - grep for class.*Repository → Repository pattern
+   - grep for class.*Factory → Factory pattern
+   - grep for class.*Strategy|interface.*Strategy → Strategy pattern
+   - grep for @Injectable|@Inject|constructor(private → DI pattern
+   - grep for EventEmitter|on\(|emit\( → Observer/Event pattern
+   - grep for middleware|pipe|chain → Chain of Responsibility
+
+3. Anti-pattern signals:
+   - Find files > 500 lines → God Object candidates
+   - Find functions > 50 lines → potential extract targets
+   - grep for switch.*case.*case.*case → State/Strategy candidates
+   - Detect circular imports → Dependency inversion needed
+
+4. Output: PATTERN CONTEXT auto-populated with detected patterns and signals.
+```
+
+## Explicit Loop Protocol
+
+Pattern detection and remediation is iterative:
+
+```
+current_iteration = 0
+findings = []  # anti-patterns found, patterns to recommend
+
+# Initial scan
+SCAN codebase for: god objects, switch blocks, circular deps, primitive obsession
+findings = scan_results
+
+WHILE findings is not empty AND current_iteration < 8:
+    current_iteration += 1
+    finding = findings.pop(0)
+
+    1. ANALYZE: understand the specific design problem
+    2. CLASSIFY: categorize (Creational/Structural/Behavioral/Modern)
+    3. RECOMMEND: select pattern with rationale and trade-offs
+    4. IMPLEMENT: produce language-specific code with tests
+    5. VERIFY: confirm the pattern resolves the original symptom
+    6. IF new anti-patterns emerge from refactoring:
+        findings.extend(new_findings)
+    7. REPORT: "Finding {finding.name}: {pattern} applied -- iteration {current_iteration}"
+
+OUTPUT: Pattern analysis report with all recommendations and implementations.
+```
+
+## Multi-Agent Dispatch
+
+For large-scale anti-pattern remediation, dispatch parallel agents:
+
+```
+MULTI-AGENT PATTERN REMEDIATION:
+Dispatch 2-3 agents in parallel worktrees when multiple anti-patterns found.
+
+Agent 1 (worktree: pattern-god-objects):
+  - Break god objects into focused classes
+  - Apply Facade if unified interface needed
+  - Extract services by domain responsibility
+
+Agent 2 (worktree: pattern-coupling):
+  - Resolve circular dependencies with dependency inversion
+  - Replace tight coupling with Strategy/Observer patterns
+  - Add interfaces at module boundaries
+
+Agent 3 (worktree: pattern-primitives):
+  - Replace primitive obsession with Value Objects
+  - Add domain types (Email, Money, UserId)
+  - Add validation at construction time
+
+MERGE ORDER: god-objects -> coupling -> primitives (structural before type-level)
+CONFLICT ZONES: Shared service interfaces, constructor signatures, import paths
+```
+
 ## Anti-Patterns
 
 - **Do NOT recommend patterns without understanding the problem.** "Use a Factory" means nothing without knowing what creation problem exists. Diagnose first.

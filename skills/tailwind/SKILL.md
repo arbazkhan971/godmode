@@ -872,6 +872,38 @@ Migration plan:
 | `--cva` | Set up CVA for component variants |
 | `--v4` | Migrate from Tailwind 3 to Tailwind 4 |
 
+## HARD RULES
+
+1. **NEVER construct class names dynamically.** `bg-${color}-500` will not be included in the output. Use complete string literals in an object map.
+2. **NEVER override the entire theme.** Use `theme.extend` to add values. Overriding `theme.colors` removes all default colors.
+3. **NEVER hardcode colors or spacing values.** `text-[#1a2b3c]` or `mt-[13px]` defeats the design system. Add values to the config and use theme tokens.
+4. **NEVER skip focus styles.** Every interactive element needs `focus-visible:ring-2` or equivalent. Keyboard users depend on visible focus.
+5. **ALWAYS write mobile-first responsive.** `flex flex-col lg:flex-row` not `lg:flex flex-col`. Design for the smallest viewport first.
+6. **ALWAYS include all template directories in `content` paths.** Missing a directory means classes used there will not be generated in production.
+7. **NEVER use `@apply` everywhere.** Excessive `@apply` recreates CSS-in-JS with extra steps. Use utilities in markup or extract to components.
+8. **NEVER safelist large pattern sets.** Safelisting `bg-*-*` includes thousands of classes. Safelist only specific, necessary classes.
+
+## Auto-Detection
+
+On activation, detect the Tailwind project context:
+
+```bash
+# Detect Tailwind installation and version
+grep -r "tailwindcss" package.json 2>/dev/null
+
+# Detect config file
+ls tailwind.config.* postcss.config.* 2>/dev/null
+
+# Detect CSS framework conflicts
+grep -r "styled-components\|@emotion\|sass\|less\|css-modules" package.json 2>/dev/null
+
+# Detect template file locations
+find src/ -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.svelte" -o -name "*.html" 2>/dev/null | head -5
+
+# Detect existing design tokens
+grep -r "theme\|extend" tailwind.config.* 2>/dev/null | head -10
+```
+
 ## Anti-Patterns
 
 - **Do NOT construct class names dynamically.** `bg-${color}-500` will not be included in the output. Use complete strings in an object map.

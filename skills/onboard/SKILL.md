@@ -367,6 +367,102 @@ Entry point: src/server.ts
 | `--files` | Key file identification only |
 | `--health` | Project health signals only |
 
+## HARD RULES
+
+1. **NEVER make architectural claims without reading the actual code.** Directory names lie. Read the files.
+2. **NEVER list more than 10 key files.** The goal is 10-20% of files that explain 80% of the system. More than 10 means you have not prioritized.
+3. **NEVER skip the git history.** `git log --oneline -20` and `git log --since="30 days ago" --pretty=format:"%h %s" --diff-filter=M` are mandatory steps.
+4. **NEVER generate onboarding docs without verifying claims against source code.** Every file path, function name, and architectural statement must be confirmed.
+5. **NEVER assume REST.** Detect the actual protocol: REST, GraphQL, gRPC, WebSocket, CLI, event-driven. Read the router/handler code.
+6. **ALWAYS read the README first if it exists.** It sets context even if outdated.
+7. **ALWAYS identify the entry point before anything else.** The entry point is the root of understanding.
+8. **ALWAYS include the test file in the code tour.** Tests document expected behavior better than comments.
+
+## Auto-Detection
+
+Before starting onboarding, automatically detect the project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Project type detection:
+   - ls package.json → Node.js/TypeScript
+   - ls Cargo.toml → Rust
+   - ls go.mod → Go
+   - ls pyproject.toml / setup.py / requirements.txt → Python
+   - ls pom.xml / build.gradle → Java/Kotlin
+   - ls Gemfile → Ruby
+   - ls *.csproj / *.sln → C#/.NET
+
+2. Framework detection:
+   - grep "next" package.json → Next.js
+   - grep "express" package.json → Express
+   - grep "fastapi\|flask\|django" requirements.txt → Python web
+   - grep "gin\|echo\|fiber" go.mod → Go web
+   - grep "actix\|axum\|rocket" Cargo.toml → Rust web
+
+3. Architecture detection:
+   - ls src/api/ src/services/ src/models/ → layered/clean architecture
+   - ls apps/ packages/ → monorepo
+   - ls cmd/ internal/ pkg/ → Go standard layout
+   - ls docker-compose* → multi-service
+   - ls serverless* / template.yaml → serverless
+
+4. Populate PROJECT PROFILE automatically from detection results.
+```
+
+## Explicit Loop Protocol
+
+Onboarding involves iterative exploration -- each pass deepens understanding:
+
+```
+current_iteration = 0
+onboard_steps = [discovery, architecture, key_files, naming, dependencies, code_tour, report]
+
+WHILE onboard_steps is not empty AND current_iteration < 7:
+    current_iteration += 1
+    step = onboard_steps.pop(0)
+
+    1. EXECUTE step (scan, analyze, document)
+    2. VERIFY output is populated (no "<placeholder>" left)
+    3. IF step produced unexpected findings (e.g., monorepo detected):
+        ADJUST remaining steps (e.g., repeat architecture per workspace)
+    4. REPORT: "Step {step}: DONE -- iteration {current_iteration}/7"
+
+OUTPUT: Onboarding report with all sections populated from verified data.
+```
+
+## Multi-Agent Dispatch
+
+For large monorepos or multi-service projects, dispatch parallel agents:
+
+```
+MULTI-AGENT ONBOARDING:
+Dispatch 2-4 agents in parallel worktrees for monorepo/multi-service projects.
+
+Agent 1 (worktree: onboard-frontend):
+  - Scan frontend app structure, routing, state management
+  - Identify key components and data flow
+  - Document frontend-specific conventions
+
+Agent 2 (worktree: onboard-backend):
+  - Scan API routes, services, data models
+  - Map database schema and ORM usage
+  - Document backend-specific patterns
+
+Agent 3 (worktree: onboard-infra):
+  - Analyze CI/CD, Docker, Kubernetes, IaC
+  - Map deployment topology
+  - Document infrastructure conventions
+
+Agent 4 (worktree: onboard-shared):
+  - Analyze shared libraries, types, configs
+  - Map cross-service dependencies
+  - Document API contracts between services
+
+MERGE: Combine into single onboarding report ordered by reading priority.
+CONFLICT ZONES: None (read-only operation, separate documentation sections).
+```
+
 ## Anti-Patterns
 
 - **Do NOT assume architecture from directory names.** A folder called "services" might contain anything. Read the files.

@@ -1227,6 +1227,89 @@ ERROR HANDLING VERIFICATION CHECKLIST:
 - **From `/godmode:review`:** Code review flags missing error handling → apply `/godmode:errorhandling` patterns
 - **From `/godmode:api`:** API design needs consistent error responses → use `/godmode:errorhandling` format
 
+## HARD RULES
+
+1. **Never use empty catch blocks.** `catch(err) {}` silently swallows errors and makes bugs invisible. Every catch must log, re-throw, or handle meaningfully.
+2. **Never expose stack traces, SQL errors, or internal paths in API responses.** Internal details go to logs, referenced by `requestId`. Users see a safe generic message.
+3. **Never log at every layer.** Log errors at the boundary (global error handler), not at every function in the call stack. Catch-log-rethrow at every layer produces duplicate logs.
+4. **Never retry programmer errors.** A `TypeError` will produce the same result on retry. Only retry operational errors (timeouts, connection failures, rate limits).
+5. **Never log sensitive data in error context.** No credit card numbers, passwords, tokens, SSNs, or full API keys in log output. Mask or redact before logging.
+
+## Loop Protocol
+
+```
+error_audit_queue = detect_error_sites()  // all throw/Error/panic/raise statements in codebase
+current_iteration = 0
+
+WHILE error_audit_queue is not empty:
+  batch = error_audit_queue.take(15)
+  current_iteration += 1
+
+  FOR each error_site in batch:
+    1. Classify: operational vs programmer error
+    2. Check: does it use typed AppError subclass? (not bare Error/Exception)
+    3. Check: does the catch site log with context (requestId, userId, operation)?
+    4. Check: does the API response hide internal details?
+    5. IF bare throw/catch or missing classification → fix
+
+  Log: "Iteration {current_iteration}: audited {batch.length} error sites, {error_audit_queue.remaining} remaining, {fixed} fixed"
+
+  IF error_audit_queue is empty:
+    Verify global error handler is registered
+    Run error handling verification checklist
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "error-hierarchy":
+  EnterWorktree("error-hierarchy")
+  Design base AppError class with code, statusCode, isOperational
+  Create typed error subclasses (ValidationError, NotFoundError, etc.)
+  Implement toLog() and toResponse() serialization methods
+  ExitWorktree()
+
+Agent 2 — "error-boundaries":
+  EnterWorktree("error-boundaries")
+  Implement global error handler (Express middleware / Go middleware / FastAPI handler)
+  Add React error boundaries at app, page, and widget levels
+  Set up process-level handlers (unhandledRejection, uncaughtException)
+  Add asyncHandler wrapper for route handlers
+  ExitWorktree()
+
+Agent 3 — "logging-and-responses":
+  EnterWorktree("logging-and-responses")
+  Define structured error response format (consistent JSON across all APIs)
+  Build error code registry (code → HTTP status → description)
+  Implement structured logging with context (requestId, userId, operation)
+  Add user-facing message translation table (internal → safe message)
+  ExitWorktree()
+
+MERGE: Combine all branches, verify global handler catches all error types.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT error handling context:
+  1. Detect language/framework: Express, NestJS, FastAPI, Go chi/gin, Next.js
+  2. Grep for existing error classes: extends Error, AppError, HttpException, apperr
+  3. Check for global error handler: app.use(errorHandler), @Catch(), exception_handler
+  4. Grep for bare throws: throw new Error( without custom class
+  5. Check for error tracking: Sentry.init, Bugsnag.start, errorReporter
+  6. Count empty catch blocks: catch\s*\(\w*\)\s*\{\s*\}
+  7. Check for structured logging: winston, pino, structlog, slog
+
+  USE detected context to:
+    - Extend existing AppError hierarchy (don't replace)
+    - Match existing error response format
+    - Identify highest-priority gaps (no global handler? no typed errors?)
+    - Connect to existing error tracking service
+```
+
 ## Anti-Patterns
 
 ```

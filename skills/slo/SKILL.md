@@ -897,6 +897,17 @@ DASHBOARD: API Gateway SLO Dashboard
 | `--review` | SLO review template and cadence setup |
 | `--validate` | Validate SLO implementation against checklist |
 
+## HARD RULES
+
+1. **NEVER set SLO = 100%.** A 100% SLO means zero error budget, which means zero deployments. It is mathematically incompatible with shipping software.
+2. **NEVER set SLO = SLA.** The SLO must always be stricter than the SLA. The gap is your safety margin. If SLO equals SLA, you breach the contract before detecting the problem.
+3. **NEVER use averages as SLIs.** Use proportional SLIs (`99% of requests < 200ms`), not averages (`avg latency < 200ms`). Averages hide tail latency.
+4. **NEVER define SLOs without an error budget policy.** An SLO without a policy is a number on a dashboard that changes nothing.
+5. **NEVER alert on raw error rates without burn rate context.** Use multi-window, multi-burn-rate alerts. A 1% error rate for 5 seconds is noise; for 6 hours it is a crisis.
+6. **ALWAYS require both long AND short windows for burn rate alerts.** Long window alone fires on resolved problems. Short window alone fires on transient spikes.
+7. **ALWAYS measure SLIs closer to the user.** Load balancer metrics over application metrics over database metrics.
+8. **ALWAYS start with current measured reliability** and set the SLO target slightly below it. Over-ambitious targets that are constantly violated erode trust.
+
 ## Anti-Patterns
 
 - **Do NOT set SLO = 100%.** A 100% SLO means zero error budget. Zero error budget means you cannot deploy anything. This is mathematically incompatible with shipping software.

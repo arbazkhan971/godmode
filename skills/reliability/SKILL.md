@@ -682,6 +682,69 @@ ELIMINATION PLAN:
 | `--maturity` | Operational maturity assessment |
 | `--validate` | Validate SRE practices against checklist |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for monitoring stack: grep for prometheus, datadog, grafana, newrelic in configs
+2. Detect alerting: PagerDuty, OpsGenie, Slack webhook configs
+3. Check for existing SLOs: docs/slo*, slo.yaml, service-level-*.md
+4. Detect deployment method: kubernetes (k8s manifests), docker-compose, serverless
+5. Check for health endpoints: grep for /health, /healthz, /ready, /livez
+6. Detect logging: structured logging (winston, pino, zerolog), log aggregation (ELK, Loki)
+7. Scan for incident management: PagerDuty configs, runbook references, incident templates
+8. Check error tracking: Sentry, Bugsnag, Rollbar SDK presence
+```
+
+## Iterative SRE Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+sre_tasks = [SLO definition, SLI instrumentation, error budget, alerts, runbooks, toil automation]
+
+WHILE sre_tasks is not empty AND current_iteration < max_iterations:
+    task = sre_tasks.pop(0)
+    1. Assess current state for this task (what exists, what's missing)
+    2. Define target state with measurable criteria
+    3. Implement the change (SLO doc, alert rule, runbook, automation script)
+    4. Validate: SLO is measurable, alert fires correctly, runbook is executable
+    5. Test: simulate failure scenario to verify detection + response
+    6. IF validation fails → revise thresholds or implementation
+    7. IF passing → commit: "reliability: <task> for <service>"
+    8. current_iteration += 1
+
+POST-LOOP: Run full incident simulation drill to validate end-to-end
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "reliability-slo": SLO/SLI definitions, error budget policies, dashboards
+  Agent 2 — "reliability-alerts": burn rate alerts, alert routing, escalation policies
+  Agent 3 — "reliability-runbooks": runbook creation, toil automation scripts, incident templates
+
+MERGE ORDER: slo → alerts → runbooks (alerts reference SLOs, runbooks reference alerts)
+CONFLICT ZONES: service names, threshold values (agree on naming + targets first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER set an SLO at 100%. It is mathematically impossible and blocks all deployments.
+2. EVERY alert must have a corresponding runbook. No alert without a response procedure.
+3. NEVER alert on raw metrics. Alert on SLO burn rate (multi-window, multi-burn-rate).
+4. SLO MUST be stricter than SLA. Internal target > external promise.
+5. EVERY SLI must be measurable from real user traffic, not synthetic probes alone.
+6. NEVER skip post-mortems for SEV1/SEV2. Blameless, with tracked action items.
+7. Error budget policy MUST define what happens when budget is exhausted (freeze deploys).
+8. On-call rotation MUST have minimum 5 people. Single-person on-call is a bus factor.
+9. NEVER use liveness probes that check external dependencies. Liveness = "process is alive."
+10. Toil MUST be measured monthly. If toil > 50% of team time, stop features and automate.
+```
+
 ## Anti-Patterns
 
 - **Do NOT set SLOs at 100%.** A 100% availability target is impossible and means zero error budget. This stops all deployments. Set realistic targets (99.9% is generous for most services).

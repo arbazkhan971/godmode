@@ -402,6 +402,84 @@ Results:
 Next: Send resource files to translation service, then /godmode:test
 ```
 
+## HARD RULES
+1. NEVER concatenate translated strings — use ICU MessageFormat with placeholders. No exceptions.
+2. NEVER use binary plural logic (`count === 1 ? ... : ...`) — use CLDR plural rules via the i18n library.
+3. NEVER hardcode locale-specific formats (dates, numbers, currency) — use `Intl` APIs or equivalent.
+4. NEVER skip RTL audit if any target locale is RTL — every layout must be verified.
+5. NEVER expose raw Eloquent/ORM models in translation resource files — keys must be semantic.
+6. NEVER commit translation files with missing placeholders — validate placeholder preservation before merge.
+7. ALWAYS use full locale codes (`en-US`, not `en`) — locale is not language.
+8. ALWAYS add translator context/notes for ambiguous strings ("Save" can mean save-to-disk or save-money).
+9. ALWAYS run pseudo-localization before real translation — it catches 90% of i18n bugs instantly.
+10. ALWAYS use UTF-8 (utf8mb4 for MySQL) for all storage — never truncate multi-byte characters.
+
+## Auto-Detection
+On activation, detect project i18n context automatically before prompting:
+```
+AUTO-DETECT:
+1. Scan for existing i18n config:
+   - package.json → react-intl, react-i18next, vue-i18n, next-intl
+   - Podfile / build.gradle → NSLocalizedString, strings.xml
+   - pubspec.yaml → flutter_localizations, intl
+2. Scan for locale/resource files:
+   - src/locales/, public/locales/, lib/l10n/, *.lproj/
+   - *.json, *.yaml, *.properties, *.strings, *.xml, *.arb
+3. Detect base locale from existing files or package.json "defaultLocale"
+4. Count hardcoded strings: grep for quoted strings in UI component files
+5. Detect RTL need: check if target locales include ar, he, fa, ur
+6. Check Intl API usage: grep for Intl.DateTimeFormat, Intl.NumberFormat
+```
+
+## Iterative Extraction Protocol
+String extraction is iterative — process files in batches, not all at once:
+```
+current_iteration = 0
+total_batches = ceil(files_with_strings / BATCH_SIZE)
+BATCH_SIZE = 10  # files per iteration
+
+WHILE current_iteration < total_batches:
+  1. SELECT next 10 files with highest hardcoded string count
+  2. EXTRACT strings to resource files (base locale)
+  3. REPLACE hardcoded strings with i18n function calls
+  4. VALIDATE: run build + pseudo-localization on changed files
+  5. IF validation fails → fix before proceeding
+  6. COMMIT batch: "i18n: extract strings from batch {current_iteration+1}/{total_batches}"
+  7. current_iteration += 1
+  8. REPORT progress: "{extracted}/{total} strings, {current_iteration}/{total_batches} batches"
+
+EXIT when all strings extracted OR user requests stop
+```
+
+## Multi-Agent Dispatch
+When targeting 3+ locales, parallelize locale-specific work across worktrees:
+```
+DISPATCH parallel agents (one per locale group):
+
+Agent 1 (worktree: i18n-rtl):
+  - RTL layout audit and CSS logical property conversion
+  - Scope: all CSS/style files
+  - Output: RTL-ready stylesheets
+
+Agent 2 (worktree: i18n-formats):
+  - Date, number, currency formatting fixes
+  - Scope: all files using Intl APIs or locale-unaware formatting
+  - Output: Locale-aware formatting throughout
+
+Agent 3 (worktree: i18n-extract):
+  - String extraction for remaining files
+  - Scope: UI component files with hardcoded strings
+  - Output: Resource files + externalized strings
+
+Agent 4 (worktree: i18n-tests):
+  - Pseudo-localization test suite + locale-specific format tests
+  - Scope: test directory
+  - Output: i18n test suite
+
+MERGE ORDER: extract → formats → rtl → tests
+CONFLICT RESOLUTION: extract branch is source of truth for resource files
+```
+
 ## Flags & Options
 
 | Flag | Description |

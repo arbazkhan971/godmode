@@ -276,6 +276,69 @@ CONSISTENCY AUDIT:
 | `--extract` | Extract design contract from existing codebase only |
 | `--strict` | Fail the build if any inconsistency found (CI mode) |
 
+## HARD RULES
+
+- NEVER introduce a color, spacing, font size, border radius, or shadow value not in the design contract
+- NEVER use raw hex/rgb values in component code — always use semantic tokens or design system classes
+- NEVER generate UI without first reading `docs/design/design-contract.md` (or extracting one if it does not exist)
+- NEVER approve a component that uses different spacing/radius/shadow from existing sibling components
+- NEVER update the design contract without updating ALL existing components that reference the changed value
+- ALL consistency audits MUST use mechanical grep/search verification, not visual inspection alone
+- ALL new design contract values MUST be justified with a comment explaining why the existing scale was insufficient
+
+## Iterative Audit Loop Protocol
+
+When auditing or enforcing consistency across a codebase:
+
+```
+current_iteration = 0
+violation_queue = [all_ui_files_and_components]
+WHILE violation_queue is not empty:
+    current_iteration += 1
+    batch = violation_queue.pop(next 10 files)
+    FOR each file in batch:
+        grep for arbitrary hex colors, px/rem values, inconsistent classes
+        compare against design contract values
+        replace violations with contract-approved tokens
+        log: file, line, violation type, old value, new value
+    run build + visual snapshot check
+    IF new violations discovered in dependencies or shared components:
+        add to violation_queue
+    report: "Iteration {current_iteration}: {N} files audited, {M} violations fixed, {remaining} files remaining"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 3 agents in separate worktrees:
+  Agent 1 (extract):   Scan tailwind config, CSS variables, existing components → build/update design-contract.md
+  Agent 2 (audit):     Run mechanical grep audit on all UI files → generate violation report with file:line:value
+  Agent 3 (fix):       Apply contract-compliant replacements for all violations found by Agent 2
+SYNC point: All agents complete
+  Merge worktrees
+  Run visual regression / snapshot comparison
+  Generate before/after consistency report
+```
+
+## Auto-Detection
+
+```
+1. Check for existing design contract:
+   - Scan for docs/design/design-contract.md → load if exists
+   - Scan for tailwind.config.{js,ts} → extract theme tokens (colors, spacing, radius, shadows)
+   - Scan for CSS files with :root or [data-theme] → extract CSS custom properties
+   - Scan for tokens.json, tokens.css, design-tokens.* → detect token format
+   - Check for .storybook/ → detect component documentation
+2. Check for component library:
+   - Detect shadcn/ui, radix, chakra, mantine, ant-design, MUI in package.json
+   - Count components in src/components/ or packages/ui/
+   - Scan for consistent patterns (shared padding, radius, shadow usage)
+3. Determine current consistency level:
+   - Count unique hex values, spacing values, radius values across all UI files
+   - Compare against contract (if exists) to calculate violation percentage
+4. Set workflow: If no contract exists, start at Step 1 (extract). If contract exists, start at Step 3 (pre-check).
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the design contract.** Every UI generation must read it first. "This is a quick component" is how drift starts.

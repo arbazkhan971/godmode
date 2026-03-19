@@ -371,6 +371,89 @@ Remediation: Add backup purge job that removes soft-deleted records after 30 day
 | `--quick` | Top findings only, skip exhaustive checklist |
 | `--report` | Generate report from last audit |
 
+## HARD RULES
+
+1. **NEVER STOP** until all applicable regulations are assessed and all findings are documented.
+2. **NEVER provide legal advice** — identify technical gaps, recommend consulting legal counsel for interpretation.
+3. **EVERY finding MUST reference a specific regulation article** (e.g., "GDPR Article 17" not "deletion missing").
+4. **EVERY finding MUST point to actual code** — file paths, line numbers, functions. No theoretical assessments.
+5. **git commit BEFORE verify** — commit the compliance report, then verify all findings are actionable.
+6. **Automatic revert on regression** — if a remediation introduces new compliance gaps, revert immediately.
+7. **TSV logging** — log every compliance scan:
+   ```
+   timestamp	regulation	scope	critical	high	medium	low	verdict
+   ```
+8. **NEVER log PII in audit trails** — log user IDs, not names/SSNs/emails.
+
+## Explicit Loop Protocol
+
+When auditing across multiple regulations:
+
+```
+current_iteration = 0
+regulations = [GDPR, HIPAA, SOC2, PCI_DSS, ...]  # applicable only
+all_findings = []
+
+WHILE regulations is not empty:
+    current_iteration += 1
+    regulation = regulations.pop(0)
+
+    # Scan codebase for this regulation
+    data_flows = trace_data_flows(regulation.data_types)
+    controls = check_controls(regulation.requirements)
+
+    FOR each requirement in regulation.requirements:
+        evidence = find_evidence(requirement)
+        IF evidence.status == NON_COMPLIANT:
+            finding = {
+                regulation: regulation.name,
+                article: requirement.reference,
+                severity: assess_severity(requirement),
+                location: evidence.code_location,
+                remediation: generate_remediation(requirement)
+            }
+            all_findings.append(finding)
+
+    git commit findings for this regulation
+
+    IF current_iteration % 5 == 0:
+        print(f"Progress: {current_iteration} regulations assessed, {len(all_findings)} findings")
+
+generate_report(all_findings)
+```
+
+## Auto-Detection
+
+On activation, automatically detect compliance scope:
+
+```
+AUTO-DETECT:
+1. Data types handled:
+   grep -r "email\|password\|ssn\|credit.card\|phone\|address\|dob\|birth" src/ --include="*.ts" --include="*.py" -l 2>/dev/null
+   # Determines: PII present -> GDPR/CCPA scope
+
+2. Health data:
+   grep -ri "patient\|diagnosis\|medical\|health\|phi\|hipaa" src/ -l 2>/dev/null
+   # Determines: PHI present -> HIPAA scope
+
+3. Payment data:
+   grep -ri "stripe\|payment\|credit.card\|pan\|cvv\|billing" src/ -l 2>/dev/null
+   # Determines: Payment data -> PCI-DSS scope
+
+4. Existing compliance artifacts:
+   ls docs/compliance/ docs/privacy/ PRIVACY.md DPA.md 2>/dev/null
+
+5. Audit logging:
+   grep -ri "audit.log\|audit.trail\|event.log" src/ -l 2>/dev/null
+
+6. Geographic scope:
+   grep -ri "eu\|gdpr\|europe\|california\|ccpa" src/ docs/ -l 2>/dev/null
+
+-> Auto-select applicable regulations based on data types detected.
+-> Auto-scope the audit to relevant code paths.
+-> Only ask user to confirm scope if multiple regulations apply.
+```
+
 ## Anti-Patterns
 
 - **Do NOT treat compliance as a checkbox exercise.** Checking boxes without understanding the spirit of the regulation leads to false confidence and real violations.

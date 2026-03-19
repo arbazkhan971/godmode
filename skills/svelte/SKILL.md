@@ -920,6 +920,17 @@ Note: Runes and legacy can coexist — migrate incrementally per file.
 | `--component <name>` | Generate a new component with tests |
 | `--hooks` | Set up server/client hooks |
 
+## HARD RULES
+
+1. **NEVER fetch data in `onMount`.** Use SvelteKit load functions. They run on the server, handle errors, are type-safe, and prevent waterfalls.
+2. **NEVER create API routes for form submissions.** Use form actions with `use:enhance`. They are simpler, progressively enhanced, and handle validation natively.
+3. **NEVER use `$effect` for derived state.** Use `$derived` or `$derived.by()`. Effects are for side effects only.
+4. **NEVER put server secrets in `+page.ts`.** Use `+page.server.ts` for anything that touches secrets, databases, or private APIs.
+5. **NEVER use `document` or `window` without guards.** Check `browser` from `$app/environment` or use `onMount` for client-only code.
+6. **NEVER create global mutable state in modules.** Server-rendered pages share module scope across requests. Use stores or context.
+7. **ALWAYS add `use:enhance` to forms.** Without it, every form submission causes a full page reload.
+8. **ALWAYS use Svelte 5 runes for new projects.** Runes (`$state`, `$derived`, `$effect`) are more explicit, more powerful, and the future of Svelte.
+
 ## Anti-Patterns
 
 - **Do NOT fetch data in `onMount`.** Use SvelteKit load functions. They run on the server, handle errors, are type-safe, and prevent waterfalls.

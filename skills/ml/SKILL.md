@@ -376,6 +376,135 @@ ML: Loading experiment results...
 | `--registry` | Show experiment registry |
 | `--export <id>` | Export experiment artifacts (model, config, results) |
 
+## Auto-Detection
+
+```
+IF directory contains requirements.txt OR setup.py OR pyproject.toml:
+  IF contains "torch" OR "tensorflow" OR "scikit-learn" OR "xgboost" OR "jax":
+    SUGGEST "ML framework detected. Activate /godmode:ml?"
+
+IF directory contains *.ipynb files:
+  notebook_count = count(*.ipynb)
+  IF notebook_count > 0:
+    SCAN notebooks for model training code (model.fit, trainer.train, etc.)
+    IF found:
+      SUGGEST "ML training notebooks detected ({notebook_count}). Activate /godmode:ml?"
+
+IF directory contains mlflow/ OR wandb/ OR .dvc/ OR experiments/:
+  SUGGEST "ML experiment tracking detected. Activate /godmode:ml?"
+
+IF directory contains data/ AND models/:
+  SUGGEST "ML project structure detected (data/ + models/). Activate /godmode:ml?"
+
+IF directory contains configs/ with *.yaml containing "learning_rate" OR "batch_size":
+  SUGGEST "ML hyperparameter configs detected. Activate /godmode:ml?"
+```
+
+## Iterative Experiment Protocol
+
+```
+WHEN running a series of ML experiments:
+
+current_experiment = 0
+total_experiments = len(experiment_configs)
+results = []
+best_score = baseline_score
+best_experiment = "baseline"
+
+WHILE current_experiment < total_experiments:
+  config = experiment_configs[current_experiment]
+
+  1. VALIDATE dataset (schema, quality, leakage checks)
+  2. CONFIGURE hyperparameters from config
+  3. TRAIN model with checkpointing
+  4. EVALUATE on validation set
+  5. CHECK for bias across protected attributes
+  6. LOG results to experiment registry
+
+  score = evaluation_result.primary_metric
+  IF score > best_score:
+    best_score = score
+    best_experiment = config.id
+    SAVE best checkpoint
+
+  results.append({id: config.id, score: score, vs_baseline: score - baseline_score})
+  current_experiment += 1
+
+  IF current_experiment % 5 == 0:
+    REPORT "Progress: {current_experiment}/{total_experiments}, best so far: {best_experiment} ({best_score})"
+
+  # Early termination: if last 3 experiments show no improvement
+  IF len(results) >= 3 AND all(r.score <= best_score for r in results[-3:]):
+    SUGGEST "Last 3 experiments showed no improvement. Consider new approach."
+
+FINAL:
+  REPORT experiment comparison table
+  RECOMMEND best_experiment with statistical significance test
+  IF bias_detected: BLOCK deployment until addressed
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN running hyperparameter search OR comparing architectures:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (experiment-A):
+    - Train model with config A (e.g., learning_rate=1e-3, model=base)
+    - Full evaluation + bias check
+    - Output: results/exp-A.json
+
+  Agent 2 (experiment-B):
+    - Train model with config B (e.g., learning_rate=3e-4, model=large)
+    - Full evaluation + bias check
+    - Output: results/exp-B.json
+
+  Agent 3 (experiment-C):
+    - Train model with config C (e.g., distilled model, augmented data)
+    - Full evaluation + bias check
+    - Output: results/exp-C.json
+
+  Agent 4 (dataset-validation):
+    - Run comprehensive dataset quality checks
+    - Run bias detection across all protected attributes
+    - Output: reports/dataset-quality.md
+
+MERGE:
+  - Compare all experiment results side by side
+  - Run statistical significance tests between top results
+  - Select winner based on metric + latency + size tradeoff
+  - Verify winner passes bias checks from Agent 4
+```
+
+## HARD RULES
+
+```
+1. NEVER evaluate on the test set during development.
+   Test set is touched ONCE for final evaluation. Use validation set for tuning.
+
+2. EVERY experiment MUST record: git SHA, data version, hyperparameters,
+   random seeds, and environment. Reproducibility is non-negotiable.
+
+3. NEVER report a result without comparing to a baseline.
+   Even a majority-class baseline provides essential context.
+
+4. NEVER deploy a model that fails bias checks on any protected attribute.
+   Bias is a deployment blocker, not a nice-to-have.
+
+5. ALWAYS test statistical significance before claiming improvement.
+   A 0.2% improvement could be noise. Use paired bootstrap (10K iterations).
+
+6. NEVER hardcode hyperparameters in training scripts.
+   Use configuration files (YAML/JSON) that are version-controlled.
+
+7. EVERY failed experiment MUST be logged with explanation of why it failed.
+   Negative results prevent duplicate wasted effort.
+
+8. ALWAYS check for data leakage before training:
+   no target leakage, no train/test overlap, no future data in training.
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the baseline.** "Our model has 0.92 F1" means nothing without knowing what a trivial baseline achieves. Always compare.

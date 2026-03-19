@@ -250,6 +250,91 @@ Produce the final prioritized output:
 
 Save to `docs/priorities/<date>-backlog.md` and commit.
 
+## Auto-Detection
+
+Before prompting the user, automatically discover work items:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan issue tracker:
+   - GitHub Issues: gh issue list --state open --json number,title,labels,assignees
+   - Linear: check for .linear/ config or LINEAR_API_KEY
+   - Jira: check for JIRA_URL in env or .jira/ config
+2. Scan git for work signals:
+   - Open branches not merged to main: git branch --no-merged main
+   - Stale PRs: gh pr list --state open --json number,title,createdAt
+   - TODO/FIXME/HACK comments: grep -rn "TODO\|FIXME\|HACK" src/
+3. Detect sprint context:
+   - Current sprint from issue tracker metadata
+   - Team velocity from recent sprint history
+   - Capacity: number of developers x sprint length
+4. Detect dependency relationships:
+   - Issue links (blocks/blocked-by) from issue tracker
+   - Branch dependency chains (stacked branches)
+5. Classify items automatically:
+   - Label "bug" or branch prefix "fix/" -> bug fix
+   - Label "enhancement" or "feat/" -> feature
+   - TODO/FIXME in code -> technical debt
+   - Label "docs" or "*.md" changes -> documentation
+```
+
+## Explicit Loop Protocol
+
+For iterative scoring and re-prioritization:
+
+```
+PRIORITIZATION LOOP:
+current_iteration = 0
+max_iterations = 3
+items = collect_all_work_items()
+
+WHILE current_iteration < max_iterations:
+  current_iteration += 1
+
+  1. SCORE all items using selected framework:
+     - Apply RICE/ICE/MoSCoW/Matrix to each item
+     - Record raw scores
+
+  2. ADJUST for dependencies:
+     - Identify blocking/blocked relationships
+     - Bump items that unblock multiple others
+     - Defer items that are transitively blocked
+
+  3. ADJUST for debt ratio:
+     - Calculate current tech debt percentage
+     - Apply recommended feature/debt split
+     - Ensure debt items fill their allocated capacity
+
+  4. VALIDATE with constraints:
+     - Total estimated effort <= sprint capacity?
+     - Critical path identified?
+     - No circular dependencies?
+     - Separation of concerns (no two risky items in same sprint)?
+
+  5. EVALUATE:
+     - IF all constraints satisfied: STOP — emit final backlog
+     - IF capacity exceeded: remove lowest-priority item, re-iterate
+     - IF dependency conflict: reorder and re-iterate
+
+  OUTPUT: Ranked backlog with scores, dependencies, and capacity fit
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER prioritize without a named framework (RICE, ICE, MoSCoW, or Matrix).
+2. NEVER commit to more effort than sprint capacity allows.
+3. NEVER schedule a blocked item before its blocker.
+4. NEVER defer ALL technical debt — allocate minimum 20% capacity to debt.
+5. ALWAYS include confidence scores — high impact + low confidence = risky.
+6. ALWAYS show the scoring math — no hidden judgments.
+7. ALWAYS identify the critical path and call it out explicitly.
+8. NEVER prioritize a single sprint in isolation — show the next sprint overflow.
+9. ALWAYS re-prioritize when new information arrives (scope change, bug, outage).
+10. NEVER rank items by gut feeling and present it as data-driven.
+```
+
 ## Key Behaviors
 
 1. **Frameworks over gut feeling.** Every prioritization uses a named framework. "I think this is important" is not a priority — a RICE score of 2667 is.

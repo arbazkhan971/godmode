@@ -673,6 +673,49 @@ PARTITION HANDLING:
 | `--topology` | Generate distributed system topology diagram |
 | `--validate` | Validate existing distributed architecture |
 
+## HARD RULES
+
+- NEVER skip the CAP theorem conversation before any distributed design work — this decision cascades through everything
+- NEVER use wall clocks for event ordering — use logical clocks (Lamport, vector) or hybrid logical clocks
+- NEVER deploy a leader election without fencing tokens — a stale leader WILL corrupt data
+- NEVER use 2-phase commit at scale — use sagas or compensation-based approaches instead
+- NEVER shard prematurely — start with single node, then replicas, then shard only when data volume or write throughput demands it
+- ALL consistency levels MUST be documented per operation, not per system
+- ALL failure modes MUST be documented for every component ("what happens when X is down?")
+- ALL distributed systems MUST be tested with real network partitions via chaos engineering before production
+
+## Iterative Design Validation Loop Protocol
+
+When designing or auditing a distributed system:
+
+```
+current_iteration = 0
+validation_queue = [CAP_analysis, consensus, locking, sharding, consistency_patterns, leader_election, partition_handling]
+WHILE validation_queue is not empty:
+    current_iteration += 1
+    design_aspect = validation_queue.pop(next)
+    analyze current design for design_aspect
+    run validation checklist for design_aspect
+    IF validation fails:
+        revise design, re-add to queue
+    IF design_aspect reveals new concerns in other areas:
+        add affected areas to validation_queue
+    report: "Iteration {current_iteration}: {design_aspect} — {PASS|FAIL}, {N} issues found, {remaining} aspects to validate"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 3 agents in separate worktrees:
+  Agent 1 (design):       CAP analysis + consensus protocol selection + replication topology design
+  Agent 2 (coordination): Distributed locking + leader election + fencing token implementation
+  Agent 3 (data):         Sharding strategy + consistency patterns + conflict resolution + partition handling
+SYNC point: All agents complete
+  Merge worktrees
+  Run full validation checklist (12 checks)
+  Generate distributed system architecture document with topology diagram
+```
+
 ## Anti-Patterns
 
 - **Do NOT ignore the CAP theorem.** Claiming your system is consistent, available, AND partition-tolerant is physically impossible. If you think you have all three, you have not considered real network failures.

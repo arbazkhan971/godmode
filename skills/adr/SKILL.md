@@ -282,6 +282,43 @@ Alternatives: MongoDB (rejected: schema flexibility not worth losing JOINs)
 | `--supersede <NNN>` | Create a new ADR that supersedes ADR-NNN |
 | `--template` | Output a blank ADR template |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect ADR context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for existing ADR directory:
+   - ls docs/adr/ docs/decisions/ docs/architecture/decisions/
+2. Detect ADR format and numbering:
+   - Parse existing ADRs for template style (MADR, Nygard, custom)
+   - Find next available ADR number
+3. Scan recent git history for architecture-relevant changes:
+   - New dependencies added (package.json, go.mod, requirements.txt)
+   - New infrastructure files (Dockerfile, terraform, k8s manifests)
+   - Major refactors (files moved, new directory structures)
+4. Detect undocumented decisions:
+   - Compare tech stack (detected from code) against existing ADRs
+   - Flag technologies in use with no corresponding ADR
+5. Set ADR directory automatically based on convention found
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. NEVER reuse an ADR number — numbers are permanent, even for rejected ADRs.
+2. NEVER edit an accepted ADR — create a new ADR that supersedes it.
+3. EVERY ADR MUST have at least 2 alternatives (chosen + strongest rejected).
+4. EVERY ADR MUST have negative consequences — no decision is all upside.
+5. ALWAYS include code references (file paths, line numbers) in the Context section.
+6. git commit the ADR file immediately after creation — do not batch with other changes.
+7. Commit message format: "adr: ADR-<NNN> — <title> (<status>)"
+8. When superseding, commit BOTH the old (updated status) and new ADR together.
+9. NEVER create an ADR for trivial decisions (formatting, naming, lint rules).
+10. ALWAYS validate that referenced ADRs exist before linking in "Related Decisions".
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the alternatives section.** "We chose X because X is good" is not an ADR. Document what you didn't choose and why.

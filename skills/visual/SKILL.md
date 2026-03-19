@@ -426,6 +426,39 @@ Verdict: PASS
 | `--threshold <N>` | Override diff threshold (default: 0.01) |
 | `--ci` | Output in CI-friendly format (exit code 1 on failure) |
 
+## HARD RULES
+
+1. **NEVER set diff threshold to 0%.** Sub-pixel rendering and anti-aliasing cause tiny differences across environments. A 0% threshold guarantees false positives.
+2. **NEVER store screenshots in git without LFS.** Screenshot files are large binaries. Use Git LFS or an external storage bucket.
+3. **NEVER run visual tests on developer machines for CI baselines.** OS-level font rendering differences between macOS and Linux cause every test to fail. Use consistent CI environments.
+4. **ALWAYS test every visual state** (default, hover, focus, error, loading, empty, disabled). Not just the happy path.
+5. **ALWAYS update baselines immediately after intentional changes.** Stale baselines produce false failures on every subsequent run.
+6. **ALWAYS test at multiple breakpoints** (mobile 375px, tablet 768px, desktop 1280px minimum).
+7. **NEVER test third-party components you don't control.** Browser chrome and native form elements change with browser updates.
+8. **ALWAYS use a consistent CI environment** (same OS, browser version, viewport) for generating and comparing baselines.
+
+## Auto-Detection
+
+On activation, detect the visual testing context:
+
+```bash
+# Detect visual testing tools
+grep -r "chromatic\|percy\|backstop\|playwright.*screenshot\|reg-suit\|loki" package.json 2>/dev/null
+
+# Detect Storybook (primary source of component states)
+ls .storybook/ 2>/dev/null
+grep -r "storybook" package.json 2>/dev/null
+
+# Detect component framework
+grep -r "react\|vue\|svelte\|@angular" package.json 2>/dev/null
+
+# Detect existing baseline screenshots
+find . -name "*.png" -path "*__snapshots__*" -o -name "*.png" -path "*baselines*" 2>/dev/null | head -5
+
+# Detect CSS approach (affects what might change visually)
+grep -r "tailwindcss\|styled-components\|sass\|css-modules" package.json 2>/dev/null
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip baseline updates after intentional changes.** Stale baselines produce false failures on every subsequent run. Update baselines immediately when changes are intentional.

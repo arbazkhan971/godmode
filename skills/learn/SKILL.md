@@ -426,6 +426,47 @@ Gotchas:
 Start exploring: src/routes/index.ts (see all endpoints at a glance)
 ```
 
+## HARD RULES
+1. NEVER lecture without a hands-on exercise — every concept MUST have a "TRY IT" section.
+2. NEVER use only textbook examples — use real code from the user's codebase whenever possible.
+3. NEVER recommend more than ONE primary pattern — mention alternatives briefly, explain one thoroughly.
+4. NEVER skip trade-offs — every pattern, practice, and approach has costs. Present both benefits and drawbacks.
+5. NEVER assume skill level — calibrate with a question if unsure. A senior dev may be a beginner in a new language.
+6. NEVER teach without codebase context — "Observer pattern decouples X from Y" is a definition. Show how it applies to THEIR code.
+7. ALWAYS connect new concepts to what the user already knows — "This is like X you already use in Y."
+8. ALWAYS provide a checkpoint after each major concept — verify understanding before proceeding.
+9. ALWAYS keep tutorials incremental — each step builds on the previous one. Never jump ahead.
+10. ALWAYS offer concrete next steps — "/godmode:build to implement", "/godmode:review for feedback".
+
+## Iterative Learning Protocol
+Learning is a loop — teach, practice, verify, adjust:
+```
+current_topic = 0
+topics = [prioritized list from learning path or user request]
+
+WHILE current_topic < len(topics):
+  topic = topics[current_topic]
+  1. ASSESS: Does the user have prerequisites for {topic}?
+     - If missing prerequisites → teach prerequisite first (push to stack)
+  2. EXPLAIN concept using the user's codebase:
+     - Show real code example from their project
+     - Explain what's happening and WHY
+     - Highlight the key insight (one sentence)
+  3. PRACTICE: Give hands-on "TRY IT" exercise
+     - Specific action in their codebase
+     - Expected observation
+     - What it demonstrates
+  4. VERIFY understanding:
+     - Ask a question that requires APPLYING the concept (not just recalling)
+     - If user demonstrates understanding → proceed
+     - If user struggles → re-explain with different angle, simpler example
+  5. CONNECT to next topic:
+     - "Now that you understand X, let's see how Y builds on it"
+  6. current_topic += 1
+
+EXIT when learning path complete OR user changes direction
+```
+
 ## Flags & Options
 
 | Flag | Description |

@@ -305,6 +305,56 @@ ACTIVE RFCs:
 | `--reject <NNN>` | Mark RFC-NNN as rejected with reason |
 | `--defer <NNN>` | Defer RFC-NNN with revisit date |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for existing RFC directory: docs/rfcs/, rfcs/, docs/proposals/
+2. Detect RFC numbering: scan existing RFCs for numbering convention (001, RFC-001, etc.)
+3. Check for RFC template: docs/rfcs/template.md, .github/RFC_TEMPLATE.md
+4. Detect review process: CODEOWNERS, PR review requirements, approval workflows
+5. Check for decision log: docs/decisions/, ADR directory, decision-log.md
+6. Detect team communication: Slack webhook, email distribution list for RFC announcements
+7. Scan for active RFCs: find drafts, in-review, accepted statuses in RFC metadata
+```
+
+## Iterative RFC Writing Loop
+
+```
+current_iteration = 0
+max_iterations = 8
+rfc_sections = [problem, context, options, proposal, risks, migration, open_questions, review]
+
+WHILE rfc_sections is not empty AND current_iteration < max_iterations:
+    section = rfc_sections.pop(0)
+    1. IF problem: define the problem clearly with evidence (metrics, user reports, incidents)
+    2. IF context: document current state, constraints, and prior art
+    3. IF options: list all alternatives including "Do Nothing" with pros/cons
+    4. IF proposal: detail the recommended approach with concrete implementation steps
+    5. IF risks: identify risks with likelihood, impact, and mitigation strategies
+    6. IF migration: define rollout plan, backward compatibility, rollback procedure
+    7. IF open_questions: list unresolved questions that need input from reviewers
+    8. IF review: submit for team review with clear review deadline
+    9. Validate: every section is concise, evidence-based, and actionable
+    10. current_iteration += 1
+
+POST-LOOP: Verify all open questions are resolved before accepting
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. EVERY RFC must include a "Do Nothing" alternative. If status quo is fine, no RFC needed.
+2. NEVER write an RFC after the code is already written. RFC = proposal, not notification.
+3. EVERY RFC must have a review deadline. Open-ended reviews never close.
+4. NEVER accept an RFC with unresolved open questions. Resolve or explicitly defer each one.
+5. EVERY rejected RFC must be preserved with rejection rationale. Future teams need this context.
+6. RFC scope must be small enough to explain in < 5 pages. If longer, split into multiple RFCs.
+7. EVERY RFC must include a rollback/migration plan. Irreversible decisions need extra scrutiny.
+8. NEVER skip the alternatives section. Single-option RFCs are not proposals — they are mandates.
+```
+
 ## Anti-Patterns
 
 - **Do NOT write an RFC for trivial changes.** Renaming a variable doesn't need team consensus. RFCs are for decisions that are hard to reverse.

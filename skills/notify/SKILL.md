@@ -1550,6 +1550,46 @@ Estimated monthly cost (10K users):
 | `--quiet-hours` | Quiet hours implementation only |
 | `--schema` | Database schema for notification center only |
 
+## HARD RULES
+
+1. NEVER send notifications without checking user preferences first. Ignoring opt-outs violates trust and may violate CAN-SPAM, TCPA, or GDPR consent requirements.
+2. NEVER send SMS without explicit opt-in consent. TCPA fines are $500-$1,500 per message. Marketing SMS requires prior express written consent.
+3. NEVER hardcode provider credentials or API keys. Use environment variables or a secrets manager. Rotate keys on a schedule.
+4. ALWAYS implement idempotency keys for every notification dispatch. Duplicate sends erode user trust faster than missing sends.
+5. ALWAYS enforce rate limits per user per channel. A bug in a loop can send 10,000 emails in seconds. Cap hourly sends and alert on anomalies.
+6. NEVER send push notifications without handling stale tokens. Check provider error codes (FCM: `messaging/registration-token-not-registered`, APNs: HTTP 410) and remove invalid tokens immediately.
+7. ALWAYS queue notifications asynchronously. Synchronous sends block the request path. Use a job queue (BullMQ, SQS, Pub/Sub) with retry and dead-letter handling.
+8. NEVER serve notification content without sanitizing user-generated data. Templates that interpolate user input are XSS vectors in email and web push payloads.
+
+## Auto-Detection
+
+Before implementing, detect existing notification infrastructure:
+
+```bash
+# Detect existing notification providers
+echo "=== Notification Providers ==="
+grep -r "sendgrid\|ses\.\|nodemailer\|postmark\|mailgun" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+grep -r "twilio\|vonage\|nexmo\|plivo" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+grep -r "firebase.*messaging\|onesignal\|web-push\|fcm" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect notification service patterns
+echo "=== Notification Service ==="
+grep -r "NotificationService\|notification_service\|notify(" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect preference storage
+echo "=== User Preferences ==="
+grep -r "notification.*pref\|channel.*pref\|opt.out\|unsubscribe" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect queue infrastructure
+echo "=== Queue Infrastructure ==="
+grep -r "bullmq\|bull\|sqs\|pub.sub\|rabbitmq\|celery" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect templates
+echo "=== Templates ==="
+find . -path "*/templates/*" -name "*.html" -o -name "*.hbs" -o -name "*.mjml" 2>/dev/null | head -5
+find . -path "*/notifications/*" -name "*.ts" -o -name "*.js" 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT send notifications directly from business logic.** Always go through the notification service. Direct sends bypass preferences, quiet hours, rate limiting, and tracking. The notification service is the single source of truth.

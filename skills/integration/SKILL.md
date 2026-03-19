@@ -957,6 +957,99 @@ describe('OrderRepository (integration)', () => {
 Writing 6 integration tests with PostgreSQL container...
 ```
 
+## HARD RULES
+1. NEVER mock the database in integration tests — use Testcontainers or real instances. Mocking defeats the purpose.
+2. NEVER share test databases across parallel test runs — each run gets its own container.
+3. NEVER hardcode ports — always use `container.getMappedPort()` for dynamic port assignment.
+4. NEVER seed all data globally — each test owns its data. Global seeds create hidden coupling.
+5. NEVER use production databases for testing — not even read-only queries.
+6. NEVER skip cleanup between tests — leftover data causes mysterious failures.
+7. ALWAYS separate integration tests from unit tests in CI — integration tests are slower and run independently.
+8. ALWAYS test the transaction boundary — verify multi-step operations fully succeed or fully roll back.
+9. ALWAYS include a timeout for container startup (`beforeAll` timeout >= 60s).
+10. ALWAYS test failure modes (database down, network timeout, pool exhaustion) — not just happy paths.
+
+## Auto-Detection
+On activation, detect integration test context automatically:
+```
+AUTO-DETECT:
+1. Scan for existing test infrastructure:
+   - docker-compose*.yml, Dockerfile*, testcontainers* references
+   - tests/integration/, tests/e2e/, **/it/
+2. Detect test framework:
+   - package.json → jest, vitest, mocha
+   - pyproject.toml → pytest, pytest markers
+   - go.mod → testing package, testify
+   - pom.xml/build.gradle → JUnit, Testcontainers
+3. Detect external dependencies:
+   - Database connections: pg, mysql2, mongoose, prisma, sqlalchemy, gorm
+   - Message queues: kafkajs, amqplib, bullmq
+   - Cache: ioredis, redis, node-cache
+   - External APIs: axios, fetch, http client calls
+4. Detect ORM/migration tooling:
+   - Prisma, Drizzle, Knex, TypeORM, Sequelize
+   - Alembic, Django migrations, Flask-Migrate
+   - golang-migrate, goose
+5. Check for existing seeding:
+   - seeds/, fixtures/, factories/, test-data/
+   - Factory libraries (factory-boy, fishery, faker)
+```
+
+## Iterative Test Writing Protocol
+Integration tests are written iteratively per boundary:
+```
+current_boundary = 0
+boundaries = [detected external dependencies sorted by criticality]
+
+WHILE current_boundary < len(boundaries):
+  boundary = boundaries[current_boundary]
+  1. SETUP container/test infrastructure for {boundary}
+  2. WRITE fixture factories for test data
+  3. WRITE integration tests:
+     a. Happy path (CRUD operations work end-to-end)
+     b. Transaction boundary (atomic operations succeed or rollback)
+     c. Failure modes (connection failure, timeout, constraint violation)
+     d. Concurrency (parallel access, race conditions)
+  4. RUN tests — verify all pass
+  5. IF any test flaky (passes sometimes, fails sometimes):
+     - Diagnose: timing issue, cleanup issue, or port conflict
+     - Fix before proceeding
+  6. COMMIT: "test(integration): {boundary} — {N} tests with {container}"
+  7. current_boundary += 1
+  8. REPORT: "{current_boundary}/{total} boundaries covered"
+
+EXIT when all boundaries covered OR user requests stop
+```
+
+## Multi-Agent Dispatch
+For services with multiple external dependencies, parallelize test writing:
+```
+DISPATCH parallel agents (one per dependency type):
+
+Agent 1 (worktree: integration-db):
+  - Database integration tests (PostgreSQL/MySQL/MongoDB)
+  - Scope: repositories, data access layer
+  - Output: Testcontainers setup + repository tests
+
+Agent 2 (worktree: integration-api):
+  - API endpoint integration tests
+  - Scope: route handlers, controllers
+  - Output: HTTP integration tests with supertest/httpx
+
+Agent 3 (worktree: integration-queue):
+  - Message queue integration tests (Kafka/RabbitMQ/SQS)
+  - Scope: producers, consumers, event handlers
+  - Output: Queue container setup + pub/sub tests
+
+Agent 4 (worktree: integration-cache):
+  - Cache integration tests (Redis/Memcached)
+  - Scope: cached repositories, session stores
+  - Output: Cache container setup + cache behavior tests
+
+MERGE ORDER: db → api → queue → cache
+CONFLICT RESOLUTION: db branch owns container setup shared across tests
+```
+
 ## Flags & Options
 
 | Flag | Description |

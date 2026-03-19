@@ -662,6 +662,92 @@ RESULT:
 | `--fix` | Diagnose and fix failing pipeline |
 | `--dry-run` | Show pipeline changes without writing files |
 
+## HARD RULES
+
+1. **NEVER STOP** until the pipeline is green or all failures are documented with root causes.
+2. **git commit BEFORE verify** — commit pipeline config, then trigger a run to verify.
+3. **Automatic revert on regression** — if a pipeline change increases total runtime by >20%, revert and reassess.
+4. **TSV logging** — log every pipeline optimization:
+   ```
+   timestamp	stage	before_duration	after_duration	savings_pct	technique	status
+   ```
+5. **NEVER deploy to production without a staging gate.** No exceptions.
+6. **NEVER use `latest` for action/image versions.** Pin to SHA or specific version.
+7. **NEVER echo secrets in pipeline logs.** Use masking.
+8. **ALWAYS set timeouts on every job.**
+9. **ALWAYS cache dependencies with lockfile hash key.**
+
+## Explicit Loop Protocol
+
+When optimizing an existing pipeline:
+
+```
+current_iteration = 0
+stages = list_all_pipeline_stages()
+optimizations_applied = []
+
+WHILE stages has unoptimized items:
+    current_iteration += 1
+    stage = stages.pop(0)
+
+    # Measure current
+    baseline_duration = measure(stage)
+
+    # Identify optimizations
+    opportunities = analyze(stage)  # caching, sharding, parallel, etc.
+
+    FOR each opportunity in opportunities:
+        apply(opportunity)
+        new_duration = measure(stage)
+        IF new_duration > baseline_duration:
+            revert(opportunity)
+        ELSE:
+            optimizations_applied.append({stage, opportunity, savings})
+            baseline_duration = new_duration
+
+    git commit pipeline config
+
+    IF current_iteration % 5 == 0:
+        print(f"Progress: {current_iteration} stages optimized")
+        print(f"Total savings so far: {sum(o.savings for o in optimizations_applied)}")
+
+    IF all stages optimized:
+        generate_report(optimizations_applied)
+        BREAK
+```
+
+## Auto-Detection
+
+On activation, automatically detect project context without asking:
+
+```
+AUTO-DETECT:
+1. CI platform:
+   ls .github/workflows/*.yml 2>/dev/null && echo "github-actions"
+   ls .gitlab-ci.yml 2>/dev/null && echo "gitlab-ci"
+   ls .circleci/config.yml 2>/dev/null && echo "circleci"
+   ls Jenkinsfile 2>/dev/null && echo "jenkins"
+
+2. Language and package manager:
+   ls package-lock.json yarn.lock pnpm-lock.yaml 2>/dev/null  # Node.js
+   ls Pipfile.lock requirements.txt pyproject.toml 2>/dev/null  # Python
+   ls go.sum 2>/dev/null  # Go
+   ls Cargo.lock 2>/dev/null  # Rust
+
+3. Test framework:
+   grep -r "jest\|vitest\|mocha\|pytest\|go test\|cargo test" package.json Makefile 2>/dev/null
+
+4. Container:
+   ls Dockerfile docker-compose.yml 2>/dev/null
+
+5. Deploy target:
+   grep -ri "ecs\|kubernetes\|k8s\|vercel\|netlify\|lambda" .github/ .gitlab-ci* 2>/dev/null
+
+-> Auto-configure pipeline stages based on detected stack.
+-> Auto-select caching strategy based on package manager.
+-> Only ask user about deploy target if not detectable.
+```
+
 ## Anti-Patterns
 
 - **Do NOT install dependencies without caching.** Running `npm install` from scratch on every build wastes minutes. Cache with lockfile hash.

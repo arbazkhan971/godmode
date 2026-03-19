@@ -639,6 +639,51 @@ GRACEFUL SHUTDOWN: WaitGroup tracks all goroutines, drain channels before exit
 | `--test` | Concurrent testing strategy |
 | `--model` | Concurrency model selection guide |
 
+## HARD RULES
+
+1. **NEVER STOP** until all shared mutable state is identified and protected.
+2. **NEVER add locks without documenting what they protect** — every mutex gets a comment.
+3. **NEVER hold locks during I/O** — fetch data first, then acquire lock to update.
+4. **ALWAYS run the race detector** on every test (go -race, TSan, etc.).
+5. **ALWAYS verify cancellation paths** — every concurrent operation must support cancellation.
+6. **git commit BEFORE verify** — commit concurrency fixes, then run stress tests.
+7. **Automatic revert on regression** — if a fix introduces deadlocks or new races, revert immediately.
+8. **TSV logging** — log every concurrency analysis:
+   ```
+   timestamp	component	shared_states	races_found	races_fixed	deadlock_risk	verdict
+   ```
+
+## Multi-Agent Dispatch
+
+For large codebases, dispatch parallel agents to analyze concurrency in independent modules:
+
+```
+MULTI-AGENT CONCURRENCY ANALYSIS:
+
+Agent 1 (worktree: concurrent-analysis-data):
+  Scope: Data layer (database access, caches, connection pools)
+  Task: Identify shared mutable state, check lock ordering, verify pool safety
+  Output: data-layer-thread-safety.md
+
+Agent 2 (worktree: concurrent-analysis-api):
+  Scope: API layer (request handlers, middleware, session state)
+  Task: Identify async race conditions, check request isolation
+  Output: api-layer-thread-safety.md
+
+Agent 3 (worktree: concurrent-analysis-workers):
+  Scope: Background workers (queues, schedulers, batch processors)
+  Task: Identify goroutine/task leaks, check channel usage, verify shutdown
+  Output: worker-thread-safety.md
+
+Agent 4 (worktree: concurrent-analysis-tests):
+  Scope: Test suite
+  Task: Write stress tests, run race detector, verify invariants under load
+  Output: concurrent-test-results.md
+
+MERGE: Combine all findings, resolve cross-module shared state conflicts,
+       produce unified concurrency report.
+```
+
 ## Anti-Patterns
 
 - **Do NOT add locks without identifying what they protect.** A mutex without a documented invariant is a bug waiting to happen. Write a comment: "mu protects X and Y".

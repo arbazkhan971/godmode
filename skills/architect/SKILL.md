@@ -462,6 +462,65 @@ Migration strategy:
 | `--migrate` | Architecture migration analysis (current → target with strategy) |
 | `--validate` | Validate existing architecture against stated requirements |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect architecture context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect project structure:
+   - Monorepo? Check for nx.json, turbo.json, pnpm-workspace.yaml, lerna.json
+   - Multi-service? Check for docker-compose.yml with multiple services
+   - Single app? Standard project layout
+2. Detect current architecture pattern:
+   - Count service directories or Dockerfiles → monolith vs microservices
+   - Check for message broker configs (kafka, rabbitmq, sqs) → event-driven
+   - Check for API gateway configs (kong, nginx, traefik) → gateway pattern
+3. Detect tech stack:
+   - Languages: scan file extensions (.ts, .py, .go, .java, .rs)
+   - Databases: grep for connection strings, ORM configs (prisma, typeorm, sqlalchemy)
+   - Infrastructure: check for terraform, pulumi, cdk, cloudformation files
+4. Detect team signals:
+   - Count git contributors in last 6 months → team size proxy
+   - Check CODEOWNERS file → team boundaries
+5. Detect existing architecture docs:
+   - Find docs/architecture/, docs/adr/, C4 diagrams, architecture.md
+6. Detect scale indicators:
+   - Check Dockerfile/k8s configs for replica counts
+   - Check for auto-scaling configs, load balancer configs
+7. Auto-configure:
+   - Small team + single repo → likely modular monolith candidate
+   - Multiple repos + multiple databases → likely already microservices
+   - Event broker present → event-driven components exist
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive architecture analysis of large systems:
+
+```
+PARALLEL ARCHITECTURE ANALYSIS:
+IF system has multiple services OR team_size > 10:
+  Agent 1 (worktree: arch-patterns):
+    - Evaluate architecture patterns against requirements
+    - Build comparison matrix with weighted scoring
+    - Produce recommendation with justification
+
+  Agent 2 (worktree: arch-diagrams):
+    - Generate C4 Level 1 (System Context) diagram
+    - Generate C4 Level 2 (Container) diagram
+    - Generate C4 Level 3 (Component) for key containers
+    - Generate bounded context map
+
+  Agent 3 (worktree: arch-quality):
+    - Analyze quality attributes (scalability, reliability, security)
+    - Identify architectural risks and mitigations
+    - Evaluate operational complexity
+    - Assess team fit for recommended architecture
+
+  COORDINATOR merges into unified architecture document + ADR
+```
+
 ## Anti-Patterns
 
 - **Do NOT recommend microservices by default.** Microservices are a solution to organizational scaling, not a default. Most systems should start as a modular monolith.

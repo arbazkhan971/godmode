@@ -657,6 +657,40 @@ Implementation: 3 PRs over 1 week (low risk, incremental)
 | `--provider <name>` | Target provider (aws, gcp, azure) |
 | `--audit` | Audit current storage for waste and risk |
 
+## HARD RULES
+
+1. **NEVER proxy file uploads through the API server.** Use presigned URLs for direct-to-storage uploads. The server generates the URL; the client uploads directly.
+2. **NEVER store files on the application server filesystem.** Local storage is not durable, not scalable, and lost on deploy. Use object storage (S3, GCS, Azure Blob).
+3. **NEVER trust file extensions or Content-Type headers.** Inspect file headers (magic bytes) to determine actual file type. A `.jpg` with PHP file headers is an attack.
+4. **NEVER serve files directly from the bucket URL.** Use a CDN. Direct bucket access is slower, more expensive (egress), and exposes your bucket name.
+5. **NEVER skip virus scanning on user uploads.** Scan with ClamAV or a commercial scanner before making files available to other users.
+6. **ALWAYS strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps -- serving it is a privacy violation.
+7. **ALWAYS set lifecycle policies from day one.** Transition to IA after 90 days, Glacier after a year. Auto-delete incomplete multipart uploads after 24 hours.
+8. **ALWAYS generate image variants at upload time**, not at request time. On-demand resizing adds latency and unpredictable cost to every request.
+
+## Auto-Detection
+
+On activation, detect the storage context:
+
+```bash
+# Detect cloud provider
+ls ~/.aws/credentials ~/.config/gcloud/application_default_credentials.json 2>/dev/null
+grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage\|@azure/storage-blob" package.json 2>/dev/null
+
+# Detect existing storage configuration
+grep -rl "S3Client\|S3\|getSignedUrl\|presignedUrl\|Storage\|BlobServiceClient" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
+
+# Detect upload handling
+grep -rl "multer\|busboy\|formidable\|multipart" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
+
+# Detect image processing
+grep -r "sharp\|imagemagick\|jimp\|canvas" package.json 2>/dev/null
+
+# Detect CDN configuration
+ls cdn.* cloudfront.* 2>/dev/null
+grep -r "CloudFront\|cloudflare\|cdn" infra/ terraform/ 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT proxy file uploads through your API server.** Presigned URLs let clients upload directly to storage. Your server generating presigned URLs and the client uploading directly is both faster and cheaper.

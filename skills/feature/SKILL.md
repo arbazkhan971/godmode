@@ -1103,6 +1103,58 @@ STALE FLAG REPORT:
 | `--compare` | Compare flag platforms (LD, Unleash, etc.) |
 | `--migrate` | Migrate between flag platforms |
 
+## HARD RULES
+
+1. **NEVER leave release flags at 100% for more than 2 weeks.** A flag at 100% is dead code wrapped in a conditional. Clean it up.
+2. **NEVER nest flag checks.** `if (flagA && flagB && !flagC)` creates 8 possible states that are impossible to test. Keep flags independent.
+3. **NEVER use flags as permanent configuration.** Feature flags are temporary or targeted toggles. Permanent config belongs in config files or environment variables.
+4. **ALWAYS test both the flag-on AND flag-off paths.** The off-path is your fallback during incidents. If it is broken, you have no safety net.
+5. **NEVER evaluate flags in hot loops.** Evaluate once per request and pass the result. Calling the flag service 1000 times per request adds latency.
+6. **NEVER expose server-side targeting rules to clients.** Targeting rules may contain business logic or internal IDs. Use server-side evaluation for sensitive flags.
+7. **NEVER call an experiment winner without sufficient sample size.** Calculate required sample size upfront and wait for statistical significance.
+8. **ALWAYS maintain an audit trail.** Every flag change must record who changed it, when, and the previous value.
+
+## Auto-Detection
+
+On activation, detect the feature flag context:
+
+```bash
+# Detect flag platforms
+grep -r "launchdarkly\|unleash\|flagsmith\|split\|statsig\|growthbook\|posthog" package.json 2>/dev/null
+
+# Detect homegrown flags
+grep -rl "featureFlag\|feature_flag\|isEnabled\|isFeatureEnabled\|getFeature" src/ --include="*.ts" --include="*.js" --include="*.py" 2>/dev/null | head -10
+
+# Detect flag config files
+find . -name "*feature*flag*" -o -name "*flags*" -o -name "*toggles*" 2>/dev/null | head -5
+
+# Count existing flags
+grep -roh "FEATURE_[A-Z_]*\|feature\.[a-z._]*\|flag\.[a-z._]*" src/ 2>/dev/null | sort -u | wc -l
+```
+
+## Iteration Protocol
+
+For gradual feature rollout with monitoring:
+
+```
+current_percentage = 0
+rollout_stages = [1, 5, 25, 50, 100]
+
+WHILE current_percentage < 100:
+  next_stage = rollout_stages[next]
+  1. Set flag percentage to next_stage
+  2. Monitor error rates, latency, and business metrics for observation_window
+  3. Compare treatment vs control groups
+  4. IF metrics degrade beyond threshold: ROLLBACK to previous stage, investigate
+  5. IF metrics stable: advance to next stage
+  current_percentage = next_stage
+  Report: "Rollout at {current_percentage}%: error_rate={rate}, latency_p99={p99}ms, conversion={conv}%"
+
+AFTER 100%:
+  Schedule flag cleanup (max 2 weeks)
+  Remove flag code and dead branches
+```
+
 ## Anti-Patterns
 
 - **Do NOT leave flags forever.** A release flag at 100% for months is dead code wrapped in a conditional. Clean it up within 2 weeks of full rollout.

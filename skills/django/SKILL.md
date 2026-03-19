@@ -877,6 +877,75 @@ app/
 | `--migrate` | Database migration strategy |
 | `--deploy <target>` | Deployment configuration (gunicorn, docker, serverless) |
 
+## HARD RULES
+
+- NEVER put business logic in views or serializers — business rules belong in service functions
+- NEVER use `fields = '__all__'` in DRF serializers — explicitly list every field to prevent data leakage
+- NEVER use the default User model — always create a custom user model with AbstractUser at project start
+- NEVER use synchronous HTTP calls (requests) in async views — use httpx.AsyncClient instead
+- NEVER skip database indexes on fields used in filter(), order_by(), or WHERE clauses
+- ALL N+1 queries MUST be eliminated with select_related (ForeignKey) and prefetch_related (ManyToMany)
+- ALL admin ModelAdmin classes MUST use list_select_related to prevent N+1 in the admin interface
+- ALL API list endpoints MUST have pagination configured — unbounded queries are not acceptable
+
+## Iterative Audit Loop Protocol
+
+When auditing or building a Django/FastAPI project:
+
+```
+current_iteration = 0
+audit_queue = [all_apps_and_modules]
+WHILE audit_queue is not empty:
+    current_iteration += 1
+    batch = audit_queue.pop(next 3 apps)
+    FOR each app in batch:
+        check: business logic in services.py (not views/serializers)
+        check: serializers have explicit fields (no __all__)
+        check: select_related/prefetch_related on all querysets
+        check: database indexes on filtered/ordered fields
+        check: admin has list_select_related and list_per_page
+        check: pagination on all list endpoints
+        log violations found and fixes applied
+    run tests + migration check (python manage.py check --deploy)
+    IF new issues discovered in dependent apps:
+        add to audit_queue
+    report: "Iteration {current_iteration}: {N} apps audited, {M} violations fixed, {remaining} apps remaining"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 4 agents in separate worktrees:
+  Agent 1 (models+DB):     Audit/build models, managers, indexes, migrations, custom User model
+  Agent 2 (API layer):     Audit/build serializers, viewsets, routers, permissions, pagination, throttling
+  Agent 3 (services):      Extract business logic into services.py + selectors.py, write service-level tests
+  Agent 4 (admin+async):   Customize admin (list_display, filters, actions, inlines), configure ASGI if needed
+SYNC point: All agents complete
+  Merge worktrees
+  Run full test suite + python manage.py check --deploy
+  Generate project audit report with per-app status
+```
+
+## Auto-Detection
+
+```
+1. Check for Django or FastAPI:
+   - Scan for manage.py, settings.py, wsgi.py, asgi.py → Django detected
+   - Scan for main.py with FastAPI/APIRouter imports → FastAPI detected
+   - Scan for both → hybrid project
+2. Check Django configuration:
+   - Scan settings for REST_FRAMEWORK config → DRF detected
+   - Scan for INSTALLED_APPS to count apps
+   - Check AUTH_USER_MODEL → custom user or default
+   - Check for DATABASES config → detect database engine
+3. Check project structure:
+   - Scan for services.py, selectors.py → proper layering
+   - Scan for factories.py in tests/ → Factory Boy usage
+   - Scan for Celery config → background task setup
+4. Determine maturity: scaffold | structured | optimized | production-ready
+5. Set assessment fields and proceed to Step 1
+```
+
 ## Anti-Patterns
 
 - **Do NOT put business logic in views or serializers.** Views handle HTTP, serializers handle validation. Business rules belong in service functions that can be tested independently.

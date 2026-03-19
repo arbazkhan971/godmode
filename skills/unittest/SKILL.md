@@ -835,6 +835,54 @@ Writing 3 property-based tests with fast-check...
 | `--framework <name>` | Target a specific framework (jest, vitest, pytest, go, junit) |
 | `--refactor` | Refactor existing tests for better structure and naming |
 
+## HARD RULES
+
+1. **NEVER mock everything.** Mock boundaries (APIs, databases, external services), use real implementations for internal collaborators.
+2. **NEVER test implementation details.** If your test breaks when you rename a private method, it is testing implementation, not behavior.
+3. **NEVER share mutable state between tests.** Every test gets fresh state. Shared state causes ordering bugs and flaky failures.
+4. **NEVER chase 100% coverage as a goal.** 80% meaningful coverage beats 100% superficial coverage. Focus on critical paths and business logic.
+5. **NEVER write slow unit tests.** If a single unit test takes more than 100ms, it is probably hitting real I/O. Mock it or move it to integration tests.
+6. **ALWAYS use Arrange-Act-Assert structure.** Every test has three clear phases. No exceptions.
+7. **ALWAYS name tests as behavior descriptions.** `should return empty array when no items match filter` not `test1` or `testFilter`.
+8. **ALWAYS investigate surviving mutants.** Each surviving mutant is a potential bug your tests would miss.
+
+## Iteration Protocol
+
+For large-scale unit test writing across a codebase:
+
+```
+current_file = 0
+files_to_test = [list of source files needing tests]
+
+WHILE current_file < len(files_to_test):
+  file = files_to_test[current_file]
+  1. Analyze file: identify public API, dependencies, edge cases
+  2. Design test cases: happy path, error cases, boundary conditions
+  3. Write tests using Arrange-Act-Assert
+  4. Run tests -- confirm all pass
+  5. Check coverage for this file -- identify untested branches
+  current_file += 1
+  Report: "Tests for {current_file}/{len(files_to_test)}: {file} -- {test_count} tests, {coverage}% coverage"
+
+AFTER all files tested:
+  Run mutation testing on critical modules
+  Report overall coverage and surviving mutants
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive test suite creation, dispatch parallel agents:
+
+```
+DISPATCH 3 agents:
+  Agent 1 (worktree: test-services):   Unit tests for service/business logic layer
+  Agent 2 (worktree: test-controllers): Unit tests for controllers/handlers/API layer
+  Agent 3 (worktree: test-utils):       Unit tests for utilities, helpers, and shared modules
+
+MERGE order: Agent 3 (utils) first, then Agent 1 (services), then Agent 2 (controllers)
+CONFLICT resolution: Shared test fixtures defined by Agent 3 are authoritative
+```
+
 ## Anti-Patterns
 
 - **Do NOT mock everything.** If you mock every dependency, you are testing that your mocks work, not that your code works. Mock boundaries, use real implementations for internal collaborators.

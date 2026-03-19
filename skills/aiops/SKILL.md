@@ -599,6 +599,103 @@ Strategy 4-5 if further reduction needed.
 | `--trace <request_id>` | Debug a specific request trace |
 | `--dashboard` | Generate monitoring dashboard configuration |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect the AI system context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for LLM provider SDKs:
+   - grep for 'openai', 'anthropic', '@google/generative-ai', 'replicate'
+   - Check API keys in .env.example (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+2. Detect AI frameworks:
+   - LangChain: grep for 'langchain', '@langchain'
+   - LlamaIndex: grep for 'llama_index', 'llama-index'
+   - Custom: grep for 'chat.completions', 'messages.create'
+3. Detect existing guardrails:
+   - grep for 'nemo-guardrails', 'guardrails-ai', 'llama-guard'
+   - Check for content filtering middleware
+4. Detect monitoring:
+   - grep for 'langsmith', 'langfuse', 'helicone', 'phoenix'
+   - Check for OpenTelemetry tracing on LLM calls
+5. Detect RAG components:
+   - grep for 'pinecone', 'weaviate', 'chromadb', 'qdrant', 'pgvector'
+6. Detect agent patterns:
+   - grep for 'tools', 'function_calling', 'tool_choice'
+   - Check for agent loop patterns (while loops with LLM calls)
+7. Auto-configure priority based on findings:
+   - No guardrails detected → priority: safety
+   - No monitoring detected → priority: monitoring
+   - High token usage patterns → priority: cost
+```
+
+## Explicit Loop Protocol
+
+For iterative optimization of AI systems:
+
+```
+AIOPS OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 15
+metrics = { cost: current_cost, latency: current_p95, quality: current_score, safety: current_score }
+targets = { cost: target_cost, latency: target_p95, quality: target_score, safety: 10 }
+
+WHILE any(metrics[k] worse than targets[k]) AND current_iteration < max_iterations:
+    current_iteration += 1
+
+    1. IDENTIFY highest-impact optimization from gap analysis
+    2. IMPLEMENT optimization (guardrail config, model routing, caching, prompt edit)
+    3. git commit: "aiops: <optimization> (iter {current_iteration})"
+    4. MEASURE all metrics after change (not just the targeted one)
+    5. IF quality or safety regressed:
+       - git revert
+       - Try alternative approach
+    6. RECORD in TSV log:
+       ITER\tOPTIMIZATION\tCOST\tLATENCY_P95\tQUALITY\tSAFETY
+
+    IF current_iteration % 5 == 0:
+        PRINT STATUS:
+        "Iteration {current_iteration}/{max_iterations}"
+        "Cost: ${metrics.cost}/mo (target: ${targets.cost}/mo)"
+        "Latency P95: {metrics.latency}ms (target: {targets.latency}ms)"
+        "Quality: {metrics.quality}/10 (target: {targets.quality}/10)"
+        "Safety: {metrics.safety}/10 (target: 10/10)"
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive AI operations audits, parallelize across concerns:
+
+```
+PARALLEL AIOPS AUDIT:
+IF system has multiple components (RAG + agent + guardrails):
+  Agent 1 (worktree: aiops-safety):
+    - Run full red-team test suite
+    - Test prompt injection resistance
+    - Audit guardrail coverage
+    - Verify PII handling
+
+  Agent 2 (worktree: aiops-cost):
+    - Analyze token usage per component
+    - Identify model routing opportunities
+    - Design caching strategy for repeated queries
+    - Calculate projected savings
+
+  Agent 3 (worktree: aiops-quality):
+    - Run hallucination detection on sample responses
+    - Evaluate response quality with LLM-as-judge
+    - Test edge cases and failure modes
+    - Measure retrieval quality (if RAG)
+
+  Agent 4 (worktree: aiops-monitoring):
+    - Set up tracing for all LLM calls
+    - Configure cost tracking and alerts
+    - Build quality monitoring dashboard
+    - Set up guardrail trigger alerting
+
+  COORDINATOR merges all findings into unified operations report
+```
+
 ## Anti-Patterns
 
 - **Do NOT deploy AI without guardrails.** "We'll add guardrails later" means "we'll add them after the incident." Input and output validation are launch requirements.

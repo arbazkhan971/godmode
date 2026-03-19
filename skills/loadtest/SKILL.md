@@ -508,6 +508,114 @@ Recommendations:
 Run /godmode:optimize to address bottlenecks, then re-test.
 ```
 
+## HARD RULES
+1. NEVER load test production without coordination — unannounced load tests are indistinguishable from DDoS attacks.
+2. NEVER test without think time between requests — real users pause. Tests without think time overestimate capacity.
+3. NEVER compare single runs — one run with P95=200ms and another with P95=180ms is noise. Run 5+ times minimum.
+4. NEVER test with empty databases — performance on 100 rows is meaningless. Use production-scale data volumes.
+5. NEVER skip warm-up — cold starts, empty caches, and JIT compilation make the first minutes unrepresentative.
+6. NEVER report averages without percentiles — average response time hides tail latency problems. Always report P50, P95, P99.
+7. NEVER ignore tail latency — if P50 is 50ms but P99 is 5s, 1% of users has a terrible experience.
+8. ALWAYS establish a baseline before optimizing — you cannot improve what you haven't measured.
+9. ALWAYS test in production-like environments — match hardware, data volume, and network topology.
+10. ALWAYS include realistic mixed workloads — combine reads, writes, searches in proportion to real traffic.
+
+## Auto-Detection
+On activation, detect load test context automatically:
+```
+AUTO-DETECT:
+1. Detect API endpoints:
+   - Parse route files: routes/*.ts, app.py, main.go, routes/web.php
+   - Extract endpoint paths, methods, and handlers
+   - Estimate traffic weight from analytics or handler complexity
+2. Detect existing load tests:
+   - loadtest/, performance/, bench/ directories
+   - *.k6.js, *.artillery.yml, *_locust.py, *.jmx files
+3. Detect baseline data:
+   - loadtest/results/, performance/baselines/
+   - Previous test reports (JSON, HTML)
+4. Detect infrastructure:
+   - docker-compose.yml → local stack
+   - k8s manifests → container resources, replica count
+   - terraform → cloud resources, instance types
+5. Detect database:
+   - Connection config → estimate data volume
+   - Migration count → schema complexity
+6. Detect monitoring:
+   - Prometheus, Grafana, Datadog, NewRelic configs
+   - CloudWatch, Application Insights
+7. Detect SLOs:
+   - SLO/SLA documentation
+   - alerting thresholds in monitoring config
+```
+
+## Iterative Load Test Protocol
+Load testing follows an iterative cycle — baseline, stress, identify, optimize, re-test:
+```
+current_phase = "baseline"
+iteration = 0
+
+WHILE current_phase != "complete":
+  IF current_phase == "baseline":
+    1. RUN baseline load test (expected traffic, 10 min steady)
+    2. RECORD metrics: P50, P95, P99, throughput, error rate
+    3. SAVE baseline: loadtest/results/baseline-{date}.json
+    4. current_phase = "stress"
+
+  IF current_phase == "stress":
+    1. RUN stress test (ramp to 2x, 5x, 10x baseline)
+    2. IDENTIFY breaking point (error rate > 10% or P99 > 10s)
+    3. RECORD: max stable load, breaking point, bottleneck
+    4. current_phase = "analyze"
+
+  IF current_phase == "analyze":
+    1. CORRELATE: response time vs CPU vs memory vs DB connections
+    2. IDENTIFY top 3 bottlenecks ranked by impact
+    3. REPORT findings with specific fix recommendations
+    4. IF meets SLOs with headroom → current_phase = "complete"
+    5. ELSE → current_phase = "optimize"
+
+  IF current_phase == "optimize":
+    1. APPLY fix for top bottleneck
+    2. RE-RUN baseline to verify improvement
+    3. STATISTICAL comparison: before vs after (5 runs each)
+    4. IF improvement confirmed → current_phase = "stress"
+    5. IF no improvement → revert, try next bottleneck
+    6. iteration += 1
+    7. IF iteration > 5 → REPORT: "Optimization plateau reached"
+
+EXIT when SLOs met OR optimization plateau
+```
+
+## Multi-Agent Dispatch
+For comprehensive performance validation across test types:
+```
+DISPATCH parallel agents (one per test type):
+
+Agent 1 (worktree: loadtest-baseline):
+  - Baseline load test with standard traffic pattern
+  - Scope: all high-traffic endpoints
+  - Output: Baseline metrics (P50/P95/P99/throughput)
+
+Agent 2 (worktree: loadtest-stress):
+  - Stress test to find breaking point
+  - Scope: same endpoints, increasing load
+  - Output: Breaking point, max stable capacity
+
+Agent 3 (worktree: loadtest-spike):
+  - Spike test for sudden surge behavior
+  - Scope: critical endpoints (checkout, auth)
+  - Output: Recovery time, degradation behavior
+
+Agent 4 (worktree: loadtest-soak):
+  - Soak test for memory leaks and gradual degradation
+  - Scope: full API, moderate sustained load
+  - Output: Memory/connection trends over 4+ hours
+
+MERGE ORDER: baseline → stress → spike → soak (results only, no code conflicts)
+CONFLICT RESOLUTION: each agent writes to its own results subdirectory
+```
+
 ## Flags & Options
 
 | Flag | Description |

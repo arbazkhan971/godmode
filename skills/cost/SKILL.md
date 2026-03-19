@@ -290,6 +290,92 @@ Implementation time: < 2 hours
 | `--report` | Generate report from last analysis |
 | `--threshold <dollars>` | Only show savings above threshold |
 
+## HARD RULES
+
+1. **NEVER STOP** until all resource categories are analyzed and all savings are quantified in dollars.
+2. **EVERY recommendation MUST include dollar impact** — "oversized" is not actionable, "$180/month savings" is.
+3. **EVERY recommendation MUST include risk level** and reversibility assessment.
+4. **NEVER recommend reserved instances for workloads with less than 3 months of stable data.**
+5. **NEVER apply dev-level aggressive optimization to production resources.**
+6. **ALWAYS fix tagging first** — cost optimization without attribution is guesswork.
+7. **git commit BEFORE verify** — commit the cost report, then verify recommendations.
+8. **TSV logging** — log every cost analysis:
+   ```
+   timestamp	provider	scope	current_spend	projected_savings	recommendations	quick_wins
+   ```
+
+## Explicit Loop Protocol
+
+When analyzing resources across categories:
+
+```
+current_iteration = 0
+resource_categories = [compute, storage, database, network, containers, serverless, other]
+all_recommendations = []
+
+WHILE resource_categories is not empty:
+    current_iteration += 1
+    category = resource_categories.pop(0)
+
+    # Inventory
+    resources = list_resources(category)
+
+    FOR each resource in resources:
+        utilization = get_utilization(resource, period="14d")
+
+        IF utilization.cpu_avg < 5 AND utilization.mem_avg < 10:
+            recommendation = {type: "TERMINATE", savings: resource.monthly_cost}
+        ELIF utilization.cpu_avg < 30 OR utilization.mem_avg < 40:
+            right_size = calculate_right_size(resource, utilization)
+            recommendation = {type: "RESIZE", from: resource.type, to: right_size, savings: delta}
+        ELIF resource.is_unattached OR resource.last_access > 90_days:
+            recommendation = {type: "DELETE", savings: resource.monthly_cost}
+        ELSE:
+            CONTINUE  # Resource is appropriately sized
+
+        all_recommendations.append(recommendation)
+
+    IF current_iteration % 3 == 0:
+        total = sum(r.savings for r in all_recommendations)
+        print(f"Progress: {current_iteration} categories, ${total}/month identified")
+
+sort_by_savings(all_recommendations)
+generate_report(all_recommendations)
+git commit report
+```
+
+## Auto-Detection
+
+On activation, automatically detect cloud context:
+
+```
+AUTO-DETECT:
+1. Cloud provider:
+   aws sts get-caller-identity 2>/dev/null && echo "aws"
+   gcloud config get-value project 2>/dev/null && echo "gcp"
+   az account show 2>/dev/null && echo "azure"
+
+2. Infrastructure as code:
+   ls terraform/ *.tf 2>/dev/null && echo "terraform"
+   ls pulumi/ Pulumi.yaml 2>/dev/null && echo "pulumi"
+   ls cdk.json 2>/dev/null && echo "cdk"
+
+3. Resource inventory tools:
+   which aws-nuke cloud-nuke infracost 2>/dev/null
+
+4. Existing cost tools:
+   ls .infracost/ 2>/dev/null
+   grep -r "cost\|budget\|billing" .github/workflows/ 2>/dev/null
+
+5. Tagging policy:
+   # Check for tag enforcement
+   grep -ri "required_tags\|tag.policy\|tag.compliance" terraform/ 2>/dev/null
+
+-> Auto-select provider and configure API calls.
+-> Auto-detect account/project scope.
+-> Only ask user about time period if not obvious.
+```
+
 ## Anti-Patterns
 
 - **Do NOT recommend changes without utilization data.** "You should use smaller instances" without CPU/memory data is speculation.

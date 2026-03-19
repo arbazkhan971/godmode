@@ -501,6 +501,57 @@ Verdict: NEEDS REVISION — 4 issues found
 | `--diff <v1> <v2>` | Compare two API versions for breaking changes |
 | `--mock` | Generate mock server from the spec |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect API context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect existing API framework:
+   - grep for 'express', 'fastify', 'koa', 'hono' (Node.js)
+   - grep for 'flask', 'fastapi', 'django' (Python)
+   - grep for 'gin', 'echo', 'fiber' (Go)
+   - grep for 'spring-boot' (Java)
+2. Detect existing API spec:
+   - Find openapi.yaml, openapi.json, swagger.yaml, swagger.json
+   - Find .proto files (gRPC)
+   - Find schema.graphql, .graphql files (GraphQL)
+3. Detect existing endpoints:
+   - Scan route files for HTTP method + path patterns
+   - Count endpoints and resources
+4. Detect auth patterns:
+   - grep for 'bearer', 'jwt', 'apiKey', 'oauth' in route middleware
+5. Detect existing pagination:
+   - grep for 'cursor', 'offset', 'limit', 'page' in query params
+6. Detect error handling:
+   - Check for centralized error handler or middleware
+   - Analyze error response format consistency
+7. Detect versioning:
+   - Check URL patterns for /v1/, /v2/ prefixes
+   - Check for version headers in middleware
+8. Auto-configure:
+   - No spec → generate OpenAPI from existing routes
+   - Existing spec → validate against implementation
+   - No versioning → recommend URL path versioning
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. EVERY list endpoint MUST have pagination — no exceptions, no "we only have a few items."
+2. EVERY endpoint MUST have a documented error response format — one schema for the entire API.
+3. EVERY mutation endpoint MUST validate input — never trust client data.
+4. EVERY public endpoint MUST have rate limiting defined.
+5. NEVER put sensitive data in URLs or query parameters — use headers or body.
+6. NEVER return stack traces or internal errors to API consumers — use error codes.
+7. ALWAYS version from day one — /api/v1/ is cheap insurance.
+8. ALWAYS validate the OpenAPI spec with tooling after generation.
+9. git commit the spec file BEFORE implementing endpoints — spec is source of truth.
+10. Log all API design decisions as TSV:
+    ENDPOINT\tMETHOD\tPAGINATION\tAUTH\tRATE_LIMIT\tNOTES
+```
+
 ## Anti-Patterns
 
 - **Do NOT design APIs around database tables.** APIs expose resources, not tables. Aggregate data for the consumer's use case.

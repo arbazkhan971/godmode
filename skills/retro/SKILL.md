@@ -230,6 +230,55 @@ When recurring themes appear in 3+ consecutive retros:
 | `--auto` | Auto-generate retro insights from git data (solo developer mode) |
 | `--compare <N>` | Compare health metrics across last N sprints |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check git log for sprint/iteration boundaries: tags, merge patterns, date ranges
+2. Detect sprint length: analyze commit frequency patterns (1-week, 2-week, etc.)
+3. Check for previous retro artifacts: docs/retro*, retrospective*, retro-sprint-*
+4. Detect project management tool: Jira, Linear, Shortcut references in commits/PRs
+5. Calculate velocity: count merged PRs, closed issues, story points (from commit messages)
+6. Check for previous action items: grep retro docs for "Action:", "TODO:", "[ ]"
+7. Analyze CI data: build success rate, deploy frequency, test pass rate for the sprint
+```
+
+## Iterative Retro Facilitation Loop
+
+```
+current_iteration = 0
+max_iterations = 6
+retro_phases = [context_gather, generate_insights, group_themes, vote_priorities, define_actions, close]
+
+WHILE retro_phases is not empty AND current_iteration < max_iterations:
+    phase = retro_phases.pop(0)
+    1. IF context_gather: pull velocity, incidents, action item completion from last retro
+    2. IF generate_insights: collect Start/Stop/Continue (or chosen format) inputs
+    3. IF group_themes: cluster related items, identify recurring patterns across sprints
+    4. IF vote_priorities: rank themes by team vote or impact score
+    5. IF define_actions: create max 3 SMART action items with owners and due dates
+    6. IF close: summarize retro, confirm action items, save artifact
+    7. Validate: every action item has an owner, due date, and measurable outcome
+    8. IF validation fails → refine action items until they pass SMART criteria
+    9. current_iteration += 1
+
+POST-LOOP: Compare with last 3 retros for recurring unresolved themes
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. ALWAYS start with the prime directive. Blameless, every time.
+2. NEVER create more than 3 action items per retro. Focus beats breadth.
+3. EVERY action item must be SMART: Specific, Measurable, Assignable, Realistic, Time-bound.
+4. ALWAYS review previous retro action items first. Unfinished items carry forward or are dropped explicitly.
+5. NEVER compare teams against each other. Health metrics track a team's own trajectory.
+6. EVERY insight must be backed by data. "Felt slow" must reference actual velocity numbers.
+7. NEVER skip the retro because "the sprint went fine." Good sprints have improvement opportunities too.
+8. Action item owners must be individuals, not "the team." Shared ownership = no ownership.
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the prime directive.** Even for solo developers, the blameless mindset matters. Self-blame is just as unproductive as blaming others.

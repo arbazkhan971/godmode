@@ -855,6 +855,64 @@ Requires: Add SLACK_WEBHOOK_URL to repository secrets.
 | `--list` | List all existing automation in the project |
 | `--audit` | Audit existing automation for issues (missing error handling, no timeouts) |
 
+## Explicit Loop Protocol
+
+When automating multiple tasks or iterating on automation reliability:
+
+```
+AUTOMATION BUILD LOOP:
+current_iteration = 0
+max_iterations = 15
+tasks_remaining = total_tasks_to_automate
+
+WHILE tasks_remaining > 0 AND current_iteration < max_iterations:
+    current_iteration += 1
+
+    1. SELECT next task to automate (highest impact first)
+    2. DETECT existing automation context for this task
+    3. GENERATE automation artifact (script, workflow, Makefile target)
+    4. TEST the automation:
+       - Dry-run mode (--dry-run) passes
+       - Real execution succeeds
+       - Error handling works (simulate failure)
+       - Idempotency verified (run twice, same result)
+    5. git commit: "automate: <type> for <task> (iter {current_iteration})"
+    6. IF test fails:
+       - Debug and fix
+       - Re-test
+       - If still failing after 3 attempts, log as manual and move on
+    7. UPDATE tasks_remaining
+
+    IF current_iteration % 5 == 0:
+        PRINT STATUS:
+        "Iteration {current_iteration}/{max_iterations}"
+        "Tasks automated: {total_tasks - tasks_remaining}/{total_tasks}"
+        "Automation types: {cron_count} cron, {workflow_count} workflows, {script_count} scripts"
+        "Remaining: {tasks_remaining} tasks"
+
+IF tasks_remaining > 0:
+    PRINT "Remaining tasks need manual automation design: {tasks_remaining}"
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. NEVER create automation without error handling — set -euo pipefail in bash, try/catch in scripts.
+2. NEVER hardcode secrets — environment variables or secret managers only.
+3. EVERY scheduled job MUST have a lock file or concurrency guard — no parallel execution.
+4. EVERY script MUST support --dry-run — destructive operations need preview mode.
+5. EVERY automated task MUST log: start time, actions taken, completion status.
+6. EVERY CI workflow MUST have a timeout — no runaway jobs.
+7. EVERY GitHub Actions scheduled workflow MUST also have workflow_dispatch.
+8. NEVER duplicate existing automation — add to existing Makefile/Taskfile, do not create competing files.
+9. NEVER schedule cron jobs at midnight UTC — offset by random minutes to avoid thundering herd.
+10. git commit automation files BEFORE testing — if test fails, you have a baseline to debug from.
+11. Automatic revert: if automation causes a failure in CI, revert the automation commit.
+12. Log all automation artifacts in TSV:
+    TYPE\tTRIGGER\tFREQUENCY\tFILE\tERROR_HANDLING\tTIMEOUT
+```
+
 ## Anti-Patterns
 
 - **Do NOT automate without error handling.** A script without `set -euo pipefail` or try/catch will fail silently. Silent failures are worse than manual processes because nobody notices.

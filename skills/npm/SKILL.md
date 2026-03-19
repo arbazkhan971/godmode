@@ -605,6 +605,167 @@ REMEDIATION:
 | `--overrides` | Manage version overrides/resolutions |
 | `--ci` | CI-friendly output (exit code 1 on issues) |
 
+## Auto-Detection
+
+```
+IF package-lock.json exists:
+  DETECT manager = "npm"
+  version = parse lockfileVersion from package-lock.json
+
+IF yarn.lock exists:
+  DETECT manager = "yarn"
+  IF .yarnrc.yml exists: manager = "yarn berry"
+
+IF pnpm-lock.yaml exists:
+  DETECT manager = "pnpm"
+
+IF bun.lockb exists:
+  DETECT manager = "bun"
+
+IF multiple lock files exist (e.g., package-lock.json AND yarn.lock):
+  WARN "Multiple lock files detected! Pick one package manager. Activate /godmode:npm?"
+
+IF node_modules/ does not exist AND lock file exists:
+  SUGGEST "Dependencies not installed. Run install with detected manager."
+
+ON git pull/merge with lock file changes:
+  SUGGEST "Lock file changed. Run {manager} install to sync."
+
+ON npm audit OR pnpm audit returning critical/high:
+  SUGGEST "Security vulnerabilities detected. Activate /godmode:npm --audit?"
+
+IF package.json has no "engines" field AND is a library:
+  SUGGEST "Missing engines field in library package.json. Activate /godmode:npm?"
+```
+
+## Iterative Dependency Management Protocol
+
+```
+WHEN performing a full dependency audit and cleanup:
+
+phases = ["audit_security", "check_outdated", "remove_unused", "deduplicate", "verify_build"]
+current_phase = 0
+total_phases = len(phases)
+changes_made = []
+
+WHILE current_phase < total_phases:
+  phase = phases[current_phase]
+
+  IF phase == "audit_security":
+    1. RUN {manager} audit
+    2. FOR each CRITICAL/HIGH vulnerability:
+       - Check if direct or transitive dependency
+       - IF direct: update to fixed version
+       - IF transitive: update parent OR add override
+       - IF no fix available: assess actual exploitability
+    3. VERIFY: 0 critical, 0 high vulnerabilities
+    changes_made.append(fixes)
+
+  IF phase == "check_outdated":
+    1. RUN {manager} outdated
+    2. CATEGORIZE: patch updates, minor updates, major updates
+    3. APPLY patch updates (safe)
+    4. APPLY minor updates (test after)
+    5. FLAG major updates for manual review
+    changes_made.append(updates)
+
+  IF phase == "remove_unused":
+    1. RUN depcheck to find unused dependencies
+    2. VERIFY each "unused" dependency isn't used dynamically
+    3. REMOVE confirmed unused packages
+    changes_made.append(removals)
+
+  IF phase == "deduplicate":
+    1. RUN {manager} dedupe
+    2. CHECK for duplicate packages in lock file
+    3. RESOLVE duplicates via version alignment
+    changes_made.append(dedup_results)
+
+  IF phase == "verify_build":
+    1. DELETE node_modules and lock file
+    2. RUN fresh install
+    3. RUN build
+    4. RUN tests
+    IF build_or_tests_fail:
+      ROLLBACK last changes
+      REPORT "Build verification failed. Rolling back."
+
+  current_phase += 1
+  REPORT "Phase {current_phase}/{total_phases}: {phase} complete"
+
+FINAL:
+  REPORT dependency health: vulnerabilities, outdated, unused, duplicates
+  REPORT total changes made
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN setting up a monorepo with workspace configuration:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (workspace-structure):
+    - Create package directories (apps/, packages/)
+    - Configure workspace protocol references
+    - Set up pnpm-workspace.yaml or equivalent
+    - Output: directory structure + package.json files
+
+  Agent 2 (dependency-audit):
+    - Run security audit across all packages
+    - Identify outdated dependencies
+    - Find and remove unused dependencies
+    - Deduplicate shared dependencies
+    - Output: audit report + fixed package.json files
+
+  Agent 3 (publish-config):
+    - Configure package.json exports (ESM/CJS dual)
+    - Set up tsup/unbuild for library builds
+    - Configure changesets for versioning
+    - Set up prepublishOnly scripts
+    - Output: build configs + publish-ready package.json
+
+  Agent 4 (ci-pipeline):
+    - Configure Turborepo/Nx task pipeline
+    - Set up selective builds in CI
+    - Configure remote caching
+    - Output: turbo.json + CI workflow
+
+MERGE:
+  - Verify workspace references resolve correctly
+  - Verify all packages build and test
+  - Verify publish dry-run succeeds for public packages
+  - Run full audit: 0 critical/high vulnerabilities
+```
+
+## HARD RULES
+
+```
+1. ALWAYS commit lock files to version control.
+   Without a committed lock file, every install produces different versions.
+
+2. ALWAYS use --frozen-lockfile (or npm ci) in CI/CD.
+   npm install in CI can update the lock file, causing non-reproducible builds.
+
+3. NEVER mix package managers in one project.
+   One lock file, one package manager. Delete the others.
+
+4. NEVER manually edit lock files.
+   Let the package manager resolve versions. Manual edits cause corruption.
+
+5. NEVER use * or "latest" as version ranges in package.json.
+   Always specify semver ranges. Unbounded versions break builds.
+
+6. NEVER run npm audit fix --force without reviewing each change.
+   Force-fixing can jump major versions and introduce breaking changes.
+
+7. ALWAYS run npm publish --dry-run before real publish.
+   Verify package contents. npm publish is effectively irreversible.
+
+8. Build tools, test frameworks, and linters MUST be in devDependencies.
+   Production deployments should never install dev packages.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use `npm install` in CI/CD.** Use `npm ci` (or `pnpm install --frozen-lockfile`). `install` can update the lock file, causing non-reproducible builds.

@@ -1210,6 +1210,72 @@ RESILIENCE VERIFICATION CHECKLIST:
 - **From `/godmode:resilience` to `/godmode:loadtest`:** Validate resilience under load
 - **From `/godmode:incident`:** Post-mortem reveals resilience gaps → implement with `/godmode:resilience`
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for HTTP client libraries: axios, got, node-fetch, requests, net/http
+2. Detect existing resilience patterns: grep for circuitBreaker, retry, bulkhead, rateLimit
+3. Check for resilience libraries: cockatiel, polly, resilience4j, hystrix, gobreaker
+4. Detect service mesh: istio, linkerd, envoy configs (may handle retries/circuit breaking)
+5. Check for health checks: /health, /ready endpoints, kubernetes probes
+6. Detect timeout configuration: grep for timeout, connectTimeout, requestTimeout
+7. Scan for fallback patterns: grep for fallback, degraded, cached response
+8. Check infrastructure: docker-compose for multiple services, k8s for multi-pod deployments
+```
+
+## Iterative Resilience Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 12
+dependencies = [list of external dependencies/services to protect]
+
+WHILE dependencies is not empty AND current_iteration < max_iterations:
+    dep = dependencies.pop(0)
+    1. Map the dependency: protocol, expected latency, failure modes, criticality
+    2. Choose patterns: circuit breaker (if remote), retry (if idempotent), bulkhead (if shared pool)
+    3. Configure timeouts: connect < request < circuit breaker < caller's timeout
+    4. Implement circuit breaker with thresholds (5 failures / 60s → open, 30s half-open)
+    5. Implement retry with exponential backoff + jitter (max 3 retries)
+    6. Add fallback: cached response, default value, or graceful degradation
+    7. Add observability: circuit state metric, retry count, fallback activation
+    8. Test: simulate dependency failure, verify graceful degradation
+    9. IF degradation is not graceful → fix fallback logic
+    10. IF passing → commit: "resilience: protect <dep> (circuit breaker + retry + fallback)"
+    11. current_iteration += 1
+
+POST-LOOP: Chaos test all dependencies failing simultaneously
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "resilience-patterns": circuit breakers, retries, bulkheads, rate limiters
+  Agent 2 — "resilience-fallbacks": fallback handlers, cached responses, degradation logic
+  Agent 3 — "resilience-observability": metrics, dashboards, alerts for resilience state
+
+MERGE ORDER: patterns → fallbacks → observability
+CONFLICT ZONES: HTTP client wrappers, middleware chains (agree on wrapper API first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER retry non-idempotent operations. POST that creates a resource = no retry without idempotency key.
+2. EVERY retry must use exponential backoff WITH jitter. Linear retry = thundering herd.
+3. Timeout hierarchy MUST be monotonically decreasing: caller > gateway > service > dependency.
+4. Circuit breaker MUST have half-open state. Open → half-open → test → closed/open.
+5. NEVER use the same thread/connection pool for all dependencies. Bulkhead per dependency.
+6. EVERY fallback must be tested independently. An untested fallback is no fallback.
+7. NEVER catch all exceptions for retry. Only retry transient failures (5xx, timeout, connection reset).
+8. Rate limiting MUST return 429 with Retry-After header. Silent dropping is hostile.
+9. EVERY resilience pattern must emit metrics. Invisible resilience is untunable resilience.
+10. Liveness probes MUST NOT check external dependencies. Liveness = process alive. Readiness = deps available.
+```
+
 ## Anti-Patterns
 
 ```

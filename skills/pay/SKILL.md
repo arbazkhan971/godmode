@@ -653,6 +653,104 @@ Response plan:
 | `--dunning` | Failed payment recovery flow only |
 | `--reconcile` | Payment reconciliation check |
 
+## HARD RULES
+
+1. **NEVER process card numbers on your server.** Use client-side tokenization (Stripe.js Elements, PayPal JS SDK). This is PCI SAQ-A. Violating this moves you to SAQ-D.
+2. **NEVER fulfill orders from client-side redirects.** Redirects can be faked. Always fulfill from webhook events, which are cryptographically signed.
+3. **NEVER skip idempotency keys on payment write operations.** Every `create`, `capture`, `refund`, and `charge` call must include an idempotency key.
+4. **NEVER calculate tax yourself.** Use Stripe Tax, TaxJar, or Avalara. Tax rules change constantly across thousands of jurisdictions.
+5. **NEVER store API keys in code or environment files committed to git.** Use a secrets manager. Rotate immediately if exposed.
+6. **NEVER send payment amounts as client-side parameters.** The price must come from your server-side product catalog.
+7. **NEVER log card numbers, CVCs, or full bank account numbers.** Log event IDs, amounts, and outcomes only.
+8. **ALWAYS verify webhook signatures before processing any event.** An unverified webhook is an attack vector.
+9. **ALWAYS test with provider test mode.** Use Stripe test card numbers (4242..., 4000000000000002 for decline) to verify all paths.
+
+## Auto-Detection
+
+Before implementing payment integration, detect existing setup:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect payment provider:
+   - grep for "stripe" in package.json / requirements.txt / go.mod → Stripe
+   - grep for "paypal" / "braintree" / "adyen" similarly
+   - ls .env* and grep for STRIPE_SECRET_KEY, PAYPAL_CLIENT_ID, etc.
+
+2. Detect existing integration:
+   - grep for "PaymentIntent\|checkout.sessions\|subscriptions" → Stripe API usage
+   - grep for "webhook\|stripe-signature" → webhook handler exists
+   - grep for "createCustomer\|createSubscription" → subscription billing
+
+3. Detect billing model:
+   - ls src/services/billing* src/services/payment* src/lib/stripe* → existing billing code
+   - grep for "subscription\|recurring\|plan\|tier" → subscription model
+   - grep for "invoice\|receipt\|charge" → one-time or invoicing model
+
+4. Detect tax configuration:
+   - grep for "automatic_tax\|tax_id\|TaxJar\|Avalara" → tax handling
+   - grep for "vat\|VAT\|sales_tax" → tax awareness
+
+5. Output: PAYMENT REQUIREMENTS table auto-populated from detection.
+```
+
+## Explicit Loop Protocol
+
+Payment integration involves iterative setup and verification:
+
+```
+current_iteration = 0
+components = [gateway_setup, checkout_flow, webhook_handler,
+              subscription_billing, tax_config, pci_audit, reconciliation]
+
+WHILE components is not empty AND current_iteration < 10:
+    current_iteration += 1
+    component = components.pop(0)
+
+    1. IMPLEMENT component (create service, route, webhook handler)
+    2. TEST with provider's test mode:
+       - Successful payment (test card 4242...)
+       - Declined payment (test card 4000000000000002)
+       - 3D Secure flow (test card 4000000000003220)
+       - Webhook delivery (stripe listen --forward-to localhost)
+    3. VERIFY idempotency: duplicate request produces same result
+    4. VERIFY security: no card data in logs, signatures checked
+    5. IF test fails:
+        components.append(component)  # retry
+    6. REPORT: "Component {component}: {DONE|RETRY} -- iteration {current_iteration}"
+
+OUTPUT: Full payment integration with all components tested.
+```
+
+## Multi-Agent Dispatch
+
+For full billing system implementation, dispatch parallel agents:
+
+```
+MULTI-AGENT PAYMENT SETUP:
+Dispatch 3 agents in parallel worktrees.
+
+Agent 1 (worktree: pay-core):
+  - Set up Stripe client and customer management
+  - Implement PaymentIntent creation for one-time charges
+  - Build checkout session flow with Elements
+  - Implement refund handling
+
+Agent 2 (worktree: pay-subscriptions):
+  - Create subscription plans and prices in Stripe
+  - Implement subscription CRUD (create, update, cancel)
+  - Build plan change with proration
+  - Implement dunning flow for failed payments
+
+Agent 3 (worktree: pay-webhooks):
+  - Build webhook endpoint with signature verification
+  - Implement idempotent event processing
+  - Handle all subscription lifecycle events
+  - Set up daily reconciliation job
+
+MERGE ORDER: core -> subscriptions -> webhooks
+CONFLICT ZONES: Stripe client initialization, customer model, billing routes
+```
+
 ## Anti-Patterns
 
 - **Do NOT process card numbers on your server.** Use client-side tokenization (Stripe.js, PayPal JS SDK). Handling raw card data moves you from SAQ-A to SAQ-D, a dramatically harder compliance burden.

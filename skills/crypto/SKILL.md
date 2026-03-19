@@ -849,6 +849,56 @@ Key rotation: New KEK version, re-wrap DEKs (no data re-encryption)
 | `--migrate` | Migrate from weak to strong cryptography |
 | `--test` | Generate tests for cryptographic operations |
 
+## HARD RULES
+
+1. **NEVER implement your own cryptographic primitives.** Use audited libraries only.
+2. **NEVER reuse IVs/nonces with the same key.** A single reuse with AES-GCM breaks authentication.
+3. **NEVER store encryption keys alongside encrypted data.** Keys and data in different systems.
+4. **NEVER use MD5, SHA-1, DES, 3DES, RC4, or ECB mode** for any security purpose.
+5. **NEVER encrypt passwords** — hash them with Argon2id or bcrypt. Encryption is reversible.
+6. **NEVER use `Math.random()` or non-cryptographic RNGs** for keys, tokens, or IVs.
+7. **ALWAYS use authenticated encryption** (GCM, ChaCha20-Poly1305). Never AES-CBC without HMAC.
+8. **ALWAYS track key version** with encrypted data for rotation support.
+9. **git commit BEFORE verify** — commit crypto implementation, then run verification tests.
+10. **TSV logging** — log every cryptographic implementation:
+    ```
+    timestamp	use_case	algorithm	key_management	key_rotation	verdict
+    ```
+
+## Auto-Detection
+
+On activation, automatically detect cryptographic context:
+
+```
+AUTO-DETECT:
+1. Existing crypto usage:
+   grep -r "crypto\|encrypt\|decrypt\|hash\|bcrypt\|argon2\|jwt\|jose" src/ --include="*.ts" --include="*.py" --include="*.go" -l 2>/dev/null
+
+2. Password handling:
+   grep -ri "password\|passwd\|bcrypt\|argon2\|scrypt\|pbkdf2" src/ -l 2>/dev/null
+   # Detect current hashing algorithm and parameters
+
+3. JWT usage:
+   grep -ri "jsonwebtoken\|jose\|jwt\|bearer" src/ -l 2>/dev/null
+   # Detect algorithm, key type, expiration settings
+
+4. TLS configuration:
+   ls nginx.conf /etc/nginx/conf.d/*.conf 2>/dev/null
+   grep -ri "ssl_protocols\|ssl_ciphers\|tls" nginx.conf 2>/dev/null
+
+5. Key management:
+   grep -ri "kms\|vault\|secret.manager\|key.vault" src/ 2>/dev/null
+   # Detect if KMS is already integrated
+
+6. Weak crypto indicators:
+   grep -ri "md5\|sha1\|des\|ecb\|Math.random\|PKCS1v1.5" src/ -l 2>/dev/null
+   # Flag immediately for remediation
+
+-> Auto-identify what needs implementation vs what needs upgrading.
+-> Auto-detect weak crypto for immediate remediation.
+-> Only ask user about compliance requirements if not detectable.
+```
+
 ## Anti-Patterns
 
 - **Do NOT implement your own cryptographic primitives.** Do not write your own AES, SHA, or ECDSA. Use established libraries. "Rolling your own crypto" is the most common source of cryptographic vulnerabilities.

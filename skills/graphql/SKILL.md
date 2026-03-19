@@ -708,6 +708,96 @@ Composition: VALID — no conflicts detected
 | `--diff <old> <new>` | Detect breaking changes between schema versions |
 | `--allowlist` | Extract and register persisted queries |
 
+## Auto-Detection
+
+On activation, automatically detect GraphQL project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for GraphQL framework: apollo-server, graphql-yoga, mercurius, @pothos-graphql, nexus, type-graphql, strawberry, ariadne, gqlgen
+2. Detect approach: *.graphql files = SDL-first, schema builder imports = code-first
+3. Check for existing schema: schema.graphql, typeDefs definitions, generated schema files
+4. Detect DataLoader usage: scan for dataloader imports — flag if missing with relation resolvers present
+5. Check for subscription infrastructure: graphql-ws, subscriptions-transport-ws, Redis pub/sub config
+6. Detect federation: @apollo/subgraph, @apollo/gateway, federation directives in schema
+7. Scan for performance defenses: query-complexity, depth-limit, persisted queries config
+8. Check for testing: schema snapshot tests, resolver unit tests, integration tests with graphql queries
+9. Detect N+1 patterns: field resolvers with direct DB calls (no DataLoader)
+10. Check for code generation: graphql-codegen config, relay compiler, generated types directory
+```
+
+## Explicit Loop Protocol
+
+When building or extending a GraphQL schema with multiple entity types:
+
+```
+GRAPHQL ENTITY BUILD LOOP:
+current_iteration = 0
+entities = [entity_1, entity_2, ...]  // from schema design
+
+WHILE current_iteration < len(entities) AND NOT user_says_stop:
+  1. SELECT next entity by dependency order (entities with no relations first)
+  2. DESIGN types: <Entity>, <EntityConnection>, Create/Update inputs, mutation payloads
+  3. IMPLEMENT resolvers: Query (get, list), Mutation (create, update, delete)
+  4. CREATE DataLoaders for all relation fields (batch + grouped loaders)
+  5. ADD field resolvers that use DataLoaders (NEVER direct DB calls)
+  6. WRITE tests: resolver unit tests, integration tests with real queries
+  7. CHECK N+1: instrument DB layer, assert query count for list operations
+  8. current_iteration += 1
+  9. REPORT: "Entity <N>/<total>: <name> — <X> queries, <Y> mutations, DataLoaders: <Z>"
+
+ON COMPLETION:
+  ADD performance defenses: complexity limit, depth limit, persisted queries
+  RUN schema validation and breaking change detection
+  REPORT: "<N> types, <M> operations, <K> DataLoaders, complexity limit: <X>"
+```
+
+## Multi-Agent Dispatch
+
+For large GraphQL APIs or federated schemas, dispatch parallel agents:
+
+```
+PARALLEL GRAPHQL AGENTS:
+When building a GraphQL API with multiple domains:
+
+Agent 1 (worktree: gql-schema):
+  - Design complete schema (types, inputs, enums, connections, payloads)
+  - Implement shared types (PageInfo, UserError, scalars)
+  - Set up performance plugins (complexity, depth limit, APQ)
+  - Create schema snapshot tests
+
+Agent 2 (worktree: gql-resolvers):
+  - Implement all resolvers with service layer delegation
+  - Create DataLoader factory with batch and grouped loaders
+  - Build context factory (auth, loaders, services per request)
+  - Implement subscription resolvers with pub/sub
+
+Agent 3 (worktree: gql-tests):
+  - Write integration tests for all queries and mutations
+  - Add N+1 regression tests (query count assertions)
+  - Create breaking change detection in CI (graphql-inspector)
+  - Write load tests for critical query paths
+
+MERGE STRATEGY: Schema merges first. Resolvers rebase onto schema.
+  Tests rebase onto resolvers. Final: run full test suite, verify schema snapshot.
+```
+
+## Hard Rules
+
+```
+HARD RULES — GRAPHQL:
+1. EVERY field resolver that fetches data MUST use a DataLoader. No exceptions. N+1 queries are bugs.
+2. EVERY mutation MUST return a payload type with the entity and an errors array. Never throw for user-facing errors.
+3. EVERY list field MUST use Relay-style connection pagination (edges, pageInfo, totalCount).
+4. NEVER expose database column names directly as GraphQL fields. Design the schema for consumers, not the database.
+5. ALWAYS use separate input types for create vs update. They have different required fields and validation rules.
+6. ALWAYS add depth limiting and complexity analysis to production APIs. Without them, one query can bring down the server.
+7. ALWAYS use persisted queries or an allowlist in production. Arbitrary query strings are an attack surface.
+8. NEVER share message/input types across multiple operations. Each query/mutation gets its own input and output types.
+9. ALWAYS run schema snapshot tests and breaking change detection in CI. Accidental breaking changes break clients.
+10. NEVER federate prematurely. Start monolithic. Extract subgraphs only when team boundaries or scaling demands it.
+```
+
 ## Anti-Patterns
 
 - **Do NOT expose database columns directly as GraphQL fields.** Design the schema for the consumer's use case, not the database structure.

@@ -717,6 +717,91 @@ Config generated: infra/kafka/topics.yaml
 | `--catalog` | Generate event catalog documentation |
 | `--validate` | Validate existing event architecture |
 
+## HARD RULES
+
+1. **Never use events as remote procedure calls.** Events are notifications of something that happened (past tense: "OrderPlaced"), not requests for something to happen. If you need a response, use a command with a reply channel.
+2. **Never mutate historical events.** Changing events after publication breaks every consumer that already processed them and destroys the audit trail. Publish corrective events instead.
+3. **Never deploy consumers without idempotency.** At-least-once delivery means duplicates will happen. Every consumer must handle reprocessing safely using a deduplication table or natural idempotency.
+4. **Never skip the dead letter queue.** Every consumer needs a DLQ for messages that cannot be processed after retries. Monitor DLQ depth and alert on non-zero.
+5. **Never publish events without a schema registry check.** Without schema validation, a producer can publish malformed events that break every consumer downstream.
+
+## Loop Protocol
+
+```
+event_design_queue = detect_event_domains()  // e.g., [orders, payments, inventory, notifications]
+current_iteration = 0
+
+WHILE event_design_queue is not empty:
+  domain = event_design_queue.pop()
+  current_iteration += 1
+
+  1. Identify all events in the domain (aggregate commands → events)
+  2. Design event schemas with envelope standard (event_id, correlation_id, etc.)
+  3. Register schemas in schema registry with compatibility check
+  4. Configure topic/exchange/queue (partitioning, retention, DLQ)
+  5. Implement consumer with idempotency and retry policy
+  6. Validate: schema registered, DLQ configured, idempotent, correlation IDs present
+
+  Log: "Iteration {current_iteration}: designed {domain} domain, {N} event types, {event_design_queue.remaining} domains remaining"
+
+  IF event_design_queue is empty:
+    Run architecture validation checklist (14 checks)
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "event-store-and-schemas":
+  EnterWorktree("event-store-and-schemas")
+  Design event store schema (events table, snapshots table)
+  Define event envelope standard with all required fields
+  Create Avro/JSON Schema/Protobuf definitions for each event type
+  Register schemas in schema registry with compatibility validation
+  ExitWorktree()
+
+Agent 2 — "broker-topology":
+  EnterWorktree("broker-topology")
+  Configure message broker (Kafka topics / RabbitMQ exchanges / SQS queues / NATS streams)
+  Set partitioning strategy, retention, replication
+  Configure DLQ for each consumer with retry policy (exponential backoff)
+  Implement DLQ replay tooling
+  ExitWorktree()
+
+Agent 3 — "consumers-and-projections":
+  EnterWorktree("consumers-and-projections")
+  Implement idempotent consumers with deduplication table
+  Build CQRS projections (read models from event stream)
+  Add correlation ID propagation through all event handlers
+  Configure consumer lag monitoring and alerting
+  ExitWorktree()
+
+MERGE: Combine all branches, run architecture validation checklist.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT event-driven architecture context:
+  1. Check for message broker: kafka (server.properties, docker-compose kafka),
+     rabbitmq (rabbitmq.conf), SQS/SNS (AWS CDK/SAM), NATS (nats-server.conf)
+  2. Scan for event schemas: schemas/, events/, *.avsc, *.proto files
+  3. Check for schema registry: schema-registry config, Confluent, AWS Glue
+  4. Detect event sourcing: event_store table, EventStore library, axon framework
+  5. Detect CQRS: separate read/write models, projection services
+  6. Check for DLQ config: dead-letter-queue, DLX (RabbitMQ), maxReceiveCount (SQS)
+  7. Grep for consumer groups: group.id (Kafka), queue bindings (RabbitMQ)
+  8. Check for idempotency: processed_events table, deduplication logic
+
+  USE detected context to:
+    - Target the correct broker (don't suggest Kafka if already on RabbitMQ)
+    - Extend existing event schemas rather than redesigning
+    - Identify gaps: missing DLQ, missing idempotency, no schema registry
+    - Match existing event naming conventions
+```
+
 ## Anti-Patterns
 
 - **Do NOT use events as remote procedure calls.** Events are notifications of something that happened, not requests for something to happen. If you need a response, use a command with a reply channel.

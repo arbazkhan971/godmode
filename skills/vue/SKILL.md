@@ -824,6 +824,17 @@ Configuring useAsyncData patterns...
 | `--component <name>` | Generate a new component with tests and story |
 | `--upgrade` | Upgrade Vue 2 to Vue 3 migration guide |
 
+## HARD RULES
+
+1. **NEVER use mixins in Vue 3.** Use composables. Mixins cause name collisions, implicit dependencies, and untraceable data flow.
+2. **NEVER use Vuex in new projects.** Pinia is the official recommendation with better TypeScript support and simpler API.
+3. **NEVER mutate props.** Props are read-only. Use `emit` to notify the parent, or use a local ref copy.
+4. **NEVER skip `key` on `v-for`.** Missing keys cause subtle reactivity bugs and broken animations.
+5. **NEVER use `v-html` with user input.** It creates XSS vulnerabilities. Sanitize first, or use text interpolation.
+6. **ALWAYS lazy-load routes with dynamic `import()`.** Every route loaded upfront is bundle bloat users pay for.
+7. **ALWAYS extract business logic to composables.** Components handle rendering; composables handle logic.
+8. **NEVER use `reactive()` for primitives.** Use `ref()` for primitives. `reactive()` is for objects when you want deep reactivity without `.value`.
+
 ## Anti-Patterns
 
 - **Do NOT use mixins in Vue 3.** Use composables. Mixins cause name collisions, implicit dependencies, and untraceable data flow.

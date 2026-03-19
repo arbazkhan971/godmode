@@ -944,6 +944,74 @@ Time: 2,100ms -> 45ms (47x improvement)
 | `--logging` | Configure query logging and slow query detection |
 | `--report` | Generate full data access layer report |
 
+## HARD RULES
+
+1. **NEVER mix ORMs in the same project.** One project, one ORM. Prisma + TypeORM = schema drift, migration conflicts, pool contention.
+2. **NEVER set pool size >= max_connections.** Coordinate across all app instances: `pool_size_per_instance * instance_count < max_connections * 0.8`.
+3. **NEVER lazy-load in a loop.** If you see `for ... await find` or `for post in posts: post.author`, that is an N+1. Fix it before committing.
+4. **NEVER hold a transaction open during I/O.** No HTTP calls, no email sends, no file uploads inside a database transaction. Compute outside, write inside.
+5. **NEVER use SELECT * through the ORM in production.** Select only the columns you need. Use `select:` (Prisma), `select()` (Drizzle), `.only()` (Django), `.pluck()` (Rails).
+6. **NEVER disable foreign key constraints.** Orphaned data is worse than any perceived performance gain.
+7. **ALWAYS enable query logging in development.** You cannot fix N+1 queries you cannot see.
+8. **ALWAYS test migrations with up + down + up cycle.** A migration that cannot be reversed is a deployment risk.
+9. **NEVER retry on constraint violations or syntax errors.** Only retry on transient failures (connection reset, deadlock, timeout).
+
+## Explicit Loop Protocol
+
+ORM optimization is iterative -- detect, fix, verify, repeat:
+
+```
+current_iteration = 0
+issues_remaining = []  # populated by initial scan
+
+# Initial scan
+SCAN codebase for: N+1 patterns, missing indexes, pool misconfig, unoptimized queries
+issues_remaining = scan_results
+
+WHILE issues_remaining is not empty AND current_iteration < 10:
+    current_iteration += 1
+    issue = issues_remaining.pop(0)
+
+    1. DIAGNOSE: enable query logging, reproduce, count queries
+    2. FIX: apply eager loading / add index / tune pool / rewrite query
+    3. VERIFY: re-run with query logging, confirm query count reduced
+    4. MEASURE: before/after response time and query count
+    5. IF verification fails OR regression detected:
+        issues_remaining.append(issue)  # retry
+    6. REPORT: "Issue {issue.type}: {FIXED|RETRY} -- {before}ms -> {after}ms -- iteration {current_iteration}"
+
+OUTPUT: Full data access layer report with before/after metrics.
+```
+
+## Multi-Agent Dispatch
+
+For large codebases with many data access patterns, dispatch parallel agents:
+
+```
+MULTI-AGENT ORM OPTIMIZATION:
+Dispatch 2-3 agents in parallel worktrees.
+
+Agent 1 (worktree: orm-n-plus-one):
+  - Scan all endpoints/services for N+1 query patterns
+  - Add eager loading (include/select_related/Preload) to each
+  - Verify with query logging: before/after query counts
+
+Agent 2 (worktree: orm-pool-config):
+  - Audit connection pool settings across all environments
+  - Configure production pool sizes based on CPU cores
+  - Add connection health checks and monitoring
+  - Set statement timeouts and max lifetimes
+
+Agent 3 (worktree: orm-transactions):
+  - Audit transaction patterns for correctness
+  - Add optimistic locking where concurrent updates occur
+  - Implement saga pattern for cross-service operations
+  - Add retry logic for transient failures
+
+MERGE ORDER: n-plus-one -> pool-config -> transactions
+CONFLICT ZONES: ORM config files, middleware registration, service constructors
+```
+
 ## Anti-Patterns
 
 - **Do NOT use the ORM for everything.** Complex reporting queries, recursive CTEs, window functions, and bulk operations are often better as raw SQL. The ORM is for CRUD, not analytics.

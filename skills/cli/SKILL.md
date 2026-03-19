@@ -587,6 +587,56 @@ Next: /godmode:build to implement commands
 | `--parser <name>` | Use specific parser (commander, clap, cobra, click) |
 | `--tui` | Full TUI application setup |
 
+## HARD RULES
+
+1. **NEVER ship a CLI without `--help`, `--version`, and `--no-color`.**
+2. **NEVER require global installation** — support npx/pipx/cargo install/go install.
+3. **NEVER make interactive prompts mandatory** — support `--yes` / `--no-input` for CI.
+4. **ALWAYS exit with meaningful codes** — 0 success, 1 error, 2 usage error.
+5. **ALWAYS respect NO_COLOR and TTY detection.**
+6. **ALWAYS generate shell completions** for at least bash and zsh.
+7. **git commit BEFORE verify** — commit CLI scaffold, then run integration tests.
+8. **TSV logging** — log CLI development progress:
+   ```
+   timestamp	command	status	tests_passing	completions	distribution
+   ```
+
+## Auto-Detection
+
+On activation, automatically detect project context without asking:
+
+```
+AUTO-DETECT:
+1. Language:
+   ls package.json 2>/dev/null && echo "node"
+   ls Cargo.toml 2>/dev/null && echo "rust"
+   ls go.mod 2>/dev/null && echo "go"
+   ls pyproject.toml setup.py 2>/dev/null && echo "python"
+
+2. Existing CLI framework:
+   grep -r "commander\|yargs\|meow\|oclif" package.json 2>/dev/null  # Node
+   grep "clap\|argh" Cargo.toml 2>/dev/null  # Rust
+   grep "cobra\|urfave" go.mod 2>/dev/null  # Go
+   grep "click\|typer\|argparse" pyproject.toml requirements.txt 2>/dev/null  # Python
+
+3. Existing bin/entry point:
+   grep '"bin"' package.json 2>/dev/null
+   grep '\[project.scripts\]' pyproject.toml 2>/dev/null
+   ls cmd/ 2>/dev/null  # Go convention
+
+4. Distribution targets:
+   ls .github/workflows/release* 2>/dev/null  # GitHub Releases
+   grep "homebrew\|Formula" .github/ -r 2>/dev/null  # Homebrew
+   ls Formula/ 2>/dev/null
+
+5. Existing tests:
+   ls tests/test_cli* test/*cli* src/**/*.test.* 2>/dev/null
+
+-> Auto-select parser based on language + existing dependencies.
+-> Auto-detect if this is a new CLI or extending an existing one.
+-> Only ask user about distribution targets if ambiguous.
+```
+
 ## Anti-Patterns
 
 - **Do NOT print help on no arguments if the tool has a default action.** If `tool` with no args should do something useful, do that. Only show help when the user explicitly asks or when the input is ambiguous.

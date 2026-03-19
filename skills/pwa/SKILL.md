@@ -822,6 +822,120 @@ Verdicts:
 5. If NOT READY: "Core PWA requirements missing. Fix the remaining items, then re-audit with `/godmode:pwa`."
 6. If READY: "PWA implementation complete. Ready for `/godmode:webperf` or `/godmode:ship`."
 
+## Auto-Detection
+
+Before prompting the user, automatically detect PWA readiness:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect framework:
+   - package.json: next, react, vue, svelte, angular, @angular/core
+   - Check for existing PWA plugins: next-pwa, vite-plugin-pwa, @angular/service-worker
+2. Check existing PWA artifacts:
+   - manifest.json or manifest.webmanifest in public/ or static/
+   - sw.js or service-worker.js in public/ or src/
+   - workbox-config.js or workbox-config.cjs
+3. Check HTML head for PWA meta tags:
+   - <link rel="manifest">
+   - <meta name="theme-color">
+   - <meta name="apple-mobile-web-app-capable">
+   - <link rel="apple-touch-icon">
+4. Check HTTPS configuration:
+   - Production URL scheme (check deploy config, Netlify, Vercel, etc.)
+   - Local dev server (localhost is allowed)
+5. Detect icon assets:
+   - icons/ directory with 192px and 512px variants
+   - Maskable icon presence
+6. Check for existing offline support:
+   - IndexedDB usage (idb, dexie, localforage in dependencies)
+   - Cache API usage in service worker
+```
+
+## Explicit Loop Protocol
+
+For iterative PWA audit and fix cycles:
+
+```
+PWA IMPLEMENTATION LOOP:
+current_iteration = 0
+max_iterations = 5
+lighthouse_score = run_lighthouse_pwa_audit()
+
+WHILE current_iteration < max_iterations AND lighthouse_score.failures > 0:
+  current_iteration += 1
+
+  1. IDENTIFY top failing check:
+     - Parse Lighthouse PWA audit results
+     - Pick the highest-priority failing check
+
+  2. IMPLEMENT fix:
+     - Add manifest field / register SW / add offline page / fix icon
+     - One fix per iteration (isolate impact)
+
+  3. RE-AUDIT:
+     - Run Lighthouse PWA audit again
+     - Record: { iteration, fix_applied, checks_passing, checks_failing }
+
+  4. EVALUATE:
+     - IF all Lighthouse PWA checks pass: STOP — PWA READY
+     - IF progress stalled (same failures): escalate to manual investigation
+     - ELSE: continue to next failing check
+
+  OUTPUT:
+  Iteration | Fix Applied | Passing | Failing | Status
+  0         | baseline    | 4/10    | 6/10    | NOT READY
+  1         | +manifest   | 6/10    | 4/10    | improving
+  ...
+```
+
+## Multi-Agent Dispatch
+
+For full PWA implementation across concerns:
+
+```
+PARALLEL AGENTS:
+Agent 1 — Manifest & Icons (worktree: pwa-manifest)
+  - Generate manifest.json with all required fields
+  - Generate icon set from source image (192, 512, maskable)
+  - Add HTML meta tags and apple-touch-icon
+
+Agent 2 — Service Worker & Caching (worktree: pwa-sw)
+  - Implement service worker with Workbox strategies
+  - Configure precaching for app shell
+  - Set up runtime caching for API and assets
+
+Agent 3 — Offline & Background Sync (worktree: pwa-offline)
+  - Create offline fallback page
+  - Implement IndexedDB for offline data
+  - Set up background sync for mutations
+
+Agent 4 — Push Notifications (worktree: pwa-push)
+  - Generate VAPID keys
+  - Implement client subscription flow
+  - Add push handler to service worker
+  - Create server-side push endpoint
+
+MERGE ORDER: Agent 1 first (manifest), Agent 2 (SW), Agent 3 (offline), Agent 4 (push).
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER register a service worker that does nothing — it must cache or serve.
+2. NEVER request notification permission on first page load.
+3. NEVER cache without expiration limits (maxEntries + maxAgeSeconds always).
+4. NEVER use Cache API for structured user data — use IndexedDB.
+5. NEVER serve stale HTML indefinitely — use NetworkFirst for navigation.
+6. ALWAYS provide an offline fallback page for uncached routes.
+7. ALWAYS include both 192px and 512px icons in the manifest.
+8. ALWAYS include a maskable icon for Android adaptive icons.
+9. ALWAYS test on real devices — Chrome, Safari (iOS), Firefox, Edge.
+10. ALWAYS version cache names and clean up old caches on activate.
+11. NEVER use skipWaiting() without understanding the implications for active clients.
+12. ALWAYS check for SyncManager/periodicSync support before registering.
+```
+
 ## Key Behaviors
 
 1. **Service worker is the foundation.** Without a service worker, there is no PWA. It enables offline support, push notifications, background sync, and installability. Build the service worker first.

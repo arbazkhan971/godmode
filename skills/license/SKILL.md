@@ -808,6 +808,76 @@ Created: .github/workflows/license-check.yml
 All source files now have SPDX license headers.
 ```
 
+## HARD RULES
+1. NEVER distribute code without a LICENSE file — without one, code is "all rights reserved" by default.
+2. NEVER ignore dependency license compatibility — a GPL library in a proprietary product is a license violation.
+3. NEVER copy license text from another project without updating copyright year, holder, and project name.
+4. NEVER mix incompatible licenses — MIT project cannot include GPL code (but GPL can include MIT). Compatibility is directional.
+5. NEVER assume "no license" means "public domain" — code without a license is copyrighted by default.
+6. NEVER use this skill as legal advice — for commercial licensing or patent issues, consult a qualified attorney.
+7. ALWAYS use SPDX identifiers in file headers and package metadata — they are unambiguous and machine-readable.
+8. ALWAYS generate a NOTICE file when using Apache-2.0 licensed dependencies.
+9. ALWAYS verify license compatibility BEFORE adding a new dependency, not after.
+10. ALWAYS keep copyright year current — use a range (2020-2026) or update annually.
+
+## Auto-Detection
+On activation, detect licensing context automatically:
+```
+AUTO-DETECT:
+1. Check for existing license:
+   - LICENSE, LICENSE.md, LICENSE.txt, COPYING in project root
+   - Parse SPDX identifier if present
+2. Check package metadata:
+   - package.json → "license" field
+   - pyproject.toml → license = {text = "..."}
+   - Cargo.toml → license = "..."
+   - go.mod → (check LICENSE file)
+   - pom.xml → <licenses> section
+3. Scan source file headers:
+   - grep for "SPDX-License-Identifier" across source files
+   - Count files with/without headers
+4. Audit dependency licenses:
+   - npx license-checker --summary (Node.js)
+   - pip-licenses --format=table (Python)
+   - go-licenses check ./... (Go)
+   - cargo-license --json (Rust)
+5. Check for CLA/DCO:
+   - .github/workflows/ with CLA or DCO check
+   - CLA.md, DCO.md in project root
+6. Check for NOTICE file:
+   - NOTICE, NOTICE.md, THIRD_PARTY_LICENSES
+7. Identify project distribution model:
+   - Open source (public repo) vs proprietary vs source-available
+```
+
+## Iterative License Audit Protocol
+License auditing is iterative — check, fix, verify:
+```
+current_check = 0
+checks = ["project_license", "file_headers", "dependency_compat", "attribution", "cla"]
+
+WHILE current_check < len(checks):
+  check = checks[current_check]
+  1. AUDIT {check}:
+     - project_license: Verify LICENSE file exists and is valid
+     - file_headers: Count files with/without SPDX headers
+     - dependency_compat: Check all deps against project license
+     - attribution: Verify NOTICE file completeness
+     - cla: Check CLA/DCO enforcement
+  2. REPORT findings:
+     - PASS: "{check} — compliant"
+     - FAIL: "{check} — {N} issues found, details below"
+  3. IF issues found:
+     - GENERATE fix plan (auto-fixable vs manual review needed)
+     - APPLY auto-fixes (add headers, generate NOTICE)
+     - FLAG manual-review items (incompatible deps, missing licenses)
+  4. VERIFY fixes: re-run audit for {check}
+  5. COMMIT: "license: {check} — {action taken}"
+  6. current_check += 1
+
+EXIT when all checks pass OR manual items flagged for user
+```
+
 ## Flags & Options
 
 | Flag | Description |

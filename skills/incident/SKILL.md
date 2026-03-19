@@ -302,6 +302,70 @@ What was the impact? How was it resolved?
 <interactive Q&A to build the full post-mortem>
 ```
 
+## HARD RULES
+1. NEVER assign blame to individuals — name systems, processes, and tools. "The deployment pipeline lacked X" not "Alice forgot X."
+2. NEVER skip the post-mortem for SEV1 or SEV2 incidents. No exceptions.
+3. NEVER guess at the timeline — use logs, monitoring data, and git history. Human memory under stress is unreliable.
+4. NEVER inflate or deflate severity — classify honestly. Over-classification breeds alert fatigue; under-classification delays response.
+5. NEVER create action items without an owner and a due date. "Be more careful" is not an action item.
+6. NEVER let action items exceed 30 days without follow-up — track weekly, escalate if overdue.
+7. ALWAYS timestamp every event in UTC — local times cause confusion during multi-timezone incidents.
+8. ALWAYS attach evidence to timeline entries (logs, dashboards, deploy records).
+9. ALWAYS include "Where We Got Lucky" in post-mortems — near-misses are free lessons.
+10. ALWAYS update the status page within the timeframe defined by the severity level.
+
+## Auto-Detection
+On activation, detect incident context automatically:
+```
+AUTO-DETECT:
+1. Check for active alerts:
+   - Scan conversation for error messages, stack traces, HTTP 5xx codes
+   - Look for PagerDuty/OpsGenie/CloudWatch alert references
+   - Detect severity keywords: "down", "outage", "degraded", "breach"
+2. Check for existing incident docs:
+   - docs/incidents/, postmortems/, incident-reports/
+   - Previous incident IDs (INC-YYYY-MM-DD-NNN pattern)
+3. Check for monitoring integration:
+   - .github/, terraform/ (for infrastructure context)
+   - docker-compose.yml, k8s manifests (for service topology)
+4. Detect environment:
+   - Parse deployment configs for production URLs, service names
+   - Identify on-call rotation tools (PagerDuty, OpsGenie configs)
+5. Auto-generate incident ID from current date + sequence
+```
+
+## Incident Investigation Loop
+Active incident investigation is iterative — gather evidence, form hypotheses, test them:
+```
+current_iteration = 0
+status = "INVESTIGATING"
+
+WHILE status != "RESOLVED":
+  1. GATHER latest evidence:
+     - Fresh logs from affected services (last 15 min window)
+     - Current error rates and latency metrics
+     - Recent deployments or config changes
+  2. UPDATE timeline with new findings
+  3. FORM hypothesis: "The issue is caused by X because Y"
+  4. TEST hypothesis:
+     - Check logs/metrics that would confirm or deny
+     - If confirmed → apply mitigation
+     - If denied → record as eliminated cause, form new hypothesis
+  5. IF mitigation applied:
+     - Monitor for 5-10 minutes
+     - IF metrics recovering → status = "MONITORING"
+     - IF no improvement → revert mitigation, continue investigating
+  6. IF status == "MONITORING" for 15+ minutes with stable metrics:
+     - status = "RESOLVED"
+  7. current_iteration += 1
+  8. IF current_iteration > 10 AND status == "INVESTIGATING":
+     - ESCALATE to next severity level
+     - Broaden investigation scope
+
+EXIT when status == "RESOLVED"
+POST-EXIT: Generate post-mortem document
+```
+
 ## Flags & Options
 
 | Flag | Description |

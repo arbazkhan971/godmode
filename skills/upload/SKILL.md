@@ -1470,6 +1470,44 @@ Add weekly: S3-to-DB reconciliation with dry-run logging
 | `--provider <name>` | Target provider (aws, gcp, azure, cloudflare) |
 | `--tool <name>` | Specific tool (sharp, cloudinary, imgproxy, ffmpeg) |
 
+## HARD RULES
+
+1. NEVER proxy file uploads through your application server when presigned URLs are available. Direct-to-storage uploads eliminate your server as a bottleneck and single point of failure.
+2. NEVER trust the Content-Type header or file extension. Always validate file type by inspecting magic bytes. A file named `photo.jpg` containing PHP is an attack.
+3. ALWAYS scan uploaded files for viruses before making them accessible. If the scanner is unavailable, quarantine the file. Never skip the scan.
+4. ALWAYS strip EXIF metadata from images before storage. EXIF contains GPS coordinates, device info, and timestamps that leak user privacy.
+5. NEVER serve user-uploaded files from the same domain as your application. Use a separate domain or CDN subdomain to prevent cookie theft and XSS via uploaded HTML/SVG.
+6. ALWAYS enforce file size limits on both client and server. Client-side limits improve UX; server-side limits prevent abuse. They must match.
+7. NEVER generate predictable or sequential file names for uploads. Use UUIDs or content hashes. Predictable names enable enumeration attacks.
+8. ALWAYS implement orphan cleanup. Uploads that start but never complete, or files referenced by deleted records, accumulate silently. Run a periodic cleanup job.
+
+## Auto-Detection
+
+Before implementing, detect existing upload infrastructure:
+
+```bash
+# Detect upload libraries and SDKs
+echo "=== Upload Libraries ==="
+grep -r "multer\|busboy\|formidable\|sharp\|@aws-sdk/s3\|@google-cloud/storage\|@azure/storage-blob" package.json 2>/dev/null
+grep -r "boto3\|google.cloud.storage\|azure.storage.blob\|django-storages\|carrierwave\|activestorage" requirements.txt Gemfile 2>/dev/null
+
+# Detect existing upload handling
+echo "=== Upload Handlers ==="
+grep -r "multer\|upload\|presigned\|putObject\|getSignedUrl" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect image processing
+echo "=== Image Processing ==="
+grep -r "sharp\|jimp\|imagemagick\|pillow\|cloudinary\|imgproxy" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+
+# Detect virus scanning
+echo "=== Virus Scanning ==="
+grep -r "clamav\|clamscan\|virus\|malware" --include="*.ts" --include="*.js" --include="*.py" --include="*.yaml" -l 2>/dev/null | head -5
+
+# Detect storage configuration
+echo "=== Storage Config ==="
+grep -r "S3_BUCKET\|STORAGE_BUCKET\|AZURE_CONTAINER\|UPLOAD_DIR\|CLOUDINARY" .env .env.example 2>/dev/null
+```
+
 ## Anti-Patterns
 
 - **Do NOT proxy file uploads through your API server.** Use presigned URLs. Your server should never be a data pipe between client and storage — it wastes compute, adds latency, and creates a single point of failure.

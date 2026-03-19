@@ -593,6 +593,71 @@ OPTIMIZATION APPLIED:
 | `--ci` | Generate CI/CD Docker build pipeline |
 | `--audit` | Audit existing Docker setup for issues |
 
+## HARD RULES
+
+- NEVER use `latest` tag for base images — pin to specific version (e.g., `node:20.11-alpine`)
+- NEVER run containers as root in production — always add a non-root USER directive
+- NEVER store secrets in ENV, ARG, or COPY in Dockerfile layers — use BuildKit secret mounts or runtime env
+- NEVER use ADD when COPY suffices — ADD has URL fetch and tar extraction side effects
+- NEVER skip .dockerignore — without it, .git, node_modules, .env are sent as build context
+- ALL production Dockerfiles MUST use multi-stage builds — build tools never appear in the final image
+- ALL container images MUST pass vulnerability scanning (Trivy/Snyk) with zero CRITICAL findings before deployment
+- ALL images MUST include a HEALTHCHECK directive
+
+## Iterative Optimization Loop Protocol
+
+When optimizing or auditing Docker configurations:
+
+```
+current_iteration = 0
+optimization_queue = [all_dockerfiles_and_compose_files]
+WHILE optimization_queue is not empty:
+    current_iteration += 1
+    file = optimization_queue.pop(next)
+    analyze: base image size, layer count, caching order, security issues
+    apply: multi-stage build, layer reordering, .dockerignore, non-root user, healthcheck
+    measure: image size, build time, vulnerability count
+    run: trivy image scan + trivy config scan
+    IF scan reveals CRITICAL/HIGH vulnerabilities:
+        fix and re-add to queue
+    report: "Iteration {current_iteration}: {file} — size={N}MB, layers={N}, vulns={N}, build_time={N}s"
+```
+
+## Multi-Agent Dispatch
+
+```
+DISPATCH 3 agents in separate worktrees:
+  Agent 1 (Dockerfile):    Optimize all Dockerfiles — multi-stage builds, layer caching, minimal base images, non-root
+  Agent 2 (Compose):       Set up Docker Compose for local dev — services, healthchecks, volumes, networks, profiles
+  Agent 3 (security+CI):   Run security scans (Trivy), create .dockerignore, set up CI build pipeline, image signing
+SYNC point: All agents complete
+  Merge worktrees
+  Build all images, run security scans, measure final sizes
+  Generate Docker configuration report
+```
+
+## Auto-Detection
+
+```
+1. Check for existing Docker setup:
+   - Scan for Dockerfile, Dockerfile.* → detect existing Dockerfiles
+   - Scan for docker-compose.yml, docker-compose.*.yml → detect Compose files
+   - Scan for .dockerignore → check if exists and is comprehensive
+2. Detect project language/runtime:
+   - Scan for package.json → Node.js
+   - Scan for requirements.txt, pyproject.toml, Pipfile → Python
+   - Scan for go.mod → Go
+   - Scan for Cargo.toml → Rust
+   - Scan for pom.xml, build.gradle → Java
+3. Check current image quality:
+   - Parse FROM directives for base image and tag
+   - Check for USER directive (non-root)
+   - Check for HEALTHCHECK directive
+   - Check for multi-stage build patterns
+4. Determine state: missing | exists-unoptimized | optimized | production-ready
+5. Set assessment fields and proceed to Step 1
+```
+
 ## Anti-Patterns
 
 - **Do NOT use `latest` tag for base images.** Pin to a specific version (e.g., `node:20.11-alpine`). `latest` is unpredictable and breaks reproducibility.

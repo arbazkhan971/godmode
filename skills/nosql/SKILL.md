@@ -979,6 +979,148 @@ REASONS:
 | `--aggregate` | Build MongoDB aggregation pipeline |
 | `--graph-query` | Write Cypher queries for Neo4j |
 
+## Auto-Detection
+
+```
+IF package.json OR requirements.txt contains "mongoose" OR "mongodb" OR "pymongo":
+  DETECT database = "MongoDB"
+  SUGGEST "MongoDB driver detected. Activate /godmode:nosql?"
+
+IF package.json OR requirements.txt contains "@aws-sdk/client-dynamodb" OR "boto3":
+  IF code references DynamoDB tables:
+    DETECT database = "DynamoDB"
+    SUGGEST "DynamoDB usage detected. Activate /godmode:nosql?"
+
+IF code imports "cassandra-driver" OR "datastax":
+  DETECT database = "Cassandra"
+  SUGGEST "Cassandra driver detected. Activate /godmode:nosql?"
+
+IF code imports "neo4j-driver" OR "neo4j":
+  DETECT database = "Neo4j"
+  SUGGEST "Neo4j graph database detected. Activate /godmode:nosql?"
+
+IF code imports "influxdb" OR "influxdb-client":
+  DETECT database = "InfluxDB"
+  SUGGEST "InfluxDB time-series database detected. Activate /godmode:nosql?"
+
+IF docker-compose.yml contains "mongo:" OR "dynamodb-local" OR "cassandra:" OR "neo4j:":
+  db_name = detect_nosql_from_compose()
+  SUGGEST "{db_name} detected in Docker Compose. Activate /godmode:nosql?"
+
+IF directory contains *.cql files (Cassandra) OR *.cypher files (Neo4j):
+  SUGGEST "NoSQL query files detected. Activate /godmode:nosql?"
+```
+
+## Iterative Data Modeling Protocol
+
+```
+WHEN designing a NoSQL data model:
+
+current_pattern = 0
+access_patterns = list_all_access_patterns()  # MUST be defined first
+total_patterns = len(access_patterns)
+served_patterns = []
+unserved_patterns = []
+
+WHILE current_pattern < total_patterns:
+  pattern = access_patterns[current_pattern]
+
+  1. DETERMINE how to serve this pattern:
+     - MongoDB: which collection, index, or aggregation?
+     - DynamoDB: which PK/SK combo or GSI?
+     - Cassandra: which table (one table per query)?
+     - Neo4j: which traversal pattern?
+
+  2. DESIGN key structure / document shape / graph model
+  3. VALIDATE:
+     - Partition size bounded (DynamoDB < 10GB, Cassandra < 100MB)
+     - No unbounded arrays in documents (MongoDB)
+     - High-cardinality partition keys
+     - No shared data that requires distributed transactions
+
+  IF pattern cannot be served efficiently:
+    unserved_patterns.append(pattern)
+    SUGGEST "Pattern '{pattern}' may need a GSI, materialized view, or separate table"
+  ELSE:
+    served_patterns.append(pattern)
+
+  current_pattern += 1
+  REPORT "{current_pattern}/{total_patterns} access patterns addressed"
+
+FINAL:
+  REPORT "Served: {len(served_patterns)}, Unserved: {len(unserved_patterns)}"
+  FOR each unserved pattern: propose solution (GSI, denormalization, separate table)
+  GENERATE complete schema with all indexes and access pattern mapping
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN designing a complex NoSQL system with multiple database types:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (primary-data-model):
+    - Design primary data store (MongoDB/DynamoDB/Cassandra)
+    - Map all CRUD access patterns to key design
+    - Design indexes (compound, partial, TTL)
+    - Output: data model documentation + index definitions
+
+  Agent 2 (secondary-data-model):
+    - Design secondary store if needed (Redis cache, Elasticsearch search)
+    - Design cache invalidation strategy
+    - Design search index mapping
+    - Output: cache strategy + search index config
+
+  Agent 3 (graph-model):
+    - Design graph model if relationships are core (Neo4j)
+    - Write Cypher queries for traversal patterns
+    - Design graph indexes
+    - Output: graph schema + query library
+
+  Agent 4 (migration-and-testing):
+    - Design data migration scripts (seed data, backfill)
+    - Write data validation queries
+    - Design capacity planning estimates
+    - Output: migration scripts + validation suite
+
+MERGE:
+  - Verify all access patterns are served by at least one data store
+  - Verify denormalization is consistent across stores
+  - Verify sync strategy between primary and secondary stores
+  - Run validation queries against test data
+```
+
+## HARD RULES
+
+```
+1. NEVER design a NoSQL schema before listing ALL access patterns.
+   In NoSQL, you model for queries, not for entities.
+
+2. NEVER use a relational (normalized) design in DynamoDB or Cassandra.
+   Denormalize for reads. Duplication is a feature, not a bug.
+
+3. NEVER use low-cardinality partition keys (e.g., "status" with 3 values).
+   This creates hot partitions that throttle your entire table.
+
+4. NEVER create unbounded partitions. Cassandra partitions > 100MB
+   and DynamoDB items collections > 10GB cause performance degradation.
+   Use time bucketing or size limits.
+
+5. MongoDB documents MUST have schema validation in production.
+   "Schemaless" does not mean "no schema."
+
+6. In Cassandra, ONE TABLE PER QUERY. No JOINs, no subqueries.
+   Write amplification is the accepted tradeoff.
+
+7. NEVER choose NoSQL because "it scales." PostgreSQL handles
+   terabytes and millions of rows. Choose NoSQL for data model fit.
+
+8. ALWAYS start with PostgreSQL as the default. Move to NoSQL only
+   when PostgreSQL cannot meet a specific technical requirement
+   (schema flexibility, data model fit, horizontal scale).
+```
+
 ## Anti-Patterns
 
 - **Do NOT choose NoSQL because "it scales."** PostgreSQL scales to terabytes and millions of rows. Choose NoSQL for data model fit, not scale marketing.

@@ -310,6 +310,89 @@ Investigate slow endpoints with /godmode:optimize --goal "reduce p99 latency".
 | `--source <platform>` | Limit to specific platform (sentry, datadog, bugsnag) |
 | `--export` | Export analysis as JSON for integration |
 
+## HARD RULES
+
+1. **Never treat all errors equally.** A NullPointerException affecting 10,000 users is not the same as a debug log warning. Always prioritize by user impact and frequency.
+2. **Never group errors by message text alone.** Messages contain variable data (IDs, timestamps, hostnames). Group by normalized stack trace structure (top 3 application frames + exception type).
+3. **Never ignore the error budget policy.** If budget is red and someone wants to ship a feature, the answer is no. Policy exists to protect users, not to be overridden by urgency.
+4. **Never analyze errors without a time window.** "All errors ever" is meaningless. Always specify a time range relevant to the question being asked.
+5. **Never skip deploy correlation.** The most common root cause of new errors is new code. Always cross-reference error onset with the most recent deploy.
+
+## Loop Protocol
+
+```
+error_group_queue = fetch_unresolved_error_groups(since="24h")
+current_iteration = 0
+
+WHILE error_group_queue is not empty:
+  batch = error_group_queue.take(5)
+  current_iteration += 1
+
+  FOR each error_group in batch:
+    1. Normalize stack traces → compute fingerprint
+    2. Count: occurrences, affected users, first/last seen
+    3. Correlate: find deploys/config changes within [-30min, +5min] of first occurrence
+    4. Classify: unhandled exception | network | validation | auth | DB | third-party
+    5. Score priority: (users * 3) + (frequency * 2) + (severity * 1)
+    6. IF P0 → flag for immediate investigation
+
+  Log: "Iteration {current_iteration}: triaged {batch.length} error groups, {P0_count} P0, {error_group_queue.remaining} remaining"
+
+  IF error_group_queue is empty:
+    Compute error budget status
+    Generate triage report
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "aggregation":
+  EnterWorktree("aggregation")
+  Fetch errors from all sources (Sentry, DataDog, Bugsnag, CloudWatch, logs)
+  Normalize and group by stack trace fingerprint
+  Compute per-group metrics: count, affected users, trend
+  ExitWorktree()
+
+Agent 2 — "correlation":
+  EnterWorktree("correlation")
+  Fetch recent deploys (git log, CI/CD history)
+  Fetch config changes and infrastructure events
+  Compute temporal and code correlation scores for each error group
+  Identify regressions (previously resolved, now recurring)
+  ExitWorktree()
+
+Agent 3 — "budget-and-triage":
+  EnterWorktree("budget-and-triage")
+  Calculate error budget status against SLOs (availability, error rate, latency)
+  Compute burn rate and time-to-exhaustion
+  Generate prioritized triage list with P0/P1/P2/P3 rankings
+  Produce trend analysis (new errors, resolved, growing)
+  ExitWorktree()
+
+MERGE: Combine aggregation, correlation, and triage into unified error report.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT error tracking context:
+  1. Check for error tracking SDK: @sentry/node, @sentry/react, bugsnag-js, dd-trace
+  2. Check for log aggregation: elasticsearch, loki, cloudwatch-logs, datadog-log
+  3. Scan for SLO definitions: slo.yaml, error-budget config, service-level-objectives
+  4. Check CI/CD for deploy tracking: GitHub releases, deploy tags, deployment history API
+  5. Detect monitoring: Grafana dashboards, DataDog monitors, PagerDuty integrations
+  6. Grep application logs for error rate patterns: ERROR, FATAL, Exception counts
+
+  USE detected context to:
+    - Query the correct error tracking platform
+    - Correlate with the correct deployment pipeline
+    - Reference existing SLO targets for budget calculation
+    - Use existing alert channels for P0 notifications
+```
+
 ## Anti-Patterns
 
 - **Do NOT treat all errors equally.** A NullPointerException affecting 10,000 users is not the same as a debug log warning. Prioritize by impact.

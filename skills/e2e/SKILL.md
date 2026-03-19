@@ -617,6 +617,89 @@ Applying fixes... All 3 tests now pass consistently (10/10 runs).
 | `--ci` | Configure E2E tests for CI pipeline |
 | `--coverage` | Identify user flows without E2E coverage |
 
+## HARD RULES
+
+1. **Never use CSS selectors as test locators.** `div.class > span:nth-child(3)` breaks on any DOM change. Use `data-testid`, `getByRole`, or `getByLabel` exclusively.
+2. **Never use fixed `sleep()` or `waitForTimeout()` in tests.** Use auto-waiting assertions (`expect(locator).toBeVisible()`) that resolve as soon as the condition is met.
+3. **Never depend on test execution order.** Each test must be fully independent. Create its own data in `beforeEach`, clean up in `afterEach`.
+4. **Never put selectors directly in test files.** All locators live in Page Object classes. Tests call page object methods only.
+5. **Never skip flaky test investigation.** A flaky test is either fixed or deleted within 48 hours. No `test.skip()` without a linked issue.
+
+## Loop Protocol
+
+```
+test_flow_queue = detect_untested_user_flows()  // e.g., [login, checkout, settings, search]
+current_iteration = 0
+
+WHILE test_flow_queue is not empty:
+  batch = test_flow_queue.take(3)
+  current_iteration += 1
+
+  FOR each flow in batch:
+    1. Create Page Object(s) for pages in the flow
+    2. Write spec file with happy path + error path + edge cases
+    3. Run tests across browser matrix (chromium, firefox, webkit)
+    4. IF flaky → diagnose root cause, apply anti-flakiness fix
+    5. Record pass rate and timing
+
+  Log: "Iteration {current_iteration}: tested {batch.length} flows, {test_flow_queue.remaining} remaining, pass rate: {rate}%"
+
+  IF test_flow_queue is empty:
+    Run full cross-browser suite
+    Generate E2E report
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "page-objects":
+  EnterWorktree("page-objects")
+  Create BasePage class with common methods
+  Create Page Object for each page in the application
+  Define all locators using accessible selectors (role, label, testid)
+  ExitWorktree()
+
+Agent 2 — "test-specs":
+  EnterWorktree("test-specs")
+  Write E2E specs for each user flow (auth, CRUD, checkout, etc.)
+  Create test fixtures and data factories
+  Set up authentication fixtures for pre-logged-in state
+  ExitWorktree()
+
+Agent 3 — "infra-and-flakiness":
+  EnterWorktree("infra-and-flakiness")
+  Configure playwright.config.ts (browsers, retries, reporters)
+  Set up CI pipeline for E2E (GitHub Actions / GitLab CI)
+  Add trace/screenshot/video capture on failure
+  Run flakiness scan: execute suite 10x, identify unstable tests
+  ExitWorktree()
+
+MERGE: Combine all branches, run full suite, generate E2E report.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT E2E testing context:
+  1. Check for existing E2E config: playwright.config.*, cypress.config.*, wdio.conf.*
+  2. Scan for existing test files: *.e2e.*, *.spec.* in e2e/ or tests/ directories
+  3. Detect frontend framework: Next.js (next.config), React (react-dom), Vue, Angular
+  4. Check for page objects: e2e/pages/, e2e/page-objects/ directories
+  5. Check for test data: e2e/fixtures/, e2e/factories/ files
+  6. Detect app URL from config or package.json dev script
+  7. Check CI config for existing E2E jobs
+  8. Scan for data-testid attributes in source → existing locator strategy
+
+  USE detected context to:
+    - Choose Playwright vs Cypress based on existing config (default: Playwright)
+    - Reuse existing page objects and fixtures
+    - Generate tests only for uncovered user flows
+    - Match existing test naming conventions
+```
+
 ## Anti-Patterns
 
 - **Do NOT use CSS selectors as locators.** `div.class > span:nth-child(3)` breaks on any DOM change. Use `data-testid`, `getByRole`, or `getByLabel`.

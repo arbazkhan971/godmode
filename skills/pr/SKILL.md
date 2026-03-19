@@ -499,6 +499,84 @@ OPTIMIZATION STRATEGIES:
 2. Commit: `"chore: PR workflow — <strategy> with <N> PRs for <feature>"`
 3. After PR creation: "PR(s) created. Use `/godmode:ship` to finalize or `/godmode:review` for pre-merge review."
 
+## Explicit Loop Protocol
+
+For stacked PR workflows involving iterative splitting and creation:
+
+```
+STACKED PR LOOP:
+current_iteration = 0
+remaining_diff = total_diff
+pr_stack = []
+
+WHILE remaining_diff > 200 lines AND current_iteration < 8:
+  current_iteration += 1
+
+  1. IDENTIFY next slice:
+     - Find the next logical, independently-reviewable chunk
+     - Prefer: schema first, then service, then API, then UI
+     - Each slice MUST pass CI independently
+
+  2. CREATE branch and PR:
+     - Branch from previous stack branch (or main for first)
+     - Create PR with base = previous branch
+     - Apply description template with stack position
+
+  3. VALIDATE:
+     - PR size < 200 lines? YES -> continue
+     - CI passes on this branch? YES -> continue
+     - Independently reviewable? YES -> continue
+     - IF any NO: re-split this slice further
+
+  4. UPDATE remaining_diff:
+     - remaining_diff -= lines_in_this_pr
+     - pr_stack.append({ pr_number, branch, size, base })
+
+  OUTPUT: pr_stack with merge order and retarget instructions
+```
+
+## Multi-Agent Dispatch
+
+For large feature PRs that need splitting across domains:
+
+```
+PARALLEL AGENTS (when feature spans multiple domains):
+Agent 1 — Backend PR (worktree: pr-backend)
+  - Extract backend changes (models, services, migrations)
+  - Create PR with tests passing independently
+
+Agent 2 — API PR (worktree: pr-api)
+  - Extract API layer changes (controllers, serializers, routes)
+  - Base on Agent 1's branch
+
+Agent 3 — Frontend PR (worktree: pr-frontend)
+  - Extract frontend changes (components, pages, styles)
+  - Base on Agent 2's branch
+
+Agent 4 — Config/Infra PR (worktree: pr-infra)
+  - Extract infrastructure changes (docker, CI, env vars)
+  - Independent base (main), merge in parallel
+
+Each agent writes its own PR description with stack context.
+MERGE ORDER: Agent 4 (independent) + Agent 1 -> Agent 2 -> Agent 3
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER create a PR with more than 500 lines without splitting it.
+2. NEVER leave a PR description empty — every PR gets the template.
+3. NEVER request review before self-reviewing the diff.
+4. NEVER force-push during active review — push new commits instead.
+5. NEVER assign more than 3 reviewers — 1-2 is ideal.
+6. NEVER stack more than 5 PRs deep — use parallel branches instead.
+7. ALWAYS include the issue/ticket link in the PR description.
+8. ALWAYS mark draft PRs as draft — do not request review on WIP.
+9. ALWAYS squash commits before merging (not during review).
+10. NEVER merge a PR with failing CI checks.
+```
+
 ## Key Behaviors
 
 1. **Small PRs are non-negotiable.** A 500-line PR will get rubber-stamped. Four 125-line PRs will get thoughtful reviews. Always split large changes.

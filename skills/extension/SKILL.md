@@ -597,6 +597,90 @@ Next: /godmode:build to implement tab management features
 | `--framework <name>` | Use specific framework (wxt, plasmo, crxjs, vanilla) |
 | `--migrate` | Migrate MV2 extension to MV3 |
 
+## Auto-Detection
+
+On activation, automatically detect the extension project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for manifest.json — determine manifest version (MV2 vs MV3)
+2. Detect target browsers from manifest fields (background.service_worker = Chrome MV3, background.scripts = Firefox)
+3. Check for build framework: WXT (wxt.config.ts), Plasmo (plasmo.config.ts), CRXJS (crxjs plugin in vite.config)
+4. Scan package.json for webextension-polyfill, @anthropic/chrome-types, @anthropic/webextension-types
+5. Detect content script injection patterns (static in manifest vs programmatic chrome.scripting)
+6. Check for existing messaging patterns (chrome.runtime.sendMessage, port connections)
+7. Identify UI surfaces present: popup/, options/, sidepanel/, devtools/ directories
+8. Scan permissions in manifest — flag broad permissions (all_urls, <all_urls>)
+9. Check for store-specific assets: screenshots, promo images, privacy policy
+```
+
+## Explicit Loop Protocol
+
+When building extension components iteratively:
+
+```
+EXTENSION BUILD LOOP:
+current_iteration = 0
+components = [background, content_scripts, popup, options, sidepanel, ...]  // from assessment
+
+WHILE current_iteration < len(components) AND NOT user_says_stop:
+  1. SELECT next component from priority list
+  2. IMPLEMENT component with MV3 patterns
+  3. ADD messaging between new component and existing components
+  4. TEST in target browser(s) — verify no permission errors, no CSP violations
+  5. CHECK cross-browser compatibility if multi-browser target
+  6. VERIFY security checklist for this component (input validation, message validation)
+  7. current_iteration += 1
+  8. REPORT: "Component <N>/<total> complete. Next: <next_component>"
+
+ON COMPLETION:
+  RUN full extension validation: permissions audit, CSP check, store readiness
+  REPORT: "<N> components built, <M> browsers tested, store readiness: <X>/<total>"
+```
+
+## Multi-Agent Dispatch
+
+For cross-browser extension development, dispatch parallel agents:
+
+```
+PARALLEL EXTENSION AGENTS:
+When building for multiple browsers simultaneously:
+
+Agent 1 (worktree: ext-chrome):
+  - Build and test Chrome MV3 extension
+  - Chrome-specific features (side panel, offscreen API, tab groups)
+  - Chrome Web Store submission preparation
+
+Agent 2 (worktree: ext-firefox):
+  - Port and test Firefox MV3 extension
+  - Firefox-specific manifest adjustments (background.scripts vs service_worker)
+  - Firefox Add-ons (AMO) submission preparation
+
+Agent 3 (worktree: ext-shared):
+  - Build shared logic layer (messaging types, storage wrappers, constants)
+  - Write cross-browser E2E tests with Playwright
+  - Create build pipeline that outputs per-browser bundles
+
+MERGE STRATEGY: Shared code merges first, then browser-specific agents rebase.
+  Final validation: build all browser targets, run E2E tests on each.
+```
+
+## Hard Rules
+
+```
+HARD RULES — EXTENSION:
+1. ALWAYS use Manifest V3 for new extensions. MV2 is deprecated and Chrome rejects new MV2 submissions.
+2. NEVER use eval(), new Function(), or remote script loading. Chrome Web Store will reject the extension.
+3. NEVER store state in service worker global variables. The worker can terminate at any time — use chrome.storage.session.
+4. ALWAYS validate message type and sender in onMessage handlers. Never execute arbitrary code from messages.
+5. ALWAYS use Shadow DOM for UI injected by content scripts. Page CSS WILL break your components otherwise.
+6. NEVER request all_urls or <all_urls> unless the extension fundamentally requires it. Use activeTab + optional_host_permissions.
+7. ALWAYS namespace CSS classes and DOM IDs in content scripts. Prefix with extension name to avoid page conflicts.
+8. NEVER commit API keys or secrets in manifest.json or source code. Route sensitive requests through the background worker.
+9. ALWAYS provide a privacy policy URL if the extension collects any user data. Required by all stores.
+10. NEVER auto-open tabs, change the new tab page, or inject UI without clear user intent. This gets extensions removed.
+```
+
 ## Anti-Patterns
 
 - **Do NOT request all_urls permission unless absolutely necessary.** It triggers the highest-level permission warning and may cause rejection in store review. Use activeTab and specific host permissions instead.

@@ -433,6 +433,38 @@ Next: /godmode:test to add invariant tests
 | `--chain <name>` | Target specific chain (ethereum, solana, polygon, arbitrum) |
 | `--framework <name>` | Use specific framework (hardhat, foundry, anchor) |
 
+## HARD RULES
+
+1. **NEVER deploy unaudited contracts with real value.** Even well-tested contracts can have subtle vulnerabilities. Internal audit is the absolute minimum.
+2. **NEVER use `tx.origin` for authentication.** It is vulnerable to phishing attacks. Always use `msg.sender`.
+3. **NEVER store sensitive data on-chain.** All blockchain data is public. Use commit-reveal or off-chain computation for private data.
+4. **NEVER use `block.timestamp` for critical randomness.** Miners can manipulate timestamps. Use Chainlink VRF for verifiable randomness.
+5. **NEVER use floating pragma (`^0.8.0`) in production.** Pin to exact version (e.g., `0.8.24`) for reproducible builds.
+6. **ALWAYS deploy to testnet first.** Rehearse the full deployment flow including upgrade procedures before touching mainnet.
+7. **ALWAYS run gas reports and set gas budgets** for every public function. Optimize during development, not after.
+8. **ALWAYS implement reentrancy guards** on any function that makes external calls or transfers ETH.
+
+## Auto-Detection
+
+On activation, detect the Web3 project context:
+
+```bash
+# Detect framework
+ls hardhat.config.* foundry.toml truffle-config.* Anchor.toml 2>/dev/null
+
+# Detect language/chain
+find . -name "*.sol" -o -name "*.rs" -path "*/programs/*" 2>/dev/null | head -5
+
+# Detect existing contracts
+find contracts/ src/ -name "*.sol" 2>/dev/null | head -10
+
+# Detect test framework
+find test/ tests/ -name "*.t.sol" -o -name "*.test.ts" -o -name "*.test.js" 2>/dev/null | head -5
+
+# Detect deployment scripts
+find script/ scripts/ deploy/ -name "*.s.sol" -o -name "*.ts" -o -name "*.js" 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT deploy unaudited contracts with real value.** Even well-tested contracts can have subtle vulnerabilities. Internal audit is the absolute minimum.

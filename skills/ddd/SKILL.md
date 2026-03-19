@@ -489,6 +489,57 @@ Shall I continue to Phase 2 (timeline ordering)?
 | `--scaffold` | Generate directory structure and skeleton code from the domain model |
 | `--validate` | Validate existing domain model against DDD principles |
 
+## HARD RULES
+
+1. **NEVER start with the database schema.** Model the domain first. Persistence is derived.
+2. **NEVER create a God Aggregate** — if an aggregate has more than 3-4 entities, split it.
+3. **NEVER share domain objects across bounded contexts.** Each context owns its model.
+4. **NEVER hold direct object references across aggregate boundaries.** Use IDs only.
+5. **NEVER force immediate consistency across aggregates** — use domain events and eventual consistency.
+6. **ALWAYS define ubiquitous language before writing code** — code speaks the domain language.
+7. **ALWAYS start with events, not entities** — events reveal real behavior, entities emerge from grouping events.
+8. **git commit BEFORE verify** — commit domain model artifacts, then validate against DDD principles.
+9. **TSV logging** — log every DDD session:
+   ```
+   timestamp	domain	bounded_contexts	aggregates	events	value_objects	verdict
+   ```
+
+## Auto-Detection
+
+On activation, automatically detect domain context:
+
+```
+AUTO-DETECT:
+1. Existing domain structure:
+   find src/ -type d -name "domain" -o -name "models" -o -name "entities" \
+     -o -name "aggregates" -o -name "events" 2>/dev/null
+
+2. Existing domain objects:
+   grep -r "class.*Entity\|class.*Aggregate\|class.*ValueObject\|interface.*Repository" \
+     src/ --include="*.ts" --include="*.java" --include="*.cs" -l 2>/dev/null
+
+3. Domain events:
+   grep -r "Event\|EventHandler\|EventBus\|publish.*event\|emit.*event" \
+     src/ --include="*.ts" --include="*.java" -l 2>/dev/null
+
+4. Anemic domain model detection:
+   # Look for models that are just data bags (getters/setters only, no behavior)
+   # Flag if entity classes have no methods beyond get/set
+
+5. Service layer:
+   find src/ -type f -name "*Service*" -o -name "*UseCase*" -o -name "*Handler*" 2>/dev/null
+   # Detect if business logic lives in services (anemic) vs domain objects (rich)
+
+6. Module/context boundaries:
+   ls -d src/*/ 2>/dev/null
+   # Detect existing module structure that may map to bounded contexts
+
+-> Auto-identify if project uses DDD patterns already or is CRUD-based.
+-> Auto-detect existing bounded context candidates from module structure.
+-> Auto-flag anemic domain models for enrichment.
+-> Only ask user about core vs supporting domain classification.
+```
+
 ## Anti-Patterns
 
 - **Do NOT start with the database schema.** DDD models the domain, not the database. The persistence model is derived from the domain model, not the other way around.

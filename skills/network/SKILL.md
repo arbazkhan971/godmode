@@ -611,6 +611,141 @@ Recommendation: Set up process manager (systemd/supervisord)
 | `--domain <name>` | Target a specific domain |
 | `--provider <name>` | Use specific provider (aws, cloudflare, gcp) |
 
+## Auto-Detection
+
+```
+IF directory contains nginx.conf OR nginx/:
+  SUGGEST "Nginx configuration detected. Activate /godmode:network?"
+
+IF directory contains haproxy.cfg OR haproxy/:
+  SUGGEST "HAProxy configuration detected. Activate /godmode:network?"
+
+IF directory contains Caddyfile:
+  SUGGEST "Caddy server detected. Activate /godmode:network?"
+
+IF Terraform files contain "aws_lb" OR "aws_cloudfront" OR "aws_route53":
+  SUGGEST "AWS networking infrastructure detected. Activate /godmode:network?"
+
+IF k8s/ contains Ingress OR Certificate OR NetworkPolicy manifests:
+  SUGGEST "Kubernetes networking resources detected. Activate /godmode:network?"
+
+IF directory contains cloudflare/ OR wrangler.toml:
+  SUGGEST "Cloudflare configuration detected. Activate /godmode:network?"
+
+IF .env or config contains DOMAIN, SSL_CERT, or CDN references:
+  SUGGEST "Networking configuration variables detected. Activate /godmode:network?"
+
+ON deployment failure with 502/503/504 errors:
+  SUGGEST "Gateway error detected. Run /godmode:network --troubleshoot?"
+```
+
+## Iterative Network Setup Protocol
+
+```
+WHEN configuring a complete networking stack (DNS + SSL + CDN + LB + VPC):
+
+components = ["vpc_design", "security_groups", "load_balancer", "ssl_certs", "cdn", "dns"]
+current_component = 0
+total_components = len(components)
+configured = []
+validation_failures = []
+
+WHILE current_component < total_components:
+  component = components[current_component]
+
+  1. ASSESS current state of {component}
+  2. DESIGN configuration based on requirements
+  3. APPLY configuration
+  4. VALIDATE:
+     - vpc: subnets reachable, route tables correct
+     - security_groups: least-privilege, no 0.0.0.0/0 on non-LB
+     - load_balancer: health checks passing, targets healthy
+     - ssl: certificate valid, TLS 1.2+ enforced, HSTS enabled
+     - cdn: cache headers correct, invalidation works
+     - dns: resolution correct from multiple resolvers
+
+  IF validation_fails:
+    validation_failures.append({component: component, reason: reason})
+    FIX and re-validate
+    CONTINUE  # retry same component
+  ELSE:
+    configured.append(component)
+    current_component += 1
+
+  REPORT "{current_component}/{total_components} networking components configured"
+
+FINAL:
+  RUN end-to-end test: curl -sI https://{domain}
+  VERIFY: 200 OK, valid cert, HSTS header, correct origin
+  REPORT full network inventory
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN setting up networking for a multi-service deployment:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (vpc-and-security):
+    - Design VPC with public/private/isolated subnets
+    - Configure security groups (least-privilege)
+    - Set up NACLs and VPC Flow Logs
+    - Output: infra/network/ (Terraform or CloudFormation)
+
+  Agent 2 (load-balancer):
+    - Configure ALB/NLB with target groups
+    - Set up health checks and routing rules
+    - Configure SSL termination
+    - Output: infra/lb/ configs
+
+  Agent 3 (cdn-and-dns):
+    - Configure CDN (CloudFront/Cloudflare)
+    - Set up DNS records with correct TTLs
+    - Configure cache behaviors per path
+    - Output: infra/cdn/ + infra/dns/ configs
+
+  Agent 4 (ssl-and-security):
+    - Configure SSL certificates (Let's Encrypt / cert-manager)
+    - Set up WAF rules (SQL injection, XSS, rate limiting)
+    - Configure HSTS, CSP, and security headers
+    - Output: infra/certs/ + infra/waf/ configs
+
+MERGE:
+  - Verify DNS points to CDN which routes to LB
+  - Verify SSL terminates correctly at each layer
+  - Verify security groups allow traffic flow: CDN -> LB -> App -> DB
+  - Run end-to-end connectivity test through full stack
+```
+
+## HARD RULES
+
+```
+1. EVERY public endpoint MUST use TLS 1.2+ with valid certificates.
+   HTTP exists only to redirect to HTTPS. No exceptions.
+
+2. NEVER expose database ports to the internet.
+   Databases belong in isolated subnets with no public IP.
+
+3. NEVER use 0.0.0.0/0 in security group inbound rules
+   except for ALB on ports 80 and 443.
+
+4. Certificate auto-renewal MUST be configured. Manual certificate
+   management leads to outages. Use Let's Encrypt + certbot or cert-manager.
+
+5. Load balancers MUST have health checks configured.
+   Without health checks, traffic goes to dead backends.
+
+6. VPC design MUST use three tiers (public, private, isolated)
+   spanning at least two availability zones.
+
+7. NEVER cache authenticated/personalized content at the CDN
+   unless cache keys include auth tokens.
+
+8. VPC Flow Logs MUST be enabled on all production VPCs.
+   You cannot investigate what you did not record.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use self-signed certificates in production.** Let's Encrypt is free. There is no excuse for self-signed certs outside of local development.

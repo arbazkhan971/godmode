@@ -547,6 +547,56 @@ Justification:
 | `--init` | Initialize component library structure from scratch |
 | `--generate <name>` | Generate a new component with all standard files |
 
+## HARD RULES
+
+1. **NEVER mix CSS approaches.** Pick one (CSS Modules, Tailwind, styled-components) and standardize across the project.
+2. **NEVER create God components.** A component with 30 props and 500 lines is not a component. Break it into smaller, composable pieces.
+3. **NEVER hardcode colors or spacing.** Use design tokens (`var(--color-text-primary)`), not raw hex values or pixel literals.
+4. **NEVER couple UI components to business logic.** A Button should not know about API calls. A DataTable should not know about user permissions. Pass data and callbacks via props.
+5. **ALWAYS type every component prop.** `any` props are not a component API. Every prop needs a type and a description.
+6. **ALWAYS write Storybook stories for every component**, including "simple" ones. They have variants, states, and edge cases.
+7. **ALWAYS design mobile-first.** Building desktop-first and fixing mobile is 3x more work than starting mobile-first.
+8. **NEVER use inline styles for component internals.** They bypass the cascade, cannot be themed, cannot be responsive, and cannot be overridden.
+
+## Auto-Detection
+
+On activation, detect the UI architecture context:
+
+```bash
+# Detect framework
+grep -r "react\|vue\|svelte\|@angular/core" package.json 2>/dev/null
+
+# Detect CSS approach
+grep -r "tailwindcss\|styled-components\|@emotion\|css-modules\|sass\|less" package.json 2>/dev/null
+
+# Detect component library
+grep -r "radix\|shadcn\|chakra\|mantine\|ant-design\|material-ui\|headless" package.json 2>/dev/null
+
+# Detect Storybook
+ls .storybook/ 2>/dev/null
+grep -r "storybook" package.json 2>/dev/null
+
+# Count components
+find src/ -name "*.tsx" -o -name "*.vue" -o -name "*.svelte" 2>/dev/null | wc -l
+
+# Detect design tokens
+find src/ -name "tokens.*" -o -name "theme.*" -o -name "design-system.*" 2>/dev/null
+```
+
+## Multi-Agent Dispatch
+
+For large component library builds, dispatch parallel agents:
+
+```
+DISPATCH 3 agents:
+  Agent 1 (worktree: ui-primitives):  Primitive components (Button, Input, Label, Badge, Avatar)
+  Agent 2 (worktree: ui-composite):   Composite components (Dialog, Dropdown, DataTable, Form)
+  Agent 3 (worktree: ui-layout):      Layout components (Sidebar, Nav, Page, Grid) + design tokens
+
+MERGE order: Agent 3 (tokens/layout) first, then Agent 1 (primitives), then Agent 2 (composites)
+CONFLICT resolution: Token definitions in Agent 3 are authoritative
+```
+
 ## Anti-Patterns
 
 - **Do NOT mix CSS approaches.** CSS Modules in some components, styled-components in others, and Tailwind in a third creates maintenance chaos. Pick one and standardize.

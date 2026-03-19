@@ -706,6 +706,106 @@ RESULT:
   Rules enforced: 47 -> 41 (Biome) + 6 (ESLint for React)
 ```
 
+## HARD RULES
+1. NEVER debate formatting in code reviews — configure the formatter, automate it, and never discuss it again.
+2. NEVER enable all lint rules at once on an existing codebase — start with recommended, add rules incrementally.
+3. NEVER lint in CI without linting locally first — developers must get feedback in seconds, not minutes.
+4. NEVER use `eslint-disable` as a strategy — a file full of disable comments is worse than no linting.
+5. NEVER run the full linter in pre-commit hooks — lint only staged files. Full linting makes commits painful.
+6. NEVER skip the formatter — linting without formatting eliminates only half the style noise.
+7. NEVER keep warnings around — warnings are noise. Promote to error or remove the rule.
+8. ALWAYS configure linting with team agreement — rules imposed without consensus will be circumvented.
+9. ALWAYS set `--max-warnings=0` in CI — prevent warning accumulation over time.
+10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
+
+## Auto-Detection
+On activation, detect linting context automatically:
+```
+AUTO-DETECT:
+1. Detect language(s):
+   - package.json → JavaScript/TypeScript
+   - pyproject.toml, setup.cfg → Python
+   - go.mod → Go
+   - Cargo.toml → Rust
+   - Gemfile → Ruby
+   - pom.xml, build.gradle → Java/Kotlin
+2. Detect existing linter config:
+   - .eslintrc*, eslint.config.* → ESLint
+   - biome.json → Biome
+   - .prettierrc* → Prettier
+   - pyproject.toml [tool.ruff] → Ruff
+   - .flake8, setup.cfg [flake8] → Flake8
+   - .golangci.yml → golangci-lint
+   - .rubocop.yml → RuboCop
+3. Detect formatter:
+   - .prettierrc* → Prettier
+   - biome.json → Biome formatter
+   - pyproject.toml [tool.ruff.format] or [tool.black] → Ruff/Black
+   - gofmt / goimports → Go fmt
+4. Detect pre-commit hooks:
+   - .husky/ → Husky
+   - .pre-commit-config.yaml → pre-commit framework
+   - .git/hooks/pre-commit → manual hook
+5. Detect editor config:
+   - .editorconfig → EditorConfig
+   - .vscode/settings.json → VS Code settings
+6. Count current violations:
+   - Run linter in check mode, count errors + warnings
+```
+
+## Iterative Lint Fix Protocol
+Lint adoption on existing codebases is iterative — enable, fix, commit, repeat:
+```
+current_rule_group = 0
+rule_groups = [sorted by auto-fix ratio: highest first]
+
+WHILE current_rule_group < len(rule_groups):
+  group = rule_groups[current_rule_group]
+  1. ENABLE rule group: {group} (e.g., "import ordering", "unused variables")
+  2. RUN linter in check mode — count violations
+  3. RUN auto-fix: eslint --fix / ruff check --fix / biome check --write
+  4. COUNT remaining (manual) violations
+  5. IF manual violations > 0:
+     - REPORT: "{N} violations require manual review"
+     - LIST each with file:line and suggested fix
+     - FIX manually or flag for user
+  6. RUN full test suite — verify no regressions from auto-fix
+  7. IF tests fail → revert auto-fix, investigate
+  8. COMMIT: "lint: enable {group} — auto-fixed {N}, manual {M}"
+  9. current_rule_group += 1
+
+EXIT when all rule groups enabled and violations resolved
+```
+
+## Multi-Agent Dispatch
+For multi-language projects or large codebases:
+```
+DISPATCH parallel agents (one per language/tool):
+
+Agent 1 (worktree: lint-ts):
+  - TypeScript/JavaScript linting (ESLint or Biome)
+  - Scope: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
+  - Output: Linter config + auto-fixed violations
+
+Agent 2 (worktree: lint-python):
+  - Python linting (Ruff)
+  - Scope: **/*.py
+  - Output: Ruff config + auto-fixed violations
+
+Agent 3 (worktree: lint-hooks):
+  - Pre-commit hooks + CI integration
+  - Scope: .husky/, .pre-commit-config.yaml, .github/workflows/
+  - Output: Husky/lint-staged config + CI lint job
+
+Agent 4 (worktree: lint-editor):
+  - Editor integration + .editorconfig
+  - Scope: .vscode/, .editorconfig
+  - Output: VS Code settings, EditorConfig, format-on-save
+
+MERGE ORDER: ts → python → hooks → editor
+CONFLICT RESOLUTION: each agent owns its language config files exclusively
+```
+
 ## Flags & Options
 
 | Flag | Description |

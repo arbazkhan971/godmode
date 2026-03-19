@@ -1427,6 +1427,44 @@ AFTER FIXES: Rate limits enforced within 1-2% tolerance
 | `--validate` | Validate rate limit configuration |
 | `--test` | Load test rate limits under concurrency |
 
+## HARD RULES
+
+1. NEVER use non-atomic check-and-increment operations. Separate GET then INCR has a race condition. Under concurrency, clients bypass limits by 10x or more. Use Lua scripts or atomic commands.
+2. NEVER fail closed when the rate limit backend (Redis, etc.) is unavailable. A rate limiter outage must not become an application outage. Fail open, log, and alert.
+3. ALWAYS return standard rate limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After`). Clients cannot self-throttle without this information.
+4. NEVER apply the same limits to authenticated and unauthenticated traffic. Authenticated users have an identity and a billing relationship. Anonymous traffic should have stricter limits.
+5. ALWAYS use sliding window or token bucket algorithms for user-facing limits. Fixed window algorithms allow 2x burst at window boundaries.
+6. NEVER store rate limit state in application memory for multi-instance deployments. Use a shared store (Redis, Memcached). In-process counters allow N-times bypass where N is the number of instances.
+7. ALWAYS exempt internal service-to-service traffic from public rate limits. Internal calls should use a separate bypass mechanism with its own monitoring.
+8. NEVER log rate-limited request bodies. Rate-limited endpoints are abuse magnets. Logging payloads at volume fills disks and may capture sensitive data.
+
+## Auto-Detection
+
+Before implementing, detect existing rate limiting infrastructure:
+
+```bash
+# Detect existing rate limiting
+echo "=== Rate Limit Libraries ==="
+grep -r "rate.limit\|ratelimit\|throttle\|express-rate-limit\|bottleneck" package.json requirements.txt Gemfile go.mod 2>/dev/null
+
+# Detect Redis or cache layer
+echo "=== Cache/Store Infrastructure ==="
+grep -r "redis\|ioredis\|memcached\|upstash" --include="*.ts" --include="*.js" --include="*.py" --include="*.go" -l 2>/dev/null | head -5
+
+# Detect existing middleware
+echo "=== Rate Limit Middleware ==="
+grep -r "rateLim\|throttle\|RateLimit\|rate_limit" --include="*.ts" --include="*.js" --include="*.py" --include="*.go" -l 2>/dev/null | head -5
+
+# Detect API gateway configuration
+echo "=== API Gateway ==="
+ls -la nginx.conf kong.yml traefik.yml gateway.yaml 2>/dev/null
+grep -r "rate_limit\|throttling" --include="*.yaml" --include="*.yml" -l 2>/dev/null | head -5
+
+# Detect response headers already set
+echo "=== Existing Headers ==="
+grep -r "X-RateLimit\|Retry-After\|x-rate" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip rate limiting on public endpoints.** Every unauthenticated endpoint is an abuse vector. "We don't have enough traffic to worry about it" is how you get your first outage.

@@ -1067,6 +1067,38 @@ FIXES APPLIED:
 | `--fix` | Diagnose and fix failing workflow |
 | `--dry-run` | Show workflow changes without writing files |
 
+## HARD RULES
+
+1. **NEVER use `permissions: write-all`.** Declare minimum permissions per job. Broad permissions are an exploit surface.
+2. **NEVER pin actions to mutable tags.** `actions/checkout@v4` can change. Pin to full commit SHA. Use Dependabot for updates.
+3. **NEVER interpolate untrusted input in `run:` blocks.** `${{ github.event.pull_request.title }}` is a script injection vector. Use `env:` variables.
+4. **NEVER share secrets with fork PRs.** Gate secret access with `github.event.pull_request.head.repo.full_name == github.repository`.
+5. **ALWAYS set `timeout-minutes` on every job.** Without it, workflows can run up to 6 hours. Set explicit timeouts.
+6. **ALWAYS use concurrency groups to cancel redundant runs.** Five quick commits without concurrency means five redundant workflow runs.
+7. **ALWAYS set `retention-days` on artifact uploads.** Default 90-day retention balloons storage costs.
+8. **NEVER use `continue-on-error: true` to fix flaky steps.** It masks real failures. Fix the flakiness or quarantine the test.
+
+## Auto-Detection
+
+On activation, detect the GitHub Actions context:
+
+```bash
+# Detect existing workflows
+ls .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null
+
+# Detect actions used
+grep -rh "uses:" .github/workflows/ 2>/dev/null | sort -u
+
+# Detect security issues (unpinned actions)
+grep -rn "uses:.*@v[0-9]" .github/workflows/ 2>/dev/null | head -10
+
+# Detect missing permissions
+grep -L "permissions:" .github/workflows/*.yml 2>/dev/null
+
+# Detect missing timeouts
+grep -L "timeout-minutes:" .github/workflows/*.yml 2>/dev/null
+```
+
 ## Anti-Patterns
 
 - **Do NOT use `permissions: write-all`.** Declare the minimum permissions each workflow needs. Broad permissions are an exploit surface.

@@ -495,6 +495,81 @@ RESULTS:
 | `--visualize` | Generate 2D/3D visualization of embedding space |
 | `--compare <models>` | Compare embedding models side by side |
 
+## HARD RULES
+
+1. **Never choose an embedding model without benchmarking on your data.** MTEB scores are general-purpose. Your domain may have wildly different results. Always run your own evaluation with your queries.
+2. **Never mix embedding model versions in the same index.** Embeddings from different models are not comparable. Mixing them silently degrades search quality with no obvious error.
+3. **Never skip hybrid search for production systems.** Pure dense search fails on exact matches (product IDs, proper nouns, acronyms). Always combine dense + sparse unless you have strong evidence otherwise.
+4. **Never embed without preprocessing.** Clean text before embedding: strip HTML tags, boilerplate, and noise. Garbage in, garbage out.
+5. **Never use brute-force search at scale.** Flat/brute-force is fine for <10K vectors. Beyond that, use ANN indexes (HNSW, IVF). The latency cliff is steep.
+
+## Loop Protocol
+
+```
+embedding_pipeline_queue = [model_selection, indexing, hybrid_search, evaluation, optimization]
+current_iteration = 0
+
+WHILE embedding_pipeline_queue is not empty:
+  stage = embedding_pipeline_queue.pop()
+  current_iteration += 1
+
+  SWITCH stage:
+    model_selection:
+      1. Benchmark 3 candidate models on domain eval set
+      2. Measure: hit_rate@10, MRR, latency, cost per 1M tokens
+      3. Select model with best quality/cost tradeoff
+    indexing:
+      1. Embed full corpus with selected model
+      2. Build ANN index (HNSW with tuned M and ef)
+      3. Measure: index build time, memory, QPS
+    hybrid_search:
+      1. Add BM25/SPLADE sparse component
+      2. Configure fusion (RRF or weighted linear)
+      3. Add reranker (Cohere, Voyage, or ColBERT)
+    evaluation:
+      1. Run eval suite: dense-only vs hybrid vs hybrid+reranker
+      2. Report hit_rate@10, MRR, latency p95
+      3. Compare against baseline
+    optimization:
+      1. Test dimension reduction (Matryoshka/PCA)
+      2. Test quantization (int8, binary)
+      3. Measure quality retention vs storage/speed gain
+
+  Log: "Iteration {current_iteration}: completed {stage}, hit_rate@10={val}%"
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "model-benchmark":
+  EnterWorktree("model-benchmark")
+  Prepare evaluation dataset (golden queries + relevant docs)
+  Benchmark 3+ embedding models on domain data
+  Measure quality (hit_rate, MRR), latency, and cost
+  Produce comparison table with recommendation
+  ExitWorktree()
+
+Agent 2 — "indexing-pipeline":
+  EnterWorktree("indexing-pipeline")
+  Implement embedding generation pipeline (batched, rate-limited)
+  Configure vector store (Qdrant, Pinecone, pgvector, Weaviate)
+  Build ANN index with tuned parameters (HNSW M, ef_construction)
+  Add incremental update support (upsert, delete)
+  ExitWorktree()
+
+Agent 3 — "search-and-eval":
+  EnterWorktree("search-and-eval")
+  Implement hybrid search (dense + BM25, fusion with RRF)
+  Add reranker stage (cross-encoder on top-N)
+  Build evaluation harness with automated scoring
+  Set up version registry for embedding model tracking
+  ExitWorktree()
+
+MERGE: Combine all branches, run full evaluation, produce benchmark report.
+```
+
 ## Anti-Patterns
 
 - **Do NOT choose an embedding model without benchmarking on your data.** MTEB scores are general. Your domain may have very different results. Always run your own evaluation.

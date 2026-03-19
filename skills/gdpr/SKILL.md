@@ -834,6 +834,98 @@ Schema, API, and middleware code provided.
 | `--report` | Generate report from last assessment |
 | `--quick` | Top findings only, skip exhaustive checklists |
 
+## Auto-Detection
+
+On activation, automatically detect GDPR-relevant context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan database schemas for personal data fields: name, email, phone, address, date_of_birth, ssn, ip_address
+2. Check for existing consent management: consent_records table, cookie banner components, consent API endpoints
+3. Detect analytics/tracking: Google Analytics, Mixpanel, Segment, PostHog scripts or SDKs
+4. Scan for third-party data sharing: API integrations sending user data externally
+5. Check for data deletion endpoints: DELETE /users/me, soft delete patterns (deleted_at columns)
+6. Detect cross-border transfers: cloud provider regions (AWS us-east, GCP us-central), third-party SaaS locations
+7. Check for existing privacy infrastructure: privacy policy files, cookie consent libraries, DPIA documents
+8. Scan for special category data (Article 9): health fields, biometric data, political/religious fields
+9. Check for data export endpoints: GET /users/me/export or similar portability features
+10. Detect retention policies: TTL settings, cron jobs for data cleanup, retention period configs
+```
+
+## Explicit Loop Protocol
+
+When assessing GDPR compliance across multiple processing activities:
+
+```
+GDPR ASSESSMENT LOOP:
+current_iteration = 0
+activities = [registration, analytics, marketing, billing, support, ...]  // discovered processing activities
+
+WHILE current_iteration < len(activities) AND NOT user_says_stop:
+  1. SELECT next processing activity
+  2. MAP data: identify personal data fields, categories, storage locations
+  3. DETERMINE lawful basis: consent, contract, legitimate interest, legal obligation
+  4. ASSESS: consent mechanism (if consent basis), data minimization, retention period
+  5. CHECK data subject rights coverage: access, rectification, erasure, portability, objection
+  6. CHECK cross-border transfers: destination countries, transfer mechanisms (SCCs, adequacy)
+  7. EVALUATE DPIA requirement: profiling, special categories, large-scale monitoring
+  8. CLASSIFY findings: CRITICAL (regulatory risk), HIGH (30-day fix), MEDIUM (90-day), LOW (best practice)
+  9. current_iteration += 1
+  10. REPORT: "Activity <N>/<total>: <name> — <finding_count> findings (<critical> critical)"
+
+ON COMPLETION:
+  GENERATE Article 30 processing register
+  COMPILE full compliance report with GDPR article references
+  REPORT: "<N> activities assessed, <M> findings total, <K> critical"
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive GDPR compliance projects, dispatch parallel agents:
+
+```
+PARALLEL GDPR AGENTS:
+When implementing GDPR compliance across multiple dimensions:
+
+Agent 1 (worktree: gdpr-data-map):
+  - Build comprehensive data map (all personal data fields, flows, storage)
+  - Create Article 30 processing register
+  - Document lawful basis per processing activity
+  - Identify all cross-border transfers and assess mechanisms
+
+Agent 2 (worktree: gdpr-rights):
+  - Implement consent management (database, API, middleware)
+  - Build data erasure workflow (cascade to all systems, third-party notification)
+  - Implement data portability export (JSON/CSV)
+  - Create data subject access request (DSAR) handling system
+
+Agent 3 (worktree: gdpr-governance):
+  - Create DPIA templates and complete required DPIAs
+  - Implement breach notification procedures and tracking
+  - Build BAA/vendor tracking system
+  - Set up audit logging for all personal data access
+
+MERGE STRATEGY: Data map merges first (other agents need it for reference).
+  Rights implementation and governance merge independently.
+  Final: run full GDPR assessment to verify all gaps addressed.
+```
+
+## Hard Rules
+
+```
+HARD RULES — GDPR:
+1. ALWAYS cite the specific GDPR article for every finding (e.g., "Article 17.1(a)" not "deletion missing").
+2. NEVER skip the data mapping step. You cannot assess compliance without knowing what data exists and where it flows.
+3. ALWAYS implement granular consent — one checkbox for all purposes is NOT valid GDPR consent (Article 7).
+4. NEVER confuse soft delete with erasure. Setting deleted_at is NOT Article 17 compliance. Data must be removed or irreversibly anonymized from ALL systems.
+5. ALWAYS cascade erasure to: caches, search indexes, file storage, CDN, logs, analytics, and third parties.
+6. ALWAYS complete a Transfer Impact Assessment when using SCCs for cross-border transfers (post-Schrems II).
+7. ALWAYS conduct a DPIA for: profiling, special category processing, large-scale monitoring, automated decisions.
+8. NEVER exceed 72 hours for supervisory authority breach notification (Article 33). Build the procedure before you need it.
+9. ALWAYS retain compliance documentation for minimum 6 years.
+10. NEVER provide legal advice. Identify technical gaps and recommend consulting a qualified data protection lawyer for legal interpretation.
+```
+
 ## Anti-Patterns
 
 - **Do NOT treat GDPR as a checkbox exercise.** GDPR is principles-based regulation. Checking boxes without understanding the spirit (data minimization, purpose limitation, transparency) leads to violations dressed up as compliance.

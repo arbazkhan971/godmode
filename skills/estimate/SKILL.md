@@ -484,6 +484,65 @@ QUICK ESTIMATE:
 | `--points` | Output in story points instead of days |
 | `--batch` | Estimate multiple tasks at once |
 
+## HARD RULES
+
+1. **Never give a single point estimate.** "It will take 5 days" is false precision. Always provide a three-point range (optimistic, most likely, pessimistic) with confidence intervals.
+2. **Never estimate tasks larger than 2 weeks without decomposing.** Anything over 2 weeks has too much uncertainty. Decompose into 1-3 day subtasks and estimate each one.
+3. **Never estimate without understanding the codebase.** An estimate for "add a feature" is meaningless without knowing test coverage, complexity, dependencies, and technical debt.
+4. **Never conflate estimates with commitments.** An estimate is a forecast with uncertainty. A commitment is a promise. Always clarify which is being asked for.
+5. **Never skip the spike when technical uncertainty is HIGH.** Spending 4 hours on a spike is cheaper than being wrong by 3x on a 2-week estimate.
+
+## Loop Protocol
+
+```
+task_queue = gather_tasks_to_estimate()  // from backlog, sprint planning, or user request
+current_iteration = 0
+
+WHILE task_queue is not empty:
+  task = task_queue.pop()
+  current_iteration += 1
+
+  1. Gather context: scope, affected modules, test coverage, code familiarity
+  2. Run complexity analysis across 6 dimensions
+  3. Identify risk factors and compute risk multiplier
+  4. IF task estimate > 5 days → decompose into subtasks, push subtasks to queue
+  5. IF technical uncertainty is HIGH → add spike task (0.5-1 day) before estimation
+  6. Compute three-point estimate (optimistic, most likely, pessimistic)
+  7. Calculate PERT, standard deviation, confidence intervals
+
+  Log: "Iteration {current_iteration}: estimated '{task}' at PERT={days}d, 90% CI=[{low}-{high}]d"
+
+  IF task_queue is empty:
+    IF sprint planning mode: compute load vs capacity
+    Generate estimation report
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (2 worktrees):
+
+Agent 1 — "complexity-and-risk":
+  EnterWorktree("complexity-and-risk")
+  For each task: analyze affected code modules, measure complexity
+  Assess 6 complexity dimensions (code, domain, tech uncertainty, integration, testing, deployment)
+  Identify risk factors with impact percentages and probabilities
+  Compute risk multipliers
+  ExitWorktree()
+
+Agent 2 — "decomposition-and-sizing":
+  EnterWorktree("decomposition-and-sizing")
+  Decompose large tasks into 1-3 day subtasks
+  Compute three-point estimates for each subtask
+  Calculate PERT and confidence intervals
+  Cross-reference with historical data (reference class forecasting)
+  Produce sprint load analysis if in sprint planning mode
+  ExitWorktree()
+
+MERGE: Combine complexity/risk analysis with sizing into unified estimation report.
+```
+
 ## Anti-Patterns
 
 - **Do NOT give a single point estimate.** "It will take 5 days" is false precision. "It will take 3-8 days, most likely 5" is honest. Stakeholders who demand a single number get the pessimistic end of the range.

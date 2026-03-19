@@ -444,6 +444,112 @@ Next: /godmode:test to add unit tests (Unity framework)
       /godmode:secure to audit TLS and provisioning
 ```
 
+## HARD RULES
+1. NEVER use dynamic memory allocation (malloc/new) in production firmware — use static allocation and memory pools.
+2. NEVER busy-wait/poll between sensor readings — use sleep modes with timer/interrupt wakeup.
+3. NEVER skip watchdog timers on field-deployed devices — watchdog is the last defense against permanent hangs.
+4. NEVER hardcode WiFi credentials or API keys in firmware source — use provisioning flows (BLE, QR, NFC).
+5. NEVER deploy firmware without rollback capability — always maintain a known-good fallback image.
+6. NEVER send raw sensor data to the cloud at high frequency — aggregate locally, transmit summaries.
+7. NEVER trust incoming network data — validate all commands, verify server certificates, treat every message as potentially malicious.
+8. ALWAYS sign firmware images with asymmetric keys (Ed25519 or ECDSA P-256) — public key in bootloader.
+9. ALWAYS implement anti-rollback protection with monotonic version counters.
+10. ALWAYS measure power consumption with a current probe from day one — estimated != actual.
+
+## Auto-Detection
+On activation, detect IoT project context automatically:
+```
+AUTO-DETECT:
+1. Detect MCU/platform:
+   - sdkconfig, sdkconfig.defaults → ESP32 (ESP-IDF)
+   - CMakeLists.txt + prj.conf → Zephyr RTOS
+   - FreeRTOSConfig.h → FreeRTOS
+   - platformio.ini → PlatformIO project
+   - arduino.json, *.ino → Arduino
+   - Makefile + STM32*.ld → STM32 bare-metal
+2. Detect RTOS:
+   - FreeRTOS headers (task.h, queue.h, semphr.h)
+   - Zephyr headers (zephyr/kernel.h)
+   - No RTOS headers → bare-metal
+3. Detect connectivity:
+   - mqtt*, MQTTClient → MQTT protocol
+   - coap*, CoAP → CoAP protocol
+   - ble*, BLE*, bluetooth → BLE
+   - lora*, LoRa → LoRaWAN
+   - wifi*, WiFi → WiFi connectivity
+4. Detect cloud platform:
+   - aws_iot*, AWS IoT SDK → AWS IoT Core
+   - azure_iot*, IoTHubClient → Azure IoT Hub
+   - google_cloud_iot → GCP IoT
+5. Detect OTA implementation:
+   - esp_ota*, esp_https_ota → ESP32 OTA
+   - mcuboot → MCUboot bootloader
+   - partition table with ota_0, ota_1 → A/B partitioning
+6. Scan for power management:
+   - esp_sleep*, deep_sleep → Sleep mode implementation
+   - pm_*, power_manager → Power management module
+```
+
+## Firmware Development Loop
+Firmware development is iterative — build, flash, test, measure, optimize:
+```
+current_iteration = 0
+target_met = false
+
+WHILE NOT target_met:
+  1. BUILD firmware: cmake --build build/
+  2. FLASH to target device: esptool.py flash / west flash / st-flash
+  3. TEST on real hardware:
+     a. Functional test: sensors read correctly, communication works
+     b. Power measurement: measure active/sleep current with probe
+     c. Stability test: run for N hours, check watchdog resets
+  4. MEASURE against targets:
+     - Battery life estimate vs target
+     - Communication reliability vs target
+     - Memory usage (stack high watermark, heap remaining)
+  5. IF any target not met:
+     - IDENTIFY bottleneck (power? memory? timing? reliability?)
+     - OPTIMIZE: adjust sleep timing, reduce TX power, optimize code
+     - current_iteration += 1
+  6. IF all targets met:
+     - target_met = true
+  7. IF current_iteration > 20:
+     - REPORT: "Hardware constraints may prevent meeting targets"
+     - SUGGEST: hardware changes or target relaxation
+     - WAIT for user decision
+
+EXIT when targets met OR user accepts current state
+```
+
+## Multi-Agent Dispatch
+For IoT projects with multiple firmware components:
+```
+DISPATCH parallel agents (one per firmware layer):
+
+Agent 1 (worktree: iot-drivers):
+  - Hardware drivers and HAL
+  - Scope: drivers/, hal/, board-specific code
+  - Output: Tested driver implementations
+
+Agent 2 (worktree: iot-comms):
+  - Communication protocol stack
+  - Scope: middleware/mqtt*, middleware/coap*, middleware/ble*
+  - Output: Protocol implementation with reconnect/retry logic
+
+Agent 3 (worktree: iot-ota):
+  - OTA update system
+  - Scope: ota_task, bootloader config, partition table
+  - Output: A/B OTA with signature verification and rollback
+
+Agent 4 (worktree: iot-tests):
+  - Unit tests + integration tests
+  - Scope: test/ directory
+  - Output: Unity/Ztest test suite for all modules
+
+MERGE ORDER: drivers → comms → ota → tests
+CONFLICT RESOLUTION: drivers branch owns HAL interfaces that others depend on
+```
+
 ## Flags & Options
 
 | Flag | Description |

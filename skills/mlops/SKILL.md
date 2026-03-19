@@ -504,6 +504,148 @@ schedule retraining with recent data. No immediate action required.
 | `--scale <replicas>` | Scale serving infrastructure |
 | `--versions` | Show model version registry |
 
+## Auto-Detection
+
+```
+IF directory contains model files (*.pt, *.onnx, *.savedmodel, *.pkl, *.h5):
+  SUGGEST "Trained model artifacts detected. Activate /godmode:mlops for deployment?"
+
+IF directory contains Dockerfile AND (model loading code OR serving framework):
+  SUGGEST "Model serving container detected. Activate /godmode:mlops?"
+
+IF directory contains configs/ with serving configs (triton, tf-serving, sagemaker):
+  SUGGEST "Model serving configuration detected. Activate /godmode:mlops?"
+
+IF code imports fastapi OR flask AND loads model:
+  SUGGEST "Custom model serving endpoint detected. Activate /godmode:mlops?"
+
+IF directory contains drift/ OR monitoring/ with ML monitoring code:
+  SUGGEST "ML monitoring infrastructure detected. Activate /godmode:mlops?"
+
+ON experiment completion (from /godmode:ml):
+  IF experiment.primary_metric > baseline:
+    SUGGEST "Experiment {experiment.id} beat baseline. Deploy with /godmode:mlops?"
+```
+
+## Iterative Deployment Protocol
+
+```
+WHEN deploying a model through canary -> champion pipeline:
+
+current_phase = "readiness_check"
+traffic_pct = 0
+monitoring_window_hours = 48
+samples_needed = 10000
+
+WHILE current_phase != "complete":
+
+  IF current_phase == "readiness_check":
+    RUN model readiness checklist
+    IF all_checks_pass:
+      current_phase = "shadow"
+    ELSE:
+      HALT "Model not ready: {failing_checks}"
+
+  IF current_phase == "shadow":
+    DEPLOY model in shadow mode (receives traffic, responses not returned)
+    COMPARE shadow predictions vs champion predictions
+    IF match_rate > 99% AND latency_ok:
+      current_phase = "canary"
+    ELSE:
+      INVESTIGATE discrepancies
+      CONTINUE
+
+  IF current_phase == "canary":
+    traffic_pct = 5
+    ROUTE {traffic_pct}% traffic to new model
+    MONITOR for {monitoring_window_hours} hours:
+      - Error rate vs champion
+      - Latency p50/p95/p99
+      - Primary metric (if labeled data available)
+
+    IF error_rate > champion_error_rate * 1.1 OR latency_p99 > SLA:
+      ROLLBACK to champion
+      current_phase = "rolled_back"
+    ELSE:
+      RAMP traffic: 5% -> 25% -> 50% -> 100%
+      AT each ramp step: monitor for 4 hours before next ramp
+
+    IF traffic_pct == 100 AND stable_for(24h):
+      current_phase = "promote"
+
+  IF current_phase == "promote":
+    PROMOTE new model to champion
+    ARCHIVE old champion (keep for rollback)
+    current_phase = "complete"
+
+  IF current_phase == "rolled_back":
+    REPORT "Deployment failed. Reason: {failure_reason}"
+    BREAK
+
+FINAL: Report deployment outcome and monitoring dashboard link
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN deploying a model AND setting up monitoring:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (serving-setup):
+    - Configure serving infrastructure (Triton/TF-Serving/SageMaker)
+    - Optimize inference (quantization, batching)
+    - Output: serving configs + Dockerfile
+
+  Agent 2 (monitoring-setup):
+    - Configure drift detection pipeline
+    - Set up alerting thresholds
+    - Output: monitoring configs + dashboards
+
+  Agent 3 (ab-test-setup):
+    - Configure A/B test routing
+    - Define success criteria and guardrails
+    - Output: traffic routing config + test definition
+
+  Agent 4 (retraining-pipeline):
+    - Set up automated retraining triggers
+    - Configure data pipeline for fresh training data
+    - Output: retraining pipeline config
+
+MERGE:
+  - Verify serving config aligns with monitoring expectations
+  - Verify A/B test routes match serving endpoints
+  - Verify retraining pipeline outputs are compatible with serving format
+```
+
+## HARD RULES
+
+```
+1. NEVER deploy a model without completing the readiness checklist.
+   Latency, bias, input validation, and fallback MUST be verified.
+
+2. NEVER send 100% of traffic to a new model on day one.
+   Start with shadow mode, then 5% canary, then ramp.
+
+3. ALWAYS maintain the previous champion model ready for instant rollback.
+   Rollback must take seconds, not minutes.
+
+4. NEVER automate model promotion without a validation gate.
+   Retraining can be automated; deployment requires A/B test or human review.
+
+5. EVERY model in production MUST have drift monitoring with alerting.
+   Check feature drift (PSI) and performance degradation continuously.
+
+6. NEVER serve a model without a fallback strategy.
+   When the model fails: simpler model, rules-based fallback, or graceful degradation.
+
+7. Model version and serving code version MUST be tracked independently.
+   A model update and a serving code update are separate deployments.
+
+8. EVERY A/B test MUST run for minimum sample size before making decisions.
+   Peeking at results early inflates false positive rate.
+```
+
 ## Anti-Patterns
 
 - **Do NOT deploy without benchmarking latency.** A model that takes 2 seconds per request will destroy your user experience and infrastructure budget. Benchmark first.

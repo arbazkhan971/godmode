@@ -723,6 +723,93 @@ Dashboard panels:
 8. If scaling: "Worker pool scaled to <N>. Backpressure handling added at <threshold>."
 ```
 
+## Auto-Detection
+
+Before prompting the user, automatically detect queue infrastructure:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect existing queue technology:
+   - package.json: bullmq, bull, bee-queue, amqplib, kafkajs, sqs-consumer
+   - requirements.txt: celery, dramatiq, rq, kombu
+   - Gemfile: sidekiq, good_job, delayed_job, solid_queue
+   - go.mod: asynq, machinery, watermill
+2. Detect broker infrastructure:
+   - docker-compose.yml: redis, rabbitmq, kafka, zookeeper images
+   - Environment vars: REDIS_URL, RABBITMQ_URL, KAFKA_BROKERS, SQS_QUEUE_URL
+   - AWS config: SQS queue ARNs, SNS topic ARNs
+3. Detect existing job definitions:
+   - app/jobs/ (Rails), tasks/ (Celery), workers/ (BullMQ)
+   - Scan for perform, process, handle method patterns
+4. Detect scheduling:
+   - cron patterns in code or config
+   - sidekiq-scheduler, celery beat config, BullMQ repeat patterns
+5. Detect monitoring:
+   - Bull Board, Flower, Sidekiq Web UI routes
+   - Prometheus metrics endpoints for queue depth
+6. Detect pain points:
+   - Error logs with retry/DLQ patterns
+   - Memory usage spikes in worker processes
+   - Growing queue depth in monitoring
+```
+
+## Explicit Loop Protocol
+
+For iterative queue health diagnosis and tuning:
+
+```
+QUEUE TUNING LOOP:
+current_iteration = 0
+max_iterations = 4
+baseline = capture_queue_metrics()  # depth, processing_rate, error_rate, p95_latency
+
+WHILE current_iteration < max_iterations AND SLA_not_met:
+  current_iteration += 1
+
+  1. DIAGNOSE top issue:
+     - Queue depth growing? -> insufficient workers or slow processing
+     - High error rate? -> fix error handling, add retries
+     - High p95 latency? -> worker concurrency, downstream bottleneck
+     - DLQ growing? -> investigate failure patterns
+
+  2. APPLY single fix:
+     - Scale workers / adjust concurrency / fix error handler / add rate limit
+     - ONE change per iteration
+
+  3. MEASURE:
+     - Wait for metrics to stabilize (minimum 5 minutes under load)
+     - Record: { iteration, change, depth, rate, error_rate, p95 }
+
+  4. EVALUATE:
+     - IF all SLAs met (depth < threshold, latency < target): STOP
+     - IF improvement < 10%: try different approach
+     - ELSE: continue to next issue
+
+  OUTPUT:
+  Iteration | Change | Queue Depth | Rate | Error % | P95
+  0         | baseline| 12,847     | 0/s  | 100%    | N/A
+  1         | reconnect| 12,847    | 200/s| 2.1%    | 4.8s
+  ...
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER process tasks > 500ms in request handlers — use background jobs.
+2. NEVER retry without exponential backoff and jitter.
+3. NEVER assume jobs run exactly once — ALWAYS design handlers to be idempotent.
+4. NEVER store large payloads (> 1MB) in the queue — store in S3, reference in job.
+5. NEVER share worker pools across priority levels — separate queues, separate workers.
+6. NEVER skip graceful shutdown — handle SIGTERM, finish current job, then exit.
+7. ALWAYS configure a dead letter queue for every production queue.
+8. ALWAYS monitor DLQ depth and alert when it grows.
+9. ALWAYS classify errors as retryable vs non-retryable before retrying.
+10. ALWAYS set job TTL / retention limits — queues are not permanent storage.
+11. NEVER use polling intervals shorter than processing time.
+12. ALWAYS use idempotency keys for financial/payment jobs.
+```
+
 ## Key Behaviors
 
 1. **Async by default for anything over 500ms.** If a request handler does work that takes more than 500ms, it should be a background job. Do not make users wait.

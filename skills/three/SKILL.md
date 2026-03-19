@@ -741,6 +741,38 @@ WebXR features enabled:
 | `--particles` | Particle system implementation |
 | `--postprocess` | Post-processing effects setup |
 
+## HARD RULES
+
+1. **ALWAYS dispose GPU resources explicitly.** Every `geometry.dispose()`, `material.dispose()`, `texture.dispose()` must be called. The JS garbage collector cannot free GPU memory.
+2. **NEVER use uncompressed assets in production.** Run all GLTF through gltf-transform with Draco/Meshopt + KTX2 before deploying.
+3. **NEVER use `window.devicePixelRatio` directly.** Cap at 2: `Math.min(window.devicePixelRatio, 2)`. Users cannot perceive the difference; the GPU absolutely can.
+4. **NEVER put heavy computation in `useFrame` without guards.** `useFrame` runs 60-120 times per second. No array allocations, no raycasting without early-exit conditions.
+5. **NEVER use real-time shadows on everything.** Limit shadow casters to key lights, receivers to ground/walls. Bake shadows for static objects.
+6. **ALWAYS set mobile GPU budgets at project start.** Desktop GPUs have 10-50x mobile power. A desktop-smooth scene will be single-digit FPS on mobile without explicit budgets.
+7. **ALWAYS share material instances** across meshes with identical appearance. 100 separate identical materials = 100 material switches per frame.
+8. **ALWAYS use `<Suspense>` boundaries** around lazy-loaded 3D content with loading fallbacks.
+
+## Auto-Detection
+
+On activation, detect the 3D project context:
+
+```bash
+# Detect Three.js or React Three Fiber
+grep -r "three\|@react-three/fiber\|@react-three/drei" package.json 2>/dev/null
+
+# Detect 3D assets
+find . -name "*.gltf" -o -name "*.glb" -o -name "*.fbx" -o -name "*.obj" 2>/dev/null | head -10
+
+# Detect shader files
+find . -name "*.glsl" -o -name "*.vert" -o -name "*.frag" -o -name "*.wgsl" 2>/dev/null | head -5
+
+# Detect WebXR usage
+grep -rl "WebXR\|VRButton\|ARButton\|@react-three/xr" src/ 2>/dev/null
+
+# Detect post-processing
+grep -r "postprocessing\|@react-three/postprocessing\|EffectComposer" package.json src/ 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip resource disposal.** Three.js objects hold GPU resources (buffers, textures, programs) that the JavaScript garbage collector cannot free. Every `geometry.dispose()`, `material.dispose()`, `texture.dispose()` must be called explicitly. Skipping this leaks VRAM until the tab crashes.

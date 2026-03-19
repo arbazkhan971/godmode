@@ -810,6 +810,41 @@ Expected hit rate after fixes: 88-92%
 | `--validate` | Validate existing cache configuration |
 | `--benchmark` | Benchmark cache performance |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect caching context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect existing cache infrastructure:
+   - grep for 'redis', 'ioredis', 'node-redis', 'redis-py' → Redis
+   - grep for 'memcached', 'memjs' → Memcached
+   - Check docker-compose.yml for redis/memcached services
+   - Check for ElastiCache, MemoryStore, Upstash configs
+2. Detect CDN configuration:
+   - Check for cloudflare, cloudfront, fastly configs
+   - grep for 'Cache-Control', 's-maxage', 'Surrogate-Key' in response headers
+   - Check for Varnish VCL files
+3. Detect current caching patterns:
+   - grep for '.get(', '.set(', '.setex(' in service/controller code
+   - grep for 'cache-aside', 'write-through' in comments or docs
+   - Check for cache utility modules (src/lib/cache, src/utils/cache)
+4. Detect cache key patterns:
+   - Extract key patterns from redis.get/set calls
+   - Check for consistent naming convention
+5. Detect performance signals:
+   - Check for slow query logs or N+1 detection
+   - Check for database connection pool size (high = possible cache opportunity)
+6. Detect cache monitoring:
+   - grep for cache_hit, cache_miss metrics
+   - Check for Redis INFO monitoring
+7. Auto-configure:
+   - No cache → assess hot paths and recommend cache layer
+   - Redis exists but no monitoring → flag monitoring gap
+   - No TTLs on keys → flag as HIGH issue
+   - No stampede prevention → flag for high-QPS endpoints
+```
+
 ## Anti-Patterns
 
 - **Do NOT cache without a TTL.** A key without expiry lives forever, serving increasingly stale data until memory fills up and eviction kicks in randomly.

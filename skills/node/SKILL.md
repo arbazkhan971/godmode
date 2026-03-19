@@ -870,6 +870,144 @@ FIX:
 | `--production` | Production hardening checklist |
 | `--migrate <from> <to>` | Migrate between frameworks (e.g., express to fastify) |
 
+## Auto-Detection
+
+```
+IF package.json contains "express" OR "fastify" OR "hono" OR "@nestjs/core" OR "koa":
+  framework = detect_framework()
+  version = package.json.dependencies[framework]
+  SUGGEST "Node.js backend ({framework} {version}) detected. Activate /godmode:node?"
+
+IF package.json has "type": "module" AND main entry is server.ts/server.js/index.ts:
+  SUGGEST "Node.js server application detected. Activate /godmode:node?"
+
+IF tsconfig.json has "module": "commonjs" AND code imports http/https/net:
+  SUGGEST "Node.js server detected. Activate /godmode:node?"
+
+IF Dockerfile contains "FROM node:" AND EXPOSE directive:
+  port = parse EXPOSE port
+  SUGGEST "Containerized Node.js server (port {port}) detected. Activate /godmode:node?"
+
+IF directory contains src/routes/ OR src/controllers/ OR src/middleware/:
+  SUGGEST "Node.js backend architecture detected. Activate /godmode:node?"
+
+ON performance issue (event loop lag > 100ms OR memory > 85% heap):
+  SUGGEST "Node.js performance issue detected. Run /godmode:node --perf?"
+```
+
+## Iterative API Build Protocol
+
+```
+WHEN building a Node.js API with multiple resources:
+
+current_resource = 0
+total_resources = len(api_resources)  # e.g., ["users", "posts", "comments"]
+built_resources = []
+production_checks = []
+
+WHILE current_resource < total_resources:
+  resource = api_resources[current_resource]
+
+  1. CREATE route file (routes/{resource}.ts)
+  2. CREATE controller ({resource}Controller.ts)
+  3. CREATE service ({resource}Service.ts)
+  4. CREATE repository ({resource}Repository.ts)
+  5. CREATE validation schemas (Zod/Joi for request validation)
+  6. WIRE middleware chain:
+     auth -> validate -> rateLimit -> controller
+  7. VERIFY layer boundaries:
+     - Controller has NO database queries
+     - Service has NO HTTP awareness (no req/res)
+     - Repository has NO business logic
+
+  IF boundary_violation_found:
+    FIX violation before proceeding
+    CONTINUE
+
+  built_resources.append(resource)
+  current_resource += 1
+
+  IF current_resource % 3 == 0:
+    REPORT "{current_resource}/{total_resources} resources built"
+    RUN integration tests for built resources
+
+FINAL:
+  RUN production hardening checklist
+  VERIFY: graceful shutdown, health checks, structured logging,
+          error handling, rate limiting, security headers
+  REPORT endpoint count and production readiness status
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN building a full Node.js backend with multiple concerns:
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (api-routes):
+    - Implement route handlers for all resources
+    - Configure request validation (Zod schemas)
+    - Wire middleware chain
+    - Output: src/routes/ + src/controllers/
+
+  Agent 2 (business-logic):
+    - Implement service layer with business rules
+    - Implement repository layer with database queries
+    - Output: src/services/ + src/repositories/
+
+  Agent 3 (middleware-infra):
+    - Implement auth middleware (JWT/session)
+    - Implement rate limiting, CORS, security headers
+    - Implement global error handler
+    - Implement graceful shutdown
+    - Output: src/middleware/ + src/server.ts
+
+  Agent 4 (performance):
+    - Configure worker threads for CPU-bound tasks
+    - Implement stream processing for large data
+    - Set up memory and event loop monitoring
+    - Output: src/workers/ + src/utils/monitoring.ts
+
+MERGE:
+  - Verify routes use middleware from Agent 3
+  - Verify controllers call services from Agent 2
+  - Verify CPU-bound operations use workers from Agent 4
+  - Run full integration test suite
+  - Run production hardening checklist
+```
+
+## HARD RULES
+
+```
+1. NEVER block the event loop. No synchronous file I/O, no CPU-heavy
+   computation on the main thread, no JSON.parse of multi-MB payloads
+   without a worker thread.
+
+2. NEVER use console.log in production. Use a structured logger (pino)
+   with log levels, request IDs, and JSON output.
+
+3. EVERY production Node.js server MUST handle SIGTERM gracefully:
+   stop accepting connections, drain in-flight requests, close DB pools.
+
+4. NEVER buffer large files in memory. Use streams and pipeline()
+   for files > 10MB. A 1GB upload with req.body crashes the process.
+
+5. EVERY Map used as a cache MUST have a max size and TTL.
+   Unbounded caches grow linearly with traffic until OOM.
+
+6. Controllers handle HTTP. Services contain logic. Repositories abstract data.
+   NEVER mix these concerns. No database queries in controllers.
+   No req/res objects in services.
+
+7. EVERY external HTTP call MUST have a timeout.
+   Default: 5s for APIs, 30s for file downloads. Never wait forever.
+
+8. NEVER use cluster.fork() inside containers.
+   Let the orchestrator (Kubernetes, ECS) handle scaling.
+   One process per container.
+```
+
 ## Anti-Patterns
 
 - **Do NOT block the event loop.** No synchronous file I/O, no CPU-heavy computation on the main thread, no `JSON.parse` of multi-MB payloads without a worker. The event loop is sacred.

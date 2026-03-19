@@ -903,6 +903,96 @@ SCHEMAS:
 | `--optimize` | Profile and optimize async performance |
 | `--audit` | Audit existing FastAPI app for anti-patterns |
 
+## Auto-Detection
+
+On activation, automatically detect FastAPI project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for FastAPI imports (from fastapi import FastAPI) in Python files
+2. Detect Python version from pyproject.toml / setup.py / .python-version
+3. Check package manager: uv (uv.lock), poetry (poetry.lock), pip (requirements.txt)
+4. Detect ORM: SQLAlchemy (sqlalchemy in deps), Tortoise (tortoise-orm), SQLModel, Beanie
+5. Check for async DB driver: asyncpg, aiomysql, motor — flag if sync driver used (psycopg2)
+6. Detect auth pattern: python-jose (JWT), authlib (OAuth2), fastapi.security imports
+7. Scan for Pydantic version (v1 vs v2) — flag deprecated v1 patterns (orm_mode, Optional vs | None)
+8. Check for Alembic migrations directory (alembic/ or migrations/)
+9. Detect test framework: pytest, httpx, pytest-asyncio, anyio
+10. Check for existing project structure (monolith vs modular, feature-based vs layer-based)
+```
+
+## Explicit Loop Protocol
+
+When building multiple API resources iteratively:
+
+```
+FASTAPI RESOURCE BUILD LOOP:
+current_iteration = 0
+resources = [resource_1, resource_2, ...]  // from project assessment
+
+WHILE current_iteration < len(resources) AND NOT user_says_stop:
+  1. SELECT next resource from priority list
+  2. CREATE Pydantic schemas: <Resource>Create, <Resource>Update, <Resource>Response
+  3. CREATE SQLAlchemy model with Mapped[] annotations and relationships
+  4. CREATE repository with async queries (list_paginated, get_by_id, create, update)
+  5. CREATE service class with business logic and DI
+  6. CREATE router with async endpoints and dependency injection
+  7. CREATE Alembic migration for new model
+  8. WRITE tests: endpoint tests (HTTPX), service tests, schema validation tests
+  9. RUN tests — if failures, fix before proceeding
+  10. current_iteration += 1
+  11. REPORT: "Resource <N>/<total> complete: <name> — <X> endpoints, <Y> tests passing"
+
+ON COMPLETION:
+  RUN full validation checklist (Step 7)
+  REPORT: "<N> resources, <M> endpoints, <K> tests, all async, validation PASS/FAIL"
+```
+
+## Multi-Agent Dispatch
+
+For large FastAPI services, dispatch parallel agents per resource domain:
+
+```
+PARALLEL FASTAPI AGENTS:
+When building multiple resource domains simultaneously:
+
+Agent 1 (worktree: api-core):
+  - Set up FastAPI app factory, config (pydantic-settings), DB session
+  - Implement auth dependencies (JWT, role-based access)
+  - Create shared schemas (PaginatedResponse, error types)
+  - Set up Alembic and base model with TimestampMixin
+
+Agent 2 (worktree: api-domain-a):
+  - Build resource domain A (schemas, models, repos, services, routes)
+  - Write tests for domain A endpoints and services
+  - Create Alembic migrations for domain A models
+
+Agent 3 (worktree: api-domain-b):
+  - Build resource domain B (schemas, models, repos, services, routes)
+  - Write tests for domain B endpoints and services
+  - Create Alembic migrations for domain B models
+
+MERGE STRATEGY: Core merges first. Domain agents rebase onto core, then merge sequentially.
+  Alembic migration conflicts resolved by regenerating heads after merge.
+  Final: run full test suite, verify OpenAPI docs render correctly.
+```
+
+## Hard Rules
+
+```
+HARD RULES — FASTAPI:
+1. ALWAYS use async endpoints with async DB drivers. One sync call blocks the entire event loop.
+2. NEVER return SQLAlchemy models directly from endpoints. Use Pydantic response schemas.
+3. NEVER import DB sessions as module globals. Use Depends(get_db) for request-scoped sessions.
+4. ALWAYS separate Pydantic schemas: Create (input), Update (partial), Response (output). They WILL diverge.
+5. ALWAYS set expire_on_commit=False on async sessions. Without it, accessing attributes after commit triggers sync IO.
+6. ALWAYS use selectin loading for async relationships. lazy loading triggers synchronous queries in async context.
+7. NEVER use metadata.create_all() in production. Use Alembic migrations for schema management.
+8. ALWAYS use Field() with constraints (gt, le, max_length) on Pydantic schemas. Validate at the schema level.
+9. NEVER block the event loop with CPU-intensive work. Use run_in_executor or a separate worker process.
+10. ALWAYS use pydantic-settings for configuration. Hardcoded config values are deployment bugs waiting to happen.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use sync database drivers.** `psycopg2` blocks the event loop. Use `asyncpg` with `postgresql+asyncpg://` connection strings.

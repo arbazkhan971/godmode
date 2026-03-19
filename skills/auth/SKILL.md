@@ -663,6 +663,75 @@ Implementation plan:
 | `--harden` | Security hardening review only |
 | `--migrate` | Migrate between auth strategies |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect authentication context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect application type:
+   - SPA: check for react, vue, angular with no server rendering
+   - SSR: check for next.js, nuxt, angular universal
+   - API-only: check for express, fastapi, gin without frontend
+   - Mobile: check for react-native, flutter, swift, kotlin
+2. Detect existing auth implementation:
+   - grep for 'passport', 'next-auth', 'auth0', 'firebase/auth', 'supabase/auth'
+   - grep for 'jsonwebtoken', 'jose', 'jwt', 'bcrypt', 'argon2'
+   - Find auth-related routes: /login, /register, /auth/, /oauth/
+3. Detect identity providers:
+   - grep for OAuth client IDs, OIDC configs, SAML metadata
+   - Check .env.example for AUTH0_*, GOOGLE_CLIENT_ID, etc.
+4. Detect session management:
+   - grep for 'express-session', 'cookie-session', 'iron-session'
+   - Check for Redis session store configuration
+   - Check cookie settings (HttpOnly, Secure, SameSite)
+5. Detect MFA:
+   - grep for 'speakeasy', 'otplib', '@simplewebauthn', 'webauthn'
+   - Check for TOTP or WebAuthn database tables
+6. Detect security posture:
+   - Check for rate limiting on auth routes
+   - Check for CORS configuration
+   - Check for HTTPS enforcement (HSTS headers)
+   - Check password hashing algorithm (bcrypt cost, argon2 params)
+7. Auto-configure:
+   - No auth → recommend strategy based on app type
+   - Existing auth → audit for security gaps
+   - Missing MFA → flag as security gap for production
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive auth implementation across a full-stack application:
+
+```
+PARALLEL AUTH IMPLEMENTATION:
+IF application has multiple surfaces (web + mobile + API):
+  Agent 1 (worktree: auth-core):
+    - Design token lifecycle (JWT signing, refresh rotation, revocation)
+    - Implement auth services (token, session, password)
+    - Set up key management and rotation
+
+  Agent 2 (worktree: auth-endpoints):
+    - Implement auth controllers (login, register, logout, refresh)
+    - Implement MFA enrollment and verification
+    - Implement social login callbacks
+    - Add rate limiting and brute force protection
+
+  Agent 3 (worktree: auth-middleware):
+    - Implement authentication middleware (token validation)
+    - Implement authorization middleware (permission checks)
+    - Add CORS, CSRF, and security headers
+    - Implement step-up authentication for sensitive operations
+
+  Agent 4 (worktree: auth-tests):
+    - Write integration tests for all auth flows
+    - Test token lifecycle (issue, refresh, revoke)
+    - Test MFA enrollment and verification
+    - Test security controls (rate limiting, lockout, enumeration prevention)
+
+  COORDINATOR merges all components and runs full auth security audit
+```
+
 ## Anti-Patterns
 
 - **Do NOT use symmetric JWT signing (HS256) across multiple services.** If more than one service validates tokens, use RS256 or ES256. Sharing a symmetric secret across services is a single point of compromise.

@@ -691,6 +691,121 @@ Created: docs/legacy/assessment.md
 Created: docs/legacy/modernization-roadmap.md
 ```
 
+## HARD RULES
+1. NEVER modify legacy code without characterization tests in place — tests MUST exist before any change.
+2. NEVER rewrite from scratch — rewrites take 2-3x longer than estimated and lose years of accumulated bug fixes.
+3. NEVER fix bugs in characterization tests — if the code returns 58.84 instead of 58.85, the test expects 58.84. Fix the bug separately.
+4. NEVER upgrade all dependencies at once — one major dependency at a time, with full test suite run between each.
+5. NEVER remove code you're "pretty sure" is dead — verify with static analysis AND runtime coverage AND git history.
+6. NEVER modernize code scheduled for replacement — don't spend 2 weeks polishing code that dies in 3 months.
+7. ALWAYS understand code before changing it — git blame, dependency tracing, runtime observation first.
+8. ALWAYS make small, reversible changes — every change must be reviewable in one sitting and revertable with `git revert`.
+9. ALWAYS prioritize security > stability > maintainability > performance > modernization.
+10. ALWAYS commit dead code removal in dedicated commits — one concern per commit for easy revert.
+
+## Auto-Detection
+On activation, detect legacy codebase context automatically:
+```
+AUTO-DETECT:
+1. Assess codebase age and activity:
+   - git log --oneline --since="1 year ago" | wc -l (recent activity)
+   - git log --format="%aN" --since="6 months ago" | sort -u (active contributors)
+   - First commit date (codebase age)
+2. Detect test coverage:
+   - Look for test directories: tests/, test/, spec/, __tests__/
+   - Check for test config: jest.config, pytest.ini, phpunit.xml
+   - Run coverage if tool available: --coverage flag
+3. Detect dependency health:
+   - npm audit / pip-audit / govulncheck (vulnerabilities)
+   - npm outdated / pip list --outdated (outdated packages)
+   - Check for known deprecated packages (moment, request, etc.)
+4. Detect code quality signals:
+   - Linter config present? (.eslintrc, .flake8, .golangci.yml)
+   - CI/CD present? (.github/workflows/, .gitlab-ci.yml, Jenkinsfile)
+   - Type safety? (tsconfig.json, mypy.ini, type hints)
+5. Detect complexity:
+   - Files > 500 LOC (god classes/modules)
+   - Circular dependency detection (madge --circular)
+   - TODO/FIXME/HACK comment count
+6. Classify change confidence:
+   - Tests + CI + Types → HIGH
+   - Tests but no CI → MEDIUM
+   - No tests → LOW
+   - No tests + no docs + no active contributors → NONE
+```
+
+## Incremental Modernization Loop
+Legacy modernization is iterative — stabilize, test, improve, repeat:
+```
+current_phase = "assess"
+phases = ["assess", "stabilize", "strengthen", "modernize"]
+
+WHILE current_phase != "complete":
+  IF current_phase == "assess":
+    1. Run full codebase health assessment
+    2. Generate dependency health report
+    3. Identify critical paths (most-called, handles money/auth/data)
+    4. Classify change confidence level
+    5. current_phase = "stabilize"
+
+  IF current_phase == "stabilize":
+    current_module = 0
+    critical_modules = [sorted by risk: highest first]
+    WHILE current_module < len(critical_modules):
+      module = critical_modules[current_module]
+      1. ADD characterization tests (capture current behavior)
+      2. FIX security vulnerabilities in this module
+      3. ADD error handling if missing
+      4. VERIFY: all characterization tests still pass
+      5. COMMIT: "legacy: stabilize {module} — {N} characterization tests"
+      6. current_module += 1
+    current_phase = "strengthen"
+
+  IF current_phase == "strengthen":
+    1. Replace deprecated dependencies (one at a time, test between each)
+    2. Remove verified dead code
+    3. Extract god classes into focused modules
+    4. Increase test coverage to 60%+
+    5. current_phase = "modernize"
+
+  IF current_phase == "modernize":
+    1. Upgrade major dependencies (one at a time)
+    2. Adopt modern language features (types, async/await)
+    3. Improve DX (linting, formatting, editor config)
+    4. current_phase = "complete"
+
+EXIT when user-defined scope is complete
+```
+
+## Multi-Agent Dispatch
+For large legacy codebases, parallelize assessment and stabilization:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: legacy-assess):
+  - Full codebase health assessment
+  - Scope: entire codebase (read-only analysis)
+  - Output: Assessment report, dependency health, dead code report
+
+Agent 2 (worktree: legacy-tests):
+  - Add characterization tests to critical paths
+  - Scope: top 10 most-called modules
+  - Output: Characterization + golden master tests
+
+Agent 3 (worktree: legacy-deps):
+  - Patch security vulnerabilities, replace deprecated packages
+  - Scope: package.json/requirements.txt/go.mod
+  - Output: Updated dependencies with passing tests
+
+Agent 4 (worktree: legacy-cleanup):
+  - Dead code removal and god class extraction
+  - Scope: files identified by assessment agent
+  - Output: Smaller, focused modules with tests
+
+MERGE ORDER: assess (report only, no merge) → tests → deps → cleanup
+CONFLICT RESOLUTION: tests branch must pass before deps or cleanup merge
+```
+
 ## Flags & Options
 
 | Flag | Description |

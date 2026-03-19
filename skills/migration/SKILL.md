@@ -602,6 +602,131 @@ Shall I create the detailed plan for extracting Notifications first?
 | `--dry-run` | Show migration plan without making changes |
 | `--report` | Generate migration progress report |
 
+## Auto-Detection
+
+```
+ON project scan:
+  IF tsconfig.json exists AND allowJs == true:
+    js_count = count(*.js in src/)
+    ts_count = count(*.ts in src/)
+    IF js_count > 0 AND ts_count > 0:
+      pct = ts_count / (js_count + ts_count) * 100
+      SUGGEST "JS->TS migration in progress ({pct}% converted). Activate /godmode:migration?"
+
+  IF pages/ AND app/ both exist in Next.js project:
+    SUGGEST "Pages Router -> App Router migration detected. Activate /godmode:migration?"
+
+  IF package.json has framework version < latest_major:
+    SUGGEST "Framework upgrade available ({current} -> {latest}). Activate /godmode:migration?"
+
+  IF docker-compose.yml has single large service AND code has module boundaries:
+    SUGGEST "Monolith with module boundaries detected. Activate /godmode:migration for microservice extraction?"
+```
+
+## Iterative Migration Protocol
+
+```
+WHEN executing a strangler fig or incremental migration:
+
+current_component = 0
+total_components = len(components_to_migrate)
+migrated = []
+verification_failures = []
+
+WHILE current_component < total_components:
+  component = components_to_migrate[current_component]
+
+  1. EXTRACT component from old system
+  2. BUILD new implementation
+  3. WRITE tests (or migrate existing tests)
+  4. DEPLOY behind feature flag (traffic: 0%)
+  5. PARALLEL RUN:
+     - Send shadow traffic to new implementation
+     - Compare outputs with old implementation
+     - Target: > 99.9% match rate
+
+  IF match_rate < 99.0%:
+    verification_failures.append(component)
+    LOG "Component {component} match rate {match_rate}% -- NOT READY"
+    FIX discrepancies and re-run parallel comparison
+    CONTINUE  # retry same component
+
+  IF match_rate >= 99.9%:
+    6. RAMP traffic: 5% -> 25% -> 50% -> 100%
+    7. MONITOR error rates and latency at each step
+    8. REMOVE old implementation after 2-week stability period
+    migrated.append(component)
+    current_component += 1
+
+  REPORT "{current_component}/{total_components} components migrated"
+
+FINAL:
+  IF len(verification_failures) > 0:
+    REPORT "Components needing attention: {verification_failures}"
+  REPORT "Migration progress: {len(migrated)}/{total_components}"
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN executing a large-scale migration (e.g., monolith -> microservices, JS -> TS):
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (migration-executor):
+    - Migrate components in priority order
+    - Convert files, update imports, fix type errors
+    - Output: migrated source files
+
+  Agent 2 (test-migrator):
+    - Migrate or rewrite tests for converted components
+    - Add characterization tests for components without coverage
+    - Output: test files matching migrated components
+
+  Agent 3 (verification):
+    - Run parallel comparison between old and new implementations
+    - Track match rates and discrepancies
+    - Output: verification-report.md
+
+  Agent 4 (documentation):
+    - Update migration tracking document
+    - Document breaking changes and rollback procedures
+    - Output: docs/migrations/<name>.md
+
+MERGE:
+  - Verify test agent's tests pass on migration agent's code
+  - Verify verification agent confirms match rates
+  - Combine all outputs into single migration commit
+```
+
+## HARD RULES
+
+```
+1. NEVER start a big-bang rewrite of a system > 50K LOC.
+   Use strangler fig or incremental migration.
+
+2. EVERY migration step MUST have a documented rollback plan.
+   If you cannot describe how to roll back, you are not ready to migrate.
+
+3. NEVER migrate without tests. If the old system lacks tests,
+   add characterization tests BEFORE starting migration.
+
+4. NEVER remove the old system until the new system has been stable
+   in production for at least 2 weeks.
+
+5. ALWAYS use feature flags for cutover. Never switch traffic via deployment.
+   Flags flip in seconds; deployments take minutes.
+
+6. NEVER migrate the most coupled module first.
+   Start with the module that has the fewest dependencies.
+
+7. EVERY data migration MUST verify: row count match, checksum match,
+   spot-check sample, and referential integrity.
+
+8. NEVER skip the parallel run for data-critical migrations.
+   "It works in staging" is not sufficient proof.
+```
+
 ## Anti-Patterns
 
 - **Do NOT start a big bang rewrite of a large system.** Rewrites that exceed 3 months almost always fail. The business cannot pause feature development that long, and requirements drift makes the rewrite a moving target.

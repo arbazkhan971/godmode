@@ -781,6 +781,99 @@ Key management:
 | `--report` | Generate report from last assessment |
 | `--quick` | Top findings only, skip exhaustive checklists |
 
+## Auto-Detection
+
+On activation, automatically detect HIPAA-relevant context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan database schemas for PHI fields: patient_name, ssn, date_of_birth, medical_record_number, diagnosis, lab_results
+2. Check for healthcare integrations: HL7, FHIR, claims processing, EHR system connections
+3. Detect encryption at rest: database TDE settings, field-level encryption, KMS references
+4. Check TLS configuration: scan for HTTP (not HTTPS) internal connections, TLS version settings
+5. Detect audit logging: hipaa_audit_log table, audit middleware, access logging infrastructure
+6. Scan for access control: RBAC tables, role definitions, break-glass procedures
+7. Check for BAA documentation: docs/compliance/ directory, vendor BAA tracking
+8. Detect PHI in logs: scan logging config for fields that might contain PHI (patient_name, ssn in log format)
+9. Check session management: timeout settings, auto-logoff configuration
+10. Detect cloud provider: AWS (check for BAA signing), Azure, GCP — verify HIPAA-eligible services used
+```
+
+## Explicit Loop Protocol
+
+When assessing HIPAA compliance across multiple system components:
+
+```
+HIPAA ASSESSMENT LOOP:
+current_iteration = 0
+components = [database, api, cache, file_storage, integrations, ...]  // system components handling ePHI
+
+WHILE current_iteration < len(components) AND NOT user_says_stop:
+  1. SELECT next system component
+  2. IDENTIFY PHI: scan for any of the 18 HIPAA identifiers
+  3. CHECK encryption at rest: verify AES-256 or equivalent on all ePHI storage
+  4. CHECK encryption in transit: verify TLS 1.2+ on all ePHI transmission channels
+  5. CHECK access controls: unique user IDs, RBAC, minimum necessary enforcement
+  6. CHECK audit logging: all ePHI access logged (read, write, delete, export, transmit)
+  7. CHECK session management: automatic logoff, session timeout configured
+  8. CLASSIFY findings: CRITICAL (OCR enforcement risk), HIGH (30-day), MEDIUM (90-day), LOW (best practice)
+  9. current_iteration += 1
+  10. REPORT: "Component <N>/<total>: <name> — <finding_count> findings (<critical> critical)"
+
+ON COMPLETION:
+  CHECK BAA coverage for all vendors with ePHI access
+  VERIFY breach notification procedures documented and tested
+  COMPILE full compliance report with HIPAA section references
+  REPORT: "<N> components assessed, <M> findings total, <K> critical, BAA coverage: <X>/<Y>"
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive HIPAA compliance implementation, dispatch parallel agents:
+
+```
+PARALLEL HIPAA AGENTS:
+When implementing HIPAA compliance across multiple safeguard categories:
+
+Agent 1 (worktree: hipaa-technical):
+  - Implement encryption at rest (field-level, TDE, KMS integration)
+  - Configure encryption in transit (TLS on all channels, mTLS for service-to-service)
+  - Build access control system (RBAC, minimum necessary, break-glass)
+  - Implement automatic session logoff
+
+Agent 2 (worktree: hipaa-audit):
+  - Implement immutable audit logging system (all ePHI access events)
+  - Build tamper-evident log chaining (cryptographic hashing)
+  - Create audit log review procedures and alerting
+  - Set up 6-year retention policy and archival
+
+Agent 3 (worktree: hipaa-governance):
+  - Build PHI registry and data flow map
+  - Create BAA tracking system with vendor inventory
+  - Implement breach notification procedures and tracking
+  - Build de-identification pipeline (Safe Harbor method)
+
+MERGE STRATEGY: Technical safeguards merge first (audit depends on access control).
+  Audit system merges second. Governance merges last.
+  Final: run full HIPAA assessment to verify all safeguards in place.
+```
+
+## Hard Rules
+
+```
+HARD RULES — HIPAA:
+1. ALWAYS cite the specific HIPAA section for every finding (e.g., "section 164.312(a)(2)(iv)" not "encryption missing").
+2. ALWAYS check ALL 18 HIPAA identifiers in the PHI identification step. Partial checks miss violations.
+3. NEVER store PHI in plaintext — not in databases, caches, logs, error messages, URLs, or temporary files.
+4. NEVER use shared accounts for ePHI access. Every person must have a unique identifier (section 164.312(a)(2)(i)).
+5. ALWAYS enforce minimum necessary standard. Over-broad access is a violation even if the user is authorized.
+6. ALWAYS retain audit logs for minimum 6 years. Immutable, tamper-evident, encrypted.
+7. NEVER log actual PHI content in audit trails. Log patient_id references, not patient names or diagnoses.
+8. ALWAYS maintain BAA coverage for EVERY vendor that touches PHI. No exceptions. Missing BAAs are top OCR findings.
+9. ALWAYS implement breach notification procedures BEFORE you need them. 60-day deadline is non-negotiable.
+10. NEVER provide legal advice. Identify technical gaps and recommend consulting a qualified healthcare compliance attorney.
+```
+
 ## Anti-Patterns
 
 - **Do NOT assume "addressable" means "optional."** HIPAA "addressable" specifications mean you must implement the control OR document an equivalent alternative. For encryption, there is no practical equivalent. Just encrypt.

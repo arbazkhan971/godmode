@@ -710,6 +710,17 @@ Run with: go test -update ./... to regenerate golden files
 | `--audit` | Audit existing snapshots for rot, size, and staleness |
 | `--stabilize` | Focus on stabilizing non-deterministic output |
 
+## HARD RULES
+
+1. **NEVER blindly run `--updateSnapshot`.** Every snapshot update must be preceded by reading and understanding the diff. Blind updates are equivalent to deleting the test.
+2. **NEVER create snapshots larger than 500 lines.** Break large outputs into focused sub-snapshots or switch to targeted assertions.
+3. **NEVER snapshot non-deterministic output without stabilization.** Strip timestamps, UUIDs, and random tokens before snapshotting.
+4. **NEVER commit `.received` files.** They are temporary comparison artifacts and must be gitignored.
+5. **ALWAYS use inline snapshots for outputs under 20 lines.** File-based snapshots for small outputs hide the expected value from reviewers.
+6. **ALWAYS name file-based snapshots descriptively.** `toMatchSnapshot('user profile with admin badge')` not `toMatchSnapshot()`.
+7. **ALWAYS run tests with `--ci` flag in CI** to detect obsolete snapshots.
+8. **NEVER use full component tree snapshots.** They break on every minor change. Snapshot only the meaningful structure.
+
 ## Anti-Patterns
 
 - **Do NOT snapshot everything.** Snapshot tests are for complex output verification. A simple `expect(result).toBe(42)` is clearer than a snapshot of `42`.

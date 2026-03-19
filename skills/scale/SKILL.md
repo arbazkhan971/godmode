@@ -774,6 +774,70 @@ RATE LIMITING TIERS:
 | `--capacity` | Capacity planning with growth projections |
 | `--cost` | Cost analysis for scaling options |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check infrastructure: docker-compose.yml, k8s manifests, terraform files, serverless.yml
+2. Detect database: PostgreSQL, MySQL, MongoDB, DynamoDB configs and connection strings
+3. Check for caching: Redis, Memcached, CDN configs (CloudFront, Fastly, Cloudflare)
+4. Detect load balancer: nginx.conf, ALB/NLB configs, HAProxy
+5. Check for auto-scaling: HPA (k8s), ASG (AWS), Cloud Run scaling configs
+6. Detect message queues: RabbitMQ, SQS, Kafka, Redis Streams configs
+7. Check for connection pooling: pgbouncer, ProxySQL, client-side pool configs
+8. Scan for bottleneck indicators: N+1 queries, missing indexes, synchronous I/O in hot paths
+```
+
+## Iterative Scaling Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+scaling_tasks = [list of bottlenecks/components to scale]
+
+WHILE scaling_tasks is not empty AND current_iteration < max_iterations:
+    task = scaling_tasks.pop(0)
+    1. Measure current performance: identify the bottleneck (CPU, memory, I/O, network, DB)
+    2. Choose scaling strategy: horizontal (add instances) vs vertical (bigger instance) vs optimize
+    3. Implement the change (add replicas, configure auto-scaling, add caching, optimize query)
+    4. Load test: simulate 2x current peak traffic
+    5. Measure improvement: compare latency p50/p95/p99, throughput, error rate
+    6. Verify cost impact: calculate $/request or $/user at new scale
+    7. IF improvement < 20% → wrong bottleneck, re-measure and try different approach
+    8. IF improvement >= 20% → commit: "scale: <component> — <strategy> (<improvement>)"
+    9. current_iteration += 1
+
+POST-LOOP: Capacity plan for 6-month and 12-month projected growth
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "scale-app": application-level scaling (stateless services, connection pools, caching)
+  Agent 2 — "scale-data": database scaling (read replicas, sharding, indexes, query optimization)
+  Agent 3 — "scale-infra": infrastructure scaling (auto-scaling, load balancers, CDN, queue workers)
+
+MERGE ORDER: data → app → infra (data changes may affect app config, infra wraps both)
+CONFLICT ZONES: connection strings, environment configs (define shared config first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER scale without measuring the bottleneck first. Profile before provisioning.
+2. NEVER store state in application instances. Sessions, uploads, caches = externalize all.
+3. EVERY auto-scaling policy must have a cooldown period. No flapping.
+4. NEVER set connection pool size to maximum. Calculate: pool_size * instances <= DB max_connections.
+5. ALWAYS load test at 2x projected peak before relying on a scaling plan.
+6. EVERY scaling change must include a cost estimate. 10x instances = 10x cost.
+7. NEVER scale a service that has an unoptimized hot path. Optimize first, scale second.
+8. Rate limits MUST include clear headers (X-RateLimit-*, Retry-After) and documentation.
+9. EVERY database read replica must handle stale reads correctly. No reading your own writes from replica.
+10. Horizontal scaling MUST be tested with rolling deployments. No big-bang instance replacement.
+```
+
 ## Anti-Patterns
 
 - **Do NOT scale without measuring.** "We need more servers" without knowing the bottleneck leads to wasted money. Profile first: CPU, memory, I/O, network, database.

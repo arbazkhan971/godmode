@@ -684,6 +684,41 @@ Tests: MockMvc with jwt() post-processor
 | `--audit` | Audit existing Spring Boot app for anti-patterns |
 | `--upgrade <version>` | Upgrade Spring Boot version with migration guide |
 
+## HARD RULES
+
+1. **ALWAYS set `spring.jpa.open-in-view: false`.** OSIV is enabled by default and silently causes N+1 queries. Disable it in every project, no exceptions.
+2. **ALWAYS use `ddl-auto: validate` in production.** Use Flyway or Liquibase for schema migrations. Never `create`, `update`, or `create-drop` in production.
+3. **ALWAYS use constructor injection.** Never `@Autowired` on fields. Constructor injection makes dependencies explicit and testing straightforward.
+4. **NEVER return JPA entities from controllers.** Use DTOs or projections. Entities carry persistence state that must not leak to the API layer.
+5. **NEVER use `WebSecurityConfigurerAdapter`.** It is removed in Spring Security 6. Use `SecurityFilterChain` beans with lambda DSL.
+6. **ALWAYS use `FetchType.LAZY`** for `@ManyToOne` and `@OneToMany` associations. Use `JOIN FETCH` in queries when associated data is needed.
+7. **ALWAYS test against the production database type.** Use TestContainers, not H2 compatibility mode.
+8. **NEVER expose actuator endpoints (`/env`, `/heapdump`, `/beans`)** in production without authentication. Restrict to `health`, `info`, `metrics`, `prometheus`.
+
+## Auto-Detection
+
+On activation, detect the Spring Boot project context:
+
+```bash
+# Detect Spring Boot version and starters
+cat pom.xml build.gradle build.gradle.kts 2>/dev/null | grep -E "spring-boot|springBoot"
+
+# Detect language (Java vs Kotlin)
+find src/ -name "*.kt" -o -name "*.java" 2>/dev/null | head -5
+
+# Detect existing configuration
+ls src/main/resources/application*.yml src/main/resources/application*.properties 2>/dev/null
+
+# Detect security configuration
+grep -rl "SecurityFilterChain\|WebSecurityConfigurerAdapter\|EnableWebSecurity" src/ 2>/dev/null
+
+# Detect test framework
+grep -rl "TestContainers\|@SpringBootTest\|@WebMvcTest\|@DataJpaTest" src/ 2>/dev/null | head -5
+
+# Detect migration tool
+ls src/main/resources/db/migration/* src/main/resources/db/changelog/* 2>/dev/null
+```
+
 ## Anti-Patterns
 
 - **Do NOT leave OSIV enabled.** `spring.jpa.open-in-view: true` is the default and it is wrong. It silently loads data in the view layer, hiding N+1 queries.

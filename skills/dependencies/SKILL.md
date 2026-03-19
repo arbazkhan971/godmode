@@ -938,6 +938,62 @@ Commit: "security: fix critical CVE-2024-XXXXX in xml2js (prototype pollution)"
 | `--socket` | Run socket.dev supply chain analysis |
 | `--ci` | CI-friendly output (exit code 1 on issues) |
 
+## HARD RULES
+
+1. **NEVER skip Renovate or Dependabot setup.** Manual dependency updates fall behind. Within 6 months, projects without automation accumulate 50+ outdated packages and miss critical security patches.
+2. **NEVER automerge major version updates.** Major versions contain breaking changes by definition. Always require human review.
+3. **NEVER use `npm audit fix --force` in CI.** Force-fixing can introduce breaking changes by jumping major versions. Only run interactive fixes locally.
+4. **NEVER skip lock file integrity checks in CI.** Lock files can be manipulated to point to malicious registries. Use lockfile-lint to validate.
+5. **NEVER accept `UNLICENSED` dependencies.** No license means all rights reserved. Replace the package or get explicit permission.
+6. **NEVER mix Renovate and Dependabot.** Running both creates duplicate PRs, merge conflicts, and confusion. Choose one.
+7. **ALWAYS verify transitive vulnerabilities.** "It's not our direct dependency" is not a valid security posture. Use overrides to patch.
+8. **ALWAYS audit install scripts for new dependencies.** Packages can execute arbitrary code during `npm install`.
+
+## Auto-Detection
+
+On activation, detect the dependency management context:
+
+```bash
+# Detect package ecosystems
+ls package.json package-lock.json yarn.lock pnpm-lock.yaml 2>/dev/null  # JS
+ls requirements.txt Pipfile poetry.lock pyproject.toml 2>/dev/null  # Python
+ls Gemfile Gemfile.lock 2>/dev/null  # Ruby
+ls go.mod go.sum 2>/dev/null  # Go
+ls Cargo.toml Cargo.lock 2>/dev/null  # Rust
+
+# Detect existing automation
+ls .github/dependabot.yml renovate.json renovate.json5 .renovaterc* 2>/dev/null
+
+# Detect vulnerability scanning
+grep -r "snyk\|socket\|audit\|trivy\|grype" .github/ package.json 2>/dev/null
+
+# Count outdated dependencies
+npm outdated 2>/dev/null | tail -n +2 | wc -l
+```
+
+## Iteration Protocol
+
+For large-scale dependency update campaigns:
+
+```
+current_batch = 0
+batches = [critical_security, major_updates, minor_updates, dev_dependencies]
+
+WHILE current_batch < len(batches):
+  batch = batches[current_batch]
+  1. Identify all updates in this batch category
+  2. Apply updates (one PR per major, grouped for minor/patch)
+  3. Run full test suite after each update
+  4. Verify no breaking changes or vulnerability regressions
+  current_batch += 1
+  Report: "Dependency batch {current_batch}/{len(batches)}: {batch} -- {updated_count} packages updated, {remaining} remaining"
+
+AFTER all batches:
+  Generate SBOM
+  Run final vulnerability scan
+  Report overall health improvement
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip Renovate/Dependabot setup.** Manual dependency updates fall behind. Within 6 months, projects without automation accumulate 50+ outdated packages and miss critical security patches.

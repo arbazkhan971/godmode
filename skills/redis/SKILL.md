@@ -991,6 +991,70 @@ RATE LIMITER:
 | `--diagnose` | Run full Redis diagnostic (memory, slowlog, info) |
 | `--persistence` | Configure RDB/AOF persistence |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check package.json/requirements.txt/go.mod for redis client (ioredis, redis, redis-py, go-redis)
+2. Check docker-compose.yml / docker-compose.yaml for redis service definition
+3. Detect Redis connection config: grep for REDIS_URL, REDIS_HOST, redis://, rediss://
+4. Check for existing caching layer: grep for cache.get, cache.set, cacheManager
+5. Detect usage patterns: pub/sub (subscribe, publish), streams (XADD, XREAD), queues (BRPOP, LPUSH)
+6. Check for Redis Sentinel/Cluster config: sentinel.conf, cluster-enabled
+7. Scan for rate limiting middleware: grep for rateLimit, slidingWindow, tokenBucket
+```
+
+## Iterative Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+redis_tasks = [list of Redis features to implement/optimize]
+
+WHILE redis_tasks is not empty AND current_iteration < max_iterations:
+    task = redis_tasks.pop(0)
+    1. Analyze current data access pattern for this feature
+    2. Choose optimal Redis data structure (String, Hash, Set, Sorted Set, Stream, etc.)
+    3. Implement with proper key naming: {service}:{entity}:{id}:{field}
+    4. Set TTL on every cache key (no immortal keys)
+    5. Add error handling for Redis unavailability (degrade gracefully)
+    6. Test: verify data correctness, TTL expiry, memory usage
+    7. Benchmark: redis-benchmark or custom load test for this pattern
+    8. IF performance target missed → optimize (pipeline, Lua script, structure change)
+    9. IF passing → commit: "redis: implement <feature> (<data structure>)"
+    10. current_iteration += 1
+
+POST-LOOP: Run INFO memory, check fragmentation ratio, verify maxmemory policy
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "redis-cache": caching layer, invalidation, TTL policies
+  Agent 2 — "redis-data": queues, pub/sub, streams, rate limiting
+  Agent 3 — "redis-ops": Sentinel/Cluster config, monitoring, persistence settings
+
+MERGE ORDER: ops (infra) → data (core) → cache (application layer)
+CONFLICT ZONES: connection config, key namespace conventions (agree on prefix schema first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER use KEYS command in production. Use SCAN with cursor.
+2. NEVER store values > 100KB. Compress or split.
+3. NEVER create a key without a TTL unless it is permanent reference data.
+4. NEVER use SELECT (multi-database). Use key prefixes for namespacing.
+5. NEVER use Pub/Sub for reliable messaging. Use Streams with consumer groups.
+6. NEVER connect without a connection pool. One connection per request kills throughput.
+7. EVERY Lua script must be idempotent. Scripts may be retried on MOVED errors in Cluster mode.
+8. EVERY key must follow the naming convention: {service}:{entity}:{id}[:{field}].
+9. NEVER run O(N) commands on large collections without SCAN or pagination.
+10. ALWAYS set maxmemory and maxmemory-policy. An unbounded Redis is a ticking bomb.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use KEYS in production.** KEYS * blocks the entire Redis instance (single-threaded). Use SCAN with a cursor and COUNT hint.

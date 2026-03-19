@@ -608,6 +608,17 @@ Estimated time saved: 15-20 minutes per day
 | `--prompt` | Configure shell prompt (starship, p10k) |
 | `--completions` | Set up tab completions for all tools |
 
+## HARD RULES
+
+1. **ALWAYS start shell scripts with `set -euo pipefail`.** This catches errors that would otherwise silently corrupt data.
+2. **ALWAYS quote variables.** `rm -rf $DIR/*` with an empty `$DIR` becomes `rm -rf /*`. Always quote: `"${DIR:?}/"*`.
+3. **NEVER use backticks for command substitution.** Use `$(command)` instead. Backticks don't nest and are deprecated.
+4. **NEVER use `eval` with user input.** `eval` executes arbitrary code. It is almost never necessary and is a security vulnerability.
+5. **NEVER alias commands that change destructive behavior.** `alias rm='rm -rf'` is dangerous. Use `-i` for safety, never `-rf`.
+6. **ALWAYS run ShellCheck on every script before committing.** Every SC warning has a documented rationale.
+7. **ALWAYS use version-controlled dotfile management.** Manual syncing across machines leads to drift and lost configurations.
+8. **NEVER accumulate shell history without search.** Install fzf or atuin for fuzzy history search.
+
 ## Anti-Patterns
 
 - **Do NOT write shell scripts without strict mode.** `set -euo pipefail` catches errors that would otherwise silently corrupt data or produce wrong results.

@@ -587,6 +587,96 @@ Avoid: Unreal (overkill for puzzle game, steep solo learning curve)
 | `--multiplayer` | Multiplayer architecture guidance |
 | `--mobile` | Mobile game optimization focus |
 
+## Auto-Detection
+
+On activation, automatically detect the game project context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect engine: Unity (*.unity, *.cs, ProjectSettings/), Unreal (*.uproject, *.cpp), Godot (project.godot, *.gd), Bevy (Cargo.toml with bevy dep)
+2. Detect web framework: Phaser (phaser in package.json), Three.js, PixiJS, Babylon.js, PlayCanvas, Excalibur
+3. Check rendering type: 2D (sprite assets, tilemap files) vs 3D (model files, shader assets)
+4. Detect physics: Box2D, Matter.js, Rapier, PhysX, custom collision code
+5. Scan for asset pipeline: TexturePacker configs, Aseprite files, Blender exports, atlases
+6. Check for ECS patterns: archetype queries, component structs, system functions
+7. Detect multiplayer: networking libraries, WebSocket connections, state sync code
+8. Identify build pipeline: webpack/vite for web, Xcode/Gradle for mobile, engine build settings
+9. Check for performance tooling: profiler configs, frame budget constants, LOD settings
+10. Detect platform targets from build configs or engine settings
+```
+
+## Explicit Loop Protocol
+
+When implementing multiple game systems iteratively:
+
+```
+GAME SYSTEM BUILD LOOP:
+current_iteration = 0
+systems = [input, physics, camera, audio, save_load, UI, ...]  // from analysis
+
+WHILE current_iteration < len(systems) AND NOT user_says_stop:
+  1. SELECT next system by priority (core loop systems first)
+  2. DESIGN system architecture (ECS system, component, or manager pattern)
+  3. IMPLEMENT system with fixed timestep awareness (physics) or variable (rendering)
+  4. INTEGRATE with existing systems (event bus connections, component dependencies)
+  5. TEST system in isolation AND in game loop context
+  6. PROFILE: measure frame time contribution, compare against budget
+  7. IF over budget: OPTIMIZE before proceeding (object pooling, spatial partitioning, etc.)
+  8. current_iteration += 1
+  9. REPORT: "System <N>/<total>: <name> — <frame_time>ms / <budget>ms"
+
+ON COMPLETION:
+  RUN full frame timing analysis (Step 7)
+  REPORT: "<N> systems, total frame time: <X>ms / <budget>ms, <M> over budget"
+```
+
+## Multi-Agent Dispatch
+
+For large game projects, dispatch parallel agents per domain:
+
+```
+PARALLEL GAMEDEV AGENTS:
+When building multiple game systems simultaneously:
+
+Agent 1 (worktree: game-core):
+  - Implement core game loop with fixed timestep
+  - Build input system (rebindable, multi-device)
+  - Implement entity/component management (ECS or component-based)
+  - Set up event/message bus for cross-system communication
+
+Agent 2 (worktree: game-rendering):
+  - Set up rendering pipeline (sprites, meshes, shaders)
+  - Implement camera system (follow, shake, zoom)
+  - Build particle system with object pooling
+  - Optimize draw calls (atlasing, batching, culling)
+
+Agent 3 (worktree: game-gameplay):
+  - Implement physics and collision detection
+  - Build AI systems (state machines, behavior trees)
+  - Implement save/load system with versioned serialization
+  - Create UI system (menus, HUD, inventory)
+
+MERGE STRATEGY: Core merges first (other systems depend on game loop and events).
+  Rendering and gameplay merge independently (minimal overlap).
+  Final: run full frame timing profiler on target hardware.
+```
+
+## Hard Rules
+
+```
+HARD RULES — GAMEDEV:
+1. ALWAYS use fixed timestep for physics and game logic. Variable timestep = frame-rate-dependent gameplay.
+2. NEVER allocate in the game loop. new Bullet(), new Array(), closures in loops all cause GC stutter. Pool everything.
+3. ALWAYS cap frame time to prevent spiral of death (max 250ms per frame).
+4. NEVER put game logic in the render function. Simulation must be independent of frame rate.
+5. ALWAYS use collision layers and masks. Checking every entity against every other is O(n^2).
+6. NEVER hardcode input bindings. Use action mapping so controls are rebindable and multi-device.
+7. ALWAYS profile on minimum-spec target hardware, not just development machine.
+8. ALWAYS set frame time budgets per system BEFORE building. Measure against budget continuously.
+9. NEVER skip object pooling for anything created at runtime (bullets, particles, enemies, VFX, audio sources).
+10. ALWAYS separate game state from rendering state. This enables headless servers, replays, and deterministic lockstep.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use variable timestep for physics.** `position += velocity * deltaTime` creates frame-rate-dependent behavior. A player running at 30 FPS will jump differently than one at 60 FPS. Use fixed timestep with interpolation.

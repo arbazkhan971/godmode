@@ -572,6 +572,139 @@ Investigate the failure with /godmode:debug, then fix and re-apply.
 | `--check-compat` | Run backward compatibility check only |
 | `--lock-estimate` | Estimate lock duration for pending migrations |
 
+## Auto-Detection
+
+```
+ON file_change in models/ OR entities/ OR schema:
+  detected_tool = detect_migration_tool()  # See Step 1 detection rules
+  IF detected_tool != null:
+    diff = compute_schema_diff(detected_tool)
+    IF diff.has_changes:
+      SUGGEST "Schema change detected in {changed_file}. Run /godmode:migrate to generate migration."
+
+ON startup:
+  IF prisma/schema.prisma exists:
+    pending = run("npx prisma migrate status")
+    IF pending.has_unapplied:
+      WARN "Prisma has {N} unapplied migrations. Run /godmode:migrate --apply."
+
+  IF alembic/ exists:
+    heads = run("alembic heads")
+    IF heads.count > 1:
+      WARN "Alembic has multiple heads (branch conflict). Run /godmode:migrate --status."
+
+  IF db/migrate/ exists AND Gemfile has 'rails':
+    pending = run("bin/rails db:migrate:status")
+    IF pending.has_down:
+      WARN "Rails has pending migrations. Run /godmode:migrate --apply."
+```
+
+## Iterative Migration Protocol
+
+```
+WHEN applying a batch of migrations OR multi-phase schema change:
+
+current_migration = 0
+total_migrations = len(pending_migrations)
+applied = []
+failed = []
+
+WHILE current_migration < total_migrations:
+  migration = pending_migrations[current_migration]
+
+  1. VALIDATE migration syntax (tool-specific validation)
+  2. ASSESS risk level (SAFE/CAUTION/DANGEROUS/BREAKING)
+  3. ESTIMATE lock duration for affected tables
+  4. IF risk >= DANGEROUS:
+       REQUIRE explicit user confirmation
+       IF expand-contract needed: split into phases
+
+  5. APPLY migration UP
+  6. VERIFY:
+     - Schema matches expected state
+     - Row counts preserved
+     - Application can start
+
+  IF verification_fails:
+    ROLLBACK migration DOWN
+    failed.append(migration)
+    HALT "Migration {migration.name} failed verification. Rolled back."
+    BREAK
+  ELSE:
+    applied.append(migration)
+    current_migration += 1
+
+  REPORT "{current_migration}/{total_migrations} migrations applied"
+
+FINAL: Report all applied migrations and any failures
+```
+
+## Multi-Agent Dispatch
+
+```
+WHEN performing a large-scale schema migration (multiple tables, expand-contract):
+
+DISPATCH parallel agents in worktrees:
+
+  Agent 1 (migration-generator):
+    - Generate migration files for all schema changes
+    - Ensure proper ordering (tables before foreign keys)
+    - Include UP and DOWN for every migration
+    - Output: migration files in tool-specific format
+
+  Agent 2 (validation):
+    - Test each migration: UP -> verify -> DOWN -> verify -> UP
+    - Check data preservation (row counts, sample data)
+    - Estimate lock duration for each DDL operation
+    - Output: validation report per migration
+
+  Agent 3 (application-code):
+    - Update model/entity files to match new schema
+    - Update queries and repositories for schema changes
+    - Handle dual-read/dual-write for expand-contract phases
+    - Output: updated application code
+
+  Agent 4 (seed-and-fixture):
+    - Update seed data for new schema
+    - Update test fixtures for new columns/tables
+    - Verify test suite passes with migrated schema
+    - Output: updated seeds + fixtures + test results
+
+MERGE:
+  - Verify migration files match application code changes
+  - Verify seeds and fixtures work with migrated schema
+  - Verify all validation checks passed
+  - Run full test suite
+```
+
+## HARD RULES
+
+```
+1. NEVER generate a migration without first detecting the project's migration tool.
+   Wrong tool = wrong syntax = broken migration.
+
+2. EVERY migration MUST have a matching DOWN/rollback. If a migration cannot
+   be rolled back, document this explicitly and require user confirmation.
+
+3. NEVER combine unrelated schema changes in one migration file.
+   One concern per migration. Independent rollbacks require independent files.
+
+4. NEVER apply a migration to production without testing rollback in dev/staging.
+   UP then DOWN then UP must succeed cleanly.
+
+5. ALWAYS check lock duration before applying DDL on tables > 100K rows.
+   Use CONCURRENTLY or online DDL tools for large tables.
+
+6. NEVER add a NOT NULL column without a DEFAULT to a table with existing rows.
+   This will fail on every database engine.
+
+7. NEVER rename or drop a column without the expand-contract pattern
+   if the application is actively reading/writing that column.
+
+8. ALWAYS preserve existing data. A migration that loses data without
+   explicit user confirmation is a production incident.
+```
+
 ## Anti-Patterns
 
 - **Do NOT generate migrations without detecting the tool first.** Generating a Prisma migration in a Django project is worse than doing nothing.

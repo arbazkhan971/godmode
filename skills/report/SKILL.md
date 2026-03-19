@@ -527,6 +527,70 @@ Report: docs/reports/code-health-2025-03-14.md
 | `--data-only` | Collect and output raw data without generating report |
 | `--ci` | CI-friendly output (exit code, machine-readable summary) |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for git history: git log availability, branch structure, tag history
+2. Detect CI/CD: .github/workflows, .gitlab-ci.yml (build metrics, deploy frequency)
+3. Check for test coverage reports: coverage/, .nyc_output/, htmlcov/
+4. Detect project management: look for .jira, linear, shortcut references in commits
+5. Check for existing reports: docs/reports/, reports/, find *.report.md
+6. Detect code quality tools: eslint, sonarqube, codeclimate configs
+7. Check for performance benchmarks: benchmark/, __benchmarks__/, lighthouse configs
+8. Detect dependency audit: npm audit, pip audit, go vuln check configs
+```
+
+## Iterative Report Generation Loop
+
+```
+current_iteration = 0
+max_iterations = 6
+report_sections = [data_collection, analysis, visualization, narrative, review, distribute]
+
+WHILE report_sections is not empty AND current_iteration < max_iterations:
+    section = report_sections.pop(0)
+    1. IF data_collection: gather raw metrics from all sources (git, CI, coverage, PM tool)
+    2. IF analysis: compute trends, comparisons, anomalies, correlations
+    3. IF visualization: generate charts/tables for key metrics (trend lines, sparklines)
+    4. IF narrative: write executive summary + section interpretations
+    5. IF review: spot-check 3+ metrics against source data for accuracy
+    6. IF distribute: output in requested format, send to configured channels
+    7. Validate: every metric has context (trend, target, comparison)
+    8. IF validation fails → fix data or add missing context
+    9. current_iteration += 1
+
+POST-LOOP: Verify report renders correctly in all requested formats
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "report-data": data collection, metric computation, trend analysis
+  Agent 2 — "report-content": narrative writing, executive summary, recommendations
+  Agent 3 — "report-format": template rendering, chart generation, multi-format output
+
+MERGE ORDER: data → content → format (content needs data, format needs content)
+CONFLICT ZONES: metric definitions, report template structure
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. EVERY metric must include trend (up/down/stable), target, and period comparison.
+2. NEVER present a metric without its data source. Readers must be able to verify.
+3. EVERY report starts with an executive summary: what happened, good or bad, what to do.
+4. NEVER hardcode date ranges. All reports are parameterized by time period.
+5. ALWAYS spot-check at least 3 metrics against raw source data before publishing.
+6. NEVER include raw data dumps. Summarize, interpret, and link to raw data.
+7. EVERY report must have a consistent template. No ad-hoc formatting.
+8. NEVER generate a report with no audience or no action items. Reports exist to drive decisions.
+9. Automated reports MUST have a human review step before distribution.
+10. EVERY chart/table must have a title, axis labels, and units. No unlabeled visuals.
+```
+
 ## Anti-Patterns
 
 - **Do NOT generate reports without verifying data accuracy.** Spot-check at least 3 metrics against source data. Wrong numbers destroy trust.

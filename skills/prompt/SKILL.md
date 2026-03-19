@@ -418,6 +418,93 @@ Next steps:
 
 Commit: `"prompt: <task> — v<version>, <pattern>, accuracy=<val>, <N> test cases"`
 
+## Explicit Loop Protocol
+
+For iterative prompt optimization:
+
+```
+PROMPT OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 5
+baseline_accuracy = evaluate(current_prompt, golden_set)
+
+WHILE current_iteration < max_iterations AND accuracy < target:
+  current_iteration += 1
+
+  1. DIAGNOSE failure modes:
+     - Run evaluation suite on current prompt
+     - Categorize failures: format errors, wrong answers, hallucinations, refusals
+     - Identify the single highest-frequency failure category
+
+  2. GENERATE variant:
+     - Apply ONE change targeting the top failure category:
+       - Add/modify example (if format errors)
+       - Add chain-of-thought (if reasoning errors)
+       - Add constraint (if hallucination)
+       - Adjust temperature (if consistency issues)
+
+  3. EVALUATE variant:
+     - Run same golden set against new prompt
+     - Record: { iteration, change, accuracy, format_compliance, latency, cost }
+
+  4. COMPARE:
+     - IF accuracy improved AND no regression on other metrics: ACCEPT variant
+     - IF accuracy regressed: REJECT variant, try different change
+     - IF accuracy plateaued for 2 iterations: STOP (diminishing returns)
+
+  OUTPUT:
+  Version | Change | Accuracy | Format | Latency | Cost | Status
+  v1.0    | base   | 72%      | 95%    | 800ms   | $0.01| baseline
+  v1.1    | +3 ex  | 81%      | 100%   | 1100ms  | $0.015| accepted
+  ...
+```
+
+## Multi-Agent Dispatch
+
+For large prompt engineering projects with multiple prompts:
+
+```
+PARALLEL AGENTS (when designing multiple prompts):
+Agent 1 — Prompt Design (worktree: prompt-design)
+  - Design system prompts and few-shot examples
+  - Select patterns (CoT, ReAct, structured output)
+
+Agent 2 — Test Suite (worktree: prompt-tests)
+  - Create golden set test cases
+  - Create edge case and adversarial tests
+  - Create injection resistance tests
+
+Agent 3 — Evaluation Pipeline (worktree: prompt-eval)
+  - Build evaluation harness (RAGAS, DeepEval, or custom)
+  - Run evaluations and generate metrics
+  - Compare prompt versions
+
+Agent 4 — Security Hardening (worktree: prompt-security)
+  - Audit for prompt injection vulnerabilities
+  - Design input sanitization and output validation
+  - Build monitoring and alerting for injection attempts
+
+MERGE ORDER: Agent 1 first (prompts), then Agent 2 (tests), then Agent 3 + 4 in parallel.
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER ship a prompt without running the golden set evaluation.
+2. NEVER hardcode prompts inline in application code — externalize to versioned files.
+3. NEVER change more than ONE variable per optimization iteration.
+4. NEVER ignore prompt injection if user input flows into the prompt.
+5. ALWAYS version prompts with semver and track metrics per version.
+6. ALWAYS include at least 2 few-shot examples for non-trivial tasks.
+7. ALWAYS validate structured output against the declared schema.
+8. ALWAYS test on the TARGET model — cross-model prompt transfer is unreliable.
+9. NEVER set temperature to 0 for creative/diverse generation tasks.
+10. NEVER claim "this prompt is better" without statistical significance.
+11. ALWAYS place the most critical instructions at the START and END of the system prompt.
+12. NEVER trust user input as instructions — always delimit with explicit tags.
+```
+
 ## Key Behaviors
 
 1. **Test before shipping.** No prompt goes to production without a test suite. "It looks right" is not evidence. Run the golden set.

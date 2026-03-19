@@ -728,6 +728,38 @@ Generated:
 | `--test` | Generate WASM test suite |
 | `--size` | Binary size analysis and optimization |
 
+## HARD RULES
+
+1. **NEVER use WASM for DOM manipulation.** Every DOM call goes through JS interop, which is slower than native JS. Use WASM for computation, JS for DOM.
+2. **NEVER call WASM per-element in a loop.** Each JS-WASM boundary crossing has overhead. Pass the entire array and process in one call.
+3. **NEVER block the main thread with WASM.** Use Web Workers for any WASM operation that takes more than 16ms.
+4. **NEVER hold TypedArray references across memory growth.** When WASM memory grows, all views are invalidated. Re-create views after any call that might trigger growth.
+5. **NEVER use the standard Go compiler for browser WASM.** Standard Go produces 2-10 MB binaries. Use TinyGo for dramatically smaller output.
+6. **ALWAYS set a binary size budget** and measure with twiggy. A 5 MB WASM binary defeats the purpose.
+7. **ALWAYS test core logic natively first** (cargo test, go test), then verify WASM integration separately.
+8. **NEVER assume WASM is always faster.** WASM wins for CPU-bound computation. For small operations or I/O-bound work, JS is often faster due to lower interop overhead.
+
+## Auto-Detection
+
+On activation, detect the WASM project context:
+
+```bash
+# Detect WASM toolchain
+which wasm-pack wasm-opt wasm-bindgen 2>/dev/null
+ls Cargo.toml 2>/dev/null && grep "wasm" Cargo.toml 2>/dev/null
+
+# Detect source language
+ls Cargo.toml 2>/dev/null  # Rust
+ls go.mod 2>/dev/null && grep "syscall/js\|wasi" go.mod 2>/dev/null  # Go
+ls CMakeLists.txt Makefile 2>/dev/null && grep "emscripten\|wasm" CMakeLists.txt Makefile 2>/dev/null  # C/C++
+
+# Detect existing WASM binaries
+find . -name "*.wasm" 2>/dev/null | head -5
+
+# Detect JS bindings
+grep -rl "wasm-bindgen\|wasm_bindgen\|WebAssembly\|instantiateStreaming" src/ 2>/dev/null | head -5
+```
+
 ## Anti-Patterns
 
 - **Do NOT use WASM for DOM manipulation.** WASM cannot access the DOM directly. Every DOM call goes through JS interop, which is slower than native JS. Use WASM for computation, JS for DOM.

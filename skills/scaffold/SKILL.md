@@ -308,6 +308,69 @@ project-name/
 | `--from <template>` | Use a specific existing file as the template |
 | `--no-tests` | Skip test file generation (not recommended) |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check package.json for framework: next, express, fastify, nestjs, remix, sveltekit
+2. Detect language: tsconfig.json (TypeScript), jsconfig.json (JavaScript), pyproject.toml, go.mod
+3. Detect project structure: src/ layout, app/ layout, pages/ layout, flat structure
+4. Check for existing generators: plop, hygen, yeoman configs
+5. Detect naming conventions: scan existing files for camelCase, PascalCase, kebab-case patterns
+6. Check for test patterns: *.test.ts, *.spec.ts, __tests__/, tests/ alongside source
+7. Detect code style: .eslintrc, .prettierrc, biome.json, editorconfig
+8. Check for barrel exports: index.ts files, re-export patterns
+```
+
+## Iterative Scaffold Generation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+items_to_scaffold = [list of resources/components/endpoints to generate]
+
+WHILE items_to_scaffold is not empty AND current_iteration < max_iterations:
+    item = items_to_scaffold.pop(0)
+    1. Read existing similar code to match conventions (naming, structure, imports)
+    2. Generate files: source, test, types, validation schema
+    3. Update barrel exports (index.ts) if project uses them
+    4. Run type check: tsc --noEmit (or equivalent)
+    5. Run lint: eslint/biome (auto-fix style issues)
+    6. Run generated tests to verify scaffold compiles and passes
+    7. IF type check or lint fails → fix generated code
+    8. IF passing → commit: "scaffold: generate <item> (<files created>)"
+    9. current_iteration += 1
+
+POST-LOOP: Verify all new files are properly imported and no circular deps exist
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (2 worktrees):
+  Agent 1 — "scaffold-source": source files, types, validation schemas
+  Agent 2 — "scaffold-tests": test files, fixtures, mocks
+
+MERGE ORDER: source → tests (tests import from source)
+CONFLICT ZONES: barrel exports/index.ts files (one agent handles barrel updates)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. ALWAYS read existing code before generating. Match the project's conventions exactly.
+2. NEVER generate a file > 200 lines. If larger, split into multiple focused files.
+3. EVERY generated endpoint must include a validation schema. No unvalidated inputs.
+4. EVERY generated file must include a corresponding test file. No exceptions.
+5. NEVER hardcode values in generated code. Use config, env vars, or constants.
+6. ALWAYS detect the framework before generating. Express code in a Fastify project is a disaster.
+7. NEVER generate code that doesn't compile. Run type check before committing.
+8. Generated code MUST follow the project's existing directory structure, not impose a new one.
+9. EVERY generated import must be verified to exist. No broken imports.
+10. NEVER overwrite existing files without explicit confirmation.
+```
+
 ## Anti-Patterns
 
 - **Do NOT generate code without reading existing code.** Scaffolded code that doesn't match project conventions creates more work than writing from scratch.

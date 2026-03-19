@@ -689,6 +689,40 @@ your core differentiator (automated code review). Buy.
 | `--quick` | Executive summary — one page, top-line insights only |
 | `--stage <stage>` | Override product stage: `idea`, `pre-launch`, `early`, `growth`, `mature` |
 
+## HARD RULES
+
+1. **NEVER skip product context.** Strategy without understanding the product's stage, team, and constraints is generic advice. Always identify stage first.
+2. **NEVER recommend scaling before retention is healthy.** Pouring users into a leaky bucket is burning money. Fix retention before growth investment.
+3. **NEVER present market sizing without a bottom-up cross-check.** If top-down and bottom-up diverge by more than 5x, the sizing is unreliable.
+4. **NEVER define a North Star metric that the team cannot influence.** Revenue and stock price are outcomes, not North Star metrics.
+5. **NEVER build a roadmap without a "Not Doing" section.** A roadmap without explicit exclusions is a wish list, not a strategy.
+6. **NEVER default to "build" for non-core capabilities.** Auth, payments, email, and analytics are commodities. Buy or use open source unless they are your differentiator.
+7. **NEVER present a single pricing option.** Always evaluate at least 2-3 pricing models with trade-offs.
+8. **ALWAYS quantify recommendations.** Market sizes in dollars, priority in RICE scores, retention in percentages. Numbers enable comparison; adjectives enable arguments.
+
+## Iteration Protocol
+
+For comprehensive strategy work that spans multiple dimensions:
+
+```
+current_dimension = 0
+dimensions = [market_sizing, north_star, growth_model, pricing, moat_analysis, roadmap]
+
+WHILE current_dimension < len(dimensions):
+  dimension = dimensions[current_dimension]
+  1. Gather data and context for this dimension
+  2. Apply the relevant framework (TAM/SAM/SOM, AARRR, RICE, etc.)
+  3. Produce the structured output artifact
+  4. Identify cross-dimension dependencies
+  current_dimension += 1
+  Report: "Strategy dimension {current_dimension}/{len(dimensions)}: {dimension} complete"
+
+AFTER all dimensions analyzed:
+  Synthesize findings into strategy document
+  Identify the single biggest strategic lever
+  Produce roadmap with NOW/NEXT/LATER/NOT DOING
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip product context.** Strategy without understanding the product's stage, team, and constraints is generic advice. A pre-PMF startup and a growth-stage company need opposite strategies. Ask first.

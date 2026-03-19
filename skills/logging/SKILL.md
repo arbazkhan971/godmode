@@ -1065,6 +1065,108 @@ LOGGING VERIFICATION CHECKLIST:
 - Logger configuration in service source directory
 - Commit: `"logging: <service> — structured logging with <features> (<coverage>)"`
 
+## HARD RULES
+1. NEVER use `console.log` in production — use a structured logger (pino, slog, structlog).
+2. NEVER log at ERROR level for expected conditions (404, validation failure) — these are WARN or INFO.
+3. NEVER log sensitive data (passwords, tokens, credit cards, SSN) — redact at the logger level.
+4. NEVER use string interpolation for structured data — use structured fields (`{ orderId, userId }` not `"order ${id}"`).
+5. NEVER log at every function entry/exit — log at boundaries (HTTP, queue, service) not inside every function.
+6. NEVER use synchronous file writes for logging in hot paths — use async loggers with buffered output.
+7. NEVER deploy without correlation IDs — requestId and traceId must be in every log line within a request.
+8. ALWAYS use JSON format in production — machine-parseable, searchable, aggregatable.
+9. ALWAYS include base fields in every log line: service, environment, version, timestamp (ISO 8601).
+10. ALWAYS make log level configurable at runtime — enable DEBUG for specific modules during incidents without redeployment.
+
+## Auto-Detection
+On activation, detect logging context automatically:
+```
+AUTO-DETECT:
+1. Detect current logging:
+   - grep for console.log, console.error → unstructured Node.js
+   - grep for log.Println, log.Printf → unstructured Go
+   - grep for print(), logging.info → unstructured Python
+   - grep for pino, winston, bunyan → structured Node.js
+   - grep for slog, zerolog, zap → structured Go
+   - grep for structlog, loguru → structured Python
+2. Detect logging library:
+   - package.json → pino, winston, bunyan
+   - go.mod → log/slog, rs/zerolog, uber-go/zap
+   - pyproject.toml → structlog, loguru, python-json-logger
+3. Check for correlation IDs:
+   - grep for requestId, traceId, correlationId, X-Request-ID
+4. Check for PII in logs:
+   - grep for email, password, token, ssn, credit in log statements
+   - Identify fields that need redaction
+5. Detect log aggregation:
+   - docker-compose with elasticsearch, kibana, logstash → ELK
+   - promtail config, loki → Grafana Loki
+   - CloudWatch agent config → AWS CloudWatch
+   - OTEL_EXPORTER config → OpenTelemetry
+6. Check log rotation:
+   - logrotate config, Docker log-opts
+   - Log retention policies in cloud config
+```
+
+## Iterative Logging Implementation Protocol
+Logging improvements are applied iteratively across services:
+```
+current_service = 0
+services = [detected services sorted by traffic: highest first]
+
+WHILE current_service < len(services):
+  service = services[current_service]
+  1. ASSESS current logging state for {service}
+  2. CONFIGURE structured logger:
+     a. Set up JSON output with base fields
+     b. Configure log level strategy (ERROR/WARN/INFO/DEBUG)
+     c. Add PII redaction rules
+  3. ADD request logging middleware:
+     a. Generate/propagate requestId and traceId
+     b. Log request start + completion with duration
+     c. Auto-classify log level by status code (5xx=ERROR, 4xx=WARN)
+  4. REPLACE unstructured logs:
+     - console.log/print → structured logger calls
+     - Add context fields (userId, orderId, etc.)
+     - Assign correct log levels
+  5. VERIFY:
+     - Run application, check log output is valid JSON
+     - Verify PII is redacted (test with sample sensitive data)
+     - Verify correlation IDs propagate across service calls
+  6. COMMIT: "logging: {service} — structured logging with correlation IDs"
+  7. current_service += 1
+
+EXIT when all services have structured logging
+```
+
+## Multi-Agent Dispatch
+For multi-service logging infrastructure:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: logging-core):
+  - Logger configuration and middleware for all services
+  - Scope: shared logging library/config
+  - Output: Reusable logger setup with PII redaction
+
+Agent 2 (worktree: logging-migrate):
+  - Replace unstructured logs with structured calls
+  - Scope: all source files with console.log/print/log.Println
+  - Output: Structured log calls with proper levels and context
+
+Agent 3 (worktree: logging-correlation):
+  - Correlation ID propagation across service boundaries
+  - Scope: HTTP clients, message queue producers/consumers
+  - Output: Trace ID propagation middleware + traced HTTP client
+
+Agent 4 (worktree: logging-pipeline):
+  - Log aggregation pipeline setup (ELK/Loki/CloudWatch)
+  - Scope: infrastructure configs, docker-compose, k8s
+  - Output: Log shipping + dashboards + alert rules
+
+MERGE ORDER: core → migrate → correlation → pipeline
+CONFLICT RESOLUTION: core branch owns logger config, others depend on it
+```
+
 ## Chaining
 - **From `/godmode:errorhandling`:** After designing error hierarchy, implement structured logging with `/godmode:logging`
 - **From `/godmode:logging` to `/godmode:observe`:** After logging is in place, add metrics and tracing with `/godmode:observe`

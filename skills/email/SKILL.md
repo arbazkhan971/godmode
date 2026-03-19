@@ -705,6 +705,95 @@ Estimated monthly cost:
 | `--preferences` | Notification preference center design only |
 | `--digest` | Notification digest and batching only |
 
+## HARD RULES
+
+1. **Never send email synchronously in request handlers.** Email delivery can take seconds and fail transiently. Always queue the email and return the API response immediately.
+2. **Never mix transactional and marketing email on the same domain/IP.** Marketing spam complaints destroy transactional deliverability. Use separate subdomains (notifications.myapp.com vs marketing.myapp.com).
+3. **Never email a hard-bounced address again.** Check the suppression list before every send. Repeatedly emailing invalid addresses tanks your sender reputation.
+4. **Never skip SPF, DKIM, and DMARC.** All three DNS authentication records are required. Without them, your emails land in spam. Progress DMARC to `p=reject` within 30 days.
+5. **Never send notifications without checking user preferences.** Every non-critical notification must respect user opt-out. Over-notifying drives users to mark you as spam.
+
+## Loop Protocol
+
+```
+notification_queue = detect_notification_types()  // e.g., [welcome, verify, reset, receipt, alert, digest]
+current_iteration = 0
+
+WHILE notification_queue is not empty:
+  batch = notification_queue.take(3)
+  current_iteration += 1
+
+  FOR each notification_type in batch:
+    1. Define channels (email, push, SMS, in-app) and priority
+    2. Design email template (React Email or MJML)
+    3. Implement send function with queue + retry logic
+    4. Add plain-text fallback
+    5. Test rendering across clients (Litmus or manual spot check)
+    6. Verify suppression list check is in the send path
+
+  Log: "Iteration {current_iteration}: implemented {batch.length} notification types, {notification_queue.remaining} remaining"
+
+  IF notification_queue is empty:
+    Verify DNS records (SPF, DKIM, DMARC)
+    Set up bounce/complaint webhook handler
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (4 worktrees):
+
+Agent 1 — "email-service":
+  EnterWorktree("email-service")
+  Set up email provider client (Resend, SES, Postmark, SendGrid)
+  Implement email queue with retry and exponential backoff
+  Build suppression list management
+  ExitWorktree()
+
+Agent 2 — "templates":
+  EnterWorktree("templates")
+  Create email templates for all notification types (React Email or MJML)
+  Add plain-text versions for every HTML template
+  Verify responsive design and client compatibility
+  ExitWorktree()
+
+Agent 3 — "delivery-tracking":
+  EnterWorktree("delivery-tracking")
+  Implement webhook handler for bounces, complaints, unsubscribes
+  Build delivery metrics dashboard (delivery rate, bounce rate, open rate)
+  Set up alerts for degraded deliverability
+  ExitWorktree()
+
+Agent 4 — "notification-system":
+  EnterWorktree("notification-system")
+  Build multi-channel notification service (email + push + SMS + in-app)
+  Implement user preference center
+  Add rate limiting and digest batching for low-priority notifications
+  ExitWorktree()
+
+MERGE: Combine all branches, verify end-to-end email delivery flow.
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT email/notification context:
+  1. Check for existing email provider SDK: resend, @sendgrid/mail, aws-sdk ses, postmark
+  2. Scan for email templates: emails/, src/emails/, templates/email/ directories
+  3. Check for notification service: src/services/notifications/, src/lib/email/
+  4. Detect queue system: bullmq, bull, @aws-sdk/client-sqs, amqplib
+  5. Check DNS records (if domain known): dig TXT _dmarc.<domain>, dig TXT <domain> for SPF
+  6. Scan for webhook endpoints: /webhooks/email, /api/webhooks/resend, /api/webhooks/sendgrid
+  7. Check environment variables: RESEND_API_KEY, SENDGRID_API_KEY, AWS_SES_REGION
+
+  USE detected context to:
+    - Reuse existing email provider (don't switch providers unless asked)
+    - Match existing template technology (React Email vs MJML vs raw HTML)
+    - Identify missing components (no suppression list? no webhook handler?)
+    - Prioritize gaps in email infrastructure
+```
+
 ## Anti-Patterns
 
 - **Do NOT send email synchronously in request handlers.** Email delivery can take seconds and fail transiently. Use a queue with retry logic. Return the API response immediately.

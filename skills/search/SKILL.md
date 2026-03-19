@@ -753,6 +753,72 @@ Commit: search: relevance-tuning — 32 synonyms, field boosting, recency+popula
 | `--benchmark` | Run search performance benchmarks |
 | `--migrate` | Migrate from one search engine to another |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect search engine: elasticsearch, opensearch, meilisearch, algolia, typesense in configs/deps
+2. Check for PostgreSQL FTS: grep for tsvector, to_tsvector, plainto_tsquery in migrations/models
+3. Detect data size: estimate document count from DB schema or seed data
+4. Check for existing search: grep for /search, /api/search, searchController, searchService
+5. Detect client SDK: @elastic/elasticsearch, meilisearch, algoliasearch in package.json
+6. Check for autocomplete: grep for suggest, completion, typeahead, autocomplete
+7. Scan for relevance config: synonyms.txt, stopwords.txt, custom analyzers, boost configs
+8. Check for search analytics: grep for zero-result tracking, click-through tracking
+```
+
+## Iterative Search Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+search_tasks = [index_setup, mapping, ingestion, query_logic, relevance_tuning, autocomplete, facets]
+
+WHILE search_tasks is not empty AND current_iteration < max_iterations:
+    task = search_tasks.pop(0)
+    1. IF index_setup: create index with proper settings (shards, replicas, analyzers)
+    2. IF mapping: define field types, analyzers, multi-fields for each searchable entity
+    3. IF ingestion: build indexing pipeline (bulk index, incremental updates, delete sync)
+    4. IF query_logic: implement search endpoint with proper query DSL (match, multi_match, bool)
+    5. IF relevance_tuning: test with relevance suite, adjust boosting, add synonyms
+    6. IF autocomplete: implement suggestion/completion with prefix matching
+    7. IF facets: add aggregations for filter categories
+    8. Test: run relevance test suite (precision@10, NDCG@10, zero-result rate)
+    9. IF metrics below target → adjust analysis, boosting, or synonyms
+    10. IF passing → commit: "search: implement <task> (precision@10: X, zero-result: Y%)"
+    11. current_iteration += 1
+
+POST-LOOP: Benchmark search latency at p50/p95/p99, verify < 200ms p95
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "search-engine": index setup, mappings, analyzers, ingestion pipeline
+  Agent 2 — "search-api": search endpoint, query building, pagination, facets
+  Agent 3 — "search-relevance": synonyms, boosting, relevance test suite, analytics
+
+MERGE ORDER: engine → api → relevance (API queries the engine, relevance tunes the API)
+CONFLICT ZONES: index mappings (engine defines, API and relevance depend on them)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER add Elasticsearch/OpenSearch for < 100K documents. Use PostgreSQL FTS or Meilisearch.
+2. EVERY search implementation must have a relevance test suite. "It returns results" is not enough.
+3. NEVER use high fuzziness without prefix length >= 2. Fuzziness 2 + prefix 0 = garbage results.
+4. ALWAYS track zero-result queries. They are your most valuable improvement signal.
+5. NEVER reindex in place. Use index aliases and swap atomically.
+6. EVERY search input must be sanitized. Escape reserved characters before query parsing.
+7. NEVER couple personalization with the query DSL. Personalization goes in function_score.
+8. ALWAYS use index aliases, never query an index by its raw name. Aliases enable zero-downtime reindexing.
+9. Autocomplete must respond in < 100ms. If slower, use a dedicated suggestion index.
+10. EVERY aggregation must be paired with a filter. match_all + aggregation on full index = slow.
+```
+
 ## Anti-Patterns
 
 - **Do NOT add Elasticsearch for 10,000 documents.** PostgreSQL FTS or Meilisearch handles small datasets with far less operational overhead. Elasticsearch is for millions to billions.

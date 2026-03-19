@@ -320,6 +320,89 @@ RECOMMENDATIONS:
 | `--fix-links` | Find and fix broken documentation links |
 | `--format <fmt>` | Output format: markdown, html, json (default: markdown) |
 
+## HARD RULES
+
+1. **Never generate documentation from function names alone.** Read the implementation body. `getUserById` might soft-delete check, cache-first, or throw specific errors. Describe actual behavior.
+2. **Never document stale code.** Before writing docs for a function, verify it still exists and matches the current signature. `git log -1 -- <file>` to check recency.
+3. **Never ship docs without a plain-text fallback.** Every HTML doc must have a Markdown or text equivalent. Screen readers, terminals, and search indexers depend on it.
+4. **Never commit docs with broken internal links.** Grep for `](./` and `](#` references and verify each target exists before committing.
+5. **Never include secrets, tokens, or real user data in documentation examples.** Use placeholder values like `sk-test-xxx`, `user@example.com`.
+
+## Loop Protocol
+
+```
+documentation_queue = detect_doc_targets()  // list of modules/APIs/runbooks needing docs
+current_iteration = 0
+
+WHILE documentation_queue is not empty:
+  batch = documentation_queue.take(5)
+  current_iteration += 1
+
+  FOR each target in batch:
+    1. Read the source code for the target (function, endpoint, module)
+    2. Read existing docs (if any) — check for staleness
+    3. Generate or update documentation (JSDoc, docstring, OpenAPI, README section)
+    4. Cross-reference links and examples against codebase
+    5. IF stale or broken references found → fix or flag
+
+  Log: "Iteration {current_iteration}: documented {batch.length} targets, {documentation_queue.remaining} remaining"
+
+  IF documentation_queue is empty:
+    Run full link-check and coverage report
+    BREAK
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENTS (3 worktrees):
+
+Agent 1 — "api-docs":
+  EnterWorktree("api-docs")
+  Scan all route/controller/handler files
+  Generate or update OpenAPI spec and endpoint docs
+  Verify request/response schemas match code
+  ExitWorktree()
+
+Agent 2 — "code-docs":
+  EnterWorktree("code-docs")
+  Scan all public exports lacking JSDoc/docstrings
+  Generate documentation from implementation + tests
+  Add @example blocks from test fixtures
+  ExitWorktree()
+
+Agent 3 — "runbooks-and-readme":
+  EnterWorktree("runbooks-and-readme")
+  Generate/update README from package.json, config, entry points
+  Create runbooks from CI/CD configs and deploy scripts
+  Audit existing docs for broken links and staleness
+  ExitWorktree()
+
+MERGE: Combine all branches, resolve conflicts in shared files (README, index).
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT project documentation context:
+  1. Grep for doc generation configs: .jsdoc.json, typedoc.json, mkdocs.yml, sphinx conf.py
+  2. Check for existing OpenAPI/Swagger specs: openapi.yaml, swagger.json
+  3. Scan package.json / pyproject.toml for doc scripts (docs:build, docs:generate)
+  4. Count public exports vs documented exports → compute coverage percentage
+  5. Check for .env.example → derive configuration documentation
+  6. Detect framework:
+     - JSDoc / TSDoc → TypeScript/JavaScript project
+     - Sphinx / pydoc → Python project
+     - godoc → Go project
+     - Javadoc → Java project
+  7. Check for docs/ directory structure → existing documentation conventions
+
+  USE detected context to:
+    - Match existing doc style and tooling
+    - Prioritize undocumented public APIs
+    - Skip already-documented items with recent modification dates
+```
+
 ## Anti-Patterns
 
 - **Do NOT write documentation without reading the code.** Generated docs that don't match the code are worse than no docs at all.

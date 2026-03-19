@@ -1431,6 +1431,17 @@ Seed: Production snapshot anonymization plan:
 | `--relationships` | Handle complex association seeding |
 | `--report` | Generate seed infrastructure report |
 
+## HARD RULES
+
+1. NEVER seed production databases with development data. Environment guards (`if (env === 'production') throw`) must exist at the top of every seed script.
+2. ALWAYS use a fixed faker seed (e.g., `faker.seed(42)`) for deterministic output. Without it, every developer gets different data, screenshots differ, and bugs become unreproducible.
+3. NEVER use auto-increment IDs as stable references in seed scripts. IDs change between runs. Use slugs, emails, or external identifiers for upsert matching.
+4. ALWAYS use batch inserts (`createMany`, `bulk_create`, `insert_all`). Single-row inserts in a loop turn a 2-second seed into a 5-minute seed.
+5. NEVER include real user data (names, emails, addresses) in seed files. Use faker-generated data. Seed files are committed to version control and are not private.
+6. ALWAYS make seeds idempotent with upsert logic. Running the seed twice must not create duplicate data or fail on unique constraints.
+7. NEVER seed without wrapping in a transaction. A partial seed (half the users, none of the posts) is worse than no seed. Atomic commit or full rollback.
+8. ALWAYS provide a `--reset` flag that truncates tables before seeding. Developers need a clean-slate option without manually dropping the database.
+
 ## Anti-Patterns
 
 - **Do NOT insert one row at a time in a loop.** Use batch inserts (`createMany`, `bulk_create`, `insert_all`). Inserting 10,000 rows one at a time takes minutes. Batch inserting takes seconds.

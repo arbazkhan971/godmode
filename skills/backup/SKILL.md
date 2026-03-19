@@ -473,6 +473,94 @@ Estimated monthly backup cost: $45 (storage + transfer)
 | `--audit` | Audit existing backup configuration for gaps |
 | `--scenario <type>` | Design recovery for specific scenario (db-failure, corruption, region-down) |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect backup context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect data stores:
+   - grep for database connection strings (postgres, mysql, mongodb, redis)
+   - Check docker-compose.yml for database services
+   - Check terraform/k8s configs for managed databases (RDS, Cloud SQL, etc.)
+2. Detect object storage:
+   - grep for S3, GCS, Azure Blob connection configs
+   - Check for file upload handling code
+3. Detect existing backup tooling:
+   - Check for pg_dump scripts, mysqldump scripts
+   - Check crontab for backup jobs
+   - Check for backup-related GitHub Actions or CI jobs
+   - Check for WAL archiving configuration (pg_basebackup, wal-g, pgbackrest)
+4. Detect secrets management:
+   - Check for Vault, AWS KMS, GCP KMS configs
+   - Check for .env files with database credentials
+5. Detect infrastructure-as-code:
+   - terraform, pulumi, cdk → check for backup configurations
+   - Check for RDS automated backups, snapshot configs
+6. Estimate data size:
+   - Check database migration count as proxy for schema complexity
+   - Check disk usage in docker volumes or persistent volume claims
+7. Auto-configure:
+   - No backups detected → flag as CRITICAL gap
+   - Backups exist but no verification → flag as HIGH gap
+   - No cross-region backup → flag for Tier 1 data
+```
+
+## Explicit Loop Protocol
+
+For iterative backup verification and gap remediation:
+
+```
+BACKUP VERIFICATION LOOP:
+current_iteration = 0
+max_iterations = 10
+gaps_remaining = total_gaps_found
+
+WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
+    current_iteration += 1
+
+    1. SELECT highest-severity backup gap
+    2. IMPLEMENT fix:
+       - Missing backup → create backup job/config
+       - No verification → add automated integrity check
+       - No cross-region → configure replication
+       - No restore test → create and run restore test
+    3. git commit: "backup: fix <gap> (iter {current_iteration})"
+    4. VERIFY the fix:
+       - Backup job runs successfully
+       - Backup file is valid (checksum, header check)
+       - Restore test passes (if applicable)
+    5. IF verification fails:
+       - Debug configuration
+       - Retry with adjusted parameters
+    6. UPDATE gaps_remaining
+
+    IF current_iteration % 3 == 0:
+        PRINT STATUS:
+        "Iteration {current_iteration}/{max_iterations}"
+        "Gaps fixed: {total_gaps - gaps_remaining}/{total_gaps}"
+        "Tier 1 coverage: {tier1_status}"
+        "Tier 2 coverage: {tier2_status}"
+        "Last restore test: {last_restore_result}"
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
+1. NEVER consider a backup valid until a restore test has succeeded.
+2. NEVER store backups in the same failure domain as production (same region, same account).
+3. EVERY backup MUST be encrypted at rest — no exceptions for any data tier.
+4. EVERY backup job MUST alert on failure — silent backup failures are the worst kind.
+5. EVERY backup MUST have a TTL/retention policy — no infinite storage growth.
+6. RPO and RTO MUST be defined BEFORE designing backup strategy — business drives engineering.
+7. git commit backup configurations BEFORE testing — baseline for debugging.
+8. Automatic revert on regression: if backup config change causes production issues, revert immediately.
+9. NEVER skip quarterly DR tests — schedule them and treat them as P1 obligations.
+10. Log all backup operations in TSV:
+    TIMESTAMP\tASSET\tOPERATION\tSIZE\tDURATION\tSTATUS\tCHECKSUM
+```
+
 ## Anti-Patterns
 
 - **Do NOT assume backups work without testing.** "We have automated backups configured" means nothing until you have successfully restored from one. Test regularly.

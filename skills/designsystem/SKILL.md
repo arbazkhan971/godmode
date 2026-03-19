@@ -896,6 +896,73 @@ Priority 3: Fix 6 component API violations (missing ref, inconsistent props)
 | `--init` | Initialize complete design system from scratch |
 | `--migrate` | Migrate from hardcoded values to tokens |
 
+## HARD RULES
+- NEVER use raw hex/rgb values in component code — always reference semantic tokens
+- NEVER skip the semantic token layer — components reference semantics, semantics reference primitives
+- NEVER create a component without a corresponding Storybook story
+- NEVER publish a design system version without a CHANGELOG entry
+- NEVER modify existing token values without a MAJOR version bump if it affects layout
+- NEVER allow Figma and code tokens to diverge — pipeline must be automated
+- ALL components MUST forward refs and accept className
+- ALL token changes MUST go through the three-tier architecture (primitive -> semantic -> component)
+
+## Iterative Audit Loop Protocol
+When auditing or building a design system across a large codebase:
+```
+current_iteration = 0
+audit_queue = [all_components_and_files]
+WHILE audit_queue is not empty:
+    current_iteration += 1
+    batch = audit_queue.pop(next 5 files)
+    FOR each file in batch:
+        scan for hardcoded values (colors, spacing, typography, shadows)
+        replace with token references
+        verify component API compliance (variant, size, className, ref forwarding)
+        log violations found and fixed
+    run build + visual regression check
+    IF new violations discovered in dependencies:
+        add to audit_queue
+    report: "Iteration {current_iteration}: {N} files processed, {M} violations fixed, {remaining} files remaining"
+```
+
+## Multi-Agent Dispatch
+For large design system builds spanning many components, dispatch parallel agents:
+```
+DISPATCH 4 agents in separate worktrees:
+  Agent 1 (tokens):     Build/audit token architecture — primitives, semantics, component tokens, themes
+  Agent 2 (components): Audit component API compliance — ref forwarding, prop naming, typing, composition
+  Agent 3 (pipeline):   Configure Figma-to-code pipeline — Style Dictionary, CI automation, token sync
+  Agent 4 (docs):       Set up Storybook — foundation stories, component stories, theme documentation
+
+SYNC point: All agents complete
+  Merge worktrees
+  Run full visual regression test
+  Generate unified design system audit report
+```
+
+## Auto-Detection
+On activation, automatically detect the design system context:
+```
+1. Check for existing design system:
+   - Scan for tailwind.config.{js,ts} → extract theme tokens
+   - Scan for CSS files with :root or [data-theme] → extract CSS custom properties
+   - Scan for tokens.json, tokens.css, design-tokens.* → detect token format
+   - Check for style-dictionary.config.* → detect pipeline
+   - Check for .storybook/ → detect documentation setup
+2. Check for component library:
+   - Detect shadcn/ui, radix, chakra, mantine, ant-design, MUI
+   - Count components in src/components/ or packages/ui/
+   - Scan for compound component patterns (Context + Provider)
+3. Check for Figma integration:
+   - Look for .figma*, figma-tokens.json, tokens-studio config
+4. Determine maturity level automatically:
+   - NONE: No tokens found, >10 hardcoded values
+   - STARTER: Some tokens, <50% coverage
+   - GROWING: Comprehensive tokens, partial Storybook
+   - MATURE: Full tokens + themes + Storybook + pipeline
+5. Set assessment fields from detection and proceed to Step 1
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the semantic token layer.** Mapping components directly to primitive tokens (`--button-bg: var(--primitive-blue-500)`) breaks theming. Always go through semantic tokens (`--button-bg: var(--color-primary)`).

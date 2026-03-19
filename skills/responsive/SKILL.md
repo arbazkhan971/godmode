@@ -1001,6 +1001,71 @@ Priority fixes:
 | `--breakpoints` | Breakpoint system audit and standardization |
 | `--table <name>` | Make a specific table responsive |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for CSS framework: tailwind.config, bootstrap, bulma, chakra-ui in package.json
+2. Detect CSS methodology: grep for BEM (--), CSS Modules (.module.css), styled-components, Emotion
+3. Check for existing breakpoints: grep for @media, @container in CSS/SCSS files
+4. Detect preprocessor: .scss, .less, .styl files, postcss.config
+5. Check for responsive images: grep for srcset, sizes, <picture> in templates/JSX
+6. Detect viewport meta tag: grep for viewport in index.html, _document, layout
+7. Check for container queries: grep for @container, container-type in CSS
+8. Scan for fluid typography: grep for clamp(, calc( in font-size declarations
+```
+
+## Iterative Responsive Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+pages_remaining = [list of pages/components to make responsive]
+
+WHILE pages_remaining is not empty AND current_iteration < max_iterations:
+    page = pages_remaining.pop(0)
+    1. Audit at 5 viewports: 320px, 375px, 768px, 1024px, 1440px
+    2. Identify issues: overflow, touch targets < 44px, fixed widths, missing srcset
+    3. Fix layout: convert fixed widths to fluid (%, vw, fr, minmax)
+    4. Fix typography: convert px to rem, add clamp() for fluid scaling
+    5. Fix images: add srcset + sizes, lazy loading, aspect-ratio
+    6. Fix interactions: ensure all hover states have tap alternatives
+    7. Re-audit at all 5 viewports + 2 in-between sizes
+    8. IF issues remain → fix and re-audit
+    9. IF clean → commit: "responsive: <page> — fluid layout + images + typography"
+    10. current_iteration += 1
+
+POST-LOOP: Run Lighthouse mobile audit, verify no horizontal overflow at any width 320-1440
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "responsive-layout": CSS Grid/Flexbox, breakpoints, container queries
+  Agent 2 — "responsive-media": images (srcset/picture), video, lazy loading
+  Agent 3 — "responsive-typography": fluid type scale, spacing, touch targets
+
+MERGE ORDER: layout → typography → media
+CONFLICT ZONES: shared CSS custom properties, breakpoint tokens (define design tokens first)
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER use px for font-size. Use rem + clamp() for fluid scaling.
+2. NEVER use fixed pixel widths on layout containers. Use max-width + fluid units.
+3. NEVER hide content on mobile as a responsive strategy. Restructure, don't hide.
+4. EVERY image must have srcset + sizes OR be an SVG. No single-resolution raster images.
+5. EVERY interactive element must have a minimum 44x44px touch target.
+6. NEVER mix min-width and max-width media queries. Pick one direction (mobile-first = min-width).
+7. EVERY page must be tested at 320px minimum width. No horizontal overflow allowed.
+8. NEVER use viewport units for font-size without clamp(). Unbound vw = unreadable text.
+9. EVERY layout must work without JavaScript. CSS-only responsive behavior.
+10. ALWAYS set explicit width and height (or aspect-ratio) on images/video to prevent CLS.
+```
+
 ## Anti-Patterns
 
 - **Do NOT use px for font sizes.** Pixel font sizes do not scale with user preferences. Use `rem` for consistent scaling with the root font size, and `clamp()` for fluid scaling across viewports.

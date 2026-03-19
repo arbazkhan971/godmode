@@ -342,6 +342,70 @@ Commit: "refactor: rename getUser to findUserById (14 files)"
 | `--no-verify` | Skip pre-refactoring test verification (dangerous) |
 | `--strangler` | Use strangler pattern for incremental migration |
 
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check for test framework: jest.config, vitest.config, pytest.ini, go test files
+2. Check test coverage: look for coverage reports, nyc, c8, istanbul configs
+3. Detect language/framework: package.json, tsconfig.json, pyproject.toml, go.mod
+4. Scan for code quality tools: .eslintrc, .prettierrc, biome.json, ruff.toml
+5. Check for CI pipeline: .github/workflows, .gitlab-ci.yml (refactoring needs green CI)
+6. Detect monorepo structure: lerna.json, pnpm-workspace.yaml, nx.json, turborepo
+7. Estimate codebase size: count files by extension, identify largest modules
+```
+
+## Iterative Refactoring Loop
+
+```
+current_iteration = 0
+max_iterations = 15
+refactor_targets = [list of files/modules to refactor, ordered by dependency depth]
+
+WHILE refactor_targets is not empty AND current_iteration < max_iterations:
+    target = refactor_targets.pop(0)
+    1. Run full test suite — MUST be green before touching anything
+    2. Analyze target: complexity score, coupling, number of dependents
+    3. Plan transformation (extract, inline, move, rename, simplify)
+    4. Apply transformation — ONE pattern per iteration
+    5. Run type check (if applicable): tsc --noEmit / mypy / go vet
+    6. Run tests: full suite if < 60s, else affected tests only
+    7. IF tests fail → revert immediately, diagnose, try smaller step
+    8. IF tests pass → commit: "refactor: <pattern> in <target>"
+    9. current_iteration += 1
+
+POST-LOOP: Run full test suite + coverage comparison (must not decrease)
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "refactor-core": core modules being refactored (leaf dependencies first)
+  Agent 2 — "refactor-tests": update/add tests for modules being refactored
+  Agent 3 — "refactor-callers": update call sites and imports after renames/moves
+
+MERGE ORDER: tests → core → callers
+CONFLICT ZONES: import paths, function signatures (agree on new signatures before dispatch)
+PRE-CONDITION: All agents must share the target function/module signatures before starting
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER refactor without a green test suite first. No exceptions.
+2. NEVER combine refactoring with behavior changes in the same commit.
+3. ONE refactoring pattern per commit. Extract OR rename OR move — never all at once.
+4. NEVER skip the impact analysis step. Know every caller before changing a signature.
+5. NEVER delete code without verifying zero references (grep + type checker).
+6. ALWAYS run tests after every transformation. No batching "I'll test at the end."
+7. NEVER force-push refactoring branches. Every step must be revertable.
+8. IF tests fail after a transformation, REVERT first, THEN diagnose. Do not debug forward.
+9. Coverage MUST NOT decrease after refactoring. If it does, add tests before proceeding.
+10. EVERY renamed symbol must be updated in comments, docs, and error messages — not just code.
+```
+
 ## Anti-Patterns
 
 - **Do NOT refactor without tests.** Refactoring untested code is rewriting code while hoping nothing breaks. Write tests first.

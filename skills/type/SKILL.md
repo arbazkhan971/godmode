@@ -726,6 +726,39 @@ RESULT:
 | `--env` | Add environment variable validation |
 | `--factory` | Generate test data factories from schemas |
 
+## HARD RULES
+
+1. **NEVER write types and schemas separately.** Derive the TypeScript type from the Zod/Valibot schema. Separate definitions will drift apart.
+2. **NEVER use `as` casts to silence errors.** `as unknown as User` is not type safety -- it is hiding bugs. Fix the actual type mismatch.
+3. **NEVER use `any`.** Use `unknown` instead. `unknown` requires narrowing; `any` bypasses all checking.
+4. **NEVER use `@ts-ignore`.** Use `@ts-expect-error` only for genuine compiler limitations, with a comment explaining why.
+5. **ALWAYS enable `noUncheckedIndexedAccess`.** Without it, `array[0]` returns `T` instead of `T | undefined`. This single flag catches the most real bugs.
+6. **ALWAYS validate at the boundary, trust types internally.** Validate in API handlers and database reads. Inside service functions, the types are the contract.
+7. **NEVER validate the same data at every function call.** Validate once at the boundary, then trust the type system downstream.
+8. **ALWAYS enable `strict: true` in tsconfig.** Non-strict TypeScript is a false sense of safety.
+
+## Iteration Protocol
+
+For large-scale type safety improvements across a codebase:
+
+```
+current_phase = 0
+phases = [audit, strict_mode, eliminate_any, add_schemas, add_validation, add_branded_types]
+
+WHILE current_phase < len(phases):
+  phase = phases[current_phase]
+  1. Identify all files affected by this phase
+  2. Apply changes (enable flags, replace types, add schemas)
+  3. Run type checker -- fix all new errors
+  4. Run test suite -- confirm no regressions
+  current_phase += 1
+  Report: "Type safety phase {current_phase}/{len(phases)}: {phase} -- {errors_fixed} errors resolved"
+
+AFTER all phases:
+  Calculate final type safety score
+  Report improvement delta
+```
+
 ## Anti-Patterns
 
 - **Do NOT write types and schemas separately.** If you have a TypeScript interface AND a Zod schema for the same entity, they will drift apart. Derive the type from the schema.

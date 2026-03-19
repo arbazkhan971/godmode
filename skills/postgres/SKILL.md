@@ -970,6 +970,119 @@ TOOL: Use PGTune (https://pgtune.leopard.in.ua/) for initial settings
 
 Commit: `"postgres: <description> -- <key outcome>"`
 
+## Auto-Detection
+
+Before prompting the user, automatically detect PostgreSQL context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Scan for database config files:
+   - database.yml, .env, docker-compose.yml, prisma/schema.prisma
+   - Look for DATABASE_URL, POSTGRES_*, PG_* environment variables
+2. Detect PostgreSQL version from:
+   - docker-compose.yml image tags (postgres:16, timescale/timescaledb:latest)
+   - Gemfile/package.json (pg gem version constraints)
+   - Running instance: SELECT version();
+3. Detect hosting platform from:
+   - Supabase: SUPABASE_URL, supabase/ directory
+   - Neon: neon.tech in DATABASE_URL
+   - RDS/Aurora: rds.amazonaws.com in connection string
+   - AlloyDB/CloudSQL: .cloudsql. or alloydb. in connection string
+4. Detect ORM/driver:
+   - Prisma: prisma/schema.prisma with provider = "postgresql"
+   - ActiveRecord: database.yml with adapter: postgresql
+   - SQLAlchemy: engine URL starting with postgresql://
+   - TypeORM: ormconfig with type: "postgres"
+5. Detect installed extensions:
+   - SELECT extname FROM pg_extension;
+6. Detect table sizes and pain points:
+   - Largest tables, dead tuple ratios, unused indexes
+```
+
+## Explicit Loop Protocol
+
+For iterative performance tuning workflows:
+
+```
+TUNING LOOP:
+current_iteration = 0
+max_iterations = 5
+baseline_metrics = capture_pg_stat_snapshot()
+
+WHILE current_iteration < max_iterations AND improvement_found:
+  current_iteration += 1
+
+  1. IDENTIFY bottleneck:
+     - Run pg_stat_statements top-5 by total_time
+     - Check cache hit ratio, dead tuple ratio, replication lag
+     - Identify single worst offender
+
+  2. APPLY fix:
+     - Add index / rewrite query / tune autovacuum / adjust config
+     - One change per iteration (isolate impact)
+
+  3. MEASURE:
+     - Re-run EXPLAIN ANALYZE on target query
+     - Compare before/after metrics
+     - Record: { iteration, change, metric_before, metric_after, improvement_pct }
+
+  4. EVALUATE:
+     - IF improvement < 5%: STOP (diminishing returns)
+     - IF target met (e.g., cache hit > 99%, query < 50ms): STOP
+     - ELSE: continue to next bottleneck
+
+  OUTPUT after loop:
+  Iteration | Change | Before | After | Improvement
+  1         | ...    | ...    | ...   | ...
+```
+
+## Multi-Agent Dispatch
+
+For large-scale PostgreSQL work, dispatch parallel agents:
+
+```
+PARALLEL AGENTS (when scope warrants):
+Agent 1 — Schema & Extensions (worktree: pg-schema)
+  - Analyze table structures, install/configure extensions
+  - pgvector setup, PostGIS config, TimescaleDB hypertables
+
+Agent 2 — Query Optimization (worktree: pg-queries)
+  - Run pg_stat_statements analysis
+  - Add indexes, rewrite slow queries
+  - Fix N+1 patterns in ORM layer
+
+Agent 3 — Replication & Partitioning (worktree: pg-infra)
+  - Set up streaming/logical replication
+  - Design and implement partitioning strategy
+  - Configure pg_partman for automated partition management
+
+Agent 4 — Connection Pooling & Tuning (worktree: pg-tuning)
+  - Configure PgBouncer/Supavisor
+  - Tune postgresql.conf memory/WAL/planner settings
+  - Set up monitoring dashboards
+
+MERGE ORDER: Agent 1 first (schema), then 2+3 in parallel, then 4.
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER run VACUUM FULL on a production table without explicit user confirmation
+   and a maintenance window. It takes an EXCLUSIVE LOCK.
+2. NEVER disable autovacuum. Tune it — never disable it.
+3. NEVER increase max_connections above 200 without a connection pooler.
+4. ALWAYS use CREATE INDEX CONCURRENTLY in production.
+5. ALWAYS use REINDEX CONCURRENTLY, never plain REINDEX on live tables.
+6. NEVER store passwords, tokens, or secrets in plain text columns.
+7. ALWAYS include the partition key in WHERE clauses for partitioned tables.
+8. NEVER use JSON type — use JSONB in 99.9% of cases.
+9. ALWAYS run EXPLAIN (ANALYZE, BUFFERS) before claiming a query is optimized.
+10. NEVER modify postgresql.conf without documenting the change and prior value.
+11. ALWAYS test replication changes on a staging replica first.
+12. NEVER run pg_basebackup or pg_dump during peak traffic without throttling.
+```
+
 ## Key Behaviors
 
 1. **Always check the version.** PostgreSQL features vary significantly across versions. CTEs are optimized differently in 12+, partitioning improved dramatically in 11-14, and JSONB path queries require 12+.

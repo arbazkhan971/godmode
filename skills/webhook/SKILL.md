@@ -876,6 +876,17 @@ RECOMMENDATIONS:
 | `--rotate` | Implement signing secret rotation |
 | `--debug` | Investigate delivery issues (DLQ, circuit state, retry queue) |
 
+## HARD RULES
+
+1. **NEVER deliver webhooks synchronously in the request path.** Webhook delivery must be async. User API requests must not block on third-party endpoint delivery.
+2. **NEVER retry on 4xx errors (except 408/429).** A 400 means the payload is wrong. A 404 means the endpoint is gone. Retrying will not fix it.
+3. **NEVER use simple string comparison for signatures.** Use constant-time comparison (`crypto.timingSafeEqual`, `hmac.compare_digest`) to prevent timing attacks.
+4. **NEVER parse the body before verifying the signature.** Signature must be computed over raw bytes. Parsing and re-serializing JSON can change field order.
+5. **NEVER allow HTTP webhook URLs in production.** HTTPS only. No exceptions.
+6. **NEVER skip SSRF checks on webhook URLs.** Block all private and reserved IP ranges (169.254.x.x, 10.x.x.x, 127.x.x.x, etc.).
+7. **ALWAYS send failed events to a dead letter queue.** Silent data loss erodes trust.
+8. **ALWAYS add random jitter to retry delays.** Thousands of retries at the exact same second creates a thundering herd.
+
 ## Anti-Patterns
 
 - **Do NOT deliver webhooks synchronously in the request path.** Webhook delivery must be async. The user's API request should not block on delivering events to third-party endpoints.

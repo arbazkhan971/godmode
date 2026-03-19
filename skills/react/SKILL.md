@@ -637,6 +637,95 @@ FIXES:
 | `--patterns` | Component pattern catalog for the project |
 | `--rsc` | Server Components architecture guide |
 
+## Auto-Detection
+
+On activation, silently detect the React project context before asking questions:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Check package.json for react version, framework (next, remix, gatsby, vite)
+2. Check for tsconfig.json (TypeScript yes/no, strict mode)
+3. Detect state management: grep for zustand, jotai, redux, @tanstack/react-query
+4. Detect styling: tailwind.config, styled-components, CSS modules, emotion
+5. Detect test setup: vitest.config, jest.config, @testing-library/react
+6. Scan src/ for component patterns: hooks/, components/, features/, pages/
+7. Check for .storybook/ (component library)
+8. Detect router: react-router, next/navigation, @tanstack/router
+
+OUTPUT: Pre-fill the Step 1 assessment with detected values.
+         Only ask the user about values that could not be detected.
+```
+
+## Iterative Refactoring Loop
+
+When the React skill involves multi-step component restructuring:
+
+```
+current_iteration = 0
+max_iterations = 10
+components_remaining = [list of components to refactor/create]
+
+WHILE components_remaining is not empty AND current_iteration < max_iterations:
+    component = components_remaining.pop(0)
+    1. Analyze component's current state (props, hooks, dependencies)
+    2. Apply the architecture pattern (extract hook, split component, add memo)
+    3. Run type check: npx tsc --noEmit
+    4. Run tests: npx vitest run --reporter=verbose <component-path>
+    5. IF tests fail → revert, diagnose, adjust approach
+    6. IF tests pass → commit: "react: <pattern> — <component>"
+    7. current_iteration += 1
+    8. Log: "Iteration {current_iteration}: {component} — DONE"
+
+IF components_remaining is not empty:
+    REPORT: "{len(components_remaining)} components remain — continue with /godmode:react"
+```
+
+## Multi-Agent Dispatch
+
+For large React projects with 50+ components across features:
+
+```
+PARALLEL AGENT DISPATCH (4 worktrees):
+
+Agent 1 — "react-components":
+  Worktree: .worktrees/react-components
+  Task: Refactor shared UI components (Button, Card, Modal, Table)
+  Scope: src/components/**
+
+Agent 2 — "react-features":
+  Worktree: .worktrees/react-features
+  Task: Restructure feature modules (extract hooks, split concerns)
+  Scope: src/features/**
+
+Agent 3 — "react-state":
+  Worktree: .worktrees/react-state
+  Task: Migrate state management (context → Zustand, add React Query)
+  Scope: src/stores/**, src/hooks/use*Query*
+
+Agent 4 — "react-tests":
+  Worktree: .worktrees/react-tests
+  Task: Write RTL integration tests for all features
+  Scope: src/**/*.test.tsx
+
+MERGE ORDER: components → state → features → tests
+```
+
+## HARD RULES
+
+```
+MECHANICAL CONSTRAINTS — NEVER VIOLATE:
+1. NEVER use `any` type. Use `unknown` + type guard or proper generics.
+2. NEVER put business logic in components. Extract to custom hooks or services.
+3. NEVER use useEffect for derived state. Compute during render or useMemo.
+4. NEVER add React.memo without measured evidence from React DevTools Profiler.
+5. NEVER test implementation details. Test what the user sees and does.
+6. NEVER use index as key when list items can be reordered or deleted.
+7. NEVER prop-drill through more than 2 levels — use composition or state management.
+8. ALWAYS run `npx tsc --noEmit` after every component change.
+9. ALWAYS query by role first in tests (getByRole > getByText > getByTestId).
+10. ALWAYS colocate component + hook + test + types in feature folders.
+```
+
 ## Anti-Patterns
 
 - **Do NOT put everything in global state.** Most "global state" is server state (React Query), URL state (search params), or form state (React Hook Form). True global client state is rare.

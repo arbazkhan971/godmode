@@ -865,6 +865,17 @@ Estimated time to GO: 3-5 days.
 | `--feedback <topic>` | Synthesize customer feedback on a topic |
 | `--template <type>` | Output a blank template (prd, story, okr, gtm, launch, competitive) |
 
+## HARD RULES
+
+1. NEVER write a PRD without a measurable success metric. "Improve user experience" is not a metric. Define a number, a baseline, and a target.
+2. NEVER skip competitive analysis before defining a new feature. If three competitors already solved the same problem, learn from their approach before reinventing.
+3. ALWAYS include acceptance criteria for every user story. A story without AC cannot be estimated, tested, or marked as done.
+4. NEVER prioritize features without a scoring framework (RICE, ICE, MoSCoW, or equivalent). Gut-feel prioritization leads to scope creep and stakeholder conflict.
+5. ALWAYS define rollback criteria alongside launch criteria. If the feature degrades a key metric by more than X%, have a documented plan to revert.
+6. NEVER scope a feature larger than 2 weeks of engineering work without decomposing it into milestones. Large scopes have compounding uncertainty.
+7. ALWAYS tie OKRs to user outcomes, not output. "Ship 5 features" is output. "Increase activation rate from 30% to 45%" is an outcome.
+8. NEVER approve a launch without verifying the analytics instrumentation works end-to-end. If you cannot measure it, you cannot learn from it.
+
 ## Anti-Patterns
 
 - **Do NOT write a PRD after building the feature.** A PRD written post-hoc is documentation, not product management. Write the PRD before writing code so the team builds the right thing.

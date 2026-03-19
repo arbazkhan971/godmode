@@ -441,6 +441,102 @@ Verification steps:
 
 Commit: `"query: optimize <description> -- <speedup>x improvement"`
 
+## Auto-Detection
+
+Before prompting the user, automatically detect database and query context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect database engine:
+   - DATABASE_URL env var: postgres://, mysql://, mongodb://
+   - docker-compose.yml: postgres, mysql, mariadb, mongodb images
+   - prisma/schema.prisma: provider = "postgresql" | "mysql" | "sqlite"
+   - database.yml: adapter field
+   - settings.py: DATABASES ENGINE field
+2. Detect ORM/query layer:
+   - Prisma: prisma/ directory, @prisma/client in package.json
+   - Sequelize: sequelize in package.json
+   - TypeORM: typeorm in package.json, ormconfig.*
+   - Django ORM: django in requirements.txt + models.py files
+   - ActiveRecord: Gemfile with rails or activerecord
+   - SQLAlchemy: sqlalchemy in requirements.txt
+   - GORM: gorm.io in go.mod
+   - Drizzle: drizzle-orm in package.json
+3. Detect slow query sources:
+   - PostgreSQL: pg_stat_statements (if enabled)
+   - MySQL: slow_query_log
+   - Application logs: query timing annotations
+   - APM tools: Datadog, New Relic, Sentry query traces
+4. Detect N+1 patterns:
+   - Scan controller/resolver files for loops containing ORM queries
+   - Check for missing includes/preload/select_related
+5. Detect existing indexes:
+   - Parse migration files for add_index / CREATE INDEX statements
+   - Query information_schema or pg_indexes
+```
+
+## Explicit Loop Protocol
+
+For iterative query optimization:
+
+```
+QUERY OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 5
+target_latency = user_specified OR 50ms
+
+WHILE current_iteration < max_iterations AND query_time > target_latency:
+  current_iteration += 1
+
+  1. PROFILE current state:
+     - Run EXPLAIN (ANALYZE, BUFFERS) on target query
+     - Record: execution_time, rows_scanned, scan_type, buffers
+
+  2. IDENTIFY top bottleneck:
+     - Sequential scan on large table? -> missing index
+     - Nested loop on large tables? -> wrong join strategy
+     - Rows estimated vs actual off by 10x? -> stale statistics
+     - Sort on disk? -> insufficient work_mem or missing index
+
+  3. APPLY single fix:
+     - Add index / rewrite query / update statistics / adjust ORM
+     - ONE change per iteration to isolate impact
+
+  4. VERIFY:
+     - Re-run EXPLAIN (ANALYZE, BUFFERS)
+     - Record: { iteration, change, time_before, time_after, speedup }
+     - Run test suite to confirm correctness preserved
+
+  5. EVALUATE:
+     - IF query_time <= target_latency: STOP — target met
+     - IF improvement < 10%: STOP — diminishing returns
+     - ELSE: continue to next bottleneck
+
+  OUTPUT:
+  Iteration | Change | Time Before | Time After | Speedup
+  1         | +index | 3200ms      | 45ms       | 71x
+  2         | rewrite| 45ms        | 12ms       | 3.75x
+  ...
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. NEVER claim a query is optimized without EXPLAIN ANALYZE before and after.
+2. ALWAYS use CREATE INDEX CONCURRENTLY in PostgreSQL production environments.
+3. NEVER add an index without stating the write overhead trade-off.
+4. NEVER use SELECT * in production queries — select only needed columns.
+5. NEVER use OFFSET for deep pagination — use keyset/cursor pagination.
+6. NEVER apply functions to indexed columns in WHERE clauses.
+7. ALWAYS fix N+1 at the ORM/application level, not just the SQL level.
+8. ALWAYS run ANALYZE after bulk data changes to update statistics.
+9. NEVER recommend an index on a column with < 10% selectivity without justification.
+10. ALWAYS verify query correctness (test suite) after any rewrite.
+11. NEVER optimize a query that runs fewer than 10 times per day unless latency is critical.
+12. ALWAYS report the rows_scanned:rows_returned ratio — > 100:1 means a missing index.
+```
+
 ## Key Behaviors
 
 1. **Measure before and after.** Never claim an optimization without numbers. Run EXPLAIN ANALYZE before the change, apply the fix, run EXPLAIN ANALYZE after.

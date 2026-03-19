@@ -621,6 +621,88 @@ IMPLEMENTATION ARTIFACTS:
 3. If INCOMPLETE: "Access control model needs additional work. Address remaining items, then re-run `/godmode:rbac`."
 4. If PRODUCTION READY: "Access control model complete. Run `/godmode:build` to implement, or `/godmode:secure` to audit."
 
+## Auto-Detection
+
+Before prompting the user, automatically detect existing auth and access control:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect authentication layer:
+   - JWT: jsonwebtoken, jose in dependencies
+   - Session: express-session, cookie-session, Rails sessions
+   - OAuth: passport, next-auth, devise, omniauth
+   - Managed: Auth0, Clerk, Firebase Auth, Supabase Auth SDK
+2. Detect existing authorization:
+   - RBAC models: roles table, user_roles table in migrations/schema
+   - Policy libraries: pundit (Ruby), casbin, casl (JS), django-guardian
+   - Middleware: authorize, requireRole, @Roles decorator patterns
+   - External: SpiceDB, Ory Keto, Auth0 FGA, AWS Verified Permissions
+3. Detect multi-tenancy:
+   - tenant_id columns in database schema
+   - Row-level security policies in PostgreSQL
+   - Subdomain-based routing
+   - Organization/workspace models
+4. Detect audit logging:
+   - audit_logs or access_logs tables
+   - PaperTrail (Rails), django-auditlog, audit packages
+   - SIEM integration config (Datadog, Splunk, ELK)
+5. Detect permission patterns in code:
+   - Grep for: isAdmin, hasRole, canAccess, authorize, permit
+   - Check middleware chains for auth checks
+   - Identify unprotected routes (no auth middleware)
+```
+
+## Multi-Agent Dispatch
+
+For comprehensive access control implementation:
+
+```
+PARALLEL AGENTS:
+Agent 1 — Permission Model & Schema (worktree: rbac-model)
+  - Design role hierarchy and permission definitions
+  - Create database migrations for roles, permissions, user_roles
+  - Implement role resolution with hierarchy traversal
+  - Seed default roles and permissions
+
+Agent 2 — Policy Engine & Middleware (worktree: rbac-engine)
+  - Build policy evaluation engine (RBAC/ABAC/ReBAC)
+  - Create authorization middleware for all routes
+  - Implement field-level access control
+  - Add resource ownership checks
+
+Agent 3 — Audit & Compliance (worktree: rbac-audit)
+  - Design audit log schema (immutable, tamper-resistant)
+  - Implement audit logging for all authorization decisions
+  - Build access review reports
+  - Configure alerting for suspicious patterns
+
+Agent 4 — Admin & Delegation (worktree: rbac-admin)
+  - Build role management API (CRUD for roles/permissions)
+  - Implement delegation and sharing flows
+  - Build impersonation with audit trail
+  - Create admin UI for permission management
+
+MERGE ORDER: Agent 1 first (schema), Agent 2 (engine), then Agent 3 + 4 in parallel.
+```
+
+## HARD RULES
+
+```
+HARD RULES — NEVER VIOLATE:
+1. DEFAULT DENY — if no policy grants access, the answer is DENY. Always.
+2. NEVER check roles in application code — check permissions. Roles map to permissions.
+3. NEVER implement authorization in the frontend only — backend MUST enforce.
+4. NEVER create a role that bypasses the policy engine — even super_admin goes through it.
+5. NEVER allow permission escalation through delegation — validate against delegator's perms.
+6. NEVER grant permanent admin access — use time-limited elevation with auto-expiry.
+7. ALWAYS log BOTH allow and deny decisions with full context.
+8. ALWAYS scope all queries by tenant_id in multi-tenant systems.
+9. ALWAYS use immutable, append-only storage for audit logs.
+10. NEVER use string matching for permission checks (e.g., includes("admin") matches "billing_admin").
+11. ALWAYS separate authentication from authorization — they are different concerns.
+12. ALWAYS test that users CANNOT access what they should not — not just that they CAN access what they should.
+```
+
 ## Key Behaviors
 
 1. **Default deny.** If no policy explicitly grants access, the answer is DENY. Never default to ALLOW. This is the single most important security principle in access control.

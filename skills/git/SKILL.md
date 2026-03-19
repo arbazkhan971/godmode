@@ -669,6 +669,104 @@ Regression test: Add test that login works without an existing session.
 | `--cleanup` | Clean up stale branches, prune worktrees |
 | `--audit` | Audit current Git practices and suggest improvements |
 
+## Auto-Detection
+
+On activation, automatically detect Git repository context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Run: git remote -v — detect hosting (GitHub, GitLab, Bitbucket, self-hosted)
+2. Run: git log --oneline -20 — detect commit message conventions (conventional, freeform, mixed)
+3. Run: git branch -a — count active branches, identify default branch (main/master/develop)
+4. Run: git branch --merged main — count stale merged branches
+5. Check for branch protection: .github/settings.yml, CODEOWNERS, branch protection API
+6. Detect CI/CD: .github/workflows/, .gitlab-ci.yml, Jenkinsfile, .circleci/config.yml
+7. Check for commit tooling: .commitlintrc*, .husky/, .czrc, commitizen config in package.json
+8. Detect merge strategy: scan recent merge commits for --squash, --no-ff, or rebase patterns
+9. Check for PR templates: .github/pull_request_template.md, .gitlab/merge_request_templates/
+10. Count contributors (git shortlog -sn) — determine team size for workflow recommendation
+```
+
+## Explicit Loop Protocol
+
+When cleaning up or restructuring Git history for multiple branches:
+
+```
+GIT WORKFLOW LOOP:
+current_iteration = 0
+branches = [branch_1, branch_2, ...]  // branches to clean, review, or merge
+
+WHILE current_iteration < len(branches) AND NOT user_says_stop:
+  1. SELECT next branch
+  2. ASSESS: commit count, last activity, merge status, CI status
+  3. IF stale (>30 days, merged): DELETE branch, report
+  4. IF active PR branch:
+       a. CHECK commit quality (WIP commits, message conventions)
+       b. IF needs cleanup: interactive rebase (squash WIP, reword, reorder)
+       c. REBASE onto latest main (resolve conflicts if any)
+       d. VERIFY CI passes after rebase
+  5. IF needs bisect (regression reported):
+       a. Identify good/bad commits
+       b. Run automated bisect with test script
+       c. Report bad commit and recommended fix
+  6. current_iteration += 1
+  7. REPORT: "Branch <N>/<total>: <name> — <action taken>"
+
+ON COMPLETION:
+  REPORT: "<N> branches processed, <M> deleted, <K> cleaned, <J> bisected"
+```
+
+## Multi-Agent Dispatch
+
+For large repository maintenance or multi-branch parallel work:
+
+```
+PARALLEL GIT AGENTS:
+When performing parallel development across features:
+
+Agent 1 (worktree: main-worktree):
+  - Continue primary feature development
+  - Rebase feature branch onto latest main
+  - Run full test suite
+
+Agent 2 (worktree: hotfix-worktree):
+  - Create hotfix branch from main
+  - Implement urgent production fix
+  - Cherry-pick fix to any active release branches
+  - Open PR for hotfix
+
+Agent 3 (worktree: review-worktree):
+  - Check out PR branch for review
+  - Run tests, verify behavior
+  - Provide review feedback
+
+Agent 4 (worktree: cleanup-worktree):
+  - Clean up stale branches (merged >7 days ago)
+  - Prune unreachable objects
+  - Verify .gitignore coverage
+  - Update branch protection rules documentation
+
+MERGE STRATEGY: Hotfix merges to main first (production priority).
+  Feature branches rebase onto updated main.
+  Cleanup runs independently (no code changes to merge).
+```
+
+## Hard Rules
+
+```
+HARD RULES — GIT:
+1. NEVER rebase public/shared branches. Rebase only YOUR branches onto main.
+2. NEVER use git push --force on shared branches. Use --force-with-lease on your own branches only.
+3. NEVER mix merge strategies on a team. Pick one (merge, squash, or rebase) and enforce consistently.
+4. ALWAYS use descriptive commit messages following the team's convention. "fix stuff" is never acceptable on main.
+5. ALWAYS create a backup branch before interactive rebase: git branch backup-<name>.
+6. NEVER accumulate more than 3 stashes. Convert stale stashes to branches or drop them.
+7. ALWAYS run interactive rebase before opening a PR. Clean, logical commits — not WIP sausage-making.
+8. NEVER leave stale branches. Delete merged branches within 7 days. Review inactive branches at 30 days.
+9. ALWAYS use automated bisect (git bisect run) when hunting regressions across >10 commits.
+10. ALWAYS remove worktrees when done. They share .git but consume disk space and create confusion.
+```
+
 ## Anti-Patterns
 
 - **Do NOT rebase public branches.** Rewriting shared history breaks every other developer's local state. Rebase only your own branches.
