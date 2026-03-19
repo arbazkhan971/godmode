@@ -6594,3 +6594,169 @@ The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 | `commands/godmode/cicd.md` | Command | Usage reference for `/godmode:cicd` |
 
 **Iterations 117-126 (10 files, 5 skills, 5 commands)**
+
+---
+
+## 55. Configuration & Environment Skills
+
+Two new skills address the critical gap between code and deployment — managing the configuration and environments that determine how code behaves in each stage of the delivery pipeline.
+
+### 55.1 Config — Environment & Configuration Management (`skills/config/SKILL.md`)
+
+**Purpose:** Audit, validate, and manage configuration across dev/staging/prod environments, feature flags, and A/B test rollouts.
+
+**Key capabilities:**
+- **Config inventory:** Scans all config files, environment variables, and secret references across the project.
+- **Environment parity checking:** Compares configurations across dev/staging/prod to detect critical drift (missing keys), expected drift (log levels, pool sizes), and suspicious drift (unexplained differences).
+- **Validation schema generation:** Produces typed config schemas with presence, type, format, range, and sensitivity checks. Enforces fail-fast startup validation.
+- **Feature flag management:** Designs flags with typed schema (release, experiment, ops, permission), lifecycle tracking (owner, creation date, expected removal), and hygiene audits (stale flags, dead flags, flag count).
+- **A/B test design:** Calculates required sample size from minimum detectable effect and baseline, defines rollout phases (internal, canary, controlled, full), and sets kill criteria for auto-revert.
+- **Secret management audit:** Verifies .gitignore coverage, no hardcoded secrets, rotation policy, separate dev/prod credentials, and encryption at rest.
+
+**Workflow:** Inventory config -> Parity check -> Validate schema -> Audit flags -> Audit secrets -> Report (HEALTHY / NEEDS ATTENTION / CRITICAL).
+
+**Command:** `/godmode:config` (`commands/godmode/config.md`)
+
+### 55.2 Onboard — Codebase Onboarding (`skills/onboard/SKILL.md`)
+
+**Purpose:** Accelerate developer ramp-up by generating architecture walkthroughs, key file reading lists, naming convention analysis, dependency graphs, and guided code tours.
+
+**Key capabilities:**
+- **Project discovery:** Auto-detects project type, language, framework, package manager, build system, test framework, and size from file system scanning.
+- **Architecture walkthrough:** Generates directory maps with annotated descriptions, data flow diagrams showing request lifecycle, and layer responsibility tables.
+- **Key file identification:** Identifies the 7-10 most important files ordered by reading priority, plus most-modified files (from git history) and largest files (complexity hotspots).
+- **Naming convention analysis:** Documents file, variable, function, type, API endpoint, and database naming patterns used throughout the codebase.
+- **Dependency graph:** Visualizes internal module dependencies (with circular dependency detection, fan-in/fan-out analysis) and external package dependencies (with outdated/vulnerable package flagging).
+- **Code tour generation:** Creates a guided walk-through with annotated stops at entry point, configuration, routing, core business logic, data layer, error handling, and testing patterns.
+
+**Workflow:** Discover project -> Architecture walkthrough -> Key files -> Naming conventions -> Dependency graph -> Code tour -> Report.
+
+**Command:** `/godmode:onboard` (`commands/godmode/onboard.md`)
+
+### Integration with Existing Skills
+
+```
+/godmode:onboard  ->  /godmode:think  ->  /godmode:config  ->  /godmode:plan  ->  /godmode:build
+     |                     |                    |                     |                  |
+  Understand          Design a new        Validate config       Plan the           Implement
+  the codebase        feature             for the feature       implementation     with TDD
+```
+
+- **From `/godmode:onboard`:** After understanding the codebase, use `/godmode:think` to design your first feature
+- **From `/godmode:config`:** After validating environments, use `/godmode:ship` to deploy with confidence
+- **From `/godmode:config --ab`:** After designing an A/B test, use `/godmode:build` to implement the variants
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/config/SKILL.md` | Skill | Environment and configuration management workflow |
+| `skills/onboard/SKILL.md` | Skill | Codebase onboarding and architecture discovery workflow |
+| `commands/godmode/config.md` | Command | Usage reference for `/godmode:config` |
+| `commands/godmode/onboard.md` | Command | Usage reference for `/godmode:onboard` |
+
+**Iterations 127-130 (4 files, 2 skills, 2 commands)**
+
+---
+
+## 56. Advanced Testing Skills
+
+Three new skills extend Godmode's testing capabilities beyond unit and integration tests into load testing, end-to-end browser testing, and chaos engineering — the trifecta of production readiness validation.
+
+### 56.1 Loadtest — Load Testing & Performance Testing (`skills/loadtest/SKILL.md`)
+
+**Purpose:** Stress-test systems to establish baselines, find breaking points, identify bottlenecks, and validate capacity with statistical rigor.
+
+**Key capabilities:**
+- **Multi-tool support:** Generates test scripts for k6 (JavaScript), Artillery (YAML), Locust (Python), and JMeter — matching the team's preferred toolchain.
+- **Four test patterns:** Load test (baseline at expected traffic), stress test (find breaking point), spike test (sudden surge response), and soak test (4-8 hour endurance for leak detection).
+- **Baseline establishment:** Records P50, P95, P99 response times, throughput, error rate, CPU, memory, DB connections, and network I/O per endpoint.
+- **Bottleneck analysis:** Correlates response time degradation with resource saturation (CPU, memory, DB, network) to identify root causes ranked by impact.
+- **Statistical significance:** Validates performance comparisons using Welch's t-test with Cohen's d effect size. Requires multiple runs with variance reporting.
+- **SLO compliance:** Tests against defined service level objectives (P95 < Xms, error rate < Y%, throughput > N rps) with pass/fail verdicts.
+
+**Workflow:** Define scope and SLOs -> Select test type -> Generate scripts -> Run baseline -> Analyze bottlenecks -> Statistical validation -> Report (MEETS SLOs / NEEDS OPTIMIZATION / CRITICAL).
+
+**Command:** `/godmode:loadtest` (`commands/godmode/loadtest.md`)
+
+### 56.2 E2E — End-to-End Testing (`skills/e2e/SKILL.md`)
+
+**Purpose:** Build maintainable browser-based E2E test suites with page object models, cross-browser coverage, test data isolation, and flakiness remediation.
+
+**Key capabilities:**
+- **Framework setup:** Configures Playwright, Cypress, or Selenium with production-grade settings (parallel workers, retries, reporters, web server integration).
+- **Page Object Model:** Generates base page class with common methods and per-page classes with locators (using accessible selectors: getByRole, getByLabel), actions, and assertions.
+- **Test data management:** Implements static fixtures, dynamic factories (faker-based), and authentication fixtures for isolated, reproducible test data.
+- **Cross-browser testing:** Configures and runs tests across Chromium, Firefox, WebKit, and mobile viewports with per-browser issue reporting.
+- **Flakiness remediation:** Diagnoses root causes (race conditions, animation interference, test order dependency, network timing, viewport inconsistency) with a structured fix for each pattern.
+- **Anti-flakiness rules:** Enforces auto-waiting assertions, test independence, accessible locators, data cleanup, explicit timeouts, animation disabling, API-seeded test data, and failure artifacts (screenshots, videos, traces).
+
+**Workflow:** Assess state -> Design architecture -> Configure framework -> Implement page objects -> Write tests -> Fix flakiness -> Cross-browser run -> Report (SOLID / NEEDS WORK / FRAGILE).
+
+**Command:** `/godmode:e2e` (`commands/godmode/e2e.md`)
+
+### 56.3 Chaos — Chaos Engineering (`skills/chaos/SKILL.md`)
+
+**Purpose:** Test system resilience through controlled failure injection, circuit breaker validation, and structured game day exercises.
+
+**Key capabilities:**
+- **Steady state definition:** Establishes health indicators (success rate, latency, error rate, resource usage) and monitoring endpoints as the baseline to compare against during experiments.
+- **Failure domain mapping:** Catalogs all failure modes across network (latency, DNS, packet loss), compute (process crash, memory pressure, CPU saturation), storage (DB failover, cache failure, disk full), dependencies (API outages), and data (corruption, replication lag).
+- **Experiment design:** Each experiment follows a template: hypothesis, blast radius, duration, injection method, rollback procedure, success/failure criteria, and prerequisites checklist.
+- **Network failure injection:** Dependency timeouts (tc/toxiproxy), DNS failure, packet loss — with expected behaviors for circuit breakers, retries, and graceful degradation.
+- **Process failure injection:** Process crash (kill -9), memory pressure (stress-ng), CPU saturation — testing auto-restart, load shedding, and health check priority.
+- **Storage failure injection:** Database failover, cache flush (cold cache performance), disk full — testing read replica promotion, fallback to direct queries, and write prioritization.
+- **Circuit breaker validation:** Tests all state transitions (CLOSED -> OPEN -> HALF-OPEN -> CLOSED/OPEN) with fallback response verification and metrics/logging checks.
+- **Game day planning:** Structured timeline with kickoff, experiments, observation periods, rollbacks, and retrospective. Includes safety protocols, escalation paths, and approval requirements.
+- **Resilience scorecard:** Grades each failure domain (A = resilient, B = adequate, C = fragile, F = vulnerable) with recovery time measurements against targets.
+
+**Workflow:** Define steady state -> Map failure domains -> Design experiments -> Validate circuit breakers -> Plan game day -> Run experiments -> Generate scorecard (RESILIENT / ADEQUATE / FRAGILE).
+
+**Command:** `/godmode:chaos` (`commands/godmode/chaos.md`)
+
+### Integration with Existing Skills
+
+```
+/godmode:loadtest  ->  /godmode:optimize  ->  /godmode:loadtest --compare
+     |                      |                        |
+  Find bottlenecks     Fix bottlenecks        Verify improvement
+
+/godmode:e2e  ->  /godmode:fix  ->  /godmode:e2e --fix-flaky
+     |                 |                    |
+  Find failures    Fix bugs           Fix flaky tests
+
+/godmode:chaos  ->  /godmode:fix  ->  /godmode:chaos --scorecard
+     |                   |                     |
+  Find weakness     Add resilience      Re-score system
+```
+
+- **From `/godmode:loadtest` to `/godmode:optimize`:** Load testing reveals bottlenecks; optimize addresses them; re-test verifies the improvement with statistical comparison.
+- **From `/godmode:e2e` to `/godmode:ship`:** E2E tests validate user flows before shipping. The ship skill checks E2E status as a pre-flight gate.
+- **From `/godmode:chaos` to `/godmode:fix`:** Chaos experiments reveal resilience gaps; fix addresses them; chaos re-scores the system.
+- **From `/godmode:loadtest` to `/godmode:ship`:** SLO compliance is a ship pre-condition. Loadtest provides the evidence.
+- **From `/godmode:secure` to `/godmode:chaos`:** Security audit identifies theoretical denial-of-service risks; chaos engineering validates them experimentally.
+
+### Design Principles for Advanced Testing Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Measure before optimizing | Loadtest establishes baselines before any optimization work |
+| 2 | Statistical rigor | Single runs prove nothing; multiple runs with significance testing required |
+| 3 | Stability over speed | E2E reliability trumps E2E execution time; fix flakiness first |
+| 4 | Hypothesize before injecting | Every chaos experiment starts with a testable prediction |
+| 5 | Production-like environments | Tests against dev SQLite don't predict prod PostgreSQL behavior |
+| 6 | Findings are victories | A broken test or failed experiment means you found the problem before users did |
+| 7 | Automate for regression | Performance and E2E tests run in CI to catch regressions before production |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/loadtest/SKILL.md` | Skill | Load testing and performance testing workflow |
+| `skills/e2e/SKILL.md` | Skill | End-to-end browser testing workflow |
+| `skills/chaos/SKILL.md` | Skill | Chaos engineering and resilience testing workflow |
+| `commands/godmode/loadtest.md` | Command | Usage reference for `/godmode:loadtest` |
+| `commands/godmode/e2e.md` | Command | Usage reference for `/godmode:e2e` |
+| `commands/godmode/chaos.md` | Command | Usage reference for `/godmode:chaos` |
+
+**Iterations 131-136 (6 files, 3 skills, 3 commands)**
