@@ -25,5 +25,5 @@ IF average confidence < 7 → loop back to `/godmode:think` with all risks attac
 
 ## Rules
 1. Every persona cites file:line. No finding without code evidence.
-2. Disagreements are valuable. Don't smooth them over.
+2. Disagreements are signal. Report them as-is — don't average conflicting views.
 3. Confidence < 7 = `/godmode:think` with risks attached. Never proceed to `/godmode:plan` on shaky designs.

@@ -28,4 +28,4 @@ WHILE tasks remain:
 3. Test after every merge. Broken builds don't proceed.
 4. Max 5 agents per round. Dependency order always.
 5. Build what the plan says. No unplanned refactoring or scope creep.
-6. Log everything to TSV.
+6. No code without tests. Log everything to TSV.

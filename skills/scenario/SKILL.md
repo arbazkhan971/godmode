@@ -20,6 +20,6 @@ Output table: `DIMENSION | SCENARIO | LIKELIHOOD x IMPACT | PRIORITY | TEST FILE
 
 ## Rules
 1. All 12 dimensions. Don't skip any.
-2. Score every scenario. Gut feel is not a priority.
+2. Score every scenario numerically. No unscored scenarios in output.
 3. HIGH+ scenarios get runnable tests. Stubs and TODOs are not tests.
 4. Cite specific code paths for each scenario.

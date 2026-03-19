@@ -29,4 +29,4 @@ Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ## Rules
 1. RED first. Test must fail before code.
 2. One test per iteration. Assert observable behavior (return values, side effects), not internal calls.
-3. No mocking unless external services. Every test has an assertion.
+3. No mocking unless external I/O (network, filesystem, time). Every test has ≥1 assertion.

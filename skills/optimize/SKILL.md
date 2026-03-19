@@ -14,7 +14,7 @@ Ask user: Goal, Metric (shell cmd → number), Direction (higher/lower), Scope (
 WHILE current_round < max_rounds:
     current_round += 1
     # 1. REVIEW — in-scope files + results.tsv (last 10) + git log -10. Identify bottleneck.
-    IF bounded AND remaining < 3: exploit > explore
+    IF bounded AND remaining < 3: exploit (refine best) > explore (try new)
     # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
     IF >5 consecutive discards: try OPPOSITE
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)

@@ -29,4 +29,4 @@ WHILE untested categories remain:
 ## Rules
 1. Every finding: file:line + exploit steps (reproducible). No theoretical risks.
 2. All OWASP Top 10. 4 personas per category. Critical/High first.
-3. Never approve with Critical findings.
+3. Never approve with Critical findings. Critical+High count printed in final verdict.

@@ -17,7 +17,7 @@ Run `git diff main...HEAD` (full diff, not just stat) and `git log main..HEAD --
 Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX (code snippet)`
 Severities: MUST-FIX, SHOULD-FIX, NIT.
 ### 3. Merge & Deduplicate
-Combine all findings. Remove duplicates. Sort by severity.
+Combine findings. Deduplicate (same file:line = merge). Sort: MUST-FIX → SHOULD-FIX → NIT.
 ### 4. Auto-Fix NITs
 For each NIT: if safe (unused imports, whitespace, reorder), apply and commit `"review: fix {description}"`. Else leave for human.
 ### 5. Verdict

@@ -26,4 +26,4 @@ Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
 ## Rules
 1. 100% checklist before shipping. No exceptions.
 2. Dry-run before real ship. State rollback command before executing.
-3. Verify after shipping. One ship per invocation.
+3. Verify after shipping. One ship per invocation. Failed verify = immediate rollback.
