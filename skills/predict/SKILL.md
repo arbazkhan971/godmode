@@ -8,7 +8,7 @@ description: 5-persona evaluation. Independent assessment then consensus.
 
 ## Workflow
 ### 1. Define What's Being Evaluated
-Read the spec/proposal. Summarize in one sentence.
+Read `.godmode/spec.md` or user-provided proposal. Summarize: what changes, what's at risk.
 ### 2. Run 5 Personas
 | Persona | Focus |
 |---------|-------|
@@ -26,4 +26,4 @@ IF average confidence < 7 → loop back to `/godmode:think` with all risks attac
 ## Rules
 1. Every persona cites file:line. No finding without code evidence.
 2. Disagreements are valuable. Don't smooth them over.
-3. Confidence < 7 = go back to think. Don't build on shaky designs.
+3. Confidence < 7 = `/godmode:think` with risks attached. Never proceed to `/godmode:plan` on shaky designs.

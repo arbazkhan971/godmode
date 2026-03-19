@@ -10,7 +10,7 @@ description: Branch finalization. Merge, PR, keep, or discard.
 ### 1. Pre-Check
 Run: `git status` (clean?), `test_cmd` (pass?), `lint_cmd` (pass?). Any failure → `/godmode:fix` first.
 ### 2. Choose Outcome
-- **MERGE:** squash-merge to main, delete branch
+- **MERGE:** `git merge --squash HEAD && git commit` to main, `git branch -d {branch}`
 - **PR:** `gh pr create --title '{feature}' --body "$(git log main..HEAD --format='- %s')"`
 - **KEEP:** branch stays for later
 - **DISCARD:** delete branch (confirm first — destructive)
@@ -20,6 +20,6 @@ Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}"`.
 
 ## Rules
 1. Clean state before finalize. No uncommitted changes, tests must pass.
-2. Squash-merge for clean history. One commit per feature on main.
+2. Squash-merge: `git checkout main && git merge --squash {branch} && git commit`. One commit per feature.
 3. Never force-delete without confirmation.
 4. PR body from git log. Auto-generate from commit history.
