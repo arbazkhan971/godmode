@@ -5907,6 +5907,95 @@ Next Phase
 
 ---
 
+## 61. Internationalization Skills
+
+### `/godmode:i18n` — Internationalization & Localization
+
+**Purpose:** Prepare codebases for multi-language, multi-locale, multi-region support with production-grade i18n infrastructure.
+
+**Core capabilities:**
+- **String extraction:** Scan for hardcoded UI strings, extract to resource files (JSON, YAML, .strings, .xml, ARB) with translator context and key naming conventions
+- **Framework selection:** Recommend and configure i18n libraries per stack (react-intl, vue-i18n, @angular/localize, NSLocalizedString, Android Resources, i18next, flutter_localizations)
+- **Pluralization:** CLDR-compliant plural rules (not binary if/else) using ICU MessageFormat — handles English (2 forms), Arabic (6 forms), Polish (4 forms), Japanese (1 form)
+- **Date/number/currency formatting:** Replace locale-unaware formatting with Intl API — DateTimeFormat, NumberFormat, currency with correct symbol position and decimal conventions
+- **RTL support:** Convert directional CSS to logical properties (margin-inline-start, padding-inline-end, text-align: start), configure HTML dir attribute, mirror directional icons
+- **Character set validation:** UTF-8 enforcement (utf8mb4 for MySQL), grapheme cluster awareness, Unicode normalization (NFC vs NFD), Intl.Collator for locale-aware sorting
+- **Translation workflow:** Extract → translate (professional, TMS, machine+review, community) → import → validate (completeness, placeholders, HTML balance, length)
+- **i18n testing:** Pseudo-localization (accent characters, 30-40% padding), RTL layout verification, locale-specific formatting, edge cases (CJK, emoji, mixed scripts)
+
+**Invocation:** `/godmode:i18n`, "internationalize", "translate", "add language support", "localization", "RTL support"
+
+**Key principle:** Extract and configure, don't translate. The skill builds the i18n infrastructure; actual translation is a human/service task. ICU MessageFormat is preferred over simpler formats because it handles plurals, gender, and select constructs that simpler systems cannot.
+
+---
+
+## 62. Code Quality & Analysis Skills
+
+### `/godmode:quality` — Code Quality & Analysis
+
+**Purpose:** Measure, catalog, and prioritize code quality issues across duplication, complexity, technical debt, dependency structure, and license compliance.
+
+**Core capabilities:**
+- **Code duplication detection:** AST-based structural comparison finding Type 1 (exact), Type 2 (parameterized), and Type 3 (structural) clones with extraction recommendations and duplication ratio scoring (< 3% excellent, > 20% critical)
+- **Cyclomatic complexity:** Count linearly independent paths (if/else, loops, switch cases, boolean operators, ternary) with threshold of 10 per function
+- **Cognitive complexity:** Measure human comprehension difficulty with nesting penalties, threshold of 15 per function, remediation via extract method, guard clauses, pipeline replacement
+- **Technical debt identification:** Five categories — code smells (Long Method, God Class, Feature Envy), architecture debt (layering violations, missing abstractions), test debt (untested paths, brittle tests), documentation debt (undocumented APIs, stale docs), dependency debt (outdated, vulnerable, unused)
+- **Debt prioritization:** Impact x Likelihood / Effort matrix producing ranked action list with estimated hours per item
+- **Dependency analysis:** Fan-in/fan-out mapping, instability index (I = fan-out / (fan-in + fan-out)), Stable Abstract Principle violation detection
+- **Circular dependency detection:** Identify dependency cycles with three breaking strategies — dependency inversion, extract shared module, event-based decoupling
+- **License compliance:** Inventory all dependency licenses, flag GPL/AGPL/UNLICENSED/UNKNOWN conflicts, provide replacement recommendations for incompatible packages
+
+**Invocation:** `/godmode:quality`, "code quality", "technical debt", "code smell", "complexity analysis", "dependency check", "license audit"
+
+**Key principle:** Measure, don't guess. Every complexity score is calculated, every duplication located, every dependency mapped. Prioritize ruthlessly — not all debt is worth fixing. Use the Impact x Likelihood / Effort matrix to focus effort where it matters most.
+
+---
+
+## 63. Mobile Development Skills
+
+### `/godmode:mobile` — Mobile App Development
+
+**Purpose:** Build, configure, sign, optimize, and ship iOS and Android applications with platform-aware guidance for native and cross-platform approaches.
+
+**Core capabilities:**
+- **Platform assessment:** Evaluate native vs cross-platform tradeoffs, recommend approach (Swift, Kotlin, React Native, Flutter, Kotlin Multiplatform) based on project requirements, team skills, and performance needs
+- **Architecture patterns:**
+  - MVVM (Model-View-ViewModel): reactive UI with observable state, ViewModel as presentation logic layer, repository abstraction for data access
+  - MVI (Model-View-Intent): unidirectional data flow with immutable state, sealed intent classes, separated side effects, time-travel debugging
+  - Clean Architecture: three-layer separation (Presentation, Domain, Data) with dependency rule pointing inward, domain layer has zero external dependencies
+- **Project setup:** Platform-specific configuration — Xcode project settings (bundle ID, ATS, privacy descriptions, schemes), Gradle configuration (variants, ProGuard, signing configs), React Native (TypeScript, navigation, state management, Hermes), Flutter (flavors, code generation, localization)
+- **App signing:** iOS certificates and provisioning profiles (development, ad hoc, App Store, enterprise), Android keystores with Google Play App Signing, CI/CD keychain setup, security best practices (never commit keys)
+- **App store submission:** Complete checklists for App Store (privacy labels, screenshots, metadata, archive/upload) and Play Store (data safety, store listing, AAB build, release tracks), review timeline expectations
+- **Mobile performance:** Battery optimization (significant-change location, BGTaskScheduler/WorkManager, batch networking), memory management (image resize/cache, view recycling, retain cycle prevention, LeakCanary), network optimization (offline-first, compression, certificate pinning, exponential backoff), startup performance (< 1s cold start target, deferred init, binary size reduction)
+
+**Invocation:** `/godmode:mobile`, "mobile app", "iOS", "Android", "React Native", "Flutter", "app store", "mobile performance"
+
+**Key principle:** Platform-aware recommendations always. iOS and Android have different conventions, APIs, and review guidelines. Performance budgets (startup, memory, app size) are set at project start and measured at every milestone. Signing keystores are irreplaceable — treat them like production database credentials.
+
+---
+
+## 64. Performance Profiling Skills
+
+### `/godmode:perf` — Performance Profiling & Optimization
+
+**Purpose:** Identify performance bottlenecks through CPU profiling, memory leak detection, concurrency bug hunting, and statistically rigorous benchmarking.
+
+**Core capabilities:**
+- **CPU profiling & flame graphs:** Language-specific profiling tools (node --cpu-prof, py-spy, go tool pprof, cargo flamegraph, JFR/async-profiler, Instruments Time Profiler, perf/valgrind) with flame graph generation and interpretation — plateau analysis (wide tops = CPU hotspots), tower analysis (deep stacks = excessive abstraction), common patterns (JSON serialization, regex compilation in loops, GC pressure, lock contention)
+- **Memory leak detection:** Heap snapshot diffing methodology — baseline → load → snapshot comparison. Tools per language (Chrome DevTools, tracemalloc, pprof heap, DHAT, Eclipse MAT, Instruments Leaks, Valgrind memcheck). Retention chain analysis proving why objects cannot be collected. Growth pattern classification (linear = classic leak, stepped = periodic, logarithmic = unbounded cache)
+- **Allocation tracking:** Identify excessive allocation hotspots, object pooling recommendations, pre-allocation strategies, GC tuning guidance
+- **Concurrency bug detection:**
+  - Race conditions: shared mutable state without synchronization, TOCTOU patterns, read-modify-write without atomics. Tools: go test -race, ThreadSanitizer, miri
+  - Deadlocks: lock ordering violations (A→B vs B→A), unbounded waits, channel deadlocks, connection pool exhaustion. Prevention: consistent lock ordering, try-lock with timeout, channels over shared memory
+  - Detection tools per language with reproduction scenario documentation
+- **Benchmarking methodology:** Statistical rigor required — warm-up iterations discarded, multiple measurement runs, report mean/median/stddev/percentiles, 95% confidence intervals, coefficient of variation for stability assessment. Comparison protocol: interleaved A/B runs, Welch's t-test for significance (p < 0.05), effect size with confidence intervals. Tools: Benchmark.js, pytest-benchmark, testing.B+benchstat, criterion, JMH, hyperfine
+
+**Invocation:** `/godmode:perf`, "profile", "memory leak", "race condition", "deadlock", "benchmark", "flame graph", "slow", "bottleneck"
+
+**Key principle:** Profile before optimizing — developers' intuition about bottlenecks is wrong more often than right. Statistical rigor is mandatory for benchmarks: a single measurement is noise, not data. Every remediation includes before/after measurements with confidence intervals. Concurrency bugs need exact interleaving scenarios, not "it sometimes crashes."
+
+---
+
 ## Status: COMPLETE — Design + Implementation
 
 ## Document Complete
@@ -6317,3 +6406,191 @@ The API skills integrate into the Godmode workflow at these points:
 | `commands/godmode/contract.md` | Command | Usage reference for `/godmode:contract` |
 
 **Iterations 107-110 (4 files, 2 skills, 2 commands)**
+
+---
+
+## 54. Infrastructure & DevOps Skills
+
+Infrastructure and DevOps skills bring production-grade operational capabilities to Godmode. These five skills cover the full lifecycle of deploying, running, and maintaining software in production environments.
+
+### Skills Overview
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| Infra | `/godmode:infra` | Infrastructure as Code — Terraform, CloudFormation, Pulumi, CDK |
+| K8s | `/godmode:k8s` | Kubernetes & Container Orchestration — Helm, deployments, scaling |
+| Observe | `/godmode:observe` | Monitoring & Observability — Metrics, logging, tracing, alerts, SLOs |
+| Secrets | `/godmode:secrets` | Secrets Management — Vault, rotation, leak detection, auditing |
+| CICD | `/godmode:cicd` | CI/CD Pipeline Design — GitHub Actions, GitLab CI, optimization |
+
+### Infra — Infrastructure as Code
+
+The `infra` skill manages cloud infrastructure through code. It supports four IaC toolchains (Terraform, CloudFormation, Pulumi, CDK) and enforces policy-as-code with OPA and Sentinel.
+
+**Core workflow:**
+1. Discover infrastructure context (tool, provider, state backend)
+2. Validate IaC definitions (syntax, schema, configuration)
+3. Enforce security policies (no public buckets, encryption required, least-privilege IAM)
+4. Estimate monthly cost with delta from current spend
+5. Detect drift between IaC definitions and deployed resources
+6. Run IaC tests (unit with Terratest, integration, compliance with InSpec)
+7. Generate safe deployment plan with resource counts
+8. Apply with post-deployment verification
+
+**Key principles:**
+- Never apply without reviewing the plan
+- Policy enforcement is mandatory, not optional
+- Every change includes cost estimation
+- Drift is a bug — detect and reconcile immediately
+- Secrets never appear in IaC definitions
+
+### K8s — Kubernetes & Container Orchestration
+
+The `k8s` skill handles container deployment, scaling, and troubleshooting on Kubernetes clusters.
+
+**Core workflow:**
+1. Discover cluster context (namespace, workloads, Helm releases)
+2. Generate or validate deployment manifests and Helm charts
+3. Select deployment strategy (rolling update, canary, blue-green)
+4. Configure resource requests/limits, health probes, HPA, PDB
+5. Validate manifests (kubeval, kubesec, kube-linter)
+6. Deploy with rollout verification
+7. Troubleshoot common issues (CrashLoopBackOff, OOMKilled, ImagePullBackOff)
+
+**Deployment strategies:**
+- **Rolling Update** — zero-downtime default with maxSurge/maxUnavailable control
+- **Canary** — progressive traffic shifting (5% -> 20% -> 50% -> 100%) with automated analysis via Argo Rollouts or Flagger
+- **Blue-Green** — instant switch with full rollback capability
+
+**Key principles:**
+- Always set resource requests AND limits
+- All three health probes are mandatory (liveness, readiness, startup)
+- Never use `latest` image tag — pin versions
+- PodDisruptionBudget required for production workloads
+
+### Observe — Monitoring & Observability
+
+The `observe` skill instruments applications with the three pillars of observability and configures alerting and SLOs.
+
+**Core workflow:**
+1. Assess current observability coverage (score out of 10)
+2. Design metrics using RED method (requests) and USE method (resources)
+3. Configure structured JSON logging with correlation IDs
+4. Instrument distributed tracing with OpenTelemetry
+5. Define SLOs with error budget tracking and multi-window burn rate alerts
+6. Create actionable alert rules with runbook links
+7. Design dashboards following the Four Golden Signals
+
+**Supported tools:**
+- Metrics: Prometheus, DataDog, CloudWatch
+- Logging: ELK Stack, Loki + Grafana, CloudWatch Logs
+- Tracing: Jaeger, Zipkin, Tempo, X-Ray, OpenTelemetry
+- Alerting: Prometheus Alertmanager, PagerDuty, OpsGenie
+
+**Key principles:**
+- Three pillars are mandatory — metrics, logs, and traces
+- Structured logs only — no unstructured console.log
+- Alerts must be actionable with runbook links
+- SLOs drive feature vs. reliability decisions
+- Never use high-cardinality labels on metrics
+
+### Secrets — Secrets Management
+
+The `secrets` skill prevents credential exposure, manages secret stores, and enforces rotation policies.
+
+**Core workflow:**
+1. Inventory all secrets (env vars, config files, hardcoded values)
+2. Scan codebase and git history for leaked secrets (gitleaks, truffleHog)
+3. Set up centralized secret stores (Vault, AWS SM, GCP SM, Azure KV)
+4. Manage .env files safely (.env.example as template, .gitignore enforcement)
+5. Enforce rotation schedules and flag overdue credentials
+6. Audit secret access patterns and flag anomalies
+7. Install pre-commit hooks to prevent future leaks
+
+**Defense in depth:**
+- Pre-commit hooks (gitleaks) catch leaks locally
+- CI pipeline scanning catches missed hooks
+- GitHub push protection catches everything else
+- Secret manager provides rotation, auditing, and access control
+
+**Key principles:**
+- Leaked secrets are emergencies — revoke first, then fix code
+- Never commit secrets, even temporarily
+- .env.example is documentation — keep it in sync
+- Rotation is not optional — credentials age like milk
+- Each service gets its own identity with least-privilege access
+
+### CICD — CI/CD Pipeline Design
+
+The `cicd` skill creates and optimizes continuous integration and delivery pipelines.
+
+**Core workflow:**
+1. Discover project CI/CD requirements (language, tests, deploy targets)
+2. Design pipeline architecture (lint -> test -> build -> security -> deploy)
+3. Generate platform-specific configuration (GitHub Actions, GitLab CI, CircleCI, Jenkins)
+4. Configure caching (dependencies, Docker layers, build artifacts)
+5. Set up test sharding for parallel execution
+6. Create matrix builds for multi-version testing
+7. Build reusable pipeline templates and composite actions
+8. Optimize with performance analysis (before/after comparison)
+
+**Optimization techniques:**
+- Dependency caching with lockfile hash keys
+- Docker BuildKit layer caching
+- Test sharding across parallel workers
+- Concurrent stages for independent jobs
+- Concurrency control to cancel redundant runs
+- Shallow clones for faster checkout
+
+**Key principles:**
+- Fast feedback first — lint before test, fail on cheapest checks
+- Cache aggressively — every second saved multiplies across every push
+- Environments as gates — staging auto-deploys, production requires approval
+- Timeouts are mandatory — no hung pipelines wasting compute
+- Secrets are injected, never stored in pipeline config
+
+### Workflow Integration
+
+The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
+
+```
+/godmode:plan    -> Design the feature
+/godmode:build   -> Implement with TDD
+/godmode:test    -> Verify correctness
+/godmode:secure  -> Security audit
+/godmode:infra   -> Provision infrastructure
+/godmode:k8s     -> Deploy to Kubernetes
+/godmode:observe -> Set up monitoring
+/godmode:secrets -> Secure credentials
+/godmode:cicd    -> Automate the pipeline
+/godmode:ship    -> Ship to production
+```
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Infrastructure as code | All infrastructure defined in version-controlled files |
+| 2 | Policy as code | Security and compliance rules enforced automatically |
+| 3 | Observable by default | Every service ships with metrics, logs, and traces |
+| 4 | Secrets are ephemeral | Short-lived credentials, automated rotation, audited access |
+| 5 | Pipelines are fast | Caching, sharding, and parallelism by default |
+| 6 | Environments are isolated | Separate state, credentials, and configuration per environment |
+| 7 | Deployments are reversible | Canary, blue-green, and instant rollback strategies |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/infra/SKILL.md` | Skill | Infrastructure as Code workflow |
+| `skills/k8s/SKILL.md` | Skill | Kubernetes & Container Orchestration workflow |
+| `skills/observe/SKILL.md` | Skill | Monitoring & Observability workflow |
+| `skills/secrets/SKILL.md` | Skill | Secrets Management workflow |
+| `skills/cicd/SKILL.md` | Skill | CI/CD Pipeline Design workflow |
+| `commands/godmode/infra.md` | Command | Usage reference for `/godmode:infra` |
+| `commands/godmode/k8s.md` | Command | Usage reference for `/godmode:k8s` |
+| `commands/godmode/observe.md` | Command | Usage reference for `/godmode:observe` |
+| `commands/godmode/secrets.md` | Command | Usage reference for `/godmode:secrets` |
+| `commands/godmode/cicd.md` | Command | Usage reference for `/godmode:cicd` |
+
+**Iterations 117-126 (10 files, 5 skills, 5 commands)**
