@@ -1167,4 +1167,150 @@ better tree-shaking and IDE support.
 
 ---
 
-## Status: ITERATION 12 — Review skill spec complete
+## 13. `/godmode:optimize` — Autonomous Optimization Loop Skill Spec
+
+**Origin:** Autoresearch (the core 8-phase autonomous loop)
+**Phase:** OPTIMIZE
+**Purpose:** The heart of Godmode — an autonomous iteration loop that modifies code, measures results mechanically, and keeps only improvements. Git is memory. Metrics are truth.
+
+### Trigger Conditions
+
+- Code is built and tests pass, but performance/quality can be improved
+- User says "optimize this", "make it faster", "improve this", "iterate on this"
+- Orchestrator routes here after BUILD phase completes
+- Explicitly invoked with `/godmode:optimize`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--metric` | — | The mechanical metric to optimize (required or prompted) |
+| `--verify` | — | Command to measure the metric (required or prompted) |
+| `--iterations` | 25 | Maximum iterations before stopping |
+| `--target` | — | Target metric value (stop when reached) |
+| `--guard` | — | Guard metric that must not regress (e.g., "tests passing") |
+| `--scope` | auto | Files/directories in scope for modification |
+| `--strategy` | auto | Optimization strategy: `hill-climb`, `explore`, `surgical` |
+
+### The 8-Phase Loop
+
+Each iteration follows this exact sequence:
+
+```
+┌─→ Phase 1: READ HISTORY
+│   Phase 2: ANALYZE
+│   Phase 3: PLAN CHANGE
+│   Phase 4: IMPLEMENT
+│   Phase 5: VERIFY (mechanical)
+│   Phase 6: GUARD CHECK
+│   Phase 7: KEEP or REVERT
+│   Phase 8: LOG RESULTS
+└────────────────────────┘ (repeat until target met or max iterations)
+```
+
+**Phase 1: READ HISTORY (Git-as-Memory)**
+- Read the last N commit messages from optimization branch
+- Read `.godmode/results.tsv` for metric history
+- Understand: what was tried, what worked, what failed, what's the trend
+- Never repeat a failed approach unless conditions changed
+
+**Phase 2: ANALYZE**
+- Read the current codebase (scoped files)
+- Identify the biggest opportunity for improvement
+- Consider: algorithmic changes, data structure changes, caching, batching, parallelism, reducing I/O
+
+**Phase 3: PLAN CHANGE**
+- Describe the change in one sentence
+- Predict: expected metric improvement, risk of regression, confidence level
+- The plan must be a single, atomic change (not a bundle of changes)
+
+**Phase 4: IMPLEMENT**
+- Make the code change
+- Keep it small and focused (one idea per iteration)
+- Don't touch files outside the scope
+
+**Phase 5: VERIFY (Mechanical Measurement)**
+- Run the verify command
+- Parse the metric value from the output
+- Compare to baseline and previous iteration
+- The metric MUST be mechanically measurable — no vibes, no "I think it's better"
+
+**Phase 6: GUARD CHECK**
+- Run guard commands (e.g., test suite)
+- If any guard fails: the change broke something
+- Guard failure = mandatory revert, no exceptions
+
+**Phase 7: KEEP or REVERT**
+
+| Condition | Action |
+|-----------|--------|
+| Metric improved AND guards pass | **KEEP** — commit the change |
+| Metric unchanged AND guards pass | **REVERT** — not worth the complexity |
+| Metric regressed AND guards pass | **REVERT** — made it worse |
+| Guards failed (any metric value) | **REVERT** — broke something |
+
+- KEEP: `git commit -m "optimize: iteration N — [description] (+X% improvement)"`
+- REVERT: `git checkout -- .` then `git commit -m "optimize: iteration N — [description] (reverted, [reason])"`
+
+**Phase 8: LOG RESULTS**
+- Append to `.godmode/results.tsv`:
+  ```
+  iteration	timestamp	description	metric_before	metric_after	delta	kept	guard_status
+  7	2025-01-15T10:30:00Z	add response caching	340ms	285ms	-16.2%	true	pass
+  ```
+- Print progress summary:
+  ```
+  Iteration 7/25 | Metric: 285ms (target: 200ms) | Kept: 5 | Reverted: 2 | Trend: ↓ improving
+  ```
+
+### Stopping Conditions
+
+| Condition | Behavior |
+|-----------|----------|
+| Target metric reached | Stop, report success |
+| Max iterations reached | Stop, report best result |
+| 5 consecutive reverts | Stop, report plateau (likely local optimum) |
+| Guard fails 3 times in a row | Stop, report instability |
+| User interrupts | Stop, preserve current best |
+
+### Key Behaviors
+
+1. **Mechanical metrics only** — If you can't measure it with a command, it's not a valid metric
+2. **One change per iteration** — Atomic changes make it clear what helped and what didn't
+3. **Git is memory** — Every iteration is committed (kept or reverted), creating a learning record
+4. **Guards are sacred** — Never keep a change that breaks a guard, no matter how much the metric improved
+5. **Revert is not failure** — A reverted iteration is a learned lesson; it prevents repeating mistakes
+6. **No human in the loop** — The loop runs autonomously; the user watches and can interrupt
+
+### Example Usage
+
+```
+User: /godmode:optimize --metric "p95 response time" \
+  --verify "wrk -t4 -c100 -d10s http://localhost:3000/api | grep 'Latency.*99%'" \
+  --target "200ms" \
+  --guard "npm test" \
+  --iterations 25
+
+Agent: Starting optimization loop...
+  Baseline: p95 = 340ms | Target: 200ms | Max iterations: 25
+
+  Iteration 1: Add Redis caching for user lookups
+    340ms → 285ms (-16.2%) ✓ KEPT
+
+  Iteration 2: Batch database queries in list endpoint
+    285ms → 241ms (-15.4%) ✓ KEPT
+
+  Iteration 3: Add connection pooling
+    241ms → 238ms (-1.2%) ✗ REVERTED (not worth added complexity)
+
+  Iteration 4: Switch JSON serializer to fast-json-stringify
+    241ms → 198ms (-17.8%) ✓ KEPT
+
+  🎯 Target reached! p95 = 198ms (target: 200ms)
+  Iterations: 4/25 | Kept: 3 | Reverted: 1
+  Total improvement: 340ms → 198ms (-41.8%)
+```
+
+---
+
+## Status: ITERATION 13 — Optimize skill spec complete
