@@ -1,0 +1,102 @@
+{
+  "name": "godmode",
+  "display_name": "Godmode",
+  "version": "1.0.0",
+  "description": "Turn on Godmode for Claude Code. Complete development workflow from idea to shipped, optimized product — with autonomous iteration loops, TDD, parallel agents, security audits, and mechanical verification.",
+  "author": "godmode-team",
+  "license": "MIT",
+  "homepage": "https://github.com/godmode-team/godmode",
+  "repository": "https://github.com/godmode-team/godmode",
+  "keywords": [
+    "development-workflow",
+    "tdd",
+    "autonomous",
+    "optimization",
+    "security-audit",
+    "code-review",
+    "debugging",
+    "planning",
+    "brainstorming",
+    "shipping"
+  ],
+  "categories": [
+    "development",
+    "productivity",
+    "quality",
+    "security"
+  ],
+  "icon": "icon.png",
+  "commands": {
+    "godmode": {
+      "file": "commands/godmode.md",
+      "description": "Orchestrator — auto-detect phase and suggest next action"
+    },
+    "godmode:think": {
+      "file": "commands/godmode/think.md",
+      "description": "Brainstorm and design, produce a spec"
+    },
+    "godmode:plan": {
+      "file": "commands/godmode/plan.md",
+      "description": "Decompose spec into implementable tasks"
+    },
+    "godmode:build": {
+      "file": "commands/godmode/build.md",
+      "description": "Execute plan with TDD and parallel agents"
+    },
+    "godmode:optimize": {
+      "file": "commands/godmode/optimize.md",
+      "description": "Autonomous improvement loop with mechanical verification"
+    },
+    "godmode:debug": {
+      "file": "commands/godmode/debug.md",
+      "description": "Scientific bug investigation"
+    },
+    "godmode:fix": {
+      "file": "commands/godmode/fix.md",
+      "description": "Autonomous error remediation"
+    },
+    "godmode:secure": {
+      "file": "commands/godmode/secure.md",
+      "description": "STRIDE + OWASP security audit"
+    },
+    "godmode:ship": {
+      "file": "commands/godmode/ship.md",
+      "description": "8-phase shipping workflow"
+    }
+  },
+  "skills": {
+    "godmode": "skills/godmode/SKILL.md",
+    "think": "skills/think/SKILL.md",
+    "predict": "skills/predict/SKILL.md",
+    "scenario": "skills/scenario/SKILL.md",
+    "plan": "skills/plan/SKILL.md",
+    "build": "skills/build/SKILL.md",
+    "test": "skills/test/SKILL.md",
+    "review": "skills/review/SKILL.md",
+    "optimize": "skills/optimize/SKILL.md",
+    "debug": "skills/debug/SKILL.md",
+    "fix": "skills/fix/SKILL.md",
+    "secure": "skills/secure/SKILL.md",
+    "ship": "skills/ship/SKILL.md",
+    "finish": "skills/finish/SKILL.md",
+    "setup": "skills/setup/SKILL.md",
+    "verify": "skills/verify/SKILL.md"
+  },
+  "agents": {
+    "code-reviewer": "agents/code-reviewer.md",
+    "spec-reviewer": "agents/spec-reviewer.md"
+  },
+  "hooks": {
+    "config": "hooks/hooks.json",
+    "session_start": "hooks/session-start"
+  },
+  "compatibility": {
+    "claude_code_version": ">=1.0.0"
+  },
+  "stats": {
+    "skills_count": 16,
+    "commands_count": 9,
+    "agents_count": 2,
+    "phases": ["THINK", "BUILD", "OPTIMIZE", "SHIP"]
+  }
+}
