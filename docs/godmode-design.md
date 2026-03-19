@@ -7950,3 +7950,156 @@ Integration with existing skills:
 | `commands/godmode/release.md` | Command | Usage reference for `/godmode:release` |
 
 **Iterations 211-216 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 86. Productivity & Project Management Skills
+
+Four new skills bring structured developer productivity and project management workflows into Godmode — from daily standups and sprint retrospectives through task prioritization and scope management.
+
+### Daily Standup & Progress Tracking (`/godmode:standup`)
+
+**Purpose:** Automated standup report generation from git activity with blocker detection and sprint metrics.
+
+**Workflow:**
+1. **Gather** — Scan git log, PRs, branches, and issue references for the lookback period (default: 24 hours)
+2. **Report** — Generate structured standup following Yesterday / Today / Blockers / Metrics format
+3. **Detect Blockers** — Identify stale PRs (>24h), failing CI, stuck tasks, and dependency issues with severity classification (MEDIUM/HIGH/CRITICAL)
+4. **Burndown** — Track sprint progress against ideal burndown with risk assessment (On Track / At Risk / Off Track)
+5. **Velocity** — Calculate rolling averages across sprints with confidence ranges for sprint commitment planning
+
+**Blocker Escalation:**
+| Severity | Signal | Action |
+|----------|--------|--------|
+| MEDIUM | PR open >24h, task in progress >3 days | Flag in standup report |
+| HIGH | PR open >48h, upstream dependency blocked | Flag with recommended owner |
+| CRITICAL | Build failing on main, production issue | Recommend immediate attention, link to `/godmode:incident` |
+
+**Key Principle:** Evidence-based reporting. Every item in "Yesterday" is backed by a commit, PR, or review. No self-reported fluff.
+
+**Chaining:** `/godmode:standup` -> `/godmode:scope` (scope adjustment) | `/godmode:prioritize` (blocker triage) | `/godmode:incident` (critical blockers)
+
+### Retrospective & Team Health (`/godmode:retro`)
+
+**Purpose:** Facilitate sprint retrospectives, track team health metrics, manage action items, and measure continuous improvement.
+
+**Workflow:**
+1. **Context** — Gather sprint metrics, git history, incidents, and previous action items
+2. **Format** — Choose from 5 retrospective formats (Start/Stop/Continue, 4Ls, Mad/Sad/Glad, Sailboat, What Went Well)
+3. **Facilitate** — Guide through Set the Stage, Gather Data, Generate Insights, Define Action Items
+4. **Health** — Score team health across 8 dimensions (Delivery Pace, Code Quality, Technical Debt, Testing Confidence, Documentation, CI/CD Reliability, Developer Experience, Process Efficiency)
+5. **Improve** — Track improvement trends across sprints, escalate recurring themes (3+ appearances)
+
+**Action Item Rules:**
+- Maximum 3 action items per retro (more means nothing gets done)
+- Each action has an owner (not "the team"), a deadline, and verifiable completion criteria
+- Previous actions are reviewed at the start of every retro
+
+**Health Scoring (1-5):**
+| Score | Meaning | Action |
+|-------|---------|--------|
+| 5 | Excellent | No improvement needed |
+| 4 | Good | Minor improvements possible |
+| 3 | Adequate | Noticeable room for improvement |
+| 2 | Struggling | Needs focused attention |
+| 1 | Critical | Blocking team effectiveness |
+
+**Key Principle:** Blameless or useless. The prime directive applies to every retrospective. Focus on systems and processes, not individuals.
+
+**Chaining:** `/godmode:retro` -> `/godmode:prioritize` (prioritize action items) | `/godmode:plan` (plan improvement initiatives)
+
+### Task Prioritization (`/godmode:prioritize`)
+
+**Purpose:** Structured prioritization using established frameworks with dependency awareness and technical debt trade-offs.
+
+**Frameworks:**
+| Framework | Best For | Type |
+|-----------|----------|------|
+| RICE | Large backlogs (>20 items), product features | Quantitative (Reach x Impact x Confidence / Effort) |
+| ICE | Quick scoring (5-20 items) | Quantitative (Impact x Confidence x Ease) |
+| MoSCoW | Release planning, scope negotiation | Categorical (Must/Should/Could/Won't) |
+| Effort-Impact | Visual triage, quick decisions | 2x2 matrix (Quick Wins / Big Bets / Fill-Ins / Money Pit) |
+
+**Dependency-Aware Scheduling:**
+- Items that unblock multiple others receive priority bumps
+- Critical path items are scheduled first
+- Independent items are parallelized
+- Blocked items are deferred until blockers resolve
+
+**Technical Debt Allocation:**
+| Debt Level | Ratio | Recommended Split |
+|------------|-------|-------------------|
+| Low (<15%) | <15% of backlog | 80% features / 20% debt |
+| Medium | 15-30% | 70% features / 30% debt |
+| High | 30-50% | 50% features / 50% debt |
+| Critical | >50% | 30% features / 70% debt |
+
+**Key Principle:** Frameworks over gut feeling. Every prioritization uses a named framework with visible scores and reasoning.
+
+**Chaining:** `/godmode:prioritize` -> `/godmode:plan` (plan top items) | `/godmode:scope` (scope highest priority) | `/godmode:refactor` (tackle high-value debt)
+
+### Scope Management (`/godmode:scope`)
+
+**Purpose:** Feature decomposition, MVP definition, scope creep detection, requirements validation, and user story writing.
+
+**Workflow:**
+1. **Decompose** — Break features into capabilities with T-shirt size estimates, explicit in/out scope boundaries
+2. **MVP** — Identify minimum viable set using the removal test: if removing an item does not break the core flow, it is V2
+3. **Creep Detection** — Compare current state to original scope, quantify drift percentage with severity (GREEN/YELLOW/ORANGE/RED)
+4. **Validate** — Check requirements for completeness, consistency, testability, and ambiguity
+5. **Stories** — Generate INVEST-quality user stories with Gherkin acceptance criteria (GIVEN/WHEN/THEN)
+6. **Document** — Produce scope document with problem statement, MVP, stories, assumptions, and open questions
+
+**Scope Creep Severity:**
+| Drift | Severity | Action |
+|-------|----------|--------|
+| 0-10% | GREEN | Normal refinement, continue |
+| 10-25% | YELLOW | Review with stakeholders |
+| 25-50% | ORANGE | Scope review required |
+| >50% | RED | Stop and re-scope |
+
+**MVP Test:** Can the user complete the core flow with only MVP items? Does removing any MVP item break that flow? If both answers are yes, the MVP is correctly scoped.
+
+**Key Principle:** Explicit boundaries. Every scope document has an "Out of Scope" section. What you choose NOT to build is as important as what you build.
+
+**Chaining:** `/godmode:scope` -> `/godmode:think` (design solution) | `/godmode:plan` (plan implementation) | `/godmode:build` (build MVP)
+
+### Workflow Integration
+
+The Productivity & Project Management skills form a sprint lifecycle:
+
+```
+/godmode:scope       -> Define what to build
+/godmode:prioritize  -> Decide what to build first
+/godmode:plan        -> Plan implementation
+/godmode:build       -> Execute the plan
+/godmode:standup     -> Track daily progress
+/godmode:retro       -> Reflect and improve
+```
+
+### Design Principles
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Evidence over opinion | Standups from git data, prioritization from frameworks, health from metrics |
+| 2 | Explicit boundaries | Every scope has in/out, every sprint has capacity, every retro has max 3 actions |
+| 3 | Track over time | Velocity, health, and improvement trends across sprints |
+| 4 | Blameless culture | Retros follow the prime directive, blockers name systems not people |
+| 5 | Ruthless MVP | Remove items until removing one more would break the core flow |
+| 6 | Dependencies are first-class | Prioritization accounts for blocking relationships, not just individual scores |
+| 7 | Debt is not optional | Technical debt gets allocated capacity every sprint based on measured ratio |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/standup/SKILL.md` | Skill | Daily standup and progress tracking workflow |
+| `skills/retro/SKILL.md` | Skill | Retrospective and team health workflow |
+| `skills/prioritize/SKILL.md` | Skill | Task prioritization with scoring frameworks |
+| `skills/scope/SKILL.md` | Skill | Scope management with MVP and creep detection |
+| `commands/godmode/standup.md` | Command | Usage reference for `/godmode:standup` |
+| `commands/godmode/retro.md` | Command | Usage reference for `/godmode:retro` |
+| `commands/godmode/prioritize.md` | Command | Usage reference for `/godmode:prioritize` |
+| `commands/godmode/scope.md` | Command | Usage reference for `/godmode:scope` |
+
+**Iterations 284-291 (8 files, 4 skills, 4 commands)**
