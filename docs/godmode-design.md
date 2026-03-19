@@ -8103,3 +8103,153 @@ The Productivity & Project Management skills form a sprint lifecycle:
 | `commands/godmode/scope.md` | Command | Usage reference for `/godmode:scope` |
 
 **Iterations 284-291 (8 files, 4 skills, 4 commands)**
+
+---
+
+## 75. Developer Experience Skills
+
+### Overview
+
+Four new skills extend Godmode into the developer experience domain, covering the entire spectrum of DX concerns: from environment setup and feedback loops through linting, type safety, and monorepo management. These skills address the toolchain, processes, and infrastructure that determine how productive developers are day-to-day.
+
+### Skill: `/godmode:dx` — Developer Experience Optimization
+
+**Purpose:** Audit and improve the full developer experience across environment setup, feedback loops, error messages, CLI tooling, and internal developer portals.
+
+**Capabilities:**
+- **DX audit:** Score developer experience across 5 dimensions (environment setup, feedback loops, error messages, CLI/tooling, documentation) with measurable metrics
+- **Environment automation:** One-command setup scripts, devcontainer configuration, Docker Compose, Nix flakes, and runtime version management (mise/asdf)
+- **Hot reload & feedback loops:** Vite HMR optimization, test watch modes (Jest/Vitest/pytest-watch), incremental type checking, and file watcher tuning
+- **Error message improvement:** Audit all error throw sites, classify by actionability, transform cryptic errors into diagnostics with context, remediation steps, and documentation links
+- **CLI tool design:** Framework selection (commander, oclif, cobra, click, typer), help text, autocomplete, progress indicators, JSON output, and NO_COLOR support
+- **Developer portal:** Service catalog (Backstage-compatible), API discovery, runbook library, environment provisioning, and feature flag management
+
+**Workflow:** DX Audit -> Environment Setup -> Feedback Loop Optimization -> Error Message Improvement -> CLI Design -> Developer Portal -> Improvement Plan -> Commit
+
+**Artifacts produced:**
+- `scripts/setup.sh` — One-command development environment setup
+- `.devcontainer/devcontainer.json` — VS Code devcontainer configuration
+- `src/errors/` — Structured error class hierarchy
+- DX audit report with before/after scores
+
+**Flags:** `--setup`, `--feedback`, `--errors`, `--cli`, `--portal`, `--audit-only`, `--quick-wins`, `--before-after`
+
+### Skill: `/godmode:monorepo` — Monorepo Management
+
+**Purpose:** Set up, configure, and optimize monorepo architecture with the right tooling, boundaries, and CI strategies.
+
+**Capabilities:**
+- **Tool selection:** Guided decision tree for Turborepo, Nx, Lerna, Bazel, Rush, and pnpm workspaces based on project size, language mix, and team preferences
+- **Package boundary enforcement:** Dependency rules preventing apps from importing other apps, detecting circular dependencies, and enforcing declared dependencies with Nx module boundaries or custom checkers
+- **Selective builds and testing:** Change detection that only builds and tests affected packages, with path filtering in CI (dorny/paths-filter), Turborepo `--filter`, and Nx `affected`
+- **Dependency graph management:** Visualization, health checks (circular deps, orphan packages, hub packages, chain depth), and graph maintenance
+- **Shared configuration:** Centralized tsconfig, ESLint, and Prettier configs in a `packages/config/` package that all other packages extend
+- **Remote caching:** Turborepo remote cache (Vercel), Nx Cloud, or self-hosted cache for dramatically faster CI and local builds
+
+**Workflow:** Assessment -> Tool Selection -> Package Structure -> Boundary Enforcement -> Selective Builds -> Dependency Graph -> Shared Config -> Commit
+
+**Artifacts produced:**
+- `turbo.json` or `nx.json` — Build pipeline configuration
+- `pnpm-workspace.yaml` — Workspace definition
+- `packages/config/` — Shared tsconfig, ESLint, Prettier configurations
+- `.github/workflows/ci.yml` — Selective build CI pipeline
+- Dependency graph visualization
+
+**Flags:** `--init <tool>`, `--audit`, `--boundaries`, `--graph`, `--selective`, `--cache`, `--shared-config`, `--migrate`, `--ci`
+
+### Skill: `/godmode:lint` — Linting & Code Standards
+
+**Purpose:** Set up and enforce code linting, formatting, and style standards with automated enforcement at every level.
+
+**Capabilities:**
+- **Multi-language tool configuration:** ESLint 9 flat config with typescript-eslint, Prettier, Biome (all-in-one), Ruff (Python), golangci-lint (Go), Stylelint (CSS), shellcheck, and more
+- **Custom rule creation:** ESLint custom rules with AST visitors, Ruff/flake8 custom plugins for project-specific conventions (e.g., no direct env access, no print statements)
+- **Auto-fix strategies:** Three-layer defense: format-on-save (editor), lint-staged (pre-commit), and enforcement (CI) with `--max-warnings=0`
+- **Pre-commit hooks:** Husky + lint-staged for JS/TS, pre-commit framework for Python and multi-language, with hooks that run only on staged files
+- **Style guide enforcement:** Comprehensive coding standards document covering indentation, naming conventions, import ordering, error handling, and more — all backed by automated rules
+- **Migration support:** Guided migration between tools (e.g., ESLint + Prettier to Biome) with rule mapping and batch auto-fix
+
+**Workflow:** Assess Current State -> Tool Selection -> Configuration -> Custom Rules -> Auto-Fix Setup -> Pre-Commit Hooks -> Style Guide -> CI Enforcement -> Commit
+
+**Artifacts produced:**
+- Linter config (`eslint.config.js`, `biome.json`, `pyproject.toml`, `.golangci.yml`)
+- Formatter config (`.prettierrc` or integrated in linter)
+- Pre-commit hooks (`.husky/` or `.pre-commit-config.yaml`)
+- Editor settings (`.vscode/settings.json`, `.editorconfig`)
+- Style guide document
+
+**Flags:** `--tool <name>`, `--fix`, `--hooks`, `--ci`, `--custom-rule <name>`, `--migrate <from> <to>`, `--audit`, `--strict`, `--style-guide`
+
+### Skill: `/godmode:type` — Type System & Schema Validation
+
+**Purpose:** Strengthen type safety through TypeScript strict mode, runtime schema validation, and schema-first development patterns.
+
+**Capabilities:**
+- **TypeScript strict mode:** Full strict configuration for new projects, 4-phase gradual adoption plan for existing projects (noImplicitAny -> strictFunctionTypes -> full strict -> zero any)
+- **Schema validation:** Library selection (Zod, Yup, Joi, Valibot, ArkType, io-ts) with decision tree, schema definition as single source of truth, and type inference from schemas
+- **Runtime type checking:** Validation middleware for API boundaries, environment variable validation at startup, and external API response validation
+- **Type narrowing:** Discriminated unions for state machines, Result types for error handling without exceptions, custom type guards and assertion functions
+- **Branded types:** Domain-safe primitive wrappers (UserId, OrderId, Email, Cents) that prevent accidental mixing at the type level
+- **Schema-first development:** Workflow where schemas define entities, types are inferred, business logic is typed, and test factories generate data from schemas
+
+**Workflow:** Type Safety Audit -> Strict Mode Configuration -> Schema Library Selection -> Schema-First Development -> Validation at Boundaries -> Type Narrowing -> Branded Types -> Commit
+
+**Artifacts produced:**
+- Updated `tsconfig.json` with strict mode flags
+- Schema files at `src/schemas/`
+- Validation middleware at `src/middleware/validate.ts`
+- Environment validation at `src/config/env.ts`
+- Type safety audit with before/after score
+
+**Flags:** `--audit`, `--strict`, `--schemas`, `--validate`, `--eliminate-any`, `--branded`, `--migrate <lib>`, `--env`, `--factory`
+
+### Integration with Existing Skills
+
+The Developer Experience skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:dx  ->  /godmode:lint  ->  /godmode:type  ->  /godmode:build
+     |                 |                  |                   |
+  Optimize env     Enforce code      Strengthen          Build with
+  and feedback     standards         type safety         full guardrails
+
+/godmode:monorepo  ->  /godmode:lint  ->  /godmode:dx  ->  /godmode:ship
+       |                     |                 |                 |
+  Set up workspace     Shared lint         Fast feedback    Ship with
+  and boundaries       config              per package      confidence
+```
+
+- **From `/godmode:setup`:** After initial project setup, invoke `/godmode:dx` to optimize the development environment
+- **From `/godmode:dx` to `/godmode:lint`:** After environment improvements, set up linting and code standards
+- **From `/godmode:lint` to `/godmode:type`:** After code standards are enforced, strengthen type safety
+- **From `/godmode:monorepo` to `/godmode:lint`:** Monorepo shared config package feeds into centralized lint configuration
+- **From `/godmode:type` to `/godmode:build`:** With type safety in place, build features with full guardrails
+- **From `/godmode:review`:** Code review can refer to `/godmode:lint` for style issues and `/godmode:type` for type safety gaps
+- **From `/godmode:quality`:** Quality analysis identifies technical debt that `/godmode:lint` and `/godmode:type` can address
+
+### Design Principles for Developer Experience Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Measure before improving | Every DX audit produces numeric scores; improvements show before/after deltas |
+| 2 | Automate everything repeatable | Format on save, lint on commit, validate on request — humans handle logic, machines handle style |
+| 3 | One-command setup | Any developer must go from clone to running in a single command, no tribal knowledge |
+| 4 | Schema is the source of truth | Types are inferred from schemas, never written separately; one change updates both |
+| 5 | Three layers of defense | Editor (instant), pre-commit (fast), CI (final) — violations caught as early as possible |
+| 6 | Feedback speed compounds | Every second saved on save-to-result multiplies across every developer, every day |
+| 7 | Boundaries prevent entropy | Package boundaries, lint rules, and type strictness prevent gradual quality degradation |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/dx/SKILL.md` | Skill | Developer experience optimization workflow |
+| `skills/monorepo/SKILL.md` | Skill | Monorepo management workflow |
+| `skills/lint/SKILL.md` | Skill | Linting and code standards workflow |
+| `skills/type/SKILL.md` | Skill | Type system and schema validation workflow |
+| `commands/godmode/dx.md` | Command | Usage reference for `/godmode:dx` |
+| `commands/godmode/monorepo.md` | Command | Usage reference for `/godmode:monorepo` |
+| `commands/godmode/lint.md` | Command | Usage reference for `/godmode:lint` |
+| `commands/godmode/type.md` | Command | Usage reference for `/godmode:type` |
+
+**Iterations 203-210 (8 files, 4 skills, 4 commands)**
