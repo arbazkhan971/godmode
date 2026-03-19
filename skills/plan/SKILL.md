@@ -13,7 +13,7 @@ description: Decompose spec into tasks with deps, files, agents. Output .godmode
 - Scan codebase: `git ls-files`, directory structure, existing patterns
 - Detect stack (from orchestrator Step 1)
 ### 2. Decompose into Tasks
-Each task is a YAML entry with fields: `id`, `title`, `skill` (godmode skill to follow), `files` (exact paths), `depends_on` (task IDs), `agent: true/false`, `test` (command), `done_when` (verifiable criterion).
+Each task: `id`, `title`, `skill` (which godmode skill), `files` (exact paths), `depends_on` (task IDs), `agent: true/false`, `test` (verify command), `done_when` (exit 0 = done).
 ### 3. Build Dependency Graph
 Sort tasks topologically. Group tasks with no unmet deps into rounds for parallel execution. Continue until all tasks assigned.
 ### 4. Validate Plan
@@ -24,8 +24,8 @@ Sort tasks topologically. Group tasks with no unmet deps into rounds for paralle
 Write to `.godmode/plan.yaml`. Print summary: `Plan: {N} tasks in {M} rounds` with per-round breakdown.
 
 ## Rules
-1. Every task has exact file paths. No "somewhere in src/".
-2. Every task has a `done_when` that's mechanically verifiable.
+1. Every task has exact file paths that exist (or will be created). No globs, no "somewhere in".
+2. Every `done_when` is a shell command. If it exits 0, the task is done.
 3. Max 5 tasks per round (matches build's agent cap).
 4. No task modifies more than 5 files. Split larger tasks.
 5. Plan must be valid YAML. Build skill parses it literally.
