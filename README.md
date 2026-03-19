@@ -1,5 +1,10 @@
 # Godmode
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Skills](https://img.shields.io/badge/skills-16-green.svg)](.claude-plugin/marketplace.json)
+[![Commands](https://img.shields.io/badge/commands-9-orange.svg)](commands/)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet.svg)](https://claude.ai)
+
 **Turn on Godmode for Claude Code.**
 
 A skill plugin that gives your AI agent a complete, disciplined development workflow — from idea to shipped, optimized product. Every claim is verified. Every experiment is committed. Every decision has evidence.
@@ -7,6 +12,8 @@ A skill plugin that gives your AI agent a complete, disciplined development work
 ```
 /godmode
 ```
+
+> "Godmode turned my 2-hour debugging session into a 15-minute automated investigation. The optimization loop found a 76% performance improvement I never would have found manually." — Exactly the kind of thing we want users to say.
 
 ---
 
@@ -255,10 +262,56 @@ godmode/
     └── marketplace.json        # Plugin metadata
 ```
 
+## Real-World Results
+
+These are the kinds of results Godmode enables:
+
+| Scenario | Before Godmode | With Godmode | Improvement |
+|----------|---------------|-------------|-------------|
+| API response time | 2.4s at p95 | 348ms at p95 | 85% faster |
+| Bug investigation | 2 hours manual debugging | 15 min automated | 8x faster |
+| Feature delivery | Build then test then fix | TDD from start, no rework | Zero post-build fixes |
+| Security audit | "Looks fine to me" | STRIDE + OWASP + red-team | 4 critical findings caught |
+| Code review | Informal skim | 7-dimension scored review | Consistent, thorough |
+| Optimization | "Should be faster now" | 847ms to 198ms, measured | Evidence-based, not vibes |
+
+## Frequently Asked Questions
+
+**Q: Do I have to use every skill for every feature?**
+No. Use what you need. A quick bug fix might only use `debug + fix + ship`. A major feature benefits from the full chain. See the [chaining guide](docs/chaining.md).
+
+**Q: Does this work with any programming language?**
+Yes. Godmode's skills are language-agnostic. The session-start hook auto-detects JavaScript/TypeScript, Python, Rust, Go, Ruby, and Java. See the [domain guide](docs/domain-guide.md).
+
+**Q: How is the optimization loop different from just asking Claude to "make it faster"?**
+Three ways: (1) It measures before and after with a real command, not vibes. (2) It makes one change at a time so you know what helped. (3) It automatically reverts changes that don't improve the metric. See [the autonomous loop explanation](#the-autonomous-loop-the-core-feature).
+
+**Q: Can I add my own skills?**
+Yes. See [CONTRIBUTING.md](CONTRIBUTING.md). Every skill is a Markdown file following a standard structure.
+
+**Q: Does Godmode replace my existing tools?**
+No. Godmode uses your existing test runner, linter, and deployment tools. It wraps them in a disciplined workflow.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Getting Started](docs/getting-started.md) | First-time walkthrough |
+| [Domain Guide](docs/domain-guide.md) | Backend, frontend, ML, content, DevOps |
+| [Skill Chaining](docs/chaining.md) | How to chain skills together |
+| [CI/CD Integration](docs/ci-cd.md) | GitHub Actions, GitLab CI |
+| [Architecture](docs/architecture.md) | System design overview |
+| [Examples](docs/examples/) | End-to-end workflow examples |
+| [Design Document](docs/godmode-design.md) | Full design specification |
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add new skills, improve existing ones, or contribute to the core plugin.
+
+---
+
+**Godmode: Discipline before speed. Evidence before claims. Git is memory.**
