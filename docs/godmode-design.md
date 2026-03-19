@@ -5950,6 +5950,79 @@ The following artifacts have been created as production-ready implementations:
 
 ---
 
+## 51. Database & Data Management Skills
+
+Three new skills extend Godmode into the database and data engineering domain, ensuring developers never need a separate tool for schema management, query optimization, or data pipeline work.
+
+### 51.1 Migrate — Database Migration & Schema Management (`skills/migrate/SKILL.md`)
+
+**Purpose:** Generate, validate, and apply database migrations with production-grade safety.
+
+**Key capabilities:**
+- **Auto-detection:** Scans the project to identify the ORM/migration tool (Prisma, Drizzle, TypeORM, Sequelize, Django, Rails, Go-migrate, Alembic, Flyway, Liquibase, Knex, or raw SQL) and database engine.
+- **Risk classification:** Every schema change is classified as SAFE, CAUTION, DANGEROUS, or BREAKING before any migration is generated.
+- **Backward compatibility:** BREAKING changes (column renames, drops, type changes) trigger the expand-contract pattern — add new alongside old, backfill, then remove old — preventing production outages.
+- **Rollback testing:** Every UP migration is validated by running UP, DOWN, UP to confirm reversibility and idempotency.
+- **Lock estimation:** For large tables, estimates DDL lock duration and recommends CONCURRENTLY or online DDL tools when needed.
+- **Data preservation:** Verifies row counts and sample data before/after migration to ensure no data loss.
+
+**Workflow:** Detect environment -> Analyze change -> Assess risk -> Generate migration (UP + DOWN) -> Validate (syntax, rollback, data preservation, lock estimate) -> Apply with verification -> Report.
+
+**Command:** `/godmode:migrate` (`commands/godmode/migrate.md`)
+
+### 51.2 Query — Query Optimization & Data Analysis (`skills/query/SKILL.md`)
+
+**Purpose:** Analyze, optimize, and debug database queries with measured before/after improvement.
+
+**Key capabilities:**
+- **EXPLAIN interpretation:** Reads EXPLAIN ANALYZE output line by line across PostgreSQL, MySQL, SQLite, SQL Server, and MongoDB, extracting scan types, join strategies, buffer usage, and row estimate accuracy.
+- **Red flag detection:** Identifies sequential scans on large tables, N+1 patterns, stale statistics, over-fetching (SELECT *), inefficient joins, OFFSET pagination, and functions on indexed columns.
+- **Index recommendations:** Recommends specific index types (B-tree, GIN, GiST, BRIN, partial, covering) with column order rationale, write-overhead trade-offs, and storage estimates.
+- **Query rewriting:** Transforms correlated subqueries to JOINs, replaces DISTINCT-after-JOIN with EXISTS, converts OFFSET pagination to keyset, and eliminates function-on-column anti-patterns.
+- **ORM-level fixes:** Detects N+1 patterns in Prisma, Django, Rails, SQLAlchemy, and Sequelize code and provides the idiomatic eager-loading fix for each.
+- **Multi-engine support:** SQL databases, MongoDB (explain with executionStats), Redis (SLOWLOG, O(N) command detection), and Elasticsearch.
+
+**Workflow:** Identify context -> Run EXPLAIN -> Interpret plan -> Diagnose issues -> Recommend and implement fixes -> Verify with before/after measurement -> Report.
+
+**Command:** `/godmode:query` (`commands/godmode/query.md`)
+
+### 51.3 Pipeline — Data Pipeline & ETL (`skills/pipeline/SKILL.md`)
+
+**Purpose:** Design, build, test, and debug data pipelines from simple cron scripts to orchestrated multi-stage flows.
+
+**Key capabilities:**
+- **Pipeline architecture:** Selects the right pattern (batch, streaming, micro-batch, CDC, ELT) based on SLA, volume, and freshness requirements.
+- **Tool detection:** Identifies Airflow, dbt, Dagster, Prefect, Luigi, Kafka, Spark, and custom setups from project files.
+- **Extraction patterns:** Watermark-based incremental extraction, API pagination with rate limiting, file-based deduplication, and database change tracking.
+- **Transformation design:** Pure transformation functions (no side effects) that are independently testable and composable via pipe chains.
+- **Loading strategies:** Upsert, swap (atomic table rename), append, and SCD Type 2 — each idempotent so backfills are safe.
+- **Data quality:** Row-level validation (nulls, uniqueness, ranges, patterns, referential integrity), dataset-level checks (row count anomalies, completeness, distribution drift, timeliness), and cross-pipeline reconciliation (source-target count and aggregate matching).
+- **Error handling:** Dead-letter queues, retry with exponential backoff, checkpointed resume, and circuit breakers for flaky sources.
+- **Observability:** Structured logging per stage, pipeline metrics (duration, rows processed, rejection rate, freshness), and alerting rules.
+- **Testing:** Unit tests for transformations, integration tests end-to-end, and idempotent backfill verification.
+- **Orchestrator output:** Generates Airflow DAGs, dbt projects, Dagster asset definitions, or Prefect flows matching the detected environment.
+
+**Workflow:** Map data flow -> Detect environment -> Design architecture -> Implement components (extract, transform, load) -> Add quality checks -> Configure error handling -> Set up observability -> Generate orchestrator config -> Test (unit, integration, backfill) -> Report.
+
+**Command:** `/godmode:pipeline` (`commands/godmode/pipeline.md`)
+
+### Summary of Additions
+
+| Artifact | Path | Iteration |
+|----------|------|-----------|
+| Migrate skill | `skills/migrate/SKILL.md` | 101 |
+| Query skill | `skills/query/SKILL.md` | 102 |
+| Pipeline skill | `skills/pipeline/SKILL.md` | 103 |
+| Migrate command | `commands/godmode/migrate.md` | 104 |
+| Query command | `commands/godmode/query.md` | 105 |
+| Pipeline command | `commands/godmode/pipeline.md` | 106 |
+| Design doc update | `docs/godmode-design.md` | 106 |
+
+**Total new files: 6 (3 skills + 3 commands)**
+**Iterations 101-106**
+
+---
+
 ## 59. Incident & Error Handling Skills
 
 Two new skills extend Godmode into production operations — managing incidents when things go wrong and tracking errors before they become incidents.
