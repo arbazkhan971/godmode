@@ -3923,4 +3923,131 @@ The `/godmode:ship` skill auto-generates changelog entries from git commits:
 
 ---
 
-## Status: ITERATION 35 — CHANGELOG Template complete
+## 36. Contributing Guide
+
+**Purpose:** How to add new skills, testing requirements, and PR template for contributors.
+
+### Adding a New Skill
+
+**Step 1: Create the skill directory**
+```
+skills/
+  └── your-skill/
+      ├── SKILL.md
+      └── references/
+          └── your-protocol.md
+```
+
+**Step 2: Write the SKILL.md**
+
+Follow the format from Section 4. Required sections:
+- Frontmatter (name, description, triggers, phase, flags)
+- When to Use
+- Workflow (numbered steps)
+- Key Behaviors
+- Example Usage
+
+**Step 3: Register with the orchestrator**
+
+Add your skill to the routing table in the root `SKILL.md`:
+```markdown
+| your-skill | `/godmode:yourskill` | PHASE | Description |
+```
+
+**Step 4: Add to settings.json defaults**
+
+If your skill has configurable settings, add defaults to `settings.json`.
+
+**Step 5: Write tests**
+
+Every skill must have a test scenario (see Testing Requirements below).
+
+### Testing Requirements
+
+Since skills are markdown instructions (not executable code), testing means **session replay testing**:
+
+1. **Create a test scenario** in `tests/scenarios/`:
+```markdown
+# Test: /godmode:yourskill basic workflow
+
+## Setup
+- Project: Node.js with 3 test files
+- State: BUILD phase, 2 tasks remaining
+
+## Input
+User: /godmode:yourskill --flag value
+
+## Expected Behavior
+1. Agent reads [specific files]
+2. Agent produces [specific output format]
+3. Agent commits with prefix "yourskill:"
+4. State.json updated with [specific fields]
+
+## Verification
+- File .godmode/output.md exists
+- Git log shows commit with "yourskill:" prefix
+- State.json phase field is [expected value]
+```
+
+2. **Manual smoke test**: Run the skill in a real project and verify it follows the documented workflow.
+
+3. **Integration test**: Verify the skill chains correctly with upstream and downstream skills.
+
+### PR Template
+
+```markdown
+## New Skill / Skill Improvement
+
+### What
+[One sentence: what does this add/change?]
+
+### Skill
+- Name: `/godmode:yourskill`
+- Phase: [THINK/BUILD/OPTIMIZE/SHIP/META]
+- Origin: [new / autoresearch / superpowers]
+
+### Checklist
+- [ ] SKILL.md follows the standard format (Section 4)
+- [ ] Frontmatter has all required fields
+- [ ] Workflow has numbered steps
+- [ ] Key Behaviors section included
+- [ ] Example Usage section included
+- [ ] References directory created (if needed)
+- [ ] Orchestrator routing table updated
+- [ ] Test scenario created in tests/scenarios/
+- [ ] Smoke tested in a real project
+- [ ] Integration tested with upstream/downstream skills
+- [ ] CHANGELOG entry added
+
+### Testing
+[Describe how you tested this]
+
+### Screenshots (if visual)
+[Screenshots of the skill in action]
+```
+
+### Code Style for Skills
+
+| Rule | Rationale |
+|------|-----------|
+| Workflows have numbered steps | Makes it easy to reference ("at Step 3...") |
+| Tables for structured data | Scannable, not buried in prose |
+| Code blocks for commands/output | Clear distinction between instructions and examples |
+| One behavior per Key Behaviors item | Atomic rules are easier to follow |
+| Example Usage shows a realistic scenario | Not toy examples; real-world complexity |
+
+### Contribution Areas
+
+| Area | Difficulty | Impact |
+|------|-----------|--------|
+| New skill | High | High |
+| Metric database additions | Low | Medium |
+| Platform adapter | Medium | Medium |
+| Bug fix in existing skill | Low | High |
+| Reference file expansion | Low | Medium |
+| Test scenario | Medium | High |
+| Documentation improvement | Low | Low |
+
+---
+
+## Status: ITERATION 36 — Contributing Guide complete
