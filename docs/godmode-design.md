@@ -7486,6 +7486,78 @@ The Testing Mastery skills integrate into the Godmode workflow at these points:
 
 ---
 
+## 82. Data Visualization & Reporting Skills
+
+This section covers three interconnected skills for data visualization, automated reporting, and analytics implementation. Together they form a complete data communication pipeline: collect data with analytics, visualize it with charts, and summarize it with reports.
+
+### Skill Overview
+
+| Skill | Command | Description |
+|-------|---------|-------------|
+| **Chart** | `/godmode:chart` | Data visualization — chart type selection (bar, line, scatter, heatmap, treemap, sankey), D3.js/Chart.js/Recharts/Plotly integration, dashboard design, responsive layouts, accessibility for data visualizations |
+| **Report** | `/godmode:report` | Automated report generation — PDF, HTML, Markdown output, sprint retrospectives, code health reports, performance trend reports, metric dashboards |
+| **Analytics** | `/godmode:analytics` | Analytics implementation — event tracking (Segment, Amplitude, Mixpanel, PostHog), funnel analysis, A/B test instrumentation, privacy-respecting analytics (Plausible, Umami), data modeling |
+
+### Data Communication Pipeline
+
+```
+/godmode:analytics  ->  /godmode:chart  ->  /godmode:report
+       |                      |                     |
+  Collect data          Visualize data       Summarize & distribute
+  (events, funnels,     (charts, dashboards, (PDF, HTML, Markdown
+   experiments)          responsive, a11y)    reports with metrics)
+```
+
+### How the Skills Connect
+
+- **From `/godmode:analytics` to `/godmode:chart`:** After implementing event tracking, build dashboards to visualize the collected analytics data
+- **From `/godmode:chart` to `/godmode:report`:** Charts created by the chart skill can be embedded in generated reports
+- **From `/godmode:analytics` to `/godmode:report`:** Analytics data feeds directly into metric dashboards and performance trend reports
+- **From `/godmode:report` to `/godmode:plan`:** Action items from retrospectives and code health reports become sprint tasks
+- **From `/godmode:optimize` to `/godmode:report`:** Optimization results are summarized in performance reports
+- **From `/godmode:secure` to `/godmode:analytics`:** Security audit validates that analytics tracking respects privacy (no PII, consent gates)
+
+### Integration with Existing Skills
+
+| Connected Skill | Relationship |
+|----------------|-------------|
+| `/godmode:a11y` | Validates chart accessibility (colorblind-safe palettes, ARIA labels, data tables) |
+| `/godmode:visual` | Visual regression testing for chart components and dashboard layouts |
+| `/godmode:perf` | Performance profiling for chart rendering with large datasets |
+| `/godmode:test` | Unit tests for data transformations and analytics event firing |
+| `/godmode:secure` | Privacy audit for analytics (PII detection, consent compliance, GDPR) |
+| `/godmode:plan` | Converts report action items into sprint tasks |
+| `/godmode:optimize` | Acts on report recommendations to improve metrics |
+| `/godmode:ui` | UI component architecture for chart components and dashboard layouts |
+
+### Design Principles for Data Visualization & Reporting Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Data story first | Understand what needs to be communicated before choosing chart types or report formats |
+| 2 | Accessibility is mandatory | Every chart has a colorblind-safe palette, ARIA labels, and a data table alternative |
+| 3 | Privacy by default | No analytics tracking before consent, no PII in events, respect DNT |
+| 4 | Automate the boring parts | Data collection and formatting are automated; humans focus on analysis and recommendations |
+| 5 | Taxonomy before tracking | Design the event catalog before writing any tracking code |
+| 6 | Trend over snapshot | Always show how metrics change over time, not just current values |
+| 7 | A/B tests need statistical rigor | Calculate sample size, define metrics, run to completion before analyzing |
+| 8 | Reports must be actionable | Every report includes specific next steps; a report without action items should not exist |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/chart/SKILL.md` | Skill | Data visualization workflow — chart selection, library integration, responsive design, accessibility |
+| `skills/report/SKILL.md` | Skill | Report generation workflow — sprint retros, code health, performance trends, metric dashboards |
+| `skills/analytics/SKILL.md` | Skill | Analytics implementation workflow — event tracking, funnels, A/B tests, privacy compliance |
+| `commands/godmode/chart.md` | Command | Usage reference for `/godmode:chart` |
+| `commands/godmode/report.md` | Command | Usage reference for `/godmode:report` |
+| `commands/godmode/analytics.md` | Command | Usage reference for `/godmode:analytics` |
+
+**Iterations 260-265 (6 files, 3 skills, 3 commands)**
+
+---
+
 ## 71. Microservices & Distributed Systems Skills
 
 ### Overview
@@ -7608,3 +7680,137 @@ The microservices and distributed systems skills integrate into the Godmode work
 | `commands/godmode/cache.md` | Command | Usage reference for `/godmode:cache` |
 
 **Iterations 181-186 (6 files, 3 skills, 3 commands)**
+
+---
+
+## 76. Git & Version Control Skills
+
+Three new skills extend Godmode into Git mastery, pull request excellence, and release management — the foundation of every professional development workflow.
+
+### 76.1 Advanced Git Workflows (`/godmode:git`)
+
+**Purpose:** Master advanced Git workflows including branching strategies, merge/rebase decisions, interactive rebase, git bisect, cherry-picking, stashing, worktree management, and commit message conventions.
+
+**Workflow:**
+1. **Assess** — Evaluate repository context (team size, release cadence, CI/CD, hosting platform)
+2. **Branching Strategy** — Recommend and configure the right model:
+   - **GitFlow** — For scheduled release cycles with QA phases and multiple versions in production
+   - **Trunk-Based** — For continuous delivery with short-lived branches (< 2 days) and feature flags
+   - **GitHub Flow** — Default recommendation for most teams using PR-based workflows
+   - **Ship/Show/Ask** — For high-trust senior teams that want speed without bureaucracy
+3. **Merge Strategy** — Choose between merge commits, squash merge, and rebase based on team size and history needs
+4. **Interactive Rebase** — Restructure commit history before merging (squash WIP, reword messages, split commits, reorder for narrative)
+5. **Git Bisect** — Binary search through history to find regressions (manual and automated with test scripts)
+6. **Cherry-Pick & Stash** — Selective commit application patterns and work-in-progress management
+7. **Worktree Management** — Parallel development without context switching (hotfix while coding, PR review in isolation)
+8. **Commit Conventions** — Conventional Commits format with commitlint + husky enforcement
+
+**Branching Decision Matrix:**
+
+| Factor | GitFlow | Trunk-Based | GitHub Flow | Ship/Show/Ask |
+|--------|---------|-------------|-------------|---------------|
+| Team size | Any | Senior | Any | Senior |
+| Release cadence | Scheduled | Continuous | Daily-weekly | Continuous |
+| CI/CD required | No | Yes | Recommended | Yes |
+| Feature flags | Optional | Required | Optional | Recommended |
+| Code review | Optional | Optional | Required | Varies |
+
+**Key principles:** Match workflow to team, consistency beats perfection, history should tell a story, never rebase public branches, bisect before manual search, stashes are temporary, worktrees eliminate context switching.
+
+**Flags:** `--strategy`, `--merge`, `--rebase`, `--bisect`, `--bisect-auto <script>`, `--cherry-pick <SHA>`, `--stash`, `--worktree`, `--conventions`, `--cleanup`, `--audit`
+
+### 76.2 Pull Request Excellence (`/godmode:pr`)
+
+**Purpose:** Create optimally-sized, well-documented pull requests with automated labeling, strategic reviewer assignment, stacked PR patterns for large features, and cycle time metrics.
+
+**Workflow:**
+1. **Assess** — Analyze change size (XS/S/M/L/XL), categorize (feature/fix/refactor/docs), determine risk
+2. **Size Optimization** — Split large PRs using strategies: by layer, by feature slice, by refactor+feature, by test+implementation
+3. **Description Template** — Generate PR descriptions with Summary, Problem, Solution, Changes, Testing, Screenshots, Checklist, and Reviewer Notes sections
+4. **Stacked PRs** — Decompose large features into dependent, sequential PRs with correct base branches and merge order
+5. **Review Requests** — Configure CODEOWNERS, round-robin assignment, domain expert tagging, and review SLAs
+6. **Auto-Labeling** — Set up rules for automatic labels based on file paths, branch names, PR size, and content
+7. **Metrics** — Track time to first review, review rounds, total cycle time, PR size distribution, and reviewer load balance
+
+**PR Size Impact:**
+
+| Size | Review Quality | Time to Merge | Bug Escape Rate |
+|------|---------------|---------------|-----------------|
+| < 50 LOC | Thorough | < 1 hour | Very low |
+| 50-200 | Good | < 4 hours | Low |
+| 200-500 | Declining | 1-3 days | Moderate |
+| 500+ | Rubber stamp | 3+ days | High |
+
+**Key principles:** Small PRs are non-negotiable, description is for the reviewer, self-review first, stacked PRs for large features, automate boring parts, measure and improve, review others promptly.
+
+**Flags:** `--template`, `--split`, `--stack`, `--metrics`, `--labels`, `--codeowners`, `--size-check`, `--self-review`, `--retarget`
+
+### 76.3 Release Management (`/godmode:release`)
+
+**Purpose:** Manage software releases with semantic versioning, automated changelog generation, release notes, branching/tagging, hotfix workflows, and release train scheduling.
+
+**Workflow:**
+1. **Assess** — Evaluate current version, release maturity, cadence, and automation level
+2. **Semantic Versioning** — Determine correct bump from Conventional Commits (MAJOR for breaking, MINOR for features, PATCH for fixes)
+3. **Release Notes** — Generate audience-appropriate notes with Highlights, Breaking Changes, New Features, Bug Fixes, Performance, Deprecations, and Contributors
+4. **Changelog Automation** — Maintain Keep a Changelog format with tools (release-please, semantic-release, changesets, git-cliff)
+5. **Branching & Tagging** — Three patterns: tag from main (simple), release branches (stabilization), support branches (multiple versions)
+6. **Hotfix Workflow** — Emergency production fixes: branch from tag, minimal fix + regression test, expedited review, immediate deploy, cherry-pick to other branches
+7. **Release Train** — Scheduled cadence: develop phase, feature freeze, QA, release candidate, ship, monitor
+8. **Automation Pipeline** — CI/CD integration with release-please or semantic-release for fully automated versioning, changelog, tagging, and publishing
+
+**Release Automation Tools:**
+
+| Tool | Approach | Best For |
+|------|----------|----------|
+| release-please | Automated Release PRs | Most teams (recommended) |
+| semantic-release | Fully automated on push | CI/CD-mature teams |
+| changesets | Per-PR changelog fragments | Monorepos |
+| standard-version | Bump + changelog + tag | npm projects |
+| git-cliff | Configurable generator | Customization needs |
+
+**Hotfix timeline target:** Bug detected to fix in production within 2 hours.
+
+**Key principles:** Version numbers have meaning, changelog is for humans, automate releases, hotfixes are special, release trains keep cadence, breaking changes require migration guides, every release is tagged.
+
+**Flags:** `--setup`, `--bump <type>`, `--pre-release <tag>`, `--hotfix`, `--notes`, `--changelog`, `--dry-run`, `--schedule`, `--status`, `--history`
+
+### 76.4 Skill Interactions
+
+The three Git & Version Control skills form a development lifecycle pipeline:
+
+```
+/godmode:git ──→ /godmode:pr ──→ /godmode:release ──→ /godmode:deploy
+(workflows)      (pull requests)   (versioning)         (deployment)
+```
+
+Integration with existing skills:
+- `/godmode:review` — PR skill feeds into code review before merge
+- `/godmode:ship` — Release skill coordinates with shipping workflow
+- `/godmode:deploy` — Release tags trigger deployment pipelines
+- `/godmode:finish` — Branch cleanup after PR merge
+
+### Design Principles for Git & Version Control Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Match workflow to team | Never recommend GitFlow for a 2-person team or Ship/Show/Ask for juniors |
+| 2 | Small PRs over large PRs | Every recommendation prioritizes reviewability and fast cycle time |
+| 3 | Automate the ceremony | Labels, assignments, changelogs, and version bumps should not require human effort |
+| 4 | History tells a story | Commits on main should be clean, logical, and bisect-friendly |
+| 5 | Releases are contracts | Semantic versioning is a promise to users — respect the contract |
+| 6 | Hotfixes are sacred | Emergency fixes follow a strict, minimal-change workflow with no scope creep |
+| 7 | Measure and improve | Track PR cycle time, review rounds, and release frequency to drive improvement |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/git/SKILL.md` | Skill | Advanced Git workflows |
+| `skills/pr/SKILL.md` | Skill | Pull request excellence |
+| `skills/release/SKILL.md` | Skill | Release management |
+| `commands/godmode/git.md` | Command | Usage reference for `/godmode:git` |
+| `commands/godmode/pr.md` | Command | Usage reference for `/godmode:pr` |
+| `commands/godmode/release.md` | Command | Usage reference for `/godmode:release` |
+
+**Iterations 211-216 (6 files, 3 skills, 3 commands)**
