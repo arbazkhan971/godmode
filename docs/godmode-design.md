@@ -7042,3 +7042,114 @@ docs/
 | quick-reference.md | skill-index.md, skill-chains.md, decision-tree.md, domain-guide.md |
 
 **Iterations 225-229 (4 files created, 1 file updated)**
+
+## 70. Architecture & Design Pattern Skills
+
+### Overview
+
+Three new skills extend Godmode into the architecture and design pattern domain. These skills address the structural decisions that determine a system's long-term viability: from high-level architecture selection through implementation-level pattern choice to domain modeling with DDD.
+
+### Skill: `/godmode:architect` — Software Architecture Design
+
+**Purpose:** Design system architecture with rigorous pattern evaluation, trade-off analysis, and visual documentation.
+
+**Capabilities:**
+- **Architecture pattern selection:** Evaluates monolith (modular), microservices, serverless, event-driven, CQRS, and hexagonal architectures against project requirements
+- **Trade-off analysis:** Weighted comparison matrix scoring scalability, simplicity, team fit, time to market, cost, testability, reliability, and maintainability
+- **C4 model diagrams:** Produces diagrams at all four C4 levels (System Context, Container, Component, Code) using ASCII art
+- **Bounded context mapping:** Strategic DDD view showing context relationships (Partnership, Customer/Supplier, Conformist, ACL, Open Host Service, Shared Kernel)
+- **Quality attribute analysis:** Maps how the chosen architecture addresses scalability, reliability, maintainability, security, observability, and performance
+- **Architecture Decision Records:** Formal ADRs capturing the decision, context, consequences, and risks with mitigations
+- **Migration planning:** Strangler Fig and incremental migration strategies for existing systems
+
+**Workflow:** Context Gathering -> Pattern Evaluation -> Comparison Matrix -> C4 Diagrams -> Bounded Context Map -> Quality Attributes -> ADR -> Artifacts
+
+**Artifacts produced:**
+- `docs/architecture/<system>-architecture.md` — Complete architecture document with C4 diagrams
+- `docs/adr/<number>-<decision>.md` — Architecture Decision Record
+
+**Flags:** `--quick`, `--compare <p1> <p2> <p3>`, `--c4`, `--adr`, `--context-map`, `--migrate`, `--validate`
+
+### Skill: `/godmode:pattern` — Design Pattern Recommendation
+
+**Purpose:** Recommend the right design pattern for a given problem, detect anti-patterns, and produce language-specific implementations.
+
+**Capabilities:**
+- **Gang of Four patterns:** All 23 classic patterns organized by category (Creational, Structural, Behavioral) with modern when-to-use guidance
+- **Modern distributed patterns:** Repository, CQRS, Saga (orchestration and choreography), Circuit Breaker, Outbox, Strangler Fig, Event Sourcing, Bulkhead, Sidecar, Backend for Frontend
+- **Anti-pattern detection:** Scans for God Object, Spaghetti Code, Shotgun Surgery, Feature Envy, Primitive Obsession, Anemic Domain Model, Circular Dependency, Leaky Abstraction, Distributed Monolith, Golden Hammer
+- **Language-specific implementations:** Adapts patterns to TypeScript, Python, Go, Java/Kotlin, and Rust idioms with interfaces, tests, and integration notes
+- **Pattern comparison:** Side-by-side evaluation of candidate patterns with confidence rating and rejected alternatives
+
+**Workflow:** Problem Analysis -> Pattern Classification -> Pattern Recommendation -> Language-Specific Implementation -> Anti-Pattern Detection -> Artifacts
+
+**Artifacts produced:**
+- `docs/patterns/<feature>-pattern-analysis.md` — Pattern analysis with recommendation and implementation guide
+
+**Flags:** `--detect`, `--gof`, `--modern`, `--implement <pattern>`, `--compare <p1> <p2>`, `--language <lang>`, `--teach`
+
+### Skill: `/godmode:ddd` — Domain-Driven Design
+
+**Purpose:** Apply Domain-Driven Design to model complex business domains with bounded contexts, aggregates, and domain events.
+
+**Capabilities:**
+- **Strategic design:** Bounded context identification, context mapping (8 relationship types), ubiquitous language glossary, core/supporting/generic subdomain classification
+- **Tactical design:** Aggregate root entities, child entities, value objects, domain events, commands, repository interfaces, and domain services with invariant documentation
+- **Event storming facilitation:** Structured 5-phase process (Chaotic Exploration, Timeline, Commands & Actors, Aggregates, Bounded Context Discovery)
+- **Aggregate boundary design:** 7 rules for aggregate boundaries (consistency, transaction, size, reference, cascade, invariant, identity) with concrete examples
+- **Domain event catalog:** Cross-context event documentation with payloads, schemas, and versioning rules
+- **Implementation scaffold:** Directory structure generation following hexagonal architecture (domain/application/infrastructure layers)
+
+**Workflow:** Domain Discovery -> Ubiquitous Language -> Event Storming (5 phases) -> Context Mapping -> Tactical Design -> Domain Event Catalog -> Implementation Scaffold -> Artifacts
+
+**Artifacts produced:**
+- `docs/domain/<context>-domain-model.md` — Aggregate designs with entities, value objects, and invariants
+- `docs/domain/event-catalog.md` — All domain events with payloads and schema rules
+- `docs/domain/context-map.md` — Bounded context map with relationship types
+- `docs/domain/ubiquitous-language.md` — Domain vocabulary glossary
+
+**Flags:** `--strategic`, `--tactical`, `--event-storm`, `--aggregate <name>`, `--context-map`, `--language`, `--scaffold`, `--validate`
+
+### Integration with Existing Skills
+
+The architecture and design pattern skills integrate into the Godmode workflow at these points:
+
+```
+/godmode:think  ->  /godmode:architect  ->  /godmode:ddd  ->  /godmode:pattern  ->  /godmode:plan
+     |                    |                      |                   |                    |
+  Brainstorm         Select the             Model the           Choose impl.        Decompose
+  the system         architecture           domain              patterns            into tasks
+```
+
+- **From `/godmode:think`:** After brainstorming system requirements, invoke `/godmode:architect` to formalize the architecture
+- **From `/godmode:architect` to `/godmode:ddd`:** After selecting the architecture pattern, define domain boundaries and aggregates
+- **From `/godmode:ddd` to `/godmode:pattern`:** After modeling aggregates, select implementation patterns (Repository, Factory, etc.)
+- **From `/godmode:pattern` to `/godmode:plan`:** After choosing patterns, plan the implementation tasks
+- **From `/godmode:review`:** Code review can flag architecture violations and refer to `/godmode:architect --validate`
+- **From `/godmode:pattern --detect`:** Anti-pattern detection feeds into `/godmode:refactor` for remediation
+- **From `/godmode:architect` to `/godmode:api`:** Architecture decisions inform API design (REST vs GraphQL, sync vs async)
+
+### Design Principles for Architecture & Pattern Skills
+
+| # | Principle | Implementation |
+|---|-----------|---------------|
+| 1 | Requirements before patterns | Never recommend architecture without understanding scale, team, and constraints |
+| 2 | Always compare alternatives | Minimum 3 options evaluated with trade-offs, even when the answer seems obvious |
+| 3 | Diagrams are mandatory | C4 diagrams for architecture, context maps for DDD, class diagrams for patterns |
+| 4 | Trade-offs are honest | Every pattern has real downsides — never present a solution as having no weaknesses |
+| 5 | ADRs capture the "why" | Architecture Decision Records explain reasoning, not just the decision |
+| 6 | Events before entities | DDD starts with event storming to discover behavior, not with entity modeling |
+| 7 | Simplicity over cleverness | If a function and an interface solve the problem, do not recommend a full pattern |
+
+### Files Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `skills/architect/SKILL.md` | Skill | Software architecture design workflow |
+| `skills/pattern/SKILL.md` | Skill | Design pattern recommendation workflow |
+| `skills/ddd/SKILL.md` | Skill | Domain-Driven Design workflow |
+| `commands/godmode/architect.md` | Command | Usage reference for `/godmode:architect` |
+| `commands/godmode/pattern.md` | Command | Usage reference for `/godmode:pattern` |
+| `commands/godmode/ddd.md` | Command | Usage reference for `/godmode:ddd` |
+
+**Iterations 175-180 (6 files, 3 skills, 3 commands)**
