@@ -27,7 +27,6 @@ Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ```
 
 ## Rules
-1. RED first. Test must fail before code exists.
-2. One test per iteration. Commit after each passes.
-3. Test behavior, not implementation. No mocking unless necessary (external services only).
-4. Every test has an assertion. Commit before moving on.
+1. RED first. Test must fail before code.
+2. One test per iteration. Test behavior, not implementation.
+3. No mocking unless external services. Every test has an assertion.

@@ -24,9 +24,6 @@ Post-ship health check (endpoint curl or smoke tests). If unhealthy, rollback im
 Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
 
 ## Rules
-1. **100% checklist before shipping.** No exceptions.
-2. **Dry-run before real ship.** Always preview first.
-3. **Rollback plan defined before shipping.** Know how to undo.
-4. **Verify after shipping.** Don't assume it worked.
-5. **One ship per invocation.** Don't batch multiple releases.
-6. **Log every ship.**
+1. 100% checklist before shipping. No exceptions.
+2. Dry-run before real ship. Rollback plan before shipping.
+3. Verify after shipping. One ship per invocation.

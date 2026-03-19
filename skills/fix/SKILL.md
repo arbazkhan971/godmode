@@ -26,8 +26,6 @@ Print: "{original} → 0 in {N} iterations"
 ```
 
 ## Rules
-1. Loop until zero. Don't stop after one fix.
-2. One fix per commit. Commit before verify. Revert on regression.
-3. Max 3 attempts per error. Then flag for human, move on.
-4. Never modify tests to make code pass.
-5. Regression test for every bug fix.
+1. Loop until zero errors. One fix per commit.
+2. Max 3 attempts per error. Then flag for human.
+3. Never modify tests. Regression test for every fix.

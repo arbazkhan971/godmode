@@ -29,7 +29,5 @@ WHILE failing_count > 0:
 
 ## Rules
 1. Reproduce first. Never investigate unseen bugs.
-2. Evidence, not intuition. file:line + data proof required.
-3. One bug at a time. Note others, finish current first.
-4. Don't fix during debug. Exception: trivial one-liners.
-5. Loop until all bugs found.
+2. Evidence required: file:line + data proof. No guesses.
+3. One bug at a time. Don't fix during debug (trivial one-liners excepted).

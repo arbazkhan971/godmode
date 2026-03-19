@@ -28,8 +28,5 @@ WHILE untested categories remain:
 
 ## Rules
 1. Every finding: file:line + attack scenario. No theory.
-2. All OWASP Top 10. Track coverage.
-3. 4 personas per category.
-4. Critical/High first.
-5. Never approve with Critical findings.
-6. Log to TSV.
+2. All OWASP Top 10. 4 personas per category. Critical/High first.
+3. Never approve with Critical findings.

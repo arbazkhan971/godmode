@@ -26,8 +26,6 @@ For each NIT: if safe (unused imports, whitespace, reorder), apply and commit `"
 - Critical security → REJECT (score < 5)
 
 ## Rules
-1. Every finding has file:line and suggested fix. No vague feedback.
-2. MUST-FIX blocks merge. SHOULD-FIX blocks next round. NIT = auto-fixed or ignored.
-3. Review against spec/plan, not personal preference.
-4. Auto-fix only safe changes. Never auto-fix logic or public APIs.
-5. 4 agents, 4 perspectives. Don't skip any.
+1. Every finding: file:line + suggested fix. No vague feedback.
+2. MUST-FIX blocks merge. NIT = auto-fixed. Review against spec, not preference.
+3. Auto-fix only safe changes. Never auto-fix logic or public APIs.
