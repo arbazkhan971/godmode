@@ -1,7 +1,7 @@
 {
   "name": "godmode",
   "version": "1.0.0",
-  "description": "Turn on Godmode for Claude Code. 153 skills. Zero configuration. One command.",
+  "description": "Turn on Godmode for Claude Code. 171 skills. 7 subagents. Zero configuration. One command.",
   "author": "godmode-team",
   "license": "MIT",
   "skills": [
@@ -44,6 +44,11 @@
       "name": "api",
       "description": "API design and specification skill. Activates when user needs to design, document, or validate REST, GraphQL, or gRPC APIs. Generates OpenAPI/Swagger specs, enforces versioning strategies, designs rate limiting and pagination, and produces standardized error responses. Every API endpoint gets a spec, example request/response, and validation. Triggers on: /godmode:api, \"design an API\", \"create API spec\", \"validate my API\", or when the orchestrator detects API-related work.",
       "path": "skills/api/SKILL.md"
+    },
+    {
+      "name": "apidocs",
+      "description": "API documentation generation skill. Activates when user needs OpenAPI/Swagger specs, contract-first development, or interactive docs. Triggers on: /godmode:apidocs, \"API docs\", \"Swagger\", \"OpenAPI\", \"API reference\", \"Redoc\".",
+      "path": "skills/apidocs/SKILL.md"
     },
     {
       "name": "architect",
@@ -126,6 +131,11 @@
       "path": "skills/cost/SKILL.md"
     },
     {
+      "name": "cron",
+      "description": "Scheduled tasks and job queue skill. Activates when user needs cron jobs, background workers, recurring tasks. Triggers on: /godmode:cron, \"cron job\", \"scheduler\", \"background jobs\", \"recurring tasks\", \"Bull\", \"BullMQ\", \"Celery\", \"Sidekiq\".",
+      "path": "skills/cron/SKILL.md"
+    },
+    {
       "name": "crypto",
       "description": "Cryptography implementation skill. Activates when user needs to implement encryption (at rest or in transit), key management, password hashing and storage (Argon2, bcrypt), digital signatures, JWT security, TLS configuration hardening, or any cryptographic operation. Ensures correct algorithm selection, safe parameter choices, and proper key lifecycle management. Produces implementation code with security rationale, configuration files, and verification tests. Triggers on: /godmode:crypto, \"encryption\", \"hashing\", \"key management\", \"TLS setup\", \"digital signature\", \"JWT signing\", or when code handles sensitive data that requires cryptographic protection.",
       "path": "skills/crypto/SKILL.md"
@@ -141,9 +151,19 @@
       "path": "skills/debug/SKILL.md"
     },
     {
+      "name": "dependencies",
+      "description": "Dependency management and supply chain security skill. Activates when user needs Renovate/Dependabot setup, security patching, or outdated package updates. Triggers on: /godmode:dependencies, \"dependency updates\", \"Renovate\", \"Dependabot\", \"outdated packages\", \"npm audit\", \"supply chain\".",
+      "path": "skills/dependencies/SKILL.md"
+    },
+    {
       "name": "deploy",
       "description": "Advanced deployment strategies skill. Activates when user needs sophisticated deployment orchestration including blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and zero-downtime migrations. Designs and validates deployment plans with risk mitigation at every stage. Triggers on: /godmode:deploy, \"deploy with zero downtime\", \"canary release\", \"blue-green deployment\", \"rollback strategy\", or when shipping critical changes that require controlled rollout.",
       "path": "skills/deploy/SKILL.md"
+    },
+    {
+      "name": "designconsistency",
+      "description": "Design consistency enforcement skill. Activates when generating UI/UX code or reviewing frontend implementations. Extracts a design contract from the codebase (colors, spacing, typography, radius, shadows) and mechanically enforces it. Solves AI-generated UI drift. Triggers on: /godmode:designconsistency, \"make it consistent\", \"fix the design\", \"design drift\", or automatically during UI generation.",
+      "path": "skills/designconsistency/SKILL.md"
     },
     {
       "name": "designsystem",
@@ -231,6 +251,11 @@
       "path": "skills/event/SKILL.md"
     },
     {
+      "name": "experiment",
+      "description": "A/B testing and experimentation skill. Activates when user needs split tests, statistical analysis, or experimentation platforms. Triggers on: /godmode:experiment, \"A/B test\", \"experiment\", \"split test\", \"multivariate test\", \"statistical significance\", \"Optimizely\", \"Statsig\", \"GrowthBook\".",
+      "path": "skills/experiment/SKILL.md"
+    },
+    {
       "name": "extension",
       "description": "Browser extension development skill. Activates when building, testing, or distributing browser extensions for Chrome, Firefox, and Safari. Covers Manifest V3 architecture, content scripts, background service workers, popup and options UI, cross-browser compatibility, extension store submission (Chrome Web Store, Firefox Add-ons, Safari Extensions), messaging patterns, storage APIs, and security best practices. Every recommendation includes concrete implementation with cross-browser considerations. Triggers on: /godmode:extension, \"browser extension\", \"Chrome extension\", \"Firefox addon\", \"Manifest V3\", \"content script\", \"background worker\".",
       "path": "skills/extension/SKILL.md"
@@ -239,6 +264,11 @@
       "name": "fastapi",
       "description": "FastAPI mastery skill. Activates when user needs to build, configure, optimize, or debug FastAPI applications. Covers Pydantic model design, dependency injection patterns, async database access (SQLAlchemy async, Tortoise ORM), background tasks, WebSocket support, and testing with pytest and HTTPX. Provides opinionated guidance on production-grade FastAPI patterns. Triggers on: /godmode:fastapi, \"fastapi\", \"pydantic\", \"async api\", \"python api\", or when the orchestrator detects Python async backend work using FastAPI.",
       "path": "skills/fastapi/SKILL.md"
+    },
+    {
+      "name": "feature",
+      "description": "Feature flags and gradual rollout skill. Activates when user needs feature toggles, canary releases, or progressive delivery. Triggers on: /godmode:feature, \"feature flags\", \"feature toggle\", \"gradual rollout\", \"canary release\", \"LaunchDarkly\", \"Unleash\", \"Flagsmith\".",
+      "path": "skills/feature/SKILL.md"
     },
     {
       "name": "finetune",
@@ -269,6 +299,11 @@
       "name": "gdpr",
       "description": "GDPR deep compliance skill. Activates when user needs comprehensive General Data Protection Regulation compliance \u2014 data mapping and classification, consent management implementation, right to deletion (data erasure workflows), data portability exports, privacy impact assessments (DPIAs), DPO notification procedures, and cross-border data transfer mechanisms (SCCs, adequacy decisions). Goes far deeper than the general comply skill by producing implementable code, database schemas, API endpoints, and operational procedures for every GDPR requirement. Triggers on: /godmode:gdpr, \"GDPR compliance\", \"data mapping\", \"consent management\", \"right to be forgotten\", \"data portability\", \"DPIA\", \"cross-border transfer\", or when building features that collect, process, or share personal data of EU/EEA residents.",
       "path": "skills/gdpr/SKILL.md"
+    },
+    {
+      "name": "ghactions",
+      "description": "GitHub Actions workflow skill. Activates when user needs CI/CD on GitHub, custom actions, matrix builds. Triggers on: /godmode:ghactions, \"GitHub Actions\", \"workflow\", \".github/workflows\", \"CI pipeline\", \"matrix strategy\".",
+      "path": "skills/ghactions/SKILL.md"
     },
     {
       "name": "git",
@@ -421,6 +456,11 @@
       "path": "skills/nosql/SKILL.md"
     },
     {
+      "name": "notify",
+      "description": "Notification systems skill. Activates when user needs push notifications, SMS, in-app alerts, multi-channel delivery. Triggers on: /godmode:notify, \"notifications\", \"push notifications\", \"SMS\", \"Twilio\", \"Firebase Cloud Messaging\", \"OneSignal\".",
+      "path": "skills/notify/SKILL.md"
+    },
+    {
       "name": "npm",
       "description": "Package management skill. Activates when user needs to manage JavaScript/TypeScript dependencies, compare package managers (npm, yarn, pnpm, bun), manage lock files, configure workspaces and monorepos, publish packages, run security audits, or resolve version conflicts. Triggers on: /godmode:npm, \"npm install\", \"package manager\", \"lock file\", \"monorepo workspace\", \"publish package\", \"npm audit\", \"dependency conflict\", \"version resolution\", or when managing project dependencies.",
       "path": "skills/npm/SKILL.md"
@@ -486,6 +526,11 @@
       "path": "skills/plan/SKILL.md"
     },
     {
+      "name": "pm",
+      "description": "Product management skill. Covers PRD creation, user story writing, feature prioritization (RICE, MoSCoW, ICE), sprint planning, OKR/KPI definition, go-to-market planning, launch readiness checklists, and customer feedback synthesis. Triggers on: /godmode:pm, \"write a PRD\", \"create user stories\", \"prioritize features\", \"plan the launch\", \"define OKRs\", \"competitive analysis\", \"sprint planning\".",
+      "path": "skills/pm/SKILL.md"
+    },
+    {
       "name": "postgres",
       "description": "PostgreSQL mastery skill. Activates when a developer needs advanced PostgreSQL features, extension management, replication setup, partitioning strategies, performance tuning, or connection pooling configuration. Covers CTEs, window functions, JSONB, full-text search, PostGIS, pgvector, TimescaleDB, streaming and logical replication, declarative partitioning, VACUUM/ANALYZE tuning, pg_stat diagnostics, PgBouncer, and Supavisor. Triggers on: /godmode:postgres, \"postgres performance\", \"set up replication\", \"partition this table\", \"configure pgbouncer\", \"pgvector\", \"full-text search in postgres\", or when the orchestrator detects PostgreSQL-specific work.",
       "path": "skills/postgres/SKILL.md"
@@ -541,6 +586,11 @@
       "path": "skills/rails/SKILL.md"
     },
     {
+      "name": "ratelimit",
+      "description": "Rate limiting skill. Activates when user needs rate limiting algorithms, quota management, throttling, or API protection. Triggers on: /godmode:ratelimit, \"rate limit\", \"throttle\", \"quota\", \"token bucket\", \"sliding window\", \"DDoS protection\".",
+      "path": "skills/ratelimit/SKILL.md"
+    },
+    {
       "name": "rbac",
       "description": "Permission and access control skill. Activates when user needs to design or implement role-based access control (RBAC), attribute-based access control (ABAC), relationship-based access control (ReBAC), role hierarchies, resource-based permissions, permission inheritance and delegation, or audit logging for access decisions. Produces permission models, policy engines, enforcement middleware, and audit infrastructure. Triggers on: /godmode:rbac, \"permissions\", \"access control\", \"roles\", \"who can access\", \"authorization model\", or when building features that restrict what authenticated users can do.",
       "path": "skills/rbac/SKILL.md"
@@ -579,6 +629,11 @@
       "name": "report",
       "description": "Report generation skill. Activates when users need to create automated development reports in PDF, HTML, or Markdown. Generates metric dashboards, sprint retrospective reports, code health reports, performance trend reports, and custom project reports. Produces structured, data-driven documents with charts, tables, and actionable summaries. Triggers on: /godmode:report, \"generate a report\", \"create a summary\", \"sprint retro\", \"code health check\", or when the orchestrator detects reporting needs.",
       "path": "skills/report/SKILL.md"
+    },
+    {
+      "name": "research",
+      "description": "User research skill. Activates when user needs personas, surveys, interview scripts, journey maps, pain point identification, competitive UX analysis, usability tests, or Jobs-to-be-Done analysis. Triggers on: /godmode:research, \"user personas\", \"survey design\", \"user interview\", \"journey map\", \"pain points\", \"usability test\", \"jobs to be done\".",
+      "path": "skills/research/SKILL.md"
     },
     {
       "name": "resilience",
@@ -646,6 +701,11 @@
       "path": "skills/secure/SKILL.md"
     },
     {
+      "name": "seed",
+      "description": "Database seeding and factory patterns skill. Activates when user needs test fixtures, seed data, fake data generation. Triggers on: /godmode:seed, \"seed data\", \"fixtures\", \"factories\", \"test data\", \"Faker\", \"FactoryBot\".",
+      "path": "skills/seed/SKILL.md"
+    },
+    {
       "name": "seo",
       "description": "SEO optimization and auditing skill. Activates when user needs technical SEO audits, meta tag analysis, structured data implementation, Core Web Vitals optimization, schema.org markup, Open Graph tags, sitemap/robots.txt validation, or keyword tracking. Integrates with Lighthouse, Google Search Console, and Schema.org validators. Triggers on: /godmode:seo, \"SEO audit\", \"meta tags\", \"structured data\", \"schema markup\", \"Core Web Vitals\", \"sitemap\", \"robots.txt\", \"Open Graph\".",
       "path": "skills/seo/SKILL.md"
@@ -659,6 +719,11 @@
       "name": "ship",
       "description": "Shipping workflow skill. Activates when code is ready to deploy or merge. Runs an 8-phase shipping workflow: inventory changes, run checklist, prepare artifacts, dry-run, execute ship, verify deployment, log results, and post-ship monitoring. Triggers on: /godmode:ship, \"ship it\", \"deploy\", \"release\", \"merge to main\", or when optimize/secure phases complete successfully.",
       "path": "skills/ship/SKILL.md"
+    },
+    {
+      "name": "slo",
+      "description": "SLO/SLI and error budget skill. Activates when user needs reliability targets, service level management. Triggers on: /godmode:slo, \"SLO\", \"SLI\", \"SLA\", \"error budget\", \"reliability target\", \"uptime\", \"availability\".",
+      "path": "skills/slo/SKILL.md"
     },
     {
       "name": "snapshot",
@@ -689,6 +754,11 @@
       "name": "storage",
       "description": "File storage and CDN skill. Activates when user needs to design or implement file storage systems. Covers object storage (S3, GCS, Azure Blob), file upload architecture (presigned URLs, multipart, resumable), image and video processing pipelines, storage cost optimization, and backup and replication strategies. Triggers on: /godmode:storage, \"file upload\", \"S3 bucket\", \"image processing\", \"storage optimization\", \"backup strategy\", or when building features that handle user-generated content.",
       "path": "skills/storage/SKILL.md"
+    },
+    {
+      "name": "strategy",
+      "description": "Product strategy skill. Covers market analysis, roadmap creation, North Star metrics, growth models (AARRR), pricing analysis, build vs buy decisions, competitive moat analysis, and product-market fit measurement. Triggers on: /godmode:strategy, \"product strategy\", \"market analysis\", \"build or buy\", \"what's our moat\", \"how do we grow\", \"pricing strategy\".",
+      "path": "skills/strategy/SKILL.md"
     },
     {
       "name": "svelte",
@@ -736,6 +806,16 @@
       "path": "skills/unittest/SKILL.md"
     },
     {
+      "name": "upload",
+      "description": "File upload and media processing skill. Activates when user needs file uploads, image optimization, signed URLs, multipart uploads. Triggers on: /godmode:upload, \"file upload\", \"image upload\", \"media processing\", \"S3 presigned URLs\", \"multipart\", \"Cloudinary\".",
+      "path": "skills/upload/SKILL.md"
+    },
+    {
+      "name": "uxdesign",
+      "description": "UI/UX design skill. Covers user research, persona creation, information architecture, wireframing, usability heuristic evaluation (Nielsen's 10), user flow mapping, WCAG-compliant design, design handoff, A/B testing variants, and mobile-first responsive design. Triggers on: /godmode:uxdesign, \"UX review\", \"user flow\", \"wireframe\", \"design critique\", \"usability audit\", \"persona\".",
+      "path": "skills/uxdesign/SKILL.md"
+    },
+    {
       "name": "verify",
       "description": "Evidence gate skill. Enforces the \"evidence before claims\" principle. Before any skill can claim success (tests pass, performance improved, bug fixed), this skill runs the verification command, reads the actual output, and confirms or denies the claim. Triggers on: /godmode:verify, internally by other skills before claiming success, or when user says \"prove it\", \"show me evidence\", \"verify this.\"",
       "path": "skills/verify/SKILL.md"
@@ -766,9 +846,19 @@
       "path": "skills/web3/SKILL.md"
     },
     {
+      "name": "webhook",
+      "description": "Webhook design and delivery skill. Activates when user needs webhook endpoints, retry strategies, HMAC verification, event subscriptions. Triggers on: /godmode:webhook, \"webhooks\", \"event delivery\", \"callback URLs\", \"webhook signatures\", \"webhook retry\".",
+      "path": "skills/webhook/SKILL.md"
+    },
+    {
       "name": "webperf",
       "description": "Web performance optimization skill. Activates when user needs Lighthouse auditing, bundle analysis, code splitting, image optimization, critical CSS extraction, font optimization, service worker caching, or CDN configuration. Covers the full web performance stack from server response to paint completion. Triggers on: /godmode:webperf, \"Lighthouse audit\", \"bundle size\", \"code splitting\", \"image optimization\", \"lazy loading\", \"critical CSS\", \"font loading\", \"service worker cache\", \"CDN\", \"page speed\", \"web performance\".",
       "path": "skills/webperf/SKILL.md"
+    },
+    {
+      "name": "wireframe",
+      "description": "Wireframing and prototyping skill. Generates lo-fi ASCII wireframes, maps component hierarchies, designs navigation flows, plans responsive breakpoints, builds sitemaps, and translates Figma designs to code structure. Triggers on: /godmode:wireframe, \"wireframe\", \"prototype\", \"layout plan\", \"screen flow\", \"sitemap\", \"Figma to code\".",
+      "path": "skills/wireframe/SKILL.md"
     }
   ],
   "commands": [
@@ -807,6 +897,10 @@
     {
       "name": "godmode:api",
       "path": "commands/godmode/api.md"
+    },
+    {
+      "name": "godmode:apidocs",
+      "path": "commands/godmode/apidocs.md"
     },
     {
       "name": "godmode:architect",
@@ -873,6 +967,10 @@
       "path": "commands/godmode/cost.md"
     },
     {
+      "name": "godmode:cron",
+      "path": "commands/godmode/cron.md"
+    },
+    {
       "name": "godmode:crypto",
       "path": "commands/godmode/crypto.md"
     },
@@ -885,8 +983,16 @@
       "path": "commands/godmode/debug.md"
     },
     {
+      "name": "godmode:dependencies",
+      "path": "commands/godmode/dependencies.md"
+    },
+    {
       "name": "godmode:deploy",
       "path": "commands/godmode/deploy.md"
+    },
+    {
+      "name": "godmode:designconsistency",
+      "path": "commands/godmode/designconsistency.md"
     },
     {
       "name": "godmode:designsystem",
@@ -957,12 +1063,20 @@
       "path": "commands/godmode/event.md"
     },
     {
+      "name": "godmode:experiment",
+      "path": "commands/godmode/experiment.md"
+    },
+    {
       "name": "godmode:extension",
       "path": "commands/godmode/extension.md"
     },
     {
       "name": "godmode:fastapi",
       "path": "commands/godmode/fastapi.md"
+    },
+    {
+      "name": "godmode:feature",
+      "path": "commands/godmode/feature.md"
     },
     {
       "name": "godmode:finetune",
@@ -983,6 +1097,10 @@
     {
       "name": "godmode:gdpr",
       "path": "commands/godmode/gdpr.md"
+    },
+    {
+      "name": "godmode:ghactions",
+      "path": "commands/godmode/ghactions.md"
     },
     {
       "name": "godmode:git",
@@ -1101,6 +1219,10 @@
       "path": "commands/godmode/nosql.md"
     },
     {
+      "name": "godmode:notify",
+      "path": "commands/godmode/notify.md"
+    },
+    {
       "name": "godmode:npm",
       "path": "commands/godmode/npm.md"
     },
@@ -1153,6 +1275,10 @@
       "path": "commands/godmode/plan.md"
     },
     {
+      "name": "godmode:pm",
+      "path": "commands/godmode/pm.md"
+    },
+    {
       "name": "godmode:postgres",
       "path": "commands/godmode/postgres.md"
     },
@@ -1193,6 +1319,10 @@
       "path": "commands/godmode/rails.md"
     },
     {
+      "name": "godmode:ratelimit",
+      "path": "commands/godmode/ratelimit.md"
+    },
+    {
       "name": "godmode:rbac",
       "path": "commands/godmode/rbac.md"
     },
@@ -1223,6 +1353,10 @@
     {
       "name": "godmode:report",
       "path": "commands/godmode/report.md"
+    },
+    {
+      "name": "godmode:research",
+      "path": "commands/godmode/research.md"
     },
     {
       "name": "godmode:resilience",
@@ -1269,12 +1403,20 @@
       "path": "commands/godmode/secure.md"
     },
     {
+      "name": "godmode:seed",
+      "path": "commands/godmode/seed.md"
+    },
+    {
       "name": "godmode:seo",
       "path": "commands/godmode/seo.md"
     },
     {
       "name": "godmode:ship",
       "path": "commands/godmode/ship.md"
+    },
+    {
+      "name": "godmode:slo",
+      "path": "commands/godmode/slo.md"
     },
     {
       "name": "godmode:snapshot",
@@ -1299,6 +1441,10 @@
     {
       "name": "godmode:storage",
       "path": "commands/godmode/storage.md"
+    },
+    {
+      "name": "godmode:strategy",
+      "path": "commands/godmode/strategy.md"
     },
     {
       "name": "godmode:svelte",
@@ -1333,6 +1479,14 @@
       "path": "commands/godmode/unittest.md"
     },
     {
+      "name": "godmode:upload",
+      "path": "commands/godmode/upload.md"
+    },
+    {
+      "name": "godmode:uxdesign",
+      "path": "commands/godmode/uxdesign.md"
+    },
+    {
       "name": "godmode:visual",
       "path": "commands/godmode/visual.md"
     },
@@ -1353,8 +1507,16 @@
       "path": "commands/godmode/web3.md"
     },
     {
+      "name": "godmode:webhook",
+      "path": "commands/godmode/webhook.md"
+    },
+    {
       "name": "godmode:webperf",
       "path": "commands/godmode/webperf.md"
+    },
+    {
+      "name": "godmode:wireframe",
+      "path": "commands/godmode/wireframe.md"
     }
   ]
 }
