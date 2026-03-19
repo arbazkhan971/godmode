@@ -1056,4 +1056,115 @@ Agent: Analyzing rate-limiter.ts...
 
 ---
 
-## Status: ITERATION 11 — Test skill spec complete
+## 12. `/godmode:review` — Code Review Skill Spec
+
+**Origin:** Superpowers (dispatch reviewer agent, handle feedback)
+**Phase:** BUILD
+**Purpose:** Dispatch a dedicated code reviewer agent that reviews changes with technical rigor, categorized severity, and actionable feedback.
+
+### Trigger Conditions
+
+- After a task is built (automatically triggered by `/godmode:build`)
+- User says "review this", "review my changes", "code review"
+- Before merging any branch
+- Explicitly invoked with `/godmode:review`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--scope` | staged | What to review: `staged`, `branch`, `file:path`, `commit:hash` |
+| `--focus` | all | Review focus: `all`, `security`, `performance`, `style`, `correctness` |
+| `--severity` | all | Minimum severity to report: `block`, `warn`, `note` |
+| `--auto-fix` | false | Automatically apply WARN and NOTE fixes |
+| `--model` | sonnet | Model for reviewer agent |
+
+### Severity Levels
+
+| Level | Symbol | Meaning | Action Required |
+|-------|--------|---------|-----------------|
+| **BLOCK** | :stop: | Must fix — bugs, security issues, data loss risks | Cannot merge until resolved |
+| **WARN** | :warning: | Should fix — code quality, maintainability, minor issues | Fix recommended, not blocking |
+| **NOTE** | :memo: | Optional — style preferences, nice-to-haves, suggestions | Author decides |
+
+### Workflow
+
+**Step 1: Gather Context**
+- Read the diff (staged changes, branch diff, or specific files)
+- Read relevant test files
+- Read the task description (if invoked from `/godmode:build`)
+- Understand what the change is trying to accomplish
+
+**Step 2: Review Checklist**
+
+The reviewer evaluates against this checklist:
+
+| Category | Checks |
+|----------|--------|
+| **Correctness** | Does the code do what it claims? Are edge cases handled? |
+| **Tests** | Are tests present? Do they test the right things? Coverage gaps? |
+| **Security** | Input validation? Auth checks? Injection vulnerabilities? Secrets exposed? |
+| **Performance** | N+1 queries? Unbounded loops? Missing indexes? Memory leaks? |
+| **Error Handling** | Are errors caught? Meaningful error messages? Recovery paths? |
+| **Naming** | Clear variable/function names? Consistent conventions? |
+| **Documentation** | Comments for complex logic? Updated README? API docs? |
+| **Style** | Consistent formatting? Follows project conventions? |
+
+**Step 3: Produce Review**
+
+```markdown
+## Code Review: Task 003 — Rate Limiter Middleware
+
+### Summary
+Clean implementation of token bucket rate limiting. 1 blocking issue,
+2 warnings, 1 note.
+
+### Findings
+
+#### 🛑 BLOCK: Unhandled Redis disconnection
+**File:** `src/middleware/rate-limiter.ts:45`
+**Issue:** If Redis disconnects, `increment()` throws an unhandled exception
+that crashes the Express process.
+**Fix:** Wrap in try/catch, fall back to allowing the request (fail-open)
+or returning 503 (fail-closed).
+
+#### ⚠️ WARN: Missing rate limit headers
+**File:** `src/middleware/rate-limiter.ts:62`
+**Issue:** Response doesn't include `X-RateLimit-Remaining` or
+`X-RateLimit-Reset` headers.
+**Fix:** Add standard rate limit headers per RFC 6585.
+
+#### ⚠️ WARN: Test missing for window expiry
+**File:** `tests/rate-limiter.test.ts`
+**Issue:** No test for the case where the time window expires and the
+counter resets.
+**Fix:** Add a test that advances time past the window.
+
+#### 📝 NOTE: Consider named export
+**File:** `src/middleware/rate-limiter.ts:1`
+**Suggestion:** Use named export instead of default export for
+better tree-shaking and IDE support.
+```
+
+**Step 4: Handle Feedback Loop**
+- BLOCK issues: Agent fixes them immediately, then re-reviews
+- WARN issues: Agent fixes if `--auto-fix` is on, otherwise lists them
+- NOTE issues: Listed for the user to decide
+- Loop continues until zero BLOCKs remain
+
+**Step 5: Approve or Request Changes**
+- Zero BLOCKs → **APPROVED** — ready to merge
+- BLOCKs remain after 3 fix attempts → **ESCALATE** — ask the user
+- Commit review results: `git commit -m "review: task-003 approved (1 block fixed, 2 warns)"`
+
+### Key Behaviors
+
+1. **The reviewer is adversarial** — Its job is to find problems, not approve
+2. **Every finding has a fix** — Don't just complain; show how to fix it
+3. **Severity is strict** — BLOCK means BLOCK; don't inflate or deflate
+4. **Context matters** — A quick prototype doesn't need the same rigor as production code
+5. **Review the tests too** — Bad tests are worse than no tests (false confidence)
+
+---
+
+## Status: ITERATION 12 — Review skill spec complete
