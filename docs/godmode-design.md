@@ -375,4 +375,100 @@ Proceed with recommendation? [Y/n/choose]
 
 ---
 
-## Status: ITERATION 5 — Orchestrator complete
+## 6. `/godmode:think` — Brainstorm Skill Spec
+
+**Origin:** Superpowers (structured brainstorming protocol)
+**Phase:** THINK
+**Purpose:** Collaborative design sessions that produce a written spec through disciplined, one-question-at-a-time exploration.
+
+### Trigger Conditions
+
+- User says "let's brainstorm", "I have an idea", "help me design", "let's think about"
+- Orchestrator detects no spec exists for current work
+- Explicitly invoked with `/godmode:think`
+
+### Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--visual` | false | Launch visual companion in browser |
+| `--approaches` | 3 | Number of approaches to propose (2-5) |
+| `--spec` | true | Write a spec at the end |
+| `--review` | true | Run review loop on the spec |
+
+### Workflow
+
+**Step 1: Understand the Problem**
+- Ask ONE question at a time (never batch questions)
+- Listen to the answer completely before asking the next
+- Build understanding incrementally
+- Stop asking when you have enough to propose approaches (usually 3-7 questions)
+
+**Step 2: Propose Approaches**
+- Present 2-3 distinct approaches (not variations of the same idea)
+- Each approach gets: name, one-paragraph description, pros, cons, complexity estimate
+- Format as a comparison table
+- Ask the user to pick one (or combine elements)
+
+**Step 3: Deep Dive on Chosen Approach**
+- Explore the chosen approach in detail
+- Ask clarifying questions specific to this approach
+- Identify technical decisions that need to be made
+- Map out the components/modules involved
+
+**Step 4: Write the Spec**
+- Produce a structured spec document using `@templates/spec-template.md`
+- Spec includes: problem statement, chosen approach, components, API surface, data model, edge cases, open questions
+- Save to `.godmode/specs/SPEC-NAME.md`
+
+**Step 5: Review Loop**
+- Read the spec back to the user section by section
+- Ask "Does this capture what you want?" for each section
+- Iterate until the user approves
+- Final spec is committed: `git commit -m "spec: SPEC-NAME"`
+
+### Key Behaviors
+
+1. **One question at a time** — Never ask "What's the goal and who are the users and what's the tech stack?" Ask one, wait, ask the next.
+2. **No premature solutions** — Spend time understanding before proposing
+3. **Concrete over abstract** — "Show me what the API call looks like" not "describe the interface"
+4. **User drives decisions** — Present options, never decide for the user
+5. **Spec is the output** — The brainstorm isn't done until there's a written, reviewed spec
+
+### Example Usage
+
+```
+User: /godmode:think
+Agent: What are you building? (one question to start)
+
+User: A rate limiter for our API
+Agent: What's the current setup — is this a new API or adding rate limiting to an existing one?
+
+User: Existing Express.js API, about 40 endpoints
+Agent: Are there different rate limit needs for different endpoints, or one global limit?
+
+[... 3-5 more questions ...]
+
+Agent: Here are 3 approaches:
+
+| Approach | Description | Pros | Cons | Complexity |
+|----------|-------------|------|------|------------|
+| Token Bucket | Classic token bucket with Redis backend | Battle-tested, flexible | Requires Redis | Medium |
+| Sliding Window | In-memory sliding window per IP | No external deps | Doesn't scale past one process | Low |
+| API Gateway | Move rate limiting to nginx/Kong | Offloads from app | Infrastructure change | High |
+
+Which approach works best for your situation?
+```
+
+### Visual Companion Integration
+
+When `--visual` is active:
+- Launch browser-based brainstorming canvas
+- Display questions, answers, and approaches in real-time
+- Allow user to rearrange, annotate, and connect ideas
+- Export canvas state as part of the spec
+- See Section 27 for full Visual Companion spec
+
+---
+
+## Status: ITERATION 6 — Think skill spec complete
