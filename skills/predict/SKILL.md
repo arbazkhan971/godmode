@@ -19,7 +19,7 @@ Read `.godmode/spec.md` or user-provided proposal. Summarize: what changes, what
 | Product Manager (13yr) | User value, scope, timeline |
 Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + file:line), Mitigation (code change or architecture suggestion).
 ### 3. Synthesize Consensus
-Avg confidence, concerns raised by 3+ personas, key disagreements, recommendation: PROCEED / REVISE (with specific changes) / RETHINK.
+Print: `Confidence: {avg}/10. Unanimous concerns: {list}. Disagreements: {list}. Recommendation: PROCEED/REVISE/RETHINK.`
 ### 4. Gate
 IF average confidence < 7 → loop back to `/godmode:think` with all risks attached.
 

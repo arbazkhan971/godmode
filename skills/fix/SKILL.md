@@ -22,7 +22,7 @@ WHILE error_count > 0:
     ELSE: error_count = new_count
     # 6. LOG to .godmode/fix-log.tsv: iteration, error, file, fix_description, status(kept/reverted)
     # 7. STATUS every 5: "{error_count} remaining (from {original})"
-Print: "{original} → 0 in {N} iterations"
+Print: "Fixed: {original} → {error_count} errors in {N} iterations. Skipped: {skipped_list}"
 ```
 
 ## Rules

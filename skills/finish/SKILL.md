@@ -16,7 +16,7 @@ Run: `git status` (clean?), `test_cmd` (pass?), `lint_cmd` (pass?). Any failure 
 - **DISCARD:** delete branch (confirm first — destructive)
 Auto-decide: tests pass + `/godmode:review` done → MERGE. Tests pass + unreviewed → PR. Uncommitted changes → KEEP. User says abandon → DISCARD.
 ### 3. Post-Finalization
-Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}"`.
+Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}. Commits: {N}. Tests: {pass}/{total}."`.
 
 ## Rules
 1. Clean state before finalize. No uncommitted changes, tests must pass.

@@ -13,7 +13,7 @@ description: Decompose spec into tasks with deps, files, agents. Output .godmode
 - Scan codebase: `git ls-files`, directory structure, existing patterns
 - Detect stack (from orchestrator Step 1)
 ### 2. Decompose into Tasks
-Each task: `id`, `title`, `skill` (which godmode skill), `files` (exact paths), `depends_on` (task IDs), `agent: true/false`, `test` (verify command), `done_when` (exit 0 = done).
+Each task: `id`, `title`, `skill` (godmode skill name), `files` (exact paths), `depends_on` (task IDs), `agent: true|false`, `test` (verify cmd), `done_when` (shell cmd, exit 0 = done).
 ### 3. Build Dependency Graph
 Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks before API before UI.
 ### 4. Validate Plan

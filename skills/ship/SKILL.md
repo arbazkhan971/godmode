@@ -11,7 +11,7 @@ description: Ship workflow. Checklist → dry-run → ship → verify. PR, deplo
 Run `git log main..HEAD --oneline` and `git diff main..HEAD --stat`.
 ### 2. Pre-Ship Checklist
 Run each, record pass/fail: `test_cmd`, `lint_cmd`, `build_cmd`, `grep -rn 'API_KEY\|SECRET\|PASSWORD' $(git diff main..HEAD --name-only)`, `grep -n 'TODO\|FIXME' $(git diff main..HEAD --name-only)`.
-Score = passing/total x 100. Must be 100% to proceed.
+Print: `Checklist: {passing}/{total} passed`. Must be {total}/{total} to proceed.
 ### 3. Dry-Run
 Preview: show exact commands that will run, files/branches/tags that will be created. User must confirm.
 ### 4. Ship

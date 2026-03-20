@@ -19,7 +19,7 @@ WHILE failing_count > 0:
          Unknown → Binary Search (eliminate half)
     # 3. INVESTIGATE — collect evidence: variable values, call stack, input/output at failure point
     # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
-         Chain: Symptom → Proximate cause → Root cause → Fix (file:line + exact change)
+         Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4
     # 6. VERIFY — re-run tests
     # 7. LOG to .godmode/debug-findings.tsv: iteration, symptom, root_cause, file:line, status(fixed/skipped)

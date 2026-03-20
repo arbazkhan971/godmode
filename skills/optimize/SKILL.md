@@ -28,7 +28,7 @@ WHILE current_round < max_rounds:
     # 7. DIMINISHING — last 3 keeps <1%: radical → compound → STOP
 STOP: target | max rounds | diminishing returns | guard broken
 ```
-Print: baseline → final (delta%), keeps/discards, best round.
+Print: `{metric}: {baseline} → {final} ({delta}%). Rounds: {total}, Keeps: {keeps}, Discards: {discards}, Best: round {N}`.
 
 ## Rules
 1. Metric must be a shell command that outputs a single number. No subjective assessment.

@@ -19,7 +19,7 @@ Per approach: description (2-3 sentences), trade-offs, complexity (Low/Med/High)
 ### 4. Recommend One
 Lead with recommendation + justification. State: chosen approach, why others rejected, key risk.
 ### 5. Write Spec
-Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out of Scope, Edge Cases, Files Affected. Commit: `"spec: {feature name}"`
+Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out of Scope, Files to Create/Modify. Commit: `"spec: {feature name}"`
 
 ## Rules
 1. Always produce `.godmode/spec.md`. Next step: `/godmode:plan` reads it.

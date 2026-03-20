@@ -23,7 +23,7 @@ WHILE tasks remain:
 ```
 
 ## Rules
-1. One task per agent. One commit per task.
+1. One task per agent. Commit message: `feat({module}): {task.title}`. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = discard.
 3. Test after every merge. Broken builds don't proceed.
 4. Max 5 agents per round. Dependency order always.
