@@ -60,6 +60,6 @@ Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass: stack, test_cmd, lint_c
 3. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
 4. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`. Never leave broken commits in history.
 5. Log: `.godmode/<skill>-results.tsv` (per-skill columns). Session: `.godmode/session-log.tsv`: timestamp, skill, iterations, kept, discarded, outcome.
-6. Stuck (>5 discards): re-read all, try opposite, try radical.
+6. Stuck (>5 consecutive discards): re-read all in-scope files, try opposite approach, try radical rewrite. Never repeat failed approach.
 7. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
 8. Chain: `think → plan → build → test → fix → review → optimize → secure → ship`. Auto-advance when current skill completes.

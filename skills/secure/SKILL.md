@@ -24,7 +24,7 @@ WHILE untested categories remain:
     Every 5 iters: print "{tested}/10 OWASP, {findings} findings"
 ```
 6. **Report** — Coverage: OWASP {N}/10, STRIDE {N}/6. Findings: {critical} critical, {high} high. Verdict: PASS/FAIL.
-7. **Auto-Fix** (if `--fix`) — For Critical/High: fix → commit → test → revert if broken.
+7. **Auto-Fix** (if `--fix`) — For Critical/High: fix → commit → run full test suite → revert if ANY test breaks.
 
 ## Rules
 1. Every finding: file:line + exploit steps (reproducible). No theoretical risks.

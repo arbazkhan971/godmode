@@ -9,7 +9,7 @@ description: Design session. Explore approaches, produce .godmode/spec.md.
 
 ## Workflow
 ### 1. Understand the Problem
-- What does the user want? (one sentence)
+- What does the user want? (one sentence, confirmed with user if ambiguous)
 - What are the constraints? (time, tech, team)
 - What does success look like? (measurable criteria)
 ### 2. Scan Codebase

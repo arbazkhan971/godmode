@@ -22,4 +22,4 @@ Output table: `DIMENSION | SCENARIO | LIKELIHOOD x IMPACT | PRIORITY | TEST FILE
 1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.
 2. Score every scenario numerically. No unscored scenarios in output.
 3. HIGH+ scenarios get runnable tests. Stubs and TODOs are not tests.
-4. Cite specific code paths for each scenario.
+4. Cite specific code paths (file:line). If code doesn't exist yet, cite the spec section instead.

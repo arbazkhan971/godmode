@@ -8,7 +8,7 @@ description: Ship workflow. Checklist → dry-run → ship → verify. PR, deplo
 
 ## Workflow
 ### 1. Inventory Changes
-Run `git log main..HEAD --oneline` and `git diff main..HEAD --stat`.
+Run `git log main..HEAD --oneline` and `git diff main..HEAD --stat`. If no commits → nothing to ship, stop.
 ### 2. Pre-Ship Checklist
 Run each, record pass/fail: `test_cmd`, `lint_cmd`, `build_cmd`, `grep -rn 'API_KEY\|SECRET\|PASSWORD' $(git diff main..HEAD --name-only)`, `grep -n 'TODO\|FIXME' $(git diff main..HEAD --name-only)`.
 Print: `Checklist: {passing}/{total} passed`. Must be {total}/{total} to proceed.

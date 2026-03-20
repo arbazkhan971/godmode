@@ -17,7 +17,7 @@ WHILE tasks remain:
     round = pick_tasks_with_no_unmet_deps(tasks, completed)[:5]
     FOR each task: Agent("Implement: {task.title}\nFiles: {task.files}\nDone when: {task.done_when}\nStack: {stack}", isolation: "worktree")
     FOR each completed agent:
-        merge worktree → conflict: discard worktree, retry → test fail: `/godmode:fix` or revert
+        merge worktree → conflict: discard, log, retry with narrower scope → test fail: `/godmode:fix` (max 2) or revert
     VERIFY: test_cmd && lint_cmd && build_cmd → fail: /godmode:fix (max 3)
     Log to .godmode/build-log.tsv: round, task_id, status(merged/reverted/conflict). Print "Round {N}: {done}/{total}"
 ```

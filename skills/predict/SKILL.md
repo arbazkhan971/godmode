@@ -8,7 +8,7 @@ description: 5-persona evaluation. Independent assessment then consensus.
 
 ## Workflow
 ### 1. Define What's Being Evaluated
-Read `.godmode/spec.md` or user-provided proposal. Summarize: what changes, what's at risk.
+Read `.godmode/spec.md` or user-provided proposal. If no spec exists, ask user to run `/godmode:think` first.
 ### 2. Run 5 Personas
 | Persona | Focus |
 |---------|-------|

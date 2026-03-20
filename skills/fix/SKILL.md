@@ -14,7 +14,7 @@ current_iteration = 0
 WHILE error_count > 0:
     current_iteration += 1
     # 1. PICK: build errors > type errors > lint > test failures (each layer unblocks the next)
-    # 2. ANALYZE — read error message + surrounding code (10 lines). Identify the exact mismatch.
+    # 2. ANALYZE — read FULL error message (not just first line) + surrounding code (±10 lines). Identify the exact mismatch.
     # 3. FIX — smallest change for ONE error. Prefer fixing root cause over suppressing symptoms.
     # 4. COMMIT "fix: {description}" BEFORE verify
     # 5. VERIFY: new_count = run_all_checks()

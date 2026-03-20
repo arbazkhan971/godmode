@@ -18,7 +18,7 @@ WHILE current_round < max_rounds:
     # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
     IF >5 consecutive discards: try OPPOSITE
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
-    Each agent: ONE change → commit → run guard (test_cmd) → verify 3x → report median
+    Each agent: ONE change → commit → run guard (test_cmd, must pass) → verify 3x → report median. Timeout: 5min per agent.
     # 4. PICK WINNER — largest improvement
     improved + guard passed → cherry-pick, update baseline
     improved + guard failed → rework (max 2), else discard

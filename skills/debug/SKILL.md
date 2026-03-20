@@ -12,7 +12,7 @@ failing_count = run_tests()  # test_cmd (from stack detection), count failures
 current_iteration = 0
 WHILE failing_count > 0:
     current_iteration += 1
-    # 1. REPRODUCE — run failing command, capture FULL output (stdout+stderr)
+    # 1. REPRODUCE — run failing command 3x. Consistent failure = real bug. Intermittent = add to flaky list.
     # 2. SELECT TECHNIQUE:
          Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log --oneline -20`
          Intermittent → State Inspection | Wrong results → State Inspection

@@ -16,7 +16,7 @@ WHILE coverage < target:
     # 1. FIND — use coverage report to identify untested lines. Priority: happy path > error path > edge case > integration
     # 2. RED — write test that FAILS
     # 3. GREEN — run test → must FAIL. If passes: test is wrong, rewrite. Write minimum code → must PASS.
-    # 4. REFACTOR — remove duplication in test code, re-run ALL tests (not just new one)
+    # 4. REFACTOR — remove duplication in test code. Run ALL tests. If unrelated test breaks → revert, investigate.
     # 5. COMMIT: git commit -m "test({module}): {what_behavior_is_tested}"
     # 6. MEASURE: coverage = measure_coverage()
     # 7. LOG to .godmode/test-results.tsv:
