@@ -20,7 +20,7 @@ WHILE current_round < max_rounds:
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
     Each agent: ONE change → commit → run guard (test_cmd, must pass) → verify 3x → report median. Timeout: 5min per agent.
     # 4. PICK WINNER — largest improvement
-    improved + guard passed → cherry-pick, update baseline
+    improved + guard passed → cherry-pick to main branch, update baseline
     improved + guard failed → rework (max 2), else discard
     no improvement → discard all
     # 5. LOG to .godmode/optimize-results.tsv: round, agent, change, metric_before, metric_after, status(kept/discarded)

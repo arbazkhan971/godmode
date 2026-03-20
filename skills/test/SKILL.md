@@ -14,7 +14,7 @@ current_iteration = 0
 WHILE coverage < target:
     current_iteration += 1
     # 1. FIND — use coverage report to identify untested lines. Priority: happy path > error path > edge case > integration
-    # 2. RED — write test that FAILS
+    # 2. RED — write ONE test for the identified uncovered path. It must FAIL.
     # 3. GREEN — run test → must FAIL. If passes: test is wrong, rewrite. Write minimum code → must PASS.
     # 4. REFACTOR — remove duplication in test code. Run ALL tests. If unrelated test breaks → revert, investigate.
     # 5. COMMIT: git commit -m "test({module}): {what_behavior_is_tested}"

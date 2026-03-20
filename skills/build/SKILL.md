@@ -8,7 +8,7 @@ description: Implementation engine. Parallel agents in worktrees from plan.
 - Plan exists with unimplemented tasks
 
 ## Input
-Read `.godmode/plan.yaml`. No plan file → run `/godmode:plan` first. No plan needed for single-file changes.
+Read `.godmode/plan.yaml`. Missing → `/godmode:plan` first. Skip plan only for changes touching ≤2 files.
 
 ## The Loop
 ```

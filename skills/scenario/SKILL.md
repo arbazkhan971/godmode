@@ -16,7 +16,7 @@ Score = Likelihood (1-5) × Impact (1-5). ≥20 CRITICAL | 12-19 HIGH | 6-11 MED
 ### 4. Generate Test Skeletons
 For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values, not 'example'. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
 ### 5. Output
-Output table: `DIMENSION | SCENARIO | LIKELIHOOD x IMPACT | PRIORITY | TEST FILE`. Print summary counts.
+Output: `DIMENSION | SCENARIO | L×I | SCORE | TEST`. Print: `{total} scenarios, {critical} critical, {high} high, {tests} tests generated`.
 
 ## Rules
 1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.

@@ -62,5 +62,5 @@ Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass: stack, test_cmd, lint_c
 4. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`. Never leave broken commits in history.
 5. Log: `.godmode/<skill>-results.tsv` (per-skill columns). Session: `.godmode/session-log.tsv`: timestamp, skill, iterations, kept, discarded, outcome.
 6. Stuck (>5 consecutive discards): re-read all in-scope files, try opposite approach, try radical rewrite. Never repeat failed approach.
-7. Multi-agent: up to 5 agents per round, `isolation: "worktree"`, scoped files. Merge sequentially. Test after each. Conflict → discard, retry.
+7. Multi-agent: ≤5 agents/round, `isolation: "worktree"`, scoped to task.files. Merge one-by-one. Test after each merge. Conflict → discard + retry.
 8. Chain: `think → plan → [predict] → build → test → fix → review → optimize → secure → ship`. [predict] optional but recommended.

@@ -12,7 +12,7 @@ Read `.godmode/spec.md` or user-provided proposal. If no spec exists, ask user t
 ### 2. Run 5 Personas
 | Persona | Focus |
 |---------|-------|
-| Backend Architect (15yr) | Scalability, data model, API design |
+| Backend Architect (15yr) | Scalability, data model, API contracts, error handling |
 | Frontend Lead (12yr) | UX, performance, component design |
 | SRE (10yr) | Reliability, monitoring, failure modes |
 | Security Researcher (11yr) | Attack surface, data exposure, auth, supply chain |

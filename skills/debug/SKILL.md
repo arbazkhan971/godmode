@@ -20,7 +20,7 @@ WHILE failing_count > 0:
     # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
          Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4
-    # 6. VERIFY — re-run tests
+    # 6. VERIFY — re-run failing test. Then run full suite to check for regressions.
     # 7. LOG to .godmode/debug-findings.tsv: iteration, symptom, root_cause, file:line, status(fixed/skipped)
     # 8. STATUS every 3: "{found} found, {failing_count} remaining"
     failing_count = run_tests()

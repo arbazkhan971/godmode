@@ -19,7 +19,7 @@ Preview: print exact commands, affected branches/tags, and rollback command. Use
 - **Deploy:** trigger CI/CD or apply manifests
 - **Release:** `git tag v{version} && gh release create v{version} --generate-notes`
 ### 5. Verify
-Post-ship: `curl -sf {endpoint}` or run smoke test. Non-zero exit = rollback (`git revert HEAD && push`).
+Post-ship: `curl -sf {endpoint}/health` or `test_cmd`. Non-zero = rollback: `git revert HEAD && git push`.
 ### 6. Log
 Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
 

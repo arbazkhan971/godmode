@@ -21,7 +21,7 @@ Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks 
 - `depends_on[]` must reference valid task IDs, no circular deps
 - Max 2 tasks per file (avoid conflicts). If unavoidable, tasks touching same file must be sequential.
 ### 5. Output
-Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks in {M} rounds`. For complex plans, suggest `/godmode:predict` before `/godmode:build`.
+Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks, {M} rounds, {F} files`. If >10 tasks → suggest `/godmode:predict`.
 
 ## Rules
 1. Every task has exact file paths that exist (or will be created). No globs, no "somewhere in".

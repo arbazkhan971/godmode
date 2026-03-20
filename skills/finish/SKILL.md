@@ -14,7 +14,7 @@ Run: `git diff --cached` (nothing staged?), `git status` (clean?), `test_cmd`, `
 - **PR:** `gh pr create --title '{feature}' --body "$(git log main..HEAD --format='- %s')"`
 - **KEEP:** branch stays for later
 - **DISCARD:** delete branch (confirm first — destructive)
-Auto-decide: tests pass + `/godmode:review` done → MERGE. Tests pass + unreviewed → PR. Uncommitted changes → KEEP. User says abandon → DISCARD.
+Auto: tests pass + reviewed → MERGE. Tests pass + unreviewed → PR. Dirty worktree → KEEP. User confirms abandon → DISCARD.
 ### 3. Post-Finalization
 Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}. Commits: {N}. Tests: {pass}/{total}."`.
 
