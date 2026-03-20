@@ -17,7 +17,7 @@ categories = OWASP_TOP_10 + STRIDE  # 16 total
 current_iteration = 0
 WHILE untested categories remain:
     current_iteration += 1
-    Pick next untested category. Order: Injection, Auth, XSS, SSRF, then remaining.
+    Pick untested category. Priority: Injection > Broken Auth > XSS > SSRF > IDOR > remaining.
     Test as 4 personas: External (no auth), Insider (valid session), Supply Chain (malicious dep), Infra (server access).
     Each finding: file:line + exploit steps + severity (Critical/High/Med/Low) + fix (code snippet).
     Log to .godmode/security-findings.tsv: iteration, category, persona, finding, severity, file:line, status(open/fixed).

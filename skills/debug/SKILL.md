@@ -28,5 +28,5 @@ WHILE failing_count > 0:
 
 ## Rules
 1. Reproduce first. Never investigate unseen bugs. Never guess — run the code and read the output.
-2. Evidence required: file:line + data proof + reproduce command. No guesses.
+2. Evidence: file:line + actual vs expected values + reproduce command. Found root cause → `/godmode:fix`.
 3. One bug at a time. Don't fix during debug (one-line fixes excepted). If stuck 3 iterations on same bug, skip it.

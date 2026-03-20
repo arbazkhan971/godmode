@@ -19,7 +19,7 @@ Read `.godmode/spec.md` or user-provided proposal. If no spec exists, ask user t
 | Product Manager (13yr) | User value, scope, timeline |
 Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + file:line), Mitigation (code change or architecture suggestion).
 ### 3. Synthesize Consensus
-Print: `Confidence: {avg}/10. Unanimous concerns: {list}. Disagreements: {list}. Recommendation: PROCEED/REVISE/RETHINK.`
+Print: `Confidence: {avg}/10. Blockers: {list}. Split votes: {list}. Gate: PROCEED (≥7) / REVISE (4-6) / RETHINK (<4).`
 ### 4. Gate
 IF average confidence < 7 → loop back to `/godmode:think` with all risks attached.
 

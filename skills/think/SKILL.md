@@ -11,7 +11,7 @@ description: Design session. Explore approaches, produce .godmode/spec.md.
 ### 1. Understand the Problem
 - What does the user want? (one sentence, confirmed with user if ambiguous)
 - What are the constraints? (time, tech, team)
-- What does success look like? (measurable: number, command output, or user-visible behavior)
+- Success criteria: a shell command that exits 0 when done, or a metric with target value
 ### 2. Scan Codebase
 Run `git ls-files` + read key files → identify patterns, naming conventions, abstractions to reuse. Note: framework version.
 ### 3. Generate 2-3 Approaches

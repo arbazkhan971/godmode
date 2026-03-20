@@ -10,7 +10,7 @@ description: Edge case exploration. 12 dimensions, scored by likelihood x impact
 ### 1. Read the Design
 Read spec. Trace data flow: inputs → validation → processing → storage → output. List external deps and state mutations.
 ### 2. Explore 12 Dimensions
-Invalid Input, Boundary (0, 1, MAX, empty), Concurrency (race conditions), Network (timeout, 5xx), Data Integrity, Auth, Time (timezone, leap), Scale (10x load), Failure Modes, Migration, User Error, External Deps.
+Invalid Input, Boundary (0, 1, MAX_INT, empty, null), Concurrency (race, deadlock), Network (timeout, 5xx, DNS), Data (corrupt, stale, missing), Auth, Time (TZ, DST, leap), Scale (10x), Failure (crash, OOM, disk full), Migration, User Error, Deps (down, slow, changed API).
 ### 3. Score Each Scenario
 Score = Likelihood (1-5) × Impact (1-5). ≥20 CRITICAL | 12-19 HIGH | 6-11 MEDIUM | ≤5 LOW.
 ### 4. Generate Test Skeletons

@@ -27,6 +27,6 @@ WHILE tasks remain:
 2. Agent may only modify files listed in task.files. Touching other files = discard.
 3. Test after every merge: `build_cmd && lint_cmd && test_cmd`. Broken builds don't proceed.
 4. Max 5 agents per round. Dependency order always.
-5. Build what the plan says. No unplanned refactoring, no TODO comments, no placeholder implementations.
+5. Build exactly what the plan says. No unplanned refactoring, no TODOs, no stubs, no `// placeholder`.
 6. No code without tests. Log everything to TSV.
 7. Each agent receives: task.title, task.files, task.done_when, stack info. Nothing else.

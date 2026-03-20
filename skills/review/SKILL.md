@@ -8,7 +8,7 @@ description: 4-agent code review. Correctness, security, performance, style. Aut
 
 ## Workflow
 ### 1. Gather Diff
-Run `git diff main...HEAD` and `git log main..HEAD --oneline`. Read every changed file. If >500 lines changed, split review by module.
+Run `git diff main...HEAD` (full, not --stat). Read every changed file in full. >500 lines → split by directory/module.
 ### 2. Multi-Agent Review (4 agents, parallel)
 - **Correctness** — logic errors, off-by-ones, null/undefined, unhandled promise rejections, missing returns
 - **Security** — injection (SQL/XSS/cmd), auth bypass, secrets in code, insecure defaults

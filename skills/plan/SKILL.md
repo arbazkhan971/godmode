@@ -17,7 +17,7 @@ Each task: `id`, `title`, `skill` (godmode skill name), `files` (exact paths), `
 ### 3. Build Dependency Graph
 Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks before API before UI.
 ### 4. Validate Plan
-- `files[]` must be real paths or new files in existing directories
+- `files[]` must be real paths (`git ls-files`) or new files in existing dirs. Validate: `test -d $(dirname $path)`.
 - `depends_on[]` must reference valid task IDs, no circular deps
 - Max 2 tasks per file (avoid conflicts). If unavoidable, tasks touching same file must be sequential.
 ### 5. Output
