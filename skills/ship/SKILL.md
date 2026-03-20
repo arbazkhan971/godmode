@@ -24,6 +24,6 @@ Post-ship: `curl -sf {endpoint}` or run smoke test. Non-zero exit = rollback (`g
 Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
 
 ## Rules
-1. 100% checklist before shipping. No exceptions.
+1. 100% checklist before shipping. No exceptions. Never ship with failing checks — fix first, then re-run.
 2. Dry-run before real ship. State rollback command before executing.
 3. Verify after shipping. One ship per invocation. Failed verify = immediate rollback.

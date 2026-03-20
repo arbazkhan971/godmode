@@ -28,4 +28,4 @@ Print: "{original} → 0 in {N} iterations"
 ## Rules
 1. Loop until zero errors. One fix per commit.
 2. Max 3 attempts per error. Skip and move to next. Print skipped errors at end.
-3. Never modify tests. Regression test for every fix.
+3. Never modify tests to make them pass. Never suppress errors with try/catch. Add regression test for every fix.

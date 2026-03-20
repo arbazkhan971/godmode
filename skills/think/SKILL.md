@@ -26,4 +26,4 @@ Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out
 2. 2-3 approaches, then pick one. Not 7 options.
 3. Measurable success criteria. "Works well" is not a criterion.
 4. Scan existing code first. Reuse existing patterns, don't introduce new ones.
-5. Spec under 100 lines. If longer, decompose the feature.
+5. Spec under 100 lines. If longer, decompose into sub-features. Never design what you haven't scanned.

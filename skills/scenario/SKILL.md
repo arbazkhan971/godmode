@@ -19,7 +19,7 @@ For HIGH/CRITICAL: generate test with ARRANGE (setup) / ACT (trigger) / ASSERT (
 Output table: `DIMENSION | SCENARIO | LIKELIHOOD x IMPACT | PRIORITY | TEST FILE`. Print summary counts.
 
 ## Rules
-1. All 12 dimensions. Don't skip any.
+1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.
 2. Score every scenario numerically. No unscored scenarios in output.
 3. HIGH+ scenarios get runnable tests. Stubs and TODOs are not tests.
 4. Cite specific code paths for each scenario.

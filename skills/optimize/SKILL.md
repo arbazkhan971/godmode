@@ -33,6 +33,6 @@ Print: baseline → final (delta%), keeps/discards, best round.
 ## Rules
 1. Metric must be a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.
-3. Never modify tests to pass optimization.
+3. Never modify tests. Never add caching that breaks correctness. Never trade readability for <1% gain.
 4. +0.1% with added complexity → discard. Same metric + fewer lines → keep.
 5. Diminishing returns: 3 consecutive <1% keeps → radical → compound → stop.

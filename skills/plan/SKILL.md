@@ -28,4 +28,4 @@ Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks in {M} rounds`. For complex 
 2. Every `done_when` is a shell command. If it exits 0, the task is done.
 3. Max 5 tasks per round (matches build's agent cap).
 4. Max 5 files per task. Larger → split into subtasks with shared interface.
-5. Plan must be valid YAML. Build skill parses it literally.
+5. Plan must be valid YAML. Build skill parses it literally. Test the YAML: `python -c 'import yaml; yaml.safe_load(open(".godmode/plan.yaml"))'`.
