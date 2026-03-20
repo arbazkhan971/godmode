@@ -21,7 +21,7 @@ WHILE failing_count > 0:
          Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4
     # 6. VERIFY — re-run failing test. Then run full suite to check for regressions.
-    # 7. LOG to .godmode/debug-findings.tsv: iteration, symptom, root_cause, file:line, status(fixed/skipped)
+    # 7. APPEND .godmode/debug-findings.tsv: iteration, symptom, root_cause, file:line, fix_commit, status(fixed/skipped)
     # 8. STATUS every 3: "{found} found, {failing_count} remaining"
     failing_count = run_tests()
 ```

@@ -28,4 +28,4 @@ Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ## Rules
 1. RED first. Test must fail before code. If test passes immediately → the test is wrong or testing nothing.
 2. One test per iteration. Assert return values, thrown errors, or side effects — never mock internals.
-3. No mocking unless external I/O (network, filesystem, time). Every test: ≥1 assertion + descriptive test name.
+3. No mocking unless external I/O (network, filesystem, clock). Test names: `should {verb} when {condition}`. ≥1 assertion per test.

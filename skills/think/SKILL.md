@@ -24,6 +24,6 @@ Write `.godmode/spec.md`: Problem, Approach, Success Criteria (verifiable cmd), 
 ## Rules
 1. Always produce `.godmode/spec.md`. Next step: `/godmode:plan` reads it.
 2. 2-3 approaches, then pick one. Not 7 options.
-3. Measurable success criteria. "Works well" is not a criterion.
+3. Success criteria = shell command with expected exit code or output. "Works well", "is fast", "looks good" = rejected.
 4. Scan existing code first. Reuse existing patterns, don't introduce new ones.
 5. Spec under 100 lines. If longer, decompose into sub-features. Never design what you haven't scanned.

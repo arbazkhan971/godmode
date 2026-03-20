@@ -58,7 +58,7 @@ Read `skills/{skill}/SKILL.md`. Follow it literally. Pass: `stack`, `test_cmd`, 
 ## Rules
 1. Detect stack FIRST. Cache result. One skill at a time — read its SKILL.md, follow it.
 2. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Initialize `current_iteration = 0`. Increment at loop top.
-3. `Iterations: N` = bounded. No number = loop forever. Never ask "should I continue?"
+3. `Iterations: N` = run exactly N times then stop+summarize. No number = loop until interrupted. Never ask to continue.
 4. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`. Never leave broken commits in history.
 5. Log: `.godmode/<skill>-results.tsv` (append, never overwrite). Session: `.godmode/session-log.tsv`: timestamp, skill, iters, kept, discarded, outcome.
 6. Stuck (>5 consecutive discards): re-read all in-scope files, try opposite approach, try radical rewrite. Never repeat failed approach.

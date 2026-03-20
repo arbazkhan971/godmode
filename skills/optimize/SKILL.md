@@ -16,7 +16,7 @@ WHILE current_round < max_rounds:
     # 1. REVIEW — in-scope files + results.tsv (last 10) + git log -10. Profile first: identify hotspot before changing.
     IF bounded AND remaining < 3: exploit only (refine best kept change, no new experiments)
     # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
-    IF >5 consecutive discards: try OPPOSITE
+    IF >5 consecutive discards: try OPPOSITE of last approach (e.g., if simplifying → add complexity, if inlining → extract)
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
     Each agent: ONE change → commit → run guard (test_cmd, must pass) → verify 3x → report median. Timeout: 5min per agent.
     # 4. PICK WINNER — largest improvement

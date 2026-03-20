@@ -24,7 +24,7 @@ Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks 
 Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks, {M} rounds, {F} files`. If >10 tasks → suggest `/godmode:predict`.
 
 ## Rules
-1. Every task has exact file paths that exist (or will be created). No globs, no "somewhere in".
+1. Every task lists exact file paths. Existing files: verify with `git ls-files`. New files: parent dir must exist.
 2. Every `done_when` is a shell command. If it exits 0, the task is done.
 3. Max 5 tasks per round (build's agent limit). Same-round tasks: zero file overlap. Validate: no path appears in two tasks.
 4. Max 5 files per task. Larger → split into subtasks with shared interface.

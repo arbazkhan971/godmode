@@ -19,7 +19,7 @@ WHILE tasks remain:
     FOR each completed agent:
         merge worktree → conflict: `git merge --abort`, discard, retry narrower scope → test fail: `/godmode:fix` (max 2) or `git revert HEAD`
     VERIFY: build_cmd && lint_cmd && test_cmd → fail: /godmode:fix (max 3). All 3 must pass.
-    Log to .godmode/build-log.tsv: round, task_id, status(merged/reverted/conflict). Print "Round {N}: {done}/{total}"
+    Append `.godmode/build-log.tsv`: round, task_id, agent_time_ms, status(merged/reverted/conflict). Print `Round {N}: {done}/{total}`
 ```
 
 ## Rules

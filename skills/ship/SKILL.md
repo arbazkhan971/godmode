@@ -21,7 +21,7 @@ Preview: print exact commands, target branch/tag, and rollback command. User mus
 ### 5. Verify
 Post-ship: `curl -sf {endpoint}/health` or `test_cmd`. Non-zero = rollback: `git revert HEAD && git push`.
 ### 6. Log
-Append to `.godmode/ship-log.tsv`: timestamp, type, commit, outcome, url.
+Append `.godmode/ship-log.tsv`: ISO-8601 timestamp, type, commit_sha, outcome(shipped/rolled-back/failed), url.
 
 ## Rules
 1. 100% checklist before shipping. No exceptions. Never ship with failing checks — fix first, then re-run.

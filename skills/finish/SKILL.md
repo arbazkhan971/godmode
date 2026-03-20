@@ -16,7 +16,7 @@ Run: `git diff --cached` (must be empty), `git status` (clean worktree), `build_
 - **DISCARD:** delete branch (confirm first — destructive)
 Auto: tests pass + reviewed → MERGE. Tests pass + unreviewed → PR. Dirty worktree → KEEP. User confirms abandon → DISCARD.
 ### 3. Post-Finalization
-Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}. Commits: {N}. Tests: {pass}/{total}."`.
+Append `.godmode/session-log.tsv`. Print: `Branch {name}: {outcome}. {N} commits squashed. Tests: {pass}/{total}.`
 
 ## Rules
 1. Clean state before finalize. `git status` must show nothing to commit. All tests must pass.

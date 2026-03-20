@@ -12,7 +12,7 @@ Run `git diff main...HEAD` (full, not --stat). Read every changed file in full. 
 ### 2. Multi-Agent Review (4 agents, parallel)
 - **Correctness** — logic errors, off-by-ones, null/undefined, unhandled promise rejections, missing returns
 - **Security** — injection (SQL/XSS/cmd), auth bypass, secrets in code, insecure defaults
-- **Performance** — N+1 queries, O(n²) in loops, unnecessary re-renders/re-computations, unbounded collections, memory leaks
+- **Performance** — N+1 queries, O(n²) in hot paths, missing pagination, unbounded `.map()`/`.filter()` chains, memory leaks
 - **Style** — naming conventions, dead/unreachable code, inconsistent patterns, missing types/returns
 Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX (code snippet)`
 Severities: MUST-FIX, SHOULD-FIX, NIT.

@@ -17,7 +17,7 @@ Read `.godmode/spec.md` or user-provided proposal. If no spec exists, ask user t
 | SRE (10yr) | Reliability, monitoring, failure modes |
 | Security Researcher (11yr) | Attack surface, data exposure, auth, supply chain |
 | Product Manager (13yr) | User value, scope, timeline |
-Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + file:line), Mitigation (code change or architecture suggestion).
+Each outputs: `VERDICT: YES|REVISE|NO`, `CONFIDENCE: 1-10`, `RISK: {sentence} @ {file:line}`, `MITIGATION: {concrete change}`.
 ### 3. Synthesize Consensus
 Print: `Confidence: {avg}/10. Blockers: {list}. Split votes: {list}. Gate: PROCEED (≥7) / REVISE (4-6) / RETHINK (<4).`
 ### 4. Gate
