@@ -8,7 +8,7 @@ description: Fix loop. One fix per commit, auto-revert on regression, until zero
 
 ## The Loop
 ```
-error_count = run_all_checks()  # test_cmd + lint_cmd + build_cmd (from stack detection)
+error_count = run_all_checks()  # build_cmd + lint_cmd + test_cmd (build first — can't lint/test broken code)
 original = error_count
 current_iteration = 0
 WHILE error_count > 0:

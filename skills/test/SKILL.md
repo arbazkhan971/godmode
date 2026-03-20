@@ -8,7 +8,7 @@ description: TDD loop. RED-GREEN-REFACTOR until coverage target met.
 
 ## The Loop
 ```
-coverage = measure_coverage()  # test_cmd --coverage (from stack detection)
+coverage = measure_coverage()  # e.g. vitest --coverage, pytest --cov, go test -cover
 target = user_target OR 80
 current_iteration = 0
 WHILE coverage < target:

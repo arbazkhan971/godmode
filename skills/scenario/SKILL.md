@@ -12,7 +12,7 @@ Read spec. Trace data flow: inputs → validation → processing → storage →
 ### 2. Explore 12 Dimensions
 Invalid Input, Boundary (0, 1, MAX, empty), Concurrency (race conditions), Network (timeout, 5xx), Data Integrity, Auth, Time (timezone, leap), Scale (10x load), Failure Modes, Migration, User Error, External Deps.
 ### 3. Score Each Scenario
-Priority = Likelihood (1-5) × Impact (1-5). ≥20: CRITICAL | 12-19: HIGH | 6-11: MEDIUM | 1-5: LOW.
+Score = Likelihood (1-5) × Impact (1-5). ≥20 CRITICAL | 12-19 HIGH | 6-11 MEDIUM | ≤5 LOW.
 ### 4. Generate Test Skeletons
 For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values, not 'example'. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
 ### 5. Output

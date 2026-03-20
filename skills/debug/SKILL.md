@@ -16,7 +16,7 @@ WHILE failing_count > 0:
     # 2. SELECT TECHNIQUE:
          Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log -20`
          Intermittent/Wrong results → State Inspection | Unknown → Binary Search (eliminate half)
-    # 3. INVESTIGATE — collect evidence: variable values, call stack, input/output at failure point
+    # 3. INVESTIGATE — add logging/prints at suspect points. Collect: variable values, call stack, actual vs expected.
     # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
          Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4

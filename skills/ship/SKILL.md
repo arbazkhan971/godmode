@@ -17,7 +17,7 @@ Preview: print exact commands, affected branches/tags, and rollback command. Use
 ### 4. Ship
 - **PR:** `gh pr create --title "{title}" --body "## Summary\n{changes}\n## Test Plan\n{how_verified}"`
 - **Deploy:** trigger CI/CD or apply manifests
-- **Release:** `git tag v{version} && gh release create`
+- **Release:** `git tag v{version} && gh release create v{version} --generate-notes`
 ### 5. Verify
 Post-ship: `curl -sf {endpoint}` or run smoke test. Non-zero exit = rollback (`git revert HEAD && push`).
 ### 6. Log

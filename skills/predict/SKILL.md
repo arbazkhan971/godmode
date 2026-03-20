@@ -15,7 +15,7 @@ Read `.godmode/spec.md` or user-provided proposal. If no spec exists, ask user t
 | Backend Architect (15yr) | Scalability, data model, API design |
 | Frontend Lead (12yr) | UX, performance, component design |
 | SRE (10yr) | Reliability, monitoring, failure modes |
-| Security Researcher (11yr) | Attack surface, data exposure, auth |
+| Security Researcher (11yr) | Attack surface, data exposure, auth, supply chain |
 | Product Manager (13yr) | User value, scope, timeline |
 Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + file:line), Mitigation (code change or architecture suggestion).
 ### 3. Synthesize Consensus

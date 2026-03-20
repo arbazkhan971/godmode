@@ -19,6 +19,6 @@ Auto-decide: tests pass + `/godmode:review` done → MERGE. Tests pass + unrevie
 Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}. Commits: {N}. Tests: {pass}/{total}."`.
 
 ## Rules
-1. Clean state before finalize. No uncommitted changes, tests must pass.
+1. Clean state before finalize. `git status` must show nothing to commit. All tests must pass.
 2. One commit per feature on main (squash-merge). Never force-delete. Never merge with failing tests.
 3. PR body auto-generated from `git log main..HEAD --format='- %s'`. No manual summaries.
