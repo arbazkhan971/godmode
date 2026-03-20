@@ -18,7 +18,7 @@ WHILE error_count > 0:
     # 3. FIX — change ≤5 lines for ONE error. Fix the cause, not the symptom. No workarounds.
     # 4. COMMIT `fix({module}): {description}` BEFORE verify
     # 5. VERIFY: new_count = run_all_checks()
-    IF new_count > error_count: git reset --hard HEAD~1 (max 3, then skip this error, move to next)
+    IF new_count >= error_count: `git reset --hard HEAD~1`. Max 3 attempts per error, then skip + log to skipped_list.
     ELSE: error_count = new_count
     # 6. LOG to .godmode/fix-log.tsv: iteration, error, file, fix_description, status(kept/reverted)
     # 7. STATUS every 5: "{error_count} remaining (from {original})"

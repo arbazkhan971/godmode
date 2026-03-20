@@ -19,7 +19,7 @@ Per approach: trade-offs, complexity (S/M/L), files touched, task count. Disqual
 ### 4. Recommend One
 Recommend one. State: chosen approach, why others rejected (1 sentence each), top risk + mitigation.
 ### 5. Write Spec
-Output `.godmode/spec.md`: Problem, Approach, Success Criteria (measurable), Out of Scope, Files to Create/Modify. Commit: `"spec: {feature name}"`
+Write `.godmode/spec.md`: Problem, Approach, Success Criteria (verifiable cmd), Out of Scope, Files to Create/Modify. `git commit -m "spec: {feature}"`
 
 ## Rules
 1. Always produce `.godmode/spec.md`. Next step: `/godmode:plan` reads it.

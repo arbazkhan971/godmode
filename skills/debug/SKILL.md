@@ -27,6 +27,6 @@ WHILE failing_count > 0:
 ```
 
 ## Rules
-1. Reproduce first. Never investigate unseen bugs. Never guess — run the code and read the output.
+1. Reproduce before investigating. No reproduce = no bug. Run the code, read stdout+stderr, paste the output.
 2. Evidence: file:line + actual vs expected values + reproduce command. Found root cause → `/godmode:fix`.
 3. One bug at a time. Don't fix during debug (one-line fixes excepted). If stuck 3 iterations on same bug, skip it.

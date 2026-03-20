@@ -28,5 +28,5 @@ NITs: auto-fix if safe (imports, whitespace, formatting). Commit each: `review: 
 
 ## Rules
 1. Every finding: file:line + suggested fix (code). No vague feedback like 'consider improving' or 'could be better'.
-2. MUST-FIX blocks merge. NIT = auto-fixed. Review against spec and tests, not personal style preference.
+2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Review against spec + tests, not personal style. No bikeshedding.
 3. Auto-fix only safe changes. Never auto-fix logic, public APIs, or security-related code.

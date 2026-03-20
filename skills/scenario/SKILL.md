@@ -20,6 +20,6 @@ Output: `DIMENSION | SCENARIO | L×I | SCORE | TEST`. Print: `{total} scenarios,
 
 ## Rules
 1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.
-2. Score every scenario numerically. No unscored scenarios in output.
+2. Score every scenario: L(1-5) × I(1-5) = S. No unscored rows. S=0 is not valid — minimum is 1×1=1.
 3. HIGH+ scenarios get runnable tests. Stubs and TODOs are not tests.
 4. Cite specific code paths (file:line). If code doesn't exist yet, cite the spec section instead.

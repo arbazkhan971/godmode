@@ -11,7 +11,7 @@ description: Evidence gate. Run command, read output, confirm or deny claim.
 2. **RUN** — Execute: `cmd 2>&1 | tee /tmp/verify-output.txt`. Capture full stdout+stderr. No filtering, no truncation.
 3. **READ** — Parse entire output line by line. Check for warnings, errors, and unexpected values.
 4. **JUDGE** — Compare expected vs actual. Numeric: 3 runs, median. Boolean: 1 run. Ambiguous output = FAIL.
-5. **REPORT** — `Claim | Result: PASS/FAIL | Command | Expected | Actual | Details`
+5. **REPORT** — `| Claim | PASS/FAIL | Command | Expected | Actual | Evidence (paste output) |`
 
 ## Rules
 1. Run the command. Never verify in your head. Never trust cached results. Never accept 'it should work'.

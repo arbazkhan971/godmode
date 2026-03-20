@@ -8,7 +8,7 @@ description: Branch finalization. Merge, PR, keep, or discard.
 
 ## Workflow
 ### 1. Pre-Check
-Run: `git diff --cached` (nothing staged?), `git status` (clean?), `test_cmd`, `lint_cmd`. Any failure → `/godmode:fix`.
+Run: `git diff --cached` (must be empty), `git status` (clean worktree), `build_cmd && lint_cmd && test_cmd`. Any fail → `/godmode:fix`.
 ### 2. Choose Outcome
 - **MERGE:** `git checkout main && git merge --squash {branch} && git commit -m "feat: {title}"`, then `git branch -d {branch}`
 - **PR:** `gh pr create --title '{feature}' --body "## Changes\n$(git log main..HEAD --format='- %s')\n## Tests\nAll passing."`

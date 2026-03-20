@@ -23,7 +23,7 @@ WHILE untested categories remain:
     Log to .godmode/security-findings.tsv: iteration, category, persona, finding, severity, file:line, status(open/fixed).
     Every 5 iters: print "{tested}/10 OWASP, {findings} findings"
 ```
-6. **Report** — Coverage: OWASP {N}/10, STRIDE {N}/6. Findings: {critical} critical, {high} high. Verdict: PASS/FAIL.
+6. **Report** — OWASP: {N}/10, STRIDE: {N}/6. `{critical}C {high}H {med}M {low}L`. PASS if 0 critical + 0 high. Else FAIL.
 7. **Auto-Fix** (if `--fix`) — For Critical/High: fix → commit → run full test suite → revert if ANY test breaks.
 
 ## Rules

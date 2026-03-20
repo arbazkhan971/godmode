@@ -32,6 +32,6 @@ Print: `{metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} di
 ## Rules
 1. Metric must be a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.
-3. Never modify tests. Never add caching that breaks correctness. Never trade readability for <1% gain.
+3. Never modify test files. Never cache mutable data. Never trade readability for <1% gain. Profile before guessing.
 4. +0.1% with added complexity → discard. Same metric + fewer lines → keep. Simpler code > marginal gains.
 5. Diminishing returns: 3 consecutive <1% keeps → radical → compound → stop.

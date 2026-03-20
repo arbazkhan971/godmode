@@ -17,7 +17,7 @@ WHILE coverage < target:
     # 2. RED — write ONE test for the identified uncovered path. It must FAIL.
     # 3. GREEN — run test → must FAIL first. If passes immediately: test is wrong, delete and rewrite. Then write minimum code → PASS.
     # 4. REFACTOR — remove duplication in test code. Run ALL tests. If unrelated test breaks → revert, investigate.
-    # 5. COMMIT: git commit -m "test({module}): {what_behavior_is_tested}"
+    # 5. COMMIT: `git add {test_file} && git commit -m "test({module}): {what_behavior_is_tested}"`
     # 6. MEASURE: coverage = measure_coverage()
     # 7. LOG to .godmode/test-results.tsv: iteration, test_file, coverage_before, coverage_after, delta
     IF current_iteration % 5 == 0:
