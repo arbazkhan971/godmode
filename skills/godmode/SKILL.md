@@ -49,7 +49,7 @@ no .godmode/spec.md, no plan  → THINK
 .godmode/spec.md exists, no .godmode/plan.yaml → PLAN
 .godmode/plan.yaml exists, incomplete tasks  → BUILD
 code exists, tests failing → FIX
-code exists, tests passing → OPTIMIZE or SHIP
+code exists, tests passing, no review done → REVIEW. Reviewed → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute

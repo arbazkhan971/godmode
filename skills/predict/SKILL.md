@@ -21,7 +21,7 @@ Each outputs: Verdict (YES/REVISE/NO), Confidence (1-10), Risk (one sentence + f
 ### 3. Synthesize Consensus
 Print: `Confidence: {avg}/10. Blockers: {list}. Split votes: {list}. Gate: PROCEED (≥7) / REVISE (4-6) / RETHINK (<4).`
 ### 4. Gate
-IF average confidence < 7 → loop back to `/godmode:think` with all risks attached.
+IF avg < 7 → `/godmode:think` with all risks as constraints. IF any persona says NO → `/godmode:think` regardless of avg.
 
 ## Rules
 1. Every persona cites file:line. No finding without code evidence. Generic advice like 'add more tests' is not a finding.

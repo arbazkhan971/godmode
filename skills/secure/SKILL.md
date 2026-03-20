@@ -9,7 +9,7 @@ description: Security audit. STRIDE + OWASP + 4 red-team personas. Code evidence
 ## Workflow
 1. **Recon** — `npm audit`/`pip audit`/`cargo audit` for CVEs, `grep -rn 'SECRET\|API_KEY\|PASSWORD'` for secrets, scan routes.
 2. **Asset Map** — List: databases, auth (JWT/session/OAuth), APIs called, user input fields, public endpoints.
-3. **Trust Boundaries** — client↔server, public↔authenticated, user↔admin, service↔service, CI↔prod, internal↔external.
+3. **Trust Boundaries** — Draw: client↔server, public↔auth, user↔admin, svc↔svc, CI↔prod, internal↔external. Each = attack surface.
 4. **STRIDE** — For each boundary: Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation.
 5. **Iterate:**
 ```

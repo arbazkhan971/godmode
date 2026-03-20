@@ -11,7 +11,7 @@ description: Decompose spec into tasks with deps, files, agents. Output .godmode
 ### 1. Read Context
 - Read spec: `.godmode/spec.md` or user-provided
 - Scan codebase: `git ls-files`, directory structure, existing patterns
-- Use cached stack: `test_cmd`, `lint_cmd`, `build_cmd` (from orchestrator)
+- Use cached `test_cmd`, `lint_cmd`, `build_cmd`. If any is `—` (not available), omit from task verify steps.
 ### 2. Decompose into Tasks
 Each task: `id`, `title`, `skill` (godmode skill name), `files` (exact paths), `depends_on` (task IDs), `agent: true|false`, `test` (verify cmd), `done_when` (shell cmd, exit 0 = done).
 ### 3. Build Dependency Graph

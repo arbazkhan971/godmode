@@ -14,7 +14,7 @@ Invalid Input, Boundary (0, 1, MAX_INT, empty, null), Concurrency (race, deadloc
 ### 3. Score Each Scenario
 Score = Likelihood (1-5) × Impact (1-5). ≥20 CRITICAL | 12-19 HIGH | 6-11 MEDIUM | ≤5 LOW.
 ### 4. Generate Test Skeletons
-For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values, not 'example'. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
+For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values from codebase. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
 ### 5. Output
 Output: `DIMENSION | SCENARIO | L×I | SCORE | TEST`. Print: `{total} scenarios, {critical} critical, {high} high, {tests} tests generated`.
 

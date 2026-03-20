@@ -22,7 +22,7 @@ Combine findings. Deduplicate (same file:line = merge). Sort: MUST-FIX → SHOUL
 ### 4. Auto-Fix NITs
 NITs: auto-fix if safe (imports, whitespace, formatting). Commit each: `review: fix {description}`. Logic/API/security NITs → leave for human.
 ### 5. Verdict
-- 0 MUST-FIX → APPROVE (score 8-10)
+- 0 MUST-FIX + 0 SHOULD-FIX → APPROVE (9-10). 0 MUST-FIX + some SHOULD-FIX → APPROVE (8).
 - Any MUST-FIX → REQUEST CHANGES (score 5-7)
 - Critical security → REJECT (score < 5)
 
