@@ -7,7 +7,7 @@ description: Evidence gate. Run command, read output, confirm or deny claim.
 - `/godmode:verify`, "prove it", "verify this"
 
 ## Workflow
-1. **IDENTIFY** — Extract claim → pick verify command → define pass condition (exact string, numeric threshold, or exit code).
+1. **IDENTIFY** — Extract claim → pick verify command → define pass/fail (exact string match, threshold comparison, or exit code 0).
 2. **RUN** — Execute exact command with `2>&1`. Full stdout+stderr. No filtering.
 3. **READ** — Read entire output. Do not skim.
 4. **JUDGE** — Compare pass condition vs actual output. Numeric metrics: 3 runs, use median. Boolean: single run.

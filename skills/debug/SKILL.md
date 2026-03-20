@@ -14,7 +14,7 @@ WHILE failing_count > 0:
     current_iteration += 1
     # 1. REPRODUCE — run failing command, capture FULL output (stdout+stderr)
     # 2. SELECT TECHNIQUE:
-         Stack trace → Trace Analysis | "Used to work" → git bisect
+         Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log --oneline -20`
          Intermittent → State Inspection | Wrong results → State Inspection
          Unknown → Binary Search (eliminate half)
     # 3. INVESTIGATE — collect evidence: variable values, call stack, input/output at failure point

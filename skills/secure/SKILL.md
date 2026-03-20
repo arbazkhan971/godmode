@@ -7,7 +7,7 @@ description: Security audit. STRIDE + OWASP + 4 red-team personas. Code evidence
 - `/godmode:secure`, "security audit", "vulnerabilities", "harden"
 
 ## Workflow
-1. **Recon** — Scan: package.json/deps for CVEs, .env/.config for secrets, routes for exposed endpoints.
+1. **Recon** — `npm audit`/`pip audit`/`cargo audit` for CVEs, `grep -rn 'SECRET\|API_KEY\|PASSWORD'` for secrets, scan routes.
 2. **Asset Map** — Catalog data stores, auth systems, external services, user inputs, endpoints.
 3. **Trust Boundaries** — browser↔server, public↔auth, user↔admin, service↔service, CI↔prod.
 4. **STRIDE** — For each boundary: Spoofing, Tampering, Repudiation, Info Disclosure, DoS, Elevation.

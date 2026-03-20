@@ -52,7 +52,7 @@ code exists, tests passing → OPTIMIZE or SHIP
 ```
 
 ## Step 4: Execute
-Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass cached stack vars.
+Read `skills/{skill}/SKILL.md`. Follow it exactly. Pass: stack, test_cmd, lint_cmd, build_cmd.
 
 ## Rules
 1. Detect stack FIRST. Cache result. One skill at a time — read its SKILL.md, follow it.

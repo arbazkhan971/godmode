@@ -15,7 +15,7 @@ description: Decompose spec into tasks with deps, files, agents. Output .godmode
 ### 2. Decompose into Tasks
 Each task: `id`, `title`, `skill` (which godmode skill), `files` (exact paths), `depends_on` (task IDs), `agent: true/false`, `test` (verify command), `done_when` (exit 0 = done).
 ### 3. Build Dependency Graph
-Sort tasks topologically. Group tasks with no unmet deps into rounds for parallel execution. Continue until all tasks assigned.
+Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks before API before UI.
 ### 4. Validate Plan
 - `files[]` must be real paths or new files in existing directories
 - `depends_on[]` must reference valid task IDs, no circular deps

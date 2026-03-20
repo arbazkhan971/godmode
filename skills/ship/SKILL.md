@@ -15,7 +15,7 @@ Score = passing/total x 100. Must be 100% to proceed.
 ### 3. Dry-Run
 Preview: show exact commands that will run, files/branches/tags that will be created. User must confirm.
 ### 4. Ship
-- **PR:** `gh pr create --title "{title}" --body "{body}"`
+- **PR:** `gh pr create --title "{title}" --body "## Summary\n{changes}\n## Test Plan\n{how_verified}"`
 - **Deploy:** trigger CI/CD or apply manifests
 - **Release:** `git tag v{version} && gh release create`
 ### 5. Verify

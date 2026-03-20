@@ -13,7 +13,7 @@ target = user_target OR 80
 current_iteration = 0
 WHILE coverage < target:
     current_iteration += 1
-    # 1. FIND — highest-impact uncovered path. Priority: happy path > error path > edge case > integration
+    # 1. FIND — use coverage report to identify untested lines. Priority: happy path > error path > edge case > integration
     # 2. RED — write test that FAILS
     # 3. GREEN — run test → must FAIL. If passes: test is wrong, rewrite. Write minimum code → must PASS.
     # 4. REFACTOR — remove duplication in test code, re-run ALL tests (not just new one)

@@ -19,7 +19,7 @@ Severities: MUST-FIX, SHOULD-FIX, NIT.
 ### 3. Merge & Deduplicate
 Combine findings. Deduplicate (same file:line = merge). Sort: MUST-FIX → SHOULD-FIX → NIT.
 ### 4. Auto-Fix NITs
-For each NIT: if safe (unused imports, whitespace, reorder), apply and commit `"review: fix {description}"`. Else leave for human.
+For each NIT: if safe (unused imports, whitespace, reorder, formatting), auto-fix and commit `"review: fix {description}"`. If touches logic → leave for human.
 ### 5. Verdict
 - 0 MUST-FIX → APPROVE (score 8-10)
 - Any MUST-FIX → REQUEST CHANGES (score 5-7)

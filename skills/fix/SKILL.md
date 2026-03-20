@@ -13,7 +13,7 @@ original = error_count
 current_iteration = 0
 WHILE error_count > 0:
     current_iteration += 1
-    # 1. PICK highest priority: types > lint > tests (type fixes often resolve lint+test errors downstream)
+    # 1. PICK: build errors > type errors > lint > test failures (each layer unblocks the next)
     # 2. ANALYZE — read error message + surrounding code (10 lines). Identify the exact mismatch.
     # 3. FIX — smallest change for ONE error. Prefer fixing root cause over suppressing symptoms.
     # 4. COMMIT "fix: {description}" BEFORE verify

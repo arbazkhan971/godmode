@@ -8,7 +8,7 @@ description: Edge case exploration. 12 dimensions, scored by likelihood x impact
 
 ## Workflow
 ### 1. Read the Design
-Read spec. Map: user inputs → processing → outputs. List external deps and state mutations.
+Read spec. Trace data flow: inputs → validation → processing → storage → output. List external deps and state mutations.
 ### 2. Explore 12 Dimensions
 Invalid Input, Boundary (0, 1, MAX, empty), Concurrency (race conditions), Network (timeout, 5xx), Data Integrity, Auth, Time (timezone, leap), Scale (10x load), Failure Modes, Migration, User Error, External Deps.
 ### 3. Score Each Scenario

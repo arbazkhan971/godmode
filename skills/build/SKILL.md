@@ -15,7 +15,7 @@ Read `.godmode/plan.yaml`. No plan file → run `/godmode:plan` first. No plan n
 tasks = load_plan()
 WHILE tasks remain:
     round = pick_tasks_with_no_unmet_deps(tasks, completed)[:5]
-    FOR each task: Agent("Implement: {task.title}\nFiles: {task.files}\nDone when: {task.done_when}", isolation: "worktree")
+    FOR each task: Agent("Implement: {task.title}\nFiles: {task.files}\nDone when: {task.done_when}\nStack: {stack}", isolation: "worktree")
     FOR each completed agent:
         merge worktree → conflict: discard worktree, retry → test fail: `/godmode:fix` or revert
     VERIFY: test_cmd && lint_cmd && build_cmd → fail: /godmode:fix (max 3)
