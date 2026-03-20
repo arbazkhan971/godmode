@@ -616,6 +616,38 @@ CONFLICT RESOLUTION: manifests branch is source of truth for base templates
 - **Do NOT deploy straight to production.** Validate in dev/staging first. Use canary deployments for high-risk changes.
 
 
+## Output Format
+Print on completion: `K8s: {resource_count} resources across {namespace_count} namespaces. Health: {health_status}. Security: {security_score}. Scaling: {min_replicas}-{max_replicas}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every Kubernetes operation to `.godmode/k8s-results.tsv`:
+```
+iteration	task	namespace	resources_created	resources_modified	health_check	security_issues	status
+1	manifests	app-prod	12	0	all_ready	2	created
+2	security	app-prod	0	5	all_ready	0	hardened
+3	scaling	app-prod	0	3	all_ready	0	configured
+4	observability	monitoring	4	0	all_ready	0	deployed
+```
+Columns: iteration, task, namespace, resources_created, resources_modified, health_check, security_issues, status(created/modified/hardened/configured/deployed).
+
+## Success Criteria
+- All pods have resource requests AND limits configured.
+- All deployments have liveness and readiness probes.
+- All containers run as non-root with read-only root filesystem.
+- No secrets in plain-text manifests (using Secrets or external-secrets).
+- Image tags are pinned to specific versions (no `latest`).
+- HPA configured for production deployments with appropriate min/max replicas.
+- NetworkPolicies restrict ingress/egress to required paths only.
+- All manifests pass `kubectl --dry-run=server` validation.
+
+## Error Recovery
+- **Pod stuck in CrashLoopBackOff**: Check logs with `kubectl logs <pod> --previous`. Verify liveness probe is not too aggressive (increase `initialDelaySeconds`). Check resource limits (OOMKilled = memory limit too low).
+- **Pod stuck in Pending**: Check `kubectl describe pod` for scheduling failures. Common causes: insufficient CPU/memory on nodes, node affinity/taint mismatch, PVC not bound.
+- **ImagePullBackOff**: Verify image exists in registry. Check `imagePullSecrets` on the service account. Verify registry credentials are valid and not expired.
+- **Service returns 503**: Check if endpoints exist (`kubectl get endpoints <service>`). Verify readiness probe is passing. Check if the pod labels match the service selector.
+- **HPA not scaling**: Verify metrics-server is running. Check `kubectl describe hpa` for conditions. Verify resource requests are set (HPA needs requests to calculate utilization).
+- **ConfigMap/Secret changes not picked up**: Pods must be restarted to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Kubernetes tasks sequentially: manifests, then security, then scaling, then observability.

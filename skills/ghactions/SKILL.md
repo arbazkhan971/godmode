@@ -1111,3 +1111,83 @@ grep -L "timeout-minutes:" .github/workflows/*.yml 2>/dev/null
 - **Do NOT upload artifacts without retention limits.** Default retention is 90 days. Set `retention-days` to avoid ballooning storage costs.
 - **Do NOT ignore the Actions usage report.** Monitor minutes consumption in repository settings. Self-hosted runners or larger runners may be more cost-effective at scale.
 - **Do NOT use `continue-on-error: true` as a fix for flaky steps.** It masks real failures. Fix the flakiness or quarantine the test.
+
+## Output Format
+Print on completion: `GH Actions: {workflow_count} workflows, {job_count} jobs. Duration: {total_time}. Cache: {cache_hit_rate}%. Security: {security_issues} issues. Minutes/run: {minutes}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every workflow optimization to `.godmode/ghactions-results.tsv`:
+```
+iteration	workflow	jobs	duration_before	duration_after	cache_hit_rate	security_fixes	status
+1	ci.yml	4	12m	5m	92%	3	optimized
+2	deploy.yml	3	8m	6m	85%	2	hardened
+3	release.yml	2	15m	10m	90%	1	optimized
+```
+Columns: iteration, workflow, jobs, duration_before, duration_after, cache_hit_rate, security_fixes, status(created/optimized/hardened/failed).
+
+## Success Criteria
+- All workflows have explicit `permissions:` (no write-all).
+- All third-party actions pinned to full commit SHA (not mutable tag).
+- All jobs have `timeout-minutes` configured.
+- Concurrency groups configured to cancel redundant runs.
+- Dependency caching enabled with lockfile hash key.
+- No untrusted input interpolated in `run:` blocks.
+- Secrets never echoed in logs.
+- Artifact retention configured with explicit `retention-days`.
+- Total pipeline duration under 10 minutes for PR checks.
+
+## Error Recovery
+- **Workflow syntax error**: Run `actionlint` locally before pushing. Check YAML indentation. Validate with `act` for local testing.
+- **Action fails with permission denied**: Add the required permission to the `permissions:` block. Common: `contents: read`, `pull-requests: write`, `packages: write`.
+- **Cache miss every run**: Verify the cache key matches the actual lockfile path. Check that `actions/cache` is using `hashFiles('**/package-lock.json')`. Ensure the cache path matches the install directory.
+- **Secret not available in fork PR**: Secrets are not passed to fork PRs by default. Use `pull_request_target` with caution, or require forks to set their own secrets.
+- **Workflow runs too long**: Add `timeout-minutes` to the job. Check for hung processes. Split long jobs into parallel steps. Enable test sharding.
+- **Concurrency group cancels needed runs**: Use `cancel-in-progress: false` for deploy workflows. Use `cancel-in-progress: true` only for PR checks where the latest commit is all that matters.
+
+## Iterative Loop Protocol
+```
+current_workflow = 0
+workflows = detect_github_workflows()
+
+WHILE current_workflow < len(workflows):
+  workflow = workflows[current_workflow]
+  1. AUDIT: Check permissions, pinned versions, timeouts, caching, secrets handling
+  2. FIX security issues: pin actions to SHA, restrict permissions, mask secrets
+  3. OPTIMIZE performance: add caching, enable concurrency groups, parallelize jobs
+  4. VALIDATE: run actionlint, verify with dry-run
+  5. LOG to .godmode/ghactions-results.tsv
+  6. current_workflow += 1
+  7. REPORT: "Workflow {current_workflow}/{total}: {workflow} — {security_fixes} security fixes, {duration_before} → {duration_after}"
+
+EXIT when all workflows optimized OR user requests stop
+```
+
+## Multi-Agent Dispatch
+For repositories with multiple workflows:
+```
+DISPATCH parallel agents (one per workflow concern):
+
+Agent 1 (worktree: ghactions-security):
+  - Pin all actions to SHA, restrict permissions, fix secret handling
+  - Scope: all .github/workflows/*.yml
+  - Output: Hardened workflows
+
+Agent 2 (worktree: ghactions-perf):
+  - Add caching, concurrency groups, parallel jobs
+  - Scope: all .github/workflows/*.yml
+  - Output: Optimized workflows
+
+Agent 3 (worktree: ghactions-reusable):
+  - Extract shared logic into composite actions and reusable workflows
+  - Scope: .github/actions/, .github/workflows/
+  - Output: DRY workflow architecture
+
+MERGE ORDER: security → perf → reusable
+CONFLICT RESOLUTION: security branch takes priority on permission/action version conflicts
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run GitHub Actions tasks sequentially: security hardening, then performance optimization, then reusable workflow extraction.
+- Use branch isolation per task: `git checkout -b godmode-ghactions-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -1205,6 +1205,38 @@ LOGGING ANTI-PATTERNS:
 ```
 
 
+## Output Format
+Print on completion: `Logging: {service_count} services configured. Format: structured JSON. Levels: {level_config}. Correlation: {correlation_status}. PII: {pii_status}. Retention: {retention_policy}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every logging configuration step to `.godmode/logging-results.tsv`:
+```
+iteration	task	services_configured	format	correlation_ids	pii_redacted	retention_days	status
+1	core_setup	4	structured_json	yes	yes	30	configured
+2	migration	2	migrated_from_console	yes	yes	30	migrated
+3	correlation	4	structured_json	verified	yes	30	verified
+4	pipeline	1	aggregator	n/a	n/a	90	configured
+```
+Columns: iteration, task, services_configured, format, correlation_ids, pii_redacted, retention_days, status(configured/migrated/verified/failed).
+
+## Success Criteria
+- All services use structured JSON logging (no `console.log` or `print` statements).
+- Log levels correctly configured (ERROR for failures, WARN for degradation, INFO for business events, DEBUG disabled in production).
+- Correlation IDs (request ID, trace ID) attached to every log line.
+- PII redacted or masked in all log output (emails, tokens, passwords).
+- Log aggregation pipeline configured (ship to centralized logging).
+- Retention policy set per environment (production: 30-90 days, staging: 7 days).
+- Async log writing configured (no blocking I/O on hot paths).
+- Consistent log format across all services (same field names, same structure).
+
+## Error Recovery
+- **Logs are unstructured after migration**: Search for remaining `console.log`, `print()`, `fmt.Println` calls. Replace with the structured logger. Use lint rules to prevent regression (`no-console` ESLint rule).
+- **Correlation IDs missing in some logs**: Check middleware ordering — correlation ID middleware must run before any handler that logs. Verify the logger context is propagated to all layers (service, repository, etc.).
+- **Log volume too high (cost explosion)**: Audit log levels — production should not use DEBUG. Sample high-volume events instead of logging every one. Filter out health check logs at the aggregator level.
+- **PII found in logs**: Add redaction middleware/filters. Audit all log statements for email, phone, SSN, token, password fields. Use allowlists (log only known-safe fields) instead of denylists.
+- **Logs not appearing in aggregator**: Check the log shipping agent (Fluentd, Filebeat, CloudWatch agent). Verify network connectivity to the aggregator. Check log file rotation — the agent may be tailing a rotated file.
+- **Different services use different log formats**: Standardize on a single schema. Create a shared logging library/wrapper that all services import. Enforce the schema in code review.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run logging tasks sequentially: core setup, then migration, then correlation, then pipeline.

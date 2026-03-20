@@ -903,6 +903,34 @@ Recovery status:
 | `--migrate` | Migrate from one queue technology to another |
 | `--benchmark` | Run queue throughput benchmarks |
 
+## Multi-Agent Dispatch
+
+```
+PARALLEL QUEUE AGENTS:
+When building a complete queue system with multiple queue types:
+
+Agent 1 (worktree: queue-core):
+  - Set up queue infrastructure (Redis/RabbitMQ/SQS connection)
+  - Implement job producers with structured payloads
+  - Configure queues by priority (critical, default, bulk)
+  - Add retry strategy with exponential backoff + jitter
+
+Agent 2 (worktree: queue-workers):
+  - Implement idempotent job handlers for each job type
+  - Add graceful shutdown (SIGTERM handling)
+  - Configure worker concurrency per queue
+  - Add circuit breaker for downstream dependencies
+
+Agent 3 (worktree: queue-monitoring):
+  - Configure DLQ with replay tooling
+  - Add queue metrics (depth, processing time, failure rate)
+  - Create monitoring dashboard and alerts
+  - Write integration tests (job lifecycle, retry, DLQ)
+
+MERGE: Core merges first. Workers rebase onto core.
+  Monitoring rebases onto workers. Final: end-to-end job lifecycle test.
+```
+
 ## Anti-Patterns
 
 - **Do NOT process long tasks in request handlers.** Anything over 500ms belongs in a background job. Users should not stare at a loading spinner while you generate a PDF.
@@ -913,3 +941,82 @@ Recovery status:
 - **Do NOT store large payloads in the queue.** Queues are for metadata and references, not 50MB files. Store the file in S3/storage, put the URL in the job payload.
 - **Do NOT skip graceful shutdown.** Killing a worker mid-job corrupts state and causes double-processing. Handle SIGTERM, finish current work, then exit.
 - **Do NOT use polling intervals shorter than your processing time.** If jobs take 5 seconds to process, polling every 100ms wastes CPU. Match polling to workload characteristics.
+
+## Output Format
+
+```
+QUEUE SYSTEM COMPLETE:
+  Technology: <BullMQ | Kafka | RabbitMQ | SQS | Celery | other>
+  Queues: <N> queues configured
+  Workers: <N> worker pools, <M> total concurrency
+  Retry strategy: exponential backoff, max <N> attempts, jitter: <on|off>
+  DLQ: <configured | not configured> — max retries before DLQ: <N>
+  Idempotency: <implemented | not implemented>
+  Delivery guarantee: <at-least-once | exactly-once | at-most-once>
+  Graceful shutdown: <implemented | not implemented>
+  Monitoring: <configured | not configured>
+
+QUEUE SUMMARY:
++--------------------------------------------------------------+
+|  Queue Name      | Priority | Concurrency | Retry | DLQ      |
++--------------------------------------------------------------+
+|  <queue>         | high     | 5           | 3x    | yes      |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every queue design session to `.godmode/queue-results.tsv`:
+
+```
+Fields: timestamp\tproject\ttechnology\tqueues_count\tworker_pools\tretry_strategy\tdlq_configured\tidempotency\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\tbullmq\t4\t3\texponential\tyes\tyes\tabc1234
+```
+
+Append after every completed queue design or implementation pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+QUEUE SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  All long tasks (>500ms) moved to queue     | YES              |
+|  Retry strategy with exponential backoff    | YES              |
+|  Dead letter queue configured               | YES              |
+|  Idempotent job handlers                    | YES              |
+|  Graceful shutdown (SIGTERM handling)        | YES              |
+|  Separate queues by priority                | YES              |
+|  No large payloads in job data (<10KB)      | YES              |
+|  Monitoring (queue depth, processing time)  | YES              |
+|  Circuit breaker on downstream dependencies | RECOMMENDED      |
+|  Job scheduling for recurring tasks         | IF APPLICABLE    |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — QUEUE:
+1. Jobs stuck in active state (not completing):
+   → Check worker logs for unhandled errors. Verify job timeout is set (stalledInterval). Implement stalled job recovery. Check if downstream dependency is down.
+2. DLQ growing (jobs failing after max retries):
+   → Inspect DLQ messages for common error patterns. Fix root cause (schema change, dependency down, permissions). Replay DLQ after fix. Do not replay without fixing.
+3. Memory exhaustion in worker:
+   → Check for memory leaks in job handler (unclosed connections, growing arrays). Limit concurrency. Add memory monitoring. Restart workers periodically if leak cannot be fixed.
+4. Duplicate job processing:
+   → Verify idempotency key is set and checked before processing. Check if job ID is unique. Add deduplication table/cache with TTL matching job retention.
+5. Queue backlog growing (consumers falling behind):
+   → Scale worker concurrency or add worker instances. Check if job processing time has increased (dependency slowdown). Add backpressure to producers if needed.
+6. Connection to broker lost:
+   → Implement automatic reconnection with backoff. Use connection pooling. Add health check endpoint that verifies broker connectivity. Alert on connection failures.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run queue tasks sequentially: queue design, then worker implementation, then monitoring.
+- Use branch isolation per task: `git checkout -b godmode-queue-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

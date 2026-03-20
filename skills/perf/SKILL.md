@@ -668,6 +668,36 @@ CONFLICT ZONES: Hot path code changes, lock/synchronization changes
 - **Do NOT profile debug builds.** Debug builds have extra instrumentation, assertions, and disabled optimizations that completely change the performance profile. Always profile release/production builds.
 
 
+## Output Format
+Print on completion: `Perf: {finding_count} findings ({critical} critical, {high} high). CPU hotspot: {top_hotspot} ({cpu_pct}%). Memory: {leak_status}. Concurrency: {race_count} races, {deadlock_count} deadlocks. Top fix: {top_fix} ({improvement}% improvement).`
+
+## TSV Logging
+Log every profiling finding to `.godmode/perf-results.tsv`:
+```
+iteration	module	finding_type	location	severity	metric_before	metric_after	status
+1	cpu	hotspot	formatCurrency:45	critical	8247ms	423ms	fixed
+2	memory	leak	EventCache:120	high	+50MB/hr	stable	fixed
+3	concurrency	race	Counter:33	critical	data_corruption	safe	fixed
+```
+Columns: iteration, module(cpu/memory/concurrency/benchmark), finding_type, location, severity, metric_before, metric_after, status(fixed/open/wontfix).
+
+## Success Criteria
+- All CPU hotspots consuming > 10% of total CPU identified with flame graph evidence.
+- All memory leaks identified with retention chain evidence and verified fix (memory stabilizes).
+- All race conditions identified with reproduction scenario and fix verified under concurrent load.
+- All benchmarks report with confidence intervals (95% CI) and sufficient sample size (n >= 10).
+- Before/after measurements provided for every fix with statistical significance (p < 0.05).
+- Flame graph generated and saved for CPU profiling sessions.
+- No regressions introduced by performance fixes (full test suite passes).
+
+## Error Recovery
+- **Profiler produces empty or corrupted output**: Verify the application ran long enough to collect samples (minimum 10 seconds). Check that the profiler is compatible with the runtime version. Try a different profiler tool.
+- **Flame graph is flat (no clear hotspot)**: The bottleneck may be I/O, not CPU. Switch to an off-CPU flame graph or trace I/O operations. Check if the workload is I/O-bound (database, network, disk).
+- **Memory leak not reproducible in dev**: Increase load duration and volume. Some leaks only manifest under sustained traffic. Use a soak test pattern (moderate load for hours, not minutes).
+- **Race condition not reproducible**: Increase concurrency level. Add deliberate delays (`time.Sleep` / `await delay()`) at suspected race points to widen the race window. Use ThreadSanitizer or `-race` flag for deterministic detection.
+- **Benchmark results are unstable (CV > 10%)**: Control the environment — disable CPU frequency scaling, close background processes, pin to CPU core. Increase warm-up iterations. Run more samples.
+- **Fix improves one metric but regresses another**: Profile again after the fix. If the regression is in a different module, dispatch a separate fix. Do not ship a net-negative change.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run performance tasks sequentially: CPU profiling, then memory profiling, then concurrency, then benchmarks.

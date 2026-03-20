@@ -674,6 +674,39 @@ CONFLICT ZONES: middleware registration order, config files, docker-compose port
 - **Do NOT ignore error budget.** When the error budget is depleted, stop shipping features and fix reliability. That is the whole point of SLOs.
 
 
+## Output Format
+Print on completion: `Observe: {pillar_count}/3 pillars configured (metrics/logs/traces). SLOs: {slo_count} defined. Alerts: {alert_count} configured. Dashboards: {dashboard_count}. Error budget: {error_budget_pct}% remaining. Verdict: {verdict}.`
+
+## TSV Logging
+Log every observability setup step to `.godmode/observe-results.tsv`:
+```
+iteration	pillar	tool	items_configured	coverage_pct	alert_count	status
+1	metrics	prometheus	24	85	8	configured
+2	logging	structured_json	12	90	4	configured
+3	tracing	opentelemetry	8	75	2	configured
+4	alerts	alertmanager	14	100	14	verified
+```
+Columns: iteration, pillar(metrics/logging/tracing/alerts/dashboards), tool, items_configured, coverage_pct, alert_count, status(configured/verified/incomplete).
+
+## Success Criteria
+- All three observability pillars implemented (metrics, logs, traces).
+- SLOs defined for all critical services with error budgets.
+- Structured logging with consistent JSON format across all services.
+- Trace context propagated across all service boundaries.
+- Alerts have `for` duration (no instant alerts) and actionable runbooks.
+- Dashboards answer specific questions (not decorative).
+- No unbounded cardinality in metric labels.
+- PII redacted from all logs and traces.
+- Error budget tracked and enforced (feature freeze when depleted).
+
+## Error Recovery
+- **Metrics cardinality explosion**: Identify labels with high cardinality (`user_id`, `request_path` with parameters). Replace with bounded labels (status code ranges, endpoint patterns). Drop offending series with relabeling rules.
+- **Trace context lost between services**: Verify W3C Trace Context headers (`traceparent`, `tracestate`) are propagated. Check HTTP client libraries for automatic propagation. Add manual instrumentation at the boundary where context breaks.
+- **Alert fatigue (too many alerts firing)**: Review alert thresholds. Increase `for` duration. Group related alerts. Remove alerts that never lead to action. Each alert must have a runbook.
+- **Logs too expensive (cloud log storage costs)**: Set retention policies (7d hot, 30d warm, 90d cold). Filter out debug/verbose logs in production. Sample high-volume log lines instead of capturing all.
+- **Dashboard shows no data**: Check the data source connection. Verify metric names and label selectors match. Check the time range. Ensure the scrape interval is shorter than the dashboard refresh interval.
+- **SLO calculation shows 100% availability**: The SLO is likely misconfigured. Verify the error condition captures actual user-facing errors. Check that the measurement window is correct. A 100% SLO over months means you are not measuring real errors.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run observability tasks sequentially: metrics, then logging, then tracing, then alerts.

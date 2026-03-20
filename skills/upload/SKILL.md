@@ -1508,6 +1508,79 @@ echo "=== Storage Config ==="
 grep -r "S3_BUCKET\|STORAGE_BUCKET\|AZURE_CONTAINER\|UPLOAD_DIR\|CLOUDINARY" .env .env.example 2>/dev/null
 ```
 
+## Iteration Protocol
+```
+WHILE upload implementation is incomplete:
+  1. REVIEW — check current state: which components exist (presigned URLs, processing, validation, CDN), which are missing
+  2. IMPLEMENT — pick next component from the plan, implement with tests
+  3. TEST — upload test file end-to-end: presigned URL → upload → processing → CDN serving
+  4. VERIFY — check: file accessible via CDN, EXIF stripped, variants generated, virus scan passed
+  IF tests pass AND component works: commit, move to next component
+  IF tests fail: check storage permissions, CORS config, processing pipeline. Fix and re-test (max 3 attempts)
+STOP: all components implemented, end-to-end upload works, processing pipeline verified, cleanup automation active
+```
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/upload-results.tsv`:
+```
+STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
+1\tpresigned-urls\ts3\tcreated\tPUT for upload, GET for download, 15min expiry
+2\tvalidation\tcustom\tcreated\tmagic bytes check, size limits, allowed types whitelist
+3\tvirus-scan\tclamav\tcreated\tclamscan on upload before public access
+4\timage-processing\tsharp\tcreated\tthumbnail(150x150) + medium(800x600) + webp conversion + EXIF strip
+5\tcdn-serving\tcloudfront\tconfigured\timmutable cache headers, custom domain, OAC
+6\tcleanup\tcron\tcreated\tabort incomplete multipart uploads after 24h
+```
+Print final summary: `Uploads: {file_types}, max size: {size}. Storage: {provider}. Processing: {pipeline}. CDN: {cdn}. Virus scan: {yes/no}. Resumable: {yes/no}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Presigned URL generation works for upload (PUT) and download (GET) with correct expiry.
+2. File validation rejects invalid types (magic bytes check, not just extension/Content-Type).
+3. Virus scanning runs on every upload before the file is accessible to other users.
+4. Image processing generates all required variants and strips EXIF metadata.
+5. CDN serves processed files with correct cache headers (`Cache-Control: public, max-age=31536000, immutable`).
+6. Upload size limits enforced both client-side (early feedback) and server-side (authoritative).
+7. Incomplete multipart uploads are cleaned up automatically (lifecycle rule or cron job).
+8. Upload metadata stored in database (not just object storage tags) for querying and cleanup.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Presigned URL returns 403 | Check IAM permissions for `s3:PutObject` and `s3:GetObject`. Verify bucket policy. Check clock skew (<15min). Verify URL hasn't expired. Check that bucket region matches the signing region. |
+| CORS error on browser upload | Verify bucket CORS allows: origin (your domain), method (PUT), headers (Content-Type, x-amz-*). Clear browser CORS cache (test in incognito). Check that preflight OPTIONS request succeeds. |
+| Image processing fails | Check file is valid image (magic bytes, not just extension). For Sharp: check `sharp.versions` for libvips. For large files: process in background job with memory limits, not in request handler. |
+| Virus scanner rejects clean file | Check ClamAV signature database is current (`freshclam`). Test with EICAR test file to verify scanner works. If false positive: quarantine file, log for manual review, do not auto-approve. |
+| Upload timeout for large files | Switch to multipart upload (>100MB). Implement resumable uploads (tus protocol) for unreliable networks. Set client timeout to match expected upload duration at minimum bandwidth. |
+| CDN serving stale content | Use content-hashed filenames (`{hash}.{ext}`) to make cache invalidation unnecessary. If using mutable URLs: create CloudFront invalidation. Check CDN TTL settings. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: upload-core):
+  - Configure storage bucket with IAM, CORS, lifecycle rules
+  - Build presigned URL generation endpoints (upload + download)
+  - Implement file validation (magic bytes, size limits, type whitelist)
+
+Agent 2 (worktree: upload-processing):
+  - Implement image processing pipeline (variants, EXIF strip, format conversion, blur placeholder)
+  - Add virus scanning integration (ClamAV or cloud-native)
+  - Build video processing if needed (thumbnails, transcoding, adaptive bitrate)
+
+Agent 3 (worktree: upload-serving):
+  - Configure CDN with origin access control and cache policies
+  - Build upload confirmation and metadata tracking API
+  - Implement cleanup automation (incomplete uploads, orphaned files)
+
+MERGE ORDER: core -> processing -> serving
+CONFLICT ZONES: storage client initialization, upload route handlers, file metadata schema
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run upload tasks sequentially: storage config, then presigned URLs, then processing pipeline, then CDN and cleanup.
+- Use branch isolation per task: `git checkout -b godmode-upload-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT proxy file uploads through your API server.** Use presigned URLs. Your server should never be a data pipe between client and storage — it wastes compute, adds latency, and creates a single point of failure.

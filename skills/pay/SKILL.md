@@ -751,6 +751,38 @@ MERGE ORDER: core -> subscriptions -> webhooks
 CONFLICT ZONES: Stripe client initialization, customer model, billing routes
 ```
 
+## TSV Logging
+After each workflow step, append a row to `.godmode/pay-results.tsv`:
+```
+STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
+1\tpayment-core\tstripe\tcreated\tcheckout session + payment intent flow
+2\twebhook\tstripe\tcreated\t/api/webhooks/stripe with signature verification
+3\tsubscription\tstripe\tcreated\tplan CRUD + proration + dunning
+4\treconciliation\tcron\tcreated\tdaily job comparing Stripe events vs local DB
+```
+Print final summary: `Payment system: {provider}, {N} payment methods, webhooks: {yes/no}. Subscriptions: {yes/no}. Tax: {tax_provider}. Reconciliation: {frequency}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Test-mode payment completes end-to-end (checkout → payment_intent.succeeded webhook → order fulfilled).
+2. Webhook endpoint verifies signatures and processes events idempotently (replay same event, no duplicate side effects).
+3. Subscription lifecycle works: create, upgrade with proration, cancel (immediate and end-of-period).
+4. Failed payment triggers dunning flow (retry schedule + customer notification).
+5. Idempotency keys are present on every payment write operation.
+6. No raw card data touches the server (client-side tokenization only).
+7. All API keys come from environment variables, not code.
+8. Reconciliation job detects at least one known discrepancy in test data.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Stripe API key missing/invalid | Print exact env var names (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`). Link to Stripe dashboard > Developers > API keys. |
+| Webhook signature verification fails | Verify `STRIPE_WEBHOOK_SECRET` matches the endpoint secret (not the API key). Use `stripe listen --forward-to` for local dev. |
+| Payment intent fails | Check error code from Stripe. Common: `card_declined`, `insufficient_funds`, `expired_card`. Map each to user-facing message. |
+| Subscription proration incorrect | Verify `proration_behavior` parameter. Test with Stripe test clock for deterministic billing cycle simulation. |
+| Duplicate charges detected | Check idempotency key implementation. Verify webhook handler uses `event.id` as dedup key. Refund duplicates via API. |
+| Tax calculation fails | Verify tax provider credentials. Check that product tax codes are set. Fall back to no-tax with alert, never block checkout silently. |
+
 ## Anti-Patterns
 
 - **Do NOT process card numbers on your server.** Use client-side tokenization (Stripe.js, PayPal JS SDK). Handling raw card data moves you from SAQ-A to SAQ-D, a dramatically harder compliance burden.

@@ -632,3 +632,77 @@ STOP when:
 - **Do NOT add font weights you do not use.** Each unused font weight is 20-30KB downloaded for nothing. Audit CSS for actually-used weights and remove the rest.
 - **Do NOT set Cache-Control: no-store on static assets.** Hashed filenames (main.a1b2c3.js) are immutable — cache them for a year. Only HTML and API responses need revalidation.
 - **Do NOT ignore third-party script impact.** A single chat widget can add 200KB+ of JavaScript and block the main thread for seconds. Measure third-party impact and load non-essential scripts with async/defer.
+
+## Output Format
+Print on completion: `Webperf: Lighthouse {before_score} → {after_score} (+{delta}). LCP: {lcp}s, INP: {inp}ms, CLS: {cls}. JS: {js_before} → {js_after} (-{js_savings}). Total transfer: {transfer_before} → {transfer_after}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every optimization iteration to `.godmode/webperf-results.tsv`:
+```
+iteration	optimization	lighthouse_before	lighthouse_after	lcp_ms	inp_ms	cls	js_size_kb	status
+1	code_splitting	62	71	3800	180	0.12	487	improved
+2	image_webp	71	79	3200	180	0.12	487	improved
+3	critical_css	79	88	2400	160	0.05	487	improved
+4	font_optimize	88	91	2100	140	0.03	487	target_met
+```
+Columns: iteration, optimization, lighthouse_before, lighthouse_after, lcp_ms, inp_ms, cls, js_size_kb, status(improved/no_change/regressed/target_met).
+
+## Success Criteria
+- Lighthouse Performance score >= 90.
+- All Core Web Vitals in "Good" range: LCP < 2.5s, INP < 200ms, CLS < 0.1.
+- Total JavaScript bundle < 200KB gzipped.
+- All images served in modern formats (WebP/AVIF) with responsive srcset.
+- Critical CSS inlined, remaining CSS async-loaded.
+- Font loading optimized with `font-display: swap` and preload.
+- Cache headers set correctly (immutable for hashed assets, revalidate for HTML).
+- Performance budget defined and enforced in CI.
+
+## Error Recovery
+- **Lighthouse score does not improve after optimization**: Clear all caches and re-run. Verify the optimization was actually deployed (check network tab). Run Lighthouse in incognito mode to avoid extension interference.
+- **Code splitting increases total bundle size**: Check for duplicated modules across chunks. Use `webpack-bundle-analyzer` to identify shared dependencies. Extract common code into a shared chunk.
+- **Critical CSS extraction misses above-the-fold styles**: Adjust the viewport dimensions used for critical CSS extraction. Test on multiple viewport sizes (mobile and desktop). Manually verify the above-the-fold rendering.
+- **Font loading causes layout shift (CLS increase)**: Add `size-adjust` properties to the fallback font. Use `fontaine` or `@next/font` for automatic fallback metrics. Set explicit `width` and `height` on font-dependent containers.
+- **Service worker caches stale content**: Implement a cache-busting strategy for the service worker itself. Use `skipWaiting()` and `clients.claim()` for immediate activation. Version your cache names.
+- **Third-party script blocks main thread**: Load with `async` or `defer` attribute. Use a facade pattern (load on interaction, not on page load). Consider removing non-essential third-party scripts entirely.
+
+## Multi-Agent Dispatch
+For comprehensive web performance optimization:
+```
+DISPATCH parallel agents (one per optimization area):
+
+Agent 1 (worktree: webperf-bundle):
+  - Bundle analysis and code splitting
+  - Tree shaking verification
+  - Library replacement (moment → dayjs, lodash → native)
+  - Scope: webpack/vite config, dynamic imports
+  - Output: Optimized bundle with route-based splitting
+
+Agent 2 (worktree: webperf-assets):
+  - Image optimization (WebP/AVIF, srcset, lazy loading)
+  - Font optimization (subsetting, font-display, preload)
+  - Scope: public/, src/assets/, CSS @font-face
+  - Output: Optimized images and fonts
+
+Agent 3 (worktree: webperf-rendering):
+  - Critical CSS extraction and inlining
+  - Render-blocking resource elimination
+  - LCP element optimization (preload, fetchpriority)
+  - Scope: HTML templates, CSS files, head tags
+  - Output: Optimized rendering pipeline
+
+Agent 4 (worktree: webperf-caching):
+  - Service worker configuration (Workbox)
+  - HTTP cache headers audit and fix
+  - CDN configuration
+  - Scope: sw.js, server config, CDN rules
+  - Output: Optimal caching strategy
+
+MERGE ORDER: bundle → assets → rendering → caching
+CONFLICT RESOLUTION: each agent owns its resource type exclusively
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run webperf tasks sequentially: bundle optimization, then assets, then rendering, then caching.
+- Use branch isolation per task: `git checkout -b godmode-webperf-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

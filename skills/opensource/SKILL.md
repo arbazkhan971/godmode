@@ -1235,6 +1235,81 @@ MERGE ORDER: community -> templates -> automation
 CONFLICT ZONES: .github/ directory structure (create in order)
 ```
 
+## Output Format
+
+After each opensource skill invocation, emit a structured report:
+
+```
+OPEN SOURCE READINESS REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Health score        │  <N>/13 files present          │
+│  LICENSE             │  <type> — PRESENT / MISSING    │
+│  README.md           │  PRESENT / MISSING / NEEDS UPDATE │
+│  CONTRIBUTING.md     │  PRESENT / MISSING             │
+│  CODE_OF_CONDUCT.md  │  PRESENT / MISSING             │
+│  SECURITY.md         │  PRESENT / MISSING             │
+│  Issue templates     │  <N> configured                │
+│  PR template         │  PRESENT / MISSING             │
+│  CODEOWNERS          │  PRESENT / MISSING             │
+│  CI workflows        │  <N> configured                │
+│  Governance          │  <BDFL | Consensus | Committee | MISSING> │
+│  Secrets in repo     │  <N> found / CLEAN             │
+│  Verdict             │  READY / NOT READY (<N> items) │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every open source setup action for tracking:
+
+```
+timestamp	skill	action	files_created	files_updated	health_score	status
+2026-03-20T14:00:00Z	opensource	scaffold	11	2	13/13	ready
+2026-03-20T14:10:00Z	opensource	audit	0	0	8/13	needs_work
+```
+
+## Success Criteria
+
+The opensource skill is complete when ALL of the following are true:
+1. LICENSE file exists with a valid SPDX license
+2. CODE_OF_CONDUCT.md exists (Contributor Covenant 2.1 or equivalent)
+3. CONTRIBUTING.md exists with setup instructions verified on a clean machine
+4. SECURITY.md exists with a private vulnerability reporting channel
+5. Issue templates use structured YAML format (no blank issues)
+6. PR template exists with checklist
+7. CODEOWNERS file maps paths to responsible teams/individuals
+8. No secrets found in the repository (grep audit passes)
+9. Governance model matches project size
+
+## Error Recovery
+
+```
+IF secrets are found in the repository:
+  1. STOP — do not open source until secrets are removed
+  2. Rotate all exposed credentials immediately
+  3. Use git filter-branch or BFG Repo-Cleaner to remove secrets from history
+  4. Add .env and credential files to .gitignore
+  5. Re-scan to verify secrets are completely removed
+
+IF CONTRIBUTING.md setup instructions fail on a clean machine:
+  1. Install all dependencies from scratch (fresh clone, no global packages)
+  2. Document every missing step (system deps, env vars, database setup)
+  3. Simplify the setup (use Docker if native setup is complex)
+  4. Test the updated instructions on another clean machine
+
+IF issue templates are not working:
+  1. Verify YAML syntax of template files (common: indentation errors)
+  2. Check that templates are in .github/ISSUE_TEMPLATE/ (exact path)
+  3. Verify config.yml disables blank issues
+  4. Test by creating a new issue in the GitHub UI
+
+IF governance model is mismatched:
+  1. Solo project: use BDFL (simplest)
+  2. 10+ contributors: switch to consensus model
+  3. 50+ contributors or foundation-backed: use steering committee
+  4. Document the governance change and communicate to contributors
+```
+
 ## Anti-Patterns
 
 - **Do NOT open source without a LICENSE.** Code without a license is not open source. It is "all rights reserved" by default. Always include a license file.

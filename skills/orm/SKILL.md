@@ -1012,6 +1012,26 @@ MERGE ORDER: n-plus-one -> pool-config -> transactions
 CONFLICT ZONES: ORM config files, middleware registration, service constructors
 ```
 
+## Auto-Detection
+
+```
+AUTO-DETECT ORM and data access context:
+  1. Check package manager for ORM: prisma, drizzle-orm, typeorm, sequelize, knex, sqlalchemy, django.db, gorm in dependencies
+  2. Scan for schema/model files: schema.prisma, models.py, *.entity.ts, *.model.ts
+  3. Check for migrations: prisma/migrations, alembic/versions, migrations/, db/migrate
+  4. Detect connection pooling: pgBouncer, pool config in datasource, connection_pool_size
+  5. Check for N+1 indicators: lazy loading config, no include/joinedload in query calls
+  6. Detect database type: PostgreSQL (pg, psycopg2), MySQL (mysql2), SQLite, MongoDB (mongoose)
+  7. Grep for raw SQL: raw(), $queryRaw, execute(), text() alongside ORM imports
+  8. Check for query logging: DEBUG=prisma:query, SQLALCHEMY_ECHO, logging SQL statements
+
+  USE detected context to:
+    - Target the correct ORM (don't suggest Prisma patterns for SQLAlchemy projects)
+    - Identify N+1 hotspots from query patterns
+    - Check connection pool sizing against instance count
+    - Match existing migration patterns and naming conventions
+```
+
 ## Anti-Patterns
 
 - **Do NOT use the ORM for everything.** Complex reporting queries, recursive CTEs, window functions, and bulk operations are often better as raw SQL. The ORM is for CRUD, not analytics.
@@ -1025,6 +1045,78 @@ CONFLICT ZONES: ORM config files, middleware registration, service constructors
 - **Do NOT retry on every error.** Retry on transient errors (connection reset, deadlock). Do NOT retry on constraint violations or syntax errors -- those will never succeed.
 - **Do NOT mix ORMs in the same project.** Using Prisma AND TypeORM on the same database creates schema drift, migration conflicts, and connection pool contention. Pick one.
 
+
+## Output Format
+
+```
+ORM OPTIMIZATION COMPLETE:
+  ORM: <Prisma | Drizzle | TypeORM | SQLAlchemy | other>
+  Models: <N> models audited
+  N+1 issues: <found> found, <fixed> fixed
+  Connection pool: <min>-<max> connections, <timeout>ms timeout
+  Transactions: <N> transaction blocks audited
+  Migrations: <N> pending, <status>
+  Query count before: <N> queries for <operation>
+  Query count after: <M> queries for <operation>
+  Estimated latency improvement: <X>%
+
+MODEL SUMMARY:
++--------------------------------------------------------------+
+|  Model           | Relations | N+1 Fixed | Eager/Lazy         |
++--------------------------------------------------------------+
+|  <ModelName>     | N         | Y/N       | <strategy>         |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every ORM optimization session to `.godmode/orm-results.tsv`:
+
+```
+Fields: timestamp\tproject\torm\tmodels_audited\tn1_found\tn1_fixed\tpool_configured\tquery_reduction_pct\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\tprisma\t12\t5\t5\tyes\t73\tabc1234
+```
+
+Append after every completed optimization pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+ORM SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Zero N+1 queries in audited operations     | YES              |
+|  Connection pool sized for workload         | YES              |
+|  All transactions use explicit boundaries   | YES              |
+|  Migrations are reversible                  | YES              |
+|  No raw SQL without parameterized queries   | YES              |
+|  Eager loading configured for known paths   | YES              |
+|  Query logging enabled in dev/staging       | YES              |
+|  Query count assertions in critical tests   | YES              |
+|  No SELECT * in production query paths      | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — ORM:
+1. N+1 query persists after eager loading:
+   → Verify include/joinedload is on the correct relation. Check that the ORM is not issuing lazy loads after the initial query. Add query count assertion test.
+2. Connection pool exhausted (timeout errors):
+   → Check pool max size vs concurrent requests. Look for leaked connections (missing finally/close). Add pool metrics. Increase max if justified.
+3. Migration fails:
+   → Read error output. Check for data-dependent failures (NOT NULL on existing rows, unique constraint violations). Add data backfill step before schema change.
+4. Transaction deadlock:
+   → Identify the two competing transactions. Ensure consistent lock ordering. Reduce transaction scope. Add retry with backoff for deadlock errors.
+5. Query timeout on large table:
+   → Run EXPLAIN ANALYZE on the generated SQL. Add missing index. Consider pagination instead of full-table scan. Check if ORM is fetching unnecessary columns.
+6. Type mismatch between ORM model and database:
+   → Re-introspect the database schema (prisma db pull, sqlacodegen). Update model to match actual column types. Re-run migration diff.
+```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

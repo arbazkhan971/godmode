@@ -562,3 +562,132 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 - **Do NOT design without consumers in mind.** An API designed in isolation will be redesigned when the first consumer tries to use it.
 - **Do NOT generate a spec and skip validation.** Generated specs often have issues. Always validate with tooling.
 - **Do NOT version reactively.** Version from the start. Adding versioning later means breaking existing consumers.
+
+## Output Format
+
+```
+API DESIGN COMPLETE:
+  Spec: <path to OpenAPI/Swagger spec file>
+  Endpoints: <N> resources, <M> total operations
+  Versioning: <strategy> (URL path | header | query param)
+  Pagination: <cursor | offset> on all list endpoints
+  Auth: <mechanism> on <N> endpoints
+  Rate limiting: <configured | recommended>
+  Error schema: unified <format> across all endpoints
+  Validation: <PASS | FAIL> (<N> issues)
+
+ENDPOINT SUMMARY:
++--------------------------------------------------------------+
+|  Resource        | GET | POST | PUT | PATCH | DELETE | Notes  |
++--------------------------------------------------------------+
+|  /api/v1/<res>   | Y   | Y    | --  | Y     | Y      | ...    |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every API design session to `.godmode/api-results.tsv`:
+
+```
+Fields: timestamp\tproject\tendpoints_designed\tspec_format\tvalidation_status\tissues_found\tissues_fixed\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-service\t12\topenapi-3.1\tPASS\t3\t3\tabc1234
+```
+
+Append after every completed design or validation pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+API DESIGN SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  OpenAPI spec generated and valid           | YES              |
+|  All list endpoints paginated               | YES              |
+|  Unified error response schema              | YES              |
+|  Versioning strategy applied                | YES              |
+|  Auth defined for all non-public endpoints  | YES              |
+|  Rate limit headers documented              | YES              |
+|  Example request/response for each endpoint | YES              |
+|  Spec validates with spectral/redocly lint  | YES              |
+|  No breaking changes vs previous version    | YES (if exists)  |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — API:
+1. Spec validation fails (spectral/redocly errors):
+   → Read error output line by line. Fix each violation. Re-run validator. Repeat until 0 errors.
+2. Breaking change detected vs previous spec:
+   → Compare old vs new spec with oasdiff or openapi-diff. Revert breaking fields. Add new fields as additive changes only.
+3. Pagination missing on list endpoint:
+   → Add cursor-based pagination parameters (after, first, before, last) and PageInfo to response schema.
+4. Inconsistent error format across endpoints:
+   → Create shared error component in spec. Reference it from all error responses (4xx, 5xx).
+5. Auth model undefined:
+   → Add securitySchemes to spec components. Apply security requirement to each endpoint.
+6. Rate limit headers missing from spec:
+   → Add RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset to response headers in spec.
+```
+
+## Explicit Loop Protocol
+
+```
+API ENDPOINT BUILD LOOP:
+current_iteration = 0
+resources = [resource_1, resource_2, ...]  // from resource modeling
+
+WHILE current_iteration < len(resources) AND NOT user_says_stop:
+  1. SELECT next resource by dependency order (independent resources first)
+  2. DESIGN endpoints: GET (single + list), POST, PATCH, DELETE as appropriate
+  3. DEFINE request/response schemas with examples
+  4. ADD pagination to list endpoints, filtering, sorting
+  5. APPLY auth and rate limiting to each endpoint
+  6. WRITE to OpenAPI spec file
+  7. VALIDATE spec with linter (spectral or redocly)
+  8. current_iteration += 1
+  9. REPORT: "Resource {current_iteration}/{total}: {name} — {N} endpoints, auth: {scheme}, pagination: {type}"
+
+ON COMPLETION:
+  VALIDATE full spec (0 errors, 0 warnings)
+  GENERATE documentation artifact
+  REPORT: "{N} resources, {M} endpoints, spec valid, commit ready"
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL API AGENTS:
+When designing an API with multiple resource domains:
+
+Agent 1 (worktree: api-spec):
+  - Design full OpenAPI spec (paths, schemas, components, security)
+  - Define shared error schema, pagination schema, auth schemes
+  - Add examples for every endpoint
+  - Run spec validation (spectral lint, 0 errors)
+
+Agent 2 (worktree: api-impl):
+  - Implement route handlers for all endpoints
+  - Wire up auth middleware, pagination helpers, error handlers
+  - Add request validation (Zod, Joi, Pydantic, etc.)
+  - Add rate limiting middleware
+
+Agent 3 (worktree: api-tests):
+  - Write integration tests for all endpoints (happy path + error cases)
+  - Test pagination, filtering, sorting on list endpoints
+  - Test auth (valid, expired, missing token)
+  - Test rate limiting headers and 429 responses
+
+MERGE: Spec merges first. Implementation rebases onto spec.
+  Tests rebase onto implementation. Final: run full test suite.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run API tasks sequentially: spec design, then implementation, then tests.
+- Use branch isolation per task: `git checkout -b godmode-api-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

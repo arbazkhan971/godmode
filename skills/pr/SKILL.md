@@ -661,6 +661,88 @@ Labels: backend, feature, size/M
 | `--self-review` | Run self-review checklist before requesting |
 | `--retarget` | Retarget stacked PRs after a merge |
 
+## Output Format
+
+After each PR skill invocation, emit a structured report:
+
+```
+PR REPORT:
+┌──────────────────────────────────────────────────────┐
+│  PR action           │  <create | split | stack | review> │
+│  Branch              │  <branch name>                 │
+│  Diff size           │  +<N> / -<N> lines             │
+│  Files changed       │  <N>                           │
+│  PR size category    │  <XS | S | M | L | XL>         │
+│  Split recommended   │  YES (<N> PRs) / NO            │
+│  Self-review         │  DONE / SKIPPED                │
+│  CI status           │  PASSING / FAILING             │
+│  Reviewers assigned  │  <N> (<names>)                 │
+│  Verdict             │  READY FOR REVIEW | NEEDS WORK │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every PR operation for tracking:
+
+```
+timestamp	skill	action	branch	diff_lines	files_changed	size_category	status
+2026-03-20T14:00:00Z	pr	create	feature/auth	+180/-30	8	M	ready
+2026-03-20T14:10:00Z	pr	split	feature/big-refactor	+800/-200	24	XL	split_into_3
+```
+
+## Success Criteria
+
+The PR skill is complete when ALL of the following are true:
+1. PR is within size limits (< 400 lines changed, or split if larger)
+2. PR description includes summary, related issues, and test plan
+3. Self-review checklist is completed before requesting review
+4. CI passes (tests, lint, type check)
+5. Appropriate reviewers are assigned (1-2 specific people, not the whole team)
+6. PR targets the correct base branch
+7. Stacked PRs (if any) have correct dependency chain and are < 5 deep
+
+## Error Recovery
+
+```
+IF PR is too large (> 400 lines):
+  1. Analyze the diff by concern: refactoring, feature, tests, config
+  2. Split into separate PRs by concern (each independently mergeable)
+  3. Use stacked PRs if changes have dependencies
+  4. If splitting is not possible, add a detailed self-review walkthrough in the description
+
+IF CI fails on the PR:
+  1. Check the specific failing step (test, lint, type check, build)
+  2. Fix locally, push the fix as a new commit (not amend during review)
+  3. If the failure is flaky/unrelated, document it and re-run CI
+  4. Never merge with failing CI
+
+IF reviewers are not responding within 24 hours:
+  1. Send a direct message with a brief summary of the PR
+  2. If still no response, re-assign to a different available reviewer
+  3. Consider the PR may be too large — offer to walk through it
+  4. Set a team SLA for PR review turnaround (recommendation: < 24 hours)
+
+IF stacked PR chain breaks after a merge:
+  1. Retarget child PRs to the new base (the merged PR's target branch)
+  2. Rebase each child PR onto the new base
+  3. Resolve any conflicts introduced by the merge
+  4. Update PR descriptions to reflect the new dependency chain
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect branch strategy: check for main/master, develop, release/* branches
+2. Detect PR template: ls .github/PULL_REQUEST_TEMPLATE.md
+3. Detect CI status: check for .github/workflows/, .circleci/, .gitlab-ci.yml
+4. Detect labeling: ls .github/labeler.yml, .github/labels.yml
+5. Detect CODEOWNERS: ls .github/CODEOWNERS
+6. Detect merge strategy: check repo settings or recent merge commits for squash/rebase/merge
+7. Auto-configure: use detected conventions for PR creation
+```
+
 ## Anti-Patterns
 
 - **Do NOT open PRs with 500+ lines.** They will not get a thorough review. Split them. No exceptions.

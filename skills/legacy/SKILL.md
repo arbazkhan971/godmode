@@ -822,6 +822,76 @@ CONFLICT RESOLUTION: tests branch must pass before deps or cleanup merge
 | `--understand <path>` | Deep analysis of a specific module or function |
 | `--dry-run` | Show modernization plan without making changes |
 
+## Output Format
+Print on completion:
+```
+LEGACY ASSESSMENT: {project_name}
+Language/Framework: {language} | Age: {years} | Size: {files} files, {loc} LOC
+Test coverage: {percentage}% | Change confidence: {HIGH|MEDIUM|LOW|NONE}
+Dependencies: {total} total, {outdated} outdated, {deprecated} deprecated, {vulns} vulnerabilities
+Dead code: ~{loc} LOC identified across {files} files
+God classes: {N} files > 500 LOC
+Modernization priority: {P0_count} urgent, {P1_count} high, {P2_count} medium
+Roadmap: {N} phases over {timeline}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every legacy session to `.godmode/legacy-results.tsv`:
+```
+timestamp	project	language	age_years	loc	test_coverage_pct	change_confidence	vulns	deprecated_deps	dead_code_loc	phases	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Full codebase health assessment completed before any modifications.
+2. Characterization tests added to critical paths before any refactoring.
+3. Security vulnerabilities (CRITICAL/HIGH) addressed before any modernization work.
+4. Dead code verified with at least 2 signals (static analysis + git history or runtime coverage) before removal.
+5. Each refactoring step is small enough to review in one sitting and revertable with `git revert`.
+6. Dependency upgrades done one major version at a time with full test suite run between each.
+7. Modernization roadmap follows priority order: security > stability > maintainability > performance > modernization.
+8. Every characterization test expects actual behavior, not intended behavior.
+
+## Error Recovery
+```
+IF codebase has zero tests and user wants to refactor:
+  → Block: "Add characterization tests to critical paths before any changes"
+  → Identify top 5 most-called functions via dependency tracing
+  → Write characterization tests for those 5 functions first
+  → Only then allow refactoring to proceed
+
+IF characterization test captures a bug as expected behavior:
+  → This is correct — the test documents CURRENT behavior
+  → Add a comment: "// BUG: returns 58.84, should be 58.85 (floating point). Fix in separate commit."
+  → Fix the bug in a separate commit AFTER the characterization test is in place
+
+IF dependency upgrade breaks tests:
+  → Revert the upgrade: git revert
+  → Read the migration guide for the specific dependency
+  → Identify breaking changes that affect the codebase
+  → Apply code fixes first, then re-apply the upgrade
+  → Never upgrade multiple dependencies in the same commit
+
+IF dead code removal causes runtime errors:
+  → Immediate: git revert the removal commit
+  → Investigate: the code was called via reflection, dynamic dispatch, or configuration
+  → Add runtime tracking (instrument the function) for 1 week to confirm zero calls
+  → Re-attempt removal only after runtime verification
+
+IF god class extraction breaks existing callers:
+  → Create a facade that delegates to the new focused classes
+  → Old callers continue using the facade (no changes needed)
+  → Migrate callers to use focused classes directly over time
+  → Remove facade when all callers are migrated
+
+IF team has no active contributors familiar with the legacy code:
+  → Prioritize understanding over changing: code archaeology first
+  → Add extensive inline comments documenting discovered behavior
+  → Write characterization tests as documentation of current behavior
+  → Do NOT modernize modules that no one understands yet
+```
+
 ## Anti-Patterns
 
 - **Do NOT refactor without tests.** Changing untested legacy code is gambling. You have no way to know if you broke something until users report it. Add characterization tests first, always.

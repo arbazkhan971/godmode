@@ -684,6 +684,77 @@ MERGE:
    Store in CI/CD secrets or secure vault.
 ```
 
+## Output Format
+
+After each mobile skill invocation, emit a structured report:
+
+```
+MOBILE BUILD REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Platform           │  <iOS | Android | Both>         │
+│  Framework          │  <React Native | Flutter | etc> │
+│  Screens built      │  <N>                            │
+│  Components         │  <N> created / <N> updated      │
+│  Tests              │  <N> passing, <N> failing       │
+│  App size           │  <N> MB (release build)         │
+│  Cold start time    │  <N> ms                         │
+│  Memory usage       │  <N> MB peak                    │
+│  A11y violations    │  <N>                            │
+│  Platform guidelines│  iOS HIG: PASS/FAIL  Material: PASS/FAIL │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every mobile build action for tracking:
+
+```
+timestamp	skill	platform	screen	action	tests_pass	app_size_mb	status
+2026-03-20T14:00:00Z	mobile	ios	HomeScreen	create	15/15	12.3	pass
+2026-03-20T14:10:00Z	mobile	android	ProfileScreen	update	8/10	14.1	needs_fix
+```
+
+## Success Criteria
+
+The mobile skill is complete when ALL of the following are true:
+1. App builds successfully on all target platforms (iOS and/or Android)
+2. All screens render correctly on minimum supported device/OS version
+3. All tests pass (unit + integration + at least one E2E smoke test)
+4. App size is within budget (< 50MB initial download unless justified)
+5. Cold start time is acceptable (< 2s on mid-range device)
+6. No accessibility violations from platform accessibility scanner
+7. Platform conventions are respected (iOS HIG, Material Design guidelines)
+8. No signing certificates or secrets committed to version control
+
+## Error Recovery
+
+```
+IF build fails on one platform but not the other:
+  1. Check platform-specific native module compatibility
+  2. Verify native dependencies are linked (pod install for iOS, gradle sync for Android)
+  3. Clear build caches: `cd ios && pod deintegrate && pod install`, or `cd android && ./gradlew clean`
+  4. Check minimum OS version requirements in platform config
+
+IF app crashes on launch (release build only):
+  1. Check ProGuard/R8 rules — missing keep rules cause obfuscation crashes
+  2. Compare debug vs release build configurations
+  3. Check for missing native libraries stripped by the release build
+  4. Test with a staging release build before app store submission
+
+IF performance is below targets:
+  1. Profile with platform tools (Xcode Instruments / Android Profiler)
+  2. Check for excessive re-renders (React Native) or widget rebuilds (Flutter)
+  3. Optimize images: compress, use appropriate resolution per device
+  4. Defer heavy initialization to after first frame render
+
+IF app store submission is rejected:
+  1. Read the rejection reason carefully — Apple/Google provide specific guideline references
+  2. Fix the cited issue exactly (do not add unrelated changes)
+  3. Write a clear resolution note in the resubmission
+  4. For metadata rejections: update screenshots, descriptions, or privacy policy as requested
+```
+
 ## Anti-Patterns
 
 - **Do NOT build native for simple apps.** If the app is content-focused with standard UI, cross-platform saves 40-60% effort. Save native for performance-critical or platform-deeply-integrated apps.

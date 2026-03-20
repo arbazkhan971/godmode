@@ -726,6 +726,84 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. ALWAYS colocate component + hook + test + types in feature folders.
 ```
 
+## Output Format
+
+Every React skill invocation ends with a structured summary:
+
+```
+REACT COMPLETE:
+Project: <name>
+Components: <N> across <M> features
+State: <approach per category>
+Performance: <optimizations applied>
+Tests: <N> patterns, <M> test files
+Audit: <PASS | NEEDS REVISION>
+Duration: <time spent>
+```
+
+Commit message: `"react: <project> — <primary change>, <secondary change>"`
+
+## TSV Logging
+
+Append one row per React skill invocation to `.godmode/react-results.tsv`:
+
+```
+timestamp	project	action	components_count	tests_count	audit_status	notes
+2024-01-15T10:30:00Z	my-app	architecture	24	12	PASS	component hierarchy + state management
+2024-01-15T11:00:00Z	my-app	perf-audit	24	12	NEEDS_REVISION	3 memo boundaries missing
+```
+
+Fields: `timestamp` (ISO 8601), `project`, `action` (architecture | audit | perf | test | hooks | migrate | patterns | rsc), `components_count`, `tests_count`, `audit_status` (PASS | NEEDS_REVISION | SKIPPED), `notes` (free text, no tabs).
+
+IF `.godmode/` directory does not exist, create it. IF the TSV file does not exist, write the header row first.
+
+## Success Criteria
+
+A React skill invocation is successful when ALL of the following are true:
+
+1. `npx tsc --noEmit` passes with zero errors.
+2. All existing tests pass (`npx vitest run` or `npx jest`).
+3. No `any` types introduced in changed files.
+4. Every new component has at least one co-located test file.
+5. No prop drilling deeper than 2 levels in changed components.
+6. State management choice matches the decision tree (server state in React Query, URL state in search params, etc.).
+7. React DevTools Profiler shows no unnecessary re-renders in changed components.
+8. The validation audit (Step 7) shows PASS on all applicable checks.
+
+IF any criterion fails, fix before marking the invocation complete.
+
+## Error Recovery
+
+```
+WHEN tsc --noEmit fails:
+  1. Read the error output, identify the file and line.
+  2. Fix the type error (do NOT use `any` or `// @ts-ignore`).
+  3. Re-run tsc. Repeat until zero errors.
+
+WHEN tests fail after refactor:
+  1. Read the test failure output.
+  2. Determine: is the test wrong (testing implementation) or the code wrong?
+  3. If test is testing implementation details → rewrite test to test behavior.
+  4. If code is wrong → fix the component/hook, re-run tests.
+  5. Never delete a failing test without understanding why it fails.
+
+WHEN React DevTools Profiler shows excessive re-renders:
+  1. Identify the component re-rendering.
+  2. Check: is a new object/array/function created on every render and passed as prop?
+  3. Fix: stabilize with useMemo/useCallback ONLY if the re-render is measurably costly.
+  4. Verify with Profiler that the fix reduced render count.
+
+WHEN build fails (webpack/vite):
+  1. Read the build error — usually import path or missing dependency.
+  2. Fix the import or install the missing package.
+  3. Re-run build. Never suppress build warnings without understanding them.
+
+WHEN state management causes infinite loops:
+  1. Check useEffect dependencies — circular dependency between state setter and dependency.
+  2. Remove the problematic dependency or restructure the effect.
+  3. If derived state, replace useEffect with useMemo or inline computation.
+```
+
 ## Anti-Patterns
 
 - **Do NOT put everything in global state.** Most "global state" is server state (React Query), URL state (search params), or form state (React Hook Form). True global client state is rare.

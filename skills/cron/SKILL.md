@@ -1222,3 +1222,85 @@ ls .github/workflows/*.yml 2>/dev/null | xargs grep -l "schedule:" 2>/dev/null
 - **Do NOT put heavy work in the scheduler tick.** The scheduler should enqueue a job, not execute it. Blocking the scheduler loop delays all other schedules.
 - **Do NOT store schedule definitions only in code without a startup registry check.** If registration fails silently, jobs stop running with no alert. Verify registered job count on startup.
 - **Do NOT use fixed-offset timezones (UTC-5).** Use IANA names (America/New_York). Fixed offsets do not handle daylight saving time and will be wrong for half the year.
+
+## Output Format
+Print on completion: `Cron: {job_count} jobs configured. Scheduler: {scheduler_type}. Locking: {lock_status}. Monitoring: {monitor_status}. Idempotent: {idempotent_count}/{job_count}. Overlap guard: {overlap_status}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every cron job configuration to `.godmode/cron-results.tsv`:
+```
+iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitoring	status
+1	daily_report	0 6 * * *	bullmq	redis_lock	yes	max_instances:1	yes	configured
+2	hourly_sync	0 * * * *	bullmq	redis_lock	yes	skip_if_running	yes	configured
+3	weekly_cleanup	0 3 * * 0	bullmq	redis_lock	yes	max_instances:1	yes	configured
+```
+Columns: iteration, job_name, schedule, scheduler, locking, idempotent, overlap_guard, monitoring, status(configured/tested/failed).
+
+## Success Criteria
+- All jobs use a proper scheduler library (not `setInterval`/`setTimeout`).
+- All schedules defined in UTC (no local timezone, no fixed offsets).
+- Distributed locking configured for multi-instance deployments.
+- All job handlers are idempotent (safe to re-run).
+- Overlap protection configured (skip or queue, never stack).
+- Job monitoring with success/failure alerting.
+- Startup registry check verifies all jobs are registered.
+- Schedule definitions auditable (logged on startup, versioned in code).
+
+## Error Recovery
+- **Job fires multiple times across instances**: Enable distributed locking immediately. Use Redis-based locking (Redlock) or database advisory locks. Verify the lock TTL is longer than the job execution time.
+- **Job silently stops running**: Check the scheduler process is alive. Verify the job is still registered (startup registry check). Check Redis connection if using Redis-backed scheduler. Add monitoring that alerts when a job does not run within its expected window.
+- **Job execution overlaps with next scheduled run**: Enable overlap protection (`max_instances: 1` or `skipIfRunning`). If the job consistently exceeds its interval, increase the interval or optimize the job.
+- **DST transition causes missed/duplicate job**: Verify all schedules use UTC. If user-facing schedules must be in local time, use IANA timezone names (not fixed offsets). Test across DST boundaries.
+- **Job fails but retries indefinitely**: Set a maximum retry count. Use exponential backoff. After max retries, alert and move to dead-letter queue. Do not retry non-retriable errors (validation failures, auth errors).
+- **Scheduler restart loses in-flight jobs**: Use a persistent queue (Redis, PostgreSQL, SQS) to store job state. On restart, the scheduler should resume in-flight jobs, not lose them.
+
+## Iterative Loop Protocol
+```
+current_job = 0
+jobs = detect_scheduled_jobs()  // from cron config, code analysis, scheduler library
+
+WHILE current_job < len(jobs):
+  job = jobs[current_job]
+  1. AUDIT: Check schedule, locking, idempotency, overlap handling, monitoring
+  2. FIX: Add missing safeguards (locking, idempotency, overlap guard)
+  3. TEST: Verify job runs correctly in isolation
+  4. MONITOR: Configure alerting for success/failure/duration
+  5. LOG to .godmode/cron-results.tsv
+  6. current_job += 1
+  7. REPORT: "Job {current_job}/{total}: {job_name} — schedule: {schedule}, locking: {lock_status}, idempotent: {idempotent}"
+
+EXIT when all jobs configured OR user requests stop
+```
+
+## Multi-Agent Dispatch
+For comprehensive cron/scheduling setup:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: cron-scheduler):
+  - Set up scheduler library and job registration
+  - Configure schedules and overlap protection
+  - Scope: scheduler config, job definitions
+  - Output: Scheduler infrastructure with job registry
+
+Agent 2 (worktree: cron-locking):
+  - Implement distributed locking for all jobs
+  - Configure lock TTLs and failure handling
+  - Scope: locking middleware, Redis/DB config
+  - Output: Distributed locking for all jobs
+
+Agent 3 (worktree: cron-monitoring):
+  - Set up job monitoring and alerting
+  - Configure success/failure/duration metrics
+  - Scope: monitoring config, alert rules, dashboards
+  - Output: Job monitoring with alerting
+
+MERGE ORDER: scheduler → locking → monitoring
+CONFLICT RESOLUTION: scheduler branch owns job definitions; locking branch owns middleware
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run cron tasks sequentially: scheduler setup, then distributed locking, then monitoring.
+- Use branch isolation per task: `git checkout -b godmode-cron-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

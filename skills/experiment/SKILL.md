@@ -1027,6 +1027,38 @@ HARD RULES — EXPERIMENT:
 10. NEVER skip the exposure deduplication — log ONE exposure per user per experiment per session.
 ```
 
+## TSV Logging
+After each workflow step, append a row to `.godmode/experiment-results.tsv`:
+```
+STEP\tCOMPONENT\tPLATFORM\tSTATUS\tDETAILS
+1\tflag-setup\tstatsig\tcreated\texperiment flag with 50/50 split
+2\texposure-logging\tcustom\tcreated\tlogExposure() with dedup per user per session
+3\tmetric-pipeline\twarehouse\tcreated\tOEC: conversion_rate, guardrails: latency_p99, error_rate
+4\tanalysis\tstatsig\tconfigured\tMDE=2%, alpha=0.05, power=0.8, sample_size=12000
+```
+Print final summary: `Experiment: {name}, platform: {provider}, split: {control}%/{treatment}%. OEC: {metric}. Required sample: {N}. Duration: {days} days. Status: {running/concluded}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Feature flag creates clean separation between control and treatment (no code leakage between variants).
+2. Assignment is deterministic per user (same user always gets same variant across sessions).
+3. Exposure event fires exactly once per user per experiment per session (deduplication verified).
+4. SRM check runs on Day 1 and validates split ratio within tolerance (chi-squared p > 0.01).
+5. Sample size calculation is documented with MDE, alpha, power, and baseline conversion rate.
+6. Guardrail metrics are defined and monitored (minimum: latency, error rate, revenue).
+7. Analysis query correctly joins exposures to outcomes and excludes contaminated users.
+8. Cleanup plan exists: flag removal scheduled within 2 weeks of experiment conclusion.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| SRM detected (split ratio off) | Halt analysis immediately. Results are invalid. Check assignment logic for bias (bot filtering, caching, bucketing hash). Fix and re-run. |
+| Exposure logging not firing | Verify SDK initialization. Check that `logExposure()` is called at the point of divergence, not at page load. Test with a known user ID. |
+| Sample size unreachable | Increase MDE (detect larger effects only), find higher-traffic surface, extend duration, or cancel experiment. Do not run underpowered. |
+| Guardrail metric regressed | Stop experiment if regression exceeds threshold. Document the regression. Do not ship treatment regardless of primary metric lift. |
+| Platform SDK errors | Check API key and initialization order. Verify network connectivity to experiment platform. Fall back to control (flag off) on SDK failure. |
+| Duplicate exposures inflating counts | Add client-side dedup (sessionStorage key) and server-side dedup (unique constraint on user_id + experiment_id + session_id). |
+
 ## Anti-Patterns
 
 - **Do NOT run experiments without a hypothesis.** "Let's just see what happens" is not an experiment. It is random change without learning.

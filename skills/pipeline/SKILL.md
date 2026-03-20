@@ -1018,6 +1018,29 @@ MERGE ORDER: extract -> transform -> load -> orchestrate
 CONFLICT ZONES: Schema definitions, config files, shared utility functions
 ```
 
+## Auto-Detection
+On activation, detect data pipeline context automatically:
+```
+AUTO-DETECT:
+1. Detect data sources:
+   - Database connections (postgres, mysql, mongodb, redis)
+   - API client configs (REST, GraphQL, gRPC)
+   - File sources (S3, GCS, local filesystem, SFTP)
+2. Detect pipeline frameworks:
+   - Airflow (dags/, airflow.cfg), dbt (dbt_project.yml), Prefect, Dagster
+   - Luigi, Apache Beam, Spark (spark-submit configs)
+3. Detect data targets:
+   - Data warehouses (BigQuery, Snowflake, Redshift)
+   - Data lakes (S3, GCS, ADLS)
+   - Databases, APIs, file systems
+4. Detect orchestration:
+   - Airflow DAGs, GitHub Actions schedules, cron jobs
+   - Cloud-native: AWS Step Functions, GCP Workflows
+5. Detect data quality tools:
+   - Great Expectations, dbt tests, Soda, custom validation
+6. Set: PIPELINE SCOPE with detected sources, targets, and framework.
+```
+
 ## Anti-Patterns
 
 - **Do NOT build a pipeline without a data flow diagram.** "Just read from A and write to B" leads to data quality nightmares. Map the full flow first.
@@ -1033,6 +1056,38 @@ CONFLICT ZONES: Schema definitions, config files, shared utility functions
 - **Do NOT mix batch and streaming without understanding the trade-offs.** Streaming adds complexity. If your SLA is "data available by next morning," batch is simpler and cheaper.
 - **Do NOT hardcode connection strings.** Use environment variables or a secrets manager. A pipeline with hardcoded credentials will eventually be committed to version control.
 
+
+## Output Format
+Print on completion: `Pipeline: {stage_count} stages ({extract}/{transform}/{load}). Records: {source_count} → {target_count} ({reject_count} rejected). Duration: {duration}. Quality: {quality_score}%. Verdict: {verdict}.`
+
+## TSV Logging
+Log every pipeline run to `.godmode/pipeline-results.tsv`:
+```
+iteration	stage	source	target	records_in	records_out	records_rejected	duration_s	quality_pct	status
+1	extract	postgres	staging	100000	100000	0	45	100	complete
+2	transform	staging	warehouse	100000	98500	1500	120	98.5	complete
+3	load	warehouse	analytics	98500	98500	0	30	100	complete
+4	reconcile	source	target	100000	98500	1500	5	98.5	verified
+```
+Columns: iteration, stage, source, target, records_in, records_out, records_rejected, duration_s, quality_pct, status(complete/failed/partial/verified).
+
+## Success Criteria
+- Data flow diagram documented before implementation.
+- All transformations are idempotent (re-running produces the same result).
+- Data quality checks at every boundary (source, transform, target).
+- Rejected records captured in dead-letter queue with context (not silently dropped).
+- Source and target record counts reconciled after every run.
+- Schema evolution detected and handled (fail loudly on unexpected changes).
+- Pipeline runs within defined SLA (data available by target time).
+- Backfill capability designed from the start (parameterized date ranges).
+
+## Error Recovery
+- **Source schema changed unexpectedly**: Fail the pipeline loudly. Do not load corrupted data. Alert the data team. Update the schema contract and re-run after verification.
+- **Transformation produces duplicate records**: Verify idempotency. Use upsert (INSERT ON CONFLICT) instead of INSERT. Add deduplication step before load.
+- **Dead-letter queue grows unexpectedly**: Investigate the rejection reason. If it is a data quality issue at the source, notify the source team. If it is a transformation bug, fix and reprocess from DLQ.
+- **Pipeline exceeds SLA**: Profile each stage for bottlenecks. Parallelize independent stages. Optimize slow queries. Consider incremental loads instead of full refreshes.
+- **Backfill fails midway**: Ensure backfill is resumable (checkpoint-based). Process in date-range batches. Log the last successful checkpoint for restart.
+- **Connection timeout to source/target**: Implement retry with exponential backoff. Check connection pool configuration. Verify network connectivity and credentials.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

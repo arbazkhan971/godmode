@@ -883,6 +883,79 @@ MERGE: Validate all agents' outputs are consistent
 - **Do NOT deploy without a service mesh.** Manual circuit breakers, retries, and mTLS in every service is unsustainable. Use infrastructure-level solutions.
 
 
+## Output Format
+
+```
+MICROSERVICE ARCHITECTURE COMPLETE:
+  Services: <N> services decomposed from <source>
+  Communication: <sync: REST/gRPC | async: events/queues | hybrid>
+  Service mesh: <Istio | Linkerd | none>
+  Service discovery: <Consul | Kubernetes DNS | AWS Cloud Map | none>
+  Saga pattern: <choreography | orchestration | none>
+  API gateway: <Kong | Traefik | AWS API Gateway | none>
+  Observability: distributed tracing <on|off>, centralized logging <on|off>
+  Circuit breakers: <N> configured
+  Health checks: <N> services with /healthz
+
+SERVICE SUMMARY:
++--------------------------------------------------------------+
+|  Service          | Owns           | Communicates With | Proto |
++--------------------------------------------------------------+
+|  <service>        | <domain>       | <services>        | gRPC  |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every microservice design session to `.godmode/micro-results.tsv`:
+
+```
+Fields: timestamp\tproject\tservices_count\tcommunication\tsaga_pattern\tservice_mesh\tcircuit_breakers\thealth_checks\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-platform\t6\thybrid\tchoreography\tistio\t6\t6\tabc1234
+```
+
+Append after every completed microservice design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+MICROSERVICE SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Each service owns its data (no shared DB)  | YES              |
+|  Service boundaries follow domain boundaries| YES              |
+|  Health check endpoint on every service     | YES              |
+|  Circuit breaker on every external call     | YES              |
+|  Distributed tracing across service calls   | YES              |
+|  Centralized logging with correlation IDs   | YES              |
+|  Saga pattern for multi-service transactions| YES (if needed)  |
+|  API gateway for external traffic           | YES (production)  |
+|  Graceful degradation (service down ≠ outage)| YES             |
+|  Independent deployability per service      | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — MICROSERVICES:
+1. Cascading failure (one service down → all down):
+   → Add circuit breakers to every inter-service call. Implement fallback responses. Add bulkhead isolation (separate thread pools per dependency).
+2. Distributed transaction fails mid-saga:
+   → Implement compensating transactions for each saga step. Log saga state. Add saga orchestrator or choreography events for rollback. Verify idempotency of compensations.
+3. Service discovery not resolving:
+   → Check DNS/Consul/service registry health. Verify service registration on startup. Add retry with backoff on resolution failure. Cache last-known-good addresses.
+4. Circular dependency between services:
+   → Identify the cycle. Extract shared logic into a new service or shared library. Use events instead of synchronous calls to break the cycle.
+5. Data inconsistency across services:
+   → Verify eventual consistency window is acceptable. Check event ordering. Add reconciliation job that compares data across services periodically. Fix root cause in event handlers.
+6. Observability gap (cannot trace request across services):
+   → Verify trace context propagation (W3C Trace Context headers). Check that all services instrument outgoing calls. Add trace ID to all log entries.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run microservice tasks sequentially: service design, then communication design, then infrastructure.

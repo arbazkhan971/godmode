@@ -726,6 +726,26 @@ RESULT:
 | `--env` | Add environment variable validation |
 | `--factory` | Generate test data factories from schemas |
 
+## Auto-Detection
+On activation, detect type safety context automatically:
+```
+AUTO-DETECT:
+1. Check for TypeScript config:
+   - ls tsconfig.json tsconfig.*.json
+   - Parse compilerOptions for strict flags
+2. Count any/unknown usage:
+   - grep for ": any", "as any", "@ts-ignore", "@ts-expect-error"
+3. Detect schema validation library:
+   - package.json → zod, yup, joi, valibot, arktype, io-ts
+4. Detect existing schemas:
+   - src/schemas/, src/types/, src/validation/
+5. Detect API framework:
+   - Express, Fastify, Koa, Hono → check for validation middleware
+6. Detect runtime:
+   - package.json type field, tsconfig module/target settings
+7. Set: TYPE SAFETY AUDIT with detected values, proceed to Step 1.
+```
+
 ## HARD RULES
 
 1. **NEVER write types and schemas separately.** Derive the TypeScript type from the Zod/Valibot schema. Separate definitions will drift apart.
@@ -769,3 +789,73 @@ AFTER all phases:
 - **Do NOT use `any` for "I'll type this later."** Use `unknown` instead. `unknown` is safe (requires narrowing), `any` is unsafe (bypasses all checking).
 - **Do NOT over-validate.** Validating the same data at every function call is wasteful. Validate once at the boundary, then trust the types.
 - **Do NOT create overly complex union types.** If a discriminated union has 15 variants and each handler is trivial, the type complexity is not paying for itself. Keep types proportional to the problem.
+
+## Output Format
+Print on completion: `Type: safety score {before}/100 → {after}/100 (grade: {grade}). any count: {before_any} → {after_any}. Strict mode: {strict_status}. Runtime validation: {validation_status}. Schemas: {schema_count}.`
+
+## TSV Logging
+Log every type safety phase to `.godmode/type-results.tsv`:
+```
+phase	action	any_before	any_after	errors_fixed	tests_pass	safety_score	status
+1	strict_null_checks	340	278	89	yes	48	improved
+2	strict_function_types	278	244	34	yes	58	improved
+3	full_strict	244	216	28	yes	68	improved
+4	zod_schemas	216	180	36	yes	78	improved
+```
+Columns: phase, action, any_before, any_after, errors_fixed, tests_pass, safety_score, status(improved/blocked/regressed).
+
+## Success Criteria
+- TypeScript strict mode fully enabled (`"strict": true` plus `noUncheckedIndexedAccess`).
+- Zero `any` types (or a documented reduction plan with sprint-level targets).
+- Zero `@ts-ignore` directives (replaced with `@ts-expect-error` where genuinely needed).
+- Runtime validation at all API boundaries (request handlers, database reads, external API responses).
+- Schema library (Zod/Valibot) as single source of truth for domain types.
+- All tests pass after each strictness phase (no regressions).
+- Type safety score >= 80/100 (grade B or above).
+
+## Error Recovery
+- **Enabling strict flag produces hundreds of errors**: Do not enable all flags at once. Follow the gradual adoption phases (Phase 1-4). Enable one flag, fix errors, commit, then proceed to the next flag.
+- **Third-party library lacks types**: Check DefinitelyTyped (`@types/library-name`). If not available, create a minimal `.d.ts` declaration file in `src/types/`. Do not use `any` as a workaround.
+- **Zod schema and existing type diverge**: Delete the manually written TypeScript interface. Use `z.infer<typeof Schema>` as the single source of truth. Never maintain both.
+- **Runtime validation is too slow**: Use `schema.parse()` only at boundaries. Inside service functions, trust the types. For hot paths, consider `schema.safeParse()` with early return instead of try/catch.
+- **`noUncheckedIndexedAccess` produces too many errors**: Add explicit undefined checks where needed. Use `Array.at()` for safer access. Do not disable the flag — the errors it surfaces are real bugs.
+- **Auto-fix changes semantics**: Review all `as` casts and type assertions after fixing. Run the full test suite. If behavior changes, the previous code was relying on incorrect types.
+
+## Multi-Agent Dispatch
+For large-scale type safety improvements across a codebase:
+```
+DISPATCH parallel agents (one per phase):
+
+Agent 1 (worktree: type-strict):
+  - Enable strict mode flags incrementally
+  - Fix all resulting type errors
+  - Scope: tsconfig.json + all .ts/.tsx files
+  - Output: Strict tsconfig + fixed type errors
+
+Agent 2 (worktree: type-schemas):
+  - Create Zod schemas for all domain entities
+  - Derive types from schemas (z.infer)
+  - Scope: src/schemas/, src/types/
+  - Output: Schema library + inferred types
+
+Agent 3 (worktree: type-validation):
+  - Add runtime validation middleware at API boundaries
+  - Validate environment variables at startup
+  - Scope: src/middleware/, src/config/
+  - Output: Validation middleware + env validation
+
+Agent 4 (worktree: type-eliminate-any):
+  - Replace all remaining `any` with proper types
+  - Remove `@ts-ignore` directives
+  - Scope: all .ts/.tsx files
+  - Output: Zero-any codebase
+
+MERGE ORDER: strict → schemas → validation → eliminate-any
+CONFLICT RESOLUTION: schemas branch owns type definitions; strict branch owns tsconfig
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run type safety tasks sequentially: strict mode, then schemas, then validation, then eliminate-any.
+- Use branch isolation per task: `git checkout -b godmode-type-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

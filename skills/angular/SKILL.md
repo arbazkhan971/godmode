@@ -928,6 +928,96 @@ AUTO-DETECT SEQUENCE:
 9. Auto-configure recommendations based on detected version and patterns
 ```
 
+## Output Format
+
+End every Angular skill invocation with this summary block:
+
+```
+ANGULAR RESULT:
+Action: <scaffold | component | service | module | optimize | test | audit | upgrade>
+Components created/modified: <N>
+Services created/modified: <N>
+Angular version: <N>
+Standalone: <yes | no | mixed>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/angular.tsv` after each invocation:
+
+```
+timestamp	project	action	components_count	services_count	modules_count	tests_status	build_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | component | service | module | optimize | test | audit | upgrade
+- `components_count`: number of components created or modified
+- `services_count`: number of services created or modified
+- `modules_count`: number of modules created or modified (0 for standalone)
+- `tests_status`: passing | failing | skipped | none
+- `build_status`: passing | failing | not-checked
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Angular skill invocation must pass ALL of these checks before reporting success:
+
+1. `ng build` completes with zero errors
+2. `ng test --no-watch --browsers=ChromeHeadless` passes (if test suite exists)
+3. No components using default change detection (all must use `OnPush`)
+4. No `any` types in application code
+5. All subscriptions have cleanup via `takeUntilDestroyed()`, `async` pipe, or explicit unsubscribe
+6. No nested subscriptions (use RxJS operators instead)
+7. All feature routes are lazy-loaded with `loadChildren` or `loadComponent`
+8. No direct DOM manipulation (no jQuery, no `document.querySelector`)
+9. Strict TypeScript enabled in `tsconfig.json`
+10. All services use constructor injection (no `@Autowired` on fields)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF ng build fails:
+  1. Read the full error output
+  2. Fix type errors first (these cascade into template errors)
+  3. Fix template binding errors (property does not exist on component)
+  4. Check for circular dependency warnings and break cycles with injection tokens
+  5. Verify all imports are correct (standalone components must import dependencies)
+
+IF tests fail:
+  1. Check that TestBed is configured with all required providers and imports
+  2. Verify mocks match the interface of the real service
+  3. Check async tests use fakeAsync/tick or waitForAsync
+  4. Verify HttpClientTestingModule is imported for HTTP tests
+  5. Check that OnPush components have change detection triggered in tests
+
+IF runtime errors (change detection):
+  1. ExpressionChangedAfterItHasBeenCheckedError → move logic to ngOnInit or use signals
+  2. Verify OnPush components call markForCheck() or use async pipe
+  3. Check that state mutations happen inside NgZone
+
+IF dependency injection errors:
+  1. NullInjectorError → add missing provider to component, module, or root
+  2. Circular dependency → use forwardRef() or restructure service dependencies
+  3. Check providedIn: 'root' vs module-level providers
+
+IF RxJS memory leaks:
+  1. Add takeUntilDestroyed() to all manual subscriptions
+  2. Replace .subscribe() in templates with async pipe
+  3. Use shareReplay({ bufferSize: 1, refCount: true }) for shared observables
+```
+
 ## Anti-Patterns
 
 - **Do NOT use Default change detection.** OnPush is mandatory. Default change detection runs on every event, timer, and HTTP response in the entire app.
@@ -940,3 +1030,11 @@ AUTO-DETECT SEQUENCE:
 - **Do NOT skip DI.** Instantiating services with `new` defeats Angular's DI system, breaks testing, and creates singletons you can't control.
 - **Do NOT use jQuery or direct DOM manipulation.** Use Angular's template syntax, Renderer2, or ElementRef if absolutely necessary.
 - **Do NOT mix state management approaches randomly.** Pick one approach per scope (signals for local, service/NgRx for global) and be consistent.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Replace `Agent("task")` → run the task inline in the current conversation
+- Replace `EnterWorktree` → use `git stash` + work in current directory
+- Replace `TodoWrite` → track progress with numbered comments in chat
+- All Angular conventions, patterns, and quality checks still apply identically

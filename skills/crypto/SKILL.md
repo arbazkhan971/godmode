@@ -899,6 +899,84 @@ AUTO-DETECT:
 -> Only ask user about compliance requirements if not detectable.
 ```
 
+## Output Format
+
+Every crypto invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  CRYPTO RESULT                                                  │
+├────────────────────────────────────────────────────────────────┤
+│  Use case: <encryption at rest | transit | passwords | JWT | sigs>│
+│  Algorithm: <AES-256-GCM | Argon2id | RS256 | etc.>            │
+│  Key management: <KMS | Vault | env var | none>                 │
+│  Key rotation: <defined schedule | not defined>                 │
+│  Weak crypto found: <N instances>                               │
+│  Verdict: <SECURE | NEEDS IMPROVEMENT | INSECURE>               │
+└────────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every cryptographic implementation to `.godmode/crypto-audit.tsv`:
+
+```
+timestamp	use_case	algorithm	key_management	key_rotation	weak_crypto_count	verdict
+```
+
+Append one row per invocation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+PASS if ALL of the following:
+  - Encryption uses AES-256-GCM or ChaCha20-Poly1305 (authenticated encryption)
+  - Unique IV/nonce per encryption operation (no reuse verified)
+  - Passwords hashed with Argon2id (m=65536, t=3, p=4) or bcrypt (cost >= 12)
+  - JWT uses RS256/ES256 for multi-service or HS256 (256-bit+ key) for single-service
+  - JWT verifies algorithm, issuer, audience, and expiration explicitly
+  - TLS 1.2+ enforced, HSTS enabled, forward secrecy via ECDHE
+  - Encryption keys stored in KMS/Vault, not in source code or env vars in production
+  - Key version tracked with encrypted data for rotation support
+  - No instances of MD5, SHA-1, DES, 3DES, RC4, or ECB in security-critical code
+
+FAIL if ANY of the following:
+  - Passwords encrypted instead of hashed
+  - MD5, SHA-1, DES, or ECB mode used for any security purpose
+  - IV/nonce reuse detected with the same key
+  - Math.random() or non-CSPRNG used for keys, tokens, or IVs
+  - Encryption keys stored alongside encrypted data
+  - JWT uses "none" algorithm or allows algorithm confusion
+  - TLS configuration permits SSLv3, TLS 1.0, or TLS 1.1
+  - AES-CBC used without HMAC authentication
+```
+
+## Error Recovery
+
+```
+IF weak cryptography is discovered in production:
+  1. Assess blast radius: what data is affected, how long was it exposed
+  2. Do not change the algorithm in-place — implement migration path
+  3. For passwords: upgrade hash on next login (verify old hash, re-hash with Argon2id)
+  4. For encrypted data: re-encrypt with new algorithm using envelope encryption
+  5. For TLS: deploy new configuration, test with SSL Labs before and after
+  6. Log the migration: old algorithm, new algorithm, records migrated, completion date
+
+IF key rotation fails mid-process:
+  1. Both old and new keys must remain valid during the grace period
+  2. Encrypted data must track which key version encrypted it
+  3. Verify all services can read both old and new keys
+  4. Complete the rotation: old key becomes decrypt-only, new key handles all new encryption
+  5. Only destroy old key after confirming zero data still requires it
+
+IF IV/nonce reuse is detected:
+  1. Treat as a security incident — AES-GCM auth tag is compromised for affected ciphertexts
+  2. Re-encrypt all affected data with new, unique IVs
+  3. Rotate the encryption key (nonce reuse may have leaked key material)
+  4. Audit the code path that generated duplicate nonces
+  5. Fix the root cause: use crypto.randomBytes for IVs, never counters without coordination
+```
+
 ## Anti-Patterns
 
 - **Do NOT implement your own cryptographic primitives.** Do not write your own AES, SHA, or ECDSA. Use established libraries. "Rolling your own crypto" is the most common source of cryptographic vulnerabilities.

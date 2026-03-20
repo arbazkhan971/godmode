@@ -767,6 +767,74 @@ HARD RULES — GIT:
 10. ALWAYS remove worktrees when done. They share .git but consume disk space and create confusion.
 ```
 
+## Output Format
+
+After each git skill invocation, emit a structured report:
+
+```
+GIT OPERATION REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Operation           │  <branch | merge | rebase | bisect | worktree> │
+│  Branch              │  <branch name>                 │
+│  Commits             │  <N> created / <N> cleaned up  │
+│  Conflicts resolved  │  <N>                           │
+│  Stale branches      │  <N> cleaned / <N> remaining   │
+│  Worktrees           │  <N> active                    │
+│  Stashes             │  <N> current (target: < 3)     │
+│  Tests after         │  PASSING / FAILING             │
+│  Verdict             │  CLEAN | NEEDS ATTENTION       │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every git operation for tracking:
+
+```
+timestamp	skill	operation	branch	commits	conflicts	tests_pass	status
+2026-03-20T14:00:00Z	git	rebase	feature/auth	5	0	yes	clean
+2026-03-20T14:10:00Z	git	merge	release/v2.0	12	3	yes	resolved
+```
+
+## Success Criteria
+
+The git skill is complete when ALL of the following are true:
+1. Branch strategy is established and documented (trunk-based, gitflow, or GitHub flow)
+2. All commits follow the team's commit message convention
+3. No stale branches older than 30 days (merged branches deleted within 7 days)
+4. Stash count is < 3 (stale stashes converted to branches or dropped)
+5. All merge/rebase operations result in passing tests
+6. Worktrees are cleaned up after use
+7. Interactive rebase is performed before PR (clean, logical commits)
+
+## Error Recovery
+
+```
+IF merge conflict is too complex to resolve:
+  1. Create a backup branch: git branch backup-<name>
+  2. Try rebase --abort or merge --abort to return to clean state
+  3. Break the conflicting changes into smaller, non-overlapping commits
+  4. Re-attempt the merge/rebase with the smaller changes
+
+IF interactive rebase goes wrong:
+  1. NEVER panic — git reflog shows everything
+  2. Find the pre-rebase commit: git reflog | head -20
+  3. Reset to the pre-rebase state: git reset --hard <pre-rebase-hash>
+  4. Re-attempt with a more careful edit plan
+
+IF bisect identifies the wrong commit:
+  1. Verify the test script is deterministic (run it twice on the same commit)
+  2. Check for flaky tests that may give false good/bad results
+  3. Narrow the range manually and re-run bisect
+  4. Use git bisect log to review and replay the bisect session
+
+IF force push was accidentally done to shared branch:
+  1. Alert the team immediately
+  2. Find the pre-force-push ref: git reflog on the remote or another developer's local
+  3. Restore with: git push --force-with-lease origin <correct-hash>:<branch>
+  4. Have all team members pull the corrected branch
+```
+
 ## Anti-Patterns
 
 - **Do NOT rebase public branches.** Rewriting shared history breaks every other developer's local state. Rebase only your own branches.

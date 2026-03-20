@@ -794,6 +794,37 @@ AUTO-DETECT email/notification context:
     - Prioritize gaps in email infrastructure
 ```
 
+## TSV Logging
+After each workflow step, append a row to `.godmode/email-results.tsv`:
+```
+STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
+1\temail-service\tresend\tcreated\tsrc/lib/email.ts with send(), sendBatch(), sendTemplate()
+2\ttemplate\treact-email\tcreated\t3 templates: welcome, reset-password, invoice
+3\tdelivery-tracking\twebhook\tcreated\t/api/webhooks/resend handling delivered/bounced/complained
+4\tsuppression-list\tdb\tcreated\temail_suppressions table with hard-bounce auto-add
+```
+Print final summary: `Email system: {provider}, {N} templates, delivery tracking via {method}. Suppression list: {yes/no}. Queue: {queue_system}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. `email.send({ to, subject, body })` works end-to-end in development (API key set, test email received).
+2. At least one template renders correctly with dynamic data (verified by preview or test send).
+3. Webhook endpoint receives and logs delivery status events (delivered, bounced, complained).
+4. Suppression list exists and hard-bounced addresses are automatically added.
+5. Email sending is async (queued), not blocking the request handler.
+6. SPF, DKIM, and DMARC records are documented (or verified if domain access exists).
+7. All new code has tests (unit for templates, integration for send + webhook).
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Provider API key missing/invalid | Print exact env var name needed. Provide link to provider dashboard. Do not proceed until key works (`curl` test). |
+| Template render error | Validate template with provider preview API or local render. Fix syntax. Re-render. |
+| Webhook signature verification fails | Check signing secret env var. Print expected header name. Test with provider's test event. |
+| Email lands in spam | Check SPF/DKIM/DMARC with `dig TXT`. Check sender reputation. Verify from-domain matches authenticated domain. |
+| Queue not processing | Verify queue connection (Redis/SQS). Check worker is running. Check dead-letter queue for stuck messages. |
+| Bounce rate exceeds 5% | Immediately pause sending. Audit suppression list. Verify list hygiene. Check for typos in recipient collection. |
+
 ## Anti-Patterns
 
 - **Do NOT send email synchronously in request handlers.** Email delivery can take seconds and fail transiently. Use a queue with retry logic. Return the API response immediately.

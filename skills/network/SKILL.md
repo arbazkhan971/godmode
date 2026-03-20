@@ -758,6 +758,40 @@ MERGE:
 - **Do NOT ignore VPC Flow Logs.** They are essential for security forensics and compliance auditing. Enable them on all production VPCs.
 
 
+## Output Format
+Print on completion: `Network: {resource_count} resources configured. TLS: {tls_status}. DNS: {domain_count} domains. LB: {lb_type}. CDN: {cdn_status}. Security groups: {sg_count}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every network configuration step to `.godmode/network-results.tsv`:
+```
+iteration	task	resource_type	count	security_issues	tls_status	status
+1	vpc	vpc/subnets	6	0	n/a	created
+2	security	security_groups	8	0	n/a	hardened
+3	load_balancer	alb	2	0	tls_1.3	configured
+4	cdn	cloudfront	1	0	tls_1.3	configured
+5	dns	route53	4	0	n/a	configured
+```
+Columns: iteration, task, resource_type, count, security_issues, tls_status, status(created/hardened/configured/failed).
+
+## Success Criteria
+- VPC with public/private subnet separation across at least 2 AZs.
+- Security groups follow least-privilege (no 0.0.0.0/0 except ALB 80/443).
+- TLS 1.2+ enforced on all endpoints (TLS 1.3 preferred).
+- HSTS enabled with preload on all production domains.
+- DNS configured with appropriate TTLs (60s minimum for dynamic records).
+- Load balancer health checks configured for all target groups.
+- CDN configured with appropriate cache policies (immutable for hashed assets).
+- VPC Flow Logs enabled on all production VPCs.
+- No database ports exposed to the internet.
+
+## Error Recovery
+- **TLS certificate expires**: Set up automated certificate renewal (Let's Encrypt / ACM). Configure certificate expiry alerts at 30, 14, and 7 days before expiry. If already expired, issue a new certificate immediately.
+- **DNS propagation delays**: Check TTL values. Flush local DNS cache. Verify the change was applied at the authoritative nameserver. Wait for the old TTL to expire before testing.
+- **Load balancer returns 502/503**: Check target group health. Verify security groups allow traffic from ALB to targets. Check that the application is listening on the correct port. Verify the health check path returns 200.
+- **CDN serves stale content**: Invalidate the CDN cache for affected paths. Check cache-control headers on the origin. Verify the CDN is configured to respect origin cache headers.
+- **Security group blocks legitimate traffic**: Check inbound rules for the affected port. Verify the source CIDR or security group reference is correct. Use VPC Flow Logs to identify dropped packets.
+- **VPC peering or transit gateway connectivity fails**: Verify route tables in both VPCs include routes to the peer. Check security groups allow traffic from the peer CIDR. Verify DNS resolution works across the peering connection.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.

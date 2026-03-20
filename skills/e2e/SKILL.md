@@ -711,6 +711,35 @@ AUTO-DETECT E2E testing context:
 - **Do NOT run E2E tests only locally.** E2E tests must run in CI against a real browser. Local-only E2E tests provide false confidence.
 
 
+## Output Format
+Print on completion: `E2E: {total_tests} tests across {flow_count} flows, {browser_count} browsers. Pass rate: {pass_rate}%. Flaky: {flaky_count}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every test flow result to `.godmode/e2e-results.tsv`:
+```
+iteration	flow	browser	tests_written	tests_passing	flaky_count	status
+1	auth	chromium	5	5	0	passing
+1	auth	firefox	5	4	1	flaky
+2	checkout	chromium	8	8	0	passing
+```
+Columns: iteration, flow, browser, tests_written, tests_passing, flaky_count, status(passing/flaky/failing).
+
+## Success Criteria
+- All critical user flows have E2E coverage (login, CRUD, checkout, settings).
+- All tests pass across the full browser matrix (chromium, firefox, webkit).
+- Zero flaky tests (pass rate = 100% over 10 consecutive runs).
+- Page Object Model is used for all locators (no selectors in spec files).
+- CI pipeline runs E2E suite on every PR.
+- Test data is isolated per test (no shared state between tests).
+
+## Error Recovery
+- **Tests fail on first run**: Check if the dev server is running. Verify `baseURL` in config matches the actual server. Run `npx playwright install` to ensure browsers are installed.
+- **Element not found errors**: Switch from CSS selectors to accessible locators (`getByRole`, `getByLabel`, `data-testid`). Check if the element is inside an iframe or shadow DOM.
+- **Timeout errors**: Increase `actionTimeout` in config. Check if the page has slow network requests blocking load. Use `waitForLoadState('networkidle')` only when necessary.
+- **Flaky tests detected**: Run the flaky test 10 times in isolation (`--repeat-each=10`). Check for race conditions, missing waits, or shared test data. Fix root cause before proceeding.
+- **CI-specific failures**: Compare CI browser versions with local. Check CI runner resources (CPU/memory). Enable trace capture on failure for debugging.
+- **Cross-browser inconsistencies**: Check for browser-specific APIs or CSS features. Use feature detection. Add browser-specific test annotations if behavior genuinely differs.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run E2E tasks sequentially: page objects, then test specs, then infra/flakiness setup.

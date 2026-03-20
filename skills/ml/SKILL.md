@@ -505,6 +505,76 @@ MERGE:
    no target leakage, no train/test overlap, no future data in training.
 ```
 
+## Output Format
+
+After each ML skill invocation, emit a structured report:
+
+```
+ML EXPERIMENT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Task type          │  <classification | regression | etc> │
+│  Dataset            │  <name> (<N> train / <N> val / <N> test) │
+│  Baseline           │  <model> — <metric>: <value>    │
+│  Best model         │  <model> — <metric>: <value>    │
+│  Improvement        │  +<N>% over baseline             │
+│  Experiments run    │  <N>                             │
+│  Compute used       │  <N> GPU-hours                   │
+│  Bias check         │  PASS / <N> fairness violations  │
+│  Data leakage check │  PASS / FAIL                     │
+│  Verdict            │  SHIP | ITERATE | INSUFFICIENT DATA │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every experiment for tracking:
+
+```
+timestamp	skill	experiment_id	model	metric	baseline	result	improvement	status
+2026-03-20T14:00:00Z	ml	exp-001	random_forest	f1	0.72	0.72	0%	baseline
+2026-03-20T14:30:00Z	ml	exp-002	xgboost	f1	0.72	0.84	+16.7%	improvement
+```
+
+## Success Criteria
+
+The ML skill is complete when ALL of the following are true:
+1. Baseline model is established and logged (never skip baseline)
+2. Best model beats baseline by a meaningful margin on the primary metric
+3. Test set is used exactly once for final evaluation (no tuning on test data)
+4. No data leakage detected (no target leakage, no train/test overlap, no future data)
+5. Bias/fairness check passes for all relevant subgroups
+6. All experiments are logged with hyperparameters, metrics, and outcomes
+7. Failed experiments are documented with reasons for failure
+8. Model artifacts are versioned and reproducible from logged configuration
+
+## Error Recovery
+
+```
+IF model performance is worse than baseline:
+  1. Check for data leakage (target leakage, train/test overlap)
+  2. Verify data preprocessing is consistent between train and evaluation
+  3. Check for class imbalance — switch to stratified sampling and appropriate metrics
+  4. Simplify the model (reduce complexity) and verify it can at least match baseline
+
+IF training diverges or loss increases:
+  1. Reduce learning rate by 10x
+  2. Check for NaN/Inf values in features (missing value handling)
+  3. Normalize/standardize features if not already done
+  4. Reduce model complexity and verify on a smaller data subset
+
+IF model passes validation but fails in production:
+  1. Compare production data distribution with training data distribution
+  2. Check for feature drift (features computed differently in production)
+  3. Verify feature engineering pipeline is identical between training and serving
+  4. Add monitoring for input distribution and prediction distribution
+
+IF bias check reveals fairness violations:
+  1. Analyze which subgroups are affected and by how much
+  2. Check training data representation for the affected subgroups
+  3. Apply mitigation: resampling, reweighting, or fairness-constrained training
+  4. Re-evaluate and document the trade-off between overall accuracy and fairness
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the baseline.** "Our model has 0.92 F1" means nothing without knowing what a trivial baseline achieves. Always compare.

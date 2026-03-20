@@ -495,6 +495,38 @@ CONFLICT RESOLUTION: modules branch is source of truth for .tf files
 - **Do NOT ignore cost estimates.** A missing cost review is how you get a $50,000 surprise bill.
 
 
+## Output Format
+Print on completion: `Infra: {resource_count} resources across {module_count} modules. Drift: {drift_status}. Security: {policy_violations} violations. Cost: ${monthly_estimate}/mo. Verdict: {verdict}.`
+
+## TSV Logging
+Log every infrastructure operation to `.godmode/infra-results.tsv`:
+```
+iteration	task	provider	resources_planned	resources_changed	drift_detected	policy_violations	status
+1	modules	aws	24	24	0	3	created
+2	security	aws	0	8	0	0	hardened
+3	cost	aws	0	2	0	0	optimized
+4	drift	aws	0	0	0	0	clean
+```
+Columns: iteration, task, provider, resources_planned, resources_changed, drift_detected, policy_violations, status(created/modified/hardened/optimized/clean/drifted).
+
+## Success Criteria
+- All infrastructure defined in code (zero manual console changes).
+- Remote state backend configured with locking (S3+DynamoDB, GCS, Terraform Cloud).
+- All resources tagged with owner, environment, cost-center, and managed-by.
+- IAM policies follow least privilege (no `*` actions or resources).
+- Secrets managed through a secret manager (not hardcoded in `.tf` files).
+- Cost estimate reviewed before every apply.
+- Drift detection runs on schedule (daily or per-PR).
+- State file never committed to version control.
+
+## Error Recovery
+- **`terraform plan` shows unexpected destroys**: Check for state file corruption. Run `terraform state list` to verify resources. If resource was renamed, use `terraform state mv` instead of destroy+recreate.
+- **State lock stuck**: Identify the lock holder with `terraform force-unlock <LOCK_ID>`. Only force-unlock if the holding process is confirmed dead. Never force-unlock during an active apply.
+- **Provider authentication failure**: Check environment variables or credential files. Verify IAM roles/service accounts have required permissions. Check token expiration.
+- **Drift detected in production**: Do not auto-apply to fix drift. Investigate why manual changes were made. Import the manual change into state if intentional, or revert it in the console if accidental. Then apply from code.
+- **Module version conflict**: Pin module versions explicitly. Use version constraints (`~> 3.0`). Check for breaking changes in the module changelog before upgrading.
+- **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources that should be in a lower tier. Verify auto-scaling max limits are set.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run infra tasks sequentially: modules, then security, then cost analysis, then drift detection.

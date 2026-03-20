@@ -770,6 +770,86 @@ MERGE:
    Sequential awaits create waterfall requests that block rendering.
 ```
 
+## Output Format
+
+Every Next.js skill invocation ends with a structured summary:
+
+```
+NEXT.JS COMPLETE:
+Project: <name>
+Routes: <N> total (<N> SSG, <N> ISR, <N> SSR, <N> streaming)
+Components: <N> Server, <M> Client
+Data: <fetching strategy>
+Optimization: <images, fonts, scripts status>
+Audit: <PASS | NEEDS REVISION>
+Duration: <time spent>
+```
+
+Commit message: `"nextjs: <project> — <primary change>, <rendering strategy>"`
+
+## TSV Logging
+
+Append one row per Next.js skill invocation to `.godmode/nextjs-results.tsv`:
+
+```
+timestamp	project	action	routes_count	server_components	client_components	audit_status	notes
+2024-01-15T10:30:00Z	storefront	architecture	18	12	5	PASS	App Router + ISR for products
+2024-01-15T11:00:00Z	storefront	audit	18	12	5	NEEDS_REVISION	use client on layout.tsx found
+```
+
+Fields: `timestamp` (ISO 8601), `project`, `action` (architecture | audit | migrate | routes | data | optimize | middleware | api | deploy), `routes_count`, `server_components`, `client_components`, `audit_status` (PASS | NEEDS_REVISION | SKIPPED), `notes` (free text, no tabs).
+
+IF `.godmode/` directory does not exist, create it. IF the TSV file does not exist, write the header row first.
+
+## Success Criteria
+
+A Next.js skill invocation is successful when ALL of the following are true:
+
+1. `next build` completes with zero errors.
+2. No `'use client'` directive on any `page.tsx` or `layout.tsx`.
+3. Every route with data fetching has a corresponding `loading.tsx`.
+4. Every route with dynamic content has an `error.tsx` boundary.
+5. All images use `next/image` with `sizes` prop for responsive images.
+6. Metadata uses the Metadata API (not manual `<head>` tags).
+7. No `useEffect` + `fetch` patterns where Server Component fetch would work.
+8. Parallel data fetching used (Promise.all or Suspense boundaries) — no sequential waterfalls.
+9. The validation audit (Step 9) shows PASS on all applicable checks.
+
+IF any criterion fails, fix before marking the invocation complete.
+
+## Error Recovery
+
+```
+WHEN next build fails:
+  1. Read the build error output.
+  2. Common causes: TypeScript errors, missing imports, invalid metadata.
+  3. Fix the error. Re-run next build. Repeat until clean.
+
+WHEN 'use client' is on page.tsx or layout.tsx:
+  1. Identify which interactive elements require client-side code.
+  2. Extract those elements into separate client component files.
+  3. Import client components into the server page/layout.
+  4. Remove 'use client' from page.tsx/layout.tsx.
+
+WHEN hydration mismatch errors appear:
+  1. Identify the component causing the mismatch (browser console).
+  2. Common causes: Date/time rendering, browser-only APIs, conditional rendering.
+  3. Wrap browser-only code in useEffect or dynamic import with ssr: false.
+  4. Verify mismatch is resolved in both dev and production builds.
+
+WHEN Server Action fails:
+  1. Check the server-side error logs (not just the client response).
+  2. Verify the function has 'use server' directive.
+  3. Verify all arguments are serializable (no functions, classes, or symbols).
+  4. Add proper error handling with try/catch and return error state to the client.
+
+WHEN middleware causes redirect loops:
+  1. Check matcher configuration — ensure it excludes static assets and API routes.
+  2. Verify redirect conditions don't match the redirect target URL.
+  3. Add logging to middleware to trace the redirect chain.
+  4. Fix the condition or add the target path to matcher exclusions.
+```
+
 ## Anti-Patterns
 
 - **Do NOT add 'use client' to page.tsx or layout.tsx.** This opts the entire tree out of server rendering. Push client boundaries to the smallest leaf components.

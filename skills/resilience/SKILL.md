@@ -1300,6 +1300,38 @@ RESILIENCE ANTI-PATTERNS:
 ```
 
 
+## Output Format
+Print on completion: `Resilience: {pattern_count} patterns implemented. Circuit breakers: {cb_count}. Retry policies: {retry_count}. Timeouts: {timeout_count}. Fallbacks: {fallback_count}. Bulkheads: {bulkhead_count}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every resilience pattern implementation to `.godmode/resilience-results.tsv`:
+```
+iteration	pattern	target_service	dependency	config	test_result	status
+1	circuit_breaker	api-gateway	payment-api	threshold:5,timeout:30s	verified	implemented
+2	retry	order-service	inventory-api	max:3,backoff:exponential	verified	implemented
+3	timeout	api-gateway	search-api	connect:2s,read:5s	verified	implemented
+4	bulkhead	api-gateway	all	pool:10_per_dep	verified	implemented
+```
+Columns: iteration, pattern, target_service, dependency, config, test_result, status(implemented/verified/failed).
+
+## Success Criteria
+- All external dependencies have timeouts configured (connect + read).
+- All retriable operations have retry policies with exponential backoff and jitter.
+- Circuit breakers configured for all external service calls.
+- Bulkhead isolation between independent dependencies (separate connection pools/thread pools).
+- Fallback behavior defined for every circuit breaker (cached data, degraded response, or graceful error).
+- All resilience patterns tested under failure conditions (dependency down, slow, error).
+- Health checks do not depend on external dependencies (liveness checks internal only).
+- Rate limiting configured at API boundaries.
+
+## Error Recovery
+- **Circuit breaker trips too often**: Increase the failure threshold or the time window. Check if the dependency is genuinely unhealthy or if the threshold is too sensitive. Verify the circuit breaker is only counting relevant failures (not 404s).
+- **Retry storm overwhelms dependency**: Add jitter to the backoff interval. Set a maximum retry count (3-5). Ensure the circuit breaker opens before retries exhaust the dependency.
+- **Timeout too aggressive (false failures)**: Profile the dependency response time under load. Set the timeout at P99 + 50% buffer. Use different timeouts for different operations (reads vs writes).
+- **Fallback returns stale data**: Add a staleness indicator to the fallback response. Set a maximum cache age. Alert when fallback is being used so the root cause is investigated.
+- **Bulkhead pool exhausted**: Increase the pool size or reduce the timeout. Check if one dependency is consuming more than its share. Add monitoring for pool utilization.
+- **Health check causes cascading restart**: Separate liveness (is the process alive?) from readiness (can it serve traffic?). Liveness should never check external dependencies. Only readiness should check dependencies.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run resilience tasks sequentially: patterns (circuit breakers, retries), then fallbacks, then observability.

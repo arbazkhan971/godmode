@@ -1144,6 +1144,78 @@ HARD RULES — FORMS:
 10. ALWAYS share the same schema (Zod) between client and server validation. Two schemas = two sources of bugs.
 ```
 
+## Output Format
+
+After each forms skill invocation, emit a structured report:
+
+```
+FORMS BUILD REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Forms created      │  <N>                            │
+│  Forms updated      │  <N>                            │
+│  Fields total       │  <N>                            │
+│  Validation schemas │  <N> (Zod/Yup)                  │
+│  Client validation  │  YES / NO                       │
+│  Server validation  │  YES / NO (shared schema)       │
+│  A11y (labels+aria) │  PASS / <N> violations          │
+│  Error messages     │  <N> fields with inline errors  │
+│  Multi-step         │  <N> steps / N/A                │
+│  Tests              │  <N> passing, <N> failing       │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every form creation for tracking:
+
+```
+timestamp	skill	form_name	fields	validation	a11y_pass	tests_pass	status
+2026-03-20T14:00:00Z	forms	signup	5	zod_client+server	yes	8/8	pass
+2026-03-20T14:10:00Z	forms	checkout_wizard	12	zod_client+server	yes	15/15	pass
+```
+
+## Success Criteria
+
+The forms skill is complete when ALL of the following are true:
+1. Every field has a visible `<label>` element (not just placeholder text)
+2. Validation schema is shared between client and server (single source of truth)
+3. Every field shows inline error messages with `aria-describedby` and `aria-invalid`
+4. Form validates on blur (first touch) and on change (after first error)
+5. Form submission is protected against double-submit (disable button + debounce)
+6. Multi-step forms persist data across steps and survive browser back navigation
+7. File uploads validate MIME type, extension, file size, and count
+8. All form interactions are keyboard-accessible (tab order, enter to submit, escape to cancel)
+9. Tests cover: valid submission, each validation rule, error display, and edge cases
+
+## Error Recovery
+
+```
+IF form validation fires too aggressively (errors on first keystroke):
+  1. Switch to onBlur validation for first interaction with each field
+  2. Switch to onChange validation only after the field has been blurred with an error
+  3. Verify the form library's mode setting (e.g., React Hook Form mode: "onBlur")
+  4. Test the complete user flow: focus, type, blur, fix error, re-type
+
+IF server validation rejects data that client validation accepts:
+  1. Compare the client Zod schema with the server Zod schema — they must be identical
+  2. Check for server-only validations (uniqueness, authorization) and handle them as server errors
+  3. Display server validation errors inline next to the relevant fields
+  4. Never silently swallow server validation errors
+
+IF multi-step form loses data on navigation:
+  1. Verify step data is persisted in state (not just local component state)
+  2. Add sessionStorage persistence as a backup for browser refresh
+  3. Test: fill step 1, go to step 2, go back to step 1 — data should be preserved
+  4. Test: fill step 1, refresh browser — data should be restored from sessionStorage
+
+IF form is inaccessible (screen reader cannot navigate):
+  1. Verify every input has a <label> with matching htmlFor/id
+  2. Add aria-describedby pointing to error message elements
+  3. Add aria-invalid="true" on fields with errors
+  4. Add role="alert" on error summary component so screen readers announce errors
+```
+
 ## Anti-Patterns
 
 - **Do NOT use placeholder as a label.** Placeholder text disappears on focus, is low contrast, and is not announced by all screen readers as a label. Every field needs a real `<label>`.

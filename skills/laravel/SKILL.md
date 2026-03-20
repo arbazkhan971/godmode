@@ -947,6 +947,97 @@ CONFLICT RESOLUTION: models branch owns migrations and model definitions
 | `--upgrade <version>` | Upgrade Laravel version with guide |
 | `--audit` | Audit existing Laravel app for anti-patterns |
 
+## Output Format
+
+End every Laravel skill invocation with this summary block:
+
+```
+LARAVEL RESULT:
+Action: <scaffold | model | controller | service | policy | optimize | test | audit | upgrade>
+Files created/modified: <N>
+Models created/modified: <N>
+Controllers created/modified: <N>
+Migrations created: <N>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/laravel.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | model | controller | service | policy | optimize | test | audit | upgrade
+- `files_count`: number of files created or modified
+- `models_count`: number of Eloquent models created or modified
+- `controllers_count`: number of controllers created or modified
+- `migrations_count`: number of migrations generated
+- `tests_status`: passing | failing | skipped | none
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Laravel skill invocation must pass ALL of these checks before reporting success:
+
+1. `php artisan test` passes if test suite exists
+2. No Eloquent models returned directly from controllers (use API Resources)
+3. No business logic in controllers (use Action or Service classes)
+4. All models use explicit `$fillable` (no `$guarded = []`)
+5. All form validation uses Form Request classes (no inline validation)
+6. Heavy work dispatched to queues (email, PDF, payment, external APIs)
+7. `preventLazyLoading` enabled in AppServiceProvider (development)
+8. No `env()` calls outside config files (use `config()` helper)
+9. All endpoints have authorization (Policies or Gates)
+10. All migrations are consistent (`php artisan migrate:status`)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF php artisan test fails:
+  1. Check that test database is configured in phpunit.xml
+  2. Verify RefreshDatabase or DatabaseTransactions trait is used
+  3. Check that factories produce valid model instances
+  4. Verify that environment-specific config is mocked in tests
+
+IF migration fails:
+  1. Check for column type conflicts with existing data
+  2. Verify foreign key references exist before adding constraints
+  3. For large tables, use batched operations to avoid lock timeouts
+  4. Never edit deployed migrations — create new corrective migrations
+
+IF N+1 query detected (preventLazyLoading):
+  1. Add with() eager loading to the query
+  2. Use withCount() for count-only relationships
+  3. Use load() for conditional post-query loading
+  4. Verify with Laravel Debugbar that query count decreased
+
+IF queue job fails:
+  1. Check that job class is serializable (no closures, no unserializable properties)
+  2. Verify queue connection is configured and running
+  3. Add retry logic with backoff: $backoff = [60, 300, 900]
+  4. Implement failed() method for error notification
+
+IF authorization errors:
+  1. Verify Policy is registered in AuthServiceProvider
+  2. Check that Gate definitions match the method signatures
+  3. Verify middleware is applied to route groups
+  4. Test with actingAs() in feature tests
+```
+
 ## Anti-Patterns
 
 - **Do NOT return Eloquent models from controllers.** Use API Resources. Models carry hidden state, relationships, and database details that should never leak to the API.

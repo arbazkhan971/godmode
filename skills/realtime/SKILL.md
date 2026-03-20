@@ -1093,6 +1093,79 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT ignore connection limits.** Each WebSocket connection consumes memory and a file descriptor. Set per-instance connection limits, monitor connection counts, and auto-scale based on connections, not CPU.
 
 
+## Output Format
+
+```
+REALTIME SYSTEM COMPLETE:
+  Transport: <WebSocket | SSE | Socket.io | WebTransport>
+  Events: <N> event types (client→server: <M>, server→client: <K>)
+  Rooms/Channels: <N> room patterns
+  Presence: <implemented | not implemented>
+  Scaling: <Redis pub/sub | NATS | sticky sessions | single instance>
+  Auth: <JWT on connect | cookie | custom handshake>
+  Reconnection: <automatic with backoff | manual | none>
+  CRDT: <used for | not applicable>
+  Heartbeat: <interval>s timeout, <interval>s ping
+
+EVENT SUMMARY:
++--------------------------------------------------------------+
+|  Event Name        | Direction    | Room/Channel | Auth       |
++--------------------------------------------------------------+
+|  <event>           | server→client| <room>       | required   |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every realtime system session to `.godmode/realtime-results.tsv`:
+
+```
+Fields: timestamp\tproject\ttransport\tevent_types\trooms\tpresence\tscaling_backend\treconnection\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\twebsocket\t12\t4\tyes\tredis-pubsub\tauto\tabc1234
+```
+
+Append after every completed realtime design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+REALTIME SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Auth verified on connection (not just msg) | YES              |
+|  Reconnection with exponential backoff      | YES              |
+|  Heartbeat/ping-pong configured             | YES              |
+|  Room-based message isolation               | YES              |
+|  Message ordering guaranteed per channel    | YES              |
+|  Horizontal scaling tested (multi-instance) | YES (production)  |
+|  Binary protocol for high-throughput data   | RECOMMENDED      |
+|  Presence tracking with TTL cleanup         | IF APPLICABLE    |
+|  Rate limiting on client→server messages    | YES              |
+|  Graceful degradation to polling fallback   | RECOMMENDED      |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — REALTIME:
+1. Connections dropping intermittently:
+   → Check heartbeat/ping-pong interval (too long = stale connections, too short = overhead). Verify proxy timeout settings (nginx proxy_read_timeout). Add connection state logging.
+2. Messages not reaching some clients:
+   → Verify room membership. Check pub/sub backend (Redis) connectivity across all app instances. Ensure message is published AFTER join confirmation.
+3. Scaling fails (messages lost across instances):
+   → Verify Redis pub/sub adapter is configured on ALL instances. Check Redis connectivity from each instance. Test with 2+ instances explicitly.
+4. Reconnection loop (connect → disconnect → connect):
+   → Check auth token expiry (token expires during session). Verify server is not immediately closing on reconnect. Add backoff with jitter to client reconnection.
+5. Presence shows stale users (ghost users):
+   → Implement heartbeat-based presence with TTL. Clean up presence on disconnect event AND on heartbeat timeout. Add periodic presence audit.
+6. Memory leak in long-running connections:
+   → Check for event listener accumulation (addEventListener without removeEventListener). Monitor per-connection memory. Set max message buffer size.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run realtime tasks sequentially: server handlers, then client hooks, then infra (Redis pub/sub, scaling).

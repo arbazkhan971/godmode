@@ -900,6 +900,67 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. NEVER embed unbounded arrays in documents (NoSQL). Use references for unbounded collections.
 ```
 
+## Output Format
+Print on completion:
+```
+SCHEMA DESIGN: {description}
+Database: {engine} | Model: {relational|document|graph|mixed}
+Normalization: {level}
+Entities: {N} | Relationships: {N} | Indexes: {N} | Constraints: {N}
+Validation schema: {type (Zod/JSON Schema/Protobuf/Avro)}
+Evolution strategy: {expand-contract|versioned|additive}
+Multi-tenancy: {shared|schema-per|db-per|none}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every schema session to `.godmode/schema-results.tsv`:
+```
+timestamp	description	database	model_type	normalization	entities	relationships	indexes	constraints	evolution_strategy	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Access patterns identified before schema design begins.
+2. Entity-Relationship diagram produced with cardinalities.
+3. Every foreign key column has an index.
+4. Every enum-like field has a CHECK constraint or DB enum type.
+5. Timestamps use TIMESTAMPTZ, never bare TIMESTAMP.
+6. Money fields use DECIMAL/NUMERIC or integer cents, never FLOAT/DOUBLE.
+7. Every migration has both up and down scripts.
+8. Validation schema (Zod/JSON Schema/Protobuf) derives from a single source of truth.
+9. Primary keys are surrogate (UUID or auto-increment), never natural keys.
+
+## Error Recovery
+```
+IF user provides no access patterns:
+  → Ask: "What are the 5 most frequent queries? Read-heavy or write-heavy?"
+  → Do NOT design schema until at least 3 access patterns are known
+
+IF EXPLAIN ANALYZE shows sequential scan on an indexed column:
+  → Check: is the index type correct for the query (B-tree vs GIN vs GiST)?
+  → Check: is the planner choosing a different plan due to low row count?
+  → Fix the index or add a hint, re-run EXPLAIN
+
+IF migration fails on production-scale data:
+  → Check: does the migration lock the table? (ALTER TABLE ADD COLUMN with default on old PG)
+  → Split into safe steps: add nullable column → backfill in batches → add NOT NULL constraint
+  → Use CONCURRENTLY for index creation on PostgreSQL
+
+IF schema has circular foreign keys:
+  → Break the cycle: one FK must be nullable or deferred
+  → Document: "Circular FK between {A} and {B} — {A}.{col} is nullable to break cycle"
+
+IF NoSQL document exceeds size limit (16MB MongoDB):
+  → Identify unbounded array causing growth
+  → Extract to separate collection with reference
+  → Add index on the reference field
+
+IF parallel validation/seed agents produce conflicting migration numbers:
+  → Assign migration number sequence before dispatching agents
+  → Convention: Agent 1 gets 001-010, Agent 2 gets 011-020, Agent 3 gets 021-030
+```
+
 ## Anti-Patterns
 
 - **Do NOT design schemas without knowing access patterns.** A beautifully normalized schema that requires 8 joins for the most common query is a bad schema.

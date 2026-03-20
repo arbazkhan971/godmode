@@ -1155,6 +1155,65 @@ AFTER 100%:
   Remove flag code and dead branches
 ```
 
+## TSV Logging
+After each workflow step, append a row to `.godmode/feature-results.tsv`:
+```
+STEP\tFLAG_NAME\tFLAG_TYPE\tPLATFORM\tSTATUS\tDETAILS
+1\tenable_new_checkout\trelease\tlaunchdarkly\tcreated\tboolean flag, default off
+2\tenable_new_checkout\trelease\tlaunchdarkly\ttargeted\tstaging env + internal users
+3\tenable_new_checkout\trelease\tlaunchdarkly\trollout\t5% → 25% → 50% → 100% over 4 days
+4\tenable_new_checkout\trelease\tlaunchdarkly\tcleaned\tflag removed, dead code deleted
+```
+Print final summary: `Feature flags: {N} created, platform: {provider}. Types: {release/experiment/ops/permission}. Rollout: {current}%. Kill switch: {tested/untested}. Cleanup scheduled: {date}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Flag evaluates correctly in both on and off states (both code paths tested).
+2. Default value is safe (flag off = old behavior, no user impact).
+3. SDK initialization handles failure gracefully (network error → default value, no crash).
+4. Targeting rules work: specific users/segments see the correct variant.
+5. Kill switch tested: flag can be turned off and system reverts to previous behavior within seconds.
+6. Flag cleanup plan exists with a scheduled date (max 2 weeks after 100% rollout).
+7. No flag evaluation in hot loops (evaluated once per request, result passed down).
+8. Audit trail exists: flag changes are logged with who, when, old value, new value.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| SDK initialization fails | Check API key and SDK key (they are different in most providers). Verify network access to provider CDN. Implement fallback: return default value on SDK failure. |
+| Flag not evaluating as expected | Check evaluation context: is `user.id` being passed? Is targeting rule using the correct attribute name? Use provider's evaluation debugger (LaunchDarkly: flag evaluation details, Statsig: diagnostics). |
+| Rollout causing errors | Immediately set flag to 0% (kill switch). Check error logs filtered by `flag=on` cohort. Fix the treatment code path. Resume rollout from 1%. |
+| Stale flags accumulating | Run flag audit: list all flags at 100% for >2 weeks. For each: remove flag code, delete dead branch, archive flag in provider. Automate with a weekly CI check. |
+| Flag evaluation latency | Switch from API-based evaluation to local evaluation (SDK caches rules). Check SDK polling interval. LaunchDarkly: streaming mode. Statsig: local evaluation. |
+| Conflicting flags | Map flag dependencies. If `flag_B` only makes sense when `flag_A` is on, encode this as a prerequisite in the flag system or document in flag description. Never nest `if` checks for independent flags. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: feature-sdk):
+  - Install and configure flag SDK (client + server)
+  - Implement evaluation wrapper with default values and error handling
+  - Set up flag definitions in provider dashboard or local config
+
+Agent 2 (worktree: feature-code):
+  - Implement feature-flagged code paths (treatment + control)
+  - Add targeting rules and percentage rollout configuration
+  - Build kill switch mechanism
+
+Agent 3 (worktree: feature-ops):
+  - Create rollout monitoring dashboard (error rate by variant)
+  - Implement flag lifecycle tracking (created, active, stale, archived)
+  - Write cleanup automation (detect stale flags in CI)
+
+MERGE ORDER: sdk -> code -> ops
+CONFLICT ZONES: SDK initialization, feature-flagged components, flag configuration
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run feature flag tasks sequentially: SDK setup, then flag implementation, then rollout config, then monitoring.
+- Use branch isolation per task: `git checkout -b godmode-feature-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT leave flags forever.** A release flag at 100% for months is dead code wrapped in a conditional. Clean it up within 2 weeks of full rollout.

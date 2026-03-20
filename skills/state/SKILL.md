@@ -907,6 +907,130 @@ Lines of code eliminated: ~3,200 (reducers, actions, selectors, thunks)
 7. **ALWAYS classify state before choosing a tool.** Server state vs client state is the single most important distinction. Get it right first.
 8. **NEVER mix more than one client state library** in the same project (e.g., Redux AND Zustand AND Jotai). Pick one.
 
+## Output Format
+
+After each state management skill invocation, emit a structured report:
+
+```
+STATE ARCHITECTURE REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Framework          │  <React | Vue | Svelte | etc>   │
+│  Server state tool  │  <React Query | SWR | Apollo>   │
+│  Client state tool  │  <Zustand | Jotai | Pinia>      │
+│  Stores created     │  <N>                            │
+│  Selectors          │  <N>                            │
+│  Derived state      │  <N> computed values            │
+│  Persistence        │  <localStorage | sessionStorage | none> │
+│  Tests              │  <N> passing, <N> failing       │
+│  Re-render issues   │  <N> found / <N> fixed          │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every state architecture decision for tracking:
+
+```
+timestamp	skill	store	type	tool	selectors	tests_pass	status
+2026-03-20T14:00:00Z	state	authStore	client	zustand	4	6/6	pass
+2026-03-20T14:05:00Z	state	productsQuery	server	react-query	2	3/3	pass
+```
+
+## Success Criteria
+
+The state skill is complete when ALL of the following are true:
+1. Server state and client state are clearly separated (different tools)
+2. No derived state is stored — all computed values use selectors or computed properties
+3. Every store subscription uses a selector (no full-store subscriptions)
+4. All stores have tests covering state transitions and edge cases
+5. No unnecessary re-renders detected (verified with React DevTools Profiler or equivalent)
+6. Persistence (if any) excludes sensitive data (no auth tokens in localStorage)
+7. Optimistic updates have rollback handlers for error cases
+8. State architecture is documented with a state flow diagram
+
+## Error Recovery
+
+```
+IF component re-renders excessively:
+  1. Check for full-store subscriptions — replace with targeted selectors
+  2. Check for new object/array references created on every render
+  3. Use React DevTools Profiler (or equivalent) to identify the trigger
+  4. Add React.memo or useMemo only after identifying the specific cause
+
+IF optimistic update causes stale UI:
+  1. Verify the onError rollback restores the exact pre-mutation snapshot
+  2. Check that the cache invalidation after mutation re-fetches fresh data
+  3. Test the rollback path explicitly (simulate server error)
+  4. If rollback fails, fall back to pessimistic update (wait for server confirmation)
+
+IF hydration mismatch occurs with persisted state:
+  1. Ensure persisted state is only restored in useEffect (not during SSR)
+  2. Use a hydration-safe pattern: render server default first, then apply persisted state
+  3. Add a `hasHydrated` flag to prevent flash of wrong content
+  4. Test with `localStorage.clear()` to verify the app works without persisted state
+
+IF state becomes inconsistent across tabs:
+  1. Use BroadcastChannel or storage event listener for cross-tab sync
+  2. Ensure the source of truth is the server (re-fetch on tab focus)
+  3. Implement a version stamp on persisted state to detect stale data
+  4. Clear persisted state on app version change
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect framework: check package.json for react, vue, svelte, angular, solid
+2. Detect existing state management:
+   - grep for 'redux', 'zustand', 'jotai', 'recoil', 'pinia', 'vuex', 'mobx' in package.json
+3. Detect server state tools:
+   - grep for '@tanstack/react-query', 'swr', '@apollo/client', 'urql' in package.json
+4. Detect form libraries:
+   - grep for 'react-hook-form', 'formik', 'vee-validate' in package.json
+5. Detect persistence:
+   - grep for 'localStorage', 'sessionStorage', 'zustand/middleware' in src/
+6. Auto-configure: match state tool recommendations to detected framework
+```
+
+## Iterative State Architecture Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+state_tasks = [classify_state, setup_server_state, setup_client_state, add_selectors, add_persistence, add_tests]
+
+WHILE state_tasks is not empty AND current_iteration < max_iterations:
+    task = state_tasks.pop(0)
+    1. Assess current state architecture for this task
+    2. Implement the change (new store, selector, test, persistence)
+    3. Verify: no TypeScript errors, no re-render regressions
+    4. Run tests: all passing
+    5. IF tests fail → revert and investigate
+    6. IF passing → commit: "state: <action> for <store/feature>"
+    7. current_iteration += 1
+
+POST-LOOP: Run full test suite + re-render profiling to verify no regressions
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "state-server": Server state setup (React Query/SWR queries, mutations, cache config)
+  Agent 2 — "state-client": Client state setup (Zustand/Jotai stores, selectors, persistence)
+  Agent 3 — "state-tests": Tests for all stores, selectors, and state transitions
+
+MERGE ORDER: server state → client state → tests
+CONFLICT ZONES: shared types, store interfaces (agree on interfaces before dispatch)
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run state tasks sequentially: classify state, then server state setup, then client state, then tests.
+- Use branch isolation per task: `git checkout -b godmode-state-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT put server data in Redux/Zustand/Pinia.** API data is server state. It belongs in React Query/SWR/Apollo. These tools handle caching, staleness, refetching, and garbage collection. Redux does not.

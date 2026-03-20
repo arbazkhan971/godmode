@@ -637,6 +637,77 @@ AUTO-DETECT:
 -> Only ask user about distribution targets if ambiguous.
 ```
 
+## Iteration Protocol
+```
+WHILE cli implementation is incomplete:
+  1. REVIEW — check current state: which commands exist, which are missing, test results
+  2. IMPLEMENT — pick next command/feature from the plan, implement with tests
+  3. TEST — run test suite: unit tests for parsing, integration tests for command output
+  4. VERIFY — manually run the command with sample input, check exit codes, stderr/stdout separation
+  IF tests pass AND command works: commit, move to next command
+  IF tests fail: fix, re-test (max 3 attempts), then ask user if stuck
+STOP: all planned commands implemented, tests pass, help text complete, distribution configured
+```
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/cli-results.tsv`:
+```
+STEP\tCOMMAND\tLANGUAGE\tSTATUS\tDETAILS
+1\tscaffold\tnode\tcreated\tpackage.json bin entry + commander setup
+2\tinit\tnode\timplemented\tinit command with --template flag, interactive prompts
+3\tlist\tnode\timplemented\tlist command with --json and --table output formats
+4\tdistribution\tnode\tconfigured\tnpm publish + npx support + GitHub Releases workflow
+```
+Print final summary: `CLI: {tool_name}, language: {lang}, commands: {N}. Parser: {library}. Distribution: {methods}. Tests: {pass}/{total}. Shell completions: {yes/no}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. All planned commands work with correct argument parsing (required args, optional flags, defaults).
+2. `--help` output is present for every command and subcommand with descriptions and examples.
+3. Exit codes are correct: 0 for success, 1 for user error, 2 for system error.
+4. stdout contains only program output (machine-parseable). stderr contains errors, warnings, and progress.
+5. `--json` flag (or equivalent) produces valid JSON for all list/show commands.
+6. `NO_COLOR` environment variable is respected. `--no-color` flag works. Colors only when isatty.
+7. Non-interactive mode works (`--yes` or equivalent skips all prompts) for CI/CD usage.
+8. Tests cover: argument parsing, happy path output, error conditions, exit codes.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Parser library not detected | Check `package.json` for `commander`/`yargs`/`meow`, `Cargo.toml` for `clap`, `go.mod` for `cobra`/`urfave/cli`, `pyproject.toml` for `click`/`typer`/`argparse`. If none, ask user for preference. |
+| Command fails silently | Ensure all error paths write to stderr and set non-zero exit code. Add `process.exitCode = 1` (Node), `std::process::exit(1)` (Rust), `os.Exit(1)` (Go), `sys.exit(1)` (Python). |
+| Output encoding issues | Force UTF-8 output. Node: set `process.stdout` encoding. Python: set `PYTHONIOENCODING=utf-8`. Test with pipe: `tool list | cat` must not break. |
+| Distribution build fails | Check build target matches CI runner OS/arch. For cross-compilation: use `pkg` (Node), `cross` (Rust), `GOOS/GOARCH` (Go), `PyInstaller` (Python). |
+| Shell completions not generating | Verify parser supports completion generation. Commander: `program.enablePositionalOptions()`. Clap: `generate(Shell::Bash, ...)`. Cobra: `cmd.GenBashCompletion()`. |
+| Conflicting global install | Use `npx`/`bunx`/`pipx` for isolated execution. Never require global install. Check for name conflicts on npm/PyPI/crates.io before publishing. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: cli-core):
+  - Scaffold project structure with parser library
+  - Implement core commands with argument parsing
+  - Add help text and version flag
+
+Agent 2 (worktree: cli-output):
+  - Implement output formatters (table, JSON, plain text)
+  - Add color support with NO_COLOR respect
+  - Build progress indicators (spinner, progress bar)
+
+Agent 3 (worktree: cli-dist):
+  - Configure build and distribution (npm publish, GitHub Releases, Homebrew)
+  - Add shell completion generation
+  - Write integration tests for all commands
+
+MERGE ORDER: core -> output -> dist
+CONFLICT ZONES: main entry point, command registration, output formatting
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run CLI tasks sequentially: project scaffold, then core commands, then output formatting, then distribution.
+- Use branch isolation per task: `git checkout -b godmode-cli-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT print help on no arguments if the tool has a default action.** If `tool` with no args should do something useful, do that. Only show help when the user explicitly asks or when the input is ambiguous.

@@ -904,6 +904,95 @@ find src/ -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.svelte" -o
 grep -r "theme\|extend" tailwind.config.* 2>/dev/null | head -10
 ```
 
+## Output Format
+
+End every Tailwind skill invocation with this summary block:
+
+```
+TAILWIND RESULT:
+Action: <scaffold | component | theme | optimize | migrate | audit>
+Files created/modified: <N>
+Components styled: <N>
+Tailwind version: <3 | 4>
+Design tokens added: <N>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/tailwind.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	components_count	tokens_count	build_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | component | theme | optimize | migrate | audit
+- `files_count`: number of files created or modified
+- `components_count`: number of components styled
+- `tokens_count`: number of design tokens added or modified
+- `build_status`: passing | failing | not-checked
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Tailwind skill invocation must pass ALL of these checks before reporting success:
+
+1. CSS build completes without errors (`npx tailwindcss build` or framework build)
+2. No dynamically constructed class names (e.g., `bg-${color}-500`)
+3. No excessive `@apply` usage (utilities should be in markup, not CSS)
+4. `theme.extend` used instead of overriding entire theme sections
+5. All content paths correctly configured (no missing template directories)
+6. Mobile-first responsive design (no desktop-first breakpoint patterns)
+7. All interactive elements have focus-visible styles
+8. No hardcoded colors or spacing values (use theme tokens)
+9. No duplicate utility patterns across 3+ components (extract to component or CVA)
+10. Dark mode support if project uses dark mode (consistent `dark:` variants)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF build fails (missing classes):
+  1. Check content paths in tailwind.config.js — all template dirs must be listed
+  2. Verify dynamic classes are in safelist or use complete string literals
+  3. Check that PostCSS config includes tailwindcss plugin
+  4. For Tailwind v4: verify @import "tailwindcss" in CSS entry point
+
+IF styles not applying:
+  1. Check CSS specificity — Tailwind utilities may be overridden by custom CSS
+  2. Verify the class exists in the generated CSS (inspect build output)
+  3. Check for typos in class names (Tailwind does not warn on invalid classes)
+  4. Verify purge/content config is not removing needed classes
+
+IF theme inconsistencies:
+  1. Check that custom values use theme() function in CSS or config references
+  2. Verify extend vs override in tailwind.config.js
+  3. Check for conflicting plugin theme modifications
+  4. Verify CSS custom properties match Tailwind token names
+
+IF responsive design breaks:
+  1. Verify mobile-first order: base styles first, then sm:, md:, lg:, xl:
+  2. Check container queries vs media queries for component-level responsive
+  3. Verify max-w and breakpoints are consistent across layouts
+  4. Test with browser responsive mode at each breakpoint
+
+IF dark mode issues:
+  1. Verify darkMode config: 'class' for manual, 'media' for system preference
+  2. Check that all color utilities have dark: variants
+  3. Verify dark mode toggle updates the HTML class or data attribute
+  4. Check that images/shadows have dark mode alternatives
+```
+
 ## Anti-Patterns
 
 - **Do NOT construct class names dynamically.** `bg-${color}-500` will not be included in the output. Use complete strings in an object map.
@@ -916,3 +1005,11 @@ grep -r "theme\|extend" tailwind.config.* 2>/dev/null | head -10
 - **Do NOT duplicate utilities across components.** If 5 components share the same 12-class pattern, extract a component or use CVA.
 - **Do NOT hardcode colors or spacing.** `text-[#1a2b3c]` or `mt-[13px]` defeats the design system. Add values to the config and use theme tokens.
 - **Do NOT skip focus styles.** Every interactive element needs `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` or equivalent. Keyboard users depend on visible focus.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Replace `Agent("task")` → run the task inline in the current conversation
+- Replace `EnterWorktree` → use `git stash` + work in current directory
+- Replace `TodoWrite` → track progress with numbered comments in chat
+- All Tailwind CSS conventions, patterns, and quality checks still apply identically

@@ -597,6 +597,73 @@ MERGE order: Agent 3 (tokens/layout) first, then Agent 1 (primitives), then Agen
 CONFLICT resolution: Token definitions in Agent 3 are authoritative
 ```
 
+## Output Format
+
+After each UI skill invocation, emit a summary table:
+
+```
+UI BUILD REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Components built  │  <N>                             │
+│  Components updated│  <N>                             │
+│  Storybook stories │  <N> created / <N> updated       │
+│  Tests             │  <N> passing, <N> failing        │
+│  Tokens used       │  <N> design tokens referenced    │
+│  A11y checks       │  <N> passing, <N> violations     │
+│  Bundle impact     │  +<N> KB (gzipped)               │
+│  Verdict           │  PASS | NEEDS REVISION           │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every UI skill run for tracking:
+
+```
+timestamp	skill	component	action	tests_pass	a11y_pass	bundle_kb	status
+2026-03-20T14:00:00Z	ui	Button	create	12/12	0 violations	2.1	pass
+2026-03-20T14:05:00Z	ui	DataTable	update	8/8	1 violation	4.3	needs_fix
+```
+
+## Success Criteria
+
+The UI skill is complete when ALL of the following are true:
+1. Every component renders without errors in Storybook (or equivalent)
+2. Every component has TypeScript props with descriptions and default values
+3. Every component has at least one test covering its primary use case
+4. Zero accessibility violations from axe-core on all component stories
+5. All design tokens are referenced (no hardcoded colors, spacing, or typography)
+6. Bundle size impact is documented and within project budget
+7. The build passes with zero TypeScript errors and zero lint warnings
+
+## Error Recovery
+
+```
+IF component fails to render in Storybook:
+  1. Check console for import errors or missing dependencies
+  2. Verify all peer dependencies are installed
+  3. Check for circular imports in component tree
+  4. Revert last change and re-test
+
+IF accessibility violations are found:
+  1. Fix all CRITICAL violations immediately (keyboard traps, missing labels)
+  2. Fix HIGH violations before commit (contrast, ARIA roles)
+  3. Log MEDIUM violations as follow-up tasks
+  4. Re-run axe-core after each fix to confirm resolution
+
+IF bundle size exceeds budget:
+  1. Check for accidentally imported full library (e.g., all of lodash)
+  2. Verify tree-shaking is working (named imports, sideEffects: false)
+  3. Consider lazy-loading heavy components (code splitting)
+  4. If unavoidable, document the size increase and justify it
+
+IF TypeScript errors block build:
+  1. Fix type errors in the component file first
+  2. Update prop interfaces to match actual usage
+  3. Never use `as any` to suppress errors — find the correct type
+  4. Run `tsc --noEmit` to verify zero errors before commit
+```
+
 ## Anti-Patterns
 
 - **Do NOT mix CSS approaches.** CSS Modules in some components, styled-components in others, and Tailwind in a third creates maintenance chaos. Pick one and standardize.

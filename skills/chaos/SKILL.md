@@ -607,6 +607,54 @@ AUTO-DETECT:
 -> Auto-configure monitoring queries for the detected stack.
 ```
 
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Steady state hypothesis is defined with measurable metric and threshold (e.g., `p99 latency < 200ms`).
+2. At least one chaos experiment designed with: hypothesis, injection method, blast radius, abort conditions.
+3. Monitoring dashboards show the target metric BEFORE injection (baseline captured).
+4. Experiment runs in a non-production environment first (dev or staging) with expected behavior validated.
+5. Abort mechanism works: injection can be stopped within 30 seconds and system recovers.
+6. Findings documented: each surprise becomes a backlog item with severity and remediation plan.
+7. Circuit breakers (if applicable) trip correctly under failure conditions and recover when failure is removed.
+8. Runbook updated with observed failure modes and recovery steps.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Injection cannot be reversed | Kill the injection process immediately. If using Toxiproxy: `toxiproxy-cli toxic remove`. If using tc: `tc qdisc del dev eth0 root`. If process kill: restart the service. Document the failed abort path and fix it before next experiment. |
+| Monitoring not showing impact | Verify metric queries target the correct service/pod. Check time range alignment. If metrics are delayed (>30s lag), do not proceed — you cannot observe what you cannot measure. |
+| System crashes instead of degrading | This IS a finding. Document it. The expected behavior was graceful degradation; actual behavior was crash. Create a high-priority backlog item for resilience improvement. |
+| Blast radius exceeded | Abort immediately. Check scope configuration (target only intended pods/services). Review injection parameters. Reduce blast radius for next attempt. |
+| Docker/K8s not available | Fall back to application-level injection: artificial latency in middleware, random error responses, connection pool exhaustion. No infrastructure access needed. |
+| Team not available for game day | Never run production chaos experiments solo. Reschedule. For non-production, proceed but limit blast radius to single-service. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: chaos-infra):
+  - Set up monitoring dashboards for steady-state metrics
+  - Configure chaos injection tools (Toxiproxy/tc/Litmus)
+  - Build abort scripts with one-command rollback
+
+Agent 2 (worktree: chaos-experiments):
+  - Design experiment specifications (hypothesis, method, blast radius, abort)
+  - Implement injection scripts per failure domain
+  - Create experiment execution runbook
+
+Agent 3 (worktree: chaos-resilience):
+  - Implement circuit breakers and fallbacks for identified failure points
+  - Add health checks and readiness probes
+  - Write recovery validation tests
+
+MERGE ORDER: infra -> experiments -> resilience
+CONFLICT ZONES: monitoring config, service configuration, health check endpoints
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run chaos tasks sequentially: monitoring setup, then experiment design, then injection tooling, then resilience implementation.
+- Use branch isolation per task: `git checkout -b godmode-chaos-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT inject failures without monitoring.** If you can't observe the impact, you can't learn from the experiment. Set up monitoring first.

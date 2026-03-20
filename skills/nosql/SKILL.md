@@ -1135,6 +1135,94 @@ MERGE:
 - **Do NOT skip the "which database" question.** The most expensive NoSQL mistake is choosing the wrong database. Spend time on selection (Step 2) before spending weeks on modeling.
 
 
+## Output Format
+
+After every NoSQL operation (database selection, schema design, query optimization, migration), emit a structured result box:
+
+```
+┌─ NOSQL RESULT ──────────────────────────────────────┐
+│ Database : DynamoDB                                  │
+│ Operation : single-table design for e-commerce       │
+│ Entities : User, Order, Product, Review              │
+│ Partition Key : PK (composite: ENTITY#ID)            │
+│ Sort Key : SK (composite: ENTITY#TIMESTAMP)          │
+│ GSIs : GSI1 (inverted), GSI2 (by-status)             │
+│ Access Patterns : 12 identified, 12 covered          │
+│ Hot Partition Risk : LOW (high-cardinality PK)       │
+│ Est. WCU/RCU : 500/2000 (on-demand recommended)     │
+│ Verdict : READY                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+Fields adapt to the database. For MongoDB: `Collection`, `Indexes`, `Validation Schema`, `Sharding Key`. For Cassandra: `Keyspace`, `Replication`, `Tables Per Query`, `Partition Size Est.`. For Neo4j: `Node Labels`, `Relationship Types`, `Index Strategy`. Always include `Verdict`: one of READY, NEEDS_TUNING, DEGRADED.
+
+## TSV Logging
+
+Append one row per NoSQL operation to `.godmode/nosql-ops.tsv`:
+
+```
+timestamp	database	operation	entity_count	access_patterns_covered	access_patterns_total	partition_strategy	hot_partition_risk	verdict
+2026-03-20T14:30:00Z	DynamoDB	single-table-design	4	12	12	composite-PK	LOW	READY
+2026-03-20T14:35:00Z	MongoDB	schema-validation	3	8	8	sharded-by-tenant	LOW	READY
+2026-03-20T14:40:00Z	Cassandra	table-per-query	6	15	18	time-bucketed	MEDIUM	NEEDS_TUNING
+```
+
+Create the file with the header row on first run. Tab-separated, one row per operation. This log is the audit trail for all NoSQL decisions.
+
+## Success Criteria
+
+**READY** (all must be true):
+- Database selection justified against PostgreSQL baseline (specific technical reason documented)
+- Every access pattern has a corresponding table/index/GSI design
+- Zero hot partition risk for the expected data distribution
+- Schema validation enabled (MongoDB: JSON Schema validator; DynamoDB: attribute constraints in application layer)
+- Partition sizes within limits (Cassandra < 100MB, DynamoDB item collections < 10GB)
+- Denormalization strategy documented for every duplicated field (source of truth + sync mechanism)
+- Connection pooling configured with bounded min/max
+- Read/write consistency level explicitly chosen and documented (not using defaults blindly)
+
+**NEEDS_TUNING** (any one true):
+- 1-2 access patterns not covered by existing indexes/GSIs (requires scan or filter)
+- Partition sizes between 50-100% of recommended limits
+- Read/write latency p99 > 50ms for simple lookups
+- Missing secondary index for a known query pattern (full scan as workaround)
+- Consistency level not explicitly documented (using defaults)
+
+**DEGRADED** (any one true):
+- Access patterns require cross-partition scatter-gather queries
+- Hot partition detected (single partition > 30% of total throughput)
+- No schema validation in production (MongoDB schemaless, DynamoDB no validation)
+- Normalized relational design in DynamoDB/Cassandra (JOINs or references)
+- Unbounded partition growth without time bucketing or size limits
+- PostgreSQL would have been simpler and sufficient (no technical justification for NoSQL)
+- Low-cardinality partition key (< 100 distinct values for high-volume table)
+- No backup/point-in-time recovery configured
+
+## Error Recovery
+
+1. **Hot partition detected (single partition > 30% of throughput)**
+   - DynamoDB: Check CloudWatch `ConsumedReadCapacityUnits` and `ConsumedWriteCapacityUnits` by partition key. If a single key dominates, add write sharding (append random suffix 0-N to partition key, fan-out on read).
+   - Cassandra: Run `nodetool tablehistograms` to find large partitions. Introduce time bucketing (e.g., `sensor_id:2026-03-20` instead of `sensor_id`).
+   - MongoDB: Check `db.collection.stats()` for chunk distribution. If one shard is hot, the shard key has low cardinality -- add a hashed prefix or compound shard key.
+
+2. **Access pattern not covered (full table scan required)**
+   - DynamoDB: Add a GSI with the needed partition key and sort key. If GSI limit reached (20), consolidate with overloaded GSI pattern (generic PK/SK attributes).
+   - Cassandra: Create a new materialized view or denormalized table for the query. One table per query is the correct pattern.
+   - MongoDB: Add a compound index matching the query's filter + sort fields. Use `explain()` to verify index usage.
+   - Neo4j: Add a node label index or relationship property index. Check with `EXPLAIN` / `PROFILE` that index is used.
+
+3. **Data inconsistency from denormalization (stale duplicated data)**
+   - Identify the source of truth for every duplicated field. Document in schema comments.
+   - Implement change propagation: DynamoDB Streams + Lambda, MongoDB Change Streams, Cassandra CDC.
+   - Add a `last_synced_at` timestamp to duplicated fields. Alert if drift > acceptable window (define per use case).
+   - For critical data, consider reading from source of truth and caching duplicates, rather than trusting duplicates for writes.
+
+4. **Migration between NoSQL databases (or from SQL to NoSQL)**
+   - Export data in a neutral format (JSON lines or Parquet).
+   - Design the target schema from access patterns first -- do NOT copy the source schema structure.
+   - Run dual-write during migration: write to both old and new, read from old. Switch reads to new only after validation.
+   - Validate row counts, checksums, and sample queries between source and target before cutover.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run NoSQL tasks sequentially: primary data model, then secondary data model, then graph model (if needed).

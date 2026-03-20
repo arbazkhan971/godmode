@@ -387,3 +387,63 @@ POST-EXIT: Generate post-mortem document
 - **Do NOT inflate severity.** A cosmetic bug is not SEV1. Over-classification breeds alert fatigue and erodes trust in the system.
 - **Do NOT guess at the timeline.** Use logs, monitoring data, and git history. Human memory under stress is unreliable.
 - **Do NOT skip "Where We Got Lucky."** Near-misses are free lessons. Capture them before they become real incidents.
+
+## Output Format
+Print on completion: `Incident: SEV{severity} — {title}. Duration: {start} to {resolved} ({total_time}). Root cause: {root_cause}. Action items: {action_count} ({completed}/{total} done). MTTR: {mttr}.`
+
+## TSV Logging
+Log every incident to `.godmode/incident-results.tsv`:
+```
+timestamp	severity	title	detection_time	resolution_time	mttr_min	root_cause	action_items	status
+2024-01-15T14:30:00Z	SEV1	API outage	2min	45min	47	DB connection pool	5	resolved
+2024-02-03T09:15:00Z	SEV2	Payment timeout	8min	30min	38	3rd party API	3	resolved
+```
+Columns: timestamp, severity, title, detection_time, resolution_time, mttr_min, root_cause, action_items, status(active/mitigated/resolved/postmortem_done).
+
+## Success Criteria
+- Incident classified within 5 minutes of detection (severity assigned).
+- Timeline reconstructed from logs and monitoring data (not memory).
+- Root cause identified with evidence (not guesses).
+- Post-mortem completed within 48 hours of resolution (SEV1/SEV2).
+- All action items tracked with owners and deadlines.
+- Blameless language used throughout (systems, not individuals).
+- "Where We Got Lucky" section included in post-mortem.
+- MTTR trending downward quarter over quarter.
+
+## Error Recovery
+- **Cannot identify root cause**: Widen the investigation window. Check logs, metrics, and traces for the 24 hours before the incident. Look for correlated changes (deploys, config changes, dependency updates). If still unclear, declare "root cause undetermined" and add investigation action items.
+- **Timeline has gaps**: Cross-reference multiple sources (application logs, infrastructure metrics, deployment history, git log, Slack messages). Use `git log --after` and `git log --before` to find changes in the incident window.
+- **Post-mortem becomes blame-oriented**: Redirect to systems thinking. Replace "Person X did Y" with "The system allowed Y to happen without safeguards." Focus on what process or tooling change would prevent recurrence.
+- **Action items not being completed**: Escalate overdue items weekly. Assign each item to a specific person with a specific deadline. Block feature work if critical remediation items are stale.
+- **Severity disputed**: Use the severity matrix (customer impact, data loss, revenue impact). If in doubt, classify higher and downgrade after investigation.
+- **Recurring incidents with same root cause**: Escalate to engineering leadership. Previous action items were insufficient. Require a systemic fix, not another band-aid.
+
+## Multi-Agent Dispatch
+For active incident response:
+```
+DISPATCH parallel agents (one per investigation stream):
+
+Agent 1 (worktree: incident-timeline):
+  - Build timeline from logs, metrics, and git history
+  - Scope: monitoring dashboards, log aggregator, deployment history
+  - Output: Detailed timeline with timestamps
+
+Agent 2 (worktree: incident-rootcause):
+  - Investigate root cause with evidence
+  - Scope: application code, configuration, infrastructure
+  - Output: Root cause analysis with evidence
+
+Agent 3 (worktree: incident-postmortem):
+  - Draft post-mortem document with action items
+  - Scope: timeline + root cause from other agents
+  - Output: Complete post-mortem document
+
+MERGE ORDER: timeline → rootcause → postmortem
+CONFLICT RESOLUTION: timeline branch owns timestamps; rootcause branch owns analysis
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run incident tasks sequentially: timeline construction, then root cause analysis, then post-mortem drafting.
+- Use branch isolation per task: `git checkout -b godmode-incident-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

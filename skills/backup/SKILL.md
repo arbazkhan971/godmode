@@ -570,3 +570,68 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 - **Do NOT write runbooks that only one person can execute.** Recovery procedures must be usable by anyone on the on-call rotation. Test with different team members.
 - **Do NOT neglect backup monitoring.** A silently failing backup job is worse than no backup — it creates false confidence. Alert on every failure, verify every success.
 - **Do NOT treat DR as a one-time project.** Systems change. New data stores are added. Backup strategies must evolve with the system. Review quarterly.
+
+## Output Format
+Print on completion: `Backup: {asset_count} assets covered. RPO: {rpo}. RTO: {rto}. Last restore test: {last_test_date}. Encryption: {encryption_status}. Cross-region: {cross_region}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every backup operation to `.godmode/backup-results.tsv`:
+```
+timestamp	asset	operation	size	duration_s	status	checksum
+2024-01-15T03:00:00Z	postgres-prod	backup	12GB	180	success	sha256:abc123
+2024-01-15T03:05:00Z	redis-prod	backup	2GB	30	success	sha256:def456
+2024-01-15T04:00:00Z	postgres-prod	restore-test	12GB	300	success	verified
+```
+Columns: timestamp, asset, operation(backup/restore-test/dr-drill), size, duration_s, status(success/failed/partial), checksum.
+
+## Success Criteria
+- RPO and RTO defined with business stakeholder sign-off.
+- All critical data assets have automated backup schedules.
+- Backups encrypted at rest with managed keys (not hardcoded).
+- Backups stored in a separate failure domain (different region, different account).
+- Restore test completed successfully within the defined RTO.
+- Backup failure alerts configured and verified.
+- Retention policy defined and enforced (no infinite storage growth).
+- Recovery runbook written and tested by at least two team members.
+- Quarterly DR drill scheduled and completed.
+
+## Error Recovery
+- **Backup job fails silently**: Configure alerting for every backup job (PagerDuty, Slack, email). Verify alerts are working by intentionally failing a backup. Check monitoring dashboards daily.
+- **Restore test fails**: Do not assume the backup is corrupt. Check the restore procedure first. Verify the target environment has sufficient resources. Check for schema version mismatches between backup and restore target.
+- **Backup storage costs growing unbounded**: Review retention policy. Delete backups older than the retention period. Use tiered storage (hot → warm → cold) for older backups. Enable lifecycle rules on the storage bucket.
+- **Encryption key lost or rotated**: Maintain key escrow or backup of encryption keys in a separate secure location. Document key rotation procedure. Test decryption with the new key before rotating.
+- **RPO violated (backup older than allowed)**: Investigate why the scheduled backup did not run. Check for resource contention, network issues, or credential expiration. Run an immediate backup and fix the root cause.
+- **DR drill reveals gaps**: Document all gaps found. Create remediation tasks with deadlines. Re-run the drill after fixes are applied. Update the runbook with lessons learned.
+
+## Multi-Agent Dispatch
+For comprehensive backup and DR setup:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: backup-config):
+  - Configure backup jobs for all data assets
+  - Set up schedules, retention policies, encryption
+  - Scope: backup scripts, cron jobs, cloud backup config
+  - Output: Automated backup configuration
+
+Agent 2 (worktree: backup-restore):
+  - Write and test restore procedures
+  - Create recovery runbooks
+  - Scope: restore scripts, runbook documentation
+  - Output: Tested restore procedures
+
+Agent 3 (worktree: backup-monitoring):
+  - Set up backup monitoring and alerting
+  - Configure dashboards for backup status
+  - Scope: monitoring config, alert rules
+  - Output: Backup monitoring and alerting
+
+MERGE ORDER: config → restore → monitoring
+CONFLICT RESOLUTION: config branch owns backup schedules; restore branch owns runbooks
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run backup tasks sequentially: backup configuration, then restore testing, then monitoring setup.
+- Use branch isolation per task: `git checkout -b godmode-backup-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

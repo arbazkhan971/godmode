@@ -908,6 +908,128 @@ DASHBOARD: API Gateway SLO Dashboard
 7. **ALWAYS measure SLIs closer to the user.** Load balancer metrics over application metrics over database metrics.
 8. **ALWAYS start with current measured reliability** and set the SLO target slightly below it. Over-ambitious targets that are constantly violated erode trust.
 
+## Output Format
+
+After each SLO skill invocation, emit a structured report:
+
+```
+SLO REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Service             │  <name>                        │
+│  SLIs defined        │  <N> indicators                │
+│  SLOs defined        │  <N> objectives                │
+│  Window              │  <rolling 7d | 30d | 90d>      │
+│  Error budget        │  <N> min/month (remaining: <N>%)│
+│  Burn rate alerts    │  Critical: <x>  High: <x>  Medium: <x>  Low: <x> │
+│  Budget policy       │  DOCUMENTED / MISSING          │
+│  Release gating      │  CONFIGURED / NOT CONFIGURED   │
+│  Dashboard           │  CREATED / MISSING             │
+│  Composite SLOs      │  <N> user journeys             │
+│  Review cadence      │  Weekly / Monthly / Quarterly  │
+│  Verdict             │  SLO READY | NEEDS WORK        │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every SLO action for tracking:
+
+```
+timestamp	skill	service	action	slis	slos	budget_remaining_pct	status
+2026-03-20T14:00:00Z	slo	payment-api	define	4	4	100	ready
+2026-03-20T14:30:00Z	slo	checkout	budget_check	3	3	44	warning
+```
+
+## Success Criteria
+
+The SLO skill is complete when ALL of the following are true:
+1. SLIs are chosen based on service type (not one-size-fits-all)
+2. SLIs measure user experience (not infrastructure metrics)
+3. SLO targets are achievable (not 100%) and stricter than SLA
+4. Error budgets are calculated correctly for each SLO
+5. Multi-window burn rate alerts are configured (4 severity levels)
+6. Error budget policy defines actions at each consumption level
+7. SLO dashboard is created and accessible to all stakeholders
+8. Release gating uses error budget to block/warn on deploys
+9. SLO review cadence is established (weekly, monthly, quarterly)
+
+## Error Recovery
+
+```
+IF SLO target is too aggressive (constantly violated):
+  1. Measure current actual reliability over the last 30 days
+  2. Set the SLO target slightly below the measured reliability
+  3. Communicate the adjusted target to stakeholders
+  4. Improve reliability incrementally and tighten the SLO over time
+
+IF error budget policy is ignored (team ships during freeze):
+  1. Integrate budget checks into CI/CD pipeline (automated gating)
+  2. Make budget status visible on team dashboard and standup
+  3. Require VP-level override approval for deploys during freeze
+  4. Review the policy in a team meeting to ensure buy-in
+
+IF burn rate alerts are noisy (too many false positives):
+  1. Verify both long AND short windows are configured (not just one)
+  2. Check that the SLI calculation excludes client errors (4xx)
+  3. Increase the for duration to filter out transient spikes
+  4. Check if the SLO target is too aggressive for the service's actual reliability
+
+IF composite SLO shows degradation but individual services are green:
+  1. Check inter-service latency (network issues between services)
+  2. Check for cascading timeout chains
+  3. Verify that each service's SLO is strict enough for the composite target
+  4. Add circuit breakers or fallbacks to the weakest link in the journey
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect monitoring stack: grep for prometheus, datadog, grafana, newrelic in configs
+2. Detect existing SLOs: find . -name "*slo*" -o -name "*service-level*" in docs/
+3. Detect service type: check for HTTP handlers (API), queue consumers (pipeline), cron (batch)
+4. Detect traffic patterns: check for load balancer configs, auto-scaling policies
+5. Detect alerting: check for PagerDuty, OpsGenie, Slack webhook configs
+6. Auto-configure: match SLI selection to detected service type
+```
+
+## Iterative SLO Implementation Loop
+
+```
+current_iteration = 0
+max_iterations = 10
+slo_tasks = [sli_selection, slo_targets, error_budgets, burn_rate_alerts, budget_policy, dashboard, release_gating, review_cadence]
+
+WHILE slo_tasks is not empty AND current_iteration < max_iterations:
+    task = slo_tasks.pop(0)
+    1. Assess current state for this task
+    2. Implement (SLI query, SLO target, alert rule, dashboard panel, policy doc)
+    3. Validate: SLI is measurable, alert fires correctly, dashboard renders
+    4. IF validation fails → revise thresholds or implementation
+    5. IF passing → commit: "slo: <task> for <service>"
+    6. current_iteration += 1
+
+POST-LOOP: Run full validation checklist and simulate a budget consumption scenario
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "slo-definition": SLI selection, SLO targets, error budget calculation, policy document
+  Agent 2 — "slo-alerts": Prometheus/Datadog recording rules, multi-window burn rate alerts
+  Agent 3 — "slo-dashboard": Grafana/Datadog dashboard, release gating config, review templates
+
+MERGE ORDER: definition → alerts → dashboard (alerts reference SLO targets, dashboard references alert rules)
+CONFLICT ZONES: SLO target values and service names (agree on these before dispatch)
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run SLO tasks sequentially: SLI/SLO definitions, then burn rate alerts, then dashboard/gating.
+- Use branch isolation per task: `git checkout -b godmode-slo-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT set SLO = 100%.** A 100% SLO means zero error budget. Zero error budget means you cannot deploy anything. This is mathematically incompatible with shipping software.

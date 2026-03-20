@@ -15,6 +15,44 @@ description: |
 - When `/godmode:plan` identifies Vue.js tasks
 - When `/godmode:review` flags Vue-specific patterns
 
+## Auto-Detection
+
+Run this sequence at skill start to determine project context:
+
+```bash
+# Detect Vue presence and version
+cat package.json 2>/dev/null | grep -E '"vue"|"nuxt"|"@vue/"'
+
+# Detect Vue version (2 vs 3)
+cat node_modules/vue/package.json 2>/dev/null | grep '"version"'
+
+# Detect meta-framework
+ls nuxt.config.ts nuxt.config.js 2>/dev/null
+
+# Detect Composition API vs Options API
+grep -rl 'defineComponent\|setup()\|<script setup' src/ 2>/dev/null | head -5
+grep -rl 'data()\|methods:\|computed:' src/ 2>/dev/null | head -5
+
+# Detect state management
+grep -E "pinia|vuex" package.json 2>/dev/null
+
+# Detect router
+grep -E "vue-router" package.json 2>/dev/null
+
+# Detect UI framework
+grep -E "vuetify|quasar|primevue|element-plus|naive-ui|radix-vue" package.json 2>/dev/null
+
+# Detect CSS approach
+grep -E "tailwindcss|unocss|scss|sass|less" package.json 2>/dev/null
+
+# Detect testing
+grep -E "vitest|jest|@vue/test-utils|cypress|playwright" package.json 2>/dev/null
+
+# Detect TypeScript
+ls tsconfig.json 2>/dev/null
+grep -E "vue-tsc|typescript" package.json 2>/dev/null
+```
+
 ## Workflow
 
 ### Step 1: Project Discovery & Assessment
@@ -824,6 +862,86 @@ Configuring useAsyncData patterns...
 | `--component <name>` | Generate a new component with tests and story |
 | `--upgrade` | Upgrade Vue 2 to Vue 3 migration guide |
 
+## Output Format
+
+Every Vue skill invocation ends with a structured summary:
+
+```
+VUE COMPLETE:
+Project: <name>
+Components: <N> (<Composition API | Options API>)
+Stores: <N> Pinia stores
+Routes: <N> routes (<lazy | eager>)
+Composables: <N> reusable composables
+Tests: <N> files, <M>% coverage
+Audit: <PASS | NEEDS REVISION>
+Duration: <time spent>
+```
+
+Commit message: `"vue: <project> — <primary change>, <API style>"`
+
+## TSV Logging
+
+Append one row per Vue skill invocation to `.godmode/vue-results.tsv`:
+
+```
+timestamp	project	action	components_count	stores_count	composables_count	audit_status	notes
+2024-01-15T10:30:00Z	task-mgr	architecture	14	3	5	PASS	Composition API + Pinia
+2024-01-15T11:00:00Z	task-mgr	migrate	14	3	5	NEEDS_REVISION	6 components still Options API
+```
+
+Fields: `timestamp` (ISO 8601), `project`, `action` (architecture | audit | migrate | nuxt | pinia | router | vite | test | composable | component | upgrade), `components_count`, `stores_count`, `composables_count`, `audit_status` (PASS | NEEDS_REVISION | SKIPPED), `notes` (free text, no tabs).
+
+IF `.godmode/` directory does not exist, create it. IF the TSV file does not exist, write the header row first.
+
+## Success Criteria
+
+A Vue skill invocation is successful when ALL of the following are true:
+
+1. `npx vue-tsc --noEmit` passes with zero errors (or `npx tsc --noEmit` for non-Vue TS files).
+2. All existing tests pass (`npx vitest run`).
+3. No mixins used in Vue 3 projects.
+4. All props typed with `defineProps<T>()` and emits typed with `defineEmits<T>()`.
+5. All route components lazy-loaded with dynamic `import()`.
+6. Every `v-for` has a `:key` attribute using a unique identifier (not index).
+7. No `v-html` with unsanitized user input.
+8. Pinia stores use setup syntax (Composition API style) in new projects.
+9. The validation audit (Step 9) shows PASS on all applicable checks.
+
+IF any criterion fails, fix before marking the invocation complete.
+
+## Error Recovery
+
+```
+WHEN vue-tsc --noEmit fails:
+  1. Read the error output, identify the file and line.
+  2. Fix the type error. Common issues: missing prop types, untyped emits, incorrect ref types.
+  3. Re-run vue-tsc. Repeat until zero errors.
+
+WHEN Pinia store has reactivity issues:
+  1. Check if destructuring lost reactivity (must use storeToRefs for reactive destructuring).
+  2. Verify $state is not being replaced directly — use $patch or individual property updates.
+  3. If using setup syntax, ensure all returned values are refs/computed/functions.
+
+WHEN Nuxt useAsyncData returns stale data:
+  1. Verify the key is unique and depends on reactive parameters.
+  2. Check if watch option includes the reactive dependency.
+  3. Use invalidateNuxtData(key) or refresh() to force re-fetch.
+  4. If key collision, add route-specific prefix to the key.
+
+WHEN Vite HMR stops working:
+  1. Check for circular imports in components or composables.
+  2. Clear the Vite cache: rm -rf node_modules/.vite.
+  3. Restart the dev server.
+  4. If component state is lost on HMR, check for non-serializable state in setup.
+
+WHEN component tests fail with mount errors:
+  1. Check global plugins/providers needed (Pinia, Router, i18n).
+  2. Add missing plugins to mount options: global.plugins or global.stubs.
+  3. Mock external dependencies with vi.mock().
+  4. Use createTestingPinia() for store-dependent components.
+```
+
 ## HARD RULES
 
 1. **NEVER use mixins in Vue 3.** Use composables. Mixins cause name collisions, implicit dependencies, and untraceable data flow.
@@ -847,3 +965,10 @@ Configuring useAsyncData patterns...
 - **Do NOT put business logic in components.** Extract to composables. Components handle rendering; composables handle logic.
 - **Do NOT ignore TypeScript errors.** Fix them. `// @ts-ignore` in a Vue component is a ticking time bomb.
 - **Do NOT use `reactive()` for primitives.** Use `ref()` for primitives and simple values. `reactive()` is for objects when you want deep reactivity without `.value`.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Vue tasks sequentially: components, then stores, then routing, then composables, then tests.
+- Use branch isolation per task: `git checkout -b godmode-vue-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

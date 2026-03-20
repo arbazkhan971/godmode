@@ -1,28 +1,248 @@
 ---
 name: scenario
-description: Edge case exploration. 12 dimensions, scored by likelihood x impact.
+description: Edge case exploration. 12 dimensions, scored by likelihood x impact. Runnable tests for HIGH+.
 ---
 
 ## Activate When
-- `/godmode:scenario`, "what could go wrong?", "edge cases", "failure modes"
+- `/godmode:scenario`, "what could go wrong?", "edge cases", "failure modes", "break this", "stress test the design"
+- Before shipping a new feature that handles user input, external APIs, or state mutations
+- After `/godmode:plan` or `/godmode:build` when the feature has no edge case coverage yet
 
-## Workflow
+## Auto-Detection
+The godmode orchestrator routes here when:
+- A new feature touches input validation, auth, payments, or data persistence
+- User asks "what if", "what happens when", "could this break"
+- `/godmode:test` completed but coverage is only on happy paths (no error/boundary tests)
+- A feature interacts with external services (APIs, databases, queues, file systems)
+
+## Step-by-step Workflow
+
 ### 1. Read the Design
-Read spec + code. Trace: user input → validation → transform → persist → response. List: external calls, state mutations, side effects.
-### 2. Explore 12 Dimensions
-Invalid Input, Boundary (0, 1, MAX_INT, empty, null), Concurrency (race, deadlock), Network (timeout, 5xx, DNS), Data (corrupt, stale, missing), Auth, Time (TZ, DST, leap), Scale (10x), Failure (crash, OOM, disk full), Migration, User Error, Deps (down, slow, changed API).
-### 3. Score Each Scenario
-Score = Likelihood (1-5) × Impact (1-5). ≥20 CRITICAL | 12-19 HIGH | 6-11 MEDIUM | ≤5 LOW.
-### 4. Generate Test Skeletons
-For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values from codebase. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
-### 5. Output
-Output: `DIMENSION | SCENARIO | L×I | SCORE | TEST`. Print: `{total} scenarios, {critical} critical, {high} high, {tests} tests generated`.
+Read the spec, plan (`.godmode/plan.yaml` if exists), and implementation code. Trace the complete data flow:
+```
+User Input → Validation → Transform → Business Logic → Persist → Side Effects → Response
+```
+For each stage, list:
+- **External calls**: API endpoints, DB queries, file I/O, queue publishes
+- **State mutations**: What gets created, updated, deleted
+- **Side effects**: Emails sent, webhooks fired, cache invalidated, events emitted
+- **Trust boundaries**: Where untrusted data enters, where privilege escalation is possible
+
+Print: `[scenario:read] Feature: {name} | {N} external calls | {N} state mutations | {N} side effects | {N} trust boundaries`
+
+### 2. Identify the Feature Scope
+Define the boundary of what is being explored:
+- **Entry points**: API routes, CLI commands, UI events, cron triggers, queue consumers
+- **Dependencies**: Services, databases, caches, third-party APIs this feature calls
+- **Data shapes**: Input schemas, output schemas, persisted models
+
+Print: `[scenario:scope] {N} entry points | {N} dependencies | {N} data shapes`
+
+### 3. Explore All 12 Dimensions
+For EACH dimension, generate 2-5 specific scenarios. Every scenario MUST reference a code path (file:line) or spec section.
+
+| # | Dimension | What to explore |
+|---|-----------|-----------------|
+| 1 | **Invalid Input** | Malformed JSON, wrong types, SQL injection, XSS, oversized strings (>64KB), unicode (ZWJ, RTL, null bytes), negative IDs, NaN |
+| 2 | **Boundary** | 0, 1, -1, MAX_INT, MAX_INT+1, empty string/array, null, undefined, exactly-at-limit |
+| 3 | **Concurrency** | Race conditions, deadlocks, double-submit, read-your-writes, lost updates |
+| 4 | **Network** | Timeout, 5xx, DNS failure, partial response, retry storms, TLS expiry |
+| 5 | **Data Integrity** | Corrupt DB data, stale cache, missing FK, orphaned records, encoding mismatch |
+| 6 | **Auth & Authz** | Expired token, privilege escalation, IDOR, missing auth header, forged JWT, CSRF |
+| 7 | **Time & Timezone** | DST, leap seconds, year 2038, date rollover, clock skew between services |
+| 8 | **Scale** | 10x load, 100x data, N+1 queries, unbounded lists, pagination overflow, OOM |
+| 9 | **Failure & Recovery** | Crash mid-transaction, OOM kill, disk full, partial write, retry idempotency |
+| 10 | **Migration** | Schema migration with live traffic, backward-incompatible API, rollback after partial migration |
+| 11 | **User Error** | Double-click submit, back button after POST, hidden chars in paste, bookmark stale URL |
+| 12 | **Dependencies** | Third-party API down, unexpected response schema, rate-limited, breaking dep upgrade |
+
+For each dimension, if truly not applicable, state why in one sentence. "N/A" alone is not acceptable.
+
+Print per dimension: `[scenario:{dimension}] {N} scenarios found`
+
+### 4. Score Every Scenario
+For each scenario, assign:
+- **Likelihood (L)**: 1 = nearly impossible, 2 = rare, 3 = occasional, 4 = likely, 5 = certain
+- **Impact (I)**: 1 = cosmetic, 2 = degraded UX, 3 = feature broken, 4 = data loss/security breach, 5 = system down/compliance violation
+
+Score = L x I. Severity thresholds:
+- **CRITICAL**: Score >= 20 (e.g., L=5 x I=4, or L=4 x I=5)
+- **HIGH**: Score 12-19
+- **MEDIUM**: Score 6-11
+- **LOW**: Score 1-5
+
+Minimum valid score is 1x1=1. Score of 0 is invalid — every scenario has nonzero likelihood and nonzero impact.
+
+Print: `[scenario:score] {total} scenarios scored: {critical} CRITICAL, {high} HIGH, {medium} MEDIUM, {low} LOW`
+
+### 5. Sort and Prioritize
+Sort all scenarios by score descending. Within the same score, prioritize:
+1. Data loss / security breach scenarios first
+2. Scenarios affecting the most users second
+3. Scenarios with easiest reproduction third
+
+Print the full table:
+```
+DIMENSION       | SCENARIO                           | L | I | SCORE | SEVERITY | CODE REF
+Invalid Input   | SQL injection in search query       | 4 | 5 | 20    | CRITICAL | src/search.ts:42
+Concurrency     | Race condition on balance update    | 3 | 5 | 15    | HIGH     | src/wallet.ts:88
+...
+```
+
+### 6. Generate Test Skeletons for HIGH+ Scenarios
+For every scenario scored HIGH (12+) or CRITICAL (20+), generate a runnable test file:
+- Use the project's existing test framework (detect from package.json, pytest.ini, Cargo.toml, etc.)
+- Follow ARRANGE / ACT / ASSERT structure
+- Use real values from the codebase (actual route paths, actual model names, actual field names)
+- Include setup and teardown (create test data, clean up after)
+- Save to `tests/scenarios/{feature}.scenario.test.{ext}`
+
+Each test must be runnable with the project's test command. No stubs, no TODOs, no `// implement later`.
+
+```
+# Example test structure (Jest):
+describe('Search — SQL Injection', () => {
+  it('should reject SQL injection in query parameter', async () => {
+    // ARRANGE
+    const maliciousQuery = "'; DROP TABLE users; --";
+    // ACT
+    const response = await request(app).get('/api/search').query({ q: maliciousQuery });
+    // ASSERT
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/invalid/i);
+  });
+});
+```
+
+Print: `[scenario:tests] {N} test files generated for {N} HIGH+ scenarios`
+
+### 7. Verify Generated Tests Run
+Run the generated test files to confirm they are syntactically valid and executable:
+```bash
+test_cmd -- tests/scenarios/{feature}.scenario.test.{ext}
+```
+- If a test fails to compile/parse: fix the syntax immediately.
+- If a test fails because the scenario is a real bug: flag it as `BUG_FOUND` in the output table.
+- If a test passes: the edge case is already handled — update severity to note "mitigated".
+
+Print: `[scenario:verify] {passing}/{total} scenario tests executable. {bugs_found} real bugs discovered.`
+
+### 8. Output Summary
+Print the final summary:
+```
+Scenario Analysis: {feature}
+{total} scenarios across 12 dimensions
+{critical} CRITICAL | {high} HIGH | {medium} MEDIUM | {low} LOW
+{tests_generated} tests generated | {bugs_found} bugs found
+Test file: tests/scenarios/{feature}.scenario.test.{ext}
+```
+
+### 9. Log to TSV
+Append each scenario as a row to `.godmode/scenario-log.tsv`.
+
+## Output Format
+Each stage prints a tagged line: `[scenario:{stage}] {details}`. Stages: `read`, `scope`, one per dimension, `score`, `tests`, `verify`. Final summary:
+```
+Scenario Analysis: {feature}
+{total} scenarios across 12 dimensions
+{critical} CRITICAL | {high} HIGH | {medium} MEDIUM | {low} LOW
+{tests_generated} tests generated | {bugs_found} bugs found
+Test file: tests/scenarios/{feature}.scenario.test.{ext}
+```
 
 ## TSV Logging
-Append `.godmode/scenario-log.tsv`: timestamp, feature, dimension, scenario, likelihood, impact, score, severity, test_file, code_ref.
+File: `.godmode/scenario-log.tsv`
+Columns:
+```
+timestamp	feature	dimension	scenario	likelihood	impact	score	severity	test_file	code_ref	status
+```
+Example row:
+```
+2026-03-20T14:30:00Z	user-search	Invalid Input	SQL injection in search query	4	5	20	CRITICAL	tests/scenarios/user-search.scenario.test.ts	src/search.ts:42	BUG_FOUND
+```
+Status values: `TEST_PASS` (edge case is handled), `TEST_FAIL` (bug found), `NO_TEST` (MEDIUM/LOW, no test generated), `BUG_FOUND` (test revealed a real vulnerability).
 
-## Rules
-1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.
-2. Score every scenario: L(1-5) × I(1-5) = S. No unscored rows. S=0 is not valid — minimum is 1×1=1.
-3. HIGH+ scenarios get runnable tests. Stubs and TODOs are not tests.
-4. Every scenario: cite code path (file:line) or spec section (§heading). No scenario without a source reference.
+## Success Criteria
+- [ ] All 12 dimensions explored — none skipped without a one-sentence justification
+- [ ] Every scenario has a code reference (file:line) or spec section (heading)
+- [ ] Every scenario is scored: L(1-5) x I(1-5) = S. No unscored rows. No zero scores.
+- [ ] All CRITICAL and HIGH scenarios have runnable tests — not stubs, not TODOs
+- [ ] Tests use the project's actual test framework and real code paths
+- [ ] Generated tests are syntactically valid (confirmed by running them)
+- [ ] Full scenario table printed with all columns
+- [ ] TSV row appended per scenario with all columns populated
+- [ ] Summary line printed with dimension count, severity breakdown, and test count
+
+## Error Recovery
+- **If no code exists yet (only a spec/plan)**: Generate scenarios from the spec. Use hypothetical file:line references like `{planned_file}:TBD`. Skip test generation (no code to test). Print `NOTE: Scenarios based on spec only. Re-run after /godmode:build.`
+- **If the test framework is not detected**: Ask the user which framework to use. Fall back to pseudocode test skeletons with a comment `// Adapt to your test framework` at the top.
+- **If a generated test has syntax errors**: Fix the syntax error in-place. If the error persists after 2 attempts, write the test as a comment block with `TODO: fix syntax` and flag it in the output.
+- **If a dimension genuinely does not apply**: State why in one sentence in the scenario table. Example: "Time & Timezone: N/A — feature has no date/time logic, no scheduled jobs, no TTLs." This is acceptable. Leaving the dimension blank or writing only "N/A" is not.
+- **If the feature is too large (>20 files)**: Break it into sub-features. Run scenario analysis per sub-feature. Merge results into one table and one TSV log.
+
+## Anti-Patterns
+1. **Never skip a dimension without justification.** All 12 dimensions apply to most features. "Not relevant" requires a one-sentence explanation of why.
+2. **Never leave a scenario unscored.** Every row needs L, I, and Score. Guessing is better than omitting — you can always note "estimate" in the TSV.
+3. **Never write stub tests.** `it('should handle X', () => { /* TODO */ })` is not a test. Either write a complete ARRANGE/ACT/ASSERT or don't generate the file.
+4. **Never generate scenarios without code references.** "SQL injection could happen" is useless. "SQL injection at `src/search.ts:42` where `req.query.q` is interpolated into `db.query()`" is actionable.
+5. **Never confuse likelihood with impact.** A meteor destroying the datacenter is L=1, I=5. A missing null check on a required field is L=5, I=3. Score them separately.
+
+## Examples
+
+### Example 1: API endpoint scenario analysis
+```
+> /godmode:scenario POST /api/users
+
+[scenario:read]    Feature: user-creation | 1 external call (DB) | 2 state mutations | 1 side effect (welcome email) | 1 trust boundary
+[scenario:scope]   1 entry point | 2 dependencies | 2 data shapes
+[scenario:invalid] 5 scenarios found
+[scenario:boundary] 3 scenarios found
+[scenario:concurrency] 2 scenarios found
+[scenario:network] 2 scenarios found
+[scenario:data] 3 scenarios found
+[scenario:auth] 4 scenarios found
+[scenario:time] 1 scenario found
+[scenario:scale] 2 scenarios found
+[scenario:failure] 3 scenarios found
+[scenario:migration] 1 scenario found
+[scenario:user-error] 2 scenarios found
+[scenario:deps] 2 scenarios found
+[scenario:score]   30 scenarios scored: 2 CRITICAL, 5 HIGH, 15 MEDIUM, 8 LOW
+[scenario:tests]   7 test files generated for 7 HIGH+ scenarios
+[scenario:verify]  6/7 scenario tests executable. 1 real bug discovered.
+
+Scenario Analysis: user-creation
+30 scenarios across 12 dimensions
+2 CRITICAL | 5 HIGH | 15 MEDIUM | 8 LOW
+7 tests generated | 1 bug found
+Test file: tests/scenarios/user-creation.scenario.test.ts
+```
+
+### Example 2: Scenario table excerpt (payment checkout)
+```
+DIMENSION     | SCENARIO                                     | L | I | SCORE | SEVERITY
+Invalid Input | Negative payment amount                      | 4 | 5 | 20    | CRITICAL
+Concurrency   | Double-charge on rapid double-click           | 4 | 5 | 20    | CRITICAL
+Network       | Payment gateway timeout after charge          | 3 | 5 | 15    | HIGH
+Auth          | Expired session during checkout redirect      | 4 | 3 | 12    | HIGH
+Failure       | Crash after charge, before order created      | 2 | 5 | 10    | MEDIUM
+Time          | N/A — no date logic (TTLs handled by gateway) |   |   |       |
+```
+
+### Example 3: Scenario revealing a real bug
+```
+> /godmode:scenario "user search"
+
+[scenario:verify]  4/6 scenario tests executable. 2 real bugs discovered.
+
+BUG_FOUND: SQL injection at src/search.ts:42 — query parameter interpolated directly into SQL string.
+BUG_FOUND: Unbounded result set at src/search.ts:58 — no LIMIT clause, returns all matching rows.
+
+Recommend: /godmode:fix for the 2 bugs found, then re-run /godmode:scenario to confirm fixes.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+This skill does not dispatch parallel agents, so no sequential translation is needed.
+All analysis runs in the current session. Test generation uses the detected test framework.
+If the test runner is unavailable, skip step 7 (test verification) and note `UNVERIFIED` in the status column.
+See `adapters/shared/sequential-dispatch.md` for the general protocol.

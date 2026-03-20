@@ -468,6 +468,60 @@ MERGE ORDER: god-objects -> coupling -> primitives (structural before type-level
 CONFLICT ZONES: Shared service interfaces, constructor signatures, import paths
 ```
 
+## Output Format
+Print on completion:
+```
+PATTERN ANALYSIS: {feature_or_problem}
+Recommended: {pattern_name} ({category}) — Confidence: {HIGH|MEDIUM|LOW}
+Alternatives rejected: {alt_1} ({reason}), {alt_2} ({reason})
+Anti-patterns found: {N} ({list with file:line})
+Implementation: {language} — {N} files created/modified
+Tests: {N} test cases covering the pattern
+```
+
+## TSV Logging
+Log every pattern session to `.godmode/pattern-results.tsv`:
+```
+timestamp	feature	pattern_recommended	category	confidence	antipatterns_found	language	files_modified	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Problem Analysis (Step 1) completed before any pattern recommendation.
+2. Recommendation includes at least one rejected alternative with specific reason.
+3. Trade-offs list includes both benefits and drawbacks — never one-sided.
+4. Language-specific implementation code produced, not abstract UML.
+5. At least one unit test demonstrating the pattern is included.
+6. Anti-pattern scan completed when `--detect` flag is used or when code is provided.
+7. Implementation respects language idioms (no Java patterns forced on Python/Go).
+
+## Error Recovery
+```
+IF user asks for a pattern without describing the problem:
+  → Ask: "What design challenge are you facing? Describe the symptom: duplication, coupling, complexity, or rigidity."
+  → Do NOT recommend a pattern until Step 1 (Problem Analysis) is complete
+
+IF multiple patterns fit equally well:
+  → Recommend the simpler one
+  → Document: "Both {A} and {B} apply. Choosing {A} for simplicity. Switch to {B} if {condition}."
+
+IF anti-pattern scan finds zero issues:
+  → Report: "No structural anti-patterns detected in the scanned scope"
+  → Suggest: "Run with a broader scope or specific module path if concerns remain"
+
+IF the recommended pattern adds more complexity than the problem warrants:
+  → Downgrade recommendation: "A plain function/interface solves this without a full pattern"
+  → Apply YAGNI: recommend the pattern only when complexity justifies it
+
+IF user insists on a specific pattern that does not fit the problem:
+  → Explain why the pattern does not match: "{pattern} solves {X}, but your problem is {Y}"
+  → Implement if user still requests, but add a comment: "// NOTE: {pattern} may be overengineered here"
+
+IF codebase uses a framework with built-in patterns (NestJS, Spring, etc.):
+  → Prefer framework-native patterns over standalone GoF implementations
+  → Document: "Using {framework}'s built-in {mechanism} instead of manual {pattern}"
+```
+
 ## Anti-Patterns
 
 - **Do NOT recommend patterns without understanding the problem.** "Use a Factory" means nothing without knowing what creation problem exists. Diagnose first.

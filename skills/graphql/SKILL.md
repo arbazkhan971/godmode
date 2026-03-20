@@ -810,6 +810,80 @@ HARD RULES — GRAPHQL:
 - **Do NOT ignore schema evolution.** Every schema change must be checked for backward compatibility. Use graphql-inspector or schema snapshot tests in CI.
 
 
+## Output Format
+
+```
+GRAPHQL DESIGN COMPLETE:
+  Schema: <path to schema file(s)>
+  Types: <N> object types, <M> input types, <K> enums
+  Queries: <N> root queries
+  Mutations: <M> root mutations
+  Subscriptions: <S> subscription fields
+  DataLoaders: <D> loaders (batch + grouped)
+  Pagination: Relay connections on all list fields
+  Auth: <mechanism> applied to <N> resolvers
+  Performance: depth limit <N>, complexity limit <N>, persisted queries <on|off>
+  Validation: schema snapshot <PASS|FAIL>, breaking changes <NONE|N found>
+
+SCHEMA SUMMARY:
++--------------------------------------------------------------+
+|  Domain        | Types | Queries | Mutations | DataLoaders    |
++--------------------------------------------------------------+
+|  <domain>      | N     | N       | N         | N              |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every GraphQL design session to `.godmode/graphql-results.tsv`:
+
+```
+Fields: timestamp\tproject\ttypes_count\tqueries_count\tmutations_count\tdataloaders_count\tn1_issues_found\tn1_issues_fixed\tvalidation_status\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-api\t24\t8\t12\t15\t3\t3\tPASS\tabc1234
+```
+
+Append after every completed design or extension pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+GRAPHQL SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Schema compiles without errors             | YES              |
+|  All list fields use Relay connections       | YES              |
+|  All relation fields have DataLoaders       | YES              |
+|  All mutations return payload types          | YES              |
+|  Depth limit configured                     | YES              |
+|  Complexity limit configured                | YES              |
+|  N+1 regression tests pass (query counts)   | YES              |
+|  Schema snapshot test passes                | YES              |
+|  No breaking changes vs previous schema     | YES (if exists)  |
+|  Persisted queries or allowlist in prod     | YES (production)  |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — GRAPHQL:
+1. Schema compilation fails:
+   → Read SDL error output. Fix syntax (missing types, circular refs, duplicate names). Re-compile. Repeat until clean.
+2. N+1 query detected (query count exceeds expected):
+   → Identify the resolver making direct DB calls. Create a DataLoader (batch or grouped). Replace direct call with loader. Re-test query count.
+3. Breaking change detected vs previous schema:
+   → Run graphql-inspector diff. Revert removals/type changes. Add new fields instead of modifying existing ones. Use @deprecated for removals.
+4. Mutation returns raw error instead of payload type:
+   → Wrap mutation return in a payload type: { entity: T, errors: [UserError] }. Move error handling from throw to errors array.
+5. Subscription not receiving events:
+   → Verify pub/sub backend is connected. Check topic name matches between publish and subscribe. Verify auth context is passed to subscription resolver.
+6. Complexity/depth limit blocks legitimate queries:
+   → Analyze the blocked query. If legitimate, increase limit or add cost overrides for specific fields. If malicious, keep the limit.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run GraphQL tasks sequentially: schema, then resolvers, then tests.

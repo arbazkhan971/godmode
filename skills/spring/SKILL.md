@@ -719,6 +719,97 @@ grep -rl "TestContainers\|@SpringBootTest\|@WebMvcTest\|@DataJpaTest" src/ 2>/de
 ls src/main/resources/db/migration/* src/main/resources/db/changelog/* 2>/dev/null
 ```
 
+## Output Format
+
+End every Spring skill invocation with this summary block:
+
+```
+SPRING RESULT:
+Action: <scaffold | entity | controller | service | repository | optimize | test | audit | upgrade>
+Files created/modified: <N>
+Entities created/modified: <N>
+Controllers created/modified: <N>
+Migrations created: <N>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/spring.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	entities_count	controllers_count	migrations_count	tests_status	build_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | entity | controller | service | repository | optimize | test | audit | upgrade
+- `files_count`: number of files created or modified
+- `entities_count`: number of JPA entities created or modified
+- `controllers_count`: number of controllers created or modified
+- `migrations_count`: number of Flyway/Liquibase migrations created
+- `tests_status`: passing | failing | skipped | none
+- `build_status`: passing | failing | not-checked
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Spring skill invocation must pass ALL of these checks before reporting success:
+
+1. `./mvnw verify` or `./gradlew build` passes with zero errors
+2. Tests pass (`./mvnw test` or `./gradlew test`)
+3. OSIV is disabled (`spring.jpa.open-in-view: false`)
+4. No `ddl-auto: update` or `ddl-auto: create` in production profiles
+5. All beans use constructor injection (no `@Autowired` on fields)
+6. No JPA entities returned from controllers (use DTOs or projections)
+7. Centralized exception handling via `@ControllerAdvice`
+8. No deprecated `WebSecurityConfigurerAdapter` (use `SecurityFilterChain`)
+9. Actuator endpoints are secured (no public `/actuator/env` or `/actuator/heapdump`)
+10. Tests use TestContainers for database tests (not H2 with PostgreSQL target)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF build fails (mvnw/gradlew):
+  1. Read the full error output — fix compilation errors first
+  2. Check dependency version conflicts (mvn dependency:tree)
+  3. Verify Java version matches pom.xml/build.gradle requirement
+  4. Check for missing @ComponentScan or @EntityScan configurations
+
+IF tests fail:
+  1. Verify TestContainers is running (Docker must be available)
+  2. Check @SpringBootTest vs @WebMvcTest vs @DataJpaTest scope
+  3. Verify @MockBean and @SpyBean are correctly applied
+  4. Check that test properties override production config
+
+IF JPA/Hibernate errors:
+  1. LazyInitializationException → use @EntityGraph or JOIN FETCH, never OSIV
+  2. N+1 queries → add @BatchSize or use JOIN FETCH in repository queries
+  3. OptimisticLockException → implement retry logic with @Retryable
+  4. Schema mismatch → verify Flyway/Liquibase migrations are up to date
+
+IF Spring Security errors:
+  1. 403 Forbidden → check SecurityFilterChain rules and method security
+  2. CORS errors → configure CorsConfigurationSource bean
+  3. CSRF issues → verify token handling for SPA frontends
+  4. Authentication loop → check filter order and entry point configuration
+
+IF dependency injection errors:
+  1. NoSuchBeanDefinitionException → verify @Component/@Service annotation and package scanning
+  2. Circular dependency → restructure with @Lazy or extract shared logic
+  3. Multiple bean candidates → use @Primary or @Qualifier
+```
+
 ## Anti-Patterns
 
 - **Do NOT leave OSIV enabled.** `spring.jpa.open-in-view: true` is the default and it is wrong. It silently loads data in the view layer, hiding N+1 queries.
@@ -729,3 +820,11 @@ ls src/main/resources/db/migration/* src/main/resources/db/changelog/* 2>/dev/nu
 - **Do NOT use `WebSecurityConfigurerAdapter`.** It is removed in Spring Security 6. Use `SecurityFilterChain` beans.
 - **Do NOT test against H2 when deploying to PostgreSQL.** Use TestContainers for database-specific behavior.
 - **Do NOT ignore Actuator security.** Exposed `/actuator/env` or `/actuator/heapdump` in production leaks secrets and memory.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Replace `Agent("task")` → run the task inline in the current conversation
+- Replace `EnterWorktree` → use `git stash` + work in current directory
+- Replace `TodoWrite` → track progress with numbered comments in chat
+- All Spring Boot conventions, patterns, and quality checks still apply identically

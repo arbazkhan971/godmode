@@ -838,6 +838,71 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. Horizontal scaling MUST be tested with rolling deployments. No big-bang instance replacement.
 ```
 
+## Output Format
+Print on completion:
+```
+SCALING PLAN: {system_name}
+Current: {current_rps} RPS | Target: {target_rps} RPS
+Bottleneck: {bottleneck_component} ({resource}: {utilization}%)
+Direction: {Vertical|Horizontal|Both}
+Phases: {N} phases over {timeline}
+Cost impact: ${current}/month -> ${projected}/month (+{delta}%)
+Auto-scaling: {min}-{max} instances, target {metric} {threshold}
+Verdict: {SCALES|NEEDS WORK}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every scaling session to `.godmode/scale-results.tsv`:
+```
+timestamp	system	current_rps	target_rps	bottleneck	direction	phases	cost_delta_pct	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Bottleneck identified with profiling evidence before any scaling action.
+2. Scaling direction (vertical/horizontal) justified with specific measurements.
+3. Application tier verified stateless before horizontal scaling.
+4. Auto-scaling policies include scale-out trigger, scale-in cooldown, and warm-up period.
+5. Connection pool sizes calculated: pool_size * instances <= database max_connections.
+6. Rate limiting configured with clear headers (X-RateLimit-*, Retry-After) and per-tier limits.
+7. Load test executed at 2x projected peak before relying on the scaling plan.
+8. Cost estimate provided for each scaling phase.
+9. Capacity runway calculated with dates for 70% and 90% utilization thresholds.
+
+## Error Recovery
+```
+IF bottleneck is unknown (user says "it's slow" without data):
+  → Ask: "Run a load test or provide metrics: CPU%, memory%, DB connection count, p99 latency"
+  → Do NOT recommend scaling actions without knowing the bottleneck
+
+IF scaling the identified bottleneck yields <20% improvement:
+  → Re-measure: the real bottleneck may be elsewhere
+  → Check for: N+1 queries, missing indexes, synchronous I/O in hot paths
+  → Optimize before scaling: "Optimization yields 5x more than adding instances"
+
+IF auto-scaling flaps (scales up then down repeatedly):
+  → Increase stabilization window: scaleDown.stabilizationWindowSeconds = 300+
+  → Increase scale-in cooldown period
+  → Check: is the metric oscillating near the threshold? Adjust threshold +-10%
+
+IF connection pool exhaustion causes 503 errors:
+  → Immediate: increase pool size temporarily (check DB max_connections headroom)
+  → Medium-term: add connection proxy (PgBouncer, RDS Proxy)
+  → Investigate: are connections being leaked? (not returned to pool)
+
+IF cost exceeds budget after scaling:
+  → Identify: which tier increased cost the most?
+  → Optimize before scaling: caching, query optimization, CDN for static assets
+  → Consider: reserved instances, spot instances, or right-sizing over-provisioned resources
+  → Present cost/performance trade-off: "Option A: $X/month at Y RPS. Option B: $Z/month at W RPS."
+
+IF read replica lag causes stale reads in user-facing features:
+  → Route read-after-write to primary for N seconds (session stickiness)
+  → Monitor: pg_stat_replication.replay_lag or equivalent
+  → Set circuit breaker: if lag > threshold, route all reads to primary temporarily
+```
+
 ## Anti-Patterns
 
 - **Do NOT scale without measuring.** "We need more servers" without knowing the bottleneck leads to wasted money. Profile first: CPU, memory, I/O, network, database.

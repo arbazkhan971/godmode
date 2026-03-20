@@ -463,6 +463,76 @@ MERGE: Combine into single onboarding report ordered by reading priority.
 CONFLICT ZONES: None (read-only operation, separate documentation sections).
 ```
 
+## Output Format
+
+After each onboarding skill invocation, emit a structured report:
+
+```
+ONBOARDING REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Repository          │  <name>                        │
+│  Languages           │  <list>                        │
+│  Framework           │  <detected framework>          │
+│  Architecture        │  <monolith | microservices | monorepo> │
+│  Key files analyzed  │  <N>                           │
+│  Entry points found  │  <N>                           │
+│  Dependencies        │  <N> production / <N> dev      │
+│  Test coverage       │  <N>% (detected)               │
+│  Dev setup steps     │  <N> steps documented          │
+│  Time to first run   │  ~<N> minutes                  │
+│  Verdict             │  COMPLETE | NEEDS INVESTIGATION │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every onboarding analysis for tracking:
+
+```
+timestamp	skill	repo	files_analyzed	entry_points	setup_steps	status
+2026-03-20T14:00:00Z	onboard	my-app	45	3	7	complete
+```
+
+## Success Criteria
+
+The onboard skill is complete when ALL of the following are true:
+1. Architecture is identified (monolith, microservices, monorepo, or hybrid)
+2. All entry points are documented (main files, API routes, CLI commands)
+3. Development setup instructions are verified (run from clean checkout to working dev server)
+4. Key abstractions and patterns are identified (ORM, state management, auth, etc.)
+5. Hot files are identified (most frequently modified, highest impact)
+6. Test strategy is documented (how to run tests, what framework, current coverage)
+7. Deployment process is documented (how code gets to production)
+8. The report is actionable for a new developer joining the team
+
+## Error Recovery
+
+```
+IF project fails to build from documented setup steps:
+  1. Check for missing system dependencies (database, runtime version, native libraries)
+  2. Verify environment variables are documented (check .env.example or config)
+  3. Check for platform-specific issues (macOS vs Linux, ARM vs x86)
+  4. Update the setup steps to include the fix
+
+IF architecture is ambiguous:
+  1. Check package.json/go.mod/pyproject.toml for framework clues
+  2. Look at the entry point files (main.ts, app.py, cmd/main.go)
+  3. Check for infrastructure configs (Dockerfile, docker-compose, k8s manifests)
+  4. Ask the user if detection is still ambiguous after code analysis
+
+IF test suite fails on clean checkout:
+  1. Check for required test databases or services (docker-compose for test deps)
+  2. Verify test environment variables are set
+  3. Check for flaky tests (run twice to detect intermittent failures)
+  4. Document the test requirements in the onboarding report
+
+IF repository is too large to analyze fully:
+  1. Focus on the top 20 most-modified files (git log --format="%s" --name-only)
+  2. Analyze entry points and their immediate dependencies only
+  3. Use directory-level analysis instead of file-level for large monorepos
+  4. Document the scope of analysis and recommend further investigation areas
+```
+
 ## Anti-Patterns
 
 - **Do NOT assume architecture from directory names.** A folder called "services" might contain anything. Read the files.

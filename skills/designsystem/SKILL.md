@@ -963,6 +963,75 @@ On activation, automatically detect the design system context:
 5. Set assessment fields from detection and proceed to Step 1
 ```
 
+## Output Format
+
+After each design system skill invocation, emit a structured report:
+
+```
+DESIGN SYSTEM REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Tokens             │  <N> primitive / <N> semantic    │
+│  Components         │  <N> created / <N> updated       │
+│  Themes             │  <N> (light, dark, etc.)         │
+│  Storybook stories  │  <N> total                       │
+│  Visual tests       │  <N> snapshots                   │
+│  Coverage (audit)   │  <N>% of UI uses design tokens   │
+│  Figma sync         │  IN SYNC / DRIFTED / N/A         │
+│  Bundle impact      │  <N> KB (tokens + components)    │
+│  Verdict            │  PASS | NEEDS REVISION           │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every design system action for tracking:
+
+```
+timestamp	skill	target	action	tokens_count	components_count	coverage_pct	status
+2026-03-20T14:00:00Z	designsystem	tokens	create	48 primitive/24 semantic	0	0	pass
+2026-03-20T14:10:00Z	designsystem	Button	create	0	1	85	pass
+```
+
+## Success Criteria
+
+The design system skill is complete when ALL of the following are true:
+1. All design tokens are defined in a single source (Style Dictionary, Figma Tokens, or equivalent)
+2. Semantic token layer exists between primitive tokens and components
+3. Every component references only semantic tokens (no hardcoded values)
+4. At least two themes work (light + dark) by swapping token values only
+5. Every component has a Storybook story with all variants documented
+6. Visual regression snapshots are captured for all component states
+7. Token pipeline generates CSS custom properties and any other needed formats
+8. Token coverage audit shows >= 90% of UI elements using design tokens
+
+## Error Recovery
+
+```
+IF tokens are out of sync with Figma:
+  1. Re-export tokens from Figma using the token plugin (Tokens Studio or equivalent)
+  2. Run the Style Dictionary build pipeline to regenerate outputs
+  3. Diff the generated CSS against the previous version
+  4. Update components only if token values actually changed
+
+IF theme switching breaks components:
+  1. Check that the component uses semantic tokens, not primitive tokens
+  2. Verify the theme CSS class or data attribute is applied to the root element
+  3. Inspect computed styles to confirm token values are resolving correctly
+  4. If a component hardcodes a color, replace it with the appropriate semantic token
+
+IF Storybook fails to build:
+  1. Check for import errors in story files (missing components or broken paths)
+  2. Verify Storybook addons are compatible with the current Storybook version
+  3. Clear the Storybook cache: `npx storybook@latest upgrade --check` or delete node_modules/.cache
+  4. Run Storybook in verbose mode to identify the failing story
+
+IF visual regression tests show false positives:
+  1. Check if the diff is caused by font rendering differences across environments
+  2. Update baseline snapshots if the change is intentional
+  3. Use a threshold tolerance (e.g., 0.1% pixel difference) to reduce flakiness
+  4. Run visual tests in Docker for consistent rendering environment
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip the semantic token layer.** Mapping components directly to primitive tokens (`--button-bg: var(--primitive-blue-500)`) breaks theming. Always go through semantic tokens (`--button-bg: var(--color-primary)`).

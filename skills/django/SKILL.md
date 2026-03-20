@@ -946,6 +946,97 @@ SYNC point: All agents complete
 5. Set assessment fields and proceed to Step 1
 ```
 
+## Output Format
+
+End every Django skill invocation with this summary block:
+
+```
+DJANGO RESULT:
+Action: <scaffold | model | view | serializer | service | optimize | test | audit | upgrade>
+Files created/modified: <N>
+Models created/modified: <N>
+Views created/modified: <N>
+Migrations created: <N>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/django.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	models_count	views_count	migrations_count	tests_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | model | view | serializer | service | optimize | test | audit | upgrade
+- `files_count`: number of files created or modified
+- `models_count`: number of Django models created or modified
+- `views_count`: number of views/viewsets created or modified
+- `migrations_count`: number of migrations generated
+- `tests_status`: passing | failing | skipped | none
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Django skill invocation must pass ALL of these checks before reporting success:
+
+1. `python manage.py check --deploy` passes with no critical warnings
+2. `python manage.py test` passes if test suite exists
+3. No business logic in views or serializers (use service functions)
+4. No `fields = '__all__'` in serializers (explicit field lists only)
+5. All querysets use `select_related`/`prefetch_related` for related objects
+6. All filterable/sortable fields have database indexes
+7. Custom user model in place (not default `auth.User`)
+8. All migrations are consistent (`python manage.py makemigrations --check`)
+9. No synchronous HTTP calls in async views (use `httpx.AsyncClient`)
+10. Admin classes have `list_display`, `search_fields`, and `list_filter` configured
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF manage.py check fails:
+  1. Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS)
+  2. Fix WARNING issues (missing CSRF, session configuration)
+  3. Run with --deploy flag to catch production-specific issues
+  4. Verify DATABASES configuration is correct
+
+IF tests fail:
+  1. Check that test database can be created (permissions)
+  2. Verify fixtures and factory data are consistent
+  3. Check for ordering-dependent tests (use TransactionTestCase if needed)
+  4. Verify that test settings override is correct (TEST_RUNNER, DATABASES)
+
+IF migration errors:
+  1. Conflicting migrations → run makemigrations --merge
+  2. Migration dependency error → check that app dependencies are correct
+  3. Data migration fails → add RunPython.noop as reverse_code
+  4. Circular dependency → split the migration or use RunSQL
+
+IF N+1 query detected:
+  1. Add select_related() for ForeignKey/OneToOne traversals
+  2. Add prefetch_related() for ManyToMany/reverse FK traversals
+  3. Use Prefetch() objects for filtered prefetches
+  4. Enable django-debug-toolbar or Bullet to verify fix
+
+IF serializer/validation errors:
+  1. Check that all required fields have defaults or are provided
+  2. Verify nested serializer depth and read_only settings
+  3. Check that unique_together constraints are handled in validate()
+  4. Verify that file upload fields use proper parsers
+```
+
 ## Anti-Patterns
 
 - **Do NOT put business logic in views or serializers.** Views handle HTTP, serializers handle validation. Business rules belong in service functions that can be tested independently.

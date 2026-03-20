@@ -463,3 +463,87 @@ AUTO-DETECT:
 - **Do NOT run A/B tests without sample size calculation.** Under-powered experiments give false results. Do the math first.
 - **Do NOT skip startup validation.** An app that starts with invalid config will fail at runtime in harder-to-debug ways. Fail fast.
 - **Do NOT use boolean env vars as strings.** `"true"` and `true` are different. Use a typed config parser.
+
+## Output Format
+Print on completion: `Config: {config_key_count} keys across {env_count} environments. Secrets: {secret_count} (all in secret manager: {secret_mgr_status}). Drift: {drift_count} keys differ. Validation: {validation_status}. Feature flags: {flag_count}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every configuration operation to `.godmode/config-results.tsv`:
+```
+iteration	task	environment	keys_total	secrets_count	drift_detected	validation_status	status
+1	inventory	production	45	12	0	passing	audited
+2	inventory	staging	45	12	3	passing	drift_found
+3	secrets	all	0	12	0	migrated	migrated
+4	validation	all	45	0	0	zod_schema	configured
+```
+Columns: iteration, task, environment, keys_total, secrets_count, drift_detected, validation_status, status(audited/drift_found/migrated/configured/failed).
+
+## Success Criteria
+- All configuration keys inventoried and documented.
+- Secrets stored in a secret manager (not in config files or environment variables).
+- Startup validation fails fast on missing or invalid config.
+- Configuration drift between environments detected and explained.
+- Feature flags have expiry dates and cleanup plans.
+- Typed config parsing (no raw `process.env` string access in application code).
+- Environment-specific overrides use templates, not copy-paste.
+- Config changes are auditable (versioned, logged).
+
+## Error Recovery
+- **App fails to start after config change**: Check startup validation errors for the specific key that failed. Compare with the previous working config. Verify the config format matches the expected schema (type coercion issues are common).
+- **Secret rotation breaks the app**: Use a config reload mechanism (environment variable re-read or config file watch). Test secret rotation in staging before production. Ensure the new secret is valid before revoking the old one.
+- **Config drift between environments**: Run the drift detection tool to identify which keys differ. Determine if the drift is intentional (environment-specific) or accidental (missed update). Document intentional drift.
+- **Feature flag stuck at 100% for months**: Flag has become tech debt. Schedule cleanup: remove the flag check, delete the flag, remove the old code path. Set a recurring reminder for flag cleanup.
+- **Startup validation too strict (blocks deployment)**: Separate required and optional config. Use sensible defaults for non-critical config. Allow graceful degradation for optional features.
+- **Environment variable injection fails in containers**: Verify the env vars are set in the container runtime config (not just the Dockerfile). Check for quoting issues in YAML/JSON config. Use `printenv` in the container to debug.
+
+## Iterative Loop Protocol
+```
+current_env = 0
+environments = detect_environments()  // e.g., [dev, staging, production]
+
+WHILE current_env < len(environments):
+  env = environments[current_env]
+  1. INVENTORY: List all config keys and values for {env}
+  2. CLASSIFY: Separate secrets from non-secrets
+  3. VALIDATE: Check for missing keys, type mismatches, invalid values
+  4. DRIFT: Compare with other environments, flag unexpected differences
+  5. MIGRATE: Move secrets to secret manager if not already there
+  6. LOG to .godmode/config-results.tsv
+  7. current_env += 1
+  8. REPORT: "Environment {current_env}/{total}: {env} — {keys} keys, {secrets} secrets, {drift} drift"
+
+EXIT when all environments audited OR user requests stop
+```
+
+## Multi-Agent Dispatch
+For multi-environment configuration management:
+```
+DISPATCH parallel agents (one per concern):
+
+Agent 1 (worktree: config-inventory):
+  - Inventory all config keys across all environments
+  - Detect drift between environments
+  - Scope: .env files, config directories, deployment configs
+  - Output: Complete config inventory with drift report
+
+Agent 2 (worktree: config-secrets):
+  - Migrate secrets to secret manager
+  - Configure secret rotation
+  - Scope: .env files, secret references in code
+  - Output: Secrets migrated to manager
+
+Agent 3 (worktree: config-validation):
+  - Add startup validation (Zod/pydantic/envconfig)
+  - Add typed config access layer
+  - Scope: src/config/, environment schema
+  - Output: Validated config with typed access
+
+MERGE ORDER: inventory → secrets → validation
+CONFLICT RESOLUTION: secrets branch owns .env and secret references; validation branch owns config schema
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run config tasks sequentially: inventory, then secret migration, then validation setup.
+- Use branch isolation per task: `git checkout -b godmode-config-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

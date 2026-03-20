@@ -1069,6 +1069,95 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT connect directly from many application instances.** Use connection pooling in your client library. Each Redis connection has overhead, and max_clients has a limit.
 
 
+## Output Format
+
+After every Redis operation (caching layer setup, data structure implementation, ops configuration), emit a structured result box:
+
+```
+┌─ REDIS RESULT ─────────────────────────────────────┐
+│ Operation : cache-aside setup for user sessions     │
+│ Data Structure : STRING with EX (TTL)               │
+│ Key Pattern : app:session:{session_id}              │
+│ TTL : 1800s (30 min)                                │
+│ Eviction Policy : allkeys-lru                       │
+│ Memory Est. : ~50MB for 100K sessions               │
+│ Persistence : AOF (appendfsync everysec)            │
+│ Verdict : READY                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+Fields adapt to the operation type. For Cluster operations, add `Slots`, `Replicas`, `Failover`. For Lua scripts, add `Script SHA`, `Idempotent`, `Keys Touched`. Always include `Verdict`: one of READY, NEEDS_TUNING, DEGRADED.
+
+## TSV Logging
+
+Append one row per Redis operation to `.godmode/redis-ops.tsv`:
+
+```
+timestamp	operation	data_structure	key_pattern	ttl	eviction_policy	memory_estimate	persistence	verdict
+2026-03-20T14:30:00Z	cache-aside	STRING	app:session:{id}	1800	allkeys-lru	50MB	AOF	READY
+2026-03-20T14:35:00Z	rate-limiter	SORTED_SET	ratelimit:{ip}	60	noeviction	10MB	none	READY
+2026-03-20T14:40:00Z	pub-sub-migration	STREAM	events:{topic}	-	noeviction	200MB	AOF+RDB	NEEDS_TUNING
+```
+
+Create the file with the header row on first run. Tab-separated, one row per operation. This log is the audit trail for all Redis decisions.
+
+## Success Criteria
+
+**HEALTHY** (all must be true):
+- `used_memory` < 80% of `maxmemory`
+- `mem_fragmentation_ratio` between 1.0 and 1.5
+- `connected_clients` < 80% of `maxclients`
+- `keyspace_hit_ratio` > 90% (hits / (hits + misses))
+- `instantaneous_ops_per_sec` within expected baseline
+- Zero `rejected_connections` in the monitoring window
+- All keys follow `{service}:{entity}:{id}` naming convention
+- Every cache key has an explicit TTL
+- `maxmemory-policy` is explicitly set (not default `noeviction` unless intentional)
+- Persistence (RDB or AOF) is enabled for any non-ephemeral data
+
+**NEEDS_TUNING** (any one true):
+- `keyspace_hit_ratio` between 80-90%
+- `mem_fragmentation_ratio` between 1.5 and 2.0
+- Slow log shows commands > 10ms
+- `used_memory` between 70-80% of `maxmemory`
+
+**DEGRADED** (any one true):
+- `keyspace_hit_ratio` < 80%
+- `mem_fragmentation_ratio` > 2.0
+- `rejected_connections` > 0
+- `used_memory` > 90% of `maxmemory`
+- Replication lag > 1s (Sentinel/Cluster)
+- Pub/Sub used for reliable messaging (should be Streams)
+- KEYS command found in application code
+- O(N) commands on collections > 10K elements without SCAN
+
+## Error Recovery
+
+1. **Memory pressure (used_memory > 90% of maxmemory)**
+   - Run `MEMORY DOCTOR` and `INFO memory` to diagnose.
+   - Check `mem_fragmentation_ratio`: if > 2.0, run `MEMORY PURGE` or restart with jemalloc tuning.
+   - Identify large keys: `redis-cli --bigkeys` or `MEMORY USAGE <key>`.
+   - If eviction is active and hitting important keys, move non-cache data to a separate Redis instance.
+   - If TTLs are missing, audit all SET commands and add EX/PX to cache keys.
+
+2. **Cluster MOVED/ASK errors spike**
+   - Check `CLUSTER INFO` for `cluster_state`. If not `ok`, a resharding or failover is in progress.
+   - Ensure client library handles MOVED redirects (most do automatically).
+   - If resharding, wait for completion. If a node is down, check Sentinel logs and trigger manual failover with `CLUSTER FAILOVER` if needed.
+   - Lua scripts in Cluster: ensure all keys in a script share the same hash slot (use `{hashtag}` prefix).
+
+3. **Replication lag > 1s in Sentinel/Cluster**
+   - Check `INFO replication` on the primary: `repl_backlog_size` may be too small for write volume.
+   - Increase `repl-backlog-size` (default 1MB is often too small for high-write workloads).
+   - Check network between primary and replica. If replica is slow, check `slave-lazy-flush` and disk I/O.
+   - If lag persists, consider reducing write volume or adding read replicas to distribute load.
+
+4. **Connection pool exhaustion (rejected_connections > 0)**
+   - Check `INFO clients`: `connected_clients` vs `maxclients`.
+   - Increase `maxclients` if server resources allow (check file descriptor limits with `ulimit -n`).
+   - Audit application connection pooling: ensure pools are bounded (min/max) and connections are returned after use.
+   - If using Cluster, connections multiply by node count -- size pools accordingly.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Redis tasks sequentially: caching layer, then data structures (queues/pub-sub/streams), then ops (Sentinel/Cluster config).

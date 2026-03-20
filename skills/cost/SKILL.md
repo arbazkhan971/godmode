@@ -384,3 +384,88 @@ AUTO-DETECT:
 - **Do NOT recommend reserved instances for unstable workloads.** Only recommend reservations for workloads with 3+ months of stable, predictable usage.
 - **Do NOT skip the tagging audit.** Without proper tags, you cannot attribute costs to teams or projects. Tagging comes first.
 - **Do NOT treat cost optimization as one-time.** Set up ongoing monitoring, alerts, and recurring reviews. Costs drift back up without governance.
+
+## Output Format
+Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%). Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every cost optimization action to `.godmode/cost-results.tsv`:
+```
+iteration	category	resource	current_cost	projected_cost	savings	action	status
+1	compute	ec2_oversized	$2400/mo	$1200/mo	$1200/mo	rightsize_m5.xlarge_to_m5.large	recommended
+2	storage	ebs_unattached	$180/mo	$0/mo	$180/mo	delete_unattached	applied
+3	transfer	cross_region	$500/mo	$200/mo	$300/mo	consolidate_region	recommended
+4	reserved	ec2_stable	$3600/mo	$2160/mo	$1440/mo	1yr_reserved	recommended
+```
+Columns: iteration, category, resource, current_cost, projected_cost, savings, action, status(recommended/applied/deferred/rejected).
+
+## Success Criteria
+- All resources tagged with owner, environment, and cost-center.
+- Idle/unused resources identified and cleaned up (unattached EBS, stopped instances, unused load balancers).
+- Compute resources rightsized based on utilization data (not guesses).
+- Reserved instances recommended only for workloads with 3+ months of stable usage.
+- Data transfer costs analyzed (cross-region, internet egress).
+- Cost alerts configured for budget thresholds (80%, 100%, 120%).
+- Monthly cost review process established (not one-time optimization).
+- Savings validated with before/after billing data.
+
+## Error Recovery
+- **Rightsizing breaks the application**: Never rightsize production without testing in staging first. Monitor CPU and memory for 24 hours after the change. Have a rollback plan (scale back up immediately if metrics degrade).
+- **Deleting resources causes outage**: Always verify resources are truly unused before deleting. Check for dependencies (security group referenced by another resource, EBS snapshot used by AMI). Use the provider's "delete protection" feature for critical resources.
+- **Reserved instance purchase is wasteful**: Only purchase reservations for workloads with 3+ months of stable, predictable usage. Start with 1-year no-upfront RIs (lower commitment). Monitor actual usage against the reservation.
+- **Cost alerts fire too frequently**: Adjust thresholds to reduce noise. Separate alerts by service or team. Use anomaly detection instead of fixed thresholds for variable workloads.
+- **Tagging audit reveals massive gaps**: Start with the top 10 most expensive resources. Tag those first. Then implement a tag enforcement policy (prevent untagged resource creation) for new resources.
+- **Optimization savings not reflected in bill**: Allow one full billing cycle for changes to take effect. Check for amortized costs (reserved instance upfront payments spread across months). Verify the optimization was actually applied in the correct account/region.
+
+## Iterative Loop Protocol
+```
+current_category = 0
+categories = [compute, storage, transfer, reserved, idle, tagging]
+
+WHILE current_category < len(categories):
+  category = categories[current_category]
+  1. ANALYZE: Pull utilization data and cost data for {category}
+  2. IDENTIFY: Find optimization opportunities with savings estimate
+  3. RANK: Sort by savings (highest first)
+  4. RECOMMEND: For each opportunity, specify the action and expected savings
+  5. APPLY (if approved): Make the change and log the result
+  6. VERIFY: Check billing after one cycle to confirm savings
+  7. LOG to .godmode/cost-results.tsv
+  8. current_category += 1
+  9. REPORT: "Category {current_category}/{total}: {category} — ${savings}/mo potential savings"
+
+EXIT when all categories analyzed OR user requests stop
+```
+
+## Multi-Agent Dispatch
+For comprehensive cost optimization:
+```
+DISPATCH parallel agents (one per cost category):
+
+Agent 1 (worktree: cost-compute):
+  - Rightsize compute instances based on utilization
+  - Identify idle/stopped instances
+  - Scope: EC2, ECS, Lambda, GCE, AKS
+  - Output: Compute optimization recommendations
+
+Agent 2 (worktree: cost-storage):
+  - Identify unused storage (unattached EBS, orphan snapshots)
+  - Recommend storage tier changes (gp2 → gp3, S3 lifecycle)
+  - Scope: EBS, S3, RDS storage, EFS
+  - Output: Storage optimization recommendations
+
+Agent 3 (worktree: cost-network):
+  - Analyze data transfer costs (cross-region, egress)
+  - Recommend CDN, VPC endpoints, regional consolidation
+  - Scope: VPC, CloudFront, NAT Gateway, Transit Gateway
+  - Output: Network cost optimization recommendations
+
+MERGE ORDER: compute → storage → network (results only, no conflicts)
+CONFLICT RESOLUTION: each agent owns its cost category exclusively
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run cost tasks sequentially: compute rightsizing, then storage cleanup, then network cost analysis.
+- Use branch isolation per task: `git checkout -b godmode-cost-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

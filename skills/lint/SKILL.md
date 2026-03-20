@@ -833,6 +833,37 @@ CONFLICT RESOLUTION: each agent owns its language config files exclusively
 - **Do NOT configure linting without team agreement.** Rules imposed without consensus will be circumvented. Discuss, agree, then automate.
 
 
+## Output Format
+Print on completion: `Lint: {tool} configured with {rule_count} rules. Violations: {before_count} → {after_count} ({auto_fixed} auto-fixed, {manual} manual). Pre-commit: {hooks_status}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every lint adoption iteration to `.godmode/lint-results.tsv`:
+```
+iteration	rule_group	violations_before	auto_fixed	manual_remaining	tests_pass	status
+1	import-ordering	89	89	0	yes	clean
+2	unused-variables	45	38	7	yes	partial
+3	no-explicit-any	34	0	34	yes	manual
+```
+Columns: iteration, rule_group, violations_before, auto_fixed, manual_remaining, tests_pass, status(clean/partial/manual).
+
+## Success Criteria
+- Linter configured with recommended+ rule set for the detected language.
+- Formatter configured and integrated with linter (no conflicts).
+- Pre-commit hooks installed and running on staged files only.
+- Zero warnings in CI (`--max-warnings=0`).
+- Editor integration configured (format-on-save, lint-on-save).
+- `.editorconfig` present for cross-editor consistency.
+- All auto-fixable violations resolved. Manual violations listed with file:line.
+- Full test suite passes after auto-fix (no regressions).
+
+## Error Recovery
+- **ESLint and Prettier conflict**: Install `eslint-config-prettier` to disable conflicting ESLint rules. Run Prettier last in lint-staged. Verify with `npx eslint-config-prettier path/to/file.ts`.
+- **Auto-fix introduces bugs**: Run the full test suite after auto-fix. If tests fail, revert the auto-fix (`git checkout .`), identify the breaking rule, and exclude it from auto-fix. Fix those violations manually.
+- **Pre-commit hook too slow**: Ensure lint-staged is configured to lint only staged files, not the entire codebase. Check that the linter is not type-checking during pre-commit (remove `--project` flag from eslint in hooks).
+- **Rule produces false positives**: Add a targeted `eslint-disable-next-line` with a comment explaining why. If the rule generates many false positives, reconsider whether it is appropriate for the project.
+- **Migration breaks existing CI**: Run the linter in warning mode first (`--max-warnings=999`), fix violations incrementally, then tighten to `--max-warnings=0`.
+- **Team disagrees on rules**: Use the recommended preset as the baseline. Only discuss additions or overrides. Document the decision in a team ADR. Automate enforcement so the debate only happens once.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run lint tasks sequentially: TypeScript linting, then Python linting, then hooks, then editor config.

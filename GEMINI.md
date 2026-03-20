@@ -2,6 +2,16 @@
 
 @./skills/godmode/SKILL.md
 
+## Verify Installation
+
+After running the install script, confirm everything is set up correctly:
+
+```bash
+bash adapters/gemini/verify.sh
+```
+
+This checks that Gemini CLI can find the Godmode configuration, skill files, and agent definitions. If any check fails, the script reports what is missing and how to fix it.
+
 ## Tool Mapping
 
 Gemini CLI tools map to Godmode skill references as follows:
@@ -59,6 +69,7 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | analytics | Analytics implementation |
 | angular | Angular architecture |
 | api | API design and specification |
+| apidocs | OpenAPI/Swagger documentation generation |
 | architect | Software architecture |
 | auth | Authentication and authorization |
 | automate | Task automation |
@@ -74,6 +85,7 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | concurrent | Concurrency and parallelism |
 | config | Environment and configuration management |
 | cost | Cloud cost optimization |
+| cron | Scheduled tasks and job queue management |
 | crypto | Cryptography implementation |
 | ddd | Domain-Driven Design |
 | debug | Scientific debugging |
@@ -89,10 +101,13 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | email | Email and notification systems |
 | eval | AI/LLM evaluation |
 | event | Event-driven architecture |
+| experiment | A/B testing and statistical analysis |
 | fastapi | FastAPI mastery |
+| feature | Feature flags and gradual rollouts |
 | finish | Branch finalization |
 | fix | Autonomous error fixing |
 | forms | Form architecture |
+| ghactions | GitHub Actions workflow design and optimization |
 | git | Advanced Git workflows |
 | godmode | Orchestrator (auto-detect phase and route) |
 | graphql | GraphQL API development |
@@ -118,6 +133,7 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | nextjs | Next.js mastery |
 | node | Node.js backend development |
 | nosql | NoSQL database design |
+| notify | Push, SMS, and in-app notifications |
 | npm | Package management |
 | observe | Monitoring and observability |
 | onboard | Codebase onboarding |
@@ -138,6 +154,7 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | queue | Message queue and job processing |
 | rag | RAG (Retrieval-Augmented Generation) |
 | rails | Ruby on Rails mastery |
+| ratelimit | Rate limiting algorithms and middleware |
 | rbac | Permission and access control |
 | react | React architecture |
 | realtime | Real-time communication |
@@ -154,9 +171,11 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | search | Search implementation |
 | secrets | Secrets management |
 | secure | Security audit |
+| seed | Database seeding and factory patterns |
 | seo | SEO optimization and auditing |
 | setup | Configuration wizard |
 | ship | Shipping workflow |
+| slo | SLO/SLI definition and error budget tracking |
 | spring | Spring Boot mastery |
 | state | State management design |
 | storage | File storage and CDN |
@@ -166,19 +185,10 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | think | Brainstorming and design |
 | type | Type system and schema validation |
 | ui | UI component architecture |
+| upload | File uploads and media processing |
 | verify | Evidence gate |
 | vue | Vue.js mastery |
 | webperf | Web performance optimization |
-| apidocs | OpenAPI/Swagger documentation generation |
-| cron | Scheduled tasks and job queue management |
-| experiment | A/B testing and statistical analysis |
-| feature | Feature flags and gradual rollouts |
-| ghactions | GitHub Actions workflow design and optimization |
-| notify | Push, SMS, and in-app notifications |
-| ratelimit | Rate limiting algorithms and middleware |
-| seed | Database seeding and factory patterns |
-| slo | SLO/SLI definition and error budget tracking |
-| upload | File uploads and media processing |
 | webhook | Webhook design, delivery, and retry logic |
 
 ## Command Definitions

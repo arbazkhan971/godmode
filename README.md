@@ -2,7 +2,7 @@
 
 # GODMODE
 
-### Turn on Godmode for Claude Code, Codex, Gemini CLI & OpenCode.
+### Turn on Godmode for Claude Code, Codex, Gemini CLI, Cursor & OpenCode.
 
 **126 skills. 7 subagents. Zero configuration.**
 
@@ -11,14 +11,66 @@ Your AI writes code. Godmode makes it write *great* code.
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-126-ff6b6b.svg)](skills/)
 [![Agents](https://img.shields.io/badge/subagents-7-ff9f43.svg)](agents/)
-
-[Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-supported-4A90D9.svg)](adapters/)
+[![Codex](https://img.shields.io/badge/Codex-supported-10A37F.svg)](adapters/codex/)
+[![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-supported-4285F4.svg)](adapters/gemini/)
+[![Cursor](https://img.shields.io/badge/Cursor-supported-000000.svg)](adapters/cursor/)
+[![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
 
 </div>
 
 ---
 
-## See it in action
+### Quick Links
+
+[Why Godmode?](#why-godmode) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
+
+---
+
+## Why Godmode?
+
+AI coding assistants can write code. But writing code is the easy part.
+
+The hard part is everything that happens *after* the first draft: verifying it works, measuring its performance, catching regressions, iterating until it's actually good, and knowing when to throw a change away. That is engineering discipline, and no AI coding tool does it on its own.
+
+**Without Godmode**, AI assistants:
+- Generate code and hope it works
+- Have no way to measure if a change improved anything
+- Cannot roll back a bad change automatically
+- Do not iterate -- they produce one draft and stop
+- Skip verification, testing, and security review
+- Have no memory of what they tried before
+
+**With Godmode**, every AI assistant gains:
+- **Autonomous iteration loops** -- measure, modify, verify, keep or revert, repeat
+- **Git as memory** -- every experiment is committed *before* verification, so bad changes can be rolled back with `git reset --hard HEAD~1`
+- **Mechanical verification** -- claims are proven with commands, not asserted in prose
+- **Multi-agent dispatch** -- complex tasks are decomposed and executed in parallel by specialized agents in isolated worktrees
+- **126 expert skills** -- from architecture to deployment, security to performance, each encoding real engineering workflows
+- **Cross-platform support** -- the same skills work on Claude Code, Codex, Gemini CLI, Cursor, and OpenCode
+
+Godmode turns your AI assistant from a code generator into an engineering system.
+
+---
+
+## How It's Different
+
+| | Plain AI Coding | With Godmode |
+|---|---|---|
+| **Approach** | Generate code in one shot | Iterate: measure, modify, verify, keep or revert |
+| **Verification** | "I believe this works" | Runs tests, benchmarks, linters -- proves it works |
+| **Bad changes** | Left in place, hope for the best | Automatically reverted via git |
+| **Performance** | No measurement | Baseline measured, every change benchmarked |
+| **Security** | Maybe a mention of best practices | STRIDE + OWASP audit with 4 red-team personas |
+| **Memory** | Forgets what it tried | Git log + results.tsv tracks every experiment |
+| **Complex tasks** | One agent, sequential | Up to 5 parallel agents in isolated worktrees |
+| **Engineering rigor** | Varies wildly | Enforced by the skill protocol every time |
+
+---
+
+## See It In Action
+
+### Autonomous Performance Optimization
 
 ```
 $ /godmode:optimize
@@ -39,6 +91,67 @@ Iterations: 20
 ```
 
 Every improvement **measured**. Every bad change **reverted**. Every experiment **committed**.
+
+### Multi-Agent Build
+
+```
+$ /godmode:build
+Goal: Add user authentication system
+
+  ▸ PLAN        Decomposed into 4 parallel tasks
+  ▸ AGENT 1     [worktree] Auth middleware + JWT tokens       ✓ DONE
+  ▸ AGENT 2     [worktree] User model + password hashing      ✓ DONE
+  ▸ AGENT 3     [worktree] Login/register API endpoints        ✓ DONE
+  ▸ AGENT 4     [worktree] Integration tests for auth flow     ✓ DONE
+  ▸ MERGE       Sequential merge + test after each             ✓ ALL PASS
+  ▸ REVIEW      4-agent code review (security, perf, style)    ✓ APPROVED
+
+  === Build Complete ===
+  4 tasks | 4 agents | 12 files | 47 tests passing
+```
+
+Parallel execution in isolated worktrees. Merge conflicts caught immediately. Tests run after every merge.
+
+### Security Audit
+
+```
+$ /godmode:secure
+Target: src/api/
+
+  ▸ RECON       Mapped 23 endpoints, 4 auth flows, 2 data stores
+  ▸ STRIDE      6 threat categories analyzed
+  ▸ OWASP       Top 10 checklist applied
+  ▸ RED TEAM    4 personas: script kiddie, insider, APT, researcher
+
+  === Findings ===
+  CRITICAL  1   SQL injection in /api/search (parameterize query)
+  HIGH      2   Missing rate limit on /api/login, weak CORS policy
+  MEDIUM    3   Verbose error messages, missing CSP header, session fixation
+  LOW       1   Server version disclosed in headers
+
+  Report: docs/security/api-audit.md
+  Remediation: 7 findings with fix code + verification commands
+```
+
+Every finding has code evidence, severity, and a concrete fix. Not just warnings -- actionable remediations.
+
+### Autonomous Bug Fix
+
+```
+$ /godmode:fix
+Error: Tests failing in CI — TypeError: Cannot read property 'id' of undefined
+
+  ▸ INVESTIGATE  Reproduced locally, traced to UserService.getProfile()
+  ▸ ROOT CAUSE   Null user returned when session expires mid-request
+  ▸ FIX          Added null guard + early return with 401
+  ▸ VERIFY       All 84 tests passing, error no longer reproducible
+  ▸ REGRESSION   Added test for expired-session edge case
+
+  === Fix Complete ===
+  1 root cause | 1 fix | 1 regression test | 84/84 tests passing
+```
+
+Scientific debugging: reproduce, hypothesize, fix, verify, add regression test. No guessing.
 
 ---
 
@@ -321,7 +434,33 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 | **Gemini CLI** | Full support | Sequential execution | `bash adapters/gemini/install.sh` |
 | **OpenCode** | Full support | Sequential execution | `bash adapters/opencode/install.sh` |
 
-All 126 skills work on every platform. Skills that use parallel agents (build, optimize, review) automatically degrade to sequential execution on platforms without native agent dispatch. See [adapters/](adapters/) for platform-specific setup.
+All 126 skills work on every platform. Skills that use parallel agents (build, optimize, review) automatically degrade to sequential execution on platforms without native agent dispatch.
+
+Each platform adapter includes a verification script to confirm correct installation:
+
+```bash
+bash adapters/gemini/verify.sh      # Verify Gemini CLI setup
+bash adapters/opencode/verify.sh    # Verify OpenCode setup
+bash adapters/cursor/verify.sh      # Verify Cursor setup
+bash adapters/codex/verify.sh       # Verify Codex setup
+```
+
+See [adapters/](adapters/) for platform-specific setup and [docs/platform-comparison.md](docs/platform-comparison.md) for a detailed comparison.
+
+---
+
+## What Users Say
+
+> *"I pointed godmode:optimize at a slow endpoint and walked away. Came back to a 76% improvement with every change individually committed and verified."*
+> -- **Example quote** (placeholder)
+
+> *"The security audit found a SQL injection I missed in code review. It didn't just flag it -- it gave me the fix and a command to verify the fix worked."*
+> -- **Example quote** (placeholder)
+
+> *"We used godmode:build to add a full auth system. Four agents worked in parallel, and the merge was clean. That would have been a full day of work."*
+> -- **Example quote** (placeholder)
+
+*These are example quotes illustrating typical use cases. If you have a real testimonial, [open a discussion](https://github.com/arbazkhan971/godmode/discussions) and we will feature it here.*
 
 ---
 
@@ -329,17 +468,19 @@ All 126 skills work on every platform. Skills that use parallel agents (build, o
 
 Every skill is a Markdown file. If you can write clear instructions, you can add a skill.
 
-```bash
-mkdir skills/your-skill
-# Edit skills/your-skill/SKILL.md
-# Submit a PR
-```
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide, including:
+
+- [Adding a New Skill](CONTRIBUTING.md#complete-skill-creation-guide) -- step-by-step from directory creation to PR
+- [Skill Quality Checklist](CONTRIBUTING.md#skill-quality-checklist) -- every required section and standard
+- [Adding a New Platform Adapter](CONTRIBUTING.md#adding-a-new-platform-adapter) -- how to support a new AI coding tool
+- [Testing Your Changes](CONTRIBUTING.md#testing-your-skill) -- 6 test levels from readability to live execution
+- [Style Guide](CONTRIBUTING.md#skill-writing-style-guide) -- how to write skills that AI agents execute reliably
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT -- see [LICENSE](LICENSE).
 
 ---
 

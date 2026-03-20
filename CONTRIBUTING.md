@@ -1,6 +1,6 @@
 # Contributing to Godmode
 
-Thank you for your interest in improving Godmode. This guide covers how to contribute new skills, improve existing ones, test your work, and submit pull requests.
+Thank you for your interest in improving Godmode. This guide covers how to contribute new skills, improve existing ones, add platform adapters, test your work, and submit pull requests.
 
 ---
 
@@ -8,7 +8,11 @@ Thank you for your interest in improving Godmode. This guide covers how to contr
 
 - [Types of Contributions](#types-of-contributions)
 - [Complete Skill Creation Guide](#complete-skill-creation-guide)
+- [Skill Quality Checklist](#skill-quality-checklist)
+- [Skill Writing Style Guide](#skill-writing-style-guide)
+- [Adding a New Platform Adapter](#adding-a-new-platform-adapter)
 - [Testing Your Skill](#testing-your-skill)
+- [Testing Your Changes](#testing-your-changes)
 - [Improving Existing Skills](#improving-existing-skills)
 - [Quality Standards](#quality-standards)
 - [Commit Message Convention](#commit-message-convention)
@@ -38,6 +42,9 @@ Improve guides, examples, tutorials, or the README.
 
 ### 6. Command Files
 Add or improve `/godmode:<skill>` command definitions in `commands/godmode/`.
+
+### 7. Platform Adapters
+Add or improve support for new AI coding platforms in `adapters/`.
 
 ---
 
@@ -251,6 +258,237 @@ Example:
 
 ---
 
+## Skill Quality Checklist
+
+Use this checklist before submitting any new or modified skill. Every item is required.
+
+### SKILL.md Structure
+
+- [ ] **Frontmatter** -- Has `name` and `description` fields in YAML frontmatter
+- [ ] **Description** -- Under 1024 characters, describes trigger conditions only
+- [ ] **When to Activate** -- Lists every trigger scenario (slash command, natural language, chaining)
+- [ ] **Workflow** -- Numbered steps with enough detail to execute without ambiguity
+- [ ] **Key Behaviors** -- Non-negotiable rules (ALWAYS/NEVER/IF-THEN format)
+- [ ] **Example Usage** -- At least 2 examples with realistic input and output
+- [ ] **Flags & Options** -- Table of all supported flags with defaults
+- [ ] **Anti-Patterns** -- At least 3 anti-patterns with Bad/Why/Good format
+- [ ] **Skill Chaining** -- States what comes before, what comes after, what artifacts are produced
+
+### Workflow Step Quality
+
+- [ ] Every step has a clear title and detailed instructions
+- [ ] Every step includes code examples or command examples where relevant
+- [ ] Every step states what happens on success AND failure
+- [ ] Every step is testable (someone can verify the step was done correctly)
+- [ ] The final step commits results to git and logs to results.tsv (for iterative skills)
+
+### Anti-Pattern Quality
+
+- [ ] Each anti-pattern describes a specific bad behavior (not generic advice)
+- [ ] Each anti-pattern explains WHY it is bad (with concrete consequences)
+- [ ] Each anti-pattern is based on a real failure mode, not a theoretical concern
+- [ ] Each anti-pattern includes a "Good" alternative with specific instructions
+
+### Cross-Platform Compatibility
+
+- [ ] Skill works without `Agent()` calls OR includes a `## Platform Fallback` section
+- [ ] File paths use `./` relative notation (not absolute paths)
+- [ ] Commands use portable syntax (no platform-specific shell features)
+
+### Documentation Updates
+
+- [ ] README.md updated with new skill in the appropriate category table
+- [ ] docs/COMPLETE-SKILL-LIST.md updated
+- [ ] docs/godmode-design.md updated
+- [ ] Command file created in `commands/godmode/`
+
+---
+
+## Skill Writing Style Guide
+
+Skills are instructions that AI agents execute. Writing for an AI agent is different from writing documentation for humans. Follow these rules to ensure your skill is executed reliably.
+
+### Be Imperative, Not Descriptive
+
+AI agents execute instructions. They do not read descriptions for context.
+
+**Bad:** "This step involves examining the codebase for potential issues."
+**Good:** "Run `grep -r 'TODO\|FIXME\|HACK' src/` to find all flagged issues. Record the count."
+
+### Be Specific About Tools
+
+Name the exact tool or command. Do not say "check the file" when you mean "use Read to open `package.json`."
+
+**Bad:** "Check the configuration."
+**Good:** "Read `./package.json` and extract the `scripts.test` value. If it does not exist, STOP and report: no test command configured."
+
+### State Success and Failure for Every Step
+
+Every step must say what happens when it works and what happens when it does not.
+
+**Bad:** "Run the tests."
+**Good:** "Run `npm test`. If exit code is 0, proceed to Step 4. If exit code is non-zero, STOP the loop -- do not commit broken code. Record the failure in `.godmode/results.tsv` and revert with `git reset --hard HEAD~1`."
+
+### Use ALWAYS/NEVER for Non-Negotiable Rules
+
+Conditional language ("should", "consider", "might want to") gets ignored by AI agents. Use absolute language for things that must always happen.
+
+**Bad:** "You should probably commit before running tests."
+**Good:** "ALWAYS commit before running the verify command. This ensures you can revert with `git reset --hard HEAD~1` if verification fails."
+
+### Provide Exact Output Formats
+
+If the skill produces a file, show the exact format. Do not describe it abstractly.
+
+**Bad:** "Write the results to a log file."
+**Good:** "Append one line to `.godmode/results.tsv` in this format: `{round}\t{metric_value}\t{status}\t{description}\t{commit_hash}`"
+
+### One Action Per Step
+
+Each workflow step should do one thing. If a step contains "and" connecting two distinct actions, split it into two steps.
+
+**Bad:** "Step 3: Run tests and fix any failures."
+**Good:** "Step 3: Run tests. Step 4: If tests fail, identify the root cause. Step 5: Apply the fix."
+
+### Write Examples That Look Real
+
+Examples should use realistic project names, file paths, metric values, and error messages. Generic examples ("do the thing") teach the agent nothing about real usage.
+
+**Bad:** `Input: do something with the code`
+**Good:** `Input: /godmode:optimize --metric "npm test 2>&1 | tail -1" --guard "npm run lint" Reduce test suite runtime`
+
+### Avoid Hedge Words
+
+Words like "typically", "usually", "in most cases", "might", "perhaps" weaken instructions. The agent either does something or it does not.
+
+**Bad:** "You might want to check if there are existing tests."
+**Good:** "Check for existing tests: `find . -name '*.test.*' -o -name '*.spec.*' | head -20`. If none exist, create the test file first."
+
+---
+
+## Adding a New Platform Adapter
+
+Godmode runs on multiple AI coding platforms. This guide covers how to add support for a new one.
+
+### Prerequisites
+
+Before starting, understand:
+- How the target platform discovers and loads custom instructions
+- Whether the platform supports parallel agent dispatch
+- Whether the platform supports git worktrees natively
+- What tool names the platform uses (Read, Write, Bash, etc.)
+
+### Step 1: Create the Adapter Directory
+
+```bash
+mkdir -p adapters/your-platform
+```
+
+### Step 2: Create Required Files
+
+Every adapter directory must contain these files:
+
+| File | Purpose |
+|------|---------|
+| `README.md` | Setup instructions and platform-specific notes |
+| `install.sh` | Installation script (must be idempotent) |
+| `verify.sh` | Verification script to confirm correct installation |
+| Platform config | Platform-specific configuration file |
+
+### Step 3: Write install.sh
+
+The install script must be idempotent -- running it twice produces the same result as running it once.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Guard against duplicate entries
+# Use mkdir -p instead of mkdir
+# Check for existing files before overwriting
+# Print clear success/failure messages
+
+echo "=== Godmode for YourPlatform ==="
+
+# 1. Check prerequisites
+if ! command -v your-platform &>/dev/null; then
+  echo "ERROR: your-platform CLI not found. Install it first."
+  exit 1
+fi
+
+# 2. Create config directory
+mkdir -p "$HOME/.your-platform"
+
+# 3. Copy or symlink configuration
+# (platform-specific logic here)
+
+# 4. Verify
+echo "SUCCESS: Godmode installed for YourPlatform"
+echo "Run 'bash adapters/your-platform/verify.sh' to confirm."
+```
+
+### Step 4: Write verify.sh
+
+The verification script confirms that the adapter was installed correctly.
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "=== Verifying Godmode for YourPlatform ==="
+
+PASS=0
+FAIL=0
+
+# Check 1: Config file exists
+if [ -f "$HOME/.your-platform/godmode-config" ]; then
+  echo "PASS: Config file found"
+  ((PASS++))
+else
+  echo "FAIL: Config file not found"
+  ((FAIL++))
+fi
+
+# Check 2: Skills directory accessible
+# Check 3: Platform-specific checks
+
+echo ""
+echo "Results: $PASS passed, $FAIL failed"
+[ "$FAIL" -eq 0 ] && echo "Godmode is ready for YourPlatform." || exit 1
+```
+
+### Step 5: Write the Platform Doc
+
+If your platform needs a top-level Markdown guide (like `GEMINI.md` or `OPENCODE.md`), create one in the repository root. This file should contain:
+
+1. A reference to the godmode orchestrator skill (`@./skills/godmode/SKILL.md`)
+2. A tool mapping table (if tool names differ from Claude Code)
+3. The full skill catalog (126 skills)
+4. Sequential execution instructions (if the platform does not support parallel agents)
+5. A "Verify Installation" section pointing to `adapters/your-platform/verify.sh`
+
+Use `GEMINI.md` or `OPENCODE.md` as your template.
+
+### Step 6: Update Documentation
+
+1. Add your platform to the **Platforms** table in `README.md`
+2. Add your platform to the **Platform Support Matrix** in `CONTRIBUTING.md`
+3. Add your platform to `docs/platform-comparison.md`
+
+### Step 7: Test on the Target Platform
+
+Do not submit an adapter you have not tested on the target platform. If you do not have access, note this in your PR and request help testing.
+
+Test these scenarios:
+- Fresh install on a clean system
+- Reinstall (idempotency)
+- Running `verify.sh` after install
+- Invoking a simple skill (e.g., `/godmode:think`)
+- Invoking an iterative skill (e.g., `/godmode:optimize`)
+- Invoking a skill that uses agents (e.g., `/godmode:build`) to verify sequential fallback
+
+---
+
 ## Testing Your Skill
 
 Since skills are Markdown files, testing is manual but systematic.
@@ -297,6 +535,57 @@ Verify all references to other skills:
 - Do the referenced skills actually exist?
 - Are the skill names spelled correctly?
 - Do the artifact paths match what the referenced skills actually produce?
+
+---
+
+## Testing Your Changes
+
+Beyond testing individual skills, verify that your changes do not break existing functionality.
+
+### For Skill Changes
+
+```bash
+# 1. Verify the skill file parses correctly (has valid frontmatter)
+head -20 skills/your-skill/SKILL.md  # Should start with ---
+
+# 2. Verify the command file exists and references the skill
+cat commands/godmode/your-skill.md   # Should reference skills/your-skill/SKILL.md
+
+# 3. Verify documentation is updated
+grep "your-skill" README.md          # Should appear in skill table
+grep "your-skill" docs/COMPLETE-SKILL-LIST.md  # Should appear in list
+
+# 4. Run the platform verify scripts to confirm nothing is broken
+bash adapters/gemini/verify.sh
+bash adapters/opencode/verify.sh
+bash adapters/cursor/verify.sh
+bash adapters/codex/verify.sh
+```
+
+### For Adapter Changes
+
+```bash
+# 1. Run install on the target platform
+bash adapters/your-platform/install.sh
+
+# 2. Run verify to confirm installation
+bash adapters/your-platform/verify.sh
+
+# 3. Run install again to confirm idempotency
+bash adapters/your-platform/install.sh
+bash adapters/your-platform/verify.sh
+```
+
+### For Documentation Changes
+
+```bash
+# 1. Check that all internal links resolve
+# (look for broken anchors and file references)
+grep -r '\[.*\](.*\.md)' README.md CONTRIBUTING.md | head -20
+
+# 2. Verify skill counts match
+ls skills/*/SKILL.md | wc -l    # Should match the count in README.md
+```
 
 ---
 
@@ -353,6 +642,7 @@ Types:
   ref:      New or modified reference document
   agent:    New or modified agent definition
   hook:     New or modified hook
+  adapter:  New or modified platform adapter
   docs:     Documentation changes
   fix:      Bug fix in existing content
   meta:     Plugin configuration, build, or CI changes
@@ -364,6 +654,7 @@ skill: add /godmode:migrate database migration skill
 skill: improve optimize loop stopping conditions
 command: add --verbose flag to /godmode:debug
 ref: add connection pooling guide to optimize references
+adapter: add Windsurf platform adapter
 docs: update README with new skill count
 fix: correct typo in security STRIDE checklist
 meta: add CI workflow for skill validation
@@ -417,6 +708,7 @@ Your PR must include:
 - [ ] docs/godmode-design.md updated
 - [ ] docs/COMPLETE-SKILL-LIST.md updated
 - [ ] Commit messages follow convention
+- [ ] Platform verify scripts still pass
 ```
 
 ### Review Process
@@ -474,6 +766,9 @@ The best examples come from real projects. If you have used a skill and can shar
 ### 4. Fix Anti-Patterns
 If you have encountered a failure mode that a skill does not warn about, add it as an anti-pattern. Real failure modes are more valuable than theoretical ones.
 
+### 5. Add a Platform Adapter
+If you use an AI coding tool that Godmode does not support yet, adding an adapter makes all 126 skills available on that platform. See [Adding a New Platform Adapter](#adding-a-new-platform-adapter) for the guide.
+
 ---
 
 ## Multi-Platform Compatibility
@@ -505,12 +800,14 @@ Adapter files live in `adapters/{platform}/`. Each adapter directory must contai
 | File | Purpose |
 |------|---------|
 | `README.md` | Setup instructions and platform-specific notes |
-| `install.sh` | Installation script for the adapter |
+| `install.sh` | Installation script for the adapter (must be idempotent) |
+| `verify.sh` | Verification script to confirm correct installation |
 | Platform config | A platform-specific configuration file (e.g., `gemini-config.md`, `plugin.json`) |
 
 Rules for adapters:
 
 - **Install scripts must be idempotent.** Running `install.sh` twice must produce the same result as running it once. Guard against duplicate entries, check for existing files before overwriting, and use `mkdir -p` instead of `mkdir`.
+- **Verify scripts must be included.** Every adapter needs a `verify.sh` that confirms the installation is correct. Users run this after install to confirm everything works.
 - **Test on the target platform before submitting.** Do not submit an adapter you have only tested on a different platform. If you do not have access to the target platform, note this in your PR and request help testing.
 - **Follow the existing directory structure.** Look at `adapters/gemini/`, `adapters/opencode/`, and `adapters/cursor/` for reference implementations.
 

@@ -731,6 +731,96 @@ FIXES:
 | `--audit` | Audit existing Rails app for anti-patterns |
 | `--deploy kamal` | Configure Kamal deployment |
 
+## Output Format
+
+End every Rails skill invocation with this summary block:
+
+```
+RAILS RESULT:
+Action: <scaffold | model | controller | service | optimize | test | audit | upgrade | deploy>
+Files created/modified: <N>
+Models created/modified: <N>
+Controllers created/modified: <N>
+Migrations created: <N>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/rails.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | model | controller | service | optimize | test | audit | upgrade | deploy
+- `files_count`: number of files created or modified
+- `models_count`: number of models created or modified
+- `controllers_count`: number of controllers created or modified
+- `migrations_count`: number of migrations generated
+- `tests_status`: passing | failing | skipped | none
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Rails skill invocation must pass ALL of these checks before reporting success:
+
+1. `bin/rails test` (or `bundle exec rspec`) passes if test suite exists
+2. `bin/rails db:migrate:status` shows no pending migrations
+3. All `belongs_to` foreign keys have database indexes
+4. No `default_scope` on any model
+5. No business logic in callbacks (use service objects)
+6. All queries with WHERE/ORDER BY clauses have appropriate indexes
+7. No raw SQL without parameterized queries
+8. N+1 queries detected by Bullet gem are resolved
+9. `bundle audit` shows no known vulnerabilities (if gem installed)
+10. `bin/rails routes` has no duplicate or orphaned routes
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF tests fail:
+  1. Check test database exists and is migrated (bin/rails db:test:prepare)
+  2. Verify fixtures/factories have valid data and associations
+  3. Check for order-dependent tests (run with --seed to verify)
+  4. Verify that database cleaner strategy is correct (transaction vs truncation)
+
+IF migration fails:
+  1. Check for irreversible migration (add explicit down method)
+  2. Verify column types are compatible with existing data
+  3. Check for lock timeout on large tables (use strong_migrations gem)
+  4. For failed production migration → write a corrective migration, never edit existing ones
+
+IF N+1 queries detected:
+  1. Add includes() or eager_load() to the query
+  2. Use strict_loading! on associations to catch new N+1s
+  3. Verify with Bullet gem in development
+  4. For complex cases, use preloader or custom SQL
+
+IF Rails upgrade fails:
+  1. Read the upgrade guide for each minor version step
+  2. Fix deprecation warnings one at a time
+  3. Run bin/rails app:update and review each file change
+  4. Update gems one at a time, running tests after each
+
+IF security vulnerability (bundle audit):
+  1. Update the affected gem to patched version
+  2. If no patch exists, check for workarounds in the advisory
+  3. Add to ignore list only with documented justification and expiry date
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip database indexes.** Every `belongs_to` foreign key needs an index. Every column used in WHERE or ORDER BY needs an index.

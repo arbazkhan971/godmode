@@ -673,6 +673,51 @@ PARTITION HANDLING:
 | `--topology` | Generate distributed system topology diagram |
 | `--validate` | Validate existing distributed architecture |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect distributed system context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect multi-service topology:
+   - docker-compose.yml with multiple services → distributed system
+   - kubernetes manifests with multiple Deployments → distributed system
+   - Multiple repos or monorepo with service directories → microservices
+
+2. Detect consensus/coordination:
+   - grep for: etcd, consul, zookeeper in configs or dependencies
+   - Check for: Raft, Paxos references in code or docs
+   - Check for: leader election, distributed lock usage
+
+3. Detect message brokers:
+   - Kafka, RabbitMQ, SQS, NATS, Redis Streams in configs
+   - Event-driven patterns: event bus, event store, pub/sub
+
+4. Detect data distribution:
+   - Multiple database connection strings → data partitioned across stores
+   - Sharding configuration in database config (MongoDB shardKey, Vitess, Citus)
+   - Read replica configuration (primary/replica endpoints)
+
+5. Detect consistency patterns:
+   - grep for: eventual consistency, saga, compensation, outbox pattern
+   - Check for: dual-write code, CDC (change data capture) configs
+   - Check for: idempotency keys, correlation IDs, fencing tokens
+
+6. Detect replication topology:
+   - Multi-region deployment configs (AWS regions, GCP regions)
+   - Replication lag monitoring (pg_stat_replication, ReplicaLag metrics)
+   - Async vs sync replication configuration
+
+7. Auto-classify:
+   - Single service + single DB → not distributed (suggest /godmode:architect)
+   - Multiple services + message broker → event-driven distributed
+   - Multiple services + shared DB → distributed monolith (anti-pattern)
+   - Multi-region deployment → geo-distributed system
+
+-> Auto-populate DISTRIBUTED SYSTEM CONTEXT from detected signals.
+-> Only ask about consistency requirements if not inferrable from code.
+```
+
 ## HARD RULES
 
 - NEVER skip the CAP theorem conversation before any distributed design work — this decision cascades through everything
@@ -714,6 +759,70 @@ SYNC point: All agents complete
   Merge worktrees
   Run full validation checklist (12 checks)
   Generate distributed system architecture document with topology diagram
+```
+
+## Output Format
+Print on completion:
+```
+DISTRIBUTED SYSTEM: {system_name}
+Topology: {topology} | Nodes: {N}
+CAP choice: {CP|AP} | PACELC: {classification}
+Consistency: {level} (per-operation breakdown: {N} operations documented)
+Consensus: {protocol} | Quorum: {quorum_size}
+Sharding: {strategy} | Partition key: {key}
+Conflict resolution: {strategy}
+Leader election: {mechanism} | Fencing: {yes|no}
+Verdict: {SOUND|NEEDS REVISION}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every distributed systems session to `.godmode/distributed-results.tsv`:
+```
+timestamp	system	topology	cap_choice	consistency_level	consensus	sharding_strategy	partition_key	conflict_resolution	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. CAP trade-off explicitly documented before any design work.
+2. Consistency level specified per operation, not per system.
+3. Consensus protocol selected with fault tolerance calculated (tolerates (N-1)/2 failures).
+4. Partition handling strategy defined for during-partition and post-partition phases.
+5. Fencing tokens implemented on leader election — no leader election without fencing.
+6. Sharding strategy documented with partition key selection rationale.
+7. Every failure mode documented: "What happens when X is down?"
+8. Network partition test plan exists with specific chaos experiments defined.
+9. Replication topology diagrammed with sync/async paths labeled.
+
+## Error Recovery
+```
+IF user skips CAP discussion and jumps to implementation:
+  → Block: "CAP trade-off must be documented before design. Is your system CP or AP during partitions?"
+  → Do NOT proceed until consistency requirements are explicitly stated
+
+IF consensus cluster has even number of nodes:
+  → Warn: "Even node count ({N}) risks split-brain with no majority"
+  → Recommend: add a witness/arbiter node or use odd count (N+1)
+
+IF Redlock chosen for a correctness-critical lock:
+  → Warn: "Redlock is debated for correctness locks (Kleppmann critique). Consider ZooKeeper or etcd with fencing tokens."
+  → If user accepts risk: document in design: "Redlock used as efficiency lock; data corruption risk accepted"
+
+IF sharding key produces hot spots (one shard receives >50% of writes):
+  → Identify the hot key pattern (timestamp-based? popular entity?)
+  → Apply mitigation: salting, split hot partition, or write buffering
+  → Re-measure write distribution after fix
+
+IF network partition test reveals data loss:
+  → Identify: was the partition CP or AP? Was fencing token enforced?
+  → If AP without conflict resolution: add CRDT, vector clocks, or application-level merge
+  → If CP with data loss: check quorum configuration and fencing token implementation
+  → Re-run partition test — must show zero data loss
+
+IF replication lag exceeds acceptable threshold:
+  → Measure: what is the current lag (pg_stat_replication.replay_lag)?
+  → Check: is the replica under-resourced? Is WAL generation rate too high?
+  → Mitigate: increase replica resources, or implement bounded-staleness reads that check lag before serving
 ```
 
 ## Anti-Patterns

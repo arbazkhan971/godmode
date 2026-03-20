@@ -1075,6 +1075,36 @@ CONFLICT RESOLUTION: db branch owns container setup shared across tests
 - **Do NOT hardcode ports.** Testcontainers assign random ports. Always use `container.getMappedPort()` to get the actual port.
 
 
+## Output Format
+Print on completion: `Integration: {total_tests} tests across {boundary_count} boundaries. Containers: {containers}. Pass rate: {pass_rate}%. Avg duration: {avg_ms}ms. Verdict: {verdict}.`
+
+## TSV Logging
+Log every boundary result to `.godmode/integration-results.tsv`:
+```
+iteration	boundary	container	tests_written	tests_passing	avg_duration_ms	status
+1	database	postgres:16	6	6	245	passing
+2	api	postgres:16	8	7	312	failing
+3	queue	kafka:3.6	4	4	890	passing
+```
+Columns: iteration, boundary, container, tests_written, tests_passing, avg_duration_ms, status(passing/failing/flaky).
+
+## Success Criteria
+- All external boundaries have integration test coverage (database, API, cache, queue).
+- All integration tests pass with real containers (no mocks for external dependencies).
+- Test data isolation verified (no leakage between tests).
+- Transaction boundaries tested (multi-step operations succeed or fully roll back).
+- Failure modes tested (connection failure, timeout, constraint violation).
+- Average test duration under 5 seconds per test (excluding container startup).
+- CI pipeline runs integration tests on every PR with container support.
+
+## Error Recovery
+- **Container fails to start**: Check Docker daemon is running (`docker info`). Verify image exists and can be pulled. Increase `beforeAll` timeout to 120s for slow networks. Check available disk space.
+- **Port conflict on container startup**: Never hardcode ports. Always use `container.getMappedPort()`. If tests run in parallel, each test class must get its own container.
+- **Tests pass locally but fail in CI**: Verify CI runner has Docker support. Check if CI uses DinD (Docker-in-Docker) or a native Docker socket. Increase timeouts for slower CI environments.
+- **Database migration failures in container**: Run migrations in a separate step with verbose logging. Check migration order and idempotency. Verify the container image version matches production.
+- **Flaky cleanup between tests**: Switch from DELETE to TRUNCATE CASCADE for faster cleanup. Consider transaction rollback strategy. Verify cleanup runs in `afterEach`, not `afterAll`.
+- **Connection pool exhaustion**: Close connections in `afterAll`. Set pool size to match test concurrency. Use a single connection for sequential tests.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run integration test tasks sequentially: DB tests, then API tests, then queue tests, then cache tests.

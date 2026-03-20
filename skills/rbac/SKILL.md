@@ -809,6 +809,80 @@ ReBAC EXTENSION:
 - **Do NOT allow permission escalation through delegation.** A user must not be able to delegate permissions they do not hold. Validate delegation requests against the delegator's effective permissions.
 
 
+## Output Format
+
+Every RBAC invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  RBAC RESULT                                                │
+├────────────────────────────────────────────────────────────┤
+│  Model: <RBAC | ABAC | ReBAC | Hybrid>                     │
+│  Roles: <N defined>                                         │
+│  Permissions: <N defined>                                   │
+│  Resources protected: <N>                                   │
+│  Audit logging: <YES | PARTIAL | NO>                        │
+│  Verdict: <PRODUCTION READY | NEEDS WORK | INCOMPLETE>      │
+└────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every RBAC design or audit to `.godmode/rbac-decisions.tsv`:
+
+```
+timestamp	feature	model	roles_count	permissions_count	resources_count	audit_logging	verdict
+```
+
+Append one row per invocation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+PASS if ALL of the following:
+  - Default deny is enforced (no policy match = DENY)
+  - Application code checks permissions, not role names
+  - Backend enforces authorization on every endpoint (frontend is cosmetic only)
+  - Every authorization decision (ALLOW and DENY) is logged with subject, resource, action, and timestamp
+  - Audit logs are immutable (append-only or write-once storage)
+  - Multi-tenant queries are scoped by tenant_id
+  - No permanent admin grants exist (all elevated access has expiry)
+  - Delegation cannot escalate beyond the delegator's own permissions
+
+FAIL if ANY of the following:
+  - Default allow is used anywhere
+  - Roles are checked in application code instead of permissions
+  - Any API endpoint lacks server-side authorization
+  - Authorization decisions are not logged
+  - super_admin bypasses the policy engine entirely
+  - String matching is used for permission checks (e.g., includes("admin"))
+  - tenant_id filtering is missing in a multi-tenant system
+```
+
+## Error Recovery
+
+```
+IF policy engine denies a legitimate request:
+  1. Check the audit log for the denial reason and matching policy
+  2. Verify the user's effective permissions (role hierarchy resolution)
+  3. Add or adjust the specific permission — do not create a bypass
+  4. Test both the fixed access AND ensure other restrictions still hold
+  5. Log the policy change with who, what, when, and why
+
+IF role hierarchy produces unexpected inheritance:
+  1. Print the full resolved permission set for the problematic role
+  2. Trace the inheritance path from the role to each inherited permission
+  3. Fix at the correct hierarchy level — do not patch at the leaf
+  4. Re-run authorization tests for all roles affected by the change
+
+IF audit logging fails or loses events:
+  1. Switch to synchronous logging until the async pipeline is fixed
+  2. Check for full disks, network partitions, or SIEM ingestion failures
+  3. Replay any buffered events after the pipeline is restored
+  4. Verify no authorization decisions occurred during the gap without logging
+  5. File an incident report — unlogged authorization is a compliance violation
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run RBAC tasks sequentially: permission model/schema, then policy engine/middleware, then audit/compliance, then admin/delegation.

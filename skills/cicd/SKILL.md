@@ -759,3 +759,75 @@ AUTO-DETECT:
 - **Do NOT run pipelines without timeouts.** A single hung test can block deployments for hours and waste compute budget.
 - **Do NOT build the same thing twice.** If lint and test both need `npm ci`, share the setup via a composite action or job dependency.
 - **Do NOT ignore flaky tests.** A test that passes "most of the time" erodes confidence in the entire pipeline. Fix or quarantine it.
+
+## Output Format
+Print on completion: `CI/CD: {stage_count} stages, {job_count} jobs. Build: {build_time}. Test: {test_time}. Deploy: {deploy_target}. Cache: {cache_status}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every pipeline optimization to `.godmode/cicd-results.tsv`:
+```
+iteration	stage	job_count	duration_before	duration_after	cache_hit_rate	status
+1	build	3	240s	90s	95%	optimized
+2	test	4	480s	180s	90%	sharded
+3	security	2	120s	60s	80%	added
+4	deploy	2	300s	300s	n/a	configured
+```
+Columns: iteration, stage, job_count, duration_before, duration_after, cache_hit_rate, status(optimized/sharded/added/configured/failed).
+
+## Success Criteria
+- Full pipeline runs in under 10 minutes (lint + test + build + deploy).
+- Dependency caching enabled with lockfile hash key (cache hit rate > 90%).
+- Tests parallelized across shards when suite exceeds 3 minutes.
+- Security scanning included (dependency audit + container scan).
+- Staging gate before production deployment.
+- All action/image versions pinned (no `latest` tags).
+- Secrets never echoed in logs (masked with `::add-mask::`).
+- Timeout configured on every job to prevent hung pipelines.
+- Flaky tests quarantined or fixed (zero intermittent failures).
+
+## Error Recovery
+- **Pipeline times out**: Check for hung tests or builds. Add `timeout-minutes` to every job. Identify the slow step with timing annotations. Split long steps into parallel jobs.
+- **Cache miss on every run**: Verify the cache key includes the lockfile hash. Check that the cache path matches where dependencies are installed. Ensure the cache is not being evicted due to size limits.
+- **Secret not available in workflow**: Check that the secret is defined at the correct scope (repo, environment, org). Verify the workflow has permission to access the environment. Secrets are not available in fork PRs by default.
+- **Deployment fails but tests passed**: Check for environment-specific configuration differences. Verify the build artifact matches what was tested. Check deployment credentials and permissions.
+- **Test sharding produces uneven splits**: Rebalance shards based on test duration, not test count. Use `--shard` with timing data. Ensure the slowest shard is under the target time.
+- **Flaky test blocks the pipeline**: Do not add retries as a permanent fix. Quarantine the test with a skip annotation and a linked issue. Fix the root cause within 48 hours.
+
+## Multi-Agent Dispatch
+For comprehensive CI/CD pipeline setup:
+```
+DISPATCH parallel agents (one per pipeline concern):
+
+Agent 1 (worktree: cicd-build):
+  - Build stage optimization (caching, parallel steps)
+  - Container image build and push
+  - Scope: .github/workflows/, Dockerfile, build scripts
+  - Output: Optimized build pipeline
+
+Agent 2 (worktree: cicd-test):
+  - Test stage setup (unit, integration, E2E)
+  - Test sharding and parallelization
+  - Scope: .github/workflows/, test config files
+  - Output: Parallelized test pipeline
+
+Agent 3 (worktree: cicd-security):
+  - Security scanning (dependency audit, SAST, container scan)
+  - Secret management configuration
+  - Scope: .github/workflows/, security config
+  - Output: Security scanning pipeline
+
+Agent 4 (worktree: cicd-deploy):
+  - Deployment pipeline (staging gate, production deploy)
+  - Environment configuration
+  - Scope: .github/workflows/, deployment config
+  - Output: Deployment pipeline with staging gate
+
+MERGE ORDER: build → test → security → deploy
+CONFLICT RESOLUTION: each agent owns its pipeline stage exclusively
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run CI/CD tasks sequentially: build optimization, then test setup, then security scanning, then deployment pipeline.
+- Use branch isolation per task: `git checkout -b godmode-cicd-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

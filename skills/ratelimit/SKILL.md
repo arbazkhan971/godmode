@@ -1475,3 +1475,141 @@ grep -r "X-RateLimit\|Retry-After\|x-rate" --include="*.ts" --include="*.js" --i
 - **Do NOT rate limit without response headers.** Clients cannot implement backoff without knowing their remaining quota and reset time. Always include RateLimit-* headers.
 - **Do NOT apply the same limit to all endpoints.** Login should be 5/min. Product listing should be 1000/min. A single global limit is either too strict for reads or too loose for sensitive operations.
 - **Do NOT forget quotas.** Rate limits prevent bursts, but a client making 99 req/min for 24 hours consumes 142,560 requests. Daily and monthly quotas catch sustained abuse.
+
+## Output Format
+
+```
+RATE LIMIT STRATEGY COMPLETE:
+  Algorithm: <sliding window counter | token bucket | leaky bucket>
+  Storage: <Redis | Memcached | in-memory | API gateway>
+  Tiers: <N> tiers configured (anonymous → enterprise)
+  Endpoint overrides: <N> endpoints with specific limits
+  Quotas: daily <on|off>, monthly <on|off>
+  Headers: RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, Retry-After
+  Degradation: <fail-open | fail-open + local fallback>
+  Internal bypass: <mTLS | token | IP allowlist | none>
+  Monitoring: <metrics + dashboard | metrics only | none>
+
+TIER SUMMARY:
++--------------------------------------------------------------+
+|  Tier          | Rate (req/min) | Burst | Daily Quota | Bypass |
++--------------------------------------------------------------+
+|  Anonymous     | 20             | 5     | 1,000       | no     |
+|  Free          | 60             | 15    | 10,000      | no     |
+|  Pro           | 1,000          | 200   | 1,000,000   | no     |
+|  Internal      | unlimited      | --    | --          | yes    |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every rate limiting session to `.godmode/ratelimit-results.tsv`:
+
+```
+Fields: timestamp\tproject\talgorithm\tstorage\ttiers_count\tendpoint_overrides\tquota_tracking\tdegradation\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-api\tsliding-window\tredis\t4\t8\tdaily+monthly\tfail-open\tabc1234
+```
+
+Append after every completed rate limiting design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+RATE LIMIT SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  All public endpoints have rate limits      | YES              |
+|  Auth endpoints have strict limits (<=5/min)| YES              |
+|  Rate limit headers on every response       | YES              |
+|  429 response includes Retry-After          | YES              |
+|  429 response body has structured error     | YES              |
+|  Atomic operations (Lua script or equiv)    | YES              |
+|  Fail-open on Redis/store failure           | YES              |
+|  Tiered limits by user class                | YES              |
+|  API key quotas tracked (daily/monthly)     | YES              |
+|  Internal services can bypass limits        | YES              |
+|  Rate limit metrics exported                | YES              |
+|  Monitoring dashboard configured            | RECOMMENDED      |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — RATE LIMITING:
+1. Redis unavailable (rate limiter backend down):
+   → Fail open immediately (allow all requests). Log the failure. Fall back to in-memory per-instance limiter if configured. Alert ops team. Never block traffic because the limiter is down.
+2. Clients bypassing rate limits (exceeding configured limits):
+   → Check for non-atomic check-and-increment (race condition). Verify Lua script is used. Check for API key rotation abuse (add IP-based secondary limit). Verify X-Forwarded-For is trusted only from known proxies.
+3. 429 responses missing Retry-After header:
+   → Add Retry-After to the rate-limited response handler. Calculate from reset_at timestamp. Clients cannot self-throttle without this header.
+4. Rate limit too strict (legitimate users blocked):
+   → Check tier configuration. Verify user is in correct tier. Analyze traffic patterns (burst vs sustained). Consider increasing burst allowance or upgrading tier limit.
+5. Rate limit too loose (abuse not caught):
+   → Add endpoint-specific overrides for sensitive endpoints. Tighten anonymous tier. Add IP-based rate limit as secondary check. Monitor rejection rate (if 0%, limits are too loose).
+6. Lua script errors in Redis:
+   → Check Redis version compatibility. Verify script SHA matches loaded script. Re-load script on NOSCRIPT error. Log full error for debugging.
+```
+
+## Explicit Loop Protocol
+
+```
+RATE LIMIT ENDPOINT LOOP:
+current_iteration = 0
+endpoints = detect_public_endpoints()  // e.g., [/auth/login, /api/products, /api/search, ...]
+
+WHILE current_iteration < len(endpoints) AND NOT user_says_stop:
+  endpoint = endpoints[current_iteration]
+  current_iteration += 1
+
+  1. Classify endpoint: auth | read | write | expensive | internal
+  2. Set rate limit based on classification and tier
+  3. Configure endpoint-specific override if needed (auth: 5/min, upload: 10/hr)
+  4. Add rate limit middleware/decorator to endpoint
+  5. Verify rate limit headers appear in response
+  6. Test 429 response with Retry-After header
+  7. REPORT: "Endpoint {current_iteration}/{total}: {path} — {limit}/min, tier-based: {yes|no}, override: {yes|no}"
+
+ON COMPLETION:
+  Configure Redis Lua script for atomic enforcement
+  Set up fail-open degradation
+  Configure monitoring (rejection rate, latency)
+  REPORT: "{N} endpoints protected, {M} tiers, {K} overrides, degradation: fail-open"
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL RATE LIMIT AGENTS:
+When implementing rate limiting across a large API surface:
+
+Agent 1 (worktree: ratelimit-core):
+  - Implement Redis Lua script (sliding window counter)
+  - Create rate limit middleware with tier resolution
+  - Configure fail-open degradation with local fallback
+  - Add rate limit response headers to all endpoints
+
+Agent 2 (worktree: ratelimit-tiers):
+  - Design tier configuration (anonymous, free, pro, enterprise)
+  - Implement endpoint-specific overrides for sensitive endpoints
+  - Build API key quota tracking (daily + monthly)
+  - Configure quota warning notifications (75%, 90%, 100%)
+
+Agent 3 (worktree: ratelimit-monitoring):
+  - Add Prometheus/StatsD metrics (requests, rejections, latency)
+  - Create monitoring dashboard (rejection rate, top limited clients)
+  - Configure alerts (Redis down, high rejection rate, quota exceeded)
+  - Write rate limit integration tests (under concurrency)
+
+MERGE: Core merges first. Tiers rebase onto core.
+  Monitoring rebases onto tiers. Final: load test under concurrency.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run rate limiting tasks sequentially: core middleware, then tier configuration, then monitoring.
+- Use branch isolation per task: `git checkout -b godmode-ratelimit-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

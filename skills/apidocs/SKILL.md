@@ -1197,6 +1197,113 @@ grep -r "spectral\|redocly\|optic\|oasdiff" package.json .github/ 2>/dev/null
 find src/ -name "*controller*" -o -name "*router*" -o -name "*route*" 2>/dev/null | head -10
 ```
 
+## Output Format
+
+After each apidocs skill invocation, emit a structured report:
+
+```
+APIDOCS REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Approach            │  SPEC-FIRST / CODE-FIRST       │
+│  Spec version        │  OpenAPI <3.0 | 3.1>           │
+│  Endpoints           │  <N> documented                │
+│  Schemas             │  <N> defined / <N> using $ref   │
+│  Examples            │  <N> operations with examples   │
+│  Renderer            │  <Swagger UI | Redoc | Stoplight> │
+│  CI validation       │  CONFIGURED / NOT CONFIGURED    │
+│  Breaking changes    │  <N> detected vs main          │
+│  Spectral lint       │  <N> errors / <N> warnings      │
+│  Verdict             │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every apidocs action for tracking:
+
+```
+timestamp	skill	action	endpoints	schemas	lint_errors	breaking_changes	status
+2026-03-20T14:00:00Z	apidocs	generate_spec	12	8	0	0	pass
+2026-03-20T14:10:00Z	apidocs	validate	12	8	2	1	needs_fix
+```
+
+## Success Criteria
+
+The apidocs skill is complete when ALL of the following are true:
+1. Valid OpenAPI 3.0/3.1 spec that parses without errors
+2. All operations have descriptions, tags, and at least one example
+3. All schemas have field descriptions and realistic examples
+4. $ref is used for all shared schemas (no duplicated definitions)
+5. Error responses defined on all endpoints (401, 400, 500 at minimum)
+6. Security schemes documented and applied to endpoints
+7. Spectral lint passes with zero errors
+8. No breaking changes vs main branch (or breaking changes are documented)
+9. Doc renderer builds and displays correctly
+
+## Error Recovery
+
+```
+IF OpenAPI spec fails validation:
+  1. Run npx @redocly/cli lint openapi.yaml for detailed error messages
+  2. Fix structural errors first (invalid paths, missing required fields)
+  3. Fix reference errors ($ref pointing to nonexistent schemas)
+  4. Re-validate after each fix batch
+
+IF Spectral lint reports errors:
+  1. Check .spectral.yaml for custom rules that may need adjustment
+  2. Fix errors in priority order: missing descriptions > missing examples > style issues
+  3. Suppress false positives with spectral inline ignores (use sparingly)
+  4. Re-run lint after fixes
+
+IF breaking changes are detected in CI:
+  1. Review each breaking change: is it intentional or accidental?
+  2. For intentional breaks: document in changelog, add migration notes
+  3. For accidental breaks: revert the spec change
+  4. Use API versioning for intentional breaking changes
+
+IF doc renderer fails to build:
+  1. Check for YAML syntax errors (common: wrong indentation, missing quotes)
+  2. Validate the spec with a JSON/YAML parser first
+  3. Try rendering with a different renderer to isolate the issue
+  4. Check renderer-specific extensions (x- fields) for compatibility
+```
+
+## Iterative API Documentation Loop
+
+```
+current_iteration = 0
+max_iterations = 12
+doc_tasks = [discovery, spec_writing, schema_extraction, examples, renderer_setup, ci_validation]
+
+WHILE doc_tasks is not empty AND current_iteration < max_iterations:
+    task = doc_tasks.pop(0)
+    1. Execute the task (write spec, extract schemas, add examples, etc.)
+    2. Validate: run Spectral lint + Redocly validate
+    3. IF validation fails → fix errors and re-validate
+    4. IF passing → commit: "apidocs: <action> for <service>"
+    5. current_iteration += 1
+
+POST-LOOP: Run full validation checklist and build rendered docs
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL AGENT DISPATCH (3 worktrees):
+  Agent 1 — "apidocs-spec": OpenAPI spec writing (paths, schemas, components)
+  Agent 2 — "apidocs-examples": Examples, mock server, SDK generation
+  Agent 3 — "apidocs-ci": Spectral config, CI validation workflow, renderer setup
+
+MERGE ORDER: spec → examples → ci
+CONFLICT ZONES: openapi.yaml (spec is authoritative, examples and CI reference it)
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run API docs tasks sequentially: spec writing, then examples, then CI/renderer setup.
+- Use branch isolation per task: `git checkout -b godmode-apidocs-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT write docs without examples.** A schema without examples is a guessing game. Every request body and response must have at least one realistic example.

@@ -640,6 +640,37 @@ CONFLICT RESOLUTION: each agent writes to its own results subdirectory
 - **Do NOT skip warm-up.** Cold starts, empty caches, and JIT compilation make the first minutes of a test unrepresentative. Include a warm-up phase and exclude it from metrics.
 
 
+## Output Format
+Print on completion: `Loadtest: {test_type} — P95: {p95}ms, P99: {p99}ms, throughput: {rps} rps, errors: {error_rate}%. Breaking point: {breaking_point} users. Verdict: {verdict}.`
+
+## TSV Logging
+Log every load test run to `.godmode/loadtest-results.tsv`:
+```
+iteration	test_type	target_rps	actual_rps	p50_ms	p95_ms	p99_ms	error_rate	max_users	status
+1	baseline	100	98	45	180	420	0.02	50	meets_slo
+2	stress	500	420	120	890	2400	8.5	300	breaking
+3	spike	500	480	95	340	980	0.8	200	recovery_ok
+```
+Columns: iteration, test_type, target_rps, actual_rps, p50_ms, p95_ms, p99_ms, error_rate, max_users, status(meets_slo/needs_work/breaking).
+
+## Success Criteria
+- Baseline established with at least 5 runs and statistical confidence (CV < 10%).
+- P95 response time meets defined SLO (typically < 500ms).
+- P99 response time meets defined SLO (typically < 1000ms).
+- Error rate under target threshold (typically < 1%).
+- Breaking point identified and documented (stress test).
+- Headroom above current production traffic is at least 2x.
+- Bottlenecks ranked by impact with specific fix recommendations.
+- Results saved to `loadtest/results/` with timestamp for regression tracking.
+
+## Error Recovery
+- **Load test tool fails to start**: Verify the tool is installed (`k6 version`, `artillery --version`, `locust --version`). Check that the target URL is reachable from the test machine.
+- **All requests return errors**: Check target server is running and accepting connections. Verify authentication tokens are valid. Check firewall rules and rate limiting.
+- **Results show unrealistic numbers**: Verify think time is included between requests. Check that the test machine is not the bottleneck (CPU/network saturation on the load generator). Use distributed load generation for high concurrency.
+- **High variance between runs (CV > 15%)**: Eliminate noise sources — close other applications, pin CPU governor to performance mode, run on dedicated hardware. Increase run duration. Increase warm-up phase.
+- **Test crashes at high concurrency**: Increase file descriptor limits (`ulimit -n 65535`). Check connection pool sizes on both client and server. Use connection keep-alive.
+- **Cannot reproduce production performance**: Match data volume (seed with production-scale data). Match hardware specs. Match network latency (test from same region as users). Include realistic user scenarios, not just single-endpoint hammering.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run load test tasks sequentially: baseline, then stress, then spike, then soak.

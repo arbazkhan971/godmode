@@ -622,6 +622,91 @@ Estimated improvement: +15-20% answer accuracy
 | `--rerank <model>` | Add or change reranking model |
 | `--stats` | Show pipeline statistics (chunks, queries, latency) |
 
+## Output Format
+
+After each RAG skill invocation, emit a structured report:
+
+```
+RAG PIPELINE REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Corpus              │  <N> documents / <N> chunks     │
+│  Embedding model     │  <model name> (<N> dimensions)  │
+│  Vector store        │  <store name>                   │
+│  Chunk strategy      │  <method> (<N> tokens, <N>% overlap) │
+│  Retrieval method    │  <dense | hybrid | dense+rerank>│
+│  Reranker            │  <model name> / NONE            │
+│  Retrieval quality   │  Recall@10: <N>%  MRR: <N>      │
+│  Generation quality  │  Faithfulness: <N>%  Relevance: <N>% │
+│  Hallucination rate  │  <N>%                           │
+│  Latency (p50/p99)   │  <N>ms / <N>ms                  │
+│  Verdict             │  PASS | NEEDS TUNING            │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every RAG pipeline run for tracking:
+
+```
+timestamp	skill	action	corpus_chunks	recall_at_10	faithfulness	hallucination_rate	status
+2026-03-20T14:00:00Z	rag	index	4200	0.82	0.91	0.04	pass
+2026-03-20T14:30:00Z	rag	eval	4200	0.87	0.93	0.02	improved
+```
+
+## Success Criteria
+
+The RAG skill is complete when ALL of the following are true:
+1. Chunking strategy is designed for the content type (not default 500-char splits)
+2. Hybrid search is configured (dense + sparse/BM25) or justified as unnecessary
+3. Reranker is applied to top-N retrieved results (or justified as unnecessary)
+4. Retrieval quality meets targets: Recall@10 >= 80%, MRR >= 0.7
+5. Generation faithfulness >= 90% (answers are grounded in retrieved context)
+6. Hallucination rate < 5% (measured with a hallucination detection eval)
+7. End-to-end latency is within application requirements
+8. Evaluation suite covers retrieval quality, generation quality, and hallucination separately
+
+## Error Recovery
+
+```
+IF retrieval quality is low (Recall@10 < 70%):
+  1. Check chunking: are relevant passages being split across chunks?
+  2. Increase chunk overlap to 15-20%
+  3. Try hybrid search (add BM25 alongside dense retrieval)
+  4. Test a domain-specific embedding model instead of a general-purpose one
+  5. Increase top-K retrieval count and add a reranker
+
+IF hallucination rate is high (> 5%):
+  1. Verify the prompt explicitly instructs the model to only use retrieved context
+  2. Add "If the answer is not in the context, say so" instruction
+  3. Reduce the number of retrieved chunks to avoid noise diluting the signal
+  4. Add a reranker to improve precision of retrieved chunks
+  5. Consider adding a hallucination detection step as a post-processing guard
+
+IF latency is too high:
+  1. Check embedding computation time — cache embeddings for repeated queries
+  2. Check vector search time — consider approximate nearest neighbors (HNSW)
+  3. Reduce top-K retrieval count (less to rerank = faster)
+  4. Profile the full pipeline to identify the bottleneck (embedding, retrieval, reranking, generation)
+
+IF reindexing fails or produces inconsistent results:
+  1. Verify source documents have not changed format or encoding
+  2. Check for duplicates in the corpus that may skew retrieval
+  3. Clear the vector store and perform a full reindex from scratch
+  4. Validate chunk count matches expected (documents * avg_chunks_per_doc)
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect vector store: grep for pinecone, weaviate, chroma, pgvector, qdrant, milvus in package.json or requirements.txt
+2. Detect embedding models: grep for openai, cohere, sentence-transformers, voyageai in dependencies
+3. Detect RAG frameworks: grep for langchain, llamaindex, haystack, semantic-kernel in dependencies
+4. Detect document sources: check for PDF loaders, web scrapers, database connectors
+5. Detect existing evaluation: check for ragas, deepeval, promptfoo configs
+6. Auto-configure: match pipeline recommendations to detected stack
+```
+
 ## Anti-Patterns
 
 - **Do NOT skip chunking design.** Default chunking (500 chars, no overlap) is almost always wrong. Spend time on chunking strategy — it is the highest-impact decision.

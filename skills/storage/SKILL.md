@@ -691,6 +691,78 @@ ls cdn.* cloudfront.* 2>/dev/null
 grep -r "CloudFront\|cloudflare\|cdn" infra/ terraform/ 2>/dev/null | head -5
 ```
 
+## Iteration Protocol
+```
+WHILE storage implementation is incomplete:
+  1. REVIEW — check current state: which components exist (client, presigned URLs, CDN, lifecycle), which are missing
+  2. IMPLEMENT — pick next component from the plan, implement with tests
+  3. TEST — upload a test file end-to-end: presigned URL generation → upload → CDN serving → cleanup
+  4. VERIFY — check: file accessible via CDN, original not publicly accessible, lifecycle rules active
+  IF tests pass AND component works: commit, move to next component
+  IF tests fail: check IAM permissions, bucket policy, CORS config. Fix and re-test (max 3 attempts)
+STOP: all components implemented, end-to-end upload works, CDN serving verified, lifecycle rules active
+```
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/storage-results.tsv`:
+```
+STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
+1\tstorage-client\ts3\tcreated\tS3Client wrapper with upload, download, delete, presign
+2\tpresigned-urls\ts3\tcreated\tPUT for upload, GET for download, 15min expiry
+3\tcdn\tcloudfront\tconfigured\tdistribution with OAC, cache policy, custom domain
+4\tlifecycle\ts3\tconfigured\tincomplete multipart cleanup 24h, transition to IA 90d
+5\timage-processing\tsharp\tcreated\tthumbnail + medium + large variants on upload
+```
+Print final summary: `Storage: {provider}, bucket: {name}. CDN: {cdn_provider}. Presigned URLs: {yes/no}. Image processing: {yes/no}. Lifecycle: {rules}. Backup: {strategy}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Storage client works: upload, download, delete, and presigned URL generation all succeed with test files.
+2. Presigned URLs expire correctly (test: URL works before expiry, returns 403 after expiry).
+3. CDN serves files with correct cache headers (`Cache-Control: public, max-age=31536000, immutable` for hashed filenames).
+4. Direct bucket access is blocked (only CDN or presigned URLs can access files).
+5. Lifecycle rules are active: incomplete multipart uploads cleaned up, old versions transitioned/expired.
+6. Image processing (if applicable) generates all required variants and strips EXIF metadata.
+7. CORS configuration allows uploads from the application's domain(s) only.
+8. All credentials come from environment variables or IAM roles, not hardcoded.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Access denied (403) | Check IAM policy: does the role/user have `s3:PutObject`, `s3:GetObject` on the correct bucket ARN? Check bucket policy for explicit denies. Check VPC endpoint policy if applicable. |
+| CORS error on upload | Verify bucket CORS config allows the origin, method (PUT), and headers (Content-Type, x-amz-*). CORS rules are cached by browsers — test in incognito. |
+| Presigned URL fails | Check clock skew between server and AWS (<15min). Verify signing credentials match the bucket region. Check that the URL hasn't expired. |
+| CDN returns stale content | Invalidate CDN cache: `aws cloudfront create-invalidation`. For future: use content-hashed filenames to avoid cache invalidation entirely. |
+| Image processing OOM | Reduce Sharp concurrency: `sharp.concurrency(1)`. Process large images in a background job, not in the request handler. Set memory limits on the worker. |
+| Upload timeout | For files >100MB, switch to multipart upload. Set appropriate timeout on the client. Implement resumable uploads (tus protocol) for unreliable networks. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: storage-core):
+  - Configure storage bucket with IAM, CORS, lifecycle rules
+  - Build storage client wrapper with upload, download, delete, presign
+  - Set up CDN with origin access control
+
+Agent 2 (worktree: storage-processing):
+  - Implement image processing pipeline (variants, EXIF strip, format conversion)
+  - Add virus scanning integration (ClamAV or cloud-native)
+  - Build video processing if needed (thumbnails, transcoding)
+
+Agent 3 (worktree: storage-api):
+  - Create upload API endpoints (presigned URL generation, upload confirmation)
+  - Implement file metadata tracking in database
+  - Add download endpoints with access control
+
+MERGE ORDER: core -> processing -> api
+CONFLICT ZONES: storage client initialization, file metadata schema, upload route handlers
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run storage tasks sequentially: bucket/CDN configuration, then storage client, then processing pipeline, then API endpoints.
+- Use branch isolation per task: `git checkout -b godmode-storage-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT proxy file uploads through your API server.** Presigned URLs let clients upload directly to storage. Your server generating presigned URLs and the client uploading directly is both faster and cheaper.

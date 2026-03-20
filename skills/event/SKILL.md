@@ -814,6 +814,79 @@ AUTO-DETECT event-driven architecture context:
 - **Do NOT use a single topic for all events.** One mega-topic makes filtering, scaling, and retention management impossible. Use domain-specific topics.
 
 
+## Output Format
+
+```
+EVENT ARCHITECTURE COMPLETE:
+  Pattern: <Event Sourcing | CQRS | Pub/Sub | Hybrid>
+  Broker: <Kafka | RabbitMQ | SQS/SNS | NATS | other>
+  Event types: <N> events across <M> domains
+  Schema registry: <Confluent | AWS Glue | custom | none>
+  Schema format: <Avro | Protobuf | JSON Schema>
+  Topics/Exchanges: <N> configured
+  DLQ: <configured per consumer | not configured>
+  Idempotency: <deduplication table | idempotency key | not implemented>
+  Projections: <N> read models (CQRS)
+
+DOMAIN EVENT SUMMARY:
++--------------------------------------------------------------+
+|  Domain        | Events | Topics | Consumers | DLQ | Schema   |
++--------------------------------------------------------------+
+|  <domain>      | N      | N      | N         | yes | avro     |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every event architecture session to `.godmode/event-results.tsv`:
+
+```
+Fields: timestamp\tproject\tbroker\tevent_types\tdomains\tschema_format\tdlq_configured\tidempotency\tprojections_count\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\tkafka\t18\t4\tavro\tyes\tyes\t6\tabc1234
+```
+
+Append after every completed event design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+EVENT ARCHITECTURE SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  All events have schema definitions         | YES              |
+|  Schema registry with compatibility checks  | YES              |
+|  Event envelope has required fields          | YES              |
+|  (event_id, correlation_id, timestamp, type, version)         |
+|  DLQ configured for every consumer          | YES              |
+|  Idempotent consumers (deduplication)       | YES              |
+|  Correlation ID propagated across services  | YES              |
+|  Consumer lag monitoring configured         | YES              |
+|  No sensitive data in events without encrypt| YES              |
+|  Domain-specific topics (no mega-topic)     | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — EVENT:
+1. Schema compatibility check fails:
+   → Do not modify existing fields. Add new fields with defaults. Use schema evolution rules (BACKWARD compatible). Register as new version, not replacement.
+2. Consumer lag growing (falling behind):
+   → Check consumer processing time. Scale consumer instances (add partitions if Kafka). Check for blocking I/O in handler. Add consumer lag alerting.
+3. DLQ growing (events failing after retries):
+   → Inspect DLQ messages for common error pattern. Fix root cause (schema mismatch, missing handler, dependency down). Replay DLQ after fix with idempotency check.
+4. Duplicate events processed:
+   → Verify idempotency check runs BEFORE processing. Check deduplication table TTL (must exceed max retry window). Add event_id to deduplication key.
+5. Missing correlation IDs in downstream events:
+   → Trace event flow. Ensure correlation_id from incoming event is copied to all outgoing events in the handler. Add middleware/interceptor to propagate automatically.
+6. Event store growing unboundedly:
+   → Implement snapshot strategy (snapshot every N events). Archive old events to cold storage. Set retention policy on topics/tables.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run event tasks sequentially: event store/schemas, then broker topology, then consumers/projections.

@@ -570,6 +570,82 @@ AUTO-DETECT:
 -> Only ask user about data story and audience.
 ```
 
+## Output Format
+
+After each chart skill invocation, emit a structured report:
+
+```
+CHART BUILD REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Charts created     │  <N>                            │
+│  Charts updated     │  <N>                            │
+│  Library used       │  <library name>                 │
+│  Data points        │  <N> total across all charts    │
+│  Responsive         │  YES / NO                       │
+│  A11y (data table)  │  YES / NO                       │
+│  Colorblind-safe    │  YES / NO                       │
+│  Bundle impact      │  +<N> KB (gzipped)              │
+│  Render time        │  <N> ms (largest chart)         │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every chart creation for tracking:
+
+```
+timestamp	skill	chart_type	library	data_points	render_ms	a11y_table	status
+2026-03-20T14:00:00Z	chart	bar	recharts	240	45	yes	pass
+2026-03-20T14:05:00Z	chart	line	d3	12000	180	yes	pass
+```
+
+## Success Criteria
+
+The chart skill is complete when ALL of the following are true:
+1. Chart renders correctly with real or representative data
+2. Chart is responsive (resizes without distortion on mobile through desktop)
+3. A data table alternative exists for screen reader accessibility
+4. Color palette is colorblind-safe (tested with a simulator or verified palette)
+5. Axes are labeled with units, and the chart has a descriptive title
+6. Tooltips show exact values on hover/touch
+7. Chart respects `prefers-reduced-motion` (no gratuitous animation)
+8. Bundle size impact is documented and within project budget
+
+## Error Recovery
+
+```
+IF chart renders blank or does not appear:
+  1. Check browser console for errors (missing data, wrong data shape)
+  2. Verify data is loaded before chart mounts (check async data fetching)
+  3. Confirm container has explicit width/height (many libraries require this)
+  4. Test with hardcoded sample data to isolate data vs rendering issue
+
+IF chart is too slow (> 500ms render):
+  1. Check data point count — if > 1000, consider canvas/WebGL renderer
+  2. Enable data decimation or sampling for time series
+  3. Debounce resize handlers to prevent layout thrashing
+  4. Use virtualization for very large datasets
+
+IF colors fail colorblind simulation:
+  1. Switch to a verified colorblind-safe palette (e.g., Okabe-Ito, ColorBrewer)
+  2. Add patterns or shapes in addition to color differentiation
+  3. Re-test with a colorblind simulator (Coblis, Sim Daltonism)
+  4. Ensure legend text is always visible regardless of color perception
+
+IF chart breaks on mobile:
+  1. Check that the container uses percentage or vw units, not fixed px
+  2. Simplify labels (abbreviate, rotate, or reduce count) for narrow viewports
+  3. Test at 320px width minimum
+  4. Consider a simplified mobile variant for complex charts
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run chart tasks sequentially: data preparation, then chart implementation, then accessibility/responsive.
+- Use branch isolation per task: `git checkout -b godmode-chart-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT use pie charts for more than 5 categories.** Humans cannot accurately compare arc angles. Use a bar chart.

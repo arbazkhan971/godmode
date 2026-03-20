@@ -503,3 +503,41 @@ AUTO-DETECT:
 - **Do NOT deploy during peak traffic.** Unless the deployment is urgently needed, deploy during low-traffic windows to minimize blast radius.
 - **Do NOT deploy without monitoring.** Deploying blind means you cannot detect problems until users report them. Set up dashboards before deploying.
 - **Do NOT couple multiple risky changes.** Deploy one risky change at a time. If two things break simultaneously, you cannot isolate the cause.
+
+## Output Format
+Print on completion: `Deploy: {strategy} to {environment}. Canary: {canary_pct}% → {final_pct}%. Health: {health_status}. Rollback: {rollback_status}. Duration: {duration}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every deployment step to `.godmode/deploy-results.tsv`:
+```
+step	environment	strategy	canary_pct	error_rate	latency_p99	rollback_triggered	status
+1	staging	canary	5	0.1	120ms	no	healthy
+2	production	canary	5	0.1	125ms	no	healthy
+3	production	canary	25	0.3	130ms	no	healthy
+4	production	canary	100	0.2	128ms	no	complete
+```
+Columns: step, environment, strategy, canary_pct, error_rate, latency_p99, rollback_triggered, status(healthy/degraded/rolled_back/complete).
+
+## Success Criteria
+- Deployment strategy selected based on risk assessment (canary for high-risk, rolling for low-risk).
+- Rollback plan documented and tested before deploying.
+- Health checks pass at every canary stage before promotion.
+- Error rate stays below threshold at each stage (typically < 1%).
+- Latency P99 stays within baseline + 10% at each stage.
+- Database migrations are backward-compatible (expand-contract pattern).
+- Feature flags configured for risky changes.
+- Monitoring dashboard active during deployment with alerting.
+
+## Error Recovery
+- **Canary health check fails**: Automatically rollback canary traffic to zero. Investigate logs for the canary pods/instances. Check for configuration drift between canary and stable versions.
+- **Database migration fails mid-deploy**: Do not retry the migration blindly. Check for partial schema changes. Use idempotent migrations that can be re-run safely. If the migration is not reversible, restore from the pre-deploy backup.
+- **Rollback fails**: If automated rollback fails, manually set the deployment to the previous known-good image/version. Check that the rollback target is still available in the container registry. Verify database compatibility with the older version.
+- **Traffic spike during deployment**: Pause the canary promotion. Wait for traffic to stabilize. Resume only when error rate and latency return to baseline.
+- **Feature flag service is down**: Deploy without feature flags by keeping new code paths disabled by default. Never deploy with flags enabled if the flag service is unreachable.
+- **Monitoring shows anomalies but no clear failure**: Hold at current canary percentage. Extend the observation window. Only promote when metrics are clearly within threshold for the full observation period.
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run deployment tasks sequentially: pre-deploy checks, then staging deploy, then production canary, then promotion.
+- Use branch isolation per task: `git checkout -b godmode-deploy-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

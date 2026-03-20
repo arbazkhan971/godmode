@@ -507,6 +507,83 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT ignore secret scanning alerts.** GitHub, GitLab, and other platforms surface leaked secrets. Act on them immediately.
 
 
+## Output Format
+
+Every secrets invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  SECRETS AUDIT RESULT                                       │
+├────────────────────────────────────────────────────────────┤
+│  Secrets inventoried: <N>                                   │
+│  Properly managed (vault/runtime): <N>                      │
+│  In .env files (local dev): <N>                             │
+│  LEAKED/EXPOSED: <N>                                        │
+│  Rotation overdue: <N>                                      │
+│  Pre-commit hook: <ACTIVE | MISSING>                        │
+│  Verdict: <SECURE | NEEDS ROTATION | LEAKS FOUND>           │
+└────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every secrets audit to `.godmode/secrets-audit.tsv`:
+
+```
+timestamp	scope	total_secrets	managed	env_only	leaked	rotation_overdue	precommit_hook	verdict
+```
+
+Append one row per invocation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+PASS if ALL of the following:
+  - Zero verified leaks in current codebase and git history
+  - .env files are in .gitignore (verified)
+  - .env.example exists and is in sync with .env
+  - All production secrets are in a secret manager (not env vars)
+  - Pre-commit hook for secret scanning is installed and active
+  - CI pipeline includes secret scanning step
+  - All secrets are within rotation policy (none overdue)
+  - Each service has its own identity with least-privilege access
+
+FAIL if ANY of the following:
+  - Any verified secret leak exists in source code or git history
+  - .env file is not in .gitignore
+  - Production secrets are hardcoded anywhere
+  - No pre-commit secret scanning hook is installed
+  - Secrets are shared across environments (dev/staging/prod use same credentials)
+  - Any secret rotation is overdue by more than 7 days
+```
+
+## Error Recovery
+
+```
+IF a leaked secret is discovered:
+  1. REVOKE the credential immediately (do not wait for a fix PR)
+  2. ROTATE — generate a new credential through the provider's dashboard/API
+  3. UPDATE the secret manager with the new value
+  4. VERIFY the old credential no longer works (attempt authentication with it)
+  5. AUDIT access logs during the exposure window for unauthorized usage
+  6. SCRUB from git history if the secret was committed (BFG Repo-Cleaner or git filter-repo)
+  7. LOG the incident: when exposed, when discovered, when revoked, blast radius
+
+IF secret manager is unavailable:
+  1. Do not fall back to hardcoding or .env files in production
+  2. Retry with exponential backoff (secret managers have high availability)
+  3. If extended outage: use cached secrets (applications should cache with short TTL)
+  4. If no cache: halt the affected service rather than operating without secrets
+  5. Post-incident: review whether multi-region secret replication is needed
+
+IF pre-commit hook is bypassed (--no-verify):
+  1. CI pipeline secret scan is the second line of defense — it must catch the leak
+  2. If CI also missed it: GitHub/GitLab push protection is the third line
+  3. If all three layers failed: the secret scanning rules need updating
+  4. Add the missed pattern to custom rules (.gitleaks.toml or equivalent)
+  5. Re-scan the entire repository with updated rules
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run secrets tasks sequentially: scan for exposed secrets, then set up secret manager and rotation.

@@ -860,6 +860,79 @@ HARD RULES — GRPC:
 - **Do NOT commit generated code.** Generate in CI from proto files. Committed generated code drifts from protos and causes merge conflicts.
 
 
+## Output Format
+
+```
+GRPC SERVICE COMPLETE:
+  Proto files: <paths to .proto files>
+  Services: <N> services, <M> total RPCs
+  Streaming: <N> server-stream, <M> client-stream, <K> bidi-stream, <J> unary
+  Proto validation: buf lint <PASS|FAIL>
+  Code generation: <languages> generated from proto
+  Reflection: <enabled|disabled>
+  Health check: <grpc.health.v1 implemented|not implemented>
+  Load balancing: <strategy> (round-robin | pick-first | xDS)
+  TLS: <mTLS | server-only | plaintext>
+
+SERVICE SUMMARY:
++--------------------------------------------------------------+
+|  Service          | RPCs | Streaming | Proto pkg              |
++--------------------------------------------------------------+
+|  <ServiceName>    | N    | N/M bidi  | <package.name>         |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every gRPC design session to `.godmode/grpc-results.tsv`:
+
+```
+Fields: timestamp\tproject\tservices_count\trpcs_count\tstreaming_rpcs\tbuf_lint_status\tbreaking_changes\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-service\t4\t18\t6\tPASS\t0\tabc1234
+```
+
+Append after every completed design or implementation pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+GRPC SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Proto files compile without errors         | YES              |
+|  buf lint passes with zero violations       | YES              |
+|  buf breaking detects no regressions        | YES (if exists)  |
+|  Health check service implemented           | YES              |
+|  Reflection enabled for dev/staging         | YES              |
+|  Deadline/timeout set on all RPCs           | YES              |
+|  Error codes use canonical gRPC codes       | YES              |
+|  Interceptors for logging + metrics         | YES              |
+|  TLS configured for production              | YES (production)  |
+|  Generated code committed or CI-generated   | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — GRPC:
+1. Proto compilation fails:
+   → Read protoc/buf error output. Fix syntax (missing imports, type mismatches, reserved field conflicts). Re-compile. Repeat until clean.
+2. buf lint violations:
+   → Run buf lint --error-format=json. Fix each violation (naming conventions, package structure, field numbering). Re-lint until 0 errors.
+3. Breaking change detected (buf breaking):
+   → Do not rename/remove fields. Add new fields with new numbers. Use reserved to retire old fields. Mark deprecated with field option.
+4. Streaming RPC hangs or drops messages:
+   → Check deadline/timeout configuration. Verify flow control (recv/send balance). Add keepalive pings for long-lived streams.
+5. Client connection fails (UNAVAILABLE):
+   → Verify server address and port. Check TLS cert chain. Confirm health check passes. Test with grpcurl for raw connectivity.
+6. Code generation produces stale stubs:
+   → Re-run buf generate or protoc with current proto files. Delete old generated files first. Verify import paths match proto package.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run gRPC tasks sequentially: proto definitions, then server implementation, then client stubs.

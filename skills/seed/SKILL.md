@@ -1442,6 +1442,95 @@ Seed: Production snapshot anonymization plan:
 7. NEVER seed without wrapping in a transaction. A partial seed (half the users, none of the posts) is worse than no seed. Atomic commit or full rollback.
 8. ALWAYS provide a `--reset` flag that truncates tables before seeding. Developers need a clean-slate option without manually dropping the database.
 
+## Auto-Detection
+```bash
+AUTO-DETECT seed context:
+  1. ORM/database: grep -r "prisma\|typeorm\|sequelize\|drizzle\|django\|sqlalchemy\|activerecord\|ecto" package.json pyproject.toml Gemfile mix.exs 2>/dev/null
+  2. Existing seeds: ls prisma/seed.ts db/seeds.rb db/seeds/ seeds/ scripts/seed* 2>/dev/null
+  3. Faker library: grep -r "@faker-js\|faker\|factory_bot\|factoryboy\|Bogus\|DataFactory" package.json pyproject.toml Gemfile 2>/dev/null
+  4. Test factories: ls test/factories/ tests/factories/ spec/factories/ 2>/dev/null; grep -rl "factory\|Factory\|fixture" tests/ test/ spec/ 2>/dev/null | head -5
+  5. Database schema: ls prisma/schema.prisma db/schema.rb alembic/versions/ migrations/ 2>/dev/null
+  6. Environment config: grep -r "NODE_ENV\|RAILS_ENV\|DJANGO_SETTINGS\|DATABASE_URL" .env .env.example 2>/dev/null
+
+  USE detected context to:
+    - Match existing ORM and seed conventions (don't create Prisma seeds in a Django project)
+    - Reuse existing factory patterns and faker configuration
+    - Identify seed gaps (no factories? no idempotency? no environment guards?)
+    - Read schema to determine entity relationships and dependency order
+```
+
+## Iteration Protocol
+```
+WHILE seed implementation is incomplete:
+  1. REVIEW — check current state: which entities have seed data, which are missing, dependency order
+  2. IMPLEMENT — pick next entity/factory, implement with batch inserts and upsert logic
+  3. TEST — run seed: verify idempotency (run twice, no duplicates), verify relationship integrity
+  4. VERIFY — query database: correct row counts, foreign keys valid, no orphaned records
+  IF seed runs cleanly AND idempotent: commit, move to next entity
+  IF seed fails: check dependency order, unique constraints, FK violations. Fix and re-test (max 3 attempts)
+STOP: all entities seeded, idempotent run verified, environment guards active, --reset flag works
+```
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/seed-results.tsv`:
+```
+STEP\tENTITY\tORM\tMETHOD\tSTATUS\tDETAILS
+1\tusers\tprisma\tcreateMany\tseeded\t50 users with faker seed 42
+2\torganizations\tprisma\tcreateMany\tseeded\t10 orgs with membership relations
+3\tposts\tprisma\tcreateMany\tseeded\t200 posts across 50 users
+4\tidempotency\t-\tupsert\tverified\tre-run produced 0 duplicates
+5\treset\t-\ttruncate\tverified\t--reset flag clears all tables in correct order
+```
+Print final summary: `Seeds: {N} entities, {total_rows} rows. ORM: {tool}. Faker seed: {seed}. Idempotent: {yes/no}. Environments: {dev,staging,test}. Reset: {supported/not}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Seed script runs without errors on a clean database (all tables empty).
+2. Seed script is idempotent (running twice produces no duplicate data, no unique constraint violations).
+3. Dependency order is correct (parents before children, reference data before entities).
+4. Batch inserts used for all entities (no single-row insert loops).
+5. Faker seed is fixed (`faker.seed(42)`) for deterministic output across runs.
+6. Environment guard exists (`if (env === 'production') throw`) preventing accidental production seeding.
+7. `--reset` flag truncates tables in reverse dependency order before seeding.
+8. Test factories (if applicable) share the same data patterns as seeds for consistency.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Foreign key constraint violation | Seed order is wrong. Map entity dependencies. Seed in topological order: reference tables first, then independent entities, then dependent entities. |
+| Unique constraint violation on re-run | Seed is not idempotent. Switch from `create` to `upsert` (Prisma: `upsert`, Django: `update_or_create`, Rails: `find_or_create_by`). Match on stable identifier (slug/email, not auto-increment ID). |
+| Seed too slow (>30 seconds) | Switch to batch inserts (`createMany`, `bulk_create`, `insert_all`). Disable indexes during bulk insert, re-enable after. Wrap in single transaction. |
+| Faker data unrealistic | Use domain-specific generators: `faker.internet.email()` not `faker.string.alpha()`. For demo environments, curate a small set of realistic hand-crafted records. |
+| Production guard missing | Add `if (process.env.NODE_ENV === 'production') { throw new Error('Cannot seed production') }` at the top of every seed entry point. Check for equivalent in Rails/Django/etc. |
+| Reset flag drops tables in wrong order | Reverse the seed dependency order for truncation. Disable FK checks during truncate if the database supports it (`SET FOREIGN_KEY_CHECKS=0` for MySQL, `TRUNCATE CASCADE` for Postgres). |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: seed-core):
+  - Create seed entry point with environment guards and CLI flags (--reset, --env)
+  - Map entity dependencies and determine seed order
+  - Implement reference data seeds (roles, categories, statuses)
+
+Agent 2 (worktree: seed-entities):
+  - Implement entity seeds with faker and batch inserts
+  - Build factory functions for test reuse
+  - Ensure idempotency with upsert logic
+
+Agent 3 (worktree: seed-validation):
+  - Write seed validation (row counts, FK integrity, no orphans)
+  - Implement --reset flag with correct truncation order
+  - Add environment-specific seed configs (dev: 50 users, staging: 5000)
+
+MERGE ORDER: core -> entities -> validation
+CONFLICT ZONES: seed entry point, entity factory definitions, database connection setup
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run seed tasks sequentially: core setup with dependency mapping, then entity seeds, then validation and reset.
+- Use branch isolation per task: `git checkout -b godmode-seed-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT insert one row at a time in a loop.** Use batch inserts (`createMany`, `bulk_create`, `insert_all`). Inserting 10,000 rows one at a time takes minutes. Batch inserting takes seconds.

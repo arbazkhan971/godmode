@@ -1008,6 +1008,96 @@ MERGE:
    One process per container.
 ```
 
+## Output Format
+
+End every Node skill invocation with this summary block:
+
+```
+NODE RESULT:
+Action: <scaffold | endpoint | middleware | service | optimize | test | audit | upgrade>
+Files created/modified: <N>
+Endpoints created/modified: <N>
+Framework: <Express | Fastify | Hono | Koa | NestJS | none>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/node.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	endpoints_count	framework	tests_status	build_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | endpoint | middleware | service | optimize | test | audit | upgrade
+- `files_count`: number of files created or modified
+- `endpoints_count`: number of API endpoints created or modified
+- `framework`: express | fastify | hono | koa | nestjs | none
+- `tests_status`: passing | failing | skipped | none
+- `build_status`: passing | failing | not-checked
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Node skill invocation must pass ALL of these checks before reporting success:
+
+1. `tsc --noEmit` passes (TypeScript projects) or linter passes (JavaScript projects)
+2. `npm test` passes if test suite exists
+3. No synchronous file I/O in request handlers (`readFileSync`, `writeFileSync`)
+4. No `console.log` in production code (use structured logger: pino, winston)
+5. Graceful shutdown handler exists (SIGTERM, SIGINT)
+6. No unbounded in-memory caches (all Maps/objects used as cache have max size + TTL)
+7. No unhandled promise rejections (global handler registered)
+8. All streams use `pipeline()` instead of `.pipe()` for error handling
+9. No blocking operations on the main thread (use worker_threads for CPU work)
+10. Environment variables loaded via validated config (dotenv + joi/zod, not raw `process.env`)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF tsc fails:
+  1. Read error output and fix type errors in dependency order
+  2. Check tsconfig.json paths and module resolution settings
+  3. Verify @types/* packages are installed for all dependencies
+  4. Fix strict mode violations (noImplicitAny, strictNullChecks)
+
+IF tests fail:
+  1. Check that test database/services are available and configured
+  2. Verify mocks and stubs match current interfaces
+  3. Check for port conflicts in integration tests (use dynamic ports)
+  4. Verify async tests properly await or use done() callback
+
+IF event loop blocking detected:
+  1. Profile with --prof flag or clinic.js
+  2. Move CPU-intensive work to worker_threads
+  3. Replace sync I/O with async equivalents
+  4. Break large JSON.parse operations into streaming (JSONStream)
+
+IF memory leak detected:
+  1. Check for growing Maps/Sets without cleanup
+  2. Verify event listeners are removed (removeListener/off)
+  3. Check for closures holding references to large objects
+  4. Use --max-old-space-size and monitor with process.memoryUsage()
+
+IF graceful shutdown fails:
+  1. Verify server.close() is called on SIGTERM
+  2. Check that database connections are drained
+  3. Set a force-exit timeout (e.g., 30s) as safety net
+  4. Verify health check endpoint returns 503 during shutdown
+```
+
 ## Anti-Patterns
 
 - **Do NOT block the event loop.** No synchronous file I/O, no CPU-heavy computation on the main thread, no `JSON.parse` of multi-MB payloads without a worker. The event loop is sacred.

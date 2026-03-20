@@ -355,6 +355,61 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 8. NEVER skip the alternatives section. Single-option RFCs are not proposals — they are mandates.
 ```
 
+## Output Format
+Print on completion:
+```
+RFC-{NNN}: {title}
+Type: {type} | Status: {status}
+Reviewers: {N} assigned | Comment period: {N} days
+Alternatives: {N} evaluated (including Do Nothing)
+Open questions: {N} ({N_resolved} resolved, {N_pending} pending)
+Saved to: {file_path}
+```
+
+## TSV Logging
+Log every RFC session to `.godmode/rfc-results.tsv`:
+```
+timestamp	rfc_number	title	type	status	reviewers	alternatives_count	open_questions	file_path
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. RFC contains Summary, Problem Statement, Proposed Solution, Alternatives (including Do Nothing), Risks, and Testing Strategy.
+2. At least 2 alternatives evaluated with pros, cons, and rejection rationale.
+3. Every risk has a corresponding mitigation strategy.
+4. Review deadline set with specific date.
+5. RFC is under 5 pages. If longer, split into multiple RFCs.
+6. Problem Statement contains at least one quantitative metric or concrete code reference.
+7. RFC saved to `docs/rfcs/` with correct numbering sequence.
+
+## Error Recovery
+```
+IF no existing RFC directory or numbering convention found:
+  → Create docs/rfcs/ directory
+  → Start numbering at 001
+  → Create docs/rfcs/README.md with RFC process summary
+
+IF user wants to write RFC after code is already written:
+  → Warn: "Code already exists. This RFC documents a decision retroactively."
+  → Change RFC type to "Decision Record" and save as ADR instead
+  → Suggest: "For future proposals, write RFC before implementation"
+
+IF review deadline passes with unresolved concerns:
+  → Status remains "In Review" — do NOT auto-accept
+  → Append to Decision Log: "Deadline {date} passed — {N} unresolved concerns"
+  → Suggest: extend deadline by 3 days or schedule a synchronous review meeting
+
+IF RFC scope exceeds 5 pages:
+  → Split into parent RFC (overview + decision) and child RFCs (detailed design per component)
+  → Parent RFC references children: "See RFC-{N+1} for Phase 2 details"
+
+IF all reviewers reject:
+  → Set status to Rejected
+  → Document rejection rationale in Decision Log
+  → Preserve the RFC — do NOT delete it
+  → Suggest: "Revisit in {timeframe} or explore alternative approaches"
+```
+
 ## Anti-Patterns
 
 - **Do NOT write an RFC for trivial changes.** Renaming a variable doesn't need team consensus. RFCs are for decisions that are hard to reverse.
@@ -363,3 +418,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT present a fait accompli.** An RFC published after the code is written is not a proposal — it's a notification. Write the RFC BEFORE implementation.
 - **Do NOT leave open questions unanswered.** Every open question must be resolved (answered or explicitly deferred) before the RFC can be accepted.
 - **Do NOT ignore rejected RFCs.** A rejected RFC is valuable documentation. It explains why a path was NOT taken, saving future teams from re-exploring it.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run RFC tasks sequentially: evidence gathering, then RFC drafting, then review tracking.
+- Use branch isolation per task: `git checkout -b godmode-rfc-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

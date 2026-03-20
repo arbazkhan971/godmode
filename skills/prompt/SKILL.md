@@ -618,6 +618,89 @@ Remaining risk: 2 edge cases flagged for monitoring. No known bypass for product
 | `--json` | Design for JSON/structured output |
 | `--eval` | Run full evaluation suite and report |
 
+## Output Format
+
+After each prompt engineering skill invocation, emit a structured report:
+
+```
+PROMPT ENGINEERING REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Task                │  <description>                  │
+│  Pattern             │  <zero-shot | few-shot | CoT | ReAct> │
+│  Target model        │  <model name>                   │
+│  Prompt version      │  v<N>                           │
+│  Golden set size     │  <N> test cases                 │
+│  Accuracy            │  <N>% (vs baseline <N>%)        │
+│  Latency (avg)       │  <N>ms                          │
+│  Token cost (avg)    │  <N> input + <N> output tokens  │
+│  Injection hardened  │  YES / NO                       │
+│  Structured output   │  YES (JSON) / NO                │
+│  Verdict             │  PASS | NEEDS ITERATION         │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every prompt version for tracking:
+
+```
+timestamp	skill	prompt_id	version	model	accuracy	latency_ms	tokens_avg	status
+2026-03-20T14:00:00Z	prompt	classify_intent	v1	gpt-4o	0.82	340	180	baseline
+2026-03-20T14:30:00Z	prompt	classify_intent	v2	gpt-4o	0.91	380	220	improvement
+```
+
+## Success Criteria
+
+The prompt skill is complete when ALL of the following are true:
+1. Prompt achieves target accuracy on the golden test set
+2. Prompt is externalized in a versioned file (not hardcoded in application code)
+3. Golden test set covers happy paths, edge cases, and adversarial inputs
+4. Prompt injection defenses are tested (if user input enters the prompt)
+5. Structured output format is validated (JSON schema validation if applicable)
+6. Token cost and latency are within budget for the use case
+7. Prompt works on the target model (not just the model it was developed on)
+8. Regression test suite is configured to run on prompt changes
+
+## Error Recovery
+
+```
+IF prompt accuracy drops after model update:
+  1. Re-run the golden test set on the new model version
+  2. Identify which test cases regressed
+  3. Adjust the prompt for the new model (different models respond to different patterns)
+  4. Never assume a prompt that worked on one model version works on the next
+
+IF structured output parsing fails:
+  1. Add explicit format instructions and an example in the prompt
+  2. Use the model's native JSON mode if available (response_format: json)
+  3. Add a retry with a "fix this JSON" follow-up prompt for parsing failures
+  4. Log all parsing failures for pattern analysis and prompt improvement
+
+IF prompt injection is detected:
+  1. Add input sanitization before the prompt (strip control characters, limit length)
+  2. Use a separate system prompt that cannot be overridden by user input
+  3. Add output validation to detect when the model follows injected instructions
+  4. Test with known injection patterns from the OWASP LLM Top 10
+
+IF prompt is too expensive (token cost too high):
+  1. Reduce few-shot examples (use the minimum that maintains accuracy)
+  2. Shorten the system prompt without losing critical instructions
+  3. Consider a smaller/cheaper model for simpler tasks
+  4. Cache responses for identical or similar inputs
+```
+
+## Auto-Detection
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect AI framework: grep for openai, anthropic, langchain, llamaindex in dependencies
+2. Detect existing prompts: find . -name "*.prompt" -o -name "*prompt*.yaml" -o -name "*prompt*.json"
+3. Detect model configuration: grep for model name, API key env vars in config files
+4. Detect evaluation tools: grep for promptfoo, deepeval, ragas in dependencies or config
+5. Detect prompt management: grep for helicone, humanloop, langsmith in dependencies
+6. Auto-configure: match prompt patterns to detected model and framework
+```
+
 ## Anti-Patterns
 
 - **Do NOT ship untested prompts.** "I tried it once and it worked" is not testing. Run the golden set. Measure accuracy. Track regressions.

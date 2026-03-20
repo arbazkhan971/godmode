@@ -15,6 +15,43 @@ description: |
 - When `/godmode:plan` identifies Svelte tasks
 - When `/godmode:review` flags Svelte-specific patterns
 
+## Auto-Detection
+
+Run this sequence at skill start to determine project context:
+
+```bash
+# Detect Svelte presence and version
+cat package.json 2>/dev/null | grep -E '"svelte"|"@sveltejs/kit"'
+
+# Detect SvelteKit vs standalone
+ls svelte.config.js svelte.config.ts 2>/dev/null
+
+# Detect Svelte version (4 vs 5)
+cat node_modules/svelte/package.json 2>/dev/null | grep '"version"'
+
+# Detect reactivity model (runes vs legacy)
+grep -rl '\$state\|\$derived\|\$effect\|\$props' src/ 2>/dev/null | head -5
+grep -rl '\$:' src/ 2>/dev/null | head -5
+
+# Detect state management
+grep -r "writable\|readable\|derived" src/ 2>/dev/null | head -5
+
+# Detect adapter
+grep -E "adapter-(auto|node|static|vercel|cloudflare|netlify)" svelte.config.* 2>/dev/null
+
+# Detect CSS approach
+grep -E "tailwindcss|unocss|scss|sass" package.json 2>/dev/null
+
+# Detect testing
+grep -E "vitest|playwright|@testing-library/svelte" package.json 2>/dev/null
+
+# Detect TypeScript
+ls src/app.d.ts tsconfig.json 2>/dev/null
+
+# Detect UI library
+grep -E "skeleton|daisyui|melt-ui|bits-ui" package.json 2>/dev/null
+```
+
 ## Workflow
 
 ### Step 1: Project Discovery & Assessment
@@ -931,6 +968,99 @@ Note: Runes and legacy can coexist — migrate incrementally per file.
 7. **ALWAYS add `use:enhance` to forms.** Without it, every form submission causes a full page reload.
 8. **ALWAYS use Svelte 5 runes for new projects.** Runes (`$state`, `$derived`, `$effect`) are more explicit, more powerful, and the future of Svelte.
 
+## Output Format
+
+End every Svelte skill invocation with this summary block:
+
+```
+SVELTE RESULT:
+Action: <scaffold | component | route | store | optimize | test | audit | upgrade>
+Components created/modified: <N>
+Routes created/modified: <N>
+Svelte version: <4 | 5>
+Reactivity model: <runes | legacy | mixed>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/svelte.tsv` after each invocation:
+
+```
+timestamp	project	action	components_count	routes_count	stores_count	tests_status	build_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | component | route | store | optimize | test | audit | upgrade
+- `components_count`: number of components created or modified
+- `routes_count`: number of routes created or modified
+- `stores_count`: number of stores created or modified
+- `tests_status`: passing | failing | skipped | none
+- `build_status`: passing | failing | not-checked
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every Svelte skill invocation must pass ALL of these checks before reporting success:
+
+1. `svelte-check` passes with zero errors (run `npx svelte-check --tsconfig ./tsconfig.json`)
+2. `vite build` completes without errors
+3. No `$:` reactive statements in Svelte 5 projects (use runes instead)
+4. All `{#each}` blocks have a unique key expression
+5. No `document` or `window` access without `browser` guard or `onMount`
+6. No secrets in `+page.ts` files (only in `+page.server.ts` or `+server.ts`)
+7. All form elements use `use:enhance` for progressive enhancement
+8. Tests pass if test suite exists (`npx vitest run`)
+9. No module-level mutable state in server-rendered pages
+10. All load functions return typed data (TypeScript projects)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF svelte-check fails:
+  1. Read the error output line by line
+  2. Fix type errors: add missing types, fix prop type mismatches
+  3. Fix a11y warnings: add aria labels, alt text, role attributes
+  4. Re-run svelte-check after each batch of fixes
+  5. IF error is in a dependency → check that dependency version is compatible with Svelte version
+
+IF vite build fails:
+  1. Check for missing imports or circular dependencies
+  2. Verify adapter configuration in svelte.config.js matches deployment target
+  3. Check that server-only imports are not used in client code
+  4. Verify all environment variables use $env/static or $env/dynamic correctly
+  5. Run `vite build 2>&1 | head -50` and fix the first error
+
+IF hydration mismatch occurs:
+  1. Check for browser-only code running during SSR
+  2. Wrap client-only code in `{#if browser}` blocks or `onMount`
+  3. Verify no random/date values are generated during SSR without consistent seeding
+  4. Check that stores are not shared across requests (use context instead)
+
+IF load function errors:
+  1. Verify +page.server.ts vs +page.ts placement (server secrets must be in .server)
+  2. Check that error() and redirect() are thrown, not returned
+  3. Verify parent() calls are awaited in nested layouts
+  4. Check that invalidateAll() or invalidate() is called after mutations
+
+IF test failures:
+  1. Verify @testing-library/svelte version matches Svelte version
+  2. Check that component props match expected types
+  3. Verify async state changes are wrapped in act() or waitFor()
+  4. Check that mocked stores use the correct writable/readable interface
+```
+
 ## Anti-Patterns
 
 - **Do NOT fetch data in `onMount`.** Use SvelteKit load functions. They run on the server, handle errors, are type-safe, and prevent waterfalls.
@@ -942,3 +1072,11 @@ Note: Runes and legacy can coexist — migrate incrementally per file.
 - **Do NOT create global mutable state in modules.** Server-rendered pages share module scope across requests. Use stores or context for per-request state.
 - **Do NOT skip `use:enhance` on forms.** Without it, every form submission causes a full page reload. Progressive enhancement is a one-line addition.
 - **Do NOT manually manage subscriptions.** In Svelte templates, store auto-subscription (`$store`) handles cleanup. In Svelte 5, `$effect` handles cleanup via its return function.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Replace `Agent("task")` → run the task inline in the current conversation
+- Replace `EnterWorktree` → use `git stash` + work in current directory
+- Replace `TodoWrite` → track progress with numbered comments in chat
+- All Svelte conventions, patterns, and quality checks still apply identically

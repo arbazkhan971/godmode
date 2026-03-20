@@ -406,6 +406,79 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. EVERY renamed symbol must be updated in comments, docs, and error messages — not just code.
 ```
 
+## Output Format
+
+After each refactoring skill invocation, emit a structured report:
+
+```
+REFACTORING REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Pattern used        │  <Extract | Inline | Move | Rename | Simplify> │
+│  Target              │  <file or module>              │
+│  Commits             │  <N> (all atomic, all green)   │
+│  Tests before        │  <N> passing                   │
+│  Tests after         │  <N> passing (+<N> new)        │
+│  Coverage before     │  <N>%                          │
+│  Coverage after      │  <N>%                          │
+│  Files modified      │  <N>                           │
+│  Files created       │  <N>                           │
+│  Files deleted       │  <N>                           │
+│  Dead code           │  <N> unused exports detected   │
+│  Behavior change     │  NONE (refactor only)          │
+│  Verdict             │  PASS | REVERTED               │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every refactoring step for tracking:
+
+```
+timestamp	skill	target	pattern	tests_before	tests_after	coverage_before	coverage_after	status
+2026-03-20T14:00:00Z	refactor	UserController	extract_service	147	152	78	82	pass
+2026-03-20T14:30:00Z	refactor	auth.ts	rename_symbol	152	152	82	82	pass
+```
+
+## Success Criteria
+
+The refactor skill is complete when ALL of the following are true:
+1. All tests pass after every transformation step (no batching)
+2. Test count is the same or higher than before refactoring
+3. Test coverage is the same or higher than before refactoring
+4. No behavior change (refactoring changes structure, not behavior)
+5. Each transformation is a separate, revertable commit
+6. No dead code left behind (verified with ts-prune or equivalent)
+7. All renamed symbols are updated in comments, docs, and error messages
+8. Impact analysis was performed before making changes
+
+## Error Recovery
+
+```
+IF tests fail after a transformation:
+  1. REVERT immediately — do not debug forward
+  2. Investigate what the transformation changed that affected behavior
+  3. Plan a smaller, more targeted transformation
+  4. Apply the smaller step and re-run tests
+
+IF coverage decreases after refactoring:
+  1. Identify which lines/branches lost coverage
+  2. Write tests for the uncovered paths BEFORE continuing
+  3. Commit the new tests separately: "test: add coverage for <target>"
+  4. Resume refactoring only after coverage is restored
+
+IF dead code is detected after refactoring:
+  1. Verify zero references with grep AND type checker
+  2. Check for dynamic references (reflection, string-based imports)
+  3. Remove confirmed dead code in a separate commit
+  4. Run tests after removal to confirm nothing depended on it
+
+IF refactoring scope is too large (> 30 dependents):
+  1. Switch to strangler pattern (new alongside old)
+  2. Migrate dependents one at a time in separate commits
+  3. Remove old code only after all dependents are migrated
+  4. Each migration commit must pass all tests independently
+```
+
 ## Anti-Patterns
 
 - **Do NOT refactor without tests.** Refactoring untested code is rewriting code while hoping nothing breaks. Write tests first.

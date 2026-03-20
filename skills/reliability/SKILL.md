@@ -745,6 +745,77 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. Toil MUST be measured monthly. If toil > 50% of team time, stop features and automate.
 ```
 
+## Output Format
+
+After each reliability skill invocation, emit a structured report:
+
+```
+RELIABILITY REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Service             │  <name>                        │
+│  Business tier       │  Tier <1|2|3>                  │
+│  SLOs defined        │  <N> SLOs for <N> SLIs         │
+│  Error budget        │  <N> min/month (remaining: <N>%)│
+│  Burn rate alerts    │  <N> configured                │
+│  Runbook coverage    │  <N>/<M> alerts have runbooks  │
+│  On-call rotation    │  <N> engineers, <rotation type> │
+│  Toil                │  <N> hours/month (<N>% of capacity) │
+│  Prod readiness      │  <N>/<M> checks passing        │
+│  Maturity level      │  L<1|2|3>                      │
+│  Verdict             │  RELIABLE | NEEDS WORK         │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every reliability action for tracking:
+
+```
+timestamp	skill	service	action	slos_defined	runbook_coverage	toil_hours	status
+2026-03-20T14:00:00Z	reliability	payment-api	slo_define	4	100%	8	reliable
+2026-03-20T14:30:00Z	reliability	user-service	toil_audit	2	60%	26	needs_work
+```
+
+## Success Criteria
+
+The reliability skill is complete when ALL of the following are true:
+1. SLOs are defined for all SLI categories relevant to the service type
+2. Error budgets are calculated and error budget policy is documented
+3. Multi-window burn rate alerts are configured for all SLOs
+4. Every pageable alert has a corresponding runbook
+5. On-call rotation has minimum 5 people and sustainable schedule
+6. Toil is measured and below 50% of team capacity
+7. Incident management process is documented with severity definitions and roles
+8. Production readiness checklist passes all critical items
+
+## Error Recovery
+
+```
+IF SLO is constantly violated (budget always exhausted):
+  1. Check if the SLO target is realistic — compare to actual measured reliability
+  2. If target is realistic: invest in reliability improvements (the system is unreliable)
+  3. If target is too aggressive: loosen the SLO to match achievable reliability
+  4. Start from current measured reliability minus a small margin
+
+IF burn rate alerts fire too frequently (false positives):
+  1. Verify the multi-window configuration — both long AND short windows must trigger
+  2. Check for noisy metrics (spikes in non-user-facing traffic)
+  3. Adjust burn rate thresholds (increase to reduce sensitivity)
+  4. Exclude known-benign traffic patterns from the SLI calculation
+
+IF toil exceeds 50% of team capacity:
+  1. Inventory all toil tasks with frequency and time per occurrence
+  2. Prioritize by highest monthly hours first
+  3. Automate the top 3 tasks (highest ROI)
+  4. Freeze feature work until toil is below 50%
+
+IF on-call engineer is overloaded (> 5 pages per shift):
+  1. Analyze the alerts: are they actionable or noisy?
+  2. Tune or eliminate noisy alerts (false positives)
+  3. Automate self-healing for the most common alerts
+  4. If pages are all legitimate: the system needs reliability investment, not more on-call
+```
+
 ## Anti-Patterns
 
 - **Do NOT set SLOs at 100%.** A 100% availability target is impossible and means zero error budget. This stops all deployments. Set realistic targets (99.9% is generous for most services).

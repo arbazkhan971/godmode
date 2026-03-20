@@ -463,3 +463,92 @@ AUTO-DETECT:
 - **Do NOT assume cloud provider handles compliance.** AWS being HIPAA-eligible does not make YOUR application HIPAA-compliant. You own the application layer.
 - **Do NOT ignore data retention.** "We keep everything forever" is a compliance violation for most regulations. Define retention periods and enforce them automatically.
 - **Do NOT provide legal advice.** This skill identifies technical compliance gaps. For legal interpretation, recommend consulting legal counsel.
+
+## Output Format
+
+Every comply invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  COMPLIANCE RESULT                                          │
+├────────────────────────────────────────────────────────────┤
+│  Regulations assessed: <list>                               │
+│  GDPR: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>         │
+│  HIPAA: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>        │
+│  SOC2: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>         │
+│  PCI-DSS: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>      │
+│  Findings: <N>C <N>H <N>M <N>L                             │
+│  Audit trail: <COMPLETE | PARTIAL | MISSING>                │
+│  License risk: <CLEAR | REVIEW NEEDED | RISK>               │
+│  Verdict: <COMPLIANT | CONDITIONAL | NON-COMPLIANT>         │
+└────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every compliance audit to `.godmode/compliance-audit.tsv`:
+
+```
+timestamp	regulation	scope	critical	high	medium	low	audit_trail	license_risk	verdict
+```
+
+Append one row per regulation assessed. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+COMPLIANT if ALL of the following:
+  - Every applicable regulation is fully assessed
+  - Zero CRITICAL findings
+  - Zero HIGH findings
+  - Every finding references a specific regulation article (e.g., "GDPR Article 17")
+  - Every finding points to actual code (file path, line number, function)
+  - Audit trail covers all required event categories and is tamper-resistant
+  - Data retention policies are defined and automatically enforced
+  - License compliance has no GPL/AGPL dependencies in proprietary distribution
+  - Consent management (if GDPR applies) covers all processing activities
+
+CONDITIONAL if:
+  - Zero CRITICAL findings
+  - HIGH findings exist but all have remediation plans with < 30-day SLA
+  - No active data breaches or unmitigated exposure
+
+NON-COMPLIANT if ANY of the following:
+  - Any CRITICAL compliance gap exists (e.g., no consent management for EU user data)
+  - PHI is transmitted without encryption (HIPAA violation)
+  - CVV/full PAN stored in the database (PCI-DSS violation)
+  - Audit trail is missing or tamper-possible
+  - Data subject rights (access, erasure, portability) are not implemented when GDPR applies
+  - GPL/AGPL dependency in proprietary SaaS without legal clearance
+```
+
+## Error Recovery
+
+```
+IF a compliance gap is discovered close to launch:
+  1. Classify severity: CRITICAL gaps block launch, HIGH gaps require timeline commitment
+  2. For CRITICAL GDPR gaps: implement minimum viable consent and data subject rights
+  3. For CRITICAL HIPAA gaps: enable encryption in transit and at rest immediately
+  4. For CRITICAL PCI gaps: move to tokenized payment processing (Stripe/Braintree)
+  5. Document the gap, remediation plan, and timeline for auditors
+  6. Consult legal counsel — technical fixes alone may not satisfy regulatory obligations
+
+IF remediation introduces new compliance gaps:
+  1. Re-run the compliance audit on the remediated code
+  2. A fix for GDPR Article 17 (erasure) must not break Article 20 (portability)
+  3. If conflict exists: document the trade-off and consult legal counsel
+  4. Revert the fix if it creates a gap of equal or higher severity
+
+IF audit trail data is lost or corrupted:
+  1. Treat as a compliance incident — missing audit data is a finding in itself
+  2. Reconstruct what is possible from application logs, database logs, and cloud audit trails
+  3. Document the gap: time window, data types affected, reconstruction status
+  4. Implement redundant audit trail storage (primary + backup in different systems)
+  5. File an incident report and notify compliance stakeholders
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run compliance tasks sequentially: scope definition, then per-regulation checks (GDPR, HIPAA, SOC2, PCI-DSS), then audit trail validation, then license compliance.
+- Use branch isolation per task: `git checkout -b godmode-comply-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

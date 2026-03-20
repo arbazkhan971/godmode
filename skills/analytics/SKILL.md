@@ -842,6 +842,77 @@ IF platform_count > 1 OR event_count > 30:
   COORDINATOR validates all events fire correctly, taxonomy is consistent
 ```
 
+## Output Format
+
+After each analytics skill invocation, emit a structured report:
+
+```
+ANALYTICS IMPLEMENTATION REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Platform            │  <Segment | Amplitude | PostHog | etc> │
+│  Events tracked      │  <N> across <M> categories     │
+│  Funnels defined     │  <N>                           │
+│  Experiments         │  <N> A/B tests instrumented    │
+│  Privacy model       │  <GDPR compliant | cookieless | consent-based> │
+│  Consent gate        │  WORKING / NOT TESTED / N/A    │
+│  PII audit           │  CLEAN / <N> violations found  │
+│  DNT respected       │  YES / NO                      │
+│  Bundle impact       │  +<N> KB (analytics SDK)       │
+│  Verdict             │  PASS | NEEDS REVISION         │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every analytics implementation action for tracking:
+
+```
+timestamp	skill	action	platform	events	funnels	privacy_model	status
+2026-03-20T14:00:00Z	analytics	implement	posthog	24	3	gdpr_compliant	pass
+2026-03-20T14:30:00Z	analytics	audit	posthog	24	3	gdpr_compliant	2_pii_violations
+```
+
+## Success Criteria
+
+The analytics skill is complete when ALL of the following are true:
+1. Event taxonomy is designed before any tracking code is written
+2. All events follow the naming convention consistently
+3. No PII in any event properties (verified with audit)
+4. Consent gate works correctly (no tracking before consent in GDPR jurisdictions)
+5. DNT/opt-out disables all tracking when activated
+6. All funnel steps fire in correct order (verified with analytics debugger)
+7. A/B test assignments are deterministic and sticky
+8. Analytics SDK does not block page load (async loading)
+9. Debug/dev events are filtered from production
+
+## Error Recovery
+
+```
+IF events are not appearing in the analytics dashboard:
+  1. Check browser console for SDK initialization errors
+  2. Verify the API key/write key is correct for the environment
+  3. Use the analytics debugger (Segment Debugger, PostHog Toolbar) to inspect events
+  4. Check for ad blockers or CSP rules blocking the analytics endpoint
+
+IF PII is detected in event properties:
+  1. Identify the specific events and properties containing PII
+  2. Remove PII from the tracking code immediately
+  3. Contact the analytics platform to delete the affected data (GDPR requirement)
+  4. Add PII validation to the analytics abstraction layer to prevent recurrence
+
+IF consent gate is not working:
+  1. Verify the analytics SDK loads only after consent is granted
+  2. Test: revoke consent and verify no tracking events fire
+  3. Test: clear cookies/localStorage and verify the consent prompt appears
+  4. Check that the consent state is persisted correctly
+
+IF A/B test shows unbalanced assignment:
+  1. Verify the hash function produces uniform distribution
+  2. Check for off-by-one errors in the variant assignment logic
+  3. Run a chi-squared test on the assignment distribution
+  4. If assignment uses a feature flag service, verify the flag configuration
+```
+
 ## Anti-Patterns
 
 - **Do NOT track events without a taxonomy.** Random event names like "click1", "button_pressed", "user_did_thing" are useless. Design the taxonomy first.

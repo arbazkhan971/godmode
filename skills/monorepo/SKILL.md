@@ -709,6 +709,77 @@ MERGE:
    dependency problems. Use strict node_modules (pnpm default).
 ```
 
+## Output Format
+
+After each monorepo skill invocation, emit a structured report:
+
+```
+MONOREPO REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Repository          │  <name>                        │
+│  Tool                │  <Turborepo | Nx | Lerna | Bazel> │
+│  Package manager     │  <pnpm | npm | yarn | bun>     │
+│  Packages            │  <N> (apps: <N>, libs: <N>)    │
+│  Boundary violations │  <N> found / <N> fixed         │
+│  Circular deps       │  <N> found / <N> fixed         │
+│  Config duplication  │  <N> duplicated / <N> shared    │
+│  CI time (full)      │  <N> min                       │
+│  CI time (affected)  │  <N> min                       │
+│  Remote caching      │  ENABLED / NOT CONFIGURED      │
+│  Verdict             │  HEALTHY | NEEDS ATTENTION     │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every monorepo operation for tracking:
+
+```
+timestamp	skill	action	packages	boundary_violations	ci_time_min	status
+2026-03-20T14:00:00Z	monorepo	init_turborepo	6	0	4.2	healthy
+2026-03-20T14:30:00Z	monorepo	audit_boundaries	23	7	24.7	needs_fix
+```
+
+## Success Criteria
+
+The monorepo skill is complete when ALL of the following are true:
+1. Build orchestrator is configured (Turborepo, Nx, or equivalent)
+2. Zero boundary violations (apps do not import other apps)
+3. Zero circular dependencies between packages
+4. Shared configs are centralized (tsconfig, eslint, prettier in packages/config)
+5. CI uses selective builds (only affected packages are built/tested)
+6. Remote caching is configured (reduces CI time by 70-90%)
+7. Lock file is committed and --frozen-lockfile is used in CI
+8. All packages declare explicit dependencies (no phantom deps)
+
+## Error Recovery
+
+```
+IF circular dependency is detected:
+  1. Identify the cycle: package A -> B -> A
+  2. Extract shared code into a new package C that both A and B import
+  3. Update imports in A and B to reference C instead of each other
+  4. Verify the cycle is broken: run dependency graph visualization
+
+IF CI time is excessive (> 10 min for affected-only builds):
+  1. Check that selective builds are configured correctly (--filter or affected)
+  2. Verify remote caching is working (check cache hit rate)
+  3. Check for packages that are always rebuilt (usually config or types packages)
+  4. Consider splitting large packages into smaller, more focused ones
+
+IF boundary violation is detected:
+  1. Identify which app is importing from another app
+  2. Extract the shared code into a packages/ library
+  3. Update both apps to import from the shared library
+  4. Add lint rule to prevent future violations
+
+IF build fails after adding a new package:
+  1. Verify the package is listed in pnpm-workspace.yaml (or equivalent)
+  2. Check that the package's package.json has the correct name and scope
+  3. Run pnpm install to update the workspace graph
+  4. Verify the build pipeline includes the new package in the dependency graph
+```
+
 ## Anti-Patterns
 
 - **Do NOT use a monorepo without a build orchestrator.** Running `npm run build` in 20 packages sequentially is not a monorepo strategy. Use Turborepo, Nx, or Bazel.

@@ -1205,6 +1205,98 @@ MONITORING:
 - **Do NOT tune postgresql.conf randomly.** Use PGTune for initial settings, then profile with pg_stat_statements. Random tuning often makes things worse.
 
 
+## Output Format
+
+Every postgres invocation must produce a structured report:
+
+```
++------------------------------------------------------------+
+|  POSTGRES RESULT                                            |
++------------------------------------------------------------+
+|  Version:        <version>                                  |
+|  Hosting:        <platform>                                 |
+|  Work performed: <description>                              |
+|  Cache hit ratio: <pct>%                                    |
+|  Dead tuple ratio: <pct>%                                   |
+|  Unused indexes:  <count>                                   |
+|  Replication lag: <seconds>s                                |
+|  Verdict: <HEALTHY | NEEDS TUNING | DEGRADED>               |
++------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every PostgreSQL operation to `.godmode/postgres-ops.tsv`:
+
+```
+timestamp	operation	target_table	metric_before	metric_after	improvement_pct	verdict
+```
+
+Append one row per operation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+HEALTHY if ALL of the following:
+  - Cache hit ratio > 99%
+  - Index hit ratio > 95%
+  - Dead tuple ratio < 10% on all tables
+  - Zero unused non-unique, non-primary-key indexes over 10MB
+  - No queries > 60s in pg_stat_activity
+  - No blocked queries (pg_blocking_pids returns empty)
+  - Connections < 80% of max_connections
+  - Replication lag < 1s (if replication is configured)
+  - Transaction wraparound < 50% of limit
+  - pg_stat_statements is installed
+
+NEEDS TUNING if ANY of the following:
+  - Cache hit ratio between 95-99%
+  - Dead tuple ratio between 10-30% on any table
+  - Unused indexes exist over 10MB
+  - Queries > 30s in pg_stat_activity
+  - Connections between 60-80% of max_connections
+
+DEGRADED if ANY of the following:
+  - Cache hit ratio < 95%
+  - Dead tuple ratio > 30% on any table
+  - Blocked queries exist for > 30s
+  - Replication lag > 10s
+  - Connections > 80% of max_connections without a pooler
+  - Transaction wraparound > 75% of limit
+```
+
+## Error Recovery
+
+```
+IF a migration or DDL change locks a table in production:
+  1. Check pg_stat_activity for blocking PIDs: SELECT pg_blocking_pids(pid) FROM pg_stat_activity WHERE wait_event_type = 'Lock'
+  2. If the DDL is CREATE INDEX: cancel and use CREATE INDEX CONCURRENTLY instead
+  3. If the DDL is ALTER TABLE: check if the operation requires a full table rewrite (adding NOT NULL, changing type) and schedule for maintenance window
+  4. If queries are blocked: cancel the DDL (pg_cancel_backend), not the blocked queries
+  5. For future DDL: always use lock_timeout = '3s' to fail fast rather than block
+
+IF autovacuum is not keeping up with dead tuples:
+  1. Check current autovacuum settings for the table: SELECT reloptions FROM pg_class WHERE relname = '<table>'
+  2. Tune per-table: lower autovacuum_vacuum_scale_factor (0.01-0.05), increase autovacuum_vacuum_cost_limit (500-1000)
+  3. Run manual VACUUM (VERBOSE, PARALLEL 4) <table> for immediate relief
+  4. If bloat exceeds 50%: use pg_repack for online compaction (not VACUUM FULL)
+  5. Monitor after tuning — check pg_stat_user_tables.n_dead_tup is trending down
+
+IF replication lag spikes:
+  1. Check pg_stat_replication on the primary for write_lag, flush_lag, replay_lag
+  2. Check the replica for long-running queries that block replay (hot_standby_feedback)
+  3. If network-related: check wal_keep_size is large enough to prevent WAL gap
+  4. If CPU-related on replica: check max_parallel_workers on the replica
+  5. If persistent: consider increasing wal_sender_timeout and adding more replicas for read distribution
+
+IF connection pool exhaustion occurs:
+  1. Check pg_stat_activity for idle-in-transaction connections: SELECT * FROM pg_stat_activity WHERE state = 'idle in transaction'
+  2. Kill long-idle connections: SELECT pg_terminate_backend(pid) for connections idle > 5 minutes
+  3. If no pooler exists: install PgBouncer in transaction mode immediately
+  4. Tune pool sizes: default_pool_size = 20, max_db_connections = min(max_connections * 0.8, 100)
+  5. Application-side: ensure every database connection is released after use (try/finally pattern)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Postgres tasks sequentially: schema/extensions, then query optimization, then replication/partitioning, then connection pooling/tuning.

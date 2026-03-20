@@ -540,6 +540,64 @@ AUTO-DETECT:
 -> Only ask user about core vs supporting domain classification.
 ```
 
+## Output Format
+Print on completion:
+```
+DDD SESSION: {domain_name}
+Core domain: {core_domain_name}
+Bounded contexts: {N} identified ({list})
+Aggregates: {N} designed
+Domain events: {N} cataloged
+Value objects: {N} defined
+Context map relationships: {N} mapped
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every DDD session to `.godmode/ddd-results.tsv`:
+```
+timestamp	domain	bounded_contexts	aggregates	events	value_objects	context_relationships	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Core domain identified and distinguished from supporting and generic domains.
+2. Ubiquitous language glossary created with at least 5 terms defined unambiguously.
+3. Event storming completed through at least Phase 4 (aggregates identified).
+4. Every aggregate has documented invariants, commands, and events.
+5. Context map shows relationship types between all bounded contexts.
+6. No aggregate contains more than 4 entities.
+7. Cross-aggregate references use IDs only, never direct object references.
+8. Domain event catalog includes source context, payload fields, and schema version.
+
+## Error Recovery
+```
+IF user asks to start with database schema:
+  → Redirect: "Model the domain first. Schema is derived from the domain model."
+  → Begin with Step 1 (Domain Discovery) instead of Step 7 (Implementation Scaffold)
+  → After domain model is complete, suggest: "/godmode:schema to generate the persistence layer"
+
+IF aggregate grows beyond 4 entities:
+  → Flag: "Aggregate {name} has {N} entities — exceeds recommended maximum of 4"
+  → Analyze which entities can be extracted into separate aggregates
+  → Verify: extracted entities communicate via domain events, not direct references
+
+IF same term means different things in different contexts:
+  → This is correct DDD behavior — create separate entries in each context's glossary
+  → Document: "'Order' in Ordering = items customer wants to buy. 'Order' in Fulfillment = items to pick and ship."
+  → Add anti-corruption layer or published language at the boundary
+
+IF no clear bounded context boundaries emerge:
+  → The domain may not need DDD — check if it is primarily CRUD
+  → If CRUD: suggest simpler architecture, do NOT force DDD patterns
+  → If complex but unclear: run another event storming round focusing on language divergence points
+
+IF existing codebase has anemic domain model:
+  → Do NOT rewrite immediately
+  → Add behavior to domain objects incrementally (one aggregate per sprint)
+  → Track: "Enriched {aggregate} — moved {N} methods from services to domain"
+```
+
 ## Anti-Patterns
 
 - **Do NOT start with the database schema.** DDD models the domain, not the database. The persistence model is derived from the domain model, not the other way around.
@@ -550,3 +608,10 @@ AUTO-DETECT:
 - **Do NOT hold references across aggregate boundaries.** Use IDs. Direct references create hidden coupling and make it impossible to enforce transactional boundaries.
 - **Do NOT force immediate consistency across aggregates.** If two aggregates must be consistent, they should probably be one aggregate. Otherwise, use domain events and eventual consistency.
 - **Do NOT model the entire domain at once.** Start with the core domain. Model supporting domains simply. Use off-the-shelf for generic domains. Expand DDD coverage only when complexity justifies it.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run DDD tasks sequentially: domain discovery, then event storming, then tactical design, then scaffold.
+- Use branch isolation per task: `git checkout -b godmode-ddd-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -725,6 +725,76 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. EVERY route change in SPA must update the document title and push to analytics.
 ```
 
+## Output Format
+
+After each SEO skill invocation, emit a structured report:
+
+```
+SEO AUDIT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Pages audited      │  <N>                            │
+│  Meta tags fixed    │  <N>                            │
+│  Structured data    │  <N> schemas added/updated      │
+│  Canonical URLs     │  <N> set / <N> missing          │
+│  Core Web Vitals    │  LCP: <N>s  INP: <N>ms  CLS: <N>│
+│  Lighthouse SEO     │  <N>/100                        │
+│  Sitemap            │  <N> URLs, auto-generated: YES/NO│
+│  Robots.txt         │  Valid: YES/NO                  │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every SEO action for tracking:
+
+```
+timestamp	skill	page	action	metric	before	after	status
+2026-03-20T14:00:00Z	seo	/home	meta_title	length	0	58	fixed
+2026-03-20T14:01:00Z	seo	/product	structured_data	Product	missing	added	fixed
+2026-03-20T14:02:00Z	seo	/blog	core_web_vitals	LCP	3.8s	2.1s	improved
+```
+
+## Success Criteria
+
+The SEO skill is complete when ALL of the following are true:
+1. Every page has a unique meta title (50-60 chars) and meta description (150-160 chars)
+2. Every page has a canonical URL set
+3. Structured data (JSON-LD) validates with zero errors in Google Rich Results Test
+4. Core Web Vitals meet targets: LCP < 2.5s, INP < 200ms, CLS < 0.1
+5. Lighthouse SEO score >= 90
+6. Sitemap is auto-generated and referenced in robots.txt
+7. Every page has a single H1 tag and logical heading hierarchy
+8. Open Graph and Twitter Card meta tags are present on all shareable pages
+
+## Error Recovery
+
+```
+IF Lighthouse SEO score is below 90:
+  1. Review the specific failing audits in the Lighthouse report
+  2. Fix in priority order: missing titles > missing descriptions > missing alt text > crawl issues
+  3. Re-run Lighthouse after each batch of fixes
+  4. If score remains low, check for blocked resources in robots.txt
+
+IF structured data validation fails:
+  1. Paste the JSON-LD into Google Rich Results Test (https://search.google.com/test/rich-results)
+  2. Fix required fields first (name, description for Article; name, image for Product)
+  3. Ensure JSON-LD values match visible page content (no fabricated data)
+  4. Re-validate after each fix
+
+IF Core Web Vitals fail:
+  1. LCP > 2.5s: optimize largest image (compress, add srcset, preload), reduce server response time
+  2. INP > 200ms: profile long tasks, break up heavy JavaScript, defer non-critical scripts
+  3. CLS > 0.1: add explicit width/height to images/video, avoid injecting content above the fold
+  4. Re-measure with PageSpeed Insights after each optimization
+
+IF sitemap generation fails:
+  1. Verify the sitemap plugin/script is installed and configured
+  2. Check build output for sitemap.xml in the correct public directory
+  3. Validate sitemap XML syntax at https://www.xml-sitemaps.com/validate-xml-sitemap.html
+  4. Ensure robots.txt contains: Sitemap: https://<domain>/sitemap.xml
+```
+
 ## Anti-Patterns
 
 - **Do NOT stuff keywords into meta tags.** "Buy cheap shoes online best shoes cheap shoes sale" is spam. Write naturally for humans with one primary keyword per page.

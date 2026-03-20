@@ -855,3 +855,135 @@ AUTO-DETECT SEQUENCE:
 - **Do NOT skip monitoring.** A cache with unknown hit rate and no eviction alerts is a production incident waiting to happen.
 - **Do NOT cache sensitive data without encryption.** User tokens, PII, and payment data in plaintext Redis is a security vulnerability. Encrypt or do not cache.
 - **Do NOT use inconsistent key naming.** Keys like "prod_123", "product:123", and "PRODUCT-123" in the same system make debugging and invalidation impossible. Pick a convention and enforce it.
+
+## Output Format
+
+```
+CACHE STRATEGY COMPLETE:
+  Cache layers: <L1 in-process | L2 Redis | L3 CDN> — <N> layers configured
+  Cache technology: <Redis | Memcached | Varnish | CloudFront | other>
+  Keys designed: <N> key patterns
+  Invalidation: <TTL | event-based | write-through | write-behind>
+  Stampede prevention: <mutex | PER | none>
+  Hit rate target: <N>% (measured baseline: <M>%)
+  TTLs: <range> (shortest: <N>s, longest: <M>s)
+  Memory budget: <N> MB estimated
+
+KEY PATTERN SUMMARY:
++--------------------------------------------------------------+
+|  Key Pattern             | TTL    | Invalidation | Stampede   |
++--------------------------------------------------------------+
+|  <entity>:<id>           | 300s   | event-based  | mutex      |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every caching session to `.godmode/cache-results.tsv`:
+
+```
+Fields: timestamp\tproject\tcache_technology\tkeys_designed\tinvalidation_strategy\tstampede_prevention\thit_rate_before\thit_rate_after\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\tredis\t8\tevent-based\tmutex\t0\t92\tabc1234
+```
+
+Append after every completed caching design or optimization pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+CACHE SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Every cached key has a TTL                 | YES              |
+|  Invalidation strategy defined per key      | YES              |
+|  Stampede prevention on hot keys            | YES              |
+|  Cache-aside pattern (delete on write)      | YES              |
+|  Key naming convention consistent           | YES              |
+|  Hit rate monitoring configured             | YES              |
+|  Eviction policy set (allkeys-lru or equiv) | YES              |
+|  Memory limit configured                    | YES              |
+|  No sensitive data cached without encryption| YES              |
+|  Fallback to DB when cache is down          | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — CACHE:
+1. Cache hit rate below target:
+   → Check TTLs (too short = low hits). Check key granularity (too specific = low hits). Check eviction rate (memory too small). Add monitoring for miss reasons.
+2. Cache stampede detected (DB spike on key expiry):
+   → Implement mutex/lock-based refresh (only one request refreshes, others wait). Or use probabilistic early refresh (PER). Never let all requests hit DB simultaneously.
+3. Stale data served after write:
+   → Verify invalidation fires on every write path (including bulk updates, admin tools, migrations). Use event-based invalidation, not just TTL.
+4. Redis connection failures:
+   → Verify connection pool configuration. Check max connections vs concurrent requests. Implement circuit breaker. Ensure application falls back to DB gracefully (fail open).
+5. Memory limit exceeded (evictions spiking):
+   → Audit key sizes (redis-cli --bigkeys). Reduce TTLs on large keys. Move large objects to separate Redis instance. Consider compression for large values.
+6. Inconsistent key naming causing partial invalidation:
+   → Audit all cache keys with SCAN. Standardize naming to <entity>:<id>:<field> pattern. Refactor all cache writes and invalidations to use the standard pattern.
+```
+
+## Explicit Loop Protocol
+
+```
+CACHE KEY DESIGN LOOP:
+current_iteration = 0
+cacheable_entities = detect_high_read_entities()  // e.g., [users, products, sessions, config]
+
+WHILE current_iteration < len(cacheable_entities) AND NOT user_says_stop:
+  entity = cacheable_entities[current_iteration]
+  current_iteration += 1
+
+  1. Identify read/write ratio for this entity
+  2. Design key pattern: <entity>:<id>[:<field>]
+  3. Set TTL based on staleness tolerance
+  4. Choose invalidation strategy (TTL-only, event-based, write-through)
+  5. Add stampede prevention if entity is high-traffic
+  6. Implement cache-aside wrapper (get from cache → miss → get from DB → set cache)
+  7. Add cache hit/miss metrics for this key pattern
+  8. REPORT: "Entity {current_iteration}/{total}: {name} — TTL: {N}s, invalidation: {strategy}, stampede: {prevention}"
+
+ON COMPLETION:
+  Configure memory limits and eviction policy
+  Set up monitoring dashboard (hit rate, eviction rate, memory usage)
+  REPORT: "{N} key patterns, avg TTL: {M}s, invalidation: {strategy}, monitoring: configured"
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL CACHE AGENTS:
+When designing caching across multiple layers or domains:
+
+Agent 1 (worktree: cache-design):
+  - Identify all cacheable entities and access patterns
+  - Design key patterns with consistent naming convention
+  - Set TTLs and invalidation strategies per entity
+  - Document cache warming strategy for cold starts
+
+Agent 2 (worktree: cache-infra):
+  - Configure Redis/Memcached (memory, eviction, persistence)
+  - Implement cache-aside wrappers with stampede prevention
+  - Add connection pooling and circuit breaker
+  - Set up CDN/Varnish layer if applicable
+
+Agent 3 (worktree: cache-monitoring):
+  - Add cache hit/miss/eviction metrics (Prometheus/StatsD)
+  - Create monitoring dashboard (hit rate, latency, memory)
+  - Configure alerts (hit rate < threshold, eviction spike, connection errors)
+  - Write cache invalidation integration tests
+
+MERGE: Design merges first. Infra rebases onto design.
+  Monitoring rebases onto infra. Final: verify hit rates with load test.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run caching tasks sequentially: cache design, then infrastructure setup, then monitoring.
+- Use branch isolation per task: `git checkout -b godmode-cache-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -50,16 +50,178 @@ Godmode ships with 7 specialized subagents. Spawn them for complex tasks that be
 
 **Agent definitions:** `agents/*.md` (Claude Code), `.codex/agents/*.toml` (Codex)
 
-**Usage pattern (parallel platforms — Claude Code):**
-1. Spawn `planner` to decompose a goal into rounds of parallel tasks
-2. Spawn `explorer` to map the codebase before builders start
-3. Spawn multiple `builder` agents in parallel (one per task, each following a skill)
-4. Spawn `reviewer` to check each builder's work
-5. Spawn `optimizer` to improve the merged result
-6. Spawn `security` for a final audit before shipping
+Additional specialized reviewers (`code-reviewer.md`, `spec-reviewer.md`) are available for focused review tasks dispatched by the review and think skills respectively.
 
-**Sequential platforms (Gemini CLI, OpenCode, Codex):**
-Same workflow, but execute each agent role sequentially in the current session: plan → explore → build (one task at a time) → review (4 passes) → optimize (one experiment at a time). See `adapters/shared/sequential-dispatch.md` for the full protocol. Core skills include `## Platform Fallback` sections with specific instructions.
+## Agent Capability Matrix
+
+Each agent has explicit tool access constraints. Violations are bugs — agents must not exceed their granted permissions.
+
+| Agent | Read | Write | Edit | Bash | Grep | Glob | Agent() | Worktree | Git |
+|-------|------|-------|------|------|------|------|---------|----------|-----|
+| **planner** | Yes | `.godmode/` only | No | Read-only | Yes | Yes | No | No | `log` only |
+| **builder** | Yes | Yes | Yes | Yes | Yes | Yes | No | Yes | Yes |
+| **reviewer** | Yes | `.godmode/` only | No | Test only | Yes | Yes | No | No | `log` only |
+| **optimizer** | Yes | Yes | Yes | Yes | Yes | Yes | No | Yes | Yes |
+| **explorer** | Yes | No | No | Read-only | Yes | Yes | No | No | `log` only |
+| **security** | Yes | `.godmode/` only | No | Read-only | Yes | Yes | No | No | `log` only |
+| **tester** | Yes | Test files only | Test files only | Yes | Yes | Yes | No | Yes | Yes |
+
+**Key constraints:**
+
+- **Read-only Bash** means the agent can run commands that inspect state (`ls`, `cat`, `find`, `wc`, `git log`, `git diff`) but must not run commands that modify state (`rm`, `mv`, `npm install`, `git commit`).
+- **Test-only Bash** means the agent can run test suites (`npm test`, `pytest`, `go test`) and linters, but must not run build, deploy, or destructive commands.
+- **`.godmode/` only Write** means the agent can write structured reports and plan files to the `.godmode/` directory but must not create or modify source files.
+- **Test files only Write/Edit** means the agent can create and modify files in test directories (e.g., `__tests__/`, `*_test.go`, `*.spec.ts`) but must not touch production source files.
+- **No Agent()** — subagents cannot spawn further subagents. Only the orchestrator dispatches agents. This prevents runaway recursion.
+- **Worktree** access means the agent can use `EnterWorktree`/`ExitWorktree` for isolated execution on platforms that support it.
+- **Git `log` only** means the agent can read git history (`git log`, `git show`, `git diff`) but must not create commits, branches, or tags.
+
+## Agent Communication Protocol
+
+Agents do not communicate with each other directly. All coordination flows through the orchestrator.
+
+### Dispatch Flow
+
+```
+Orchestrator
+    |
+    +--> planner (produces execution plan)
+    |        |
+    |        v
+    +--> explorer (produces codebase report)
+    |        |
+    |        v
+    +--> builder x N (each produces a builder report)
+    |        |
+    |        v
+    +--> reviewer (produces review verdict per builder)
+    |        |
+    |        v
+    +--> optimizer (produces optimization log)
+    |        |
+    |        v
+    +--> security (produces security audit)
+    |
+    v
+Orchestrator merges results, resolves conflicts, ships
+```
+
+### Status Codes
+
+Every agent must end its report with exactly one of these status codes:
+
+| Status | Meaning | Orchestrator Action |
+|--------|---------|---------------------|
+| `DONE` | Task completed successfully, all gates passed | Proceed to next stage |
+| `DONE_WITH_CONCERNS` | Task completed but agent flagged non-blocking issues | Proceed, but queue issues for follow-up |
+| `NEEDS_CONTEXT` | Agent cannot proceed without additional information | Orchestrator provides missing context and re-dispatches |
+| `BLOCKED` | Agent hit an unresolvable issue after max retries | Orchestrator logs the blocker, skips or re-queues the task |
+| `PARTIAL` | Some subtasks completed, others failed or were skipped | Orchestrator keeps completed work, re-queues failures |
+
+### Agent Input/Output Contract
+
+**Input** — every agent receives a structured dispatch message from the orchestrator:
+
+```
+Task ID:      <unique identifier>
+Agent Role:   <planner|builder|reviewer|optimizer|explorer|security|tester>
+Skill:        <skill name to follow>
+Scope:        <list of files/directories this agent may touch>
+Context:      <output from previous agents — plans, reports, explorer maps>
+Constraints:  <any additional restrictions for this task>
+```
+
+**Output** — every agent produces a structured report (format defined in each agent's `.md` file). The orchestrator parses these reports to decide next steps.
+
+### Chaining Pattern
+
+Agent outputs feed into subsequent agent inputs:
+
+1. **planner output** (execution plan with rounds, tasks, file scopes) becomes **builder input** (each builder receives one task from the plan)
+2. **explorer output** (codebase map, patterns, utilities) becomes **builder context** (builders use the map to find existing code to reuse)
+3. **builder output** (changed files, commits, test results) becomes **reviewer input** (reviewer checks each builder's diff)
+4. **reviewer output** (APPROVE / REQUEST_CHANGES / REJECT) triggers orchestrator decisions: approved work proceeds, rejected work is re-queued or discarded
+5. **All agent outputs** feed into **optimizer input** (optimizer sees the merged result and runs improvement iterations)
+6. **optimizer output** (final optimized state) becomes **security input** (security audits the final code)
+
+## Multi-Agent Coordination Rules
+
+### Concurrency Limits
+
+- **Max 5 agents per round.** The orchestrator dispatches at most 5 parallel agents in a single round. This prevents resource exhaustion and keeps merge complexity manageable.
+- **Max 3 rounds before checkpoint.** After 3 rounds of agent dispatches, the orchestrator must pause, review cumulative results, and decide whether to continue, adjust the plan, or ship.
+
+### File Scoping
+
+Each agent receives an explicit file scope in its dispatch message. Scoping rules:
+
+- **No overlap**: two agents in the same round must not be assigned overlapping file scopes. The planner is responsible for partitioning work to avoid conflicts.
+- **Scope enforcement**: if an agent discovers it needs to modify a file outside its scope, it must report `NEEDS_CONTEXT` to the orchestrator instead of making the change.
+- **Shared read access**: all agents can read any file regardless of scope. Write scope is what gets restricted.
+
+### Merge Order
+
+When multiple agents complete work in the same round:
+
+1. **Sequential merge** — agents' work is merged one at a time, in the order they were dispatched (not the order they finished).
+2. **Test after each merge** — after merging each agent's work, run the full test suite. If tests fail, that agent's work is the cause.
+3. **Fast-fail on conflict** — if merging agent B's work causes test failures, discard agent B's changes (revert the merge), log the conflict, and continue merging remaining agents.
+4. **Re-queue discarded work** — discarded agent tasks are added to the next round with a note about why they failed, so the agent can try a different approach.
+
+### Conflict Resolution
+
+| Conflict Type | Resolution |
+|---------------|------------|
+| Two agents modified the same file | Discard the later agent's changes, re-queue its task |
+| Agent's changes break existing tests | Revert the agent's commit, re-queue with failure context |
+| Agent exceeds its file scope | Discard all out-of-scope changes, keep in-scope changes if they pass tests independently |
+| Agent reports BLOCKED | Log the blocker, remove the task from the current cycle, surface to orchestrator for replanning |
+
+## Platform-Specific Agent Behavior
+
+### Claude Code (Parallel Execution)
+
+Claude Code has native `Agent()` and `EnterWorktree`/`ExitWorktree` tools. Full parallel execution is supported.
+
+**Dispatch pattern:**
+1. Spawn `planner` agent to decompose a goal into rounds of parallel tasks
+2. Spawn `explorer` agent to map the codebase before builders start
+3. Spawn multiple `builder` agents in parallel (one per task, each in its own worktree, each following a skill)
+4. Spawn `reviewer` agent to check each builder's work
+5. Spawn `optimizer` agent to improve the merged result (uses worktree for each experiment)
+6. Spawn `security` agent for a final audit before shipping
+
+**Worktree usage:** builder and optimizer agents each get their own worktree via `EnterWorktree(task-name)`. This provides true filesystem isolation — agents cannot accidentally interfere with each other's work. After completion, worktrees are merged back to the base branch and cleaned up via `ExitWorktree`.
+
+**Parallelism ceiling:** up to 5 agents in parallel per round. The orchestrator waits for all agents in a round to complete before starting the next round.
+
+### Gemini CLI / OpenCode / Codex (Sequential Execution)
+
+These platforms lack native `Agent()` and worktree tools. Execute the same workflow sequentially in a single session.
+
+**Dispatch pattern:**
+1. Run the planner role: decompose the goal into tasks
+2. Run the explorer role: map the codebase
+3. Run each builder task one at a time: implement, test, commit, then move to the next
+4. Run the reviewer role: 4 review passes (Correctness, Security, Performance, Style) executed sequentially
+5. Run the optimizer role: one experiment at a time (try, measure, keep or revert)
+6. Run the security role: final audit
+
+**Worktree replacement:** use branch-based isolation instead. Create a `godmode-{task-name}` branch for each task, do the work, merge back to the base branch. See `adapters/shared/sequential-dispatch.md` for the full protocol.
+
+**Performance impact:** sequential execution is slower (roughly proportional to the number of parallel agents replaced) but produces identical results. Verification logic, rollback behavior, output format, and decision criteria are unchanged.
+
+### Cursor (Background Agents with File Scoping)
+
+Cursor supports background agents with its own dispatch model. Godmode adapts as follows:
+
+**Dispatch pattern:**
+1. Use Cursor's background agent capability to run builder tasks concurrently
+2. Each background agent receives strict file scoping — Cursor enforces that agents only modify their assigned files
+3. The orchestrator polls for completion and merges results in dispatch order
+4. Review and security passes run in the foreground after all builders complete
+
+**Limitations:** Cursor background agents do not support worktree isolation. File scoping is the primary isolation mechanism. The orchestrator must be extra careful about file scope partitioning to prevent conflicts.
 
 ## Skill Catalog (126 Skills)
 

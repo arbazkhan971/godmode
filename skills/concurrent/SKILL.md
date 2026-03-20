@@ -639,6 +639,46 @@ GRACEFUL SHUTDOWN: WaitGroup tracks all goroutines, drain channels before exit
 | `--test` | Concurrent testing strategy |
 | `--model` | Concurrency model selection guide |
 
+## Auto-Detection
+
+Before prompting the user, automatically detect concurrency context:
+
+```
+AUTO-DETECT SEQUENCE:
+1. Detect language and concurrency model:
+   - Go: goroutines + channels (CSP). Check: go.mod, *.go files
+   - Rust: tokio/async-std. Check: Cargo.toml for tokio, async-std deps
+   - Node.js: event loop + async/await. Check: package.json
+   - Python: asyncio, threading, multiprocessing. Check: imports in *.py
+   - Java/Kotlin: threads, virtual threads, coroutines. Check: pom.xml, build.gradle
+   - Erlang/Elixir: actor model (OTP). Check: mix.exs, rebar.config
+
+2. Detect existing concurrency primitives:
+   - grep for: sync.Mutex, sync.RWMutex, sync.WaitGroup (Go)
+   - grep for: Arc<Mutex>, Arc<RwLock>, tokio::spawn (Rust)
+   - grep for: Promise.all, Promise.allSettled, Worker (Node.js)
+   - grep for: asyncio.gather, threading.Lock, multiprocessing (Python)
+   - grep for: synchronized, ReentrantLock, ExecutorService (Java)
+
+3. Detect shared mutable state:
+   - Global variables modified from multiple goroutines/threads
+   - Package-level maps, slices, counters without synchronization
+   - Singleton instances accessed concurrently
+
+4. Detect existing race condition signals:
+   - Check for: go test -race results in CI config
+   - Check for: ThreadSanitizer flags in build config
+   - Check test output for: DATA RACE, deadlock, timeout
+
+5. Auto-classify workload:
+   - I/O-bound: many HTTP calls, database queries, file operations
+   - CPU-bound: computation, data processing, encoding
+   - Mixed: both I/O and CPU in the same service
+
+-> Auto-populate CONCURRENCY CONTEXT from detected signals.
+-> Only ask user about specific shared state and I/O profile if not detectable.
+```
+
 ## HARD RULES
 
 1. **NEVER STOP** until all shared mutable state is identified and protected.
@@ -682,6 +722,69 @@ Agent 4 (worktree: concurrent-analysis-tests):
 
 MERGE: Combine all findings, resolve cross-module shared state conflicts,
        produce unified concurrency report.
+```
+
+## Output Format
+Print on completion:
+```
+CONCURRENCY ANALYSIS: {feature_or_component}
+Language/Runtime: {language} | Model: {concurrency_model}
+Shared mutable states: {N} identified, {N} protected
+Race conditions: {N} found, {N} fixed
+Deadlock risk: {HIGH|MEDIUM|LOW|NONE}
+Concurrent tests: {N} written
+Verdict: {SAFE|NEEDS WORK}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every concurrency session to `.godmode/concurrent-results.tsv`:
+```
+timestamp	component	language	model	shared_states	races_found	races_fixed	deadlock_risk	tests_written	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Every piece of shared mutable state identified and listed in the inventory.
+2. Every shared mutable state has a documented protection mechanism (mutex, atomic, channel, immutable).
+3. Race condition analysis completed using the 8-pattern checklist.
+4. Race detector run (go -race, TSan, etc.) on all concurrent code paths.
+5. Deadlock detection checklist completed with all items PASS.
+6. Cancellation paths verified — every concurrent operation supports cancellation.
+7. At least one stress test written: run 1000 iterations with maximum parallelism.
+8. Every mutex has a comment documenting what shared state it protects.
+
+## Error Recovery
+```
+IF race detector reports a data race:
+  → Locate the shared mutable state from the race report
+  → Classify: check-then-act, read-modify-write, or compound action?
+  → Apply the narrowest fix: atomic > channel > mutex
+  → Re-run race detector — must report zero races before proceeding
+
+IF deadlock detected (goroutine/thread dump shows all blocked):
+  → Identify the circular wait from the stack traces
+  → Check lock acquisition order — are locks acquired in inconsistent order?
+  → Fix: enforce global lock ordering, or use try-lock with timeout
+  → Add a regression test that reproduces the deadlock scenario
+
+IF stress test reveals intermittent failure:
+  → Increase iteration count to 10,000 to make failure reproducible
+  → Add artificial delays (sleep 1ms) at suspected race points to widen the window
+  → Once reproduced reliably, apply fix, then remove artificial delays
+  → Run stress test 10,000 times — must pass all iterations
+
+IF goroutine/task leak detected (count grows over time):
+  → Find the goroutine/task that never exits: runtime.NumGoroutine() or equivalent
+  → Check: does it have a termination condition? Is context cancellation propagated?
+  → Fix: add context.WithCancel, defer cancel(), and select on ctx.Done()
+  → Verify: goroutine count stabilizes after fix
+
+IF lock contention causes performance degradation (profiler shows lock wait time):
+  → Measure: what percentage of time is spent waiting for locks?
+  → Reduce critical section scope: move I/O and computation outside the lock
+  → Consider: RWMutex if reads dominate, or lock-free structure if profiling justifies it
+  → Do NOT switch to lock-free without profiling evidence
 ```
 
 ## Anti-Patterns

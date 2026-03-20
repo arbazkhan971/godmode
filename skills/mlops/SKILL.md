@@ -646,6 +646,77 @@ MERGE:
    Peeking at results early inflates false positive rate.
 ```
 
+## Output Format
+
+After each MLOps skill invocation, emit a structured report:
+
+```
+MLOPS DEPLOYMENT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Model               │  <name> v<version>             │
+│  Serving framework   │  <TorchServe | TFServing | Triton | custom> │
+│  Deployment method   │  <canary | blue-green | shadow> │
+│  Latency (p50/p99)   │  <N>ms / <N>ms                 │
+│  Throughput           │  <N> req/s                     │
+│  Model size           │  <N> MB                        │
+│  Drift monitoring     │  CONFIGURED / NOT CONFIGURED   │
+│  Fallback strategy    │  <description>                 │
+│  A/B test             │  RUNNING / NOT APPLICABLE      │
+│  Verdict              │  DEPLOYED | NEEDS WORK         │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every deployment action for tracking:
+
+```
+timestamp	skill	model	version	action	latency_p99_ms	throughput_rps	status
+2026-03-20T14:00:00Z	mlops	fraud_detector	v3.2	canary_5pct	45	1200	deployed
+2026-03-20T14:30:00Z	mlops	fraud_detector	v3.2	canary_25pct	48	1180	deployed
+```
+
+## Success Criteria
+
+The MLOps skill is complete when ALL of the following are true:
+1. Model is deployed with a gradual rollout strategy (canary, blue-green, or shadow)
+2. Latency meets SLA targets at p50 and p99 (benchmarked under production-like load)
+3. Fallback strategy is defined and tested (what happens when the model fails)
+4. Drift monitoring is configured for input features and prediction distribution
+5. Model version and serving code version are tracked independently
+6. Rollback procedure is tested and takes < 5 minutes
+7. A/B test (if applicable) has sufficient sample size before making decisions
+8. All deployment artifacts are versioned and reproducible
+
+## Error Recovery
+
+```
+IF model latency exceeds SLA during canary:
+  1. Halt canary rollout immediately (do not proceed to higher traffic)
+  2. Profile the model serving pipeline to identify the bottleneck
+  3. Try: reduce batch size, enable model quantization, optimize preprocessing
+  4. If latency cannot be reduced, roll back to previous model version
+
+IF drift detection fires:
+  1. Check if the drift is in input features or prediction distribution
+  2. Compare recent data distribution with training data distribution
+  3. If input drift: investigate upstream data pipeline changes
+  4. If prediction drift: trigger retraining pipeline with recent data
+  5. Do NOT auto-promote retrained model — validate first
+
+IF canary shows degraded metrics vs baseline:
+  1. Compare canary error rate to baseline error rate with statistical test
+  2. If statistically significant degradation: roll back immediately
+  3. Investigate: data drift, feature pipeline changes, or model regression
+  4. Retrain or fix the issue before attempting another deployment
+
+IF model serving crashes under load:
+  1. Check memory usage — models may OOM under concurrent requests
+  2. Verify autoscaling is configured and responding to load
+  3. Add request queuing or rate limiting to prevent cascading failure
+  4. Fall back to the fallback strategy (simpler model or rules-based system)
+```
+
 ## Anti-Patterns
 
 - **Do NOT deploy without benchmarking latency.** A model that takes 2 seconds per request will destroy your user experience and infrastructure budget. Benchmark first.

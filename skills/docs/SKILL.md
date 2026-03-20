@@ -403,6 +403,73 @@ AUTO-DETECT project documentation context:
     - Skip already-documented items with recent modification dates
 ```
 
+## Output Format
+
+After each docs skill invocation, emit a structured report:
+
+```
+DOCUMENTATION REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Doc type            │  <API | code | runbook | README>│
+│  Files documented    │  <N>                            │
+│  Functions/endpoints │  <N> documented / <N> total     │
+│  Coverage            │  <N>% of public API documented  │
+│  Stale docs found    │  <N> (modified code, unchanged docs) │
+│  Links validated     │  <N> valid / <N> broken         │
+│  Examples included   │  <N> code examples              │
+│  Verdict             │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every documentation action for tracking:
+
+```
+timestamp	skill	target	action	coverage_pct	stale_count	status
+2026-03-20T14:00:00Z	docs	src/api/	api_docs	85	3	needs_update
+2026-03-20T14:10:00Z	docs	runbooks/	runbook_create	100	0	pass
+```
+
+## Success Criteria
+
+The docs skill is complete when ALL of the following are true:
+1. Every public function/method/endpoint has a description, parameters, return type, and error cases
+2. Documentation matches the actual code behavior (verified by reading the source)
+3. Every error that can be thrown is documented with its condition
+4. Code examples are included and syntactically correct (copy-pasteable)
+5. No stale documentation (docs last modified before code was last modified)
+6. All internal links resolve (no broken cross-references)
+7. Runbooks (if any) contain exact commands that have been verified to work
+
+## Error Recovery
+
+```
+IF documentation does not match code behavior:
+  1. Read the actual source code (never document from memory or assumptions)
+  2. Run the function/endpoint to verify behavior before documenting
+  3. Check git blame to see if the code changed after docs were written
+  4. Update the documentation to match current behavior, not intended behavior
+
+IF doc generation tool fails:
+  1. Check for syntax errors in doc comments (JSDoc, docstrings, godoc)
+  2. Verify the doc tool version is compatible with the project's language version
+  3. Run the tool in verbose mode to identify the failing file
+  4. Fix the source comment and re-run
+
+IF links in documentation are broken:
+  1. Use a link checker tool (markdown-link-check, linkinator)
+  2. Update moved references to their new locations
+  3. Remove references to deleted files/sections
+  4. Add a CI check to catch broken links on every PR
+
+IF runbook commands fail:
+  1. Run every command in the runbook on a clean environment to verify
+  2. Check for environment-specific dependencies (PATH, env vars, permissions)
+  3. Add prerequisite checks to the runbook ("Before running, verify X is installed")
+  4. Never publish a runbook without executing every command in it
+```
+
 ## Anti-Patterns
 
 - **Do NOT write documentation without reading the code.** Generated docs that don't match the code are worse than no docs at all.

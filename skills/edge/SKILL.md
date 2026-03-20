@@ -968,6 +968,79 @@ AUTO-DETECT edge/serverless context:
 - **Do NOT ignore cost at scale.** $0.20 per million requests sounds cheap until you're serving a billion requests. Model costs before committing to an architecture.
 
 
+## Output Format
+
+```
+EDGE/SERVERLESS DEPLOYMENT COMPLETE:
+  Platform: <Cloudflare Workers | AWS Lambda | Vercel Edge | Deno Deploy | other>
+  Functions: <N> edge functions deployed
+  Cold start: <before>ms → <after>ms (<reduction>% improvement)
+  Bundle size: <N> KB (limit: <M> KB)
+  Runtime: <V8 isolate | Node.js | Deno | Bun>
+  State: <Durable Objects | DynamoDB | KV | R2 | none>
+  Caching: <Cache API | CDN | KV cache | none>
+  Regions: <N> regions / <global | specific regions>
+  Timeout: <N>ms (limit: <M>ms)
+
+FUNCTION SUMMARY:
++--------------------------------------------------------------+
+|  Function          | Route      | Cold Start | Bundle | State |
++--------------------------------------------------------------+
+|  <function>        | /api/...   | <N>ms      | <K>KB  | KV    |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every edge/serverless session to `.godmode/edge-results.tsv`:
+
+```
+Fields: timestamp\tproject\tplatform\tfunctions_count\tcold_start_before_ms\tcold_start_after_ms\tbundle_size_kb\tregions\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-api\tcloudflare-workers\t6\t450\t120\t85\tglobal\tabc1234
+```
+
+Append after every completed edge deployment or optimization pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+EDGE/SERVERLESS SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Bundle size within platform limits         | YES              |
+|  Cold start < 200ms (or platform target)    | YES              |
+|  No Node.js-only APIs in edge runtime       | YES (edge)       |
+|  Environment secrets not in code            | YES              |
+|  Error handling with structured responses   | YES              |
+|  Timeout configured below platform max      | YES              |
+|  Caching strategy for repeated requests     | YES              |
+|  Observability (logs, traces, metrics)      | YES              |
+|  No long-running connections in serverless  | YES              |
+|  Graceful degradation on dependency failure | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — EDGE:
+1. Cold start exceeds target:
+   → Reduce bundle size (tree-shake, remove unused deps). Use dynamic import for rarely-used code. Pre-warm with scheduled pings. Switch to edge runtime (V8 isolate) from Node.js.
+2. Bundle size exceeds platform limit:
+   → Audit dependencies (bundlephobia). Replace heavy libs with lightweight alternatives. Use platform-native APIs (fetch, crypto) instead of polyfills. Split into multiple functions.
+3. Function timeout:
+   → Profile execution. Move long operations to background queue (Queues API, SQS). Cache intermediate results. Reduce external API call count.
+4. Edge function crashes with "X is not defined":
+   → Check runtime compatibility. Edge runtimes lack Node.js globals (Buffer, process, fs). Use web-standard APIs. Add platform-specific polyfills if needed.
+5. State inconsistency across regions:
+   → Use eventually-consistent KV with conflict resolution. Or use Durable Objects / DynamoDB for strong consistency on specific operations. Document consistency model.
+6. Deployment fails silently (old version still serving):
+   → Verify deployment output. Check platform dashboard for errors. Use versioned deployments with rollback capability. Add health check endpoint.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run edge tasks sequentially: edge functions, then cold-start optimization, then caching/observability.

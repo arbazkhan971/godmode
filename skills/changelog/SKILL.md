@@ -741,6 +741,76 @@ AUTO-DETECT:
 -> Only ask user if ambiguous (e.g., no tags AND no changelog exist).
 ```
 
+## Output Format
+
+After each changelog skill invocation, emit a structured report:
+
+```
+CHANGELOG REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Last release        │  <tag> (<date>)                │
+│  Commits since       │  <N>                           │
+│  PRs merged          │  <N>                           │
+│  Contributors        │  <N>                           │
+│  Entries generated   │  <N>                           │
+│  Breaking changes    │  <N>                           │
+│  Version bump        │  <major | minor | patch>       │
+│  Suggested version   │  <x.y.z>                       │
+│  Migration guide     │  CREATED / NOT NEEDED          │
+│  Verdict             │  READY FOR RELEASE | NEEDS REVIEW │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every changelog generation for tracking (as referenced in Hard Rules):
+
+```
+timestamp	skill	version	commits_analyzed	entries_generated	breaking_changes	status
+2026-03-20T14:00:00Z	changelog	v1.6.0	34	11	0	ready
+2026-03-20T14:30:00Z	changelog	v2.0.0	52	18	3	needs_migration_guide
+```
+
+## Success Criteria
+
+The changelog skill is complete when ALL of the following are true:
+1. All commits since last release are categorized (feat, fix, perf, breaking, skip)
+2. Every user-visible change has a changelog entry
+3. Every entry includes a PR/issue reference
+4. Breaking changes are documented first with migration steps
+5. Version number follows semantic versioning correctly
+6. Changelog entry uses imperative mood ("Add feature" not "Added feature")
+7. Internal changes (refactor, test, ci, chore) are excluded from user-facing changelog
+8. Migration guide exists for any breaking changes (major version bumps)
+
+## Error Recovery
+
+```
+IF commits do not follow conventional commit format:
+  1. Manually categorize each commit by reading the diff
+  2. Group related commits into single changelog entries
+  3. Recommend setting up commitlint for future commits
+  4. Never skip categorization — every user-visible commit must appear in the changelog
+
+IF version number is ambiguous (unclear if major, minor, or patch):
+  1. Check for breaking changes — ANY breaking change = major bump
+  2. Check for new features — new features = minor bump
+  3. Everything else = patch bump
+  4. When in doubt, ask the user: "Is this a breaking change for any consumer?"
+
+IF changelog generation tool fails:
+  1. Verify git tags exist: git describe --tags --abbrev=0
+  2. Check that commit messages are parseable by the tool
+  3. Fall back to manual generation from git log
+  4. Generate the changelog manually if tool is incompatible with the project
+
+IF release-please or standard-version produces wrong version:
+  1. Check the commit history for missing or incorrect conventional commit prefixes
+  2. Use --release-as flag to force the correct version
+  3. Verify the generated changelog entry is accurate before committing
+  4. Fix the commit convention for future releases
+```
+
 ## Anti-Patterns
 
 - **Do NOT use git log as a changelog.** A list of commit messages is not a changelog. Changelogs summarize user-visible changes, not implementation details.

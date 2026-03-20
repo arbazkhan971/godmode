@@ -683,6 +683,76 @@ AUTO-DETECT AI evaluation context:
     - Add to existing CI pipeline rather than creating new one
 ```
 
+## Output Format
+
+After each eval skill invocation, emit a structured report:
+
+```
+EVALUATION REPORT:
+┌──────────────────────────────────────────────────────┐
+│  System evaluated    │  <name and version>             │
+│  Eval framework      │  <DeepEval | RAGAS | Promptfoo | custom> │
+│  Test cases          │  <N> total (<N> golden, <N> regression) │
+│  Primary metric      │  <metric>: <value> (baseline: <value>) │
+│  Secondary metrics   │  <metric>: <value>, <metric>: <value> │
+│  Improvement         │  +<N>% over baseline             │
+│  Statistical sig.    │  p=<value> (significant: YES/NO) │
+│  Regressions found   │  <N>                             │
+│  Judge model         │  <model name> (calibrated: YES/NO) │
+│  Verdict             │  PASS | REGRESSED | NEEDS MORE DATA │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every evaluation run for tracking:
+
+```
+timestamp	skill	system	version	metric	baseline	result	improvement	p_value	status
+2026-03-20T14:00:00Z	eval	rag_pipeline	v2.1	faithfulness	0.85	0.92	+8.2%	0.003	pass
+2026-03-20T14:30:00Z	eval	rag_pipeline	v2.1	hallucination	0.08	0.03	-62.5%	0.001	pass
+```
+
+## Success Criteria
+
+The eval skill is complete when ALL of the following are true:
+1. Baseline evaluation is established and logged (never skip baseline)
+2. Golden test set covers happy paths, edge cases, and adversarial inputs
+3. Regression test set captures all previously identified bugs
+4. LLM judge (if used) is calibrated against human ratings
+5. Statistical significance is computed for all metric comparisons
+6. Results are relative to baseline (never report absolute scores alone)
+7. Evaluation runs in CI and blocks merges on regression
+8. All evaluation artifacts (datasets, judge prompts, results) are versioned
+
+## Error Recovery
+
+```
+IF evaluation metrics are inconsistent across runs:
+  1. Check for non-determinism in the system under test (set temperature=0 if applicable)
+  2. Increase the evaluation dataset size to reduce variance
+  3. Run multiple evaluation passes and report mean + confidence interval
+  4. Check if the LLM judge is non-deterministic (use same seed/temperature for judge)
+
+IF LLM judge disagrees with human ratings:
+  1. Calculate judge-human agreement (Cohen's kappa or Spearman correlation)
+  2. If agreement < 0.7: recalibrate the judge prompt with human-labeled examples
+  3. Add few-shot examples of correct judgments to the judge prompt
+  4. Consider using majority vote from multiple judge runs
+
+IF regression test fails on a new change:
+  1. Identify exactly which test cases regressed
+  2. Determine if the regression is in retrieval, generation, or both
+  3. Do NOT delete the failing regression test — fix the system instead
+  4. If the regression is acceptable (trade-off), document the justification
+
+IF evaluation takes too long to run in CI:
+  1. Split evaluation into fast (smoke) and full (nightly) suites
+  2. Run smoke suite on every PR (< 5 minutes, core test cases only)
+  3. Run full suite nightly or on release branches
+  4. Cache embedding computations and model responses where safe
+```
+
 ## Anti-Patterns
 
 - **Do NOT evaluate without a baseline.** "Our model scores 4.2/5" is meaningless. Compared to what? Always report relative to a baseline.

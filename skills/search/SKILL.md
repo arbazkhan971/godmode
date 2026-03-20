@@ -831,6 +831,79 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT use match_all with expensive aggregations.** Aggregations on the entire index are slow. Always pair aggregations with a filtered query to reduce the working set.
 
 
+## Output Format
+
+```
+SEARCH IMPLEMENTATION COMPLETE:
+  Engine: <Elasticsearch | OpenSearch | Meilisearch | Typesense | Algolia | PostgreSQL FTS>
+  Indexes: <N> indexes configured
+  Documents: <N> document types indexed
+  Analyzers: <N> custom analyzers (language: <list>)
+  Facets: <N> facet fields configured
+  Autocomplete: <implemented | not implemented>
+  Synonyms: <N> synonym rules
+  Relevance tuning: <boosted fields, function scores, custom ranking>
+  Indexing pipeline: <real-time | batch | hybrid> — lag: <N>s
+
+INDEX SUMMARY:
++--------------------------------------------------------------+
+|  Index           | Documents | Fields | Facets | Analyzers    |
++--------------------------------------------------------------+
+|  <index>         | ~N        | N      | N      | N            |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every search implementation session to `.godmode/search-results.tsv`:
+
+```
+Fields: timestamp\tproject\tengine\tindexes_count\tdocument_types\tfacets\tautocomplete\tsynonyms_count\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\telasticsearch\t3\t5\t8\tyes\t24\tabc1234
+```
+
+Append after every completed search design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+SEARCH SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  Index mappings defined (no dynamic mapping)| YES              |
+|  Custom analyzers for text fields           | YES              |
+|  Pagination on search results               | YES              |
+|  Faceted search on filterable fields        | YES (if applicable)|
+|  Autocomplete/suggestions configured        | RECOMMENDED      |
+|  Relevance tuning tested with sample queries| YES              |
+|  Indexing pipeline handles updates/deletes  | YES              |
+|  Search latency < 200ms (P95)              | YES              |
+|  Zero-results rate monitored               | YES              |
+|  Security: no query injection possible      | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — SEARCH:
+1. Search returns irrelevant results:
+   → Check analyzer configuration (tokenizer, filters). Verify field boosting matches user intent. Test with explain API to see scoring breakdown. Adjust BM25 parameters or add function_score.
+2. Indexing lag growing (search shows stale data):
+   → Check indexing pipeline throughput. Increase bulk batch size. Add more indexing workers. Verify refresh_interval setting (1s default may be too frequent under load).
+3. Index mapping conflict (field type mismatch):
+   → Do not change existing field types in-place. Create a new index with correct mappings. Reindex data from source. Swap alias to new index. Delete old index.
+4. Autocomplete too slow:
+   → Use completion suggester (not prefix query on analyzed field). Build dedicated autocomplete index with edge_ngram analyzer. Cache popular prefixes.
+5. Zero-results rate too high:
+   → Analyze zero-result queries. Add synonyms for common alternative terms. Implement "did you mean" with fuzzy matching. Add fallback to broader search on zero results.
+6. Cluster health yellow/red:
+   → Check shard allocation (unassigned shards). Verify disk space on nodes. Check replica count vs available nodes. For red: identify missing primary shards and restore from snapshot.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run search tasks sequentially: engine setup (index/mappings), then search API, then relevance tuning.

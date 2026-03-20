@@ -670,6 +670,38 @@ SYNC point: All agents complete
 - **Do NOT ignore vulnerability scan results.** A "ship anyway" attitude toward CRITICAL CVEs is a security incident waiting to happen.
 
 
+## Output Format
+Print on completion: `Docker: {image_count} images optimized. Size: {before_size} → {after_size} (-{savings}%). Layers: {layer_count}. Security: {vuln_count} vulnerabilities ({critical} critical). Build: {build_time}. Verdict: {verdict}.`
+
+## TSV Logging
+Log every Docker optimization to `.godmode/docker-results.tsv`:
+```
+iteration	image	size_before	size_after	layers	vulns_critical	vulns_high	build_time_s	status
+1	app	1.2GB	180MB	12	0	2	45	optimized
+2	worker	800MB	120MB	10	0	0	30	optimized
+3	nginx	150MB	25MB	6	0	0	10	optimized
+```
+Columns: iteration, image, size_before, size_after, layers, vulns_critical, vulns_high, build_time_s, status(optimized/hardened/created/failed).
+
+## Success Criteria
+- All images use multi-stage builds (build dependencies not in final image).
+- All images use Alpine or distroless base images where possible.
+- All base image tags pinned to specific versions (no `latest`).
+- All containers run as non-root user.
+- HEALTHCHECK defined in every production Dockerfile.
+- .dockerignore excludes .git, node_modules, .env, and other unnecessary files.
+- No secrets in image layers (verified with `docker history`).
+- Vulnerability scan passes with zero critical CVEs.
+- Build cache optimized (dependency install before source copy).
+
+## Error Recovery
+- **Image build fails at dependency install**: Check that the lockfile is copied before the install step. Verify the base image has the required system dependencies. Check network access during build.
+- **Image size unexpectedly large**: Check for unnecessary files with `docker history --no-trunc`. Verify multi-stage build is copying only the final artifact. Check `.dockerignore` for missing entries.
+- **Container crashes on startup**: Check logs with `docker logs <container>`. Verify the CMD/ENTRYPOINT is correct. Check if the non-root user has permission to read required files and bind to the configured port.
+- **Health check fails**: Verify the health check endpoint exists and responds. Check if the application needs a startup delay (`--start-period`). Ensure the health check command is available in the image (curl vs wget vs nc).
+- **Vulnerability scan reports critical CVEs**: Check if the CVE is in the base image or application dependencies. Update the base image tag. If in application deps, update the dependency. If no fix available, document and accept the risk.
+- **Build cache not working**: Verify the COPY order (lockfile before source). Check that the Docker BuildKit is enabled (`DOCKER_BUILDKIT=1`). Ensure the CI runner preserves the build cache between runs.
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Docker tasks sequentially: Dockerfile optimization, then Compose setup, then security+CI.

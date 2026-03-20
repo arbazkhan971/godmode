@@ -695,3 +695,113 @@ For further improvement, consider a pre-aggregated collection
 - **Do NOT assume an index helps without checking selectivity.** An index on a boolean column with 50/50 distribution won't help much.
 - **Do NOT optimize queries in isolation.** Consider the full workload. An optimization that helps one query but hurts ten others is a net negative.
 - **Do NOT skip the write-side impact.** Report the INSERT/UPDATE/DELETE overhead of every new index.
+
+## Output Format
+
+```
+QUERY OPTIMIZATION COMPLETE:
+  Database: <PostgreSQL | MySQL | MongoDB | Redis | other>
+  Queries analyzed: <N>
+  Queries optimized: <M>
+  Indexes added: <K> (write overhead: <estimate>)
+  Indexes removed: <J> (unused)
+  Total latency reduction: <X>% (avg across optimized queries)
+
+QUERY SUMMARY:
++--------------------------------------------------------------+
+|  Query / Operation   | Before (ms) | After (ms) | Change     |
++--------------------------------------------------------------+
+|  <description>       | 1,200       | 45         | -96%       |
++--------------------------------------------------------------+
+
+INDEX CHANGES:
++--------------------------------------------------------------+
+|  Table       | Index                    | Action   | Reason   |
++--------------------------------------------------------------+
+|  <table>     | idx_<columns>            | ADD      | <reason> |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every query optimization session to `.godmode/query-results.tsv`:
+
+```
+Fields: timestamp\tproject\tdatabase\tqueries_analyzed\tqueries_optimized\tindexes_added\tindexes_removed\tavg_latency_reduction_pct\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\tpostgresql\t8\t5\t3\t1\t87\tabc1234
+```
+
+Append after every completed optimization pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+QUERY OPTIMIZATION SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  EXPLAIN ANALYZE run before AND after       | YES              |
+|  Every optimization measured with numbers   | YES              |
+|  No sequential scan on tables > 10K rows    | YES              |
+|  N+1 queries eliminated                     | YES              |
+|  No SELECT * in optimized queries           | YES              |
+|  Index write overhead documented            | YES              |
+|  No OFFSET-based deep pagination            | YES              |
+|  Statistics up to date (ANALYZE run)        | YES              |
+|  Regression test for critical query perf    | RECOMMENDED      |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — QUERY:
+1. Index creation fails (lock timeout, disk space):
+   → Use CREATE INDEX CONCURRENTLY (PostgreSQL) to avoid table locks. Check available disk. For large tables, create during low-traffic window.
+2. Query plan regresses after optimization:
+   → Run EXPLAIN ANALYZE again. Check if statistics are stale (run ANALYZE). Verify the planner is using the new index. Add pg_hint_plan hint if needed.
+3. N+1 persists after ORM-level fix:
+   → Instrument query logging. Verify eager loading is applied at the call site, not just the model definition. Check for lazy access in serialization layer.
+4. Migration adding index causes downtime:
+   → Use non-blocking index creation (CONCURRENTLY). Split large migrations. Schedule during maintenance window if unavoidable.
+5. Composite index not used by query:
+   → Verify column order matches query predicates (leftmost prefix rule). Check that statistics reflect column correlation. Consider covering index.
+6. Query still slow despite correct index:
+   → Check for low selectivity (index scan reads most of the table). Consider partial index. Check for implicit type casting preventing index use.
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL QUERY OPTIMIZATION AGENTS:
+When optimizing queries across multiple tables or services:
+
+Agent 1 (worktree: query-analysis):
+  - Run EXPLAIN ANALYZE on all identified slow queries
+  - Document current execution plans and row estimates
+  - Identify missing indexes, sequential scans, N+1 patterns
+  - Produce prioritized list of optimizations by impact
+
+Agent 2 (worktree: query-indexes):
+  - Create recommended indexes (CONCURRENTLY where supported)
+  - Remove unused indexes (check pg_stat_user_indexes or equivalent)
+  - Add composite indexes for multi-column predicates
+  - Measure write overhead of new indexes
+
+Agent 3 (worktree: query-rewrites):
+  - Rewrite inefficient queries (subquery → JOIN, OFFSET → keyset)
+  - Fix ORM-level N+1 with eager loading / DataLoaders
+  - Add query count regression tests for critical paths
+  - Update EXPLAIN baselines in documentation
+
+MERGE: Analysis merges first. Indexes and rewrites merge independently.
+  Final: run full EXPLAIN ANALYZE comparison, verify all improvements.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run query optimization tasks sequentially: analysis, then index changes, then query rewrites.
+- Use branch isolation per task: `git checkout -b godmode-query-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

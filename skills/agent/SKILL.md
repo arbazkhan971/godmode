@@ -589,6 +589,71 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 10. Observability is mandatory — if you cannot trace every step, do not deploy.
 ```
 
+## Auto-Detection
+```bash
+AUTO-DETECT agent context:
+  1. LLM provider: grep -r "openai\|anthropic\|google.generativeai\|ollama\|together" package.json pyproject.toml requirements.txt 2>/dev/null
+  2. Agent framework: grep -r "langchain\|langgraph\|autogen\|crewai\|magentic\|pydantic-ai" package.json pyproject.toml 2>/dev/null
+  3. Tool definitions: grep -rl "tool_call\|function_call\|@tool\|BaseTool\|StructuredTool" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
+  4. Vector store: grep -r "pinecone\|weaviate\|chromadb\|pgvector\|qdrant\|milvus" package.json pyproject.toml 2>/dev/null
+  5. Existing agent code: grep -rl "agent\|AgentExecutor\|ReActAgent\|create_agent" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
+  6. Observability: grep -r "langsmith\|langfuse\|phoenix\|wandb\|helicone" package.json pyproject.toml 2>/dev/null
+
+  USE detected context to:
+    - Reuse existing LLM provider and framework (don't switch unless asked)
+    - Match existing tool definition patterns
+    - Identify gaps (no guardrails? no observability? no evaluation?)
+    - Determine if building new agent or extending existing one
+```
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Agent completes its target task end-to-end with correct output (verified on at least 3 test inputs).
+2. Max steps termination works (agent stops at limit, does not loop forever).
+3. Cost budget enforced (token counter tracks usage, agent stops when budget exceeded).
+4. Guardrails block unsafe actions (test with at least one adversarial input that should be rejected).
+5. Every agent step is logged with: step number, action, tool called, result, tokens used, latency.
+6. Irreversible actions (delete, send, deploy, pay) require explicit confirmation gate.
+7. Tool errors are handled gracefully (agent retries or reports failure, does not crash).
+8. Evaluation suite exists: test trajectories (not just final output), measure success rate, cost, and safety.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Agent loops without progress | Check for: repeated tool calls with same args, no new information gained. Add loop detection: if same action repeated 3x, force different action or stop. |
+| Token budget exceeded | Implement token counting middleware. Set hard limit per task. When 80% consumed, switch to shorter prompts or cheaper model for remaining steps. |
+| Tool returns unexpected format | Add output validation on every tool result. If validation fails, retry with clearer instructions (max 2 retries), then report failure to user. |
+| Safety guardrail triggered | Log the full context (input, intended action, guardrail rule matched). Do not bypass. Report to user with explanation of what was blocked and why. |
+| LLM provider rate limited | Implement exponential backoff with jitter. If persistent, switch to fallback provider or queue the request. Never retry immediately in a tight loop. |
+| Evaluation reveals regression | Compare trajectory diffs between versions. Identify which step diverged. Revert to last known good version. Fix the specific failure case and re-evaluate. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: agent-core):
+  - Implement agent loop with LLM provider and tool calling
+  - Add max steps, token budget, and termination conditions
+  - Build structured step logging
+
+Agent 2 (worktree: agent-tools):
+  - Define and implement all tools with input validation and error handling
+  - Add confirmation gates for irreversible actions
+  - Build tool result validators
+
+Agent 3 (worktree: agent-safety):
+  - Implement guardrail system (input validation, output filtering, action blocking)
+  - Set up observability (tracing, cost tracking, latency monitoring)
+  - Write evaluation suite with trajectory testing
+
+MERGE ORDER: core -> tools -> safety
+CONFLICT ZONES: agent loop integration, tool registry, guardrail middleware
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run agent tasks sequentially: core loop first, then tools, then guardrails and evaluation.
+- Use branch isolation per task: `git checkout -b godmode-agent-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT build agents without guardrails.** An unbounded agent will loop forever, burn tokens, and potentially take destructive actions. Define limits before writing code.

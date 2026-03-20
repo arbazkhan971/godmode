@@ -727,6 +727,80 @@ MERGE:
    "It works in staging" is not sufficient proof.
 ```
 
+## Output Format
+Print on completion:
+```
+MIGRATION: {source} -> {target}
+Type: {language|framework|api|architecture|data|infrastructure}
+Strategy: {big_bang|strangler_fig|parallel_run|branch_by_abstraction}
+Status: {planning|in_progress|verifying|complete|rolled_back}
+Components: {migrated}/{total} ({percentage}%)
+Data: {migrated_records}/{total_records} records
+Parallel run match: {match_rate}%
+Rollback plan: {documented|missing}
+Timeline: started {date}, est. complete {date}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every migration session to `.godmode/migration-results.tsv`:
+```
+timestamp	source	target	type	strategy	status	components_migrated	components_total	match_rate_pct	rollback_documented	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. Migration assessment completed with source state, target state, and constraints documented.
+2. Strategy selected and justified: strangler fig for large systems, big bang only for small codebases with acceptable downtime.
+3. Rollback plan documented before any migration step begins.
+4. Characterization tests exist for all components being migrated (or added before migration starts).
+5. Feature flags control cutover — no traffic switching via deployment.
+6. Parallel run match rate exceeds 99.9% before cutover for data-critical migrations.
+7. Data integrity verified: row count match, checksum match, spot-check sample, referential integrity.
+8. Old system kept running for at least 2 weeks after full cutover.
+9. Migration progress tracked with visible dashboard (components migrated, match rates, timeline).
+
+## Error Recovery
+```
+IF parallel run match rate < 99.0%:
+  → Do NOT proceed to cutover
+  → Analyze mismatches: categorize by type (data format, timing, business logic, edge case)
+  → Fix the top 3 mismatch categories
+  → Re-run parallel comparison
+  → Repeat until match rate > 99.9%
+
+IF migration breaks a feature in production:
+  → Flip feature flag to route traffic back to old system (seconds, not minutes)
+  → If feature flag not in place: revert deployment, then add feature flag before retrying
+  → Investigate: was this a test coverage gap or a parallel run blind spot?
+  → Add test case covering the broken scenario before retrying migration
+
+IF data migration loses records:
+  → Stop dual-write immediately
+  → Reconcile: compare row counts old vs new, identify missing records
+  → Re-run backfill for missing ID ranges
+  → Verify: row count match + checksum match before resuming
+  → Add continuous integrity check: run comparison every hour during migration
+
+IF team velocity drops during migration (feature development slows):
+  → Assess: is the migration consuming too much of the team's capacity?
+  → Reduce migration scope: fewer components per sprint, not zero features per sprint
+  → Consider: dedicate a sub-team to migration while others continue feature work
+  → If still too slow: pause migration, ship critical features, resume migration
+
+IF old system receives updates during migration:
+  → This is expected in strangler fig — old system stays operational
+  → Ensure dual-write captures changes in both old and new systems
+  → If schema changed in old system: update new system's mapping/adapter
+  → If new feature added to old system: migrate it as the next component
+
+IF cutover succeeds but latency regresses:
+  → Compare: old system p99 vs new system p99
+  → Profile new system: is the regression in application code, database, or network?
+  → Optimize the hot path in the new system before decommissioning old system
+  → If regression > 2x: roll back and fix before retrying cutover
+```
+
 ## Anti-Patterns
 
 - **Do NOT start a big bang rewrite of a large system.** Rewrites that exceed 3 months almost always fail. The business cannot pause feature development that long, and requirements drift makes the rewrite a moving target.

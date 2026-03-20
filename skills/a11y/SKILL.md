@@ -562,6 +562,76 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 10. Re-run automated scans AFTER applying fixes to confirm zero regressions.
 ```
 
+## Output Format
+
+After each accessibility audit, emit a structured report:
+
+```
+A11Y AUDIT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Pages audited      │  <N>                            │
+│  Components audited │  <N>                            │
+│  Total violations   │  <N>                            │
+│  Critical           │  <N> (keyboard traps, no alt)   │
+│  High               │  <N> (contrast, missing labels) │
+│  Medium             │  <N> (aria improvements)        │
+│  Low                │  <N> (best practice suggestions) │
+│  Auto-fixed         │  <N>                            │
+│  Manual review      │  <N>                            │
+│  WCAG level         │  A | AA | AAA                   │
+│  Verdict            │  PASS | NEEDS REMEDIATION       │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every finding for tracking and regression detection:
+
+```
+timestamp	skill	page	severity	wcag	element	tool	description	status
+2026-03-20T14:00:00Z	a11y	/home	CRITICAL	2.1.2	.modal	manual	keyboard trap in modal	fixed
+2026-03-20T14:01:00Z	a11y	/form	HIGH	1.4.3	.label	axe	contrast ratio 3.2:1 < 4.5:1	fixed
+```
+
+## Success Criteria
+
+The a11y skill is complete when ALL of the following are true:
+1. Zero CRITICAL violations (keyboard traps, missing alt text on meaningful images)
+2. Zero HIGH violations (contrast failures, missing form labels, broken ARIA)
+3. All MEDIUM violations documented with remediation plan and timeline
+4. axe-core automated scan returns zero errors on all audited pages
+5. Manual keyboard navigation test passes (all interactive elements reachable, no traps)
+6. Screen reader spot-check confirms logical reading order and announced labels
+7. All fixes committed and verified with re-scan showing no regressions
+
+## Error Recovery
+
+```
+IF axe-core fails to run:
+  1. Verify the page is fully loaded before scanning (wait for hydration)
+  2. Check for CSP or CORS blocking the axe-core injection
+  3. Try running in a different browser or headless mode
+  4. Fall back to Lighthouse accessibility audit
+
+IF fix introduces new violations:
+  1. Re-run axe-core immediately after every fix
+  2. If new violations appear, revert the fix
+  3. Investigate whether the fix changed DOM structure affecting other elements
+  4. Apply a more targeted fix that addresses the original issue without side effects
+
+IF contrast fix conflicts with brand guidelines:
+  1. Document the conflict with exact ratio values
+  2. Propose the closest brand-compliant color that passes WCAG AA (4.5:1)
+  3. Escalate to design team with before/after comparison
+  4. Never ship a contrast violation — WCAG AA is non-negotiable
+
+IF ARIA fix causes screen reader regression:
+  1. Test with NVDA (Windows) or VoiceOver (macOS) before and after
+  2. Prefer semantic HTML over ARIA (use <button> not <div role="button">)
+  3. If ARIA is necessary, verify the role/state/property combination is valid
+  4. Check WAI-ARIA Authoring Practices for the correct pattern
+```
+
 ## Anti-Patterns
 
 - **Do NOT rely solely on automated tools.** Axe and Pa11y miss keyboard traps, reading order issues, and context-dependent problems. Automated = necessary but not sufficient.

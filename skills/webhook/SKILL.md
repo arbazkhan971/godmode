@@ -899,3 +899,160 @@ RECOMMENDATIONS:
 - **Do NOT discard failed events silently.** Every event that cannot be delivered must end up in a dead letter queue. Silent data loss erodes trust.
 - **Do NOT retry without jitter.** Thousands of retries firing at the exact same second creates a thundering herd. Add random jitter to every retry delay.
 - **Do NOT assume consumers handle duplicates.** Document that delivery is at-least-once. Tell consumers to implement idempotency. But also minimize unnecessary duplicates.
+
+## Auto-Detection
+
+```
+AUTO-DETECT webhook infrastructure:
+  1. Check for webhook libraries: svix, standardwebhooks, webhook-relay in package.json/requirements.txt/go.mod
+  2. Scan for HMAC/signature verification: hmac, crypto.timingSafeEqual, hashlib.sha256 in handler files
+  3. Check for webhook tables: webhooks, webhook_subscriptions, webhook_deliveries in migrations/schema
+  4. Detect queue integration: BullMQ, Celery, SQS for async delivery
+  5. Check for webhook endpoints: /webhooks, /api/webhooks in route files
+  6. Detect inbound webhook handlers: stripe, github, twilio webhook verification
+  7. Grep for webhook secrets: WEBHOOK_SECRET, signing_secret in env files
+  8. Check for retry/DLQ config: retry policies, dead letter configuration
+
+  USE detected context to:
+    - Extend existing webhook infrastructure rather than redesigning
+    - Match existing signature verification patterns
+    - Identify gaps: missing DLQ, missing SSRF protection, no retry strategy
+    - Reuse existing queue infrastructure for delivery
+```
+
+## Output Format
+
+```
+WEBHOOK SYSTEM COMPLETE:
+  Direction: <inbound | outbound | both>
+  Events: <N> event types
+  Subscriptions: <API-managed | config-managed | hardcoded>
+  Signature: HMAC-SHA256 with per-subscription secrets
+  Delivery: <async via queue | synchronous>
+  Retry strategy: exponential backoff, <N> max attempts, jitter: <on|off>
+  DLQ: <configured | not configured>
+  Circuit breaker: <implemented | not implemented>
+  SSRF protection: <IP block list | URL validation | none>
+  Secret rotation: <supported | not supported>
+
+EVENT SUMMARY:
++--------------------------------------------------------------+
+|  Event Type        | Payload Size | Retry | DLQ | Signature   |
++--------------------------------------------------------------+
+|  <event.type>      | ~<N>KB       | 5x    | yes | HMAC-SHA256 |
++--------------------------------------------------------------+
+```
+
+## TSV Logging
+
+Log every webhook system session to `.godmode/webhook-results.tsv`:
+
+```
+Fields: timestamp\tproject\tdirection\tevent_types\tdelivery_method\tretry_strategy\tdlq_configured\tssrf_protection\tcommit_sha
+Example: 2025-01-15T10:30:00Z\tmy-app\toutbound\t12\tasync-bullmq\texponential\tyes\tip-blocklist\tabc1234
+```
+
+Append after every completed webhook design pass. One row per session. If the file does not exist, create it with a header row.
+
+## Success Criteria
+
+```
+WEBHOOK SUCCESS CRITERIA:
++--------------------------------------------------------------+
+|  Criterion                                  | Required         |
++--------------------------------------------------------------+
+|  HMAC signature on every outbound payload   | YES              |
+|  Signature verified before processing inbound| YES             |
+|  Constant-time signature comparison         | YES              |
+|  Raw body used for signature (not parsed)   | YES              |
+|  HTTPS-only webhook URLs                    | YES              |
+|  SSRF protection on registered URLs         | YES              |
+|  Async delivery via queue (not in request)  | YES              |
+|  Exponential backoff with jitter on retry   | YES              |
+|  Dead letter queue for exhausted retries    | YES              |
+|  Circuit breaker per destination            | YES              |
+|  Secret rotation without downtime           | YES              |
+|  Webhook secrets encrypted at rest          | YES              |
++--------------------------------------------------------------+
+
+VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+```
+
+## Error Recovery
+
+```
+ERROR RECOVERY — WEBHOOKS:
+1. Signature verification fails on inbound webhook:
+   → Verify raw body is used (not parsed/re-serialized JSON). Check secret matches provider's current secret. Check for encoding issues (UTF-8 vs binary). Verify HMAC algorithm matches (SHA-256 vs SHA-1).
+2. Outbound delivery consistently failing to endpoint:
+   → Check circuit breaker state (open = endpoint is down). Verify URL is reachable (DNS, TLS cert). Check for IP blocking on destination. Move to DLQ after max retries. Notify subscription owner.
+3. DLQ growing (many failed deliveries):
+   → Analyze failure patterns (same endpoint? same event type?). Check if destination is permanently down (disable subscription). Fix transient issues, then replay DLQ. Do not replay without investigating.
+4. SSRF attempt detected (internal IP in webhook URL):
+   → Block the request. Log the attempt with full details. Verify IP blocklist covers all private ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, ::1). Check for DNS rebinding.
+5. Secret rotation causes verification failures:
+   → Support dual-secret verification during rotation window. Accept signature valid against either old or new secret. Remove old secret after rotation TTL expires.
+6. Webhook delivery queue backed up:
+   → Scale delivery workers. Check for slow destinations causing worker starvation. Add per-destination concurrency limits. Move persistently slow destinations to circuit-breaker open state.
+```
+
+## Explicit Loop Protocol
+
+```
+WEBHOOK EVENT BUILD LOOP:
+current_iteration = 0
+event_types = detect_webhook_events()  // e.g., [order.created, order.updated, payment.completed, ...]
+
+WHILE current_iteration < len(event_types) AND NOT user_says_stop:
+  event = event_types[current_iteration]
+  current_iteration += 1
+
+  1. Design event payload schema (JSON Schema or TypeScript type)
+  2. Implement event trigger (fire webhook after action completes)
+  3. Add HMAC signature generation for this event
+  4. Configure retry strategy (exponential backoff, max attempts)
+  5. Add to DLQ on exhausted retries
+  6. Write delivery test (mock endpoint, verify payload + signature)
+  7. REPORT: "Event {current_iteration}/{total}: {event_type} — payload: {N}KB, retry: {max}x, DLQ: yes"
+
+ON COMPLETION:
+  Verify SSRF protection on all webhook URLs
+  Configure circuit breaker per destination
+  Set up delivery monitoring dashboard
+  REPORT: "{N} event types, delivery: async, retry: exponential, DLQ: configured, SSRF: protected"
+```
+
+## Multi-Agent Dispatch
+
+```
+PARALLEL WEBHOOK AGENTS:
+When building a complete webhook system (inbound + outbound):
+
+Agent 1 (worktree: webhook-outbound):
+  - Design event payload schemas for all event types
+  - Implement async delivery via queue (BullMQ/Celery/SQS)
+  - Add HMAC-SHA256 signature generation
+  - Configure retry strategy with exponential backoff + jitter
+  - Implement circuit breaker per destination
+
+Agent 2 (worktree: webhook-inbound):
+  - Implement inbound webhook handlers (Stripe, GitHub, etc.)
+  - Add signature verification (constant-time comparison, raw body)
+  - Build webhook secret management (encrypted storage, rotation)
+  - Add SSRF protection on webhook URL registration
+
+Agent 3 (worktree: webhook-infra):
+  - Design database schema (subscriptions, deliveries, DLQ)
+  - Build subscription management API (CRUD + test endpoint)
+  - Configure monitoring (delivery success rate, latency, DLQ depth)
+  - Write integration tests (end-to-end delivery + signature verification)
+
+MERGE: Outbound and inbound merge independently.
+  Infra rebases onto both. Final: end-to-end delivery test with real queue.
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run webhook tasks sequentially: outbound delivery, then inbound handling, then infrastructure/monitoring.
+- Use branch isolation per task: `git checkout -b godmode-webhook-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

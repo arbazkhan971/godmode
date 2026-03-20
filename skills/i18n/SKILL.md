@@ -493,6 +493,47 @@ CONFLICT RESOLUTION: extract branch is source of truth for resource files
 | `--locale <code>` | Target specific locale |
 | `--pseudo` | Run pseudo-localization test |
 
+## Output Format
+Print after each workflow step:
+```
+[i18n] Step {N}: {description} — {status}
+  Files: {list of created/modified files}
+  Coverage: {locale}: {extracted}/{total} keys ({percentage}%)
+```
+Print final summary: `i18n: {N} locales, {total_keys} keys, coverage: {avg}%. Framework: {library}. Format: {icu/gettext/custom}. RTL: {supported/not_needed}. Pseudo-loc: {tested/skipped}.`
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/i18n-results.tsv`:
+```
+STEP\tCOMPONENT\tLOCALE\tSTATUS\tDETAILS
+1\taudit\t-\tcomplete\t47 hardcoded strings found in 12 files
+2\textract\ten\tcomplete\t47 keys extracted to messages/en.json
+3\tformat\ten,de,ja\tcreated\tdate/number/currency formatters using Intl API
+4\trtl\tar,he\tcomplete\tCSS logical properties applied, dir="auto" on 8 components
+5\ttest\tpseudo\tpassed\tpseudo-loc reveals 3 truncation issues in sidebar
+```
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Zero hardcoded user-visible strings remain in source code (grep returns no matches).
+2. Default locale resource file contains all extracted keys with no empty values.
+3. ICU MessageFormat (or equivalent) is used for all plurals and interpolations — no string concatenation.
+4. Date, number, and currency formatting uses `Intl` API (or equivalent) with user locale, not hardcoded formats.
+5. RTL support works if RTL locales are in scope (CSS logical properties, `dir` attributes, mirrored layouts).
+6. Pseudo-localization test passes with no truncation, overlap, or layout breakage.
+7. Missing translation detection exists (falls back gracefully + logs warning, never shows raw key to user).
+8. All new code has tests (extraction completeness, formatter output, RTL rendering).
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| i18n library not detected | Check `package.json` for `react-intl`, `next-intl`, `i18next`, `vue-i18n`, `gettext`. If none found, ask user which framework. Do not guess. |
+| Extraction misses strings | Expand extraction patterns. Check for strings in: template literals, JSX attributes, error messages, validation messages, enum labels. Re-run extraction. |
+| Plural rules incorrect for locale | Verify CLDR plural categories for the target locale. Arabic has 6 forms (zero, one, two, few, many, other). Test each form with representative numbers. |
+| RTL layout broken | Check for `text-align: left` (use `start`), `margin-left` (use `margin-inline-start`), `float: left` (use `float: inline-start`). Apply CSS logical properties. |
+| Pseudo-loc shows truncation | Increase container width or switch to flexible layout. Pseudo-loc pads ~30% which matches German expansion. Fix all truncation before real translation. |
+| Resource file has merge conflicts | Use flat key structure (dot-notation) instead of nested JSON. Flat keys produce fewer merge conflicts. Resolve conflicts key-by-key. |
+
 ## Anti-Patterns
 
 - **Do NOT concatenate strings for sentences.** `greeting + name + suffix` breaks in every language with different word order. Use ICU MessageFormat with placeholders.

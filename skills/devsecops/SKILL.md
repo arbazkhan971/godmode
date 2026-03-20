@@ -919,6 +919,86 @@ SYNC point: All agents complete
 - **Do NOT implement everything at once.** Start with SAST + SCA + secret scanning (Level 2), then add container scanning and DAST (Level 3), then security gates and SBOM (Level 4). Incremental adoption sticks; big bang does not.
 
 
+## Output Format
+
+Every devsecops invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  DEVSECOPS RESULT                                               │
+├────────────────────────────────────────────────────────────────┤
+│  CI platform: <GitHub Actions | GitLab CI | Jenkins | etc.>     │
+│  Controls configured: <N> / 11                                  │
+│  Security gates: <N blocking, N advisory>                       │
+│  Maturity level: <0-5> (before -> after)                        │
+│  Open findings: <N>C <N>H <N>M <N>L                            │
+│  Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED>      │
+└────────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every pipeline security assessment to `.godmode/devsecops-audit.tsv`:
+
+```
+timestamp	ci_platform	controls_configured	controls_total	maturity_before	maturity_after	blocking_gates	open_critical	open_high	verdict
+```
+
+Append one row per invocation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+PASS (Maturity Level 3+) if ALL of the following:
+  - SAST configured and running on every PR (Semgrep or CodeQL)
+  - SCA configured with severity thresholds (CRITICAL/HIGH block merge)
+  - Secret scanning active on pre-commit, CI, and push protection (3 layers)
+  - Container scanning active for all Dockerfile changes (Trivy or Snyk)
+  - Security gates block merge for CRITICAL and HIGH findings
+  - SBOM generated for every release in SPDX or CycloneDX format
+  - Scanner versions are pinned (not :latest)
+  - Scanner tokens stored in CI/CD secret management (not plain env vars)
+
+PASS (Maturity Level 5) additionally requires:
+  - DAST running against staging on every deploy
+  - IaC scanning for Terraform/Kubernetes/Dockerfile
+  - Artifact signing with cosign/notation and verification before deploy
+  - Policy-as-code for all security gates (not just CI config)
+  - Security metrics dashboard with SLA tracking
+
+FAIL if ANY of the following:
+  - No security scanning in the CI pipeline at all
+  - Secrets can pass the pipeline without detection
+  - CRITICAL findings do not block merge
+  - Container images deployed without scanning
+  - :latest used for scanner images
+```
+
+## Error Recovery
+
+```
+IF a security scanner produces excessive false positives:
+  1. Do NOT disable the scanner — tune the rules
+  2. Create an exception file (.snyk, .semgrepignore, .gitleaks.toml allowlist)
+  3. Every exception must include: CVE/rule ID, justification, expiry date, reviewer
+  4. Review exceptions quarterly — expired exceptions are re-enabled automatically
+  5. Track false positive rate as a metric — target < 10% of total findings
+
+IF a security gate blocks a critical deployment:
+  1. Use the documented override process (never bypass silently)
+  2. Override requires: team lead approval, documented justification, 30-day max expiry
+  3. Create a ticket for the finding with SLA based on severity
+  4. Post-deployment: fix the finding within the SLA and remove the override
+  5. Track gate override rate — increasing overrides indicate scanner tuning is needed
+
+IF a scanner fails or times out in CI:
+  1. The pipeline should NOT silently pass — fail open is a security gap
+  2. Retry the scanner once with increased timeout
+  3. If retry fails: mark the pipeline as UNSTABLE (not pass, not fail)
+  4. Notify the security/platform team of the scanner outage
+  5. Do not merge until the scanner runs successfully — queue the PR
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run DevSecOps tasks sequentially: SAST+SCA, then containers, then secrets+IaC, then gates+pipeline.

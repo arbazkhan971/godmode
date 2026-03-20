@@ -521,6 +521,60 @@ IF system has multiple services OR team_size > 10:
   COORDINATOR merges into unified architecture document + ADR
 ```
 
+## Output Format
+Print on completion:
+```
+ARCHITECTURE: {system_name}
+Pattern: {selected_pattern} (scored {weighted_total} vs {runner_up_score} for {runner_up})
+C4 diagrams: {levels_produced} levels produced
+Bounded contexts: {N} identified
+Quality attributes: {N} analyzed
+ADR: {adr_number} — {adr_title}
+Artifacts: {list of files created}
+```
+
+## TSV Logging
+Log every architecture session to `.godmode/architect-results.tsv`:
+```
+timestamp	system	pattern_selected	patterns_compared	c4_levels	bounded_contexts	quality_attrs	adr_number	verdict
+```
+Append one row per session. Create the file with headers on first run.
+
+## Success Criteria
+1. At least 3 architecture patterns compared in a weighted matrix before recommendation.
+2. C4 Level 1 (Context) and Level 2 (Container) diagrams produced for every session.
+3. Architecture Decision Record created with Context, Decision, and Consequences sections.
+4. Quality attributes table completed with specific mechanisms, not generic labels.
+5. Bounded context map produced when recommending microservices or event-driven architecture.
+6. Team size and operational maturity factored into the recommendation justification.
+7. All artifacts committed with descriptive commit message.
+
+## Error Recovery
+```
+IF user provides no requirements (team size, scale, constraints):
+  → Ask 3 specific questions: team size, expected scale, deployment target
+  → Do NOT proceed until at least team size and scale are known
+
+IF all patterns score similarly in the comparison matrix:
+  → Default to the simplest option (modular monolith)
+  → Document: "scores within 10% — simplicity tiebreaker applied"
+
+IF user insists on a pattern that contradicts the analysis:
+  → Document the user's choice in the ADR
+  → Add a Risks section listing the specific concerns from the matrix
+  → Do NOT silently comply — state the trade-offs explicitly
+
+IF existing architecture docs are found during auto-detection:
+  → Read them first
+  → Present delta: "current architecture is X, proposed change is Y"
+  → Do NOT overwrite existing ADRs — create a new numbered ADR
+
+IF C4 diagram generation fails (complex topology):
+  → Produce Level 1 and Level 2 at minimum
+  → Mark Level 3/4 as "deferred — scope too large for single session"
+  → Suggest: "Run /godmode:architect --c4 on individual containers"
+```
+
 ## Anti-Patterns
 
 - **Do NOT recommend microservices by default.** Microservices are a solution to organizational scaling, not a default. Most systems should start as a modular monolith.

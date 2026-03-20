@@ -913,6 +913,71 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
     TYPE\tTRIGGER\tFREQUENCY\tFILE\tERROR_HANDLING\tTIMEOUT
 ```
 
+## Auto-Detection
+```bash
+AUTO-DETECT automation context:
+  1. Task runner: ls Makefile Taskfile.yml Taskfile.yaml justfile Rakefile build.gradle 2>/dev/null
+  2. CI/CD: ls .github/workflows/*.yml .gitlab-ci.yml .circleci/config.yml Jenkinsfile 2>/dev/null
+  3. Scheduler: crontab -l 2>/dev/null; ls /etc/systemd/system/*.timer 2>/dev/null; kubectl get cronjobs 2>/dev/null
+  4. Package manager: ls package.json pyproject.toml Gemfile go.mod Cargo.toml pom.xml 2>/dev/null
+  5. Existing scripts: ls scripts/ bin/ tools/ 2>/dev/null
+  6. Webhooks: grep -rl "webhook\|/api/hooks" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
+
+  USE detected context to:
+    - Add targets to existing task runner (don't create Makefile if Taskfile exists)
+    - Match existing CI/CD platform (don't create GitHub Actions if project uses GitLab CI)
+    - Reuse existing script patterns (language, error handling style, logging format)
+    - Identify automation gaps (no CI? no scheduled cleanup? no deploy automation?)
+```
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Automation script runs successfully with `--dry-run` (no destructive side effects on first run).
+2. Error handling is present: `set -euo pipefail` (bash) or try/catch (Python/Node) with meaningful error messages.
+3. Logging captures: start time, actions taken, completion status, duration.
+4. Concurrency guard exists for scheduled jobs (lock file, flock, or advisory lock).
+5. CI workflow (if created) passes on a clean checkout with no manual setup required.
+6. Secrets are in environment variables, not hardcoded in scripts or workflow files.
+7. Timeout is configured for every scheduled/CI job (no runaway processes).
+8. `workflow_dispatch` is present on every GitHub Actions scheduled workflow (manual trigger for debugging).
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Task runner not detected | Check for ALL known runners before creating new. If truly none exist, ask user preference: Make (universal), Task (modern), or npm scripts (Node projects). |
+| Cron syntax invalid | Validate with `crontab -l` or use a cron expression validator. Common mistake: `*/5` means every 5 minutes, not every 5th minute of the hour. Use crontab.guru for verification. |
+| GitHub Actions workflow fails | Check: runner OS matches expected (`ubuntu-latest`), all secrets exist in repo settings, actions versions are pinned (`@v4` not `@latest`), timeout is set. |
+| Script fails in CI but works locally | Check: working directory, PATH differences, missing dependencies not in lock file, env vars not set in CI. Add `env` dump in debug mode. |
+| Lock file prevents execution | Check if previous run is actually still running (`ps aux | grep`). If stale lock: remove lock file and add PID-based locking to prevent stale locks. |
+| Webhook delivery fails | Check: endpoint URL is reachable from sender, signature verification matches, request timeout is sufficient, response returns 2xx within 5 seconds. |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: automate-scripts):
+  - Create automation scripts with error handling and dry-run
+  - Add logging, lock files, and timeout mechanisms
+  - Write unit tests for script logic
+
+Agent 2 (worktree: automate-ci):
+  - Create/update CI workflows (GitHub Actions, GitLab CI)
+  - Configure scheduled triggers with workflow_dispatch
+  - Set up webhook endpoints if needed
+
+Agent 3 (worktree: automate-infra):
+  - Configure cron jobs / systemd timers / K8s CronJobs
+  - Set up monitoring and alerting for automation failures
+  - Create Makefile/Taskfile targets for local execution
+
+MERGE ORDER: scripts -> ci -> infra
+CONFLICT ZONES: task runner targets, CI workflow definitions, environment variable declarations
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run automation tasks sequentially: scripts first, then CI workflows, then scheduler configuration.
+- Use branch isolation per task: `git checkout -b godmode-automate-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT automate without error handling.** A script without `set -euo pipefail` or try/catch will fail silently. Silent failures are worse than manual processes because nobody notices.

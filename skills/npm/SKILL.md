@@ -766,6 +766,77 @@ MERGE:
    Production deployments should never install dev packages.
 ```
 
+## Output Format
+
+After each npm skill invocation, emit a structured report:
+
+```
+PACKAGE MANAGEMENT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Package manager     │  <npm | pnpm | yarn | bun>     │
+│  Lock file           │  COMMITTED / MISSING           │
+│  Dependencies        │  <N> prod / <N> dev            │
+│  Total (transitive)  │  <N>                           │
+│  Vulnerabilities     │  C:<N> H:<N> M:<N> L:<N>       │
+│  Outdated            │  <N> packages                  │
+│  Unused              │  <N> packages                  │
+│  Duplicates          │  <N> packages                  │
+│  Workspace           │  <N> packages / N/A            │
+│  Actions taken       │  <list>                        │
+│  Verdict             │  HEALTHY | NEEDS ATTENTION     │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every package management action for tracking:
+
+```
+timestamp	skill	action	packages_affected	vulnerabilities_fixed	status
+2026-03-20T14:00:00Z	npm	audit_fix	3	3 critical	fixed
+2026-03-20T14:10:00Z	npm	deduplicate	8	0	clean
+```
+
+## Success Criteria
+
+The npm skill is complete when ALL of the following are true:
+1. Lock file is committed to version control
+2. CI uses --frozen-lockfile (or npm ci) for reproducible builds
+3. Zero critical or high vulnerabilities (npm audit clean)
+4. No unused dependencies (verified with depcheck)
+5. No duplicate packages in lock file (deduplicated)
+6. All packages use semver ranges (no * or latest)
+7. Build tools and test frameworks are in devDependencies (not dependencies)
+8. One package manager per project (no mixed lock files)
+
+## Error Recovery
+
+```
+IF npm audit shows critical vulnerabilities:
+  1. Run npm audit to identify the vulnerable packages
+  2. For direct dependencies: npm install <pkg>@latest
+  3. For transitive dependencies: add overrides in package.json
+  4. If no fix available: assess actual exploitability and document the risk
+
+IF lock file merge conflict occurs:
+  1. Do NOT manually resolve lock file conflicts
+  2. Accept theirs: git checkout --theirs package-lock.json
+  3. Run npm install to regenerate the lock file
+  4. Commit the resolved lock file
+
+IF phantom dependency is detected (works locally, fails in CI):
+  1. Switch to pnpm (strict node_modules prevents phantom deps)
+  2. Or: add the missing dependency explicitly to package.json
+  3. Verify with a clean install: rm -rf node_modules && npm ci
+  4. Test in CI to confirm the fix
+
+IF npm publish fails:
+  1. Run npm publish --dry-run first to verify package contents
+  2. Check npm auth: npm whoami (must be logged in)
+  3. Verify the version number is not already published
+  4. Check the files field in package.json (needed files must be included)
+```
+
 ## Anti-Patterns
 
 - **Do NOT use `npm install` in CI/CD.** Use `npm ci` (or `pnpm install --frozen-lockfile`). `install` can update the lock file, causing non-reproducible builds.

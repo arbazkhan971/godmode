@@ -993,6 +993,96 @@ HARD RULES — FASTAPI:
 10. ALWAYS use pydantic-settings for configuration. Hardcoded config values are deployment bugs waiting to happen.
 ```
 
+## Output Format
+
+End every FastAPI skill invocation with this summary block:
+
+```
+FASTAPI RESULT:
+Action: <scaffold | endpoint | model | schema | service | optimize | test | audit | upgrade>
+Files created/modified: <N>
+Endpoints created/modified: <N>
+Models created/modified: <N>
+Alembic migrations: <N created>
+Tests passing: <yes | no | skipped>
+Build status: <passing | failing | not-checked>
+Issues fixed: <N>
+Notes: <one-line summary>
+```
+
+## TSV Logging
+
+Append one TSV row to `.godmode/fastapi.tsv` after each invocation:
+
+```
+timestamp	project	action	files_count	endpoints_count	models_count	migrations_count	tests_status	notes
+```
+
+Field definitions:
+- `timestamp`: ISO-8601 UTC
+- `project`: directory name from `basename $(pwd)`
+- `action`: scaffold | endpoint | model | schema | service | optimize | test | audit | upgrade
+- `files_count`: number of files created or modified
+- `endpoints_count`: number of API endpoints created or modified
+- `models_count`: number of SQLAlchemy models or Pydantic schemas created or modified
+- `migrations_count`: number of Alembic migrations generated
+- `tests_status`: passing | failing | skipped | none
+- `notes`: free-text, max 120 chars, no tabs
+
+If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
+
+## Success Criteria
+
+Every FastAPI skill invocation must pass ALL of these checks before reporting success:
+
+1. `mypy .` or `pyright .` passes with zero errors
+2. `pytest` passes if test suite exists
+3. No sync database drivers (no `psycopg2` without async wrapper)
+4. All endpoints use Pydantic response models (no raw dict returns)
+5. All database sessions use `Depends(get_db)` (no module-global sessions)
+6. All Pydantic schemas use `Field()` with constraints where applicable
+7. No `metadata.create_all()` in production code (use Alembic)
+8. No blocking calls in async endpoints (no `requests`, no sync file I/O)
+9. All configuration uses `pydantic-settings` (no hardcoded values)
+10. Alembic migration chain is linear (no multiple heads)
+
+If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+
+## Error Recovery
+
+When errors occur, follow these remediation steps:
+
+```
+IF mypy/pyright fails:
+  1. Fix type errors in order: models → schemas → services → routers
+  2. Add return type annotations to all functions
+  3. Replace Any with proper types or TypeVar
+  4. Check that SQLAlchemy models use Mapped[] type annotations
+
+IF tests fail:
+  1. Verify test database is configured and accessible
+  2. Check that async test fixtures use @pytest.fixture with async support
+  3. Verify httpx.AsyncClient is configured with the correct app and base_url
+  4. Check that database transactions are rolled back between tests
+
+IF Alembic migration errors:
+  1. Multiple heads → run `alembic merge heads` to create merge migration
+  2. Migration fails → check that SQL is compatible with target database
+  3. Autogenerate misses changes → verify models are imported in env.py
+  4. Downgrade fails → verify down_revision chain is correct
+
+IF async/blocking issues:
+  1. Replace `requests` with `httpx.AsyncClient`
+  2. Replace sync file I/O with `aiofiles`
+  3. Use `run_in_executor` for unavoidable blocking calls
+  4. Check that lazy loading is not used on async SQLAlchemy relationships
+
+IF dependency injection errors:
+  1. Verify all Depends() functions have correct signatures
+  2. Check that generator dependencies use `yield` and proper cleanup
+  3. Verify scoped dependencies (request-scoped sessions) are not cached globally
+```
+
 ## Anti-Patterns
 
 - **Do NOT use sync database drivers.** `psycopg2` blocks the event loop. Use `asyncpg` with `postgresql+asyncpg://` connection strings.

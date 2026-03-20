@@ -1066,6 +1066,75 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. ALWAYS set explicit width and height (or aspect-ratio) on images/video to prevent CLS.
 ```
 
+## Output Format
+
+After each responsive skill invocation, emit a structured report:
+
+```
+RESPONSIVE AUDIT REPORT:
+┌──────────────────────────────────────────────────────┐
+│  Pages audited      │  <N>                            │
+│  Breakpoints tested │  320, 375, 768, 1024, 1280, 1536│
+│  Layout issues      │  <N> found / <N> fixed          │
+│  Image optimization │  <N> images with srcset/sizes   │
+│  Touch targets      │  <N> below 44px / <N> fixed     │
+│  CLS score          │  <N> (target < 0.1)             │
+│  Typography         │  fluid (clamp): YES / NO        │
+│  Horizontal scroll  │  NONE / <N> pages with overflow │
+│  Verdict            │  PASS | NEEDS REVISION          │
+└──────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every responsive audit action for tracking:
+
+```
+timestamp	skill	page	viewport	issue_type	element	before	after	status
+2026-03-20T14:00:00Z	responsive	/home	320px	overflow	.hero-img	overflow-x	contained	fixed
+2026-03-20T14:01:00Z	responsive	/pricing	768px	touch_target	.cta-btn	32px	48px	fixed
+```
+
+## Success Criteria
+
+The responsive skill is complete when ALL of the following are true:
+1. No horizontal overflow at any viewport from 320px to 1536px
+2. All images use srcset + sizes or are SVG (no single-resolution raster images)
+3. All interactive elements have minimum 44x44px touch targets
+4. Typography uses clamp() or responsive units (no fixed px font sizes)
+5. Layout uses CSS Grid and/or Flexbox (no float-based layouts)
+6. CLS < 0.1 (all images/video have explicit width/height or aspect-ratio)
+7. Media queries use consistent direction (mobile-first = min-width only)
+8. Pages tested and passing at 320px, 375px, 768px, 1024px, 1280px, and 1536px
+
+## Error Recovery
+
+```
+IF horizontal overflow detected at a specific viewport:
+  1. Use browser DevTools "Toggle device toolbar" at the failing width
+  2. Inspect elements with outline: `* { outline: 1px solid red; }` to find the overflowing element
+  3. Common culprits: fixed-width elements, uncontained images, pre-formatted text, tables
+  4. Fix with: max-width: 100%, overflow-x: hidden (on the specific element, not body), or responsive table wrapper
+
+IF images cause layout shift (CLS > 0.1):
+  1. Add explicit width and height attributes to all <img> and <video> elements
+  2. Use aspect-ratio CSS property as a fallback
+  3. For dynamic images (user uploads), use a placeholder with the correct aspect ratio
+  4. Re-measure CLS with Lighthouse after each fix
+
+IF touch targets are too small on mobile:
+  1. Increase the clickable area with padding (not just the visible size)
+  2. Use min-height: 44px and min-width: 44px on interactive elements
+  3. For inline links in text, increase line-height and padding
+  4. Test on a real touch device, not just browser DevTools
+
+IF typography breaks at extreme viewports:
+  1. Replace fixed font-size values with clamp(min, preferred, max)
+  2. Example: font-size: clamp(1rem, 2.5vw, 2rem)
+  3. Test at 320px (text must be readable) and 2560px (text must not be enormous)
+  4. Verify text wraps properly and does not overflow containers
+```
+
 ## Anti-Patterns
 
 - **Do NOT use px for font sizes.** Pixel font sizes do not scale with user preferences. Use `rem` for consistent scaling with the root font size, and `clamp()` for fluid scaling across viewports.

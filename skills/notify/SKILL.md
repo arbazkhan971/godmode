@@ -1590,6 +1590,80 @@ find . -path "*/templates/*" -name "*.html" -o -name "*.hbs" -o -name "*.mjml" 2
 find . -path "*/notifications/*" -name "*.ts" -o -name "*.js" 2>/dev/null | head -5
 ```
 
+## Iteration Protocol
+```
+WHILE notification system is incomplete:
+  1. REVIEW — check current state: which channels are implemented, which are missing, test results
+  2. IMPLEMENT — pick next channel/component from the plan (notification service, then channels, then preferences)
+  3. TEST — send test notification end-to-end: trigger event → notification service → channel delivery → status tracking
+  4. VERIFY — check: notification received on target device/channel, preferences respected, quiet hours honored
+  IF tests pass AND channel works: commit, move to next channel
+  IF tests fail: check provider credentials, device tokens, queue connectivity. Fix and re-test (max 3 attempts)
+STOP: all channels implemented, preferences system works, quiet hours enforced, delivery tracking active
+```
+
+## TSV Logging
+After each workflow step, append a row to `.godmode/notify-results.tsv`:
+```
+STEP\tCOMPONENT\tCHANNEL\tPROVIDER\tSTATUS\tDETAILS
+1\tnotification-service\t-\t-\tcreated\tcentral dispatcher with priority routing and dedup
+2\tpush\tmobile\tfcm\tcreated\tFCM integration with token management and batch send
+3\tsms\ttransactional\ttwilio\tcreated\tOTP + alerts via Twilio with rate limiting
+4\tin-app\twebsocket\t-\tcreated\treal-time notification center with read/unread state
+5\tpreferences\t-\tdb\tcreated\tper-user per-category per-channel preference storage
+6\tquiet-hours\t-\tdb\tcreated\ttimezone-aware quiet hours with immediate override for security
+```
+Print final summary: `Notifications: {N} channels ({list}). Providers: {providers}. Preferences: {yes/no}. Quiet hours: {yes/no}. Delivery tracking: {yes/no}. Queue: {queue_system}.`
+
+## Success Criteria
+All of these must be true before marking the task complete:
+1. Notification service accepts events and routes to correct channel(s) based on category and user preferences.
+2. Each implemented channel delivers successfully (push token valid, SMS received, in-app displayed).
+3. User preferences are checked before every non-security notification (opt-out is respected).
+4. Quiet hours block non-critical notifications during user's configured quiet window (timezone-aware).
+5. Security notifications (2FA, login alerts, password reset) bypass quiet hours and preferences — always delivered immediately.
+6. Idempotency check prevents duplicate notifications on event replay or queue retry.
+7. Failed deliveries are retried with exponential backoff, and permanently failed tokens are cleaned up.
+8. Delivery status is tracked (sent, delivered, failed, read) and queryable for debugging.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Push token invalid (FCM/APNs) | Handle `InvalidRegistration` / `Unregistered` errors. Remove the token from the database immediately. Do not retry with a known-invalid token. |
+| SMS delivery failed | Check Twilio error code. `30003` = unreachable, `30005` = unknown phone. For rate limit errors (429), implement exponential backoff. For invalid numbers, mark in suppression list. |
+| WebSocket connection dropped | Client should auto-reconnect with exponential backoff. On reconnect, fetch missed notifications since last received timestamp. Server: do not block on failed WebSocket sends. |
+| Queue not processing | Check queue connection (Redis/SQS/RabbitMQ). Verify worker is running and consuming. Check dead-letter queue for stuck messages. Alert if DLQ depth > 0. |
+| Timezone data missing for quiet hours | Fall back to UTC with a warning logged. Prompt user to set timezone on next app open. Never block notification delivery due to missing timezone — deliver with a log warning. |
+| Provider rate limited | Implement per-channel rate limiting on your side (below provider limits). Queue excess notifications. Use batch APIs where available (FCM batch send, Twilio Messaging Service). |
+
+## Multi-Agent Dispatch
+```
+Agent 1 (worktree: notify-core):
+  - Build central notification service with event routing and priority handling
+  - Implement idempotency checks and deduplication
+  - Create notification preferences storage and API
+
+Agent 2 (worktree: notify-channels):
+  - Implement push notification channel (FCM/APNs) with token management
+  - Implement SMS channel (Twilio) with rate limiting
+  - Implement in-app notification channel (WebSocket/SSE) with read state
+
+Agent 3 (worktree: notify-ops):
+  - Set up delivery tracking and status monitoring
+  - Implement quiet hours with timezone-aware scheduling
+  - Build notification digest/batching for non-critical categories
+  - Configure queue per channel with independent retry logic
+
+MERGE ORDER: core -> channels -> ops
+CONFLICT ZONES: notification service interface, queue configuration, user preference schema
+```
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run notification tasks sequentially: core service, then channels (push, SMS, in-app), then preferences, then delivery tracking.
+- Use branch isolation per task: `git checkout -b godmode-notify-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
 ## Anti-Patterns
 
 - **Do NOT send notifications directly from business logic.** Always go through the notification service. Direct sends bypass preferences, quiet hours, rate limiting, and tracking. The notification service is the single source of truth.

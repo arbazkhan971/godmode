@@ -745,6 +745,77 @@ IF application has multiple surfaces (web + mobile + API):
 - **Do NOT treat authentication as authorization.** Knowing WHO someone is (authentication) does not tell you WHAT they can do (authorization). Design both. Use `/godmode:rbac` for authorization.
 
 
+## Output Format
+
+Every auth skill invocation must produce a structured report:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  AUTH RESULT                                                │
+├────────────────────────────────────────────────────────────┤
+│  Strategy: <JWT | Session | OAuth2/OIDC | SAML | Hybrid>   │
+│  MFA: <TOTP | WebAuthn | SMS | None>                       │
+│  Endpoints: <N designed/implemented>                        │
+│  Security controls: <N passed> / <N total>                  │
+│  Verdict: <PRODUCTION READY | NEEDS HARDENING | INCOMPLETE> │
+└────────────────────────────────────────────────────────────┘
+```
+
+## TSV Logging
+
+Log every auth design or audit to `.godmode/auth-decisions.tsv`:
+
+```
+timestamp	feature	strategy	mfa_type	endpoints	controls_passed	controls_total	verdict
+```
+
+Append one row per invocation. Never overwrite previous rows.
+
+## Success Criteria
+
+```
+PASS if ALL of the following:
+  - Password hashing uses Argon2id or bcrypt (cost >= 12)
+  - Access tokens are short-lived (<= 15 min)
+  - Refresh tokens use rotation with family-based revocation
+  - Token storage follows client-type recommendations (no localStorage for JWTs)
+  - HTTPS enforced with HSTS header
+  - Rate limiting active on login and registration endpoints
+  - MFA available for production applications
+  - All security checklist items for the chosen strategy are YES
+
+FAIL if ANY of the following:
+  - Passwords stored in plaintext, MD5, or SHA-256
+  - Algorithm confusion possible (no explicit algorithm validation on JWT verify)
+  - Refresh tokens are not rotated
+  - Secrets hardcoded in source code
+  - No rate limiting on authentication endpoints
+  - Implicit grant used for any client type
+```
+
+## Error Recovery
+
+```
+IF auth implementation fails tests:
+  1. Identify the specific failing test (token validation, session handling, MFA flow)
+  2. Check for common causes: missing environment variables, incorrect key format, expired test tokens
+  3. Fix the root cause in the auth module — do not disable the test
+  4. Re-run the full auth test suite — partial passes are not acceptable
+  5. If fix introduces a regression, revert the fix and re-approach
+
+IF auth strategy does not match application type:
+  1. Re-run Step 1 (Identity Requirements Discovery) with corrected application type
+  2. Select the correct strategy (do not force a strategy that does not fit)
+  3. Discard artifacts from the wrong strategy — do not adapt them
+
+IF token signing key is compromised:
+  1. Generate new signing key immediately
+  2. Deploy new key to all services
+  3. Invalidate all existing tokens (force re-authentication)
+  4. Audit access logs during the compromise window
+  5. Post-incident: rotate keys on schedule to limit future blast radius
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run auth tasks sequentially: core auth, then endpoints, then middleware, then tests.
