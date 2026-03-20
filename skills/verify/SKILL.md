@@ -18,4 +18,4 @@ description: Evidence gate. Run command, read output, confirm or deny claim.
 2. Read full output (stdout+stderr). Never filter or skim.
 3. Partial pass = failure (47/48 ≠ success). Non-zero exit = failure. Timeout = failure.
 4. Stale results are invalid. Any code change since last run = re-run.
-5. Metrics: median of 3 runs. Boolean: single run. Show full output with verdict.
+5. Metrics: median of 3 runs. Boolean: single run. Always show: command, full output, verdict.

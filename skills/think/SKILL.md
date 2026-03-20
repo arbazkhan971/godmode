@@ -15,7 +15,7 @@ description: Design session. Explore approaches, produce .godmode/spec.md.
 ### 2. Scan Codebase
 Run `git ls-files` + read key files → identify patterns, naming conventions, abstractions to reuse. Note: framework version.
 ### 3. Generate 2-3 Approaches
-Per approach: description (2-3 sentences), trade-offs, complexity (Low/Med/High), files to create/modify.
+Per approach: 2-3 sentences, trade-offs, complexity (S/M/L), files to create/modify, estimated tasks.
 ### 4. Recommend One
 Lead with recommendation + justification. State: chosen approach, why others rejected, key risk.
 ### 5. Write Spec

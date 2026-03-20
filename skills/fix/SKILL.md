@@ -16,7 +16,7 @@ WHILE error_count > 0:
     # 1. PICK: build errors > type errors > lint > test failures (each layer unblocks the next)
     # 2. ANALYZE — read FULL error message (not just first line) + surrounding code (±10 lines). Identify the exact mismatch.
     # 3. FIX — smallest change for ONE error. Prefer fixing root cause over suppressing symptoms.
-    # 4. COMMIT "fix: {description}" BEFORE verify
+    # 4. COMMIT `fix({module}): {description}` BEFORE verify
     # 5. VERIFY: new_count = run_all_checks()
     IF new_count > error_count: git reset --hard HEAD~1 (max 3, then skip this error, move to next)
     ELSE: error_count = new_count

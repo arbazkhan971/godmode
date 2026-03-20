@@ -27,6 +27,6 @@ WHILE untested categories remain:
 7. **Auto-Fix** (if `--fix`) — For Critical/High: fix → commit → run full test suite → revert if ANY test breaks.
 
 ## Rules
-1. Every finding: file:line + exploit steps (reproducible). No theoretical risks.
+1. Every finding: file:line + exploit steps + proof (curl command, test case, or code path). No theoretical risks.
 2. All OWASP Top 10. 4 personas per category. Test real payloads, not just descriptions. Critical/High first.
 3. Never approve with Critical findings. Critical+High count printed in final verdict.

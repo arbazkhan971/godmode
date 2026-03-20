@@ -21,4 +21,4 @@ Log to `.godmode/session-log.tsv`. Print: `"Branch {name}: {outcome}. Commits: {
 ## Rules
 1. Clean state before finalize. No uncommitted changes, tests must pass.
 2. One commit per feature on main (squash-merge). Never force-delete. Never merge with failing tests.
-3. PR body auto-generated from `git log`. No manual summaries.
+3. PR body auto-generated from `git log main..HEAD --format='- %s'`. No manual summaries.

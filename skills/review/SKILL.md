@@ -28,4 +28,4 @@ For each NIT: if safe (unused imports, whitespace, reorder, formatting), auto-fi
 ## Rules
 1. Every finding: file:line + suggested fix (code). No vague feedback like 'consider improving' or 'could be better'.
 2. MUST-FIX blocks merge. NIT = auto-fixed. Review against spec and tests, not personal style preference.
-3. Auto-fix only safe changes. Never auto-fix logic or public APIs.
+3. Auto-fix only safe changes. Never auto-fix logic, public APIs, or security-related code.

@@ -14,7 +14,7 @@ Invalid Input, Boundary (0, 1, MAX, empty), Concurrency (race conditions), Netwo
 ### 3. Score Each Scenario
 Priority = Likelihood (1-5) × Impact (1-5). ≥20: CRITICAL | 12-19: HIGH | 6-11: MEDIUM | 1-5: LOW.
 ### 4. Generate Test Skeletons
-For HIGH/CRITICAL: generate test with ARRANGE (setup) / ACT (trigger) / ASSERT (verify). Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
+For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values, not 'example'. Save to `tests/scenarios/{feature}.scenario.test.{ext}`.
 ### 5. Output
 Output table: `DIMENSION | SCENARIO | LIKELIHOOD x IMPACT | PRIORITY | TEST FILE`. Print summary counts.
 

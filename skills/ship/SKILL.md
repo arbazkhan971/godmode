@@ -13,7 +13,7 @@ Run `git log main..HEAD --oneline` and `git diff main..HEAD --stat`. If no commi
 Run each, record pass/fail: `test_cmd`, `lint_cmd`, `build_cmd`, `grep -rn 'API_KEY\|SECRET\|PASSWORD' $(git diff main..HEAD --name-only)`, `grep -n 'TODO\|FIXME' $(git diff main..HEAD --name-only)`.
 Print: `Checklist: {passing}/{total} passed`. Must be {total}/{total} to proceed.
 ### 3. Dry-Run
-Preview: show exact commands that will run, files/branches/tags that will be created. User must confirm.
+Preview: print exact commands, affected branches/tags, and rollback command. User must confirm to proceed.
 ### 4. Ship
 - **PR:** `gh pr create --title "{title}" --body "## Summary\n{changes}\n## Test Plan\n{how_verified}"`
 - **Deploy:** trigger CI/CD or apply manifests
