@@ -13,7 +13,7 @@ original = error_count
 current_iteration = 0
 WHILE error_count > 0:
     current_iteration += 1
-    # 1. PICK: build errors > type errors > lint > test failures (each layer unblocks the next)
+    # 1. PICK highest-priority error: build > type > lint > test. Fix in this order — each layer unblocks the next.
     # 2. ANALYZE — read FULL error output (all lines, not just first). Read source at error file:line ±10 lines. Name the mismatch.
     # 3. FIX — change ≤5 lines for ONE error. Fix the cause, not the symptom. No workarounds.
     # 4. COMMIT `fix({module}): {description}` BEFORE verify

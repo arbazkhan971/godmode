@@ -17,7 +17,7 @@ WHILE failing_count > 0:
          Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log -20`
          Intermittent/Wrong results → State Inspection | Unknown → Binary Search (eliminate half)
     # 3. INVESTIGATE — insert print/log at suspect file:line. Log: variable name=value, caller, actual vs expected.
-    # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
+    # 4. PROVE — state: "Bug is at {file}:{line} because {variable}={actual}, expected {expected}. Reproduce: {cmd}."
          Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.
     # 5. FIX if one-line change, else → `/godmode:fix` with root cause from step 4
     # 6. VERIFY — re-run failing test. Then run full suite to check for regressions.

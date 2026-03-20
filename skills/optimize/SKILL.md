@@ -7,7 +7,7 @@ description: Autonomous optimization loop. 3 parallel agents per round, mechanic
 - `/godmode:optimize`, "make faster", "improve", "optimize"
 
 ## Setup (once)
-Ask: Goal, Metric (cmd → number), Direction (↑/↓), Scope (globs). Auto-detect: verify cmd from stack, guard = test_cmd. Baseline: verify 3x, median, commit.
+Ask: Goal, Metric (`cmd` → single number), Direction (↑/↓), Scope (file globs). Auto-detect from stack. Baseline: run metric 3x, take median, commit.
 
 ## The Loop
 ```

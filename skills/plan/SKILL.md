@@ -28,4 +28,4 @@ Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks, {M} rounds, {F} files`. If 
 2. Every `done_when` is a shell command. If it exits 0, the task is done.
 3. Max 5 tasks per round (build's agent limit). Same-round tasks: zero file overlap. Validate: no path appears in two tasks.
 4. Max 5 files per task. Larger → split into subtasks with shared interface.
-5. Plan must be valid YAML. Build skill parses it literally. Test the YAML: `python -c 'import yaml; yaml.safe_load(open(".godmode/plan.yaml"))'`.
+5. Valid YAML required — build parses literally. Validate: `python3 -c 'import yaml; yaml.safe_load(open(".godmode/plan.yaml"))'`. Fix before proceeding.

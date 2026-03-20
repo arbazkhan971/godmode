@@ -28,5 +28,5 @@ WHILE tasks remain:
 3. After every merge: `build_cmd && lint_cmd && test_cmd`. Any non-zero exit = stop round, fix before next merge.
 4. Max 5 agents per round. Dependency order always.
 5. Build exactly what the plan says. No unplanned refactoring, no TODOs, no stubs, no `// placeholder`.
-6. No code without tests. Log everything to TSV.
+6. Every new function gets a test. Every merge gets a TSV row. No exceptions.
 7. Each agent receives: task.title, task.files, task.done_when, stack info. Nothing else.

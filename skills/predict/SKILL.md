@@ -26,4 +26,4 @@ IF avg < 7 → `/godmode:think` with all risks as constraints. IF any persona sa
 ## Rules
 1. Every finding: file:line + specific risk. 'Add more tests' or 'consider error handling' = rejected. Must name the exact failure.
 2. Disagreements are signal. Report them as-is — don't average conflicting views.
-3. Confidence < 7 → `/godmode:think` with risks. Confidence ≥ 7 → `/godmode:plan`. Never skip this gate.
+3. Gate: avg < 7 → `/godmode:think` (attach all risks). avg ≥ 7 + no NO votes → `/godmode:plan`. This gate is mandatory.

@@ -25,5 +25,5 @@ Append `.godmode/ship-log.tsv`: ISO-8601 timestamp, type, commit_sha, outcome(sh
 
 ## Rules
 1. 100% checklist before shipping. No exceptions. Never ship with failing checks — fix first, then re-run.
-2. Dry-run before real ship. State rollback command before executing.
+2. Dry-run first. Print rollback command (`git revert HEAD && git push`) before executing ship action.
 3. Verify after shipping. One ship per invocation. Failed verify = immediate rollback.

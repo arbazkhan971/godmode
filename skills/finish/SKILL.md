@@ -20,5 +20,5 @@ Append `.godmode/session-log.tsv`. Print: `Branch {name}: {outcome}. {N} commits
 
 ## Rules
 1. Clean state before finalize. `git status` must show nothing to commit. All tests must pass.
-2. Squash-merge: one commit per feature on main. Never `git branch -D`. Never merge with failing tests.
+2. Squash-merge: one clean commit on main. Delete branch with `git branch -d` (lowercase). Never merge if tests fail.
 3. PR body auto-generated from `git log main..HEAD --format='- %s'`. No manual summaries.

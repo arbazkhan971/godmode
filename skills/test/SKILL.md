@@ -19,7 +19,7 @@ WHILE coverage < target:
     # 4. REFACTOR — remove duplication in test code. Run ALL tests. If unrelated test breaks → revert, investigate.
     # 5. COMMIT: `git add {test_file} && git commit -m "test({module}): {what_behavior_is_tested}"`
     # 6. MEASURE: coverage = measure_coverage()
-    # 7. LOG to .godmode/test-results.tsv: iteration, test_file, coverage_before, coverage_after, delta
+    # 7. APPEND .godmode/test-results.tsv: iteration, test_file, lines_covered, coverage_before, coverage_after, delta
     IF current_iteration % 5 == 0:
         "Test iter {N}: coverage {coverage}% (target: {target}%)"
 Print: "Coverage: {start}% → {coverage}% in {N} iterations"
