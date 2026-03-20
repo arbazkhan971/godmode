@@ -21,6 +21,7 @@ Gemfile                       → Ruby       | rspec         | rubocop -A    | �
 pom.xml                       → Java       | mvn test      | checkstyle    | mvn package
 ```
 Lockfiles: `yarn.lock` → yarn, `pnpm-lock.yaml` → pnpm, `uv.lock` → uv.
+No match → ask user for test/lint/build commands. Cache those.
 
 ## Step 2: Match Skill
 | Trigger | Skill |

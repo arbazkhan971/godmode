@@ -14,9 +14,8 @@ WHILE failing_count > 0:
     current_iteration += 1
     # 1. REPRODUCE — run failing command 3x. Consistent failure = real bug. Intermittent = add to flaky list.
     # 2. SELECT TECHNIQUE:
-         Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log --oneline -20`
-         Intermittent → State Inspection | Wrong results → State Inspection
-         Unknown → Binary Search (eliminate half)
+         Stack trace → Trace Analysis | "Used to work" → `git bisect` | Regression → `git log -20`
+         Intermittent/Wrong results → State Inspection | Unknown → Binary Search (eliminate half)
     # 3. INVESTIGATE — collect evidence: variable values, call stack, input/output at failure point
     # 4. PROVE — file:line + data evidence + reproduce cmd. Guesses rejected.
          Chain: Symptom → Why? → Why? → Root cause → Fix (file:line + diff). Min 3 'why's.

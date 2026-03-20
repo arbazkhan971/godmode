@@ -16,6 +16,7 @@ Run `git diff main...HEAD` and `git log main..HEAD --oneline`. Read every change
 - **Style** — naming conventions, dead/unreachable code, inconsistent patterns, missing types/returns
 Each agent outputs: `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX (code snippet)`
 Severities: MUST-FIX, SHOULD-FIX, NIT.
+If no findings in a category, agent must state: `{category}: No issues found.`
 ### 3. Merge & Deduplicate
 Combine findings. Deduplicate (same file:line = merge). Sort: MUST-FIX → SHOULD-FIX → NIT.
 ### 4. Auto-Fix NITs

@@ -24,8 +24,7 @@ WHILE current_round < max_rounds:
     improved + guard failed → rework (max 2), else discard
     no improvement → discard all
     # 5. LOG to .godmode/optimize-results.tsv: round, agent, change, metric_before, metric_after, status(kept/discarded)
-    # 6. STATUS every 5 rounds
-    # 7. DIMINISHING — last 3 keeps <1%: radical → compound → STOP
+    # 6. STATUS every 5 rounds. DIMINISHING: last 3 keeps <1% → radical → compound → STOP
 STOP: target | max rounds | diminishing returns | guard broken
 ```
 Print: `{metric}: {baseline} → {final} ({delta}%). Rounds: {total}, Keeps: {keeps}, Discards: {discards}, Best: round {N}`.

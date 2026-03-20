@@ -29,3 +29,4 @@ WHILE tasks remain:
 4. Max 5 agents per round. Dependency order always.
 5. Build what the plan says. No unplanned refactoring, no TODO comments, no placeholder implementations.
 6. No code without tests. Log everything to TSV.
+7. Each agent receives: task.title, task.files, task.done_when, stack info. Nothing else.
