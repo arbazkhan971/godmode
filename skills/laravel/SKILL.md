@@ -957,3 +957,10 @@ CONFLICT RESOLUTION: models branch owns migrations and model definitions
 - **Do NOT ignore `preventLazyLoading`.** Enable it in development. Every N+1 query is a production performance bug waiting to happen.
 - **Do NOT hardcode configuration.** Use `.env` variables and `config()` helper. Never reference `env()` outside of config files.
 - **Do NOT skip authorization.** Every endpoint must check Policies or Gates. An unauthorized endpoint is a security vulnerability, not a missing feature.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Laravel tasks sequentially: models, then API, then services, then tests.
+- Use branch isolation per task: `git checkout -b godmode-laravel-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

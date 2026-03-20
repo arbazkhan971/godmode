@@ -1067,3 +1067,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT use Redis transactions (MULTI/EXEC) expecting rollback.** Redis transactions are not atomic in the ACID sense. All commands execute sequentially, but if one fails, the others still run. Use Lua for true atomicity.
 - **Do NOT ignore memory fragmentation.** mem_fragmentation_ratio > 1.5 wastes 50%+ of allocated memory. Monitor and address with MEMORY PURGE or jemalloc tuning.
 - **Do NOT connect directly from many application instances.** Use connection pooling in your client library. Each Redis connection has overhead, and max_clients has a limit.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Redis tasks sequentially: caching layer, then data structures (queues/pub-sub/streams), then ops (Sentinel/Cluster config).
+- Use branch isolation per task: `git checkout -b godmode-redis-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

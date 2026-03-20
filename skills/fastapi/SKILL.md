@@ -1003,3 +1003,10 @@ HARD RULES — FASTAPI:
 - **Do NOT use `lazy` loading on async relationships.** Use `selectin` or `joined` loading strategy. Lazy loading triggers synchronous queries in an async context.
 - **Do NOT hardcode configuration.** Use `pydantic-settings` with `.env` files. Every configurable value must come from environment variables.
 - **Do NOT skip Alembic migrations.** FastAPI + SQLAlchemy needs explicit schema management. Never use `metadata.create_all()` in production.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run FastAPI tasks sequentially: core API setup, then domain A, then domain B.
+- Use branch isolation per task: `git checkout -b godmode-fastapi-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

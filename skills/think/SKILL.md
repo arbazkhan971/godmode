@@ -21,6 +21,12 @@ Recommend one. State: chosen approach, why others rejected (1 sentence each), to
 ### 5. Write Spec
 Write `.godmode/spec.md`: Problem, Approach, Success Criteria (verifiable cmd), Out of Scope, Files to Create/Modify. `git commit -m "spec: {feature}"`
 
+## Output Format
+Print: `Spec: .godmode/spec.md ({N} lines). Approach: {chosen}. Success: {criteria_cmd}. Files: {count} to modify, {count} to create.`
+
+## TSV Logging
+Append `.godmode/think-log.tsv`: timestamp, feature, approaches_considered, chosen_approach, files_to_modify, files_to_create, spec_lines.
+
 ## Rules
 1. Always produce `.godmode/spec.md`. Next step: `/godmode:plan` reads it.
 2. 2-3 approaches, then pick one. Not 7 options.

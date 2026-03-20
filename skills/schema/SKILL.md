@@ -912,3 +912,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT create migrations that lock tables in production.** Adding a column with a default value locks the table in older PostgreSQL versions. Use ALTER TABLE ... ADD COLUMN ... DEFAULT ... (PG 11+ is safe).
 - **Do NOT maintain parallel schema definitions.** If you have a Zod schema AND a Prisma schema AND a JSON Schema that all describe the same entity, they will drift. Pick one source of truth and derive the rest.
 - **Do NOT ignore soft delete implications.** If you use `deleted_at` for soft deletes, every query needs a `WHERE deleted_at IS NULL` filter. Consider using a partial index or a view.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run schema tasks sequentially: table definitions, then validation schemas, then seed data.
+- Use branch isolation per task: `git checkout -b godmode-schema-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

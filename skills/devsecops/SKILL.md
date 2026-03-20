@@ -917,3 +917,10 @@ SYNC point: All agents complete
 - **Do NOT treat security gates as permanent blockers.** Provide a documented exception process. Blocking deploys with no override path leads to circumvention.
 - **Do NOT scan without acting on results.** A scan that produces reports nobody reads is security theater. Every finding must have an owner and SLA.
 - **Do NOT implement everything at once.** Start with SAST + SCA + secret scanning (Level 2), then add container scanning and DAST (Level 3), then security gates and SBOM (Level 4). Incremental adoption sticks; big bang does not.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run DevSecOps tasks sequentially: SAST+SCA, then containers, then secrets+IaC, then gates+pipeline.
+- Use branch isolation per task: `git checkout -b godmode-devsecops-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

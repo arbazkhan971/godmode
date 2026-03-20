@@ -694,3 +694,10 @@ MERGE: Combine all findings, resolve cross-module shared state conflicts,
 - **Do NOT assume single-core execution order.** Code that "works on my machine" can fail on multi-core systems due to memory reordering. Use proper memory ordering guarantees.
 - **Do NOT catch and swallow errors in concurrent tasks.** A silently failed goroutine leaves the system in an inconsistent state. Propagate errors through channels or error groups.
 - **Do NOT optimize concurrency without profiling.** Switching from Mutex to lock-free without measuring is premature optimization. Profile first, optimize second.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run concurrency analysis sequentially: data layer, then API layer, then workers, then tests.
+- Use branch isolation per task: `git checkout -b godmode-concurrent-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

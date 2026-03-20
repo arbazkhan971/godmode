@@ -726,3 +726,10 @@ SYNC point: All agents complete
 - **Do NOT shard prematurely.** Sharding adds enormous complexity. Start with a single node, then replicas, then shard only when data volume or write throughput demands it.
 - **Do NOT conflate consensus and consistency.** Consensus (Raft, Paxos) is a mechanism. Consistency (linearizable, eventual) is a property. You can have consensus without linearizability and vice versa.
 - **Do NOT design without testing partitions.** A distributed system that has never been tested under network partitions is a system waiting to corrupt data.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run distributed system tasks sequentially: design, then coordination, then data/sharding.
+- Use branch isolation per task: `git checkout -b godmode-distributed-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

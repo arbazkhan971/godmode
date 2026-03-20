@@ -832,3 +832,10 @@ CONFLICT RESOLUTION: tests branch must pass before deps or cleanup merge
 - **Do NOT modernize code that is being replaced.** If a module is scheduled for replacement in 3 months, spending 2 weeks modernizing it is wasted effort. Focus modernization on code that will live for years.
 - **Do NOT ignore the human factor.** Legacy code was written by people who had reasons for their decisions. Understand the constraints they faced before judging their code. Blame is counterproductive.
 - **Do NOT skip the dependency audit.** A codebase running on EOL Node.js with 3 critical vulnerabilities is a security incident waiting to happen. Fix security first, modernize second.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run legacy modernization tasks sequentially: assessment, then tests, then deps, then cleanup.
+- Use branch isolation per task: `git checkout -b godmode-legacy-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -1076,3 +1076,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT serve the same image to all viewports.** A 2400px image on a 320px phone wastes bandwidth and slows the page. Use `srcset`, `sizes`, and `<picture>` for resolution and art direction.
 - **Do NOT test only on one viewport.** Responsive bugs hide between breakpoints. Test at 320px, 375px, 768px, 1024px, 1280px, and 1536px at minimum. Test in between breakpoints too.
 - **Do NOT use viewport units (vw) for font sizes without clamp().** `font-size: 5vw` creates text that is unreadably small on phones and absurdly large on ultrawide monitors. Always constrain with `clamp(min, preferred, max)`.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run responsive tasks sequentially: layout (Grid/Flexbox), then media (images/video), then typography.
+- Use branch isolation per task: `git checkout -b godmode-responsive-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

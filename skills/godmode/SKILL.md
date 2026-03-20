@@ -55,6 +55,10 @@ code exists, tests passing, no review done → REVIEW. Reviewed → OPTIMIZE or 
 ## Step 4: Execute
 Read `skills/{skill}/SKILL.md`. Follow it literally. Pass: `stack`, `test_cmd`, `lint_cmd`, `build_cmd` as variables.
 
+## Output Format
+Print: `Godmode: stack={stack}, skill={skill}, phase={phase}. Dispatching.`
+After skill completes, print: `Godmode: {skill} complete. Next: {next_skill_or_done}.`
+
 ## Rules
 1. Detect stack FIRST. Cache result. One skill at a time — read its SKILL.md, follow it.
 2. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Initialize `current_iteration = 0`. Increment at loop top.
@@ -64,3 +68,9 @@ Read `skills/{skill}/SKILL.md`. Follow it literally. Pass: `stack`, `test_cmd`, 
 6. Stuck (>5 consecutive discards): re-read all in-scope files, try opposite approach, try radical rewrite. Never repeat failed approach.
 7. Multi-agent: ≤5 agents/round, `isolation: "worktree"`. Each agent sees only task.files. Merge sequentially. Test after each. Conflict → discard, re-queue.
 8. Chain: `think → plan → [predict] → build → test → fix → review → optimize → secure → ship`. [predict] optional but recommended.
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- **Rule 7 (multi-agent):** Execute tasks sequentially in the current session instead of dispatching parallel agents. One task at a time, commit after each.
+- **Worktree isolation:** Use branch-based isolation: `git checkout -b godmode-{task}`, work, merge back. See `adapters/shared/sequential-dispatch.md`.
+- **All other rules apply unchanged.** The loop, verification, rollback, and logging work identically.

@@ -654,3 +654,10 @@ MERGE:
 - **Do NOT retrain without validation.** Automated retraining is powerful but dangerous. Always validate the new model before promoting it.
 - **Do NOT serve without a fallback.** When the model fails (and it will), have a graceful degradation path — a simpler model, a rules-based fallback, or a "we're processing your request" message.
 - **Do NOT conflate model version with code version.** Model v3.2 might run on serving code v1.8. Track both independently. A model update and a serving code update should be separate deployments.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run MLOps tasks sequentially: serving setup, then monitoring setup, then A/B test setup.
+- Use branch isolation per task: `git checkout -b godmode-mlops-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

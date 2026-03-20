@@ -15,6 +15,7 @@ Thank you for your interest in improving Godmode. This guide covers how to contr
 - [Pull Request Process](#pull-request-process)
 - [Philosophy Check](#philosophy-check)
 - [High-Value Contributions](#high-value-contributions)
+- [Multi-Platform Compatibility](#multi-platform-compatibility)
 
 ---
 
@@ -472,6 +473,74 @@ The best examples come from real projects. If you have used a skill and can shar
 
 ### 4. Fix Anti-Patterns
 If you have encountered a failure mode that a skill does not warn about, add it as an anti-pattern. Real failure modes are more valuable than theoretical ones.
+
+---
+
+## Multi-Platform Compatibility
+
+Godmode runs on multiple AI coding platforms. If your contribution touches agents, adapters, or parallel execution features, follow these guidelines to keep things working everywhere.
+
+### When Writing New Skills
+
+**Single-threaded skills are already cross-platform.** If your skill does not use `Agent()` calls or worktree features (no parallel agents, no worktree checkouts), it works on every supported platform with no additional effort.
+
+**Skills that use `Agent()` or worktrees need a fallback.** If your skill dispatches parallel agents or uses worktree isolation, add a `## Platform Fallback` section to your SKILL.md. This section must describe how the skill degrades gracefully on platforms that do not support multi-agent or worktree features. Reference [`adapters/shared/sequential-dispatch.md`](adapters/shared/sequential-dispatch.md) for the standard fallback protocol -- it defines how parallel agent dispatches are converted to sequential execution on single-threaded platforms.
+
+Example `## Platform Fallback` section:
+
+```markdown
+## Platform Fallback
+This skill dispatches 3 parallel review agents. On platforms without Agent()
+support, fall back to sequential dispatch per adapters/shared/sequential-dispatch.md:
+1. Run the security review step first
+2. Run the performance review step second
+3. Run the correctness review step third
+4. Merge results identically to the parallel path
+```
+
+### When Adding Platform Adapters
+
+Adapter files live in `adapters/{platform}/`. Each adapter directory must contain:
+
+| File | Purpose |
+|------|---------|
+| `README.md` | Setup instructions and platform-specific notes |
+| `install.sh` | Installation script for the adapter |
+| Platform config | A platform-specific configuration file (e.g., `gemini-config.md`, `plugin.json`) |
+
+Rules for adapters:
+
+- **Install scripts must be idempotent.** Running `install.sh` twice must produce the same result as running it once. Guard against duplicate entries, check for existing files before overwriting, and use `mkdir -p` instead of `mkdir`.
+- **Test on the target platform before submitting.** Do not submit an adapter you have only tested on a different platform. If you do not have access to the target platform, note this in your PR and request help testing.
+- **Follow the existing directory structure.** Look at `adapters/gemini/`, `adapters/opencode/`, and `adapters/cursor/` for reference implementations.
+
+### Agent Definitions
+
+Godmode maintains agent definitions in two formats:
+
+| Format | Location | Used By |
+|--------|----------|---------|
+| Markdown | `agents/*.md` | Claude Code |
+| TOML | `.codex/agents/*.toml` | Codex |
+
+When adding a new agent:
+
+1. **Create both files.** Every agent needs a definition in `agents/your-agent.md` AND `.codex/agents/your-agent.toml`.
+2. **Keep behavior identical.** The agent's role, constraints, and output format must match across both definitions. Differences in syntax are expected; differences in behavior are not.
+3. **Use existing agents as templates.** Compare `agents/builder.md` with `.codex/agents/builder.toml` to see how the same agent is expressed in both formats.
+4. **Name consistently.** The filename must match between formats (e.g., `security.md` and `security.toml`).
+
+### Platform Support Matrix
+
+| Platform | Skills | Agents | Worktrees | Parallel Dispatch | Adapter Location |
+|----------|--------|--------|-----------|-------------------|------------------|
+| **Claude Code** | Full | Full (`agents/*.md`) | Full | Full | Native (no adapter) |
+| **Codex** | Full | Full (`.codex/agents/*.toml`) | Full | Full | `adapters/codex/` |
+| **Gemini CLI** | Full | Sequential only | Not supported | Sequential fallback | `adapters/gemini/` |
+| **OpenCode** | Full | Sequential only | Not supported | Sequential fallback | `adapters/opencode/` |
+| **Cursor** | Full | Sequential only | Not supported | Sequential fallback | `adapters/cursor/` |
+
+**Key:** "Sequential only" means the platform runs one agent at a time using the fallback protocol in `adapters/shared/sequential-dispatch.md`. "Full" means the platform supports the feature natively.
 
 ---
 

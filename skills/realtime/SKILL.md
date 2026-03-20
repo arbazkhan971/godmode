@@ -1091,3 +1091,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT forget sticky sessions when scaling WebSocket.** WebSocket is a stateful connection. If a client's requests hit different servers, the handshake fails. Configure sticky sessions (IP hash or cookie-based) in your load balancer.
 - **Do NOT implement your own CRDT for production.** Use Yjs or Automerge. CRDT implementations are subtle and error-prone. The edge cases around concurrent edits, deletions, and undo will take months to get right.
 - **Do NOT ignore connection limits.** Each WebSocket connection consumes memory and a file descriptor. Set per-instance connection limits, monitor connection counts, and auto-scale based on connections, not CPU.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run realtime tasks sequentially: server handlers, then client hooks, then infra (Redis pub/sub, scaling).
+- Use branch isolation per task: `git checkout -b godmode-realtime-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

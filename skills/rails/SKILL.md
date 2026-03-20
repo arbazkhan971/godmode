@@ -741,3 +741,10 @@ FIXES:
 - **Do NOT test implementation details.** Do not test that a method calls another method. Test the observable behavior and output.
 - **Do NOT use `create` in factories when `build` suffices.** Hitting the database slows down tests. Only `create` when you need persistence.
 - **Do NOT leave N+1 queries in production.** Use Bullet gem and `strict_loading` to catch them in development. Every N+1 is a performance bug.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Rails tasks sequentially: models/migrations, then controllers/routes, then views/Hotwire, then jobs/services.
+- Use branch isolation per task: `git checkout -b godmode-rails-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -25,6 +25,9 @@ WHILE coverage < target:
 Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ```
 
+## Output Format
+Print: `Test: coverage {start}% → {final}% (target: {target}%). {N} tests added in {iters} iterations. Files: {test_files_touched}.`
+
 ## Rules
 1. RED first. Test must fail before code. If test passes immediately → the test is wrong or testing nothing.
 2. One test per iteration. Assert return values, thrown errors, or side effects — never mock internals.

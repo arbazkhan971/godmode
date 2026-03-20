@@ -738,3 +738,10 @@ MERGE:
 - **Do NOT migrate the most coupled module first.** Start with the module that has the fewest dependencies. Success with the first extraction builds confidence and establishes patterns for subsequent extractions.
 - **Do NOT remove the old system too soon.** Keep the old system running as a fallback for at least 2 weeks after full cutover. Decommission only after monitoring confirms the new system is stable.
 - **Do NOT ignore the team.** A migration is a people problem as much as a technical problem. The team needs training on the new technology, clear documentation, and time to ramp up.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run tech migration tasks sequentially: file migration, then test migration, then verification.
+- Use branch isolation per task: `git checkout -b godmode-migration-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -632,3 +632,10 @@ Estimated improvement: +15-20% answer accuracy
 - **Do NOT evaluate end-to-end only.** Measure retrieval quality and generation quality separately. You cannot fix generation if the problem is retrieval.
 - **Do NOT launch without hallucination measurement.** A RAG system that confidently makes things up is a liability. Measure hallucination rate and set a hard threshold.
 - **Do NOT use the same embedding model for everything.** Code, legal text, medical text, and casual conversation have different embedding needs. Test domain-specific models.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run RAG tasks sequentially: ingestion pipeline, then retrieval/reranking, then generation/prompting, then evaluation suite.
+- Use branch isolation per task: `git checkout -b godmode-rag-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

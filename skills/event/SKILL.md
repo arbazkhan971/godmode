@@ -812,3 +812,10 @@ AUTO-DETECT event-driven architecture context:
 - **Do NOT put sensitive data in events without encryption.** Events are stored and replicated. PII in events requires encryption at rest and in transit, plus GDPR deletion strategy.
 - **Do NOT design without idempotency.** At-least-once delivery means duplicates will happen. Every consumer must handle them gracefully.
 - **Do NOT use a single topic for all events.** One mega-topic makes filtering, scaling, and retention management impossible. Use domain-specific topics.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run event tasks sequentially: event store/schemas, then broker topology, then consumers/projections.
+- Use branch isolation per task: `git checkout -b godmode-event-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

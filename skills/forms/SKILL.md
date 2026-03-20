@@ -1154,3 +1154,10 @@ HARD RULES — FORMS:
 - **Do NOT use alert() for form errors.** Alerts block the UI, are not accessible, and cannot be styled. Use inline errors with aria-describedby and an error summary component.
 - **Do NOT accept any file upload without validation.** Check file type (MIME + extension), file size, and count. A 500MB file or a .exe disguised as a .jpg will cause problems.
 - **Do NOT manage 10+ fields with useState.** Manual state management for complex forms leads to stale closures, re-render cascades, and missed validations. Use a form library.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run form tasks sequentially: schemas/validation, then components, then page integration.
+- Use branch isolation per task: `git checkout -b godmode-forms-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

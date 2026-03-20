@@ -780,3 +780,10 @@ MERGE:
 - **Do NOT ignore the `sizes` prop on responsive images.** Without `sizes`, Next.js cannot select the right image variant, causing oversized downloads.
 - **Do NOT put heavy JavaScript in middleware.** Middleware runs on every request at the Edge. Keep it under 1MB and avoid Node.js-specific APIs.
 - **Do NOT manually manage `<head>` tags.** Use the Metadata API (`generateMetadata`, `metadata` export) for SEO — it handles deduplication and streaming.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Next.js tasks sequentially: marketing routes, then app routes, then API layer.
+- Use branch isolation per task: `git checkout -b godmode-nextjs-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

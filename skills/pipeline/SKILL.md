@@ -1032,3 +1032,10 @@ CONFLICT ZONES: Schema definitions, config files, shared utility functions
 - **Do NOT forget about backfill from the start.** The first thing that happens after launching a pipeline is "can you load the last 2 years of data?" Design for backfill from day one.
 - **Do NOT mix batch and streaming without understanding the trade-offs.** Streaming adds complexity. If your SLA is "data available by next morning," batch is simpler and cheaper.
 - **Do NOT hardcode connection strings.** Use environment variables or a secrets manager. A pipeline with hardcoded credentials will eventually be committed to version control.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run data pipeline tasks sequentially: extract, then transform, then load, then orchestrate.
+- Use branch isolation per task: `git checkout -b godmode-pipeline-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

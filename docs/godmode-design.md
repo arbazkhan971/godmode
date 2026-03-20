@@ -3191,24 +3191,32 @@ Godmode is a native Claude Code skill plugin. It uses:
 
 ### Adaptation Strategy
 
-For non-Claude Code platforms, provide adapter files:
+For non-Claude Code platforms, adapter files are provided:
 
 ```
 godmode/
 ├── adapters/
-│   ├── cursor/
-│   │   ├── .cursorrules          # Cursor rules file that loads Godmode skills
-│   │   └── install.sh            # Copies rules to project
-│   ├── codex/
-│   │   ├── system-prompt.md      # System prompt that includes Godmode workflows
-│   │   └── install.sh
+│   ├── shared/
+│   │   └── sequential-dispatch.md  # How to run parallel agents sequentially
+│   ├── gemini/
+│   │   ├── README.md               # Setup instructions for Gemini CLI
+│   │   ├── gemini-config.md        # Tool mapping + execution guide
+│   │   └── install.sh              # Copies config to project
 │   ├── opencode/
-│   │   ├── plugin.json           # OpenCode plugin manifest
+│   │   ├── README.md               # Setup instructions for OpenCode
+│   │   ├── plugin.json             # OpenCode plugin manifest
+│   │   └── install.sh              # Installs plugin for OpenCode
+│   ├── cursor/
+│   │   ├── README.md               # Setup instructions for Cursor
+│   │   ├── .cursorrules
 │   │   └── install.sh
-│   └── gemini/
-│       ├── system-prompt.md
+│   └── codex/
+│       ├── README.md               # Setup instructions for Codex
+│       ├── codex-config.md
 │       └── install.sh
 ```
+
+Additionally, 4 core skills (godmode, build, optimize, review) include `## Platform Fallback` sections that explain how to degrade gracefully on platforms without `Agent()` or `EnterWorktree` tools. See `adapters/shared/sequential-dispatch.md` for the full protocol.
 
 ### Platform-Specific Limitations
 

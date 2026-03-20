@@ -972,3 +972,10 @@ On activation, automatically detect the design system context:
 - **Do NOT publish without a changelog.** Consumers upgrading from v2.3.0 to v2.4.0 need to know what changed. "Various improvements" is not a changelog entry.
 - **Do NOT create tokens for every possible value.** A spacing scale of 16 steps is complete. A color palette with 200 shades is noise. Tokens should constrain choices, not enumerate them.
 - **Do NOT treat Storybook as an afterthought.** Storybook is not a developer tool you set up last. It is the component development environment, the documentation, the visual testing target, and the design review surface. Set it up first.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run design system tasks sequentially: tokens, then components, then pipeline, then docs/Storybook.
+- Use branch isolation per task: `git checkout -b godmode-designsystem-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

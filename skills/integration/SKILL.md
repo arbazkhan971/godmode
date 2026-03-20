@@ -1073,3 +1073,10 @@ CONFLICT RESOLUTION: db branch owns container setup shared across tests
 - **Do NOT ignore slow tests.** An integration test taking 30 seconds usually means a missing index, unnecessary sleep, or wrong wait strategy. Investigate.
 - **Do NOT test everything with integration tests.** Pure logic belongs in unit tests. Integration tests verify boundaries and interactions. Use the testing pyramid: many unit tests, fewer integration tests.
 - **Do NOT hardcode ports.** Testcontainers assign random ports. Always use `container.getMappedPort()` to get the actual port.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run integration test tasks sequentially: DB tests, then API tests, then queue tests, then cache tests.
+- Use branch isolation per task: `git checkout -b godmode-integration-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

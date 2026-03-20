@@ -1018,3 +1018,10 @@ MERGE:
 - **Do NOT ignore unhandled rejections.** Unhandled promise rejections are ticking time bombs. Log them, then shut down gracefully.
 - **Do NOT use `cluster.fork()` in containers.** Containers should run one process — let the orchestrator (Kubernetes, ECS) handle scaling. Use cluster mode only for bare-metal or VM deployments.
 - **Do NOT mix business logic into controllers.** Controllers parse HTTP. Services contain logic. Mixing them makes testing impossible and creates coupling.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Node.js tasks sequentially: API routes, then business logic, then middleware/infra.
+- Use branch isolation per task: `git checkout -b godmode-node-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

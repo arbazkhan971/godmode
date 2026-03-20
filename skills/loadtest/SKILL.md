@@ -638,3 +638,10 @@ CONFLICT RESOLUTION: each agent writes to its own results subdirectory
 - **Do NOT compare single runs.** One run with P95=200ms and another with P95=180ms is noise, not improvement. Run multiple times and use statistics.
 - **Do NOT test with empty databases.** Performance on 100 rows is meaningless. Test with production-scale data volumes.
 - **Do NOT skip warm-up.** Cold starts, empty caches, and JIT compilation make the first minutes of a test unrepresentative. Include a warm-up phase and exclude it from metrics.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run load test tasks sequentially: baseline, then stress, then spike, then soak.
+- Use branch isolation per task: `git checkout -b godmode-loadtest-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

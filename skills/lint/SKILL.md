@@ -831,3 +831,10 @@ CONFLICT RESOLUTION: each agent owns its language config files exclusively
 - **Do NOT skip the formatter.** Linting without formatting is half the job. Formatting eliminates 80% of style-related review comments.
 - **Do NOT keep warnings around.** Warnings are noise that developers learn to ignore. Either promote to error or remove the rule.
 - **Do NOT configure linting without team agreement.** Rules imposed without consensus will be circumvented. Discuss, agree, then automate.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run lint tasks sequentially: TypeScript linting, then Python linting, then hooks, then editor config.
+- Use branch isolation per task: `git checkout -b godmode-lint-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

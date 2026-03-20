@@ -672,3 +672,10 @@ CONFLICT ZONES: middleware registration order, config files, docker-compose port
 - **Do NOT build dashboards without a question.** "What does this dashboard answer?" If you cannot state the question, the dashboard is noise.
 - **Do NOT skip trace context propagation.** If service A calls service B but the trace breaks, you lose visibility into the most critical part of the request.
 - **Do NOT ignore error budget.** When the error budget is depleted, stop shipping features and fix reliability. That is the whole point of SLOs.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run observability tasks sequentially: metrics, then logging, then tracing, then alerts.
+- Use branch isolation per task: `git checkout -b godmode-observe-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

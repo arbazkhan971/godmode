@@ -807,3 +807,10 @@ ReBAC EXTENSION:
 - **Do NOT copy another application's role structure.** Your roles should reflect YOUR application's resources and actions. A generic admin/user/viewer hierarchy rarely fits real-world requirements without customization.
 - **Do NOT forget multi-tenancy isolation.** In a multi-tenant system, EVERY query must be scoped by tenant_id. A missing tenant filter is a data breach, not a bug.
 - **Do NOT allow permission escalation through delegation.** A user must not be able to delegate permissions they do not hold. Validate delegation requests against the delegator's effective permissions.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run RBAC tasks sequentially: permission model/schema, then policy engine/middleware, then audit/compliance, then admin/delegation.
+- Use branch isolation per task: `git checkout -b godmode-rbac-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

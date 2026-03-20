@@ -1024,3 +1024,10 @@ CONFLICT ZONES: ORM config files, middleware registration, service constructors
 - **Do NOT set pool size to max_connections.** If you have 3 app instances each with pool_size=100 and PostgreSQL max_connections=100, the third instance gets zero connections. Coordinate pool sizes across instances.
 - **Do NOT retry on every error.** Retry on transient errors (connection reset, deadlock). Do NOT retry on constraint violations or syntax errors -- those will never succeed.
 - **Do NOT mix ORMs in the same project.** Using Prisma AND TypeORM on the same database creates schema drift, migration conflicts, and connection pool contention. Pick one.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run ORM tasks sequentially: N+1 fixes, then pool config, then transaction patterns.
+- Use branch isolation per task: `git checkout -b godmode-orm-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

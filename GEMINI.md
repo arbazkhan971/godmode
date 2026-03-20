@@ -181,10 +181,29 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | upload | File uploads and media processing |
 | webhook | Webhook design, delivery, and retry logic |
 
+## Command Definitions
+
+Gemini CLI discovers `/godmode` as a slash command via the `commands/` directory:
+
+- `commands/godmode.md` — top-level `/godmode` command (orchestrator)
+- `commands/godmode/<skill>.md` — each sub-command (e.g., `/godmode:optimize`, `/godmode:secure`)
+
+When a user types `/godmode:optimize`, Gemini CLI reads `commands/godmode/optimize.md` for usage info, then loads the full skill from `skills/optimize/SKILL.md` for execution.
+
 ## Core Behaviors
 
-1. **Slash commands**: When the user types `/godmode`, follow the orchestrator workflow above. When they type `/godmode:<name>`, read `./skills/<name>/SKILL.md` and follow it.
+1. **Slash commands**: When the user types `/godmode`, read `./commands/godmode.md` for routing, then follow the orchestrator workflow. When they type `/godmode:<name>`, read `./commands/godmode/<name>.md` for usage, then read `./skills/<name>/SKILL.md` and follow it.
 2. **Auto-detection**: If the user describes a task without a slash command, match it to the most relevant skill from the catalog, read its SKILL.md, and execute.
 3. **Phase loop**: The ideal flow is THINK -> BUILD -> OPTIMIZE -> SHIP. After completing a skill, suggest the next logical step.
 4. **Always investigate first**: Run `git status`, check for tests, read project files before recommending actions.
 5. **One skill at a time**: Load and follow one skill's full workflow. Do not mix instructions from multiple skills simultaneously.
+
+## Sequential Execution (Gemini CLI Limitation)
+
+Gemini CLI does not support parallel agent dispatch or native worktrees. When a skill says "dispatch N agents in parallel" or "isolation: worktree":
+
+1. **Parallel agents → sequential**: Execute each agent's task one at a time in the current session. Complete fully (implement, test, commit) before starting the next.
+2. **Worktree isolation → branches**: Use `run_shell_command("git checkout -b godmode-{task}")` instead of EnterWorktree. Merge back with `run_shell_command("git checkout main && git merge godmode-{task}")`.
+3. **Skills with `## Platform Fallback` sections**: `build`, `optimize`, `review`, and the `godmode` orchestrator include specific sequential execution instructions. Follow those when present.
+
+For the full protocol, read: `read_file("./adapters/shared/sequential-dispatch.md")`

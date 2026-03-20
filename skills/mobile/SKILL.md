@@ -694,3 +694,10 @@ MERGE:
 - **Do NOT hardcode dimensions.** Use responsive layouts that adapt to screen size, safe area insets, and dynamic type sizes. Accessibility users may have 200% text scaling.
 - **Do NOT submit without testing on minimum supported OS version.** An API that exists on iOS 17 may not exist on your minimum target of iOS 15. The compiler won't always catch this.
 - **Do NOT lose the signing keystore.** If the Android release keystore is lost, you must publish a new app with a new package name. Users must manually migrate. Back up the keystore securely.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run mobile tasks sequentially: iOS platform, then Android platform, then shared logic.
+- Use branch isolation per task: `git checkout -b godmode-mobile-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

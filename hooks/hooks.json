@@ -4,7 +4,15 @@
       "name": "session-start",
       "event": "on_session_start",
       "script": "hooks/session-start",
-      "description": "Initialize Godmode for the current project. Detects project type, validates configuration, and sets up the .godmode directory if needed.",
+      "description": "Initialize Godmode for the current project (Claude Code). Detects project type, validates configuration, and sets up the .godmode directory if needed.",
+      "timeout_ms": 10000,
+      "required": false
+    },
+    {
+      "name": "init",
+      "event": "on_session_start",
+      "script": "hooks/init.sh",
+      "description": "Platform-agnostic initialization. Performs the same stack detection and .godmode setup as session-start, and additionally detects the calling platform (Claude Code, Gemini CLI, Cursor, Codex, OpenCode) to print tailored guidance. Can be invoked from any platform's session start mechanism.",
       "timeout_ms": 10000,
       "required": false
     }

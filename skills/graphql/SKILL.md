@@ -808,3 +808,10 @@ HARD RULES — GRAPHQL:
 - **Do NOT use subscriptions for everything.** Subscriptions are for real-time use cases. Polling or cache invalidation is simpler for data that changes infrequently.
 - **Do NOT design input types that mirror output types.** Input types are what the client sends. Output types are what the server returns. They have different shapes and validation rules.
 - **Do NOT ignore schema evolution.** Every schema change must be checked for backward compatibility. Use graphql-inspector or schema snapshot tests in CI.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run GraphQL tasks sequentially: schema, then resolvers, then tests.
+- Use branch isolation per task: `git checkout -b godmode-graphql-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -26,6 +26,9 @@ WHILE failing_count > 0:
     failing_count = run_tests()
 ```
 
+## Output Format
+Print: `Debug: {found} bugs found, {fixed} fixed, {remaining} remaining in {N} iterations. Skipped: {skipped_list}.`
+
 ## Rules
 1. Reproduce before investigating. No reproduce = no bug. Run the code, read stdout+stderr, paste the output.
 2. Evidence: file:line + actual vs expected values + reproduce command. Found root cause → `/godmode:fix`.

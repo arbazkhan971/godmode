@@ -1133,3 +1133,10 @@ MERGE:
 - **Do NOT use high-cardinality tags in InfluxDB.** Tags like user_id with millions of values create enormous index memory usage. Use fields for high-cardinality values.
 - **Do NOT ignore consistency trade-offs.** MongoDB is eventually consistent by default. DynamoDB GSIs are eventually consistent. Cassandra consistency is tunable. Understand what "eventually" means for your application.
 - **Do NOT skip the "which database" question.** The most expensive NoSQL mistake is choosing the wrong database. Spend time on selection (Step 2) before spending weeks on modeling.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run NoSQL tasks sequentially: primary data model, then secondary data model, then graph model (if needed).
+- Use branch isolation per task: `git checkout -b godmode-nosql-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

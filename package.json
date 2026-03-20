@@ -20,9 +20,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/godmode-team/godmode.git"
+    "url": "https://github.com/arbazkhan971/godmode.git"
   },
-  "homepage": "https://github.com/godmode-team/godmode",
+  "homepage": "https://github.com/arbazkhan971/godmode",
   "bugs": {
     "url": "https://github.com/godmode-team/godmode/issues"
   },
@@ -48,8 +48,8 @@
   },
   "claude-plugin": {
     "manifest": ".claude-plugin/marketplace.json",
-    "skills": 16,
-    "commands": 9,
-    "agents": 2
+    "skills": 126,
+    "commands": 118,
+    "agents": 7
   }
 }

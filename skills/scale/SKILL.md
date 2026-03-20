@@ -848,3 +848,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT skip load testing.** A scaling plan that has not been load-tested is a guess. Test at 2x projected peak before relying on it.
 - **Do NOT ignore cost.** Scaling from 4 to 40 instances is a 10x cost increase. Always calculate the cost impact and compare with alternative approaches (caching, optimization).
 - **Do NOT rate-limit without communication.** Users need clear rate limit headers, meaningful error messages, and documentation. A bare 429 with no context is hostile.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run scaling tasks sequentially: application layer, then data layer, then infrastructure layer.
+- Use branch isolation per task: `git checkout -b godmode-scale-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

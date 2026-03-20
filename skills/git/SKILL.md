@@ -776,3 +776,10 @@ HARD RULES — GIT:
 - **Do NOT mix merge strategies.** If the team squash merges, everyone squash merges. Mixed strategies create confusing history.
 - **Do NOT write commit messages after the fact.** Write the message as you commit. "Fix stuff" and "WIP" are not acceptable on main.
 - **Do NOT skip the interactive rebase before merging.** Your PR should contain clean, logical commits — not the sausage-making of how you got there.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run git maintenance tasks sequentially: primary feature work, then hotfix, then review, then cleanup.
+- Use branch isolation per task: `git checkout -b godmode-git-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

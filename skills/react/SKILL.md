@@ -736,3 +736,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT create one massive context for everything.** Split contexts by update frequency. Theme context (rare updates) should not share a provider with cursor position (frequent updates).
 - **Do NOT skip error boundaries.** An uncaught error in one widget should not crash the entire app. Wrap features in error boundaries.
 - **Do NOT ignore TypeScript.** Enable strict mode. Type your props, hooks, and context. Generic components (`DataTable<T>`) prevent runtime errors.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run React tasks sequentially: components, then features, then state management, then tests.
+- Use branch isolation per task: `git checkout -b godmode-react-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -571,3 +571,10 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 - **Do NOT skip keyboard testing because "nobody uses keyboard."** Screen reader users, motor-impaired users, power users, and users with broken trackpads all use keyboards.
 - **Do NOT treat accessibility as a post-launch fix.** Retrofitting is 10x harder than building accessibly from the start. Audit during development, not after.
 - **Do NOT assume automated 100/100 Lighthouse score means accessible.** Lighthouse checks ~40 rules. WCAG has hundreds of success criteria. A high score is good but not proof of accessibility.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run accessibility audits sequentially: perceivable, then operable, then understandable/robust, then autofix.
+- Use branch isolation per task: `git checkout -b godmode-a11y-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -719,3 +719,10 @@ MERGE:
 - **Do NOT use a monorepo just because it's trendy.** If your services are truly independent with different teams, deployment schedules, and languages, separate repos might be simpler.
 - **Do NOT ignore the dependency graph.** A monorepo without a clear dependency graph is just a directory full of code. Visualize it, maintain it, enforce it.
 - **Do NOT hoist all dependencies to root.** Hoisting causes phantom dependency problems where packages use dependencies they didn't declare. Use strict mode (pnpm default).
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run monorepo tasks sequentially: structure, then shared config, then CI pipeline.
+- Use branch isolation per task: `git checkout -b godmode-monorepo-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

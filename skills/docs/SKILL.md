@@ -411,3 +411,10 @@ AUTO-DETECT project documentation context:
 - **Do NOT skip error documentation.** Callers need to know what can go wrong. Document every thrown error and when it occurs.
 - **Do NOT generate docs and forget.** Documentation rots faster than code. Use `--audit` regularly to catch staleness.
 - **Do NOT write runbooks from memory.** Run the actual commands, verify they work, then document them. A runbook with a wrong command is dangerous.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run documentation tasks sequentially: API docs, then code docs, then runbooks/README.
+- Use branch isolation per task: `git checkout -b godmode-docs-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

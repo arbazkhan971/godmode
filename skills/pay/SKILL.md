@@ -761,3 +761,10 @@ CONFLICT ZONES: Stripe client initialization, customer model, billing routes
 - **Do NOT ignore failed webhooks.** Set up alerts for webhook delivery failures. Implement daily reconciliation to catch missed events. Stripe's retry schedule is not infinite.
 - **Do NOT allow subscription downgrades without checking usage.** If the customer is using 50 GB on the Pro plan, do not let them downgrade to Starter (10 GB) without resolving the overage.
 - **Do NOT send payment amounts as client-side parameters.** The price must be determined server-side from your product catalog. Client-supplied amounts can be manipulated.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run payment tasks sequentially: core payment processing, then subscriptions, then webhooks.
+- Use branch isolation per task: `git checkout -b godmode-pay-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

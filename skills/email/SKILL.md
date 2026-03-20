@@ -804,3 +804,10 @@ AUTO-DETECT email/notification context:
 - **Do NOT send notifications without user preference checks.** Every non-critical notification must respect user preferences. Over-notifying drives users to unsubscribe or mark you as spam.
 - **Do NOT embed images as base64 in email HTML.** Email clients often block base64 images. Host images on a CDN and reference them with absolute URLs.
 - **Do NOT launch marketing email on a new IP at full volume.** Warm up gradually over 30 days. ISPs flag sudden high-volume senders as spam.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run email tasks sequentially: email service, then templates, then delivery tracking, then notification system.
+- Use branch isolation per task: `git checkout -b godmode-email-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

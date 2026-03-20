@@ -1298,3 +1298,10 @@ RESILIENCE ANTI-PATTERNS:
 │  Catch-all exception retry │ Retrying programming errors     │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run resilience tasks sequentially: patterns (circuit breakers, retries), then fallbacks, then observability.
+- Use branch isolation per task: `git checkout -b godmode-resilience-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -858,3 +858,10 @@ HARD RULES — GRPC:
 - **Do NOT ignore backpressure in streams.** A fast producer and slow consumer will cause OOM. Implement flow control on both sides.
 - **Do NOT skip health checks.** Without grpc.health.v1.Health, load balancers and orchestrators cannot route traffic correctly.
 - **Do NOT commit generated code.** Generate in CI from proto files. Committed generated code drifts from protos and causes merge conflicts.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run gRPC tasks sequentially: proto definitions, then server implementation, then client stubs.
+- Use branch isolation per task: `git checkout -b godmode-grpc-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

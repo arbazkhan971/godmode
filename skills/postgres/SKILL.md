@@ -1203,3 +1203,10 @@ MONITORING:
 - **Do NOT use synchronous replication without understanding the latency impact.** Synchronous commit waits for the replica to confirm, adding network round-trip to every write. Use asynchronous unless you need zero-data-loss guarantees.
 - **Do NOT skip pg_stat_statements.** It is the most important extension for production PostgreSQL. Install it on every instance from day one.
 - **Do NOT tune postgresql.conf randomly.** Use PGTune for initial settings, then profile with pg_stat_statements. Random tuning often makes things worse.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Postgres tasks sequentially: schema/extensions, then query optimization, then replication/partitioning, then connection pooling/tuning.
+- Use branch isolation per task: `git checkout -b godmode-postgres-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -23,6 +23,9 @@ Topological sort. Group independent tasks into rounds (max 5). Data-layer tasks 
 ### 5. Output
 Write `.godmode/plan.yaml`. Print: `Plan: {N} tasks, {M} rounds, {F} files`. If >10 tasks → suggest `/godmode:predict`.
 
+## TSV Logging
+Append `.godmode/plan-log.tsv`: timestamp, feature, total_tasks, total_rounds, total_files, plan_path.
+
 ## Rules
 1. Every task lists exact file paths. Existing files: verify with `git ls-files`. New files: parent dir must exist.
 2. Every `done_when` is a shell command. If it exits 0, the task is done.

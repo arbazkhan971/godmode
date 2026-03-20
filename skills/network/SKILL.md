@@ -756,3 +756,10 @@ MERGE:
 - **Do NOT cache authenticated content at the CDN.** Unless you configure cache keys to include auth tokens, you risk serving one user's data to another.
 - **Do NOT rely on a single availability zone.** LBs, subnets, and instances must span at least two AZs for fault tolerance.
 - **Do NOT ignore VPC Flow Logs.** They are essential for security forensics and compliance auditing. Enable them on all production VPCs.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.
+- Use branch isolation per task: `git checkout -b godmode-network-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

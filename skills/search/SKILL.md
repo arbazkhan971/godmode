@@ -829,3 +829,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT reindex in production without a plan.** Use index aliases, create the new index alongside the old one, swap the alias atomically. Never reindex in place.
 - **Do NOT forget to sanitize search input.** Search queries can contain special characters that break query parsers. Escape or strip reserved characters before sending to the engine.
 - **Do NOT use match_all with expensive aggregations.** Aggregations on the entire index are slow. Always pair aggregations with a filtered query to reduce the working set.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run search tasks sequentially: engine setup (index/mappings), then search API, then relevance tuning.
+- Use branch isolation per task: `git checkout -b godmode-search-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -312,6 +312,38 @@ This principle eliminates the class of bugs where an AI says "done" but the test
 
 ---
 
+## Multi-Platform Usage
+
+### 31. Does godmode work on Gemini CLI?
+
+Yes. All 126 skills work. Install with `bash adapters/gemini/install.sh`. Skills that use parallel agents run sequentially — same results, slower throughput.
+
+### 32. Does godmode work on OpenCode?
+
+Yes. All 126 skills work. Install with `bash adapters/opencode/install.sh`. OpenCode supports native slash commands (`/godmode:optimize`).
+
+### 33. Does godmode work on Cursor?
+
+Yes. Install with `bash adapters/cursor/install.sh`. Cursor has background agents which handle parallel dispatch differently from Claude Code.
+
+### 34. Does godmode work on Codex?
+
+Yes. Codex has native agent definitions at `.codex/agents/*.toml`. Install with `bash adapters/codex/install.sh`. Runs in single-threaded batch mode.
+
+### 35. What features are lost on non-Claude Code platforms?
+
+No features are lost. Parallel agent dispatch degrades to sequential execution (slower but identical results). Git worktree isolation degrades to branch-based isolation. All 126 skills, all verification, all rollback behavior works identically.
+
+### 36. Can I use the same project with multiple platforms?
+
+Yes. Each platform has its own config files (GEMINI.md, AGENTS.md, .cursorrules, .codex/). The `.godmode/` directory, skills, and agents are shared across all platforms.
+
+### 37. How much slower is sequential execution?
+
+Build: ~5x slower per round. Optimize: ~3x slower per round. Review: ~4x slower. All other skills: identical speed (they're already single-threaded).
+
+---
+
 ## More Questions?
 
 Open an issue with the `question` label on the [Godmode repository](https://github.com/godmode-team/godmode/issues) and we will answer it and add it to this FAQ.

@@ -477,3 +477,10 @@ CONFLICT ZONES: Shared service interfaces, constructor signatures, import paths
 - **Do NOT ignore language idioms.** A Visitor in Python (which has duck typing) looks very different from Visitor in Java. Respect the language's strengths.
 - **Do NOT confuse patterns with frameworks.** "Use Redux" is not a pattern recommendation. The pattern is "unidirectional data flow" or "event sourcing on the client."
 - **Do NOT treat patterns as sacred.** Partial implementations are fine. You don't need the full GoF specification to benefit from the core idea of a pattern.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run pattern refactoring tasks sequentially: god objects, then coupling, then primitive obsession.
+- Use branch isolation per task: `git checkout -b godmode-pattern-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

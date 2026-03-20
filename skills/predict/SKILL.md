@@ -23,6 +23,12 @@ Print: `Confidence: {avg}/10. Blockers: {list}. Split votes: {list}. Gate: PROCE
 ### 4. Gate
 IF avg < 7 → `/godmode:think` with all risks as constraints. IF any persona says NO → `/godmode:think` regardless of avg.
 
+## Output Format
+Print: `Predict: Confidence {avg}/10. Blockers: {count}. Gate: PROCEED|REVISE|RETHINK. Verdicts: {YES_count}Y {REVISE_count}R {NO_count}N.`
+
+## TSV Logging
+Append `.godmode/predict-log.tsv`: timestamp, feature, persona, verdict, confidence, risk_summary, mitigation, gate_result.
+
 ## Rules
 1. Every finding: file:line + specific risk. 'Add more tests' or 'consider error handling' = rejected. Must name the exact failure.
 2. Disagreements are signal. Report them as-is — don't average conflicting views.

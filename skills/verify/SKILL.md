@@ -13,6 +13,9 @@ description: Evidence gate. Run command, read output, confirm or deny claim.
 4. **JUDGE** — Compare expected vs actual. Numeric: 3 runs, median. Boolean: 1 run. Ambiguous output = FAIL.
 5. **REPORT** — `| Claim | PASS/FAIL | Command | Expected | Actual | Evidence (paste output) |`
 
+## TSV Logging
+Append `.godmode/verify-log.tsv`: timestamp, claim, command, expected, actual, verdict(PASS/FAIL), evidence_file.
+
 ## Rules
 1. Run the command. Never verify in your head. Never trust cached results. Never accept 'it should work'.
 2. Read full output (stdout+stderr). Never filter or skim.

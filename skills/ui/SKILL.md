@@ -607,3 +607,10 @@ CONFLICT resolution: Token definitions in Agent 3 are authoritative
 - **Do NOT couple UI components to business logic.** A Button should not know about API calls. A DataTable should not know about user permissions. Pass data and callbacks via props.
 - **Do NOT ignore mobile-first design.** Building desktop-first and then "fixing" mobile is 3x more work than starting mobile-first. Design for the smallest viewport first.
 - **Do NOT use inline styles for component internals.** Inline styles bypass the cascade, cannot be themed, cannot be responsive, and cannot be overridden by consumers. Use your chosen CSS approach.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run UI tasks sequentially: primitive components, then composite components, then layout/tokens.
+- Use branch isolation per task: `git checkout -b godmode-ui-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

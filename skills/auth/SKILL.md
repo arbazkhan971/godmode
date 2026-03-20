@@ -743,3 +743,10 @@ IF application has multiple surfaces (web + mobile + API):
 - **Do NOT use long-lived access tokens instead of refresh tokens.** A 30-day access token is not "simpler" — it is a 30-day window of compromise with no revocation.
 - **Do NOT hardcode secrets.** JWT signing keys, OAuth client secrets, and API keys belong in environment variables or a secrets manager. Never in source code.
 - **Do NOT treat authentication as authorization.** Knowing WHO someone is (authentication) does not tell you WHAT they can do (authorization). Design both. Use `/godmode:rbac` for authorization.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run auth tasks sequentially: core auth, then endpoints, then middleware, then tests.
+- Use branch isolation per task: `git checkout -b godmode-auth-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

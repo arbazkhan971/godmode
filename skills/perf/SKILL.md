@@ -666,3 +666,10 @@ CONFLICT ZONES: Hot path code changes, lock/synchronization changes
 - **Do NOT claim "no memory leak" from a 30-second test.** Some leaks only manifest over hours or days. Match the test duration to the expected runtime.
 - **Do NOT dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in their cause, even if timing-dependent in their manifestation.
 - **Do NOT profile debug builds.** Debug builds have extra instrumentation, assertions, and disabled optimizations that completely change the performance profile. Always profile release/production builds.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run performance tasks sequentially: CPU profiling, then memory profiling, then concurrency, then benchmarks.
+- Use branch isolation per task: `git checkout -b godmode-perf-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

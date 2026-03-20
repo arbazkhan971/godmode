@@ -693,3 +693,10 @@ AUTO-DETECT AI evaluation context:
 - **Do NOT delete regression tests.** Once a bug is caught and tested, that test stays forever. Regression tests are the memory of past failures.
 - **Do NOT use accuracy alone.** Accuracy on imbalanced tasks is misleading. Use precision, recall, F1, or task-specific metrics. Report multiple dimensions.
 - **Do NOT evaluate only happy paths.** Adversarial inputs, edge cases, and out-of-scope queries reveal more about system quality than common-case inputs.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run evaluation tasks sequentially: dataset/judges, then automated evaluation, then regression/reporting.
+- Use branch isolation per task: `git checkout -b godmode-eval-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

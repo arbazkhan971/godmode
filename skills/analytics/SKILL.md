@@ -852,3 +852,10 @@ IF platform_count > 1 OR event_count > 30:
 - **Do NOT create high-cardinality properties.** Properties like "search_query" with millions of unique values bloat storage and slow queries. Categorize instead.
 - **Do NOT couple analytics to business logic.** Analytics tracking should be a side effect, not interleaved with core logic. Use an event bus or middleware.
 - **Do NOT ship analytics without testing.** Verify events fire correctly, properties are populated, funnels work end-to-end, and consent gates function properly.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run analytics tasks sequentially: taxonomy, then implementation, then funnels, then privacy.
+- Use branch isolation per task: `git checkout -b godmode-analytics-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

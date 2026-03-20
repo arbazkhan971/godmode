@@ -755,3 +755,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT skip post-mortems.** Every SEV1/SEV2 gets a post-mortem. No exceptions. Post-mortems without tracked action items are useless -- track completion.
 - **Do NOT confuse SLAs with SLOs.** SLAs are external promises with contractual consequences. SLOs are internal targets that should be stricter than SLAs. Never set SLO = SLA.
 - **Do NOT alert on everything.** More alerts does not mean more reliability. It means more noise, more fatigue, and more ignored alerts. Alert on SLO burn rate, not individual metrics.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run reliability tasks sequentially: SLO/SLI definitions, then burn-rate alerts, then runbooks.
+- Use branch isolation per task: `git checkout -b godmode-reliability-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

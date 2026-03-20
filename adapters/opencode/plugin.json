@@ -1,0 +1,58 @@
+{
+  "name": "godmode",
+  "version": "1.0.0",
+  "description": "Turn on Godmode for OpenCode. 126 skills. 9 subagents. Zero configuration.",
+  "author": "arbazkhan971",
+  "homepage": "https://github.com/arbazkhan971/godmode",
+  "repository": "https://github.com/arbazkhan971/godmode.git",
+  "license": "MIT",
+  "engine": "opencode",
+  "entry_point": "skills/godmode/SKILL.md",
+  "skills": {
+    "directory": "skills/",
+    "count": 126,
+    "pattern": "skills/*/SKILL.md",
+    "categories": {
+      "core": ["godmode", "think", "predict", "scenario", "plan", "build", "test", "review", "optimize", "debug", "fix", "ship", "finish", "setup", "verify"],
+      "architecture": ["architect", "rfc", "ddd", "pattern", "schema", "concurrent", "distributed", "scale", "legacy", "migration"],
+      "api": ["api", "graphql", "grpc", "orm", "query", "cache", "queue", "event", "realtime", "edge", "micro", "search", "ratelimit", "webhook"],
+      "frameworks": ["react", "nextjs", "vue", "svelte", "angular", "node", "fastapi", "django", "rails", "laravel", "spring", "tailwind"],
+      "databases": ["postgres", "redis", "nosql"],
+      "security": ["secure", "auth", "rbac", "secrets", "crypto", "pentest", "devsecops", "comply"],
+      "testing": ["e2e", "integration", "loadtest", "lint", "type", "perf", "webperf"],
+      "devops": ["deploy", "k8s", "infra", "cicd", "ghactions", "pipeline", "docker", "backup", "incident", "observe", "logging", "network", "resilience", "config", "cost", "cron"],
+      "frontend": ["ui", "a11y", "seo", "mobile", "chart", "state", "designsystem", "forms", "responsive"],
+      "ai": ["ml", "mlops", "rag", "prompt", "eval"],
+      "dx": ["docs", "onboard", "refactor", "git", "pr", "monorepo", "npm", "changelog", "opensource", "analytics", "apidocs", "reliability", "slo"],
+      "integrations": ["i18n", "email", "pay", "cli", "automate", "migrate", "storage", "agent", "feature", "notify", "experiment", "seed", "upload", "chaos"]
+    }
+  },
+  "agents": {
+    "directory": "agents/",
+    "definitions": [
+      {"name": "planner", "file": "agents/planner.md", "mode": "read-only"},
+      {"name": "builder", "file": "agents/builder.md", "mode": "read-write"},
+      {"name": "reviewer", "file": "agents/reviewer.md", "mode": "read-only"},
+      {"name": "code-reviewer", "file": "agents/code-reviewer.md", "mode": "read-only"},
+      {"name": "spec-reviewer", "file": "agents/spec-reviewer.md", "mode": "read-only"},
+      {"name": "optimizer", "file": "agents/optimizer.md", "mode": "read-write"},
+      {"name": "explorer", "file": "agents/explorer.md", "mode": "read-only"},
+      {"name": "security", "file": "agents/security.md", "mode": "read-only"},
+      {"name": "tester", "file": "agents/tester.md", "mode": "read-write"}
+    ]
+  },
+  "commands": {
+    "directory": "commands/godmode/",
+    "prefix": "godmode",
+    "pattern": "commands/godmode/*.md"
+  },
+  "hooks": {
+    "session_start": "hooks/session-start"
+  },
+  "platform": {
+    "parallel_agents": false,
+    "worktrees": false,
+    "execution_mode": "sequential",
+    "slash_commands": true
+  }
+}

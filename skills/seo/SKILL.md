@@ -735,3 +735,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT add structured data that does not match page content.** Marking up fake reviews, wrong prices, or misleading content violates Google's guidelines and risks a manual penalty.
 - **Do NOT ignore Core Web Vitals because "the content is good enough."** Google uses CWV as a tiebreaker between similar-quality pages. When content is equal, performance wins.
 - **Do NOT treat SEO as separate from performance.** Fast sites rank better, have lower bounce rates, and earn more conversions. SEO and web performance are inseparable.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run SEO tasks sequentially: meta tags/canonicals, then JSON-LD structured data, then Core Web Vitals/performance.
+- Use branch isolation per task: `git checkout -b godmode-seo-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

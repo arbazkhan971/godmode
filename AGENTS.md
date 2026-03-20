@@ -50,13 +50,16 @@ Godmode ships with 7 specialized subagents. Spawn them for complex tasks that be
 
 **Agent definitions:** `agents/*.md` (Claude Code), `.codex/agents/*.toml` (Codex)
 
-**Usage pattern:**
+**Usage pattern (parallel platforms — Claude Code):**
 1. Spawn `planner` to decompose a goal into rounds of parallel tasks
 2. Spawn `explorer` to map the codebase before builders start
 3. Spawn multiple `builder` agents in parallel (one per task, each following a skill)
 4. Spawn `reviewer` to check each builder's work
 5. Spawn `optimizer` to improve the merged result
 6. Spawn `security` for a final audit before shipping
+
+**Sequential platforms (Gemini CLI, OpenCode, Codex):**
+Same workflow, but execute each agent role sequentially in the current session: plan → explore → build (one task at a time) → review (4 passes) → optimize (one experiment at a time). See `adapters/shared/sequential-dispatch.md` for the full protocol. Core skills include `## Platform Fallback` sections with specific instructions.
 
 ## Skill Catalog (126 Skills)
 

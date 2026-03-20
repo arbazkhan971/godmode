@@ -18,6 +18,9 @@ For HIGH/CRITICAL: generate runnable test (ARRANGE/ACT/ASSERT). Use real values 
 ### 5. Output
 Output: `DIMENSION | SCENARIO | L×I | SCORE | TEST`. Print: `{total} scenarios, {critical} critical, {high} high, {tests} tests generated`.
 
+## TSV Logging
+Append `.godmode/scenario-log.tsv`: timestamp, feature, dimension, scenario, likelihood, impact, score, severity, test_file, code_ref.
+
 ## Rules
 1. All 12 dimensions. Don't skip any. 'N/A' requires justification — most dimensions apply to most features.
 2. Score every scenario: L(1-5) × I(1-5) = S. No unscored rows. S=0 is not valid — minimum is 1×1=1.

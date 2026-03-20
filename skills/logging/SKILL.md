@@ -1203,3 +1203,10 @@ LOGGING ANTI-PATTERNS:
 │                            │ in cloud log storage            │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run logging tasks sequentially: core setup, then migration, then correlation, then pipeline.
+- Use branch isolation per task: `git checkout -b godmode-logging-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

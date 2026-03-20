@@ -670,3 +670,10 @@ Labels: backend, feature, size/M
 - **Do NOT stack more than 5 PRs deep.** Beyond 5, the rebase chain becomes fragile. Break into independent parallel PRs if possible.
 - **Do NOT force push during review.** Push new commits so reviewers can see incremental changes. Squash before merge.
 - **Do NOT request review from the entire team.** Tag 1-2 specific reviewers. Diffusion of responsibility means nobody reviews.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run PR tasks sequentially: backend PR, then API PR, then frontend PR, then config/infra PR.
+- Use branch isolation per task: `git checkout -b godmode-pr-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

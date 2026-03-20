@@ -717,3 +717,10 @@ MERGE:
 - **Do NOT put business logic in migrations.** Migrations change schema. If you need complex data transformations, create a separate data migration with its own rollback.
 - **Do NOT forget to update seeds and fixtures.** A migration that adds a NOT NULL column will break every test fixture and seed file that doesn't include the new column.
 - **Do NOT assume the database is empty.** Always account for existing data when generating migrations. A NOT NULL column without a default will fail on a table with rows.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run migration tasks sequentially: migration generation, then validation, then application code updates.
+- Use branch isolation per task: `git checkout -b godmode-migrate-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

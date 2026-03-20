@@ -1245,3 +1245,10 @@ CONFLICT ZONES: .github/ directory structure (create in order)
 - **Do NOT over-govern small projects.** A solo project does not need a steering committee. Match governance to project size.
 - **Do NOT let issues rot.** Stale, untriaged issues signal an abandoned project. Use automation and regular triage sessions.
 - **Do NOT merge without review.** Even maintainers should get code reviewed. Four eyes catch what two miss.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run open source tasks sequentially: community files, then templates, then automation.
+- Use branch isolation per task: `git checkout -b godmode-opensource-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -956,3 +956,10 @@ SYNC point: All agents complete
 - **Do NOT handle auth in every view.** Use DRF permission classes or FastAPI dependencies. Auth logic scattered across views is unmaintainable and insecure.
 - **Do NOT use synchronous HTTP calls in async views.** Use `httpx.AsyncClient` instead of `requests`. Synchronous calls block the event loop in ASGI.
 - **Do NOT skip admin customization.** Default admin with just `admin.site.register(Model)` is useless at scale. Invest in list_display, search, filters, and actions — your operations team will thank you.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Django tasks sequentially: models+DB, then API layer, then services, then admin+async.
+- Use branch isolation per task: `git checkout -b godmode-django-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

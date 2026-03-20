@@ -1039,3 +1039,10 @@ HARD RULES — EXPERIMENT:
 - **Do NOT skip the SRM check.** Sample Ratio Mismatch is the first thing to check. If your 50/50 split is actually 48/52, your randomization is broken and all results are invalid.
 - **Do NOT let experiments run forever.** Set a hard deadline. If the experiment has not reached significance by the deadline, make a call and move on.
 - **Do NOT accumulate experiment debt.** Every shipped experiment needs its losing variant code removed and feature flag deleted. Stale flags and dead code slow the team down.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run experiment tasks sequentially: frontend flags, then backend flags, then analysis pipeline.
+- Use branch isolation per task: `git checkout -b godmode-experiment-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -471,3 +471,10 @@ CONFLICT ZONES: None (read-only operation, separate documentation sections).
 - **Do NOT ignore test files.** Tests document expected behavior. A good test file is often the best documentation.
 - **Do NOT generate documentation without reading code.** Every claim in the onboarding report must be verified against actual source code.
 - **Do NOT assume REST.** The project might use GraphQL, gRPC, WebSockets, or CLI patterns. Detect, don't assume.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run onboarding tasks sequentially: frontend docs, then backend docs, then infra docs, then shared docs.
+- Use branch isolation per task: `git checkout -b godmode-onboard-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -248,7 +248,7 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 | `cost` | Cloud cost optimization |
 | `cron` | Scheduled tasks |
 
-### Frontend & UI (8)
+### Frontend & UI (9)
 
 | Skill | What it does |
 |-------|-------------|
@@ -272,7 +272,7 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 | `prompt` | Prompt engineering |
 | `eval` | LLM evaluation |
 
-### Developer Experience (12)
+### Developer Experience (13)
 
 | Skill | What it does |
 |-------|-------------|
@@ -313,12 +313,15 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ## Platforms
 
-| Platform | Status | Agents |
-|----------|--------|--------|
-| **Claude Code** | Full support | Parallel via `Agent` tool + worktrees |
-| **Codex** | Full support | Native `.codex/agents/*.toml` |
-| **Gemini CLI** | Compatible | Sequential execution |
-| **OpenCode** | Compatible | Sequential execution |
+| Platform | Status | Agents | Setup |
+|----------|--------|--------|-------|
+| **Claude Code** | Full support | Parallel via `Agent` tool + worktrees | `claude plugin install godmode` |
+| **Codex** | Full support | Native `.codex/agents/*.toml` | Clone + use `.codex/` config |
+| **Cursor** | Full support | Background agents | `bash adapters/cursor/install.sh` |
+| **Gemini CLI** | Full support | Sequential execution | `bash adapters/gemini/install.sh` |
+| **OpenCode** | Full support | Sequential execution | `bash adapters/opencode/install.sh` |
+
+All 126 skills work on every platform. Skills that use parallel agents (build, optimize, review) automatically degrade to sequential execution on platforms without native agent dispatch. See [adapters/](adapters/) for platform-specific setup.
 
 ---
 

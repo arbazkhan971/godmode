@@ -709,3 +709,10 @@ AUTO-DETECT E2E testing context:
 - **Do NOT ignore flaky tests.** A flaky test erodes trust in the entire suite. Fix or delete flaky tests immediately.
 - **Do NOT use hard-coded waits.** `sleep(5000)` is never the answer. Use assertion-based waits that resolve as soon as the condition is met.
 - **Do NOT run E2E tests only locally.** E2E tests must run in CI against a real browser. Local-only E2E tests provide false confidence.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run E2E tasks sequentially: page objects, then test specs, then infra/flakiness setup.
+- Use branch isolation per task: `git checkout -b godmode-e2e-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

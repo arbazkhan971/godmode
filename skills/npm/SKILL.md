@@ -776,3 +776,10 @@ MERGE:
 - **Do NOT publish without `--dry-run` first.** npm publish is irreversible (within 72 hours with unpublish, but consumers may already depend on it). Always verify contents first.
 - **Do NOT install everything as a regular dependency.** Build tools, test frameworks, and linters belong in `devDependencies`. Production images should not include dev packages.
 - **Do NOT use `*` or `latest` as version ranges.** Always specify semver ranges. `*` means any version, which will eventually break your build when a breaking change is published.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run npm tasks sequentially: workspace structure, then dependency audit, then publish config.
+- Use branch isolation per task: `git checkout -b godmode-npm-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

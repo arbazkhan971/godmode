@@ -26,7 +26,22 @@ NITs: auto-fix if safe (imports, whitespace, formatting). Commit each: `review: 
 - Any MUST-FIX → REQUEST CHANGES (score 5-7)
 - Critical security → REJECT (score < 5)
 
+## Output Format
+Print: `Review: {verdict} ({score}/10). {must_fix} MUST-FIX, {should_fix} SHOULD-FIX, {nit} NIT. Auto-fixed: {auto_fixed_count}.`
+
+## TSV Logging
+Append `.godmode/review-log.tsv`: timestamp, scope, category, severity, file_line, description, status(open/auto-fixed/deferred).
+
 ## Rules
 1. Every finding: file:line + suggested fix (code). No vague feedback like 'consider improving' or 'could be better'.
 2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Review against spec + tests, not personal style. No bikeshedding.
 3. Auto-fix only safe changes. Never auto-fix logic, public APIs, or security-related code.
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks parallel agent dispatch:
+- Run the 4 review passes **sequentially**: Correctness → Security → Performance → Style.
+- Each pass: read the full diff, output findings in the same `SEVERITY | FILE:LINE | DESCRIPTION | SUGGESTED FIX` format.
+- After all 4 passes: merge and deduplicate findings identically to the parallel version.
+- Auto-fix NITs and produce verdict using the same scoring.
+- ~4x slower but identical quality and output format.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -513,3 +513,10 @@ MERGE:
 - **Do NOT ship without bias check.** A model that works for most users but fails for a subgroup is a liability. Check fairness metrics.
 - **Do NOT hardcode hyperparameters.** Use configuration files. Hardcoded values are not reproducible, searchable, or comparable.
 - **Do NOT discard failed experiments.** Log them. Tag them as failed. Explain why. They prevent duplicate wasted effort.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run ML experiments sequentially: experiment A, then experiment B, then experiment C. Compare results after all complete.
+- Use branch isolation per task: `git checkout -b godmode-ml-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

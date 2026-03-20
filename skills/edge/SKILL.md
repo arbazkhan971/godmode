@@ -966,3 +966,10 @@ AUTO-DETECT edge/serverless context:
 - **Do NOT deploy to production without local testing.** Use Miniflare, sam local, or vercel dev. Deploying untested edge functions can affect all global traffic instantly.
 - **Do NOT use serverless for everything.** Long-running processes, WebSocket servers, and high-throughput streams are better served by containers or VMs. Serverless is for request-response workloads.
 - **Do NOT ignore cost at scale.** $0.20 per million requests sounds cheap until you're serving a billion requests. Model costs before committing to an architecture.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run edge tasks sequentially: edge functions, then cold-start optimization, then caching/observability.
+- Use branch isolation per task: `git checkout -b godmode-edge-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

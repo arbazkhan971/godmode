@@ -34,6 +34,33 @@ description: |
 - Dry-run verify command 3 times to confirm stability.
 - Save everything to `.godmode/` for version control.
 
+## Platform Detection
+
+Between DETECT and VALIDATE COMMANDS, detect the host platform:
+
+1. **Check indicators** (first match wins):
+   - **Claude Code** — `Agent()` tool and `EnterWorktree` tool available
+   - **Gemini CLI** — `read_file`, `write_file`, `run_shell_command` tools available
+   - **OpenCode** — slash command support present, no `Agent()` tool
+   - **Codex** — batch mode active or `.codex/` directory exists in project root
+   - **Cursor** — `.cursorrules` file present or background agents available
+   - **Unknown** — none of the above; default to sequential, manual worktrees
+
+2. **Report capabilities** — Print exactly:
+   `Detected platform: {platform}. Parallel agents: {yes/no}. Worktrees: {native/manual/branch-based}.`
+
+   | Platform    | Parallel agents | Worktrees    |
+   |-------------|-----------------|--------------|
+   | Claude Code | yes             | native       |
+   | Gemini CLI  | no              | manual       |
+   | OpenCode    | no              | manual       |
+   | Codex       | no              | branch-based |
+   | Cursor      | no              | manual       |
+
+3. **Sequential fallback** — For non-Claude-Code platforms, note that skills using parallel dispatch will run sequentially. Reference `adapters/shared/sequential-dispatch.md` for details.
+
+4. **Save to config** — Add `platform: { name, parallel_agents, worktree_mode }` to `.godmode/config.yaml`.
+
 ## HARD RULES
 
 1. NEVER accept a test/lint/verify command without running it first.

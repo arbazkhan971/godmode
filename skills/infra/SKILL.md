@@ -493,3 +493,10 @@ CONFLICT RESOLUTION: modules branch is source of truth for .tf files
 - **Do NOT manually modify infrastructure.** If you changed it in the console, it will drift. Change it in code.
 - **Do NOT share state between environments.** Each environment gets its own state file and its own credentials.
 - **Do NOT ignore cost estimates.** A missing cost review is how you get a $50,000 surprise bill.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run infra tasks sequentially: modules, then security, then cost analysis, then drift detection.
+- Use branch isolation per task: `git checkout -b godmode-infra-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

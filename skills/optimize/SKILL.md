@@ -35,3 +35,14 @@ Print: `{metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} di
 3. Never modify test files. Never cache mutable data. Never trade readability for <1% gain. Profile before guessing.
 4. +0.1% with added complexity → discard. Same metric + fewer lines → keep. Simpler code > marginal gains.
 5. Diminishing returns: 3 consecutive <1% keeps → radical → compound → stop.
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or worktree isolation:
+- Run experiments **sequentially** instead of 3 parallel agents per round.
+- For each experiment: create branch `godmode-opt-{round}-{n}`, make ONE change, commit, run guard + verify 3x.
+- Compare all 3 results. Cherry-pick the winner to main: `git checkout main && git merge godmode-opt-{round}-{winner}`.
+- Delete experiment branches: `git branch -D godmode-opt-{round}-{n}`.
+- If no experiment improved: discard all, log, move to next round.
+- Same termination logic: target reached, max rounds, diminishing returns.
+- ~3x slower per round but identical results.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

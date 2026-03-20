@@ -614,3 +614,10 @@ CONFLICT RESOLUTION: manifests branch is source of truth for base templates
 - **Do NOT ignore pod evictions.** Evictions mean resource pressure. Investigate and fix the root cause.
 - **Do NOT run as root in containers.** Use `securityContext.runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
 - **Do NOT deploy straight to production.** Validate in dev/staging first. Use canary deployments for high-risk changes.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Kubernetes tasks sequentially: manifests, then security, then scaling, then observability.
+- Use branch isolation per task: `git checkout -b godmode-k8s-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

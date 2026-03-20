@@ -628,3 +628,10 @@ Remaining risk: 2 edge cases flagged for monitoring. No known bypass for product
 - **Do NOT use temperature 0 for everything.** Temperature 0 is for deterministic tasks. Creative tasks, brainstorming, and diverse generation benefit from higher temperature.
 - **Do NOT skip the system prompt.** User messages alone are fragile. The system prompt is the persistent instruction layer that survives conversation turns.
 - **Do NOT treat prompt engineering as one-and-done.** Models change, requirements evolve, edge cases emerge. Prompts need ongoing maintenance.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run prompt engineering tasks sequentially: prompt design, then test suite, then evaluation pipeline, then security hardening.
+- Use branch isolation per task: `git checkout -b godmode-prompt-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

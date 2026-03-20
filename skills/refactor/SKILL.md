@@ -414,3 +414,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT rename for style preference alone.** Renaming `getData` to `fetchData` because you prefer "fetch" is noise, not refactoring. Rename when the current name is misleading.
 - **Do NOT refactor without impact analysis.** "I'll just move this function" and then discovering 30 files break is preventable with 2 minutes of analysis.
 - **Do NOT ignore failing tests.** "The tests were probably wrong anyway" is never true during refactoring. If tests fail, your transformation changed behavior. Fix it or revert.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run refactoring tasks sequentially: tests first, then core modules, then caller updates. Maintain merge order: tests -> core -> callers.
+- Use branch isolation per task: `git checkout -b godmode-refactor-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -502,3 +502,10 @@ CONFLICT RESOLUTION: extract branch is source of truth for resource files
 - **Do NOT use string length for UI constraints.** German text is ~30% longer than English. Chinese text may be 50% shorter. Test with real translations or pseudo-localization padding.
 - **Do NOT skip context for translators.** "Save" can mean "save to disk" or "save money." Without context, translators guess wrong.
 - **Do NOT treat missing translations as acceptable.** A fallback to English in a Japanese UI is a bug. Track translation coverage as a metric.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run i18n tasks sequentially: RTL support, then format adapters, then string extraction, then tests.
+- Use branch isolation per task: `git checkout -b godmode-i18n-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

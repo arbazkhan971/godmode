@@ -530,3 +530,10 @@ IF system has multiple services OR team_size > 10:
 - **Do NOT conflate architecture patterns with implementation patterns.** Microservices is an architecture pattern. Repository is an implementation pattern. They operate at different levels.
 - **Do NOT ignore the team.** A technically perfect architecture that the team cannot build or operate is a failed architecture. Always factor in team experience.
 - **Do NOT design for theoretical scale.** Design for 10x your current needs, not 1000x. You can re-architect when you have 1000x problems (and 1000x revenue to fund it).
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run architecture tasks sequentially: patterns, then diagrams, then quality attributes.
+- Use branch isolation per task: `git checkout -b godmode-architect-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -505,3 +505,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 - **Do NOT log secrets.** Sanitize all log output. Mask values in error messages. Never include credentials in stack traces.
 - **Do NOT use long-lived credentials when short-lived alternatives exist.** Prefer IAM roles over access keys. Prefer JWT with short TTL over permanent tokens.
 - **Do NOT ignore secret scanning alerts.** GitHub, GitLab, and other platforms surface leaked secrets. Act on them immediately.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run secrets tasks sequentially: scan for exposed secrets, then set up secret manager and rotation.
+- Use branch isolation per task: `git checkout -b godmode-secrets-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

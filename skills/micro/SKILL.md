@@ -881,3 +881,10 @@ MERGE: Validate all agents' outputs are consistent
 - **Do NOT use distributed transactions (2PC).** Two-phase commit does not scale and creates tight coupling. Use sagas with compensating actions.
 - **Do NOT ignore data ownership.** If you cannot clearly state which service owns which data, your service boundaries are wrong.
 - **Do NOT deploy without a service mesh.** Manual circuit breakers, retries, and mTLS in every service is unsustainable. Use infrastructure-level solutions.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run microservice tasks sequentially: service design, then communication design, then infrastructure.
+- Use branch isolation per task: `git checkout -b godmode-micro-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.

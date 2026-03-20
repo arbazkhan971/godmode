@@ -668,3 +668,10 @@ SYNC point: All agents complete
 - **Do NOT skip .dockerignore.** Without it, your entire project directory (including .git, node_modules, .env) is sent as build context.
 - **Do NOT use docker-compose in production.** Docker Compose is a development tool. Use Kubernetes, ECS, or a managed container platform for production.
 - **Do NOT ignore vulnerability scan results.** A "ship anyway" attitude toward CRITICAL CVEs is a security incident waiting to happen.
+
+
+## Platform Fallback (Gemini CLI, OpenCode, Codex)
+If your platform lacks `Agent()` or `EnterWorktree`:
+- Run Docker tasks sequentially: Dockerfile optimization, then Compose setup, then security+CI.
+- Use branch isolation per task: `git checkout -b godmode-docker-{task}`, implement, commit, merge back.
+- See `adapters/shared/sequential-dispatch.md` for full protocol.
