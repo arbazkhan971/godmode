@@ -249,7 +249,6 @@ AUTO-DETECT agent context:
   3. Tool definitions: grep -rl "tool_call\|function_call\|@tool\|BaseTool\|StructuredTool" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
   4. Vector store: grep -r "pinecone\|weaviate\|chromadb\|pgvector\|qdrant\|milvus" package.json pyproject.toml 2>/dev/null
   5. Existing agent code: grep -rl "agent\|AgentExecutor\|ReActAgent\|create_agent" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
-# ... (condensed)
 ```
 
 ## Success Criteria

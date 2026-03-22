@@ -33,7 +33,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### THINK Phase
 
 | Skill | Go Adaptation |
-|-------|---------------|
+|--|--|
 | **think** | Design interfaces and structs first. A Go spec defines the contract (interfaces) and data shapes (structs). Emphasize small interfaces ("Accept interfaces, return structs"). |
 | **predict** | Expert panel evaluates concurrency design, error handling strategy, and deployment model. Request panelists with Go depth (e.g., standard library contributor, distributed systems engineer). |
 | **scenario** | Explore edge cases around goroutine leaks, channel deadlocks, race conditions, context cancellation, and nil pointer dereferences. |
@@ -41,7 +41,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### BUILD Phase
 
 | Skill | Go Adaptation |
-|-------|---------------|
+|--|--|
 | **plan** | Each task specifies packages and interfaces. File paths follow Go conventions (`internal/service/user.go`). Tasks note which interfaces they implement or consume. |
 | **build** | TDD with `go test`. RED step writes a `_test.go` file with table-driven tests. GREEN step implements the function. REFACTOR step extracts interfaces, simplifies error handling. |
 | **test** | Use table-driven tests, `testing.T`, and subtests (`t.Run`). Mock with interfaces (no framework required). Use `testify/assert` for readability or stay with stdlib. |
@@ -50,7 +50,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### OPTIMIZE Phase
 
 | Skill | Go Adaptation |
-|-------|---------------|
+|--|--|
 | **optimize** | Target response time, memory allocations, or throughput. Guard rail: `go test ./... -race` must pass. Use `go tool pprof` for profiling-guided optimization. |
 | **debug** | Use `dlv` (Delve) for debugging. Check for race conditions with `-race`. Analyze goroutine dumps with `SIGQUIT`. |
 | **fix** | Autonomous fix loop handles test failures, vet errors, and lint violations. Guard rail: `go test ./... && go vet ./... && golangci-lint run` |
@@ -59,7 +59,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### SHIP Phase
 
 | Skill | Go Adaptation |
-|-------|---------------|
+|--|--|
 | **ship** | Pre-flight: `go test ./... -race && go vet ./... && golangci-lint run && go build ./...`. Verify the binary runs and serves health checks. |
 | **finish** | Ensure the binary is statically compiled for deployment. Verify Docker multi-stage build produces a minimal image. |
 
@@ -68,7 +68,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Test coverage | `go test ./... -coverprofile=cover.out && go tool cover -func=cover.out \| grep total \| awk '{print $3}'` | >= 80% |
 | Vet errors | `go vet ./... 2>&1 \| grep -c 'vet:'` | 0 |
 | Benchmark (ns/op) | `go test -bench=BenchmarkHandler -benchmem ./internal/handler \| grep 'ns/op' \| awk '{print $3}'` | Project-specific |
@@ -376,7 +376,7 @@ Parallel agents handle tasks 4, 5, and 6 concurrently (independent handlers impl
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | JSON encoding creates allocations | Use `json.NewEncoder` with pooled buffers | 12400 ns/op | 7800 ns/op | KEEP |
 | 2 | ID generation uses `crypto/rand` per character | Batch random bytes | 7800 ns/op | 5200 ns/op | KEEP |
 | 3 | Redis round-trip per request | Add in-memory LRU cache | 5200 ns/op | 3100 ns/op | KEEP |

@@ -34,16 +34,16 @@ Godmode organizes skills into **4 phases** matching the core loop: THINK → BUI
 
 ### Phase 1: THINK (Design & Discovery)
 
-| Skill | Command | Origin | Description |
-|-------|---------|--------|-------------|
+| Skill | Cmd | From | Desc |
+|--|--|--|--|
 | **Brainstorm** | `/godmode:think` | Superpowers | Collaborative design sessions — one question at a time, visual companion, 2-3 approach proposals, spec writing |
 | **Predict** | `/godmode:predict` | Autoresearch | Multi-persona expert consensus — 5 expert perspectives evaluate a design/decision before committing |
 | **Scenario** | `/godmode:scenario` | Autoresearch | Edge case exploration — 12 dimensions (happy paths, errors, abuse, scale, concurrency, etc.) |
 
 ### Phase 2: BUILD (Plan & Implement)
 
-| Skill | Command | Origin | Description |
-|-------|---------|--------|-------------|
+| Skill | Cmd | From | Desc |
+|--|--|--|--|
 | **Plan** | `/godmode:plan` | Superpowers + Autoresearch | Decompose spec into 2-5 min tasks with exact file paths, code samples, and dependencies |
 | **Build** | `/godmode:build` | Superpowers | Execute plan with TDD (RED-GREEN-REFACTOR), parallel agent dispatch, 2-stage code review |
 | **Test** | `/godmode:test` | Superpowers | Test-driven development enforcement — write failing test first, then implement |
@@ -51,8 +51,8 @@ Godmode organizes skills into **4 phases** matching the core loop: THINK → BUI
 
 ### Phase 3: OPTIMIZE (Autonomous Iteration)
 
-| Skill | Command | Origin | Description |
-|-------|---------|--------|-------------|
+| Skill | Cmd | From | Desc |
+|--|--|--|--|
 | **Optimize** | `/godmode:optimize` | Autoresearch | The core autonomous loop — modify → verify → keep/discard → repeat. Git-as-memory. Mechanical metrics only |
 | **Debug** | `/godmode:debug` | Autoresearch | Scientific bug hunting — 7 investigation techniques, autonomous until codebase is clean |
 | **Fix** | `/godmode:fix` | Autoresearch | Autonomous error remediation — one fix per iteration until zero errors remain |
@@ -60,15 +60,15 @@ Godmode organizes skills into **4 phases** matching the core loop: THINK → BUI
 
 ### Phase 4: SHIP (Deliver & Monitor)
 
-| Skill | Command | Origin | Description |
-|-------|---------|--------|-------------|
+| Skill | Cmd | From | Desc |
+|--|--|--|--|
 | **Ship** | `/godmode:ship` | Autoresearch + Superpowers | 8-phase shipping workflow — inventory, checklist, prepare, dry-run, ship, verify, log |
 | **Finish** | `/godmode:finish` | Superpowers | Branch finalization — merge, PR, keep, or discard with full verification |
 
 ### Meta Skills (Always Active)
 
-| Skill | Command | Origin | Description |
-|-------|---------|--------|-------------|
+| Skill | Cmd | From | Desc |
+|--|--|--|--|
 | **Godmode** | `/godmode` | NEW | The orchestrator — auto-detects what phase you're in and suggests the right skill |
 | **Setup** | `/godmode:setup` | Autoresearch | Interactive wizard — configure goal, scope, metric, verify command with dry-run validation |
 | **Verify** | `/godmode:verify` | Superpowers | Evidence-before-claims gate — run command → read output → confirm → then claim success |
@@ -98,59 +98,59 @@ godmode/
 │   │       └── spec-template.md
   ├── predict/
 │   │   ├── SKILL.md                  # /godmode:predict
-│   │   └── references/
+│   │   └── refs/
 │   │       └── persona-definitions.md
   ├── scenario/
 │   │   ├── SKILL.md                  # /godmode:scenario
-│   │   └── references/
+│   │   └── refs/
 │   │       └── 12-dimensions.md
   ├── plan/
 │   │   ├── SKILL.md                  # /godmode:plan
-│   │   └── references/
+│   │   └── refs/
 │   │       └── task-decomposition.md
   ├── build/
 │   │   ├── SKILL.md                  # /godmode:build
-│   │   └── references/
+│   │   └── refs/
 │   │       ├── parallel-dispatch.md
 │   │       └── review-protocol.md
   ├── test/
 │   │   ├── SKILL.md                  # /godmode:test
-│   │   └── references/
+│   │   └── refs/
 │   │       └── tdd-cycle.md
   ├── review/
 │   │   ├── SKILL.md                  # /godmode:review
-│   │   └── references/
+│   │   └── refs/
 │   │       └── severity-levels.md
   ├── optimize/
 │   │   ├── SKILL.md                  # /godmode:optimize
-│   │   └── references/
+│   │   └── refs/
 │   │       ├── loop-protocol.md
 │   │       ├── metrics-database.md
 │   │       └── guard-system.md
   ├── debug/
 │   │   ├── SKILL.md                  # /godmode:debug
-│   │   └── references/
+│   │   └── refs/
 │   │       └── investigation-techniques.md
   ├── fix/
 │   │   ├── SKILL.md                  # /godmode:fix
-│   │   └── references/
+│   │   └── refs/
 │   │       └── fix-protocol.md
   ├── secure/
 │   │   ├── SKILL.md                  # /godmode:secure
-│   │   └── references/
+│   │   └── refs/
 │   │       ├── stride-owasp.md
 │   │       └── red-team-personas.md
   ├── ship/
 │   │   ├── SKILL.md                  # /godmode:ship
-│   │   └── references/
+│   │   └── refs/
 │   │       └── shipping-workflow.md
   ├── finish/
 │   │   ├── SKILL.md                  # /godmode:finish
-│   │   └── references/
+│   │   └── refs/
 │   │       └── completion-options.md
   ├── setup/
 │   │   ├── SKILL.md                  # /godmode:setup
-│   │   └── references/
+│   │   └── refs/
 │   │       └── wizard-steps.md
   └── verify/
   ├── SKILL.md                  # /godmode:verify
@@ -333,7 +333,7 @@ When the user types `/godmode` without a sub-command, the orchestrator inspects 
 ### Smart Routing Table
 
 | Detected State | Routed To | Reason |
-|---------------|-----------|--------|
+|---------------|--|--|
 | No project context | `/godmode:setup` | Need to configure first |
 | Fresh start, no spec | `/godmode:think` | Start with design |
 | Spec exists, no plan | `/godmode:plan` | Decompose the spec |
@@ -381,7 +381,7 @@ Proceed with recommendation? [Y/n/choose]
 **Phase:** THINK
 **Purpose:** Collaborative design sessions that produce a written spec through disciplined, one-question-at-a-time exploration.
 
-### Trigger Conditions
+### Triggers
 
 - User says "let's brainstorm", "I have an idea", "help me design", "let's think about"
 - Orchestrator detects no spec exists for current work
@@ -389,8 +389,8 @@ Proceed with recommendation? [Y/n/choose]
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--visual` | false | Launch visual companion in browser |
 | `--approaches` | 3 | Number of approaches to propose (2-5) |
 | `--spec` | true | Write a spec at the end |
@@ -477,7 +477,7 @@ When `--visual` is active:
 **Phase:** THINK
 **Purpose:** Evaluate a design decision or approach through 5 expert personas, reaching consensus before committing to implementation.
 
-### Trigger Conditions
+### Triggers
 
 - User says "will this work?", "what could go wrong?", "evaluate this approach"
 - Before a major architectural decision
@@ -486,8 +486,8 @@ When `--visual` is active:
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--personas` | 5 | Number of expert personas (3-7) |
 | `--domain` | auto | Domain for persona selection (web, ml, systems, mobile, etc.) |
 | `--decision` | — | Specific decision to evaluate (overrides auto-detect) |
@@ -496,7 +496,7 @@ When `--visual` is active:
 ### The 5 Expert Personas
 
 | Persona | Perspective | Evaluates |
-|---------|-------------|-----------|
+|--|--|-----------|
 | **The Architect** | System design, scalability, maintainability | Does the architecture hold up at 10x scale? |
 | **The Skeptic** | Risk, failure modes, hidden complexity | What will break? What's being overlooked? |
 | **The User** | UX, developer experience, usability | Is this actually pleasant to use? |
@@ -583,7 +583,7 @@ Mitigations:
 **Phase:** THINK
 **Purpose:** Systematically explore edge cases across 12 dimensions before writing code, so edge cases are designed for — not discovered in production.
 
-### Trigger Conditions
+### Triggers
 
 - After a spec is written and before planning
 - User says "what could go wrong?", "edge cases", "what am I missing?"
@@ -591,8 +591,8 @@ Mitigations:
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--dimensions` | all | Which dimensions to explore (comma-separated, or "all") |
 | `--depth` | medium | Exploration depth: `shallow` (1 per dimension), `medium` (3), `deep` (5+) |
 | `--target` | auto | Target component/feature to explore |
@@ -684,7 +684,7 @@ Generated 23 test stubs → saved to tests/rate-limiter.scenario.test.ts
 **Phase:** BUILD
 **Purpose:** Decompose a spec into small (2-5 minute), actionable tasks with exact file paths, code samples, dependencies, and test criteria.
 
-### Trigger Conditions
+### Triggers
 
 - A spec exists but no plan has been created
 - User says "plan this", "break this down", "create tasks"
@@ -693,8 +693,8 @@ Generated 23 test stubs → saved to tests/rate-limiter.scenario.test.ts
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--spec` | auto | Path to spec file (auto-detects from `.godmode/specs/`) |
 | `--max-tasks` | 20 | Maximum number of tasks to generate |
 | `--task-size` | 5min | Target task duration: `2min`, `5min`, `10min` |
@@ -797,7 +797,7 @@ Phase D (sequential):
 **Phase:** BUILD
 **Purpose:** Execute the plan task-by-task with TDD enforcement, parallel agent dispatch for independent tasks, and 2-stage code review.
 
-### Trigger Conditions
+### Triggers
 
 - A plan exists with remaining tasks
 - User says "build it", "start building", "execute the plan"
@@ -806,8 +806,8 @@ Phase D (sequential):
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--task` | next | Specific task ID to execute, or "next" for auto-selection |
 | `--parallel` | true | Dispatch parallel tasks to separate agents |
 | `--tdd` | true | Enforce TDD (write test first, then implement) |
@@ -931,7 +931,7 @@ Branch: godmode/task-003-rate-limiter
 **Phase:** BUILD
 **Purpose:** Enforce the RED-GREEN-REFACTOR cycle as a standalone skill, usable outside of `/godmode:build` for adding tests to existing code or writing test suites from scratch.
 
-### Trigger Conditions
+### Triggers
 
 - User says "write tests", "add test coverage", "TDD"
 - Code exists without tests
@@ -940,8 +940,8 @@ Branch: godmode/task-003-rate-limiter
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--target` | auto | File or function to test (auto-detects untested code) |
 | `--framework` | auto | Test framework: `jest`, `pytest`, `go test`, `vitest`, etc. |
 | `--coverage` | false | Run coverage report after tests pass |
@@ -1051,7 +1051,7 @@ Agent: Analyzing rate-limiter.ts...
 **Phase:** BUILD
 **Purpose:** Dispatch a dedicated code reviewer agent that reviews changes with technical rigor, categorized severity, and actionable feedback.
 
-### Trigger Conditions
+### Triggers
 
 - After a task is built (automatically triggered by `/godmode:build`)
 - User says "review this", "review my changes", "code review"
@@ -1060,8 +1060,8 @@ Agent: Analyzing rate-limiter.ts...
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--scope` | staged | What to review: `staged`, `branch`, `file:path`, `commit:hash` |
 | `--focus` | all | Review focus: `all`, `security`, `performance`, `style`, `correctness` |
 | `--severity` | all | Minimum severity to report: `block`, `warn`, `note` |
@@ -1162,7 +1162,7 @@ better tree-shaking and IDE support.
 **Phase:** OPTIMIZE
 **Purpose:** The heart of Godmode — an autonomous iteration loop that modifies code, measures results mechanically, and keeps only improvements. Git is memory. Metrics are truth.
 
-### Trigger Conditions
+### Triggers
 
 - Code is built and tests pass, but performance/quality can be improved
 - User says "optimize this", "make it faster", "improve this", "iterate on this"
@@ -1171,8 +1171,8 @@ better tree-shaking and IDE support.
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--metric` | — | The mechanical metric to optimize (required or prompted) |
 | `--verify` | — | Command to measure the metric (required or prompted) |
 | `--iterations` | 25 | Maximum iterations before stopping |
@@ -1232,7 +1232,7 @@ Each iteration follows this exact sequence:
 **Phase 7: KEEP or REVERT**
 
 | Condition | Action |
-|-----------|--------|
+|--|--|
 | Metric improved AND guards pass | **KEEP** — commit the change |
 | Metric unchanged AND guards pass | **REVERT** — not worth the complexity |
 | Metric regressed AND guards pass | **REVERT** — made it worse |
@@ -1308,7 +1308,7 @@ Agent: Starting optimization loop...
 **Phase:** OPTIMIZE
 **Purpose:** Systematically hunt bugs using the scientific method — hypothesize, test, narrow, repeat — with 7 investigation techniques.
 
-### Trigger Conditions
+### Triggers
 
 - Tests are failing
 - User reports a bug: "there's a bug", "this doesn't work", "something's wrong"
@@ -1317,8 +1317,8 @@ Agent: Starting optimization loop...
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--bug` | — | Description of the bug (or auto-detect from failing tests) |
 | `--technique` | auto | Investigation technique (1-7, or "auto" to try in order) |
 | `--max-iterations` | 10 | Max investigation cycles |
@@ -1423,7 +1423,7 @@ Chain to /godmode:fix? [Y/n]
 **Phase:** OPTIMIZE
 **Purpose:** Autonomous error fixing — one fix per iteration, auto-revert on failure, repeat until zero errors remain.
 
-### Trigger Conditions
+### Triggers
 
 - Tests are failing and root cause is known (from `/godmode:debug` or obvious)
 - Lint errors, type errors, build errors
@@ -1432,8 +1432,8 @@ Chain to /godmode:fix? [Y/n]
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--errors` | auto | Error source: `test`, `lint`, `typecheck`, `build`, `runtime`, `all` |
 | `--verify` | auto | Verification command (auto-detects from project) |
 | `--max-iterations` | 15 | Maximum fix attempts |
@@ -1542,7 +1542,7 @@ Agent: Scanning for errors...
 **Phase:** OPTIMIZE
 **Purpose:** Comprehensive security audit combining STRIDE threat modeling, OWASP Top 10 checks, and 4 red-team personas, producing a structured report with code evidence.
 
-### Trigger Conditions
+### Triggers
 
 - Before shipping any user-facing feature
 - User says "security review", "audit this", "is this secure?"
@@ -1551,8 +1551,8 @@ Agent: Scanning for errors...
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--scope` | auto | Files/directories to audit (auto-detects from recent changes) |
 | `--framework` | all | Which framework: `stride`, `owasp`, `redteam`, `all` |
 | `--severity` | all | Minimum severity to report: `critical`, `high`, `medium`, `low` |
@@ -1667,7 +1667,7 @@ Each persona "attacks" the system and reports what they could achieve.
 **Phase:** SHIP
 **Purpose:** 8-phase shipping workflow that handles 9 different shipment types, from npm packages to Docker images to GitHub releases.
 
-### Trigger Conditions
+### Triggers
 
 - All tasks complete, tests pass, review approved
 - User says "ship it", "deploy", "release", "publish"
@@ -1676,8 +1676,8 @@ Each persona "attacks" the system and reports what they could achieve.
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--type` | auto | Shipment type (see 9 types below) |
 | `--dry-run` | false | Run entire workflow without actually shipping |
 | `--version` | auto | Version number (auto-bumps based on changes) |
@@ -1687,7 +1687,7 @@ Each persona "attacks" the system and reports what they could achieve.
 ### 9 Shipment Types
 
 | Type | Command | What it Does |
-|------|---------|-------------|
+|--|--|--|
 | `npm` | `npm publish` | Publish to npm registry |
 | `pypi` | `python -m twine upload` | Publish to PyPI |
 | `docker` | `docker build && docker push` | Build and push Docker image |
@@ -1818,7 +1818,7 @@ Phase 8: Verify → npm view rate-limiter@1.3.0 ✓
 **Phase:** SHIP
 **Purpose:** Finalize a feature branch with 4 completion options, each gated by a verification step.
 
-### Trigger Conditions
+### Triggers
 
 - Feature is complete and shipped (or ready to ship)
 - User says "finish this", "wrap up", "merge", "close this branch"
@@ -1826,8 +1826,8 @@ Phase 8: Verify → npm view rate-limiter@1.3.0 ✓
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--action` | prompt | Completion action: `merge`, `pr`, `keep`, `discard` |
 | `--base` | main | Base branch for merge/PR |
 | `--verify` | true | Run verification gate before finalizing |
@@ -1836,7 +1836,7 @@ Phase 8: Verify → npm view rate-limiter@1.3.0 ✓
 ### 4 Completion Options
 
 | Option | Command | What Happens |
-|--------|---------|-------------|
+|--------|--|--|
 | **Merge** | `--action merge` | Squash-merge into base branch, delete feature branch |
 | **PR** | `--action pr` | Create pull request with auto-generated description |
 | **Keep** | `--action keep` | Leave the branch as-is (for later) |
@@ -1921,7 +1921,7 @@ gh pr create --title "feat: add rate limiting middleware" \
 **Phase:** META
 **Purpose:** 7-step interactive wizard that configures Godmode for the current project, with dry-run validation at each step.
 
-### Trigger Conditions
+### Triggers
 
 - First time using Godmode in a project (no `.godmode/` directory)
 - User says "set up godmode", "configure", "initialize"
@@ -1930,8 +1930,8 @@ gh pr create --title "feat: add rate limiting middleware" \
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--quick` | false | Skip optional steps, use smart defaults |
 | `--reset` | false | Re-run setup even if config exists |
 | `--template` | — | Use a preset template: `node`, `python`, `go`, `rust`, `fullstack` |
@@ -2039,7 +2039,7 @@ gh pr create --title "feat: add rate limiting middleware" \
 **Phase:** META
 **Purpose:** 5-step verification protocol that prevents the agent from claiming success without mechanical evidence. Run command, read output, confirm result, then claim.
 
-### Trigger Conditions
+### Triggers
 
 - Called automatically by other skills before claiming success
 - User says "verify this", "prove it works", "show me evidence"
@@ -2048,8 +2048,8 @@ gh pr create --title "feat: add rate limiting middleware" \
 
 ### Flags
 
-| Flag | Default | Description |
-|------|---------|-------------|
+| Opt | Def | Desc |
+|--|--|--|
 | `--command` | auto | Command to run for verification |
 | `--expect` | pass | Expected result: `pass`, `fail`, `contains:STRING`, `value:RANGE` |
 | `--retries` | 1 | Number of retry attempts |
@@ -2243,7 +2243,7 @@ AI agents have no persistent memory between sessions. But git does. Every commit
 All Godmode commits follow a strict prefix convention:
 
 | Prefix | Phase | Meaning | Example |
-|--------|-------|---------|---------|
+|--------|--|--|--|
 | `setup:` | META | Configuration change | `setup: godmode configured for rate-limiter` |
 | `spec:` | THINK | Spec created/updated | `spec: rate-limiter initial spec` |
 | `predict:` | THINK | Prediction report | `predict: rate-limiter approach consensus` |
@@ -2366,7 +2366,7 @@ Every claim must be backed by a command that produces a number.
 ```
 
 | Field | Description |
-|-------|-------------|
+|--|--|
 | `name` | Human-readable metric name |
 | `command` | Shell command to measure the metric |
 | `parse` | How to parse the output: `integer`, `float`, `duration_ms`, `percentage`, `last_number` |
@@ -2462,7 +2462,7 @@ Guards prevent this by defining boundaries that must never be crossed.
 ```
 
 | Field | Description |
-|-------|-------------|
+|--|--|
 | `name` | Human-readable guard name |
 | `command` | Shell command to measure the guard metric |
 | `baseline` | Value at the start (or minimum acceptable) |
@@ -2569,7 +2569,7 @@ iteration	timestamp	skill	description	metric_name	metric_before	metric_after	del
 ### Column Definitions
 
 | Column | Type | Description |
-|--------|------|-------------|
+|--------|--|--|
 | `iteration` | int | Sequential iteration number |
 | `timestamp` | ISO 8601 | When the iteration completed |
 | `skill` | string | Which skill produced this result |
@@ -2670,7 +2670,7 @@ When a cycle completes, results are archived:
 ### When to Use Parallel Dispatch
 
 | Scenario | Parallel? | Reason |
-|----------|-----------|--------|
+|----------|--|--|
 | Tasks in same parallel group | Yes | No dependencies between them |
 | Multiple test suites | Yes | Tests are independent |
 | Code review + next task | Yes | Review doesn't block next task's RED phase |
@@ -2948,7 +2948,7 @@ When the agent starts a new session in a project with existing `.godmode/` state
 When the optimization loop appears stuck:
 
 | Condition | Detection | Action |
-|-----------|-----------|--------|
+|-----------|--|--|
 | 5 consecutive reverts | results.tsv shows 5 `kept=false` in a row | Switch strategy (explore → surgical, etc.) |
 | Same error 3 fix attempts | Fix log shows same error ID 3 times | Escalate to user |
 | Metric oscillating | Up-down-up-down pattern in results.tsv | Increase tolerance or change approach |
@@ -2983,7 +2983,7 @@ Checkpoint triggers:
 ### Dirty State Handling
 
 | State | Detection | Action |
-|-------|-----------|--------|
+|-------|--|--|
 | Uncommitted changes | `git status --porcelain` non-empty | Stash or commit as recovery |
 | Partial merge | `.git/MERGE_HEAD` exists | Abort merge, retry |
 | Detached HEAD | `git symbolic-ref HEAD` fails | Checkout the feature branch |
@@ -3428,7 +3428,7 @@ Users can add custom hooks in `.godmode/hooks/`:
 ### Hook Naming Convention
 
 | Pattern | When it Runs |
-|---------|-------------|
+|--|--|
 | `pre-{skill}.md` | Before the named skill starts |
 | `post-{skill}.md` | After the named skill completes |
 | `on-{event}.md` | When the named event occurs |
@@ -3628,7 +3628,7 @@ Settings are resolved in order (later overrides earlier):
 ### Field Reference
 
 | Section | Field | Type | Default | Description |
-|---------|-------|------|---------|-------------|
+|---------|-------|--|--|--|
 | `project.type` | string | auto | Project language/framework |
 | `project.test_command` | string | auto | How to run tests |
 | `scope.include` | string[] | `["src/"]` | Directories the agent can modify |
@@ -3694,7 +3694,7 @@ workflow — from idea to optimized, shipped product.
 Most AI tools do one thing. Godmode does the full cycle.
 
 | Phase | What happens | Skills |
-|-------|-------------|--------|
+|--|--|--------|
 | THINK | Brainstorm, predict outcomes, explore edge cases | think, predict, scenario |
 | BUILD | Plan tasks, TDD, parallel build, code review | plan, build, test, review |
 | OPTIMIZE | Autonomous iteration with mechanical metrics | optimize, debug, fix, secure |
@@ -3742,7 +3742,7 @@ Supports npm, PyPI, Docker, GitHub Releases, Vercel, Cloudflare, and custom.
 ## Commands
 
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode` | Auto-detect phase and suggest next skill |
 | `/godmode:think` | Brainstorm and write a spec |
 | `/godmode:predict` | Multi-persona expert evaluation |
@@ -4011,7 +4011,7 @@ User: /godmode:yourskill --flag value
 ### Contribution Areas
 
 | Area | Difficulty | Impact |
-|------|-----------|--------|
+|------|--|--|
 | New skill | High | High |
 | Metric database additions | Low | Medium |
 | Platform adapter | Medium | Medium |
@@ -4096,7 +4096,7 @@ Action: Run auto-detection algorithm, route to appropriate skill
 ### Trigger Confidence Levels
 
 | Confidence | Action |
-|-----------|--------|
+|--|--|
 | **High** (>0.9) | Auto-invoke the skill (exact match, explicit trigger phrase) |
 | **Medium** (0.6-0.9) | Suggest the skill: "Would you like to use /godmode:think for brainstorming?" |
 | **Low** (<0.6) | Don't suggest; let the user invoke explicitly |
@@ -4135,7 +4135,7 @@ This prevents collisions with other plugins:
 Common abbreviations are registered as aliases:
 
 | Alias | Full Command |
-|-------|-------------|
+|--|--|
 | `/gm` | `/godmode` |
 | `/gm:t` | `/godmode:think` |
 | `/gm:b` | `/godmode:build` |
@@ -4476,7 +4476,7 @@ For plan execution:
 The planner estimates task complexity based on:
 
 | Signal | Low (1) | Medium (2-3) | High (4-5) |
-|--------|---------|-------------|-----------|
+|--------|--|--|-----------|
 | Files to modify | 1 file | 2-3 files | 4+ files |
 | Lines of code | <50 | 50-200 | >200 |
 | New dependencies | 0 | 1 | 2+ |
@@ -4533,7 +4533,7 @@ Auto-Budget Calculation:
 When a task or loop exceeds its budget:
 
 | Situation | Action |
-|-----------|--------|
+|--|--|
 | Task exceeds budget by 1 | Allow (soft limit) |
 | Task exceeds budget by 2+ | Pause, ask user: "Task 003 has used 7/5 iterations. Continue?" |
 | Optimization exceeds budget | Hard stop, report best result |
@@ -4722,7 +4722,7 @@ Step 2: Automatically invoke /godmode:fix
 Not all skills can chain to all other skills. Valid chains:
 
 | From | Can Chain To | What Passes |
-|------|-------------|-------------|
+|--|--|-------------|
 | `debug` | `fix` | Root cause and recommended fix |
 | `secure` | `fix` | Security findings as error list |
 | `test` | `fix` | Failing test results |
@@ -5575,8 +5575,8 @@ Total: 45 minutes, 12 iterations, 18 tests added.
 
 **Goal:** Add advanced features requested from early adopters.
 
-| Feature | Description |
-|---------|-------------|
+| Feature | Desc |
+|--|--|
 | Soft guards | Warning-level guards that don't auto-revert |
 | Chain system (`--chain`) | Link skills together |
 | Pipeline definitions | Pre-built skill sequences |
@@ -5594,8 +5594,8 @@ Total: 45 minutes, 12 iterations, 18 tests added.
 
 **Goal:** Make Godmode usable in CI pipelines and on more platforms.
 
-| Feature | Description |
-|---------|-------------|
+| Feature | Desc |
+|--|--|
 | Non-interactive mode | `--non-interactive` flag for CI |
 | `--fail-on` flags | Control CI exit codes |
 | SARIF output | Security findings in GitHub Code Scanning format |
@@ -5611,8 +5611,8 @@ Total: 45 minutes, 12 iterations, 18 tests added.
 
 **Goal:** Make Godmode smarter with cross-project learning and advanced optimization strategies.
 
-| Feature | Description |
-|---------|-------------|
+| Feature | Desc |
+|--|--|
 | Cross-project metric database | Learn which optimizations work for which project types |
 | Strategy library | Named optimization strategies (hill-climb, simulated annealing, explore) |
 | Automatic strategy selection | Choose strategy based on metric behavior |
@@ -5811,10 +5811,10 @@ Handoff (artifacts + state → next skill)
 Next Phase
 ```
 
-### Design Principles Recap
+### Principles Recap
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Discipline before speed | TDD, review gates, security audits before shipping |
 | 2 | Autonomy within constraints | Agent works alone, bounded by guards, budgets, and max iterations |
 | 3 | Git is memory | Every action committed, reverts are lessons, history informs decisions |
@@ -5851,7 +5851,7 @@ Next Phase
 
 **Purpose:** Prepare codebases for multi-language, multi-locale, multi-region support with production-grade i18n infrastructure.
 
-**Core capabilities:**
+**Capabilities:**
 - **String extraction:** Scan for hardcoded UI strings, extract to resource files (JSON, YAML, .strings, .xml, ARB) with translator context and key naming conventions
 - **Framework selection:** Recommend and configure i18n libraries per stack (react-intl, vue-i18n, @angular/localize, NSLocalizedString, Android Resources, i18next, flutter_localizations)
 - **Pluralization:** CLDR-compliant plural rules (not binary if/else) using ICU MessageFormat — handles English (2 forms), Arabic (6 forms), Polish (4 forms), Japanese (1 form)
@@ -5873,7 +5873,7 @@ Next Phase
 
 **Purpose:** Measure, catalog, and prioritize code quality issues across duplication, complexity, technical debt, dependency structure, and license compliance.
 
-**Core capabilities:**
+**Capabilities:**
 - **Code duplication detection:** AST-based structural comparison finding Type 1 (exact), Type 2 (parameterized), and Type 3 (structural) clones with extraction recommendations and duplication ratio scoring (< 3% excellent, > 20% critical)
 - **Cyclomatic complexity:** Count linearly independent paths (if/else, loops, switch cases, boolean operators, ternary) with threshold of 10 per function
 - **Cognitive complexity:** Measure human comprehension difficulty with nesting penalties, threshold of 15 per function, remediation via extract method, guard clauses, pipeline replacement
@@ -5895,7 +5895,7 @@ Next Phase
 
 **Purpose:** Build, configure, sign, optimize, and ship iOS and Android applications with platform-aware guidance for native and cross-platform approaches.
 
-**Core capabilities:**
+**Capabilities:**
 - **Platform assessment:** Evaluate native vs cross-platform tradeoffs, recommend approach (Swift, Kotlin, React Native, Flutter, Kotlin Multiplatform) based on project requirements, team skills, and performance needs
 - **Architecture patterns:**
   - MVVM (Model-View-ViewModel): reactive UI with observable state, ViewModel as presentation logic layer, repository abstraction for data access
@@ -5918,7 +5918,7 @@ Next Phase
 
 **Purpose:** Identify performance bottlenecks through CPU profiling, memory leak detection, concurrency bug hunting, and statistically rigorous benchmarking.
 
-**Core capabilities:**
+**Capabilities:**
 - **CPU profiling & flame graphs:** Language-specific profiling tools (node --cpu-prof, py-spy, go tool pprof, cargo flamegraph, JFR/async-profiler, Instruments Time Profiler, perf/valgrind) with flame graph generation and interpretation — plateau analysis (wide tops = CPU hotspots), tower analysis (deep stacks = excessive abstraction), common patterns (JSON serialization, regex compilation in loops, GC pressure, lock contention)
 - **Memory leak detection:** Heap snapshot diffing methodology — baseline → load → snapshot comparison. Tools per language (Chrome DevTools, tracemalloc, pprof heap, DHAT, Eclipse MAT, Instruments Leaks, Valgrind memcheck). Retention chain analysis proving why objects cannot be collected. Growth pattern classification (linear = classic leak, stepped = periodic, logarithmic = unbounded cache)
 - **Allocation tracking:** Identify excessive allocation hotspots, object pooling recommendations, pre-allocation strategies, GC tuning guidance
@@ -5985,7 +5985,7 @@ Three new skills extend Godmode into the database and data engineering domain, e
 
 **Purpose:** Generate, validate, and apply database migrations with production-grade safety.
 
-**Key capabilities:**
+**Features:**
 - **Auto-detection:** Scans the project to identify the ORM/migration tool (Prisma, Drizzle, TypeORM, Sequelize, Django, Rails, Go-migrate, Alembic, Flyway, Liquibase, Knex, or raw SQL) and database engine.
 - **Risk classification:** Every schema change is classified as SAFE, CAUTION, DANGEROUS, or BREAKING before any migration is generated.
 - **Backward compatibility:** BREAKING changes (column renames, drops, type changes) trigger the expand-contract pattern — add new alongside old, backfill, then remove old — preventing production outages.
@@ -6001,7 +6001,7 @@ Three new skills extend Godmode into the database and data engineering domain, e
 
 **Purpose:** Analyze, optimize, and debug database queries with measured before/after improvement.
 
-**Key capabilities:**
+**Features:**
 - **EXPLAIN interpretation:** Reads EXPLAIN ANALYZE output line by line across PostgreSQL, MySQL, SQLite, SQL Server, and MongoDB, extracting scan types, join strategies, buffer usage, and row estimate accuracy.
 - **Red flag detection:** Identifies sequential scans on large tables, N+1 patterns, stale statistics, over-fetching (SELECT *), inefficient joins, OFFSET pagination, and functions on indexed columns.
 - **Index recommendations:** Recommends specific index types (B-tree, GIN, GiST, BRIN, partial, covering) with column order rationale, write-overhead trade-offs, and storage estimates.
@@ -6017,7 +6017,7 @@ Three new skills extend Godmode into the database and data engineering domain, e
 
 **Purpose:** Design, build, test, and debug data pipelines from simple cron scripts to orchestrated multi-stage flows.
 
-**Key capabilities:**
+**Features:**
 - **Pipeline architecture:** Selects the right pattern (batch, streaming, micro-batch, CDC, ELT) based on SLA, volume, and freshness requirements.
 - **Tool detection:** Identifies Airflow, dbt, Dagster, Prefect, Luigi, Kafka, Spark, and custom setups from project files.
 - **Extraction patterns:** Watermark-based incremental extraction, API pagination with rate limiting, file-based deduplication, and database change tracking.
@@ -6174,7 +6174,7 @@ Three new skills extend Godmode's capabilities into frontend quality, visual con
 
 **Verdict:** PASS (no CRITICAL/HIGH, Lighthouse >= 90), CONDITIONAL PASS (no CRITICAL, HIGH with mitigation plan), FAIL (any CRITICAL or Lighthouse < 70).
 
-**Integration points:**
+**Integrates with:**
 - Pre-ship gate in `/godmode:ship`
 - Post-build check after UI changes
 - Storybook addon validation via `/godmode:ui`
@@ -6199,7 +6199,7 @@ Three new skills extend Godmode's capabilities into frontend quality, visual con
 
 **Verdict:** PASS (all within threshold), REVIEW NEEDED (minor changes require human confirmation), FAIL (significant unexpected regressions).
 
-**Integration points:**
+**Integrates with:**
 - Pre-ship gate for UI-heavy projects
 - Post-CSS-refactor validation
 - Design system update verification
@@ -6228,7 +6228,7 @@ Three new skills extend Godmode's capabilities into frontend quality, visual con
 
 **Storybook audit:** Measures coverage across stories, autodocs, controls, and a11y addon. Components without stories are flagged.
 
-**Integration points:**
+**Integrates with:**
 - Feeds into `/godmode:a11y` for accessibility validation
 - Feeds into `/godmode:visual` for visual regression baselines
 - Component generation via `--generate <name>`
@@ -6275,7 +6275,7 @@ Two new skills extend Godmode into the API design and integration testing domain
 
 **Workflow:** Discovery -> Resource Modeling -> Endpoint Design -> Versioning -> Pagination -> Error Responses -> Rate Limiting -> OpenAPI Generation -> Validation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/api/<service>-openapi.yaml` — Complete OpenAPI 3.1 specification
 - `docs/api/<service>-api-design.md` — Human-readable API design document
 
@@ -6296,7 +6296,7 @@ Two new skills extend Godmode into the API design and integration testing domain
 
 **Workflow:** Discovery -> Consumer Contract Definition -> Mock Server Generation -> Provider Verification -> Breaking Change Detection -> Compatibility Matrix -> Report -> CI/CD Integration
 
-**Artifacts produced:**
+**Outputs:**
 - `tests/contracts/<consumer>-<provider>.pact.spec.ts` — Consumer contract test files
 - `tests/mocks/<provider>-stubs/` — Mock server configuration
 - `docs/api/compatibility-matrix.md` — Cross-consumer compatibility matrix
@@ -6304,7 +6304,7 @@ Two new skills extend Godmode into the API design and integration testing domain
 
 **Flags:** `--consumer <name>`, `--provider <name>`, `--breaking`, `--mock`, `--matrix`, `--publish`, `--can-i-deploy`, `--framework pact|spring`, `--ci`
 
-### Integration with Existing Skills
+### Integrations
 
 The API skills integrate into the Godmode workflow at these points:
 
@@ -6322,10 +6322,10 @@ The API skills integrate into the Godmode workflow at these points:
 - **From `/godmode:ship`:** The ship workflow checks contract compatibility (can-i-deploy) before deployment
 - **From `/godmode:review`:** Code review flags API inconsistencies and refers to `/godmode:api --validate`
 
-### Design Principles for API Skills
+### Principles for API Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Spec before code | Never implement an API without a validated specification |
 | 2 | Consumer-driven contracts | Consumers define expectations; providers prove compliance |
 | 3 | Consistency across endpoints | One error format, one naming convention, one auth pattern |
@@ -6334,10 +6334,10 @@ The API skills integrate into the Godmode workflow at these points:
 | 6 | Matchers over exact values | Contracts use type/regex matchers, never hardcoded values |
 | 7 | Breaking changes are visible | Every PR that touches API routes gets a breaking change check |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/api/SKILL.md` | Skill | API design and specification workflow |
 | `skills/contract/SKILL.md` | Skill | Contract testing workflow |
 | `commands/godmode/api.md` | Command | Usage reference for `/godmode:api` |
@@ -6353,8 +6353,8 @@ Infrastructure and DevOps skills bring production-grade operational capabilities
 
 ### Skills Overview
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | Infra | `/godmode:infra` | Infrastructure as Code — Terraform, CloudFormation, Pulumi, CDK |
 | K8s | `/godmode:k8s` | Kubernetes & Container Orchestration — Helm, deployments, scaling |
 | Observe | `/godmode:observe` | Monitoring & Observability — Metrics, logging, tracing, alerts, SLOs |
@@ -6487,7 +6487,7 @@ The `cicd` skill creates and optimizes continuous integration and delivery pipel
 - Timeouts are mandatory — no hung pipelines wasting compute
 - Secrets are injected, never stored in pipeline config
 
-### Workflow Integration
+### In the Workflow
 
 The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 
@@ -6504,10 +6504,10 @@ The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 /godmode:ship    -> Ship to production
 ```
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Infrastructure as code | All infrastructure defined in version-controlled files |
 | 2 | Policy as code | Security and compliance rules enforced automatically |
 | 3 | Observable by default | Every service ships with metrics, logs, and traces |
@@ -6516,10 +6516,10 @@ The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 | 6 | Environments are isolated | Separate state, credentials, and configuration per environment |
 | 7 | Deployments are reversible | Canary, blue-green, and instant rollback strategies |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/infra/SKILL.md` | Skill | Infrastructure as Code workflow |
 | `skills/k8s/SKILL.md` | Skill | Kubernetes & Container Orchestration workflow |
 | `skills/observe/SKILL.md` | Skill | Monitoring & Observability workflow |
@@ -6540,12 +6540,12 @@ The Infrastructure & DevOps skills integrate with the existing Godmode workflow:
 ### Overview
 Skills for capturing, maintaining, and discovering technical decisions, project documentation, and proposals. This category ensures institutional knowledge is preserved and accessible.
 
-### Skills in this Category
+### Category Skills
 
 #### `/godmode:adr` — Architecture Decision Records
 **Purpose:** Document, discover, and maintain architectural decisions with structured records.
 
-**Core capabilities:**
+**Capabilities:**
 - **ADR creation:** Structured template with status, context, decision, alternatives considered (each with pros/cons/why rejected), and consequences (positive, negative, neutral)
 - **Status lifecycle:** Proposed -> Accepted -> Deprecated/Superseded. Accepted ADRs are immutable — supersede with a new ADR, never edit
 - **Discovery:** Search and list past decisions by keyword, status, or date. Answer "why did we choose X?" from the decision log
@@ -6561,7 +6561,7 @@ Skills for capturing, maintaining, and discovering technical decisions, project 
 #### `/godmode:docs` — Documentation Generation & Maintenance
 **Purpose:** Generate and maintain all forms of project documentation with staleness detection.
 
-**Core capabilities:**
+**Capabilities:**
 - **API documentation:** Scan routes/controllers to generate OpenAPI 3.0 specs with request/response schemas, auth requirements, and error responses
 - **Code documentation:** Generate JSDoc (TypeScript/JS) or docstrings (Python) for all public exports. Derive descriptions from actual code, examples from test files
 - **README generation:** Produce READMEs from package metadata, config files, and entry points with installation, quick start, API reference, and configuration sections
@@ -6578,7 +6578,7 @@ Skills for capturing, maintaining, and discovering technical decisions, project 
 #### `/godmode:rfc` — RFC & Proposal Writing
 **Purpose:** Write, manage, and track technical proposals with stakeholder review and decision timelines.
 
-**Core capabilities:**
+**Capabilities:**
 - **Structured RFC template:** Metadata, summary, problem statement with evidence, proposed solution with implementation plan, alternatives (always including "Do Nothing"), risks with mitigations, security/performance considerations, testing strategy, open questions, decision log
 - **RFC classification:** Feature (3-day review), Architecture (5-day), Process (5-day), Deprecation (5-day), Migration (7-day), Standard (7-day)
 - **Stakeholder review:** Track reviewer status (pending/approved/concerns), comment counts, blocking issues, and resolution
@@ -6591,7 +6591,7 @@ Skills for capturing, maintaining, and discovering technical decisions, project 
 
 **Flags:** `--list`, `--status`, `--template`, `--review <NNN>`, `--accept <NNN>`, `--reject <NNN>`, `--defer <NNN>`
 
-### Skill Interactions
+### Skill Links
 | From | To | When |
 |------|----|------|
 | `/godmode:think` | `/godmode:adr` | Significant design choice made |
@@ -6601,17 +6601,17 @@ Skills for capturing, maintaining, and discovering technical decisions, project 
 | `/godmode:ship` | `/godmode:docs` | Pre-ship documentation check |
 | `/godmode:review` | `/godmode:docs` | Undocumented public APIs detected |
 
-### Design Principles
+### Principles
 1. **Decisions are forever** — ADRs capture the reasoning at the time, not just the outcome
 2. **Documentation derives from code** — generated docs are always grounded in actual implementation
 3. **Proposals have deadlines** — RFCs without review deadlines never get decided
 4. **Staleness is the enemy** — all three skills include audit capabilities to detect rot
 5. **Structured templates reduce friction** — consistent formats make writing and reading faster
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/adr/SKILL.md` | Skill | Architecture Decision Records workflow |
 | `skills/docs/SKILL.md` | Skill | Documentation Generation & Maintenance workflow |
 | `skills/rfc/SKILL.md` | Skill | RFC & Proposal Writing workflow |
@@ -6628,12 +6628,12 @@ Skills for capturing, maintaining, and discovering technical decisions, project 
 ### Overview
 Skills for accelerating the daily development cycle: generating new code from patterns, transforming existing code safely, and collaborating through structured pair programming.
 
-### Skills in this Category
+### Category Skills
 
 #### `/godmode:scaffold` — Code Generation & Scaffolding
 **Purpose:** Generate boilerplate code for any framework by analyzing and matching existing project patterns.
 
-**Core capabilities:**
+**Capabilities:**
 - **Project scaffolding:** Generate full project skeletons for any framework with proper directory structure, configuration, and tooling
 - **CRUD generation:** Full resource CRUD (model, schema, repository, service, controller, routes, tests, migration) from a single command
 - **Pattern detection:** Analyze existing code for naming conventions, import style, error handling patterns, DI approach, and test organization before generating anything
@@ -6650,7 +6650,7 @@ Skills for accelerating the daily development cycle: generating new code from pa
 #### `/godmode:refactor` — Large-Scale Refactoring
 **Purpose:** Safely transform codebases using proven refactoring patterns with impact analysis and test verification.
 
-**Core capabilities:**
+**Capabilities:**
 - **Refactoring pattern library:** Extract (Function, Class, Interface, Module, Variable, Parameter), Inline (Function, Variable, Class), Move (Function, Field, Module), Rename (Variable, Function, File, Module), Simplify (Conditional to Polymorphism, Guards, Pipeline, Constants), Compose (Method, Replace Inheritance, Parameter Object, Factory, Null Object), Architecture (Split Monolith, Repository, Service Layer, Middleware, Facade)
 - **Impact analysis:** Map all directly and indirectly affected files, identify dynamic references, calculate blast radius before any changes
 - **Risk assessment:** LOW (<10 dependents, >80% coverage), MEDIUM (10-30, 50-80%), HIGH (30+, <50%), CRITICAL (core module, <30%). Never refactor below 60% coverage without writing characterization tests first
@@ -6667,7 +6667,7 @@ Skills for accelerating the daily development cycle: generating new code from pa
 #### `/godmode:pair` — Pair Programming Assistance
 **Purpose:** Structured pair programming with driver/navigator roles, real-time code review, and teaching capabilities.
 
-**Core capabilities:**
+**Capabilities:**
 - **Session modes:** Standard (user drives, agent navigates), Reverse (agent drives, user reviews), Teaching (explain concepts while building), Explorer (joint exploration of unfamiliar code), Ping-Pong (alternate test/implementation for TDD)
 - **Real-time navigation:** Triage observations by urgency — IMMEDIATE (bugs/security, interrupt), SOON (design, next pause), LATER (style, end of session)
 - **Knowledge transfer:** Graduated teaching protocol — SHOW (demonstrate), GUIDE (step-by-step), CHECK (user solo with review), SOLO (user independent)
@@ -6681,7 +6681,7 @@ Skills for accelerating the daily development cycle: generating new code from pa
 
 **Flags:** `--reverse`, `--teach`, `--explore`, `--ping-pong`, `--timebox <min>`, `--review`
 
-### Skill Interactions
+### Skill Links
 | From | To | When |
 |------|----|------|
 | `/godmode:plan` | `/godmode:scaffold` | Plan identifies scaffolding tasks |
@@ -6698,7 +6698,7 @@ Skills for accelerating the daily development cycle: generating new code from pa
 | Refactor | Tests must pass before AND after every transformation step |
 | Pair | Real-time bug detection; session checkpoints every 10-15 min |
 
-### Design Principles
+### Principles
 1. **Pattern-match, don't invent** — generated and refactored code must match existing project conventions
 2. **Atomic changes** — every scaffold and refactoring step is a single, revertable commit
 3. **Tests are non-negotiable** — scaffolds include tests; refactors require tests; pairing produces tests
@@ -6714,10 +6714,10 @@ THINK → PLAN → SCAFFOLD → BUILD → REFACTOR → REVIEW → SHIP
                boilerplate          structure   program
 ```
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/scaffold/SKILL.md` | Skill | Code Generation & Scaffolding workflow |
 | `skills/refactor/SKILL.md` | Skill | Large-Scale Refactoring workflow |
 | `skills/pair/SKILL.md` | Skill | Pair Programming Assistance workflow |
@@ -6737,7 +6737,7 @@ Two new skills address the critical gap between code and deployment — managing
 
 **Purpose:** Audit, validate, and manage configuration across dev/staging/prod environments, feature flags, and A/B test rollouts.
 
-**Key capabilities:**
+**Features:**
 - **Config inventory:** Scans all config files, environment variables, and secret references across the project.
 - **Environment parity checking:** Compares configurations across dev/staging/prod to detect critical drift (missing keys), expected drift (log levels, pool sizes), and suspicious drift (unexplained differences).
 - **Validation schema generation:** Produces typed config schemas with presence, type, format, range, and sensitivity checks. Enforces fail-fast startup validation.
@@ -6753,7 +6753,7 @@ Two new skills address the critical gap between code and deployment — managing
 
 **Purpose:** Accelerate developer ramp-up by generating architecture walkthroughs, key file reading lists, naming convention analysis, dependency graphs, and guided code tours.
 
-**Key capabilities:**
+**Features:**
 - **Project discovery:** Auto-detects project type, language, framework, package manager, build system, test framework, and size from file system scanning.
 - **Architecture walkthrough:** Generates directory maps with annotated descriptions, data flow diagrams showing request lifecycle, and layer responsibility tables.
 - **Key file identification:** Identifies the 7-10 most important files ordered by reading priority, plus most-modified files (from git history) and largest files (complexity hotspots).
@@ -6765,7 +6765,7 @@ Two new skills address the critical gap between code and deployment — managing
 
 **Command:** `/godmode:onboard` (`commands/godmode/onboard.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:onboard  ->  /godmode:think  ->  /godmode:config  ->  /godmode:plan  ->  /godmode:build
@@ -6778,10 +6778,10 @@ Two new skills address the critical gap between code and deployment — managing
 - **From `/godmode:config`:** After validating environments, use `/godmode:ship` to deploy with confidence
 - **From `/godmode:config --ab`:** After designing an A/B test, use `/godmode:build` to implement the variants
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/config/SKILL.md` | Skill | Environment and configuration management workflow |
 | `skills/onboard/SKILL.md` | Skill | Codebase onboarding and architecture discovery workflow |
 | `commands/godmode/config.md` | Command | Usage reference for `/godmode:config` |
@@ -6799,7 +6799,7 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 
 **Purpose:** Stress-test systems to establish baselines, find breaking points, identify bottlenecks, and validate capacity with statistical rigor.
 
-**Key capabilities:**
+**Features:**
 - **Multi-tool support:** Generates test scripts for k6 (JavaScript), Artillery (YAML), Locust (Python), and JMeter — matching the team's preferred toolchain.
 - **Four test patterns:** Load test (baseline at expected traffic), stress test (find breaking point), spike test (sudden surge response), and soak test (4-8 hour endurance for leak detection).
 - **Baseline establishment:** Records P50, P95, P99 response times, throughput, error rate, CPU, memory, DB connections, and network I/O per endpoint.
@@ -6815,7 +6815,7 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 
 **Purpose:** Build maintainable browser-based E2E test suites with page object models, cross-browser coverage, test data isolation, and flakiness remediation.
 
-**Key capabilities:**
+**Features:**
 - **Framework setup:** Configures Playwright, Cypress, or Selenium with production-grade settings (parallel workers, retries, reporters, web server integration).
 - **Page Object Model:** Generates base page class with common methods and per-page classes with locators (using accessible selectors: getByRole, getByLabel), actions, and assertions.
 - **Test data management:** Implements static fixtures, dynamic factories (faker-based), and authentication fixtures for isolated, reproducible test data.
@@ -6831,7 +6831,7 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 
 **Purpose:** Test system resilience through controlled failure injection, circuit breaker validation, and structured game day exercises.
 
-**Key capabilities:**
+**Features:**
 - **Steady state definition:** Establishes health indicators (success rate, latency, error rate, resource usage) and monitoring endpoints as the baseline to compare against during experiments.
 - **Failure domain mapping:** Catalogs all failure modes across network (latency, DNS, packet loss), compute (process crash, memory pressure, CPU saturation), storage (DB failover, cache failure, disk full), dependencies (API outages), and data (corruption, replication lag).
 - **Experiment design:** Each experiment follows a template: hypothesis, blast radius, duration, injection method, rollback procedure, success/failure criteria, and prerequisites checklist.
@@ -6846,7 +6846,7 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 
 **Command:** `/godmode:chaos` (`commands/godmode/chaos.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:loadtest  ->  /godmode:optimize  ->  /godmode:loadtest --compare
@@ -6868,10 +6868,10 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 - **From `/godmode:loadtest` to `/godmode:ship`:** SLO compliance is a ship pre-condition. Loadtest provides the evidence.
 - **From `/godmode:secure` to `/godmode:chaos`:** Security audit identifies theoretical denial-of-service risks; chaos engineering validates them experimentally.
 
-### Design Principles for Advanced Testing Skills
+### Principles for Advanced Testing Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Measure before optimizing | Loadtest establishes baselines before any optimization work |
 | 2 | Statistical rigor | Single runs prove nothing; multiple runs with significance testing required |
 | 3 | Stability over speed | E2E reliability trumps E2E execution time; fix flakiness first |
@@ -6880,10 +6880,10 @@ Three new skills extend Godmode's testing capabilities beyond unit and integrati
 | 6 | Findings are victories | A broken test or failed experiment means you found the problem before users did |
 | 7 | Automate for regression | Performance and E2E tests run in CI to catch regressions before production |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/loadtest/SKILL.md` | Skill | Load testing and performance testing workflow |
 | `skills/e2e/SKILL.md` | Skill | End-to-end browser testing workflow |
 | `skills/chaos/SKILL.md` | Skill | Chaos engineering and resilience testing workflow |
@@ -6914,7 +6914,7 @@ Two new skills extend Godmode into the authentication, authorization, and identi
 
 **Workflow:** Identity Requirements Discovery -> Auth Strategy Selection -> Session Management Design -> MFA Design -> Passwordless Design -> Token Lifecycle -> Social Login -> Security Hardening -> Implementation Artifacts -> Architecture Report
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/auth/<feature>-auth-architecture.md` — Authentication architecture decision document
 - `src/auth/` — Implementation code (strategies, middleware, controllers, services, models)
 - `tests/auth/` — Integration and unit tests
@@ -6936,7 +6936,7 @@ Two new skills extend Godmode into the authentication, authorization, and identi
 
 **Workflow:** Requirements Discovery -> Permission Model Selection -> Role Hierarchy Design -> Resource-Based Access Control -> Permission Inheritance & Delegation -> Policy Engine Design -> Audit Logging -> Implementation Artifacts -> Access Control Report
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/auth/<feature>-access-control.md` — Access control model documentation
 - `src/auth/` — Implementation code (models, middleware, policy engine, audit logger)
 - Database migrations for roles, permissions, grants, and audit tables
@@ -6944,7 +6944,7 @@ Two new skills extend Godmode into the authentication, authorization, and identi
 
 **Flags:** `--model rbac|abac|rebac`, `--hierarchy`, `--permissions`, `--delegation`, `--audit`, `--policies`, `--review`, `--migrate`, `--test`, `--matrix`
 
-### Integration with Existing Skills
+### Integrations
 
 The identity skills integrate into the Godmode workflow at these points:
 
@@ -6963,10 +6963,10 @@ The identity skills integrate into the Godmode workflow at these points:
 - **From `/godmode:comply`:** Compliance audit checks auth logging, access reviews, and data access controls against regulatory requirements
 - **From `/godmode:ship`:** Ship workflow verifies authentication and authorization are properly configured before deployment
 
-### Design Principles for Identity Skills
+### Principles for Identity Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Security by default | Every design choice defaults to the most secure option; weaker options require explicit justification |
 | 2 | Default deny | If no policy explicitly grants access, the answer is DENY |
 | 3 | Least privilege | Every role has the minimum permissions needed; start with zero and add |
@@ -6975,10 +6975,10 @@ The identity skills integrate into the Godmode workflow at these points:
 | 6 | Tokens have lifecycles | Every token has issuance, validation, refresh, revocation, and cleanup |
 | 7 | Check permissions, not roles | Code checks `can(user, "delete", resource)`, never `user.role === "admin"` |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/auth/SKILL.md` | Skill | Authentication and authorization design workflow |
 | `skills/rbac/SKILL.md` | Skill | Permission and access control design workflow |
 | `commands/godmode/auth.md` | Command | Usage reference for `/godmode:auth` |
@@ -7094,7 +7094,7 @@ Three new skills extend Godmode into the architecture and design pattern domain.
 
 **Workflow:** Context Gathering -> Pattern Evaluation -> Comparison Matrix -> C4 Diagrams -> Bounded Context Map -> Quality Attributes -> ADR -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/architecture/<system>-architecture.md` — Complete architecture document with C4 diagrams
 - `docs/adr/<number>-<decision>.md` — Architecture Decision Record
 
@@ -7113,7 +7113,7 @@ Three new skills extend Godmode into the architecture and design pattern domain.
 
 **Workflow:** Problem Analysis -> Pattern Classification -> Pattern Recommendation -> Language-Specific Implementation -> Anti-Pattern Detection -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/patterns/<feature>-pattern-analysis.md` — Pattern analysis with recommendation and implementation guide
 
 **Flags:** `--detect`, `--gof`, `--modern`, `--implement <pattern>`, `--compare <p1> <p2>`, `--language <lang>`, `--teach`
@@ -7132,7 +7132,7 @@ Three new skills extend Godmode into the architecture and design pattern domain.
 
 **Workflow:** Domain Discovery -> Ubiquitous Language -> Event Storming (5 phases) -> Context Mapping -> Tactical Design -> Domain Event Catalog -> Implementation Scaffold -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/domain/<context>-domain-model.md` — Aggregate designs with entities, value objects, and invariants
 - `docs/domain/event-catalog.md` — All domain events with payloads and schema rules
 - `docs/domain/context-map.md` — Bounded context map with relationship types
@@ -7140,7 +7140,7 @@ Three new skills extend Godmode into the architecture and design pattern domain.
 
 **Flags:** `--strategic`, `--tactical`, `--event-storm`, `--aggregate <name>`, `--context-map`, `--language`, `--scaffold`, `--validate`
 
-### Integration with Existing Skills
+### Integrations
 
 The architecture and design pattern skills integrate into the Godmode workflow at these points:
 
@@ -7159,10 +7159,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 - **From `/godmode:pattern --detect`:** Anti-pattern detection feeds into `/godmode:refactor` for remediation
 - **From `/godmode:architect` to `/godmode:api`:** Architecture decisions inform API design (REST vs GraphQL, sync vs async)
 
-### Design Principles for Architecture & Pattern Skills
+### Principles for Architecture & Pattern Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Requirements before patterns | Never recommend architecture without understanding scale, team, and constraints |
 | 2 | Always compare alternatives | Minimum 3 options evaluated with trade-offs, even when the answer seems obvious |
 | 3 | Diagrams are mandatory | C4 diagrams for architecture, context maps for DDD, class diagrams for patterns |
@@ -7171,10 +7171,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 | 6 | Events before entities | DDD starts with event storming to discover behavior, not with entity modeling |
 | 7 | Simplicity over cleverness | If a function and an interface solve the problem, do not recommend a full pattern |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/architect/SKILL.md` | Skill | Software architecture design workflow |
 | `skills/pattern/SKILL.md` | Skill | Design pattern recommendation workflow |
 | `skills/ddd/SKILL.md` | Skill | Domain-Driven Design workflow |
@@ -7192,7 +7192,7 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Purpose:** Analyze, reduce, and govern cloud spending across AWS, GCP, and Azure with evidence-based recommendations backed by actual utilization data and projected dollar savings.
 
-**Core capabilities:**
+**Capabilities:**
 - **Resource inventory:** Discover all provisioned resources across compute, storage, database, network, containers, and serverless with current monthly costs and month-over-month trends
 - **Utilization analysis:** Measure actual CPU, memory, storage, and network usage versus provisioned capacity with IDLE/OVERSIZE/UNDERSIZE/OK verdicts based on 14-day P95 data
 - **Waste detection:** Identify resources costing money but providing no value — unattached volumes, old snapshots, idle load balancers, unused Elastic IPs, orphaned ENIs, dev environments running 24/7
@@ -7206,10 +7206,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Key principle:** Every recommendation must include the projected dollar savings. "This instance is oversized" is not actionable. "$180/month savings by downsizing from m5.2xl to m5.large" is actionable. Production optimizations are conservative; dev/staging can be aggressive.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/cost/SKILL.md` | Skill | Cloud cost optimization workflow |
 | `commands/godmode/cost.md` | Command | Usage reference for `/godmode:cost` |
 
@@ -7221,7 +7221,7 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Purpose:** Systematically evaluate codebase and data flows against regulatory frameworks (GDPR, HIPAA, SOC2, PCI-DSS), validate audit trails, review data retention policies, and audit license compliance across dependencies.
 
-**Core capabilities:**
+**Capabilities:**
 - **GDPR compliance:** Lawful basis assessment for each data processing activity, data subject rights implementation check (access, rectification, erasure, portability, restriction, objection), consent management validation (freely given, specific, informed, unambiguous, withdrawable, recorded)
 - **HIPAA compliance:** Administrative safeguards (risk analysis, workforce controls, incident response, BAAs), physical safeguards (facility access, workstation security), technical safeguards (access control, audit controls, integrity, transmission security, encryption at rest), minimum necessary principle, de-identification, PHI access logging
 - **SOC2 compliance:** Trust services criteria assessment across security, availability, processing integrity, confidentiality, and privacy with control counts and gap identification for change management, logical access, encryption, monitoring, incident response, vendor risk, backup, and vulnerability scanning
@@ -7234,10 +7234,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Key principle:** Each finding must reference the specific regulation article or requirement it violates. "Deletion missing" is not a finding. "GDPR Article 17 violation: deleteUser() sets deleted_at but data persists in backups indefinitely" is a finding.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/comply/SKILL.md` | Skill | Compliance and governance audit workflow |
 | `commands/godmode/comply.md` | Command | Usage reference for `/godmode:comply` |
 
@@ -7249,7 +7249,7 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Purpose:** Design and orchestrate sophisticated deployment strategies including blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and zero-downtime migrations.
 
-**Core capabilities:**
+**Capabilities:**
 - **Deployment assessment:** Characterize change type (code, migration, infrastructure, config), risk level, rollback complexity, backward/forward compatibility, and recommend appropriate strategy with justification
 - **Blue-green deployment:** Two identical environments with instant switchover — deploy to idle environment, smoke test, switch load balancer, monitor, keep old environment for instant rollback (< 30 seconds)
 - **Canary release:** Percentage-based traffic splitting with automated gates — 1% to 5% to 25% to 50% to 100% with success criteria (error rate, P99 latency, business metrics) and automatic rollback triggers at each stage
@@ -7263,10 +7263,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Key principle:** Strategy matches risk. Low-risk changes use rolling deploys. High-risk changes need canary with automated rollback. Rollback is always planned — if you cannot define rollback, the deployment is not ready.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/deploy/SKILL.md` | Skill | Advanced deployment strategies workflow |
 | `commands/godmode/deploy.md` | Command | Usage reference for `/godmode:deploy` |
 
@@ -7278,7 +7278,7 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Purpose:** Provide interactive, codebase-grounded learning experiences including tutorials, design pattern recommendations, best practices enforcement, codebase knowledge bases, and personalized learning paths.
 
-**Core capabilities:**
+**Capabilities:**
 - **Interactive code tutorials:** Step-by-step tutorials using actual project code with context, explanations, key insights, and hands-on "TRY IT" exercises; checkpoints with comprehension questions; calibrated to beginner/intermediate/advanced level
 - **Design pattern recommendations:** Problem-specific pattern selection with trade-offs (Strategy, Observer, Factory, Repository, CQRS, Circuit Breaker, etc.); ASCII diagrams; before/after code from the actual codebase; real-world examples already in the project; "when NOT to use" guidance
 - **Best practices enforcement:** Language- and framework-specific practices (TypeScript, React, Go, Python, etc.) with MUST/SHOULD/MAY levels (RFC 2119); good/bad code examples; codebase compliance audit showing which files follow or violate each practice; prioritized adoption list
@@ -7289,10 +7289,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Key principle:** Use the actual codebase. "Here's how YOUR code uses the Observer pattern" is 10x more effective than a textbook example. One concept at a time, hands-on over theory, trade-offs always mentioned.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/learn/SKILL.md` | Skill | Learning and teaching workflow |
 | `commands/godmode/learn.md` | Command | Usage reference for `/godmode:learn` |
 
@@ -7304,7 +7304,7 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Purpose:** Design comprehensive backup strategies, define RPO/RTO targets, automate backup verification, test recovery procedures, verify data integrity, and generate disaster recovery runbooks.
 
-**Core capabilities:**
+**Capabilities:**
 - **Data asset inventory:** Catalog all data stores (databases, file storage, caches, logs, configuration, secrets, queues, search indices) with type, size, growth rate, and criticality classification; identify rebuild-from-source assets that do not need backup
 - **RPO/RTO definition:** Three-tier recovery objectives — Tier 1 critical (RPO < 1 min, RTO < 15 min for business-critical data), Tier 2 important (RPO < 1 hour, RTO < 1 hour for tolerant data), Tier 3 operational (RPO < 24 hours, RTO < 4 hours for rebuildable data)
 - **Tiered backup strategy:** Tier 1 gets streaming replication + continuous WAL archiving + daily full backups; Tier 2 gets periodic snapshots + cross-region replication + versioning; Tier 3 gets daily backups + rebuild procedures; all encrypted at rest (AES-256) with separate key management
@@ -7317,10 +7317,10 @@ The architecture and design pattern skills integrate into the Godmode workflow a
 
 **Key principle:** Backups that are not tested are not backups. A backup you have never restored is a hope, not a plan. Separate backup storage from production (different region, different account). Automate verification with alerting.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/backup/SKILL.md` | Skill | Backup and disaster recovery workflow |
 | `commands/godmode/backup.md` | Command | Usage reference for `/godmode:backup` |
 
@@ -7349,7 +7349,7 @@ Three new skills extend Godmode into search engineering, asynchronous job proces
 
 **Workflow:** Requirements Assessment -> Engine Selection -> Index Design -> Analyzer Configuration -> Relevance Tuning -> Autocomplete -> Faceted Search -> Fuzzy/Synonyms -> Optimization -> Analytics -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `search/mappings/<index>-mapping.json` — Index schema and mappings
 - `search/analyzers/<index>-analyzers.json` — Text analysis configuration
 - `search/synonyms/synonyms.txt` — Synonym dictionary
@@ -7375,7 +7375,7 @@ Three new skills extend Godmode into search engineering, asynchronous job proces
 
 **Workflow:** Requirements Assessment -> Technology Selection -> Queue Architecture -> Retry Strategy -> Dead Letter Handling -> Delivery Guarantees -> Priority Queues -> Rate Limiting -> Worker Pools -> Monitoring -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `config/queues/<queue-name>.ts` — Queue configuration
 - `workers/<queue-name>-worker.ts` — Worker definitions
 - `config/queues/retry-policy.ts` — Retry and DLQ configuration
@@ -7400,7 +7400,7 @@ Three new skills extend Godmode into search engineering, asynchronous job proces
 
 **Workflow:** Requirements Assessment -> Protocol Selection -> Connection Architecture -> Channel Design -> Presence System -> Typing Indicators -> Collaboration (CRDT/OT) -> Client Reconnection -> Scaling -> Monitoring -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `realtime/server.ts` — WebSocket/SSE server configuration
 - `realtime/channels.ts` — Channel definitions and authorization
 - `realtime/presence.ts` — Presence tracking system
@@ -7409,23 +7409,23 @@ Three new skills extend Godmode into search engineering, asynchronous job proces
 
 **Flags:** `--protocol <name>`, `--tech <name>`, `--presence`, `--collab`, `--notifications`, `--scale`, `--chat`, `--typing`, `--audit`
 
-### Integration with Existing Skills
+### Integrations
 
 The search, queue, and real-time skills integrate into the Godmode workflow at these points:
 
 ```
 /godmode:think  ->  /godmode:search   ->  /godmode:plan  ->  /godmode:build
-     |                   |                      |                  |
+     | | | |
   Brainstorm        Design search          Decompose into     Implement
   the feature       index + relevance      tasks with TDD     search API
 
 /godmode:think  ->  /godmode:queue    ->  /godmode:plan  ->  /godmode:build
-     |                   |                      |                  |
+     | | | |
   Brainstorm        Design queue           Decompose into     Implement
   async needs       architecture           tasks with TDD     workers
 
 /godmode:think  ->  /godmode:realtime ->  /godmode:plan  ->  /godmode:build
-     |                   |                      |                  |
+     | | | |
   Brainstorm        Design WS/SSE          Decompose into     Implement
   live features     architecture           tasks with TDD     real-time
 ```
@@ -7437,10 +7437,10 @@ The search, queue, and real-time skills integrate into the Godmode workflow at t
 - **From `/godmode:ship`:** Pre-ship checks verify search index health, queue worker status, and WebSocket scaling readiness
 - **From `/godmode:secure`:** Security audit covers search input sanitization, queue message validation, and WebSocket authentication
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Simplest tool that works | PostgreSQL FTS before Elasticsearch; SSE before WebSocket; pg SKIP LOCKED before Kafka |
 | 2 | Measure before tuning | Search relevance needs NDCG scores; queue health needs depth metrics; real-time needs latency P95 |
 | 3 | Design for failure | Retry with backoff, dead letter queues, client reconnection, message recovery on reconnect |
@@ -7449,10 +7449,10 @@ The search, queue, and real-time skills integrate into the Godmode workflow at t
 | 6 | Ephemeral state is not data | Typing indicators, presence, cursor positions — broadcast and forget, never persist |
 | 7 | Monitor the leading indicators | Queue depth (not throughput), zero-result rate (not query count), connection count (not CPU) |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/search/SKILL.md` | Skill | Search implementation and relevance engineering workflow |
 | `skills/queue/SKILL.md` | Skill | Message queue and job processing workflow |
 | `skills/realtime/SKILL.md` | Skill | Real-time communication and collaboration workflow |
@@ -7470,7 +7470,7 @@ Three new skills extend Godmode's testing arsenal into deep unit testing mastery
 
 **Purpose:** Write high-quality, isolated unit tests with proper structure, mocking strategies, property-based testing, and mutation testing validation. Goes beyond basic test writing into testing craftsmanship.
 
-**Key capabilities:**
+**Features:**
 - **Test structure patterns:** Arrange-Act-Assert (AAA) for input/output tests and Given-When-Then (GWT) for behavior-focused BDD-style tests, with framework-specific examples for Jest, Vitest, pytest, Go testing, and JUnit.
 - **Mocking decision framework:** A systematic flowchart for choosing when to mock (external services, non-deterministic code) vs when to use real implementations. Covers all five test double types: stubs, mocks, spies, fakes, and dummies with clear use cases for each.
 - **Property-based testing:** Identifies and implements property patterns — roundtrip/inverse, invariant preservation, idempotence, oracle/reference, and commutativity — using fast-check (JS/TS) and Hypothesis (Python). Includes shrinking interpretation for minimal failure reproduction.
@@ -7486,7 +7486,7 @@ Three new skills extend Godmode's testing arsenal into deep unit testing mastery
 
 **Purpose:** Test how components work together across real boundaries — databases, APIs, message queues, and caches — using disposable containerized infrastructure for isolation and reproducibility.
 
-**Key capabilities:**
+**Features:**
 - **Testcontainers setup:** Full configuration for PostgreSQL, MySQL, MongoDB, Redis, Kafka, Elasticsearch, and LocalStack containers across Node.js, Python, Go, and Java with proper startup, connection, and teardown patterns.
 - **Database seeding strategies:** Three approaches — migration-based seeding for schema, fixture factories with overridable defaults for test data, and SQL file seeding for large reference datasets. Includes Factory Boy (Python), custom builder patterns (TypeScript), and table-driven fixtures (Go).
 - **Cleanup strategies:** Four options ranked by trade-off — transaction rollback (fastest, zero cleanup), TRUNCATE (fast, simple), unique data per test (no cleanup needed, best for parallel), and fresh container per test class (most isolated, slowest). Decision matrix for choosing the right strategy.
@@ -7502,7 +7502,7 @@ Three new skills extend Godmode's testing arsenal into deep unit testing mastery
 
 **Purpose:** Verify complex outputs against known-good baselines using snapshot testing, approval testing, and golden file patterns — with proper stabilization for non-deterministic values and update policies to prevent snapshot rot.
 
-**Key capabilities:**
+**Features:**
 - **Suitability assessment:** Decision framework for when snapshot testing helps (complex deterministic output, infrequent changes) vs when it harms (non-deterministic output, too-large snapshots, constant changes). Prevents inappropriate snapshot usage.
 - **Four strategies:** File-based snapshots for large outputs, inline snapshots for small reviewable outputs (<20 lines), approval testing for human-reviewed baselines, and golden file testing for deterministic artifacts (Go idiom with `-update` flag).
 - **Non-deterministic handling:** Four stabilization approaches — value replacement before snapshot, custom serializers, property matchers (Jest), and deterministic injection via dependency inversion. Ensures flake-free snapshots.
@@ -7514,7 +7514,7 @@ Three new skills extend Godmode's testing arsenal into deep unit testing mastery
 
 **Command:** `/godmode:snapshot` (`commands/godmode/snapshot.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 The Testing Mastery skills integrate into the Godmode workflow at these points:
 
@@ -7532,10 +7532,10 @@ The Testing Mastery skills integrate into the Godmode workflow at these points:
 - **From `/godmode:quality`:** Quality analysis identifies test debt that these skills address
 - **From `/godmode:review`:** Code review flags test quality issues and refers to specific testing skills
 
-### Design Principles for Testing Mastery Skills
+### Principles for Testing Mastery Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Test behavior, not implementation | Tests verify what code does, not how it does it |
 | 2 | Mock at the boundary | Mock external services, use real implementations for internal logic |
 | 3 | Property tests find what you miss | Generative testing discovers edge cases manual tests never cover |
@@ -7544,10 +7544,10 @@ The Testing Mastery skills integrate into the Godmode workflow at these points:
 | 6 | Real dependencies in integration tests | Testcontainers provide isolated, disposable, real infrastructure |
 | 7 | Fast unit tests, thorough integration tests | Seconds for units, minutes for integration, separated in CI |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/unittest/SKILL.md` | Skill | Unit testing mastery with mocking, property testing, mutation testing |
 | `skills/integration/SKILL.md` | Skill | Integration testing with Testcontainers and real dependencies |
 | `skills/snapshot/SKILL.md` | Skill | Snapshot, approval, and golden file testing |
@@ -7566,7 +7566,7 @@ This section covers three interconnected skills for data visualization, automate
 ### Skill Overview
 
 | Skill | Command | Description |
-|-------|---------|-------------|
+|-------|--|--|
 | **Chart** | `/godmode:chart` | Data visualization — chart type selection (bar, line, scatter, heatmap, treemap, sankey), D3.js/Chart.js/Recharts/Plotly integration, dashboard design, responsive layouts, accessibility for data visualizations |
 | **Report** | `/godmode:report` | Automated report generation — PDF, HTML, Markdown output, sprint retrospectives, code health reports, performance trend reports, metric dashboards |
 | **Analytics** | `/godmode:analytics` | Analytics implementation — event tracking (Segment, Amplitude, Mixpanel, PostHog), funnel analysis, A/B test instrumentation, privacy-respecting analytics (Plausible, Umami), data modeling |
@@ -7590,7 +7590,7 @@ This section covers three interconnected skills for data visualization, automate
 - **From `/godmode:optimize` to `/godmode:report`:** Optimization results are summarized in performance reports
 - **From `/godmode:secure` to `/godmode:analytics`:** Security audit validates that analytics tracking respects privacy (no PII, consent gates)
 
-### Integration with Existing Skills
+### Integrations
 
 | Connected Skill | Relationship |
 |----------------|-------------|
@@ -7603,10 +7603,10 @@ This section covers three interconnected skills for data visualization, automate
 | `/godmode:optimize` | Acts on report recommendations to improve metrics |
 | `/godmode:ui` | UI component architecture for chart components and dashboard layouts |
 
-### Design Principles for Data Visualization & Reporting Skills
+### Principles for Data Visualization & Reporting Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Data story first | Understand what needs to be communicated before choosing chart types or report formats |
 | 2 | Accessibility is mandatory | Every chart has a colorblind-safe palette, ARIA labels, and a data table alternative |
 | 3 | Privacy by default | No analytics tracking before consent, no PII in events, respect DNT |
@@ -7616,10 +7616,10 @@ This section covers three interconnected skills for data visualization, automate
 | 7 | A/B tests need statistical rigor | Calculate sample size, define metrics, run to completion before analyzing |
 | 8 | Reports must be actionable | Every report includes specific next steps; a report without action items should not exist |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/chart/SKILL.md` | Skill | Data visualization workflow — chart selection, library integration, responsive design, accessibility |
 | `skills/report/SKILL.md` | Skill | Report generation workflow — sprint retros, code health, performance trends, metric dashboards |
 | `skills/analytics/SKILL.md` | Skill | Analytics implementation workflow — event tracking, funnels, A/B tests, privacy compliance |
@@ -7652,7 +7652,7 @@ Three new skills extend Godmode into the microservices and distributed systems d
 
 **Workflow:** System Assessment -> Decomposition -> Communication Design -> Service Mesh -> Service Discovery -> Saga Design -> Topology -> Resilience -> Validation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/architecture/<system>-topology.md` — Service topology diagram
 - `docs/architecture/<system>-services.md` — Service catalog and registry
 - `docs/architecture/<system>-communication.md` — Communication contracts
@@ -7675,7 +7675,7 @@ Three new skills extend Godmode into the microservices and distributed systems d
 
 **Workflow:** Assessment -> Event Sourcing -> CQRS -> Broker Design -> Schema Versioning -> DLQ & Retry -> Idempotency -> Validation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/events/<system>-event-catalog.md` — Event catalog with all event types
 - `schemas/<domain>/<event>.avsc` — Schema definitions (Avro, JSON Schema, or Protobuf)
 - `docs/events/<system>-broker-topology.md` — Broker topology documentation
@@ -7699,7 +7699,7 @@ Three new skills extend Godmode into the microservices and distributed systems d
 
 **Workflow:** Assessment -> Layer Design -> Invalidation Strategy -> Redis/Memcached Config -> CDN/Varnish Config -> Stampede Prevention -> Monitoring -> Validation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/caching/<system>-cache-strategy.md` — Cache design documentation
 - `infra/cache/` — Redis or Memcached configuration
 - `src/lib/cache.ts` — Cache utility module
@@ -7708,7 +7708,7 @@ Three new skills extend Godmode into the microservices and distributed systems d
 
 **Flags:** `--assess`, `--redis`, `--memcached`, `--cdn`, `--varnish`, `--invalidation`, `--stampede`, `--monitor`, `--warmup`, `--validate`, `--benchmark`
 
-### Integration with Existing Skills
+### Integrations
 
 The microservices and distributed systems skills integrate into the Godmode workflow at these points:
 
@@ -7728,10 +7728,10 @@ The microservices and distributed systems skills integrate into the Godmode work
 - **From `/godmode:observe`:** Monitor service communication latency, event consumer lag, and cache hit rates
 - **From `/godmode:micro` to `/godmode:contract`:** Define contracts between services for compatibility testing
 
-### Design Principles for Microservices & Distributed Systems Skills
+### Principles for Microservices & Distributed Systems Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Decompose by business capability | Services map to bounded contexts, not technical layers |
 | 2 | Each service owns its data | No shared databases — services communicate via APIs or events |
 | 3 | Default to asynchronous | Use events unless the caller genuinely needs an immediate response |
@@ -7741,10 +7741,10 @@ The microservices and distributed systems skills integrate into the Godmode work
 | 7 | Always set a TTL | No cache key lives forever — staleness and memory leaks are inevitable without expiry |
 | 8 | Resilience is infrastructure | Circuit breakers, retries, and mTLS belong in the service mesh, not application code |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/micro/SKILL.md` | Skill | Microservices design and management workflow |
 | `skills/event/SKILL.md` | Skill | Event-driven architecture workflow |
 | `skills/cache/SKILL.md` | Skill | Caching strategy workflow |
@@ -7781,7 +7781,7 @@ Three new skills extend Godmode into Git mastery, pull request excellence, and r
 **Branching Decision Matrix:**
 
 | Factor | GitFlow | Trunk-Based | GitHub Flow | Ship/Show/Ask |
-|--------|---------|-------------|-------------|---------------|
+|--------|--|--|-------------|---------------|
 | Team size | Any | Senior | Any | Senior |
 | Release cadence | Scheduled | Continuous | Daily-weekly | Continuous |
 | CI/CD required | No | Yes | Recommended | Yes |
@@ -7863,10 +7863,10 @@ Integration with existing skills:
 - `/godmode:deploy` — Release tags trigger deployment pipelines
 - `/godmode:finish` — Branch cleanup after PR merge
 
-### Design Principles for Git & Version Control Skills
+### Principles for Git & Version Control Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Match workflow to team | Never recommend GitFlow for a 2-person team or Ship/Show/Ask for juniors |
 | 2 | Small PRs over large PRs | Every recommendation prioritizes reviewability and fast cycle time |
 | 3 | Automate the ceremony | Labels, assignments, changelogs, and version bumps should not require human effort |
@@ -7875,10 +7875,10 @@ Integration with existing skills:
 | 6 | Hotfixes are sacred | Emergency fixes follow a strict, minimal-change workflow with no scope creep |
 | 7 | Measure and improve | Track PR cycle time, review rounds, and release frequency to drive improvement |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/git/SKILL.md` | Skill | Advanced Git workflows |
 | `skills/pr/SKILL.md` | Skill | Pull request excellence |
 | `skills/release/SKILL.md` | Skill | Release management |
@@ -7896,8 +7896,8 @@ Deep security specialization skills that extend beyond the general `/godmode:sec
 
 ### Skill Overview
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | **Pentest** | `/godmode:pentest` | Authorized penetration testing with reconnaissance, OWASP-methodology exploitation, API security testing, and formal report writing |
 | **DevSecOps** | `/godmode:devsecops` | Security integration into CI/CD pipelines — SAST, DAST, SCA, container scanning, secret scanning, and security gates |
 | **Crypto** | `/godmode:crypto` | Correct cryptographic implementation — encryption, key management, password hashing, digital signatures, JWT security, TLS hardening |
@@ -7954,7 +7954,7 @@ The cryptography skill ensures correct algorithm selection and implementation:
 
 Flags: `--passwords`, `--encrypt`, `--tls`, `--jwt`, `--signatures`, `--keys`, `--audit`, `--migrate`, `--test`
 
-### Integration with Existing Skills
+### Integrations
 
 The security specialization skills form a comprehensive security workflow:
 
@@ -7983,10 +7983,10 @@ The security specialization skills form a comprehensive security workflow:
 - **From `/godmode:crypto`:** Cryptographic implementation supports `/godmode:auth` (password hashing, JWT signing) and `/godmode:secrets` (key management)
 - **All three to `/godmode:ship`:** Security specialization skills are pre-ship quality gates
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/pentest/SKILL.md` | Skill | Authorized penetration testing workflow |
 | `skills/devsecops/SKILL.md` | Skill | DevSecOps pipeline security integration |
 | `skills/crypto/SKILL.md` | Skill | Cryptographic implementation guidance |
@@ -8109,7 +8109,7 @@ Four new skills bring structured developer productivity and project management w
 
 **Chaining:** `/godmode:scope` -> `/godmode:think` (design solution) | `/godmode:plan` (plan implementation) | `/godmode:build` (build MVP)
 
-### Workflow Integration
+### In the Workflow
 
 The Productivity & Project Management skills form a sprint lifecycle:
 
@@ -8122,10 +8122,10 @@ The Productivity & Project Management skills form a sprint lifecycle:
 /godmode:retro       -> Reflect and improve
 ```
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Evidence over opinion | Standups from git data, prioritization from frameworks, health from metrics |
 | 2 | Explicit boundaries | Every scope has in/out, every sprint has capacity, every retro has max 3 actions |
 | 3 | Track over time | Velocity, health, and improvement trends across sprints |
@@ -8134,10 +8134,10 @@ The Productivity & Project Management skills form a sprint lifecycle:
 | 6 | Dependencies are first-class | Prioritization accounts for blocking relationships, not just individual scores |
 | 7 | Debt is not optional | Technical debt gets allocated capacity every sprint based on measured ratio |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/standup/SKILL.md` | Skill | Daily standup and progress tracking workflow |
 | `skills/retro/SKILL.md` | Skill | Retrospective and team health workflow |
 | `skills/prioritize/SKILL.md` | Skill | Task prioritization with scoring frameworks |
@@ -8171,7 +8171,7 @@ Four new skills extend Godmode into the developer experience domain, covering th
 
 **Workflow:** DX Audit -> Environment Setup -> Feedback Loop Optimization -> Error Message Improvement -> CLI Design -> Developer Portal -> Improvement Plan -> Commit
 
-**Artifacts produced:**
+**Outputs:**
 - `scripts/setup.sh` — One-command development environment setup
 - `.devcontainer/devcontainer.json` — VS Code devcontainer configuration
 - `src/errors/` — Structured error class hierarchy
@@ -8193,7 +8193,7 @@ Four new skills extend Godmode into the developer experience domain, covering th
 
 **Workflow:** Assessment -> Tool Selection -> Package Structure -> Boundary Enforcement -> Selective Builds -> Dependency Graph -> Shared Config -> Commit
 
-**Artifacts produced:**
+**Outputs:**
 - `turbo.json` or `nx.json` — Build pipeline configuration
 - `pnpm-workspace.yaml` — Workspace definition
 - `packages/config/` — Shared tsconfig, ESLint, Prettier configurations
@@ -8216,7 +8216,7 @@ Four new skills extend Godmode into the developer experience domain, covering th
 
 **Workflow:** Assess Current State -> Tool Selection -> Configuration -> Custom Rules -> Auto-Fix Setup -> Pre-Commit Hooks -> Style Guide -> CI Enforcement -> Commit
 
-**Artifacts produced:**
+**Outputs:**
 - Linter config (`eslint.config.js`, `biome.json`, `pyproject.toml`, `.golangci.yml`)
 - Formatter config (`.prettierrc` or integrated in linter)
 - Pre-commit hooks (`.husky/` or `.pre-commit-config.yaml`)
@@ -8239,7 +8239,7 @@ Four new skills extend Godmode into the developer experience domain, covering th
 
 **Workflow:** Type Safety Audit -> Strict Mode Configuration -> Schema Library Selection -> Schema-First Development -> Validation at Boundaries -> Type Narrowing -> Branded Types -> Commit
 
-**Artifacts produced:**
+**Outputs:**
 - Updated `tsconfig.json` with strict mode flags
 - Schema files at `src/schemas/`
 - Validation middleware at `src/middleware/validate.ts`
@@ -8248,7 +8248,7 @@ Four new skills extend Godmode into the developer experience domain, covering th
 
 **Flags:** `--audit`, `--strict`, `--schemas`, `--validate`, `--eliminate-any`, `--branded`, `--migrate <lib>`, `--env`, `--factory`
 
-### Integration with Existing Skills
+### Integrations
 
 The Developer Experience skills integrate into the Godmode workflow at these points:
 
@@ -8272,10 +8272,10 @@ The Developer Experience skills integrate into the Godmode workflow at these poi
 - **From `/godmode:review`:** Code review can refer to `/godmode:lint` for style issues and `/godmode:type` for type safety gaps
 - **From `/godmode:quality`:** Quality analysis identifies technical debt that `/godmode:lint` and `/godmode:type` can address
 
-### Design Principles for Developer Experience Skills
+### Principles for Developer Experience Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Measure before improving | Every DX audit produces numeric scores; improvements show before/after deltas |
 | 2 | Automate everything repeatable | Format on save, lint on commit, validate on request — humans handle logic, machines handle style |
 | 3 | One-command setup | Any developer must go from clone to running in a single command, no tribal knowledge |
@@ -8284,10 +8284,10 @@ The Developer Experience skills integrate into the Godmode workflow at these poi
 | 6 | Feedback speed compounds | Every second saved on save-to-result multiplies across every developer, every day |
 | 7 | Boundaries prevent entropy | Package boundaries, lint rules, and type strictness prevent gradual quality degradation |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/dx/SKILL.md` | Skill | Developer experience optimization workflow |
 | `skills/monorepo/SKILL.md` | Skill | Monorepo management workflow |
 | `skills/lint/SKILL.md` | Skill | Linting and code standards workflow |
@@ -8307,8 +8307,8 @@ Web Performance & SEO skills bring production-grade web optimization capabilitie
 
 ### Skills Overview
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | SEO | `/godmode:seo` | SEO Optimization — meta tags, structured data, Core Web Vitals, Open Graph, sitemap/robots.txt |
 | Webperf | `/godmode:webperf` | Web Performance — Lighthouse, bundle analysis, image optimization, critical CSS, fonts, caching |
 | PWA | `/godmode:pwa` | Progressive Web Apps — service workers, offline-first, manifest, push notifications, background sync |
@@ -8393,7 +8393,7 @@ The `pwa` skill builds production-grade Progressive Web Apps with offline suppor
 - Never request notification permission on first visit — ask after engagement
 - Update service workers carefully — a broken update can take down the entire app
 
-### Workflow Integration
+### In the Workflow
 
 The Web Performance & SEO skills integrate with the existing Godmode workflow:
 
@@ -8414,10 +8414,10 @@ The Web Performance & SEO skills integrate with the existing Godmode workflow:
 - **From `/godmode:pwa` to `/godmode:ship`:** PWA installability and offline support verified before deployment
 - **From `/godmode:a11y`:** Accessibility and SEO share concerns (semantic HTML, alt text, headings)
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Measure before optimizing | Every optimization requires before/after metrics |
 | 2 | SEO and performance are inseparable | Fast sites rank better, slow sites lose users |
 | 3 | Offline is a feature, not an edge case | PWAs must handle network absence gracefully |
@@ -8426,10 +8426,10 @@ The Web Performance & SEO skills integrate with the existing Godmode workflow:
 | 6 | Progressive enhancement | Core content works without JS, features enhance with it |
 | 7 | Test on real devices and networks | Lab scores approximate but field data reflects reality |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/seo/SKILL.md` | Skill | SEO optimization and technical auditing workflow |
 | `skills/webperf/SKILL.md` | Skill | Web performance optimization workflow |
 | `skills/pwa/SKILL.md` | Skill | Progressive Web App development workflow |
@@ -8449,7 +8449,7 @@ Three new skills extend Godmode into application state architecture, data modeli
 
 **Purpose:** Design and implement application state architecture with the right tool for each category of state.
 
-**Key capabilities:**
+**Features:**
 - **State classification:** Categorizes all application state into server state, client UI state, client domain state, form state, URL state, persisted state, computed/derived state, and machine state. Correct classification drives correct tool selection.
 - **Frontend state libraries:** Comparison matrices for Redux Toolkit, Zustand, Jotai, MobX, Pinia, and Signals with bundle size, DX, TypeScript support, and use-case recommendations.
 - **Server state management:** React Query, SWR, Apollo Client, and RTK Query setup with query key factories, staleness configuration, cache invalidation, and garbage collection.
@@ -8466,7 +8466,7 @@ Three new skills extend Godmode into application state architecture, data modeli
 
 **Purpose:** Design, evaluate, and evolve data models and schemas across relational and NoSQL databases.
 
-**Key capabilities:**
+**Features:**
 - **Entity-relationship modeling:** Entity catalog with attributes and volume estimates, relationship mapping with cardinality (1:1, 1:N, M:N), and text-based ER diagrams.
 - **Relational schema design:** Normalization from 1NF through BCNF with practical guidance. Full SQL DDL generation with UUIDs, constraints (CHECK, NOT NULL, UNIQUE, FK), indexes, and automatic `updated_at` triggers.
 - **Denormalization trade-offs:** Evidence-based denormalization decisions: when read frequency dominates writes, when joins are proven bottlenecks, when data is point-in-time (order snapshots), and when counter caches eliminate aggregation.
@@ -8483,7 +8483,7 @@ Three new skills extend Godmode into application state architecture, data modeli
 
 **Purpose:** Select, configure, and optimize ORMs and data access layers for production performance.
 
-**Key capabilities:**
+**Features:**
 - **ORM selection:** Framework-specific comparison matrices for TypeScript (Prisma, Drizzle, TypeORM, Sequelize), Python (SQLAlchemy, Django ORM, Tortoise), Go (GORM, Ent, sqlc), Ruby (ActiveRecord, Sequel), Java (Hibernate, jOOQ), C# (EF Core, Dapper), Rust (Diesel, SeaORM), and PHP (Eloquent, Doctrine).
 - **N+1 query detection and resolution:** Enable query logging, count queries per request, detect loop-based lazy loading, and apply ORM-idiomatic eager loading fixes (Prisma `include`, Django `select_related`/`prefetch_related`, Rails `includes`, GORM `Preload`, SQLAlchemy `joinedload`/`selectinload`).
 - **Connection pooling:** Pool sizing formula (cores * 2 + spindles), configuration for Prisma, Drizzle, SQLAlchemy, Rails, and GORM with min/max connections, idle timeout, max lifetime, statement timeout, and health checks. PgBouncer and serverless pooler guidance.
@@ -8495,7 +8495,7 @@ Three new skills extend Godmode into application state architecture, data modeli
 
 **Command:** `/godmode:orm` (`commands/godmode/orm.md`)
 
-### Skill Interactions
+### Skill Links
 
 The three State Management & Data Modeling skills form a vertical stack from frontend to database:
 
@@ -8511,10 +8511,10 @@ The three State Management & Data Modeling skills form a vertical stack from fro
 
 Each skill can run independently or as part of the data architecture pipeline. The orchestrator (`/godmode`) routes to the appropriate skill based on context.
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Classify before choosing | Separate server state from client state before selecting a library |
 | 2 | Access patterns drive schema | Design schemas for how data is read, not for normalization purity |
 | 3 | The ORM is a tool, not a religion | Use the ORM for CRUD, raw SQL for complex queries |
@@ -8523,10 +8523,10 @@ Each skill can run independently or as part of the data architecture pipeline. T
 | 6 | Single source of truth | Define schemas once (Zod, Protobuf), derive everything else |
 | 7 | Evolution must be backward compatible | Every schema change must deploy without downtime |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/state/SKILL.md` | Skill | State management design and implementation |
 | `skills/schema/SKILL.md` | Skill | Data modeling and schema design |
 | `skills/orm/SKILL.md` | Skill | ORM and data access optimization |
@@ -8559,7 +8559,7 @@ Three new skills extend Godmode into production hardening — building systems t
 **Key Patterns:**
 
 | Pattern | Purpose | Failure Mode |
-|---------|---------|-------------|
+|---------|--|--|
 | Circuit Breaker | Fast failure when dependency down | Cascading failures |
 | Retry + Backoff | Recover from transient failures | Temporary network issues |
 | Bulkhead | Isolate failure domains | Resource exhaustion |
@@ -8628,10 +8628,10 @@ Three new skills extend Godmode into production hardening — building systems t
 
 **Chaining:** `/godmode:logging` → `/godmode:observe` (metrics + tracing) → `/godmode:secure` (PII audit) → `/godmode:incident` (better debugging)
 
-### Design Principles for Error Handling & Resilience Skills
+### Principles for Error Handling & Resilience Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Classify before handling | Operational errors get retries and degradation; programmer errors get alerts and fixes |
 | 2 | Fail fast, recover gracefully | Circuit breakers prevent cascading; fallbacks maintain partial service |
 | 3 | Log at the boundary | One structured log entry per error at the catch point, not at every level |
@@ -8640,10 +8640,10 @@ Three new skills extend Godmode into production hardening — building systems t
 | 6 | Correlation is non-negotiable | Every log line includes requestId and traceId for cross-service debugging |
 | 7 | Timeouts are mandatory | Every external call has a timeout; timeout hierarchy is monotonically decreasing |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/resilience/SKILL.md` | Skill | System resilience patterns and implementation |
 | `skills/errorhandling/SKILL.md` | Skill | Error handling architecture and error boundaries |
 | `skills/logging/SKILL.md` | Skill | Structured logging, correlation IDs, and PII redaction |
@@ -8675,7 +8675,7 @@ Four new skills extend Godmode into the AI/LLM application development domain. T
 
 **Workflow:** Discovery -> Pattern Selection -> System Prompt Design -> Few-Shot Examples -> Reasoning Design -> Structured Output -> Injection Prevention -> Testing -> Versioning/A/B -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `prompts/<task>/prompt-spec.yaml` — Versioned prompt specification
 - `prompts/<task>/system-prompt.md` — System prompt content
 - `prompts/<task>/examples.yaml` — Few-shot examples
@@ -8698,7 +8698,7 @@ Four new skills extend Godmode into the AI/LLM application development domain. T
 
 **Workflow:** Discovery -> Embedding Selection -> Chunking Strategy -> Vector Store -> Ingestion Pipeline -> Retrieval Optimization -> Context Assembly -> Evaluation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `config/rag/<pipeline>-config.yaml` — Pipeline configuration
 - `src/rag/<pipeline>/` — Ingestion and retrieval code
 - `tests/rag/<pipeline>/eval.py` — Evaluation suite
@@ -8722,7 +8722,7 @@ Four new skills extend Godmode into the AI/LLM application development domain. T
 
 **Workflow:** Discovery -> Architecture Selection -> Loop Design -> Tool Design -> Memory Design -> Guardrails -> Evaluation -> Artifacts
 
-**Artifacts produced:**
+**Outputs:**
 - `config/agents/<agent>-config.yaml` — Agent configuration
 - `src/agents/<agent>/` — Agent implementation
 - `src/agents/<agent>/tools/` — Tool definitions
@@ -8747,7 +8747,7 @@ Four new skills extend Godmode into the AI/LLM application development domain. T
 
 **Workflow:** Discovery -> Dataset Design -> Framework Selection -> LLM-as-Judge -> Human Evaluation -> Benchmark Creation -> Regression Testing -> Statistical Analysis -> Report
 
-**Artifacts produced:**
+**Outputs:**
 - `evals/<system>/eval-config.yaml` — Evaluation configuration
 - `evals/<system>/dataset/` — Versioned evaluation dataset
 - `evals/<system>/judges/` — LLM judge prompts
@@ -8757,7 +8757,7 @@ Four new skills extend Godmode into the AI/LLM application development domain. T
 
 **Flags:** `--dataset`, `--judge`, `--human`, `--benchmark`, `--regression`, `--compare <a> <b>`, `--report`, `--ci`, `--calibrate`, `--significance`, `--history`, `--quick`, `--full`
 
-### Integration with Existing Skills
+### Integrations
 
 The AI/LLM development skills form a cohesive pipeline and integrate with existing Godmode skills:
 
@@ -8778,10 +8778,10 @@ The AI/LLM development skills form a cohesive pipeline and integrate with existi
 - **From `/godmode:secure`:** Security audit validates agent guardrails and prompt injection defenses
 - **From `/godmode:ship`:** Ship workflow checks evaluation metrics before deployment
 
-### Design Principles for AI/LLM Skills
+### Principles for AI/LLM Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Test before shipping | No AI component goes to production without evaluation. Metrics, not vibes. |
 | 2 | Version everything | Prompts, datasets, embeddings, and eval results are versioned artifacts. |
 | 3 | Defense in depth | Prompt injection, guardrails, output validation — layer defenses, never rely on one. |
@@ -8790,10 +8790,10 @@ The AI/LLM development skills form a cohesive pipeline and integrate with existi
 | 6 | Regression tests only grow | Every production failure becomes a regression test. The test set never shrinks. |
 | 7 | Safety is non-negotiable | Agent guardrails, prompt injection defenses, and output validation are not optional. |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/prompt/SKILL.md` | Skill | Prompt engineering workflow |
 | `skills/rag/SKILL.md` | Skill | RAG pipeline design and optimization |
 | `skills/agent/SKILL.md` | Skill | AI agent development workflow |
@@ -8835,8 +8835,8 @@ Repository setup and community management for open source projects.
 - Consensus (10-50 contributors): core team with 72-hour discussion periods
 - Steering Committee (50+ contributors): elected committee, working groups, RFC process
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--audit` | Audit only, no file creation |
 | `--governance <model>` | Set governance model (bdfl, consensus, committee) |
 | `--templates` | Issue and PR templates only |
@@ -8867,8 +8867,8 @@ Changelog generation and release communication.
 - Release communication across changelog, GitHub Release, blog, community channels
 - Support window for previous major version
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--setup` | Configure Conventional Commits + auto-changelog |
 | `--release <version>` | Generate changelog for specific version |
 | `--migration <from> <to>` | Generate migration guide |
@@ -8895,8 +8895,8 @@ License selection, compliance, and attribution.
 - Corporate CLA: company signs on behalf of employees
 - Automated enforcement via GitHub Actions
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--select` | Interactive license selection |
 | `--check` | Dependency compatibility check |
 | `--headers` | Add SPDX headers to source files |
@@ -8951,7 +8951,7 @@ Four new skills extend Godmode into workflow automation, system migration, legac
 
 **Workflow:** Discover Automation Context -> Classify Automation Type -> Design (Cron | Webhook | Workflow | Script | Taskfile) -> Generate with Error Handling -> Report
 
-**Artifacts produced:**
+**Outputs:**
 - `.github/workflows/*.yml` — GitHub Actions workflow files
 - `Makefile` or `Taskfile.yml` — Task runner configuration
 - `scripts/*.sh` or `scripts/*.py` — Automation scripts
@@ -8973,7 +8973,7 @@ Four new skills extend Godmode into workflow automation, system migration, legac
 
 **Workflow:** Migration Assessment -> Strategy Selection -> Migration Planning (language/framework/architecture specific) -> Data Migration Design -> Parallel Run Verification -> Rollback Planning -> Tracking & Reporting
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/migrations/<name>.md` — Migration plan and tracking document
 - Migration code (adapters, abstractions, feature flags, comparison scripts)
 
@@ -8996,7 +8996,7 @@ Four new skills extend Godmode into workflow automation, system migration, legac
 
 **Workflow:** Legacy Code Characterization -> Understanding (Code Archaeology) -> Adding Tests (Characterization / Golden Master / Approval) -> Incremental Modernization -> Dependency Upgrades -> Obsolescence Assessment -> Dead Code Removal -> Roadmap & Report
 
-**Artifacts produced:**
+**Outputs:**
 - `docs/legacy/<project>-assessment.md` — Codebase health assessment
 - `docs/legacy/<project>-roadmap.md` — Modernization roadmap
 - `tests/` — Characterization tests
@@ -9019,13 +9019,13 @@ Four new skills extend Godmode into workflow automation, system migration, legac
 
 **Workflow:** Understand Task -> Complexity Analysis -> Risk Factor Assessment -> Three-Point Estimation -> Task Decomposition -> Reference Class Comparison -> Sprint Planning (if applicable) -> Report
 
-**Artifacts produced:**
+**Outputs:**
 - Estimation reports (not committed to git — planning artifacts only)
 - Sprint planning summaries with capacity and load analysis
 
 **Flags:** `--sprint`, `--quick`, `--decompose`, `--risk`, `--compare <task>`, `--capacity <N>`, `--confidence <N>`, `--points`, `--batch`
 
-### Integration with Existing Skills
+### Integrations
 
 The workflow automation and productivity skills integrate into the Godmode workflow at these points:
 
@@ -9049,10 +9049,10 @@ The workflow automation and productivity skills integrate into the Godmode workf
 - **From `/godmode:migration` to `/godmode:plan`:** After migration planning, decompose each phase into implementable tasks
 - **From `/godmode:automate` to `/godmode:cicd`:** Automation workflows often integrate with CI/CD pipeline configuration
 
-### Design Principles for Workflow & Productivity Skills
+### Principles for Workflow & Productivity Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Ranges over point estimates | Never give a single number; always provide confidence intervals |
 | 2 | Tests before refactoring | Add characterization tests before modifying any legacy code |
 | 3 | Incremental over big bang | Strangler fig and incremental migration over full rewrites |
@@ -9061,10 +9061,10 @@ The workflow automation and productivity skills integrate into the Godmode workf
 | 6 | Evidence over intuition | Use reference class forecasting, not gut feelings, for estimates |
 | 7 | Security first | Patch vulnerabilities before modernizing; never hardcode secrets |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/automate/SKILL.md` | Skill | Task automation and workflow orchestration |
 | `skills/migration/SKILL.md` | Skill | System migration and technology transition |
 | `skills/legacy/SKILL.md` | Skill | Legacy code modernization |
@@ -9084,13 +9084,13 @@ The workflow automation and productivity skills integrate into the Godmode workf
 
 Skills for specialized infrastructure and application domains that are common across modern SaaS and web applications. These skills encode deep operational knowledge for networking, file storage, payment processing, and communication systems — domains where getting the details wrong leads to outages, security breaches, compliance violations, or revenue loss.
 
-### Skills in this Category
+### Category Skills
 
 #### `/godmode:network` — Network & DNS
 
 **Purpose:** Configure, troubleshoot, and secure networking infrastructure across DNS, SSL/TLS, CDN, load balancers, and VPC design.
 
-**Core capabilities:**
+**Capabilities:**
 - **DNS configuration:** Record design (A, CNAME, MX, TXT), propagation validation across multiple resolvers, email DNS (SPF, DKIM, DMARC), troubleshooting resolution failures
 - **SSL/TLS management:** Let's Encrypt with certbot, Kubernetes cert-manager with ClusterIssuers, certificate monitoring and auto-renewal, TLS version and cipher suite configuration, HSTS enforcement
 - **CDN configuration:** CloudFront distributions with cache behaviors, Cloudflare zones with WAF and bot protection, Fastly VCL configuration, cache strategy by asset type (HTML no-cache, hashed assets immutable, API bypass)
@@ -9108,7 +9108,7 @@ Skills for specialized infrastructure and application domains that are common ac
 
 **Purpose:** Design and implement file storage systems with upload architecture, media processing pipelines, cost optimization, and disaster recovery.
 
-**Core capabilities:**
+**Capabilities:**
 - **Object storage configuration:** S3/GCS/Azure Blob bucket design with folder structure, encryption (SSE-S3, KMS), versioning, block public access, bucket policies enforcing SSL and encryption
 - **File upload architecture:** Presigned URL direct-to-storage uploads (card data never touches server pattern for files), multipart uploads for large files with concurrent chunk uploads and retry, resumable uploads via tus protocol for unstable connections, server-side validation (MIME sniffing, file header inspection, virus scanning)
 - **Image processing pipeline:** Validation and malware scanning, EXIF stripping for privacy, variant generation (thumbnail, medium, large) with Sharp, WebP/AVIF conversion for size reduction, blur placeholder generation for progressive loading
@@ -9126,7 +9126,7 @@ Skills for specialized infrastructure and application domains that are common ac
 
 **Purpose:** Implement payment processing, subscription billing, invoicing, and tax calculation with PCI-DSS compliance and reliable webhook handling.
 
-**Core capabilities:**
+**Capabilities:**
 - **Payment gateway integration:** Stripe PaymentIntents with client-side card collection (PCI SAQ-A), PayPal Orders API v2 with server-side capture, Braintree drop-in UI, idempotency keys on all write operations, 3D Secure for SCA compliance
 - **Subscription billing:** Plan definition with monthly/annual pricing, trial periods with automatic conversion, proration on plan upgrades and downgrades, metered/usage-based billing with usage record reporting, dunning flow with escalating notifications (Day 0-3-7-14-21)
 - **Invoice generation:** Sequential invoice numbering (never reused, no gaps), line items with subtotal/tax/discount/total, PDF generation and S3 storage, customer portal for invoice history, multi-entity support with regional prefixes
@@ -9144,7 +9144,7 @@ Skills for specialized infrastructure and application domains that are common ac
 
 **Purpose:** Build email delivery and multi-channel notification systems with deliverability monitoring, bounce handling, and user preference management.
 
-**Core capabilities:**
+**Capabilities:**
 - **Email service integration:** SendGrid, SES, Postmark, and Resend with domain verification and API setup, provider comparison by use case (Resend for DX, Postmark for deliverability, SendGrid for marketing, SES for volume/cost)
 - **Email template design:** React Email components with TypeScript props for type-safe templates, MJML for maximum cross-client compatibility (Outlook, Gmail, Apple Mail), responsive single-column layout, blur-up image loading, plain text fallback for every HTML email
 - **Notification system architecture:** Event-driven multi-channel routing (email, push, SMS, in-app), per-user per-channel preference management, rate limiting per user (max N notifications/hour), digest batching for low-priority notifications, queue-based async delivery with retry
@@ -9158,7 +9158,7 @@ Skills for specialized infrastructure and application domains that are common ac
 
 **Flags:** `--email`, `--templates`, `--push`, `--sms`, `--inapp`, `--deliverability`, `--provider <name>`, `--dns`, `--preferences`, `--digest`
 
-### Skill Interactions
+### Skill Links
 
 The specialized domain skills integrate with the core Godmode workflow and each other:
 
@@ -9175,10 +9175,10 @@ Cross-skill integration:
 - **Secure -> All:** Security audit validates each domain (TLS config, bucket policies, PCI compliance, email authentication)
 - **Deploy -> Network:** Deployment updates DNS, CDN invalidation, load balancer target groups
 
-### Design Principles for Specialized Domain Skills
+### Principles for Specialized Domain Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Security by default | TLS everywhere, presigned URLs, PCI SAQ-A, email authentication |
 | 2 | Never proxy what you can direct | Direct-to-storage uploads, client-side card tokenization, CDN serving |
 | 3 | Cost awareness from day one | Lifecycle policies, CDN egress optimization, provider cost comparison |
@@ -9187,10 +9187,10 @@ Cross-skill integration:
 | 6 | Graceful degradation | Dunning for failed payments, soft bounce retry, CDN origin failover |
 | 7 | Separate concerns | Transactional vs marketing email, hot vs cold storage, auth vs application traffic |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/network/SKILL.md` | Skill | Network & DNS workflow |
 | `skills/storage/SKILL.md` | Skill | File Storage & CDN workflow |
 | `skills/pay/SKILL.md` | Skill | Payment & Billing Integration workflow |
@@ -9232,8 +9232,8 @@ Repository setup and community management for open source projects.
 - Consensus (10-50 contributors): core team with 72-hour discussion periods
 - Steering Committee (50+ contributors): elected committee, working groups, RFC process
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--audit` | Audit only, no file creation |
 | `--governance <model>` | Set governance model (bdfl, consensus, committee) |
 | `--templates` | Issue and PR templates only |
@@ -9264,8 +9264,8 @@ Changelog generation and release communication.
 - Release communication across changelog, GitHub Release, blog, community channels
 - Support window for previous major version
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--setup` | Configure Conventional Commits + auto-changelog |
 | `--release <version>` | Generate changelog for specific version |
 | `--migration <from> <to>` | Generate migration guide |
@@ -9292,8 +9292,8 @@ License selection, compliance, and attribution.
 - Corporate CLA: company signs on behalf of employees
 - Automated enforcement via GitHub Actions
 
-| Flag | Description |
-|------|-------------|
+| Opt | Desc |
+|--|--|
 | `--select` | Interactive license selection |
 | `--check` | Dependency compatibility check |
 | `--headers` | Add SPDX headers to source files |
@@ -9334,7 +9334,7 @@ License selection, compliance, and attribution.
 
 **Purpose:** Architect, build, and optimize games across engines and frameworks with production-grade game loops, physics, asset pipelines, and performance profiling.
 
-**Core capabilities:**
+**Capabilities:**
 - **Architecture patterns:** Entity-Component-System (ECS) with archetype storage and system scheduling, component-based architecture (Unity MonoBehaviour, Godot Node), and scene graph hierarchies. Decision matrix comparing cache performance, iteration speed, designer-friendliness, and parallelism across patterns.
 - **Game loop design:** Fixed timestep with interpolation — physics at 60Hz deterministic, rendering at VSync with alpha blending between states. Frame time capped at 250ms to prevent spiral of death. Input polling once per frame, fixed update N times per frame, late update for camera/UI, render with interpolation.
 - **Physics & collision detection:** Three-phase pipeline — broad phase (spatial hash, quadtree, sweep-and-prune, BVH), narrow phase (AABB, circle, SAT, GJK+EPA), resolution (position correction, impulse-based velocity, iterative constraint solver). Collision layers with bitmask filtering.
@@ -9353,7 +9353,7 @@ License selection, compliance, and attribution.
 
 **Purpose:** Create, audit, and optimize web animations with CSS, Framer Motion, GSAP, and Lottie, ensuring performance, accessibility, and cohesive motion design.
 
-**Core capabilities:**
+**Capabilities:**
 - **CSS animation foundations:** Transitions for state changes (hover, focus, toggle) with timing guide per interaction type. Keyframe animations for multi-step and looping effects. CSS scroll-driven animations (animation-timeline: scroll()/view()) for native scroll-linked motion. Easing reference: ease-out for entering, ease-in for exiting, spring overshoot via cubic-bezier.
 - **Animation library selection:** Decision matrix across Framer Motion, GSAP, Lottie, and CSS-only — comparing React integration, bundle size, spring physics, gesture support, layout animation, SVG, scroll-driven, timeline, performance, designer handoff, and licensing.
 - **Framer Motion patterns:** AnimatePresence for enter/exit, staggered lists with variants, layout animations with layoutId for shared elements, whileInView for scroll-triggered, whileHover/whileTap for gestures, drag with constraints and velocity-based swipe detection.
@@ -9373,7 +9373,7 @@ License selection, compliance, and attribution.
 
 **Purpose:** Build, optimize, and ship 3D web experiences with Three.js, React Three Fiber, WebGL/WebGPU, custom shaders, and WebXR for VR/AR.
 
-**Core capabilities:**
+**Capabilities:**
 - **Three.js / React Three Fiber architecture:** Scene setup with renderer configuration (antialias, pixel ratio capped at 2, color space, tone mapping, shadows). R3F declarative scene graph with Canvas, useFrame, useThree, useLoader, drei helpers. Component patterns with refs, per-frame updates, pointer events, and Suspense-based loading.
 - **WebGL/WebGPU fundamentals:** Rendering pipeline (vertex shader, rasterization, fragment shader, depth test, blending). WebGL 2 vs WebGPU comparison: GLSL vs WGSL, compute shaders, multi-threaded command buffers, bind groups, browser support. Selection guidance based on requirements.
 - **3D asset optimization:** GLTF optimization pipeline with gltf-transform — cleanup, mesh simplification, Draco compression (80-90% geometry savings), Meshopt (GPU-decodable), KTX2/Basis texture compression (75% GPU memory savings), GLB packing, gzip transfer. Texture format guide per map type. Size budgets for mobile and desktop.
@@ -9388,7 +9388,7 @@ License selection, compliance, and attribution.
 
 ---
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:gamedev  ->  /godmode:three  ->  /godmode:animation
@@ -9409,10 +9409,10 @@ License selection, compliance, and attribution.
 - **From `/godmode:animation` to `/godmode:a11y`:** Motion design implements animations; accessibility audit ensures all animations respect prefers-reduced-motion and do not cause vestibular issues.
 - **From `/godmode:gamedev` to `/godmode:perf`:** Game performance profiling with frame timing analysis. Perf skill provides CPU/memory profiling that complements game-specific GPU profiling.
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/gamedev/SKILL.md` | Skill | Game development architecture workflow |
 | `skills/animation/SKILL.md` | Skill | Animation and motion design workflow |
 | `skills/three/SKILL.md` | Skill | 3D web development workflow |
@@ -9430,7 +9430,7 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 
 **Purpose:** Build, maintain, and audit design systems with token architecture, component API standards, theme systems, design-to-code pipelines, and versioned distribution.
 
-**Key capabilities:**
+**Features:**
 - **Three-tier token architecture:** Primitives (raw values) -> Semantic tokens (meaning) -> Component tokens (component-specific). This layering enables theming without touching component code.
 - **Token categories:** Colors (neutral scales, brand scales, feedback), spacing (4px base unit, 16-step scale), typography (modular scale 1.25, font stacks, composite text styles), shadows (xs through 2xl + focus ring), borders, motion, z-index.
 - **Component API standards:** Enforced prop naming (variant, size, children, className), TypeScript typing (extend native HTML attributes), ref forwarding, compound component pattern, controlled/uncontrolled modes, sensible defaults.
@@ -9448,7 +9448,7 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 
 **Purpose:** Build complex, accessible, validated forms with state management, multi-step wizards, async validation, file uploads, and focus management.
 
-**Key capabilities:**
+**Features:**
 - **State management selection:** Decision matrix comparing React Hook Form, Formik, native useState, and server actions across re-renders, bundle size, TypeScript support, complexity handling, and learning curve.
 - **Validation patterns:** Zod schemas shared between client and server. Client-side validation on blur (first visit) and onChange (re-validation). Server-side validation with same schema. Async validation with debounce for uniqueness checks.
 - **Multi-step wizard forms:** Step-level schema validation, sessionStorage persistence (survives refresh), URL-synced step navigation, visual progress indicator with accessibility (aria-current="step"), back navigation preserving data.
@@ -9465,7 +9465,7 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 
 **Purpose:** Build interfaces that work across every viewport using CSS Grid, Flexbox, container queries, fluid typography, responsive images, print stylesheets, and touch/pointer adaptation.
 
-**Key capabilities:**
+**Features:**
 - **Layout strategies:** Mobile-first (min-width, progressive enhancement), desktop-first (max-width, graceful degradation), intrinsic (container queries, component-level responsiveness). Decision matrix for strategy selection.
 - **CSS Grid mastery:** Auto-fit/minmax for responsive card grids, named grid areas for complex dashboard layouts, subgrid for cross-card alignment, responsive grid area reassignment at breakpoints.
 - **Container queries:** Component-level responsive design independent of viewport. Container query units (cqi). Combined with Grid for sidebar-aware components. Named containers for targeted queries.
@@ -9480,7 +9480,7 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 
 **Command:** `/godmode:responsive` (`commands/godmode/responsive.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:designsystem  ->  /godmode:ui  ->  /godmode:a11y
@@ -9499,10 +9499,10 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 - **From `/godmode:responsive` to `/godmode:visual`:** Responsive layouts need visual regression testing across viewports. Visual skill captures screenshots at each breakpoint.
 - **From `/godmode:responsive` to `/godmode:perf`:** Responsive images and fluid design affect Core Web Vitals (LCP, CLS). Perf skill measures the impact.
 
-### Design Principles for UI Architecture Skills
+### Principles for UI Architecture Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Tokens are the single source of truth | Every visual value comes from a token; hardcoded values are violations |
 | 2 | Components follow uniform APIs | Same prop naming, typing, composition, and ref forwarding everywhere |
 | 3 | Accessibility is a baseline, not a feature | Every form has labels, every error has focus management, every component has keyboard support |
@@ -9511,10 +9511,10 @@ Three new skills extend Godmode's frontend capabilities into design system archi
 | 6 | Validation runs on both sides | Client validation for UX, server validation for security, shared schema for consistency |
 | 7 | The design system is a product | Version it, document it, distribute it, maintain it like any other dependency |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/designsystem/SKILL.md` | Skill | Design system architecture with tokens, themes, pipeline |
 | `skills/forms/SKILL.md` | Skill | Form architecture with validation, wizards, uploads |
 | `skills/responsive/SKILL.md` | Skill | Responsive design with Grid, container queries, images |
@@ -9532,8 +9532,8 @@ Platform-specific development skills bring specialized capabilities for emerging
 
 ### Skills Overview
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | Web3 | `/godmode:web3` | Blockchain & Web3 — Smart contracts (Solidity, Rust/Anchor), security auditing, token standards, DApp architecture, gas optimization |
 | IoT | `/godmode:iot` | IoT & Embedded Systems — Firmware architecture (FreeRTOS, Zephyr), MQTT/CoAP protocols, OTA updates, power optimization, fleet management |
 | Desktop | `/godmode:desktop` | Desktop Applications — Electron, Tauri, Qt architecture, auto-update, cross-platform builds, native API integration, code signing |
@@ -9641,8 +9641,8 @@ The `extension` skill builds browser extensions with Manifest V3 for Chrome, Fir
 
 ### Guiding Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Platform expertise over generic advice | Each skill provides deep, platform-specific guidance rather than surface-level recommendations |
 | 2 | Security is non-negotiable | Smart contract audits, firmware signing, extension CSP, code signing — security is baked into every workflow |
 | 3 | Distribution is part of the product | From gas deployment to app stores to package managers — the skill guides you through getting your software to users |
@@ -9650,10 +9650,10 @@ The `extension` skill builds browser extensions with Manifest V3 for Chrome, Fir
 | 5 | Standards compliance | ERC token standards, Manifest V3, XDG paths, semver — follow established standards rather than inventing custom approaches |
 | 6 | Power users are first-class | Gas optimization, power budgets, shell completions, keyboard shortcuts — expert-level features are not afterthoughts |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/web3/SKILL.md` | Skill | Blockchain & Web3 development workflow |
 | `skills/iot/SKILL.md` | Skill | IoT & Embedded Systems development workflow |
 | `skills/desktop/SKILL.md` | Skill | Desktop Application development workflow |
@@ -9675,8 +9675,8 @@ Concurrency, distribution, and scale skills bring systems engineering capabiliti
 
 ### Skills Overview
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | Concurrent | `/godmode:concurrent` | Concurrency & Parallelism -- thread safety, race detection, async patterns, actor model, deadlocks |
 | Distributed | `/godmode:distributed` | Distributed Systems Design -- CAP theorem, consensus (Raft, Paxos), distributed locks, sharding, consistency |
 | Scale | `/godmode:scale` | Scalability Engineering -- auto-scaling, read replicas, connection pooling, rate limiting, capacity planning |
@@ -9772,7 +9772,7 @@ The `reliability` skill implements SRE practices that balance velocity with prod
 - Runbooks are mandatory for every pageable alert
 - Incidents are learning opportunities -- blameless post-mortems
 
-### Workflow Integration
+### In the Workflow
 
 The Concurrency, Distribution & Scale skills integrate with the existing Godmode workflow:
 
@@ -9789,10 +9789,10 @@ The Concurrency, Distribution & Scale skills integrate with the existing Godmode
 /godmode:ship        -> Ship to production
 ```
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Safety before speed | Thread safety analysis before concurrent code |
 | 2 | Explicit trade-offs | CAP theorem and consistency level per operation |
 | 3 | Measure before scaling | Profile bottlenecks, do not guess |
@@ -9801,10 +9801,10 @@ The Concurrency, Distribution & Scale skills integrate with the existing Godmode
 | 6 | Test at the edges | Chaos testing, stress testing, partition testing |
 | 7 | Document decisions | Every architectural choice has written rationale |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/concurrent/SKILL.md` | Skill | Concurrency & Parallelism workflow |
 | `skills/distributed/SKILL.md` | Skill | Distributed Systems Design workflow |
 | `skills/scale/SKILL.md` | Skill | Scalability Engineering workflow |
@@ -9900,10 +9900,10 @@ Flags: `--audit`, `--django`, `--fastapi`, `--drf`, `--admin`, `--async`, `--orm
 /godmode:django → /godmode:api → /godmode:test → /godmode:deploy
 ```
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/nextjs/SKILL.md` | Skill | Next.js mastery with App Router, Server Components, data fetching, optimization |
 | `skills/react/SKILL.md` | Skill | React architecture with composition, state management, performance, testing |
 | `skills/node/SKILL.md` | Skill | Node.js backend with Express/Fastify/Hono/NestJS, streams, workers, production |
@@ -9925,7 +9925,7 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 
 **Purpose:** Build production-grade Spring Boot applications with auto-configuration best practices, Spring Security, Spring Data JPA, Actuator monitoring, and Spring Cloud microservices.
 
-**Key capabilities:**
+**Features:**
 - **Starter selection:** Matches project requirements to the correct Spring Boot starters with version-managed BOM dependencies.
 - **Auto-configuration audit:** Enforces critical production settings — OSIV disabled, `ddl-auto: validate`, graceful shutdown, HikariCP pool tuning, actuator endpoint restriction, and 12-factor externalized config.
 - **Spring Security:** Component-based `SecurityFilterChain` with deny-by-default, JWT/OAuth2 resource server, method-level security, CORS, and security event auditing.
@@ -9942,7 +9942,7 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 
 **Purpose:** Build production-grade Rails applications following the Rails Way — ActiveRecord patterns, Hotwire for modern interactivity, background jobs, and comprehensive RSpec testing.
 
-**Key capabilities:**
+**Features:**
 - **Rails conventions:** Enforces naming, structure, RESTful routes, and project organization including service objects, query objects, and concerns.
 - **ActiveRecord optimization:** Eager loading with `includes`/`preload`/`eager_load`, `strict_loading` for N+1 detection, scopes, counter caches, `find_each` for batch processing, and database indexes on all foreign keys.
 - **Hotwire (Turbo + Stimulus):** Turbo Drive for SPA-like navigation, Turbo Frames for partial page updates, Turbo Streams for real-time broadcasts, and Stimulus controllers for JavaScript behavior. Includes decision guide for when to use each.
@@ -9957,7 +9957,7 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 
 **Purpose:** Build production-grade Laravel applications with Eloquent ORM mastery, service container patterns, queue-driven architecture, and Pest testing.
 
-**Key capabilities:**
+**Features:**
 - **Eloquent ORM:** Models with relationships, scopes, PHP 8.1+ backed enum casts, accessor/mutator syntax, API Resources for response shaping, eager loading with `preventLazyLoading()`, and query optimization patterns (`withWhereHas`, `chunkById`, `cursor`).
 - **Service container:** Contracts (interfaces) bound in service providers, Action classes for single-responsibility operations, DTOs for typed data transfer, and pipeline pattern for sequential processing.
 - **Queue system:** Jobs with retry policies and exponential backoff, `WithoutOverlapping` and `ShouldBeUnique` middleware, events with queued listeners, broadcasting via Laravel Reverb for real-time, and multi-queue priority management.
@@ -9972,7 +9972,7 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 
 **Purpose:** Build production-grade FastAPI applications with Pydantic schemas, async-first architecture, dependency injection, and pytest/HTTPX testing.
 
-**Key capabilities:**
+**Features:**
 - **Pydantic model design:** Separate Create/Update/Response schemas, field validators and model validators, generic `PaginatedResponse[T]`, discriminated unions, `from_attributes=True` for ORM conversion, and Python 3.12+ type syntax.
 - **Dependency injection:** `Annotated` type aliases for clean signatures, yield dependencies for resource lifecycle, nested dependency chains, parameterized dependencies for role-based access, and `dependency_overrides` for testing.
 - **Async database access:** SQLAlchemy 2.0 with asyncpg driver, `Mapped[]` type annotations, `selectin` loading for async-safe eager loading, repository pattern for query encapsulation, and Alembic async migrations.
@@ -9983,7 +9983,7 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 
 **Command:** `/godmode:fastapi` (`commands/godmode/fastapi.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:spring   ->  /godmode:test  ->  /godmode:secure  ->  /godmode:deploy
@@ -10001,10 +10001,10 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 - **From framework skill to `/godmode:loadtest`:** Framework skill builds the service; load test validates it handles production traffic.
 - **From framework skill to `/godmode:optimize`:** Framework skill establishes patterns; optimize skill tunes queries, caching, and throughput.
 
-### Design Principles for Backend Framework Skills
+### Principles for Backend Framework Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Convention over configuration | Each framework has a "right way" — follow it, document deviations |
 | 2 | Production from day one | Every setting is production-grade; dev convenience is a profile, not a default |
 | 3 | ORM discipline | Eager loading, N+1 prevention, and query optimization are non-negotiable |
@@ -10013,10 +10013,10 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 | 6 | Async when async | FastAPI is async-first; Spring offers reactive; Rails and Laravel are request-per-thread — respect each model |
 | 7 | Framework-specific tooling | Use MockMvc not generic HTTP clients; use FactoryBot not raw SQL; use Pest not generic PHPUnit |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/spring/SKILL.md` | Skill | Spring Boot mastery — auto-config, Security, JPA, Actuator, Cloud, TestContainers |
 | `skills/rails/SKILL.md` | Skill | Ruby on Rails mastery — ActiveRecord, Hotwire, Sidekiq/Solid Queue, RSpec |
 | `skills/laravel/SKILL.md` | Skill | Laravel mastery — Eloquent, service container, queues, events, Sanctum, Pest |
@@ -10035,12 +10035,12 @@ Four framework-specific mastery skills that provide deep, opinionated guidance f
 ### Overview
 Skills for mastering the developer tooling ecosystem: containerization, terminal productivity, IDE configuration, and package management. This category focuses on the tools and environments developers use daily, optimizing workflows and eliminating friction from development to deployment.
 
-### Skills in this Category
+### Category Skills
 
 #### `/godmode:docker` — Docker Mastery
 **Purpose:** Create, optimize, and secure Docker configurations for containerized applications.
 
-**Core capabilities:**
+**Capabilities:**
 - **Dockerfile best practices:** Multi-stage builds with proper layer caching, language-specific patterns for Node.js, Python, Go, Rust, Java, and .NET
 - **Docker Compose:** Local development environments with health checks, volume management, service dependencies, and profile-based optional services
 - **Image size optimization:** Base image selection (Alpine, distroless, scratch), .dockerignore, layer reduction, dependency pruning — targeting 50-90% size reduction
@@ -10057,7 +10057,7 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 #### `/godmode:terminal` — Terminal & Shell Productivity
 **Purpose:** Optimize command-line workflows with shell scripting best practices, dotfile management, multiplexers, and modern CLI tools.
 
-**Core capabilities:**
+**Capabilities:**
 - **Shell scripting:** Strict mode (set -euo pipefail), proper quoting, argument parsing, error handling, trap-based cleanup, ShellCheck linting
 - **Dotfile management:** Git bare repo, GNU Stow, chezmoi, and yadm strategies for portable, version-controlled configurations
 - **Terminal multiplexers:** tmux configuration with vim-style navigation, development layout scripts, session management
@@ -10073,7 +10073,7 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 #### `/godmode:vscode` — IDE & Editor Configuration
 **Purpose:** Configure VS Code, Neovim, and JetBrains IDEs for maximum productivity with project-specific settings, debugging, and extensions.
 
-**Core capabilities:**
+**Capabilities:**
 - **VS Code settings:** Performance optimization, formatting on save, file exclusions, search configuration, language-specific overrides
 - **Extension recommendations:** Curated extension sets by project type (TypeScript, React, Python, Go, Rust, Docker/DevOps) with workspace-level recommendations
 - **Debug configurations:** Launch.json templates for Node.js, Next.js, Python/Django, Go, Jest, pytest with compound (full-stack) configurations
@@ -10090,7 +10090,7 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 #### `/godmode:npm` — Package Management
 **Purpose:** Manage JavaScript/TypeScript dependencies with the right package manager, secure lock files, workspace configuration, and vulnerability remediation.
 
-**Core capabilities:**
+**Capabilities:**
 - **Package manager selection:** Detailed comparison of npm, yarn, pnpm, and bun with recommendation matrix by project type (application, library, monorepo, CLI)
 - **Lock file management:** Commit strategy, CI frozen installs, conflict resolution, regeneration. Rules for never mixing lock files
 - **Workspace/monorepo configuration:** pnpm workspaces, Turborepo task orchestration, workspace protocol for internal references, shared dependency management
@@ -10104,7 +10104,7 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 
 **Flags:** `--audit`, `--outdated`, `--dedupe`, `--workspace`, `--publish`, `--migrate <to>`, `--compare`, `--cleanup`, `--lockfix`, `--overrides`, `--ci`
 
-### Skill Interactions
+### Skill Links
 | From | To | When |
 |------|----|------|
 | `/godmode:docker` | `/godmode:k8s` | Container ready for orchestration |
@@ -10122,7 +10122,7 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 | `/godmode:setup` | `/godmode:vscode` | Project setup includes IDE config |
 | `/godmode:setup` | `/godmode:npm` | Project setup includes dependency management |
 
-### Design Principles
+### Principles
 1. **Tools should be invisible** — The best tooling configuration is one you never think about. Format on save, lint on commit, build on push.
 2. **Reproducibility is paramount** — Lock files, pinned versions, committed configurations. Every developer gets the same experience.
 3. **Security is continuous** — Dependency auditing and container scanning are not one-time tasks. They run in CI on every commit.
@@ -10146,10 +10146,10 @@ Skills for mastering the developer tooling ecosystem: containerization, terminal
 /godmode:terminal --tools --> /godmode:vscode --settings --> /godmode:npm --workspace --> /godmode:docker --compose
 ```
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/docker/SKILL.md` | Skill | Docker mastery workflow |
 | `skills/terminal/SKILL.md` | Skill | Terminal and shell productivity workflow |
 | `skills/vscode/SKILL.md` | Skill | IDE and editor configuration workflow |
@@ -10238,7 +10238,7 @@ Four new skills extend Godmode into advanced protocol development and modern run
 
 **Flags:** `--cloudflare`, `--vercel`, `--lambda`, `--gcp`, `--deno`, `--cold-start`, `--cache`, `--state`, `--cost`, `--migrate`, `--test`
 
-### Integration with Existing Skills
+### Integrations
 
 The protocol and runtime skills integrate into the Godmode workflow:
 
@@ -10265,10 +10265,10 @@ The protocol and runtime skills integrate into the Godmode workflow:
 - **From `/godmode:deploy`:** Use `/godmode:edge` for edge deployment strategies and cold start optimization
 - **From `/godmode:cache`:** Use `/godmode:edge --cache` for edge-specific caching strategies
 
-### Design Principles
+### Principles
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Schema/proto is the contract | GraphQL schemas and proto files are designed before implementation |
 | 2 | Performance defenses are mandatory | Every GraphQL API has complexity limits; every gRPC service has health checks |
 | 3 | DataLoaders are not optional | Every GraphQL relation field uses a DataLoader — N+1 queries are bugs |
@@ -10278,10 +10278,10 @@ The protocol and runtime skills integrate into the Godmode workflow:
 | 7 | State consistency is explicit | Every edge state solution documents its consistency model |
 | 8 | Test at every layer | Native + compiled + integrated tests for WASM; local emulators for edge |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/graphql/SKILL.md` | Skill | GraphQL API development workflow |
 | `skills/grpc/SKILL.md` | Skill | gRPC and Protocol Buffers workflow |
 | `skills/wasm/SKILL.md` | Skill | WebAssembly development workflow |
@@ -10390,10 +10390,10 @@ Orchestrate:
   /godmode:prompt     -- Prompt engineering and optimization
 ```
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/finetune/SKILL.md` | Skill | Model fine-tuning with LoRA/QLoRA/full FT, dataset prep, training, merging, deployment |
 | `skills/embeddings/SKILL.md` | Skill | Embedding model selection, dimensionality reduction, hybrid search, versioning |
 | `skills/aiops/SKILL.md` | Skill | Guardrails, hallucination detection, cost/latency optimization, safety testing, monitoring |
@@ -10469,10 +10469,10 @@ These skills are designed to be invoked after `/godmode:comply` identifies which
 | 5 | Continuous over point-in-time | Build monitoring and automation, not just one-time assessments |
 | 6 | No legal advice | Identify technical gaps and provide implementation guidance; recommend legal counsel for interpretation |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/gdpr/SKILL.md` | Skill | Deep GDPR compliance — data mapping, consent, erasure, portability, DPIAs, transfers |
 | `skills/hipaa/SKILL.md` | Skill | Deep HIPAA compliance — PHI classification, encryption, access control, BAAs, breach notification |
 | `skills/soc2/SKILL.md` | Skill | Deep SOC 2 compliance — Trust Service Criteria, evidence automation, control testing, audit prep |
@@ -10492,7 +10492,7 @@ Three database specialization skills give Godmode deep, production-grade experti
 
 **Purpose:** Master advanced PostgreSQL features, extensions, replication, partitioning, performance tuning, and connection pooling.
 
-**Key capabilities:**
+**Features:**
 - **Advanced SQL features:** Recursive and materialized CTEs (with PostgreSQL 12+ optimization fence control), window functions (ROW_NUMBER, PERCENT_RANK, LAG/LEAD, moving averages with RANGE frames), GROUPING SETS/CUBE/ROLLUP for multi-dimensional aggregation, and FILTER clause for conditional aggregation.
 - **JSONB mastery:** GIN indexing (full and path-specific), containment operators (@>), SQL/JSON path queries (jsonb_path_query, jsonb_path_exists), JSONB aggregation (jsonb_agg, jsonb_build_object), atomic updates (jsonb_set, deep merge), and key removal.
 - **Full-text search:** Weighted tsvector columns with GIN indexes, ts_rank_cd scoring, ts_headline snippet generation, auto-update triggers, prefix matching for autocomplete, phrase search, and pg_trgm for fuzzy matching.
@@ -10512,7 +10512,7 @@ Three database specialization skills give Godmode deep, production-grade experti
 
 **Purpose:** Design Redis-based systems including caching, queues, pub/sub, session stores, rate limiters, leaderboards, and distributed locks.
 
-**Key capabilities:**
+**Features:**
 - **Data structure selection:** Complete guide covering strings (cache, counters, locks), hashes (objects, sessions), lists (queues, stacks, bounded collections), sets (membership, tags, set operations), sorted sets (leaderboards, priority queues, time-series indexes, rate limiting), and streams (event sourcing, consumer groups, reliable messaging) with memory encoding details and a decision matrix mapping 16 use cases to structures.
 - **Caching strategies:** Cache-aside (lazy loading), write-through, write-behind patterns with code examples, four invalidation strategies (TTL, event, version, tag-based), key design conventions, and cache stampede prevention (probabilistic early expiration, distributed lock on miss, background refresh).
 - **Queue and messaging:** Reliable queues with BRPOPLPUSH, priority queues with sorted sets, pub/sub for broadcasts, Redis Streams with consumer groups (XREADGROUP, XACK, XAUTOCLAIM for stuck messages), and a comparison matrix (Streams vs Pub/Sub vs Lists).
@@ -10532,7 +10532,7 @@ Three database specialization skills give Godmode deep, production-grade experti
 
 **Purpose:** Design data models for document, key-value, wide-column, graph, and time-series databases with database selection guidance.
 
-**Key capabilities:**
+**Features:**
 - **Database selection:** Decision matrix comparing MongoDB, DynamoDB, Cassandra, Neo4j, InfluxDB, TimescaleDB, Redis, and Elasticsearch across data model fit, access pattern support, consistency, and scale. Includes a decision tree and NoSQL vs SQL comparison with the default advice: "Start with PostgreSQL."
 - **MongoDB document modeling:** Five modeling patterns (embedded document, referenced document, bucket pattern for time-series, computed pattern for pre-aggregation, polymorphic pattern for mixed shapes), embedding vs referencing decision guide, compound and partial indexes, text indexes, wildcard indexes, TTL indexes, and multi-stage aggregation pipeline construction with optimization tips ($match early, $project early, allowDiskUse).
 - **DynamoDB single-table design:** Composite PK/SK patterns, entity packing in a single table, GSI strategies (inverted index, status index, sparse index, overloaded GSI), LSI vs GSI trade-offs, capacity planning (on-demand vs provisioned, WCU/RCU calculations), and hot partition prevention with sharding workarounds.
@@ -10575,10 +10575,10 @@ Three database specialization skills give Godmode deep, production-grade experti
 | 6 | Graph databases for relationships | If queries are "find connections" or "shortest path", a graph database is 100-1000x faster than relational JOINs. |
 | 7 | Redis data structure selection matters | Using String for a leaderboard instead of Sorted Set wastes memory and makes operations harder. Choose the right structure. |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/postgres/SKILL.md` | Skill | PostgreSQL mastery with CTEs, JSONB, FTS, extensions, replication, partitioning, tuning |
 | `skills/redis/SKILL.md` | Skill | Redis architecture with data structures, caching, queues, Cluster, Sentinel, Lua |
 | `skills/nosql/SKILL.md` | Skill | NoSQL design with MongoDB, DynamoDB, Cassandra, Neo4j, time-series databases |
@@ -10598,7 +10598,7 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 
 **Purpose:** Build, architect, and optimize Vue.js applications with expert-level guidance on every aspect of the Vue ecosystem.
 
-**Key capabilities:**
+**Features:**
 - **API style decision guide:** Composition API vs Options API — analyzes team experience, project scale, TypeScript needs, and Vue version to recommend the right approach. Defaults to Composition API with `<script setup>` for Vue 3.
 - **Composition API patterns:** Enforces a structured component ordering (imports, props, composables, state, computed, watchers, methods, lifecycle), typed `defineProps<T>` and `defineEmits<T>`, and composable extraction rules.
 - **Composable design:** `use*` prefix convention, `MaybeRef` arguments, internal loading/error handling, independent testability. Composables replace mixins completely.
@@ -10616,7 +10616,7 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 
 **Purpose:** Build, architect, and optimize Angular applications with expert-level guidance covering the full Angular platform from standalone components to NgRx.
 
-**Key capabilities:**
+**Features:**
 - **Architecture decision:** NgModules vs standalone components — analyzes Angular version, existing codebase size, team conventions, and migration timeline. Defaults to standalone for Angular 17+.
 - **Component architecture:** OnPush change detection on all components, signal-based inputs/outputs (Angular 17+), smart vs presentational component separation, `inject()` over constructor injection.
 - **RxJS patterns:** switchMap for search, concatMap for sequential mutations, forkJoin for parallel loads, shareReplay for caching, takeUntilDestroyed for auto-unsubscribe. Pattern guide maps use cases to operators.
@@ -10634,7 +10634,7 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 
 **Purpose:** Build, architect, and optimize Svelte applications with expert-level guidance on Svelte 5 runes, SvelteKit routing, and deployment.
 
-**Key capabilities:**
+**Features:**
 - **Reactivity model:** Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`, `$bindable`) vs legacy reactive declarations (`$:`). Decision guide based on Svelte version, migration timeline, and team readiness.
 - **State management:** Svelte 5 reactive classes (`.svelte.ts` files with `$state` and `$derived`) for new projects, classic `writable`/`readable`/`derived` stores for Svelte 4. Domain-scoped, minimal API surface.
 - **SvelteKit routing:** File-based routing with `+page.svelte`, `+page.server.ts` load functions, `+layout.svelte` for shared layouts, route groups `(name)` for URL-independent grouping, param matchers for type-safe params.
@@ -10652,7 +10652,7 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 
 **Purpose:** Configure, optimize, and build with Tailwind CSS using production-grade patterns that avoid class soup and maintain design system consistency.
 
-**Key capabilities:**
+**Features:**
 - **Configuration:** Tailwind 4.x CSS-first configuration (`@theme` block) and 3.x JS configuration. Extend-not-override philosophy, oklch color spaces, CSS custom properties for semantic tokens, typed config.
 - **Custom plugins:** `addComponents` for multi-property classes (`.btn`, `.card`), `addUtilities` for single-purpose utilities (`.text-balance`, `.scrollbar-hidden`), `addBase` for element defaults, `addVariant` for custom states (`hocus:`, `aria-selected:`).
 - **Responsive design:** Mobile-first breakpoint strategy, container queries for component-level responsiveness, fluid typography with `clamp()`, responsive grid/flexbox patterns, show/hide patterns by breakpoint.
@@ -10665,7 +10665,7 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 
 **Command:** `/godmode:tailwind` (`commands/godmode/tailwind.md`)
 
-### Integration with Existing Skills
+### Integrations
 
 ```
 /godmode:vue      ->  /godmode:tailwind  ->  /godmode:a11y  ->  /godmode:e2e  ->  /godmode:ship
@@ -10681,10 +10681,10 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 - **From `/godmode:tailwind` to `/godmode:visual`:** Tailwind dark mode and responsive patterns need visual regression testing to prevent regressions.
 - **Cross-framework:** `/godmode:tailwind` works with all three framework skills — the same design tokens and patterns apply regardless of component framework.
 
-### Design Principles for Frontend Framework Skills
+### Principles for Frontend Framework Skills
 
-| # | Principle | Implementation |
-|---|-----------|---------------|
+| # | Rule | How |
+|--|--|--|
 | 1 | Framework conventions first | Follow each framework's official style guide and recommended patterns |
 | 2 | Type safety is non-negotiable | TypeScript strict mode, typed props/state/routes in every framework |
 | 3 | Test the right layer | Test logic (composables/services) independently, test components for rendering |
@@ -10693,10 +10693,10 @@ Four new skills provide deep, framework-specific mastery for the most popular fr
 | 6 | SSR is a per-route decision | Not every page needs SSR; not every page should be client-only |
 | 7 | Design tokens drive styling | Tailwind config is the single source of truth — never hardcode values |
 
-### Files Created
+### Files
 
-| File | Type | Description |
-|------|------|-------------|
+| File | Type | Do |
+|--|--|--|
 | `skills/vue/SKILL.md` | Skill | Vue.js mastery — Composition API, Pinia, Vue Router, Nuxt, Vite, Vitest |
 | `skills/angular/SKILL.md` | Skill | Angular architecture — standalone components, RxJS, NgRx, Signals, DI, Jest |
 | `skills/svelte/SKILL.md` | Skill | Svelte/SvelteKit mastery — runes, stores, load functions, form actions, adapters |

@@ -66,7 +66,6 @@ spring:
     name: ${SERVICE_NAME:my-service}
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-# ... (condensed)
 ```
 
 ```
@@ -100,7 +99,6 @@ Design and implement security:
 public class SecurityConfig {
 
     @Bean
-# ... (condensed)
 ```
 
 ```
@@ -135,7 +133,6 @@ Design the data layer:
     @Index(name = "idx_orders_customer", columnList = "customer_id"),
     @Index(name = "idx_orders_status", columnList = "status")
 })
-# ... (condensed)
 ```
 
 ```
@@ -188,7 +185,6 @@ public class PaymentGatewayHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-# ... (condensed)
 ```
 
 ### Step 6: Spring Cloud Microservices
@@ -220,7 +216,6 @@ class OrderServiceTest {
 
     @Mock private OrderRepository orderRepository;
     @Mock private PaymentClient paymentClient;
-# ... (condensed)
 ```
 
 ```

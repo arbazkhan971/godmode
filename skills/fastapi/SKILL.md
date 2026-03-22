@@ -69,7 +69,6 @@ from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
-# ... (condensed)
 ```
 
 ```
@@ -105,7 +104,6 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-# ... (condensed)
 ```
 
 ```
@@ -139,7 +137,6 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-# ... (condensed)
 ```
 
 ```
@@ -176,7 +173,6 @@ from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
 @router.post("/orders", response_model=OrderResponse, status_code=201)
 async def create_order(
     data: OrderCreate,
-# ... (condensed)
 ```
 
 ```
@@ -214,7 +210,6 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from app.main import create_app
-# ... (condensed)
 ```
 
 ```

@@ -5,3 +5,4 @@ round	change	metric_before	metric_after	delta%	status	lines_changed
 3	remove_vague_words_passive_voice_trim_last_2	1.03	0.59	-42.7%	kept	-92
 4	eliminate_passive_voice_194_rewrites	0.59	0.02	-96.6%	kept	-194
 5	eliminate_ascii_table_borders_fix_dupes	3.78	1.60	-57.7%	kept	-276
+6	remove_condensed_placeholders_dedup_templates	1.60	0.87	-45.6%	kept	-250

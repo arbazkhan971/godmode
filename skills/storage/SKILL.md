@@ -186,7 +186,6 @@ async function processImage(key: string): Promise<ProcessedImage> {
   const image = sharp(original.Body as Buffer);
   const metadata = await image.metadata();
 
-# ... (condensed)
 ```
 
 #### Video Processing Pipeline
@@ -271,7 +270,6 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
   role   = aws_iam_role.replication.arn
 
   rule {
-# ... (condensed)
 ```
 
 ### Step 7: Commit and Report
@@ -327,7 +325,6 @@ grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage\|@azure/storage-blob" package.
 
 # Detect existing storage configuration
 grep -rl "S3Client\|S3\|getSignedUrl\|presignedUrl\|Storage\|BlobServiceClient" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
-# ... (condensed)
 ```
 
 ## Iteration Protocol

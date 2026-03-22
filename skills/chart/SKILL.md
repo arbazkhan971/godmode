@@ -109,7 +109,6 @@ function transformData(raw: RawData[]): ChartData {
     .filter(/* remove invalid entries */)
     .map(/* reshape to chart format */)
     .sort(/* order for readability */)
-# ... (condensed)
 ```
 
 ### Step 5: Chart Implementation
@@ -144,7 +143,6 @@ function createChart(container: HTMLElement, data: ChartData[], options: ChartOp
   const { width, height, margin } = options;
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-# ... (condensed)
 ```
 
 #### Recharts Implementation Pattern
@@ -155,7 +153,6 @@ function Chart({ data }: { data: ChartData[] }) {
   return (
     <ResponsiveContainer width="100%" height={400}>
       <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-# ... (condensed)
 ```
 
 ### Step 6: Responsive Design

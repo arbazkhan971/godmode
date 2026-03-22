@@ -65,7 +65,6 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-# ... (condensed)
 ```
 
 #### GitLab CI
@@ -76,7 +75,6 @@ stages:
   - build
   - security
   - deploy
-# ... (condensed)
 ```
 CACHING STRATEGY:
 | Cache Type | Key | Savings |
@@ -163,7 +161,6 @@ strategy:
   matrix:
     os: [ubuntu-latest, macos-latest]
     node-version: [18, 20, 22]
-# ... (condensed)
 ```
 
 ```
@@ -189,7 +186,6 @@ description: 'Install dependencies with caching'
 inputs:
   node-version:
     description: 'Node.js version'
-# ... (condensed)
 ```
 
 #### GitHub Actions — Reusable Workflow
@@ -200,7 +196,6 @@ on:
   workflow_call:
     inputs:
       environment:
-# ... (condensed)
 ```
 
 ### Step 8: Artifact Management

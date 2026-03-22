@@ -311,7 +311,7 @@ Phase 1 — WCAG Checklist Compliance Loop
 
   WCAG 2.1 AA COMPLIANCE MATRIX:
 | Criterion | Title | Auto | Manual | Status |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | 1.1.1 | Non-text Content | PASS | — | PASS |
 | 1.3.1 | Info and Relationships | PASS | CHECK | PENDING |
 | 1.4.3 | Contrast (Minimum) | FAIL | — | FAIL |
@@ -384,7 +384,7 @@ Phase 2 — Screen Reader Testing Protocol
 
   SCREEN READER TEST RESULTS:
 | Flow | VO+Safari | NVDA+FF | NVDA+Chrome | TalkBack |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Login | PASS | PASS | PASS | PASS |
 | Signup | PASS | FAIL* | PASS | PENDING |
 | Dashboard | PASS | PASS | PASS | PASS |
@@ -413,7 +413,7 @@ Phase 3 — Automated Regression Gate
 
   ACCESSIBILITY METRICS OVER TIME:
 | Release | Axe Critical | Axe Serious | Lighthouse | SR Flows |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | v1.0.0 | 5 | 12 | 72 | not tested |
 | v1.1.0 | 0 | 4 | 88 | 4/6 pass |
 | v1.2.0 | 0 | 0 | 96 | 6/6 pass |

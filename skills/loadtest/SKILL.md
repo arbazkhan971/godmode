@@ -136,7 +136,6 @@ import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 // Custom metrics
-# ... (condensed)
 ```
 
 #### Artillery (YAML)
@@ -147,7 +146,6 @@ config:
   phases:
     - duration: 120      # 2 min ramp-up
       arrivalRate: 5
-# ... (condensed)
 ```
 
 #### Locust (Python)
@@ -158,7 +156,6 @@ import json
 import time
 import random
 
-# ... (condensed)
 ```
 
 ### Step 4: Establish Baseline

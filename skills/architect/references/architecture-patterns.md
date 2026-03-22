@@ -25,7 +25,7 @@ Single deployable unit with strictly enforced internal module boundaries.
 |  | (schema-per-module or shared schema) |  |
 ```
 
-**Appropriate when:**
+**When to use:**
 - Team size 1-15 developers
 - Domain boundaries are still being discovered
 - Time to market is critical
@@ -53,7 +53,7 @@ Independently deployable services, each owning its data and communicating via AP
               Message Bus / API Gateway
 ```
 
-**Appropriate when:**
+**When to use:**
 - Team size 15+ developers across multiple squads
 - Domain boundaries are well-understood
 - Independent deployment and scaling per service is needed
@@ -72,7 +72,7 @@ Independently deployable services, each owning its data and communicating via AP
 
 Functions triggered by events, with fully managed infrastructure.
 
-**Appropriate when:**
+**When to use:**
 - Workload is bursty or unpredictable
 - Cost optimization (pay-per-invocation) is a priority
 - Team wants zero infrastructure management
@@ -100,7 +100,7 @@ Components communicate through asynchronous events via a message broker.
 └──────────┘    └───────────────┘    │  C       │
 ```
 
-**Appropriate when:**
+**When to use:**
 - Loose coupling between components is essential
 - Multiple consumers need to react to the same business events
 - Audit trail or event sourcing is required
@@ -136,7 +136,7 @@ Separate models for read and write operations.
 └───────────┘                   │  for fast reads │
 ```
 
-**Appropriate when:**
+**When to use:**
 - Read and write workloads differ drastically (100:1 read:write ratio)
 - Complex queries need denormalized read models
 - Event sourcing is used for the write side
@@ -177,7 +177,7 @@ Business logic at the center, all external concerns at the edges via well-define
 |  | es |  | Cache |  | Producer |  |
 ```
 
-**Appropriate when:**
+**When to use:**
 - Business logic is complex and must be insulated from infrastructure changes
 - Multiple interfaces serve the same domain (API, CLI, events, jobs)
 - Testability is a top priority
@@ -206,7 +206,7 @@ Traditional horizontal layering with strict dependency direction.
 Rule: Each layer only depends on the layer directly below it.
 ```
 
-**Appropriate when:**
+**When to use:**
 - Team is familiar with traditional enterprise patterns
 - Application has clear horizontal boundaries
 - Strict separation of concerns is the primary goal
@@ -243,7 +243,7 @@ DEPENDENCY RULE: Source code dependencies point INWARD only.
 Nothing in an inner circle can know about anything in an outer circle.
 ```
 
-**Appropriate when:**
+**When to use:**
 - Domain logic is the most valuable part of the system
 - Long-lived systems where infrastructure will change
 - Teams value testability and independence from frameworks
@@ -281,7 +281,7 @@ Provides: mTLS, load balancing, circuit breaking,
           retries, observability, traffic splitting
 ```
 
-**Appropriate when:**
+**When to use:**
 - Microservices architecture at scale (20+ services)
 - Consistent security (mTLS) between all services is required
 - Need traffic management (canary, A/B, rate limiting) without code changes
@@ -310,7 +310,7 @@ Extend microservice principles to the frontend.
   iframes / server-side composition
 ```
 
-**Appropriate when:**
+**When to use:**
 - Multiple teams own different parts of the UI
 - Teams need independent deployment of frontend features
 - Different parts of the UI have different technical requirements
@@ -329,7 +329,7 @@ Extend microservice principles to the frontend.
 
 Distribute processing and data across multiple nodes to eliminate central database bottleneck.
 
-**Appropriate when:**
+**When to use:**
 - Extreme scalability requirements (millions of concurrent users)
 - Variable and unpredictable load
 - Low-latency requirements for both reads and writes
@@ -359,7 +359,7 @@ Examples:
   - CI/CD pipelines (lint → test → build → deploy)
 ```
 
-**Appropriate when:**
+**When to use:**
 - Data flows through a series of transformations
 - Steps are independent and reusable
 - Processing can be parallelized across steps
@@ -391,7 +391,7 @@ PHASE 1:                    PHASE 2:                    PHASE 3:
 └──────────┘          └────────┴────────┘          └──────────┘
 ```
 
-**Appropriate when:**
+**When to use:**
 - Migrating from a legacy system that cannot be replaced all at once
 - Need to keep the system running during migration
 - Different parts of the system can be migrated independently
@@ -426,7 +426,7 @@ App + helper process     App + proxy to           App + format translator
                                circuit break)         translation)
 ```
 
-**Appropriate when:**
+**When to use:**
 - Sidecar: logging, monitoring, configuration, networking concerns
 - Ambassador: external service communication (retries, auth, circuit breaking)
 - Adapter: integrating with legacy systems or different protocols
@@ -452,7 +452,7 @@ Isolate groups of functionality into independent, self-contained cells for blast
            (routes users to their assigned cell)
 ```
 
-**Appropriate when:**
+**When to use:**
 - Blast radius containment is critical (outage should not affect all users)
 - Multi-region or multi-tenant isolation requirements
 - Regulatory requirements for data residency
@@ -482,7 +482,7 @@ TRADITIONAL LAYERED:              VERTICAL SLICE:
 | Entities |  | Model |  | Model |  | Model |
 ```
 
-**Appropriate when:**
+**When to use:**
 - Features are relatively independent of each other
 - Team wants to minimize cross-feature coupling
 - Easy to understand all code for a single feature in one place

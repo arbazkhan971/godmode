@@ -62,7 +62,6 @@ export default {
     const url = new URL(request.url);
 
     // Early rejection
-# ... (condensed)
 ```
 
 ### Step 3: Serverless Architecture

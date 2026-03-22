@@ -84,19 +84,9 @@ Never propose an approach that contradicts existing patterns unless the spec exp
 For each approach, provide exactly 5 fields:
 
 ```
-APPROACH A: {name}
-What: {1-2 sentences describing the approach}
-Why it wins: {main advantage}
-Why it loses: {main disadvantage}
-Files: {N} to create/modify
+For each approach (A, B, and optionally C if meaningfully different), fill this template:
 
-APPROACH B: {name}
-What: {1-2 sentences describing the approach}
-Why it wins: {main advantage}
-Why it loses: {main disadvantage}
-Files: {N} to create/modify
-
-APPROACH C: {name} (optional — only if meaningfully different)
+APPROACH {A|B|C}: {name}
 What: {1-2 sentences describing the approach}
 Why it wins: {main advantage}
 Why it loses: {main disadvantage}

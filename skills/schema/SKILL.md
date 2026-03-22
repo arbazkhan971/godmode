@@ -145,7 +145,6 @@ CREATE TABLE organizations (
     name        VARCHAR(255) NOT NULL,
     plan        VARCHAR(50) NOT NULL DEFAULT 'free'
                 CHECK (plan IN ('free', 'pro', 'enterprise')),
-# ... (condensed)
 ```
 
 ### Step 4: NoSQL Data Modeling
@@ -175,7 +174,6 @@ EMBED vs REFERENCE DECISION:
   _id: ObjectId("..."),
   orderNumber: "ORD-2025-001",
   customer: {
-# ... (condensed)
 ```
 
 #### 4b: Key-Value Store (Redis/DynamoDB)
@@ -264,7 +262,6 @@ export const userSchema = z.object({
   "type": "object",
   "required": ["email", "name", "role", "orgId"],
   "properties": {
-# ... (condensed)
 ```
 MULTI-TENANCY STRATEGIES:
 | Strategy          | Isolation          | Complexity        | Best For          |

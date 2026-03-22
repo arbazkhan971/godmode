@@ -128,7 +128,7 @@
 The skills that form the THINK-BUILD-OPTIMIZE-SHIP loop.
 
 | Skill | Phase | Description |
-|-------|-------|-------------|
+|-------|--|--|
 | `godmode` | Meta | The orchestrator — auto-detects phase and routes to the right skill |
 | `setup` | Meta | Configuration wizard for project-specific settings |
 | `verify` | Meta | Evidence gate — prove claims with real command output |
@@ -149,8 +149,8 @@ The skills that form the THINK-BUILD-OPTIMIZE-SHIP loop.
 
 Structural decisions that shape the system before code is written.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `architect` | System architecture design, C4 diagrams, pattern selection |
 | `rfc` | Technical proposals and Requests for Comments |
 | `adr` | Architecture Decision Records |
@@ -164,8 +164,8 @@ Structural decisions that shape the system before code is written.
 
 Building robust server-side systems.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `api` | REST, GraphQL, and gRPC API design and specification |
 | `graphql` | GraphQL schema, resolvers, and query optimization |
 | `grpc` | gRPC services with Protocol Buffers |
@@ -183,8 +183,8 @@ Building robust server-side systems.
 
 Protecting systems and meeting regulatory requirements.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `secure` | STRIDE + OWASP Top 10 security audit with red-team personas |
 | `auth` | Authentication flows — JWT, OAuth2, OIDC, SAML, mTLS |
 | `rbac` | Role-based, attribute-based, and relationship-based access control |
@@ -198,8 +198,8 @@ Protecting systems and meeting regulatory requirements.
 
 Ensuring code correctness, reliability, and maintainability.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `test` | TDD enforcement — RED-GREEN-REFACTOR discipline |
 | `unittest` | Unit testing mastery — AAA pattern, mocking, coverage |
 | `e2e` | End-to-end browser testing with Playwright and Cypress |
@@ -216,8 +216,8 @@ Ensuring code correctness, reliability, and maintainability.
 
 Deploying, running, and monitoring production systems.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `deploy` | Blue-green, canary, and progressive rollout strategies |
 | `k8s` | Kubernetes — Helm charts, deployments, scaling, troubleshooting |
 | `infra` | Infrastructure as Code — Terraform, CloudFormation, Pulumi, CDK |
@@ -236,8 +236,8 @@ Deploying, running, and monitoring production systems.
 
 Building user interfaces that are fast, accessible, and maintainable.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `ui` | UI component architecture, design systems, Storybook |
 | `a11y` | Accessibility testing — WCAG 2.1 AA/AAA compliance |
 | `visual` | Visual regression testing across browsers |
@@ -252,8 +252,8 @@ Building user interfaces that are fast, accessible, and maintainable.
 
 Machine learning, LLMs, and intelligent systems.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `ml` | ML experiment tracking, dataset validation, model evaluation |
 | `mlops` | ML model deployment — serving, versioning, drift detection |
 | `rag` | Retrieval-Augmented Generation — embeddings, vector stores |
@@ -265,8 +265,8 @@ Machine learning, LLMs, and intelligent systems.
 
 Making developers more productive and codebases more approachable.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `docs` | Documentation generation — API docs, READMEs, runbooks |
 | `onboard` | Codebase onboarding — architecture walkthroughs, code tours |
 | `learn` | Interactive learning and concept explanations |
@@ -285,8 +285,8 @@ Making developers more productive and codebases more approachable.
 
 Moving systems forward without breaking them.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `migrate` | Database migration and schema management across ORMs |
 | `migration` | Large-scale system and technology transition planning |
 | `prioritize` | Task prioritization with ICE/RICE and MoSCoW frameworks |
@@ -295,8 +295,8 @@ Moving systems forward without breaking them.
 
 Skills tailored to specific technology domains.
 
-| Skill | Description |
-|-------|-------------|
+| Skill | Desc |
+|--|--|
 | `web3` | Blockchain — smart contracts, DApps, token systems |
 | `iot` | IoT and embedded systems — firmware, MQTT, device protocols |
 | `gamedev` | Game development — game loops, ECS, physics systems |

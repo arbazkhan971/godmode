@@ -54,7 +54,7 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 **Diagnosis:** Every attempted change either failed the guard (test_cmd) or produced no metric improvement.
 
-**Checks and fixes:**
+**Fixes:**
 - Check: Is the metric command deterministic? (run 3x, compare values)
 - Check: Is baseline realistic? (margin may be too small)
 - Fix: Lower the improvement threshold or try a different optimization axis
@@ -71,7 +71,7 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 **Diagnosis:** The build skill requires `.godmode/plan.yaml` with unimplemented tasks. No plan means nothing to build.
 
-**Checks and fixes:**
+**Fixes:**
 - Check: Does `.godmode/plan.yaml` have incomplete tasks? (`grep -c "status: pending" .godmode/plan.yaml`)
 - Check: Are `test_cmd` and `build_cmd` in `plan.yaml` correct?
 - Fix: Re-run `/godmode:plan` to regenerate tasks
@@ -79,7 +79,7 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 ### /godmode:test adds 0 tests
 
-**Checks and fixes:**
+**Fixes:**
 - Check: Does the project have a test runner? (`cat package.json | grep test`)
 - Check: Is coverage tool configured?
 - Fix: Run `/godmode:setup` first to detect and configure the test framework
@@ -206,7 +206,7 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 When parallel agents modify overlapping files, the sequential merge step will hit conflicts. This is expected behavior -- the skill discards the conflicting merge and logs it as `DISCARDED`.
 
-**Checks and fixes:**
+**Fixes:**
 - Check: Does `plan.yaml` have file scope per task? If two tasks both touch `src/index.ts`, they will always conflict when merged in the same round.
 - Fix: Re-run `/godmode:plan` with explicit file assignments so tasks have non-overlapping `files` lists.
 - Fix: Manually reorder the plan so conflicting tasks run in separate rounds.
@@ -223,7 +223,7 @@ git worktree prune
 
 Each agent has a 5-minute timeout (optimize, build). If the task is too large or the verification suite is slow, agents will time out.
 
-**Checks and fixes:**
+**Fixes:**
 - Check: Is there an infinite loop in `test_cmd`?
 - Fix: Add timeout to guard commands (e.g., `timeout 60 npm test`)
 - Fix: Break large tasks into smaller ones. Each build task should touch 1-3 files.

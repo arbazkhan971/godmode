@@ -32,7 +32,7 @@ Trust boundaries:
 **Questions to answer for each authentication flow:**
 
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Passwords hashed with bcrypt/argon2/scrypt | `grep -r "bcrypt\|argon2\|scrypt" src/` | CRITICAL |
 | No plaintext password storage | `grep -rn "password" src/ --include="*.sql"` | CRITICAL |
 | JWT expiry configured | Check JWT creation code for `expiresIn` | HIGH |
@@ -45,7 +45,7 @@ Trust boundaries:
 
 #### Tampering (Data Integrity)
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Parameterized queries (no SQL injection) | `grep -rn "query.*\$\|query.*+\|execute.*f'" src/` | CRITICAL |
 | Input validation on all endpoints | Check controllers for validation middleware | HIGH |
 | File upload type validation | Check upload handlers for MIME type checks | HIGH |
@@ -57,7 +57,7 @@ Trust boundaries:
 
 #### Repudiation (Audit Trail)
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Authentication events logged | Check login/logout handlers for logging | MEDIUM |
 | Authorization failures logged | Check permission checks for logging | MEDIUM |
 | Data modifications logged | Check write operations for audit logging | MEDIUM |
@@ -66,7 +66,7 @@ Trust boundaries:
 
 #### Information Disclosure
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Stack traces not in production responses | Check error handler for environment check | HIGH |
 | Sensitive data not in logs | `grep -rn "password\|token\|secret" src/ --include="*.log*"` | HIGH |
 | API doesn't over-expose data | Check response serialization for field selection | MEDIUM |
@@ -78,7 +78,7 @@ Trust boundaries:
 
 #### Denial of Service
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Rate limiting on public endpoints | Check for rate limiter middleware | HIGH |
 | Request size limits | Check body parser limits | MEDIUM |
 | Pagination on list endpoints | Check for `limit` and `offset` in queries | HIGH |
@@ -89,7 +89,7 @@ Trust boundaries:
 
 #### Elevation of Privilege
 | Check | How to Verify | Severity if Missing |
-|-------|---------------|---------------------|
+|--|--|--|
 | Authorization on every endpoint | Check middleware chain for each route | CRITICAL |
 | Admin routes separated | Check for admin-specific middleware | HIGH |
 | No mass assignment | Check for `req.body` spread into models | HIGH |

@@ -48,7 +48,6 @@ on:
  pull_request:
  branches: [main]
  push:
-# ... (condensed)
 ```
 
 ```
@@ -77,7 +76,6 @@ on:
  pull_request:
  branches: [main]
  push:
-# ... (condensed)
 ```
 
 ```
@@ -107,7 +105,6 @@ on:
  pull_request:
  branches: [main]
  workflow_dispatch:
-# ... (condensed)
 ```
 
 ```
@@ -143,7 +140,6 @@ on:
  pull_request:
  branches: [main]
  push:
-# ... (condensed)
 ```
 
 ```
@@ -172,7 +168,6 @@ on:
  push:
  branches: [main]
  pull_request:
-# ... (condensed)
 ```
 
 ```
@@ -205,7 +200,6 @@ on:
  pull_request:
  branches: [main]
  push:
-# ... (condensed)
 ```
 
 ```

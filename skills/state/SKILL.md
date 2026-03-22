@@ -44,7 +44,6 @@ grep -r "from 'redux\|from 'zustand\|from 'jotai\|from 'mobx\|from '@tanstack/re
 # Count state-related files
 find src/ -name "*.store.*" -o -name "*.slice.*" -o -name "*.atom.*" -o -name "*.machine.*" -o -name "*Store.*" -o -name "*Context.*" | wc -l
 
-# ... (condensed)
 ```
 
 ### Step 2: Classify State by Category
@@ -138,7 +137,6 @@ import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface CartItem {
-# ... (condensed)
 ```
 
 #### 4c: Redux Toolkit Slice Example
@@ -150,7 +148,6 @@ import type { RootState } from '../store';
 
 interface CartItem {
   productId: string;
-# ... (condensed)
 ```
 
 #### 4d: Jotai Atoms Example
@@ -162,7 +159,6 @@ import { atomWithStorage } from 'jotai/utils';
 
 interface CartItem {
   productId: string;
-# ... (condensed)
 ```
 
 ### Step 5: Server State with React Query
@@ -221,7 +217,6 @@ Do NOT use a state machine when:
 // Key rules:
 //   - Type context and events explicitly
 //   - Use assign() for context mutations
-# ... (condensed)
 ```
 
 ### Step 7: State Persistence and Hydration

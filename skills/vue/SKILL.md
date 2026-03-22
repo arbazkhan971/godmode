@@ -26,7 +26,6 @@ cat package.json 2>/dev/null | grep -E '"vue"|"nuxt"|"@vue/"'
 # Detect Vue version (2 vs 3)
 cat node_modules/vue/package.json 2>/dev/null | grep '"version"'
 
-# ... (condensed)
 ```
 
 ## Workflow
@@ -111,7 +110,6 @@ import type { User } from '@/types'
 
 export function useUser(userId: MaybeRef<string>) {
  const user = ref<User | null>(null)
-# ... (condensed)
 ```
 
 Rules for composables:
@@ -144,7 +142,6 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
-# ... (condensed)
 ```
 
 Rules for Pinia:
@@ -178,7 +175,6 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
  history: createWebHistory(import.meta.env.BASE_URL),
-# ... (condensed)
 ```
 
 Rules:
@@ -211,7 +207,6 @@ export default defineNuxtConfig({
  routeRules: {
  '/': { prerender: true }, // SSG at build time
  '/blog/**': { isr: 60 }, // ISR — revalidate every 60s
-# ... (condensed)
 ```
 
 #### Nuxt Data Fetching Patterns
@@ -272,7 +267,6 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import UserCard from '@/components/UserCard.vue'
 
-# ... (condensed)
 ```
 
 #### Composable Testing
@@ -283,7 +277,6 @@ import { useUser } from '@/composables/useUser'
 import { flushPromises } from '@vue/test-utils'
 
 vi.mock('@/api', () => ({
-# ... (condensed)
 ```
 
 ### Step 9: Validation

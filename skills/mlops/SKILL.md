@@ -50,7 +50,6 @@ model_config_list:
     - name: "<model_name>"
       base_path: "/models/<model_name>"
       model_platform: "tensorflow"
-# ... (condensed)
 ```
 
 #### Option B: NVIDIA Triton Inference Server
@@ -80,7 +79,6 @@ from sagemaker.model import Model
 
 model = Model(
     image_uri=sagemaker.image_uris.retrieve("pytorch", region, version="2.0"),
-# ... (condensed)
 ```
 
 #### Option D: Custom Serving (FastAPI / Ray Serve)
@@ -91,7 +89,6 @@ import torch
 
 app = FastAPI()
 model = None
-# ... (condensed)
 ```
 
 ### Step 3: Inference Optimization
@@ -101,7 +98,7 @@ Optimize model for production inference:
 ```
 INFERENCE OPTIMIZATION:
 | Optimization | Latency | Throughput | Size | Accuracy |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Baseline (FP32) | <ms> | <req/s> | <MB> | <metric> |
 | FP16 quantization | <ms> | <req/s> | <MB> | <metric> |
 | INT8 quantization | <ms> | <req/s> | <MB> | <metric> |
@@ -140,7 +137,7 @@ Manage model versions with structured lifecycle:
 ```
 MODEL VERSION REGISTRY:
 | Version | Experiment | Metric | Status | Traffic | Deployed |
-|---|---|---|---|---|---|
+|--|--|--|--|--|---|
 | v3.1 | EXP-042 | F1=0.891 | CHAMPION | 90% | 2025-03 |
 | v3.2 | EXP-047 | F1=0.903 | CANARY | 10% | 2025-03 |
 | v3.0 | EXP-038 | F1=0.879 | ARCHIVED | 0% | 2025-02 |
@@ -188,7 +185,7 @@ Samples: champion=<N>, challenger=<N>
 
 Metrics:
 | Metric | Champion | Challenger | Delta | p-value |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | <primary> | <value> | <value> | <change> | <p> |
 | <guardrail 1> | <value> | <value> | <change> | <p> |
 | <guardrail 2> | <value> | <value> | <change> | <p> |
@@ -210,7 +207,7 @@ Reference: <training data distribution or baseline period>
 
 Data drift (input features):
 | Feature | Test | Statistic | p-value | Status |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | <feature 1> | KS test | <val> | <p> | <status> |
 | <feature 2> | chi-sq | <val> | <p> | <status> |
 | <feature 3> | PSI | <val> | — | <status> |

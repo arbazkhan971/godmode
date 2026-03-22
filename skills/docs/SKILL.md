@@ -38,7 +38,6 @@ find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | sort
 # Find OpenAPI/Swagger specs
 find . -name "openapi*" -o -name "swagger*" | head -20
 
-# ... (condensed)
 ```
 
 Present inventory:
@@ -65,7 +64,6 @@ openapi: "3.0.3"
 info:
   title: <API name>
   version: <version>
-# ... (condensed)
 ```
 
 For each endpoint:
@@ -86,7 +84,6 @@ Analyze code and add documentation:
  * @param <name> - <description from usage context>
  * @returns <description from return statements>
  * @throws <Error type> <when condition, from throw statements>
-# ... (condensed)
 ```
 
 #### For Python (docstrings):
@@ -97,7 +94,6 @@ def function_name(param: Type) -> ReturnType:
     Args:
         param: <description from usage context>
 
-# ... (condensed)
 ```
 
 Rules for code docs:

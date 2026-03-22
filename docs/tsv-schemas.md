@@ -35,8 +35,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `round` | integer | Round number (1-indexed, increments each loop iteration) |
 | 2 | `agent` | integer | Agent number within the round (1, 2, or 3) |
 | 3 | `change` | string | Brief description of the change the agent attempted |
@@ -60,8 +60,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `iteration` | integer | Loop iteration number (1-indexed) |
 | 2 | `error` | string | The error message or identifier being fixed |
 | 3 | `file` | string | File path where the fix was applied |
@@ -84,8 +84,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `round` | integer | Build round number (1-indexed) |
 | 2 | `task_id` | string | Task identifier from `.godmode/plan.yaml` |
 | 3 | `agent_time_ms` | integer | Wall-clock time the agent took in milliseconds |
@@ -107,8 +107,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `iteration` | integer | Loop iteration number (1-indexed) |
 | 2 | `test_file` | string | Path to the test file written or modified |
 | 3 | `lines_covered` | integer | Number of new source lines covered by this test |
@@ -132,8 +132,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `iteration` | integer | Loop iteration number (1-indexed) |
 | 2 | `symptom` | string | Observable symptom (error message, wrong output, crash) |
 | 3 | `root_cause` | string | Proven root cause after investigation |
@@ -157,8 +157,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `iteration` | integer | Loop iteration number (1-indexed) |
 | 2 | `category` | string | OWASP Top 10 category or STRIDE category (e.g. `Injection`, `Spoofing`) |
 | 3 | `persona` | string | One of: `External`, `Insider`, `Supply Chain`, `Infra` |
@@ -183,8 +183,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the ship action (e.g. `2026-03-20T14:30:00Z`) |
 | 2 | `type` | string | Ship type: `PR`, `deploy`, or `release` |
 | 3 | `commit_sha` | string | Git commit SHA (short or full) that was shipped |
@@ -207,8 +207,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp when the skill session ended |
 | 2 | `skill` | string | Name of the skill that ran (e.g. `optimize`, `fix`, `build`) |
 | 3 | `iters` | integer | Number of iterations the skill executed |
@@ -232,8 +232,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the review |
 | 2 | `scope` | string | Scope of review (branch name, directory, or file glob) |
 | 3 | `category` | string | Review category: `correctness`, `security`, `performance`, or `style` |
@@ -258,8 +258,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the design session |
 | 2 | `feature` | string | Name or short description of the feature being designed |
 | 3 | `approaches_considered` | integer | Number of approaches generated (typically 2-3) |
@@ -284,8 +284,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the evaluation |
 | 2 | `feature` | string | Feature or proposal being evaluated |
 | 3 | `persona` | string | One of: `Backend Architect`, `Frontend Lead`, `SRE`, `Security Researcher`, `Product Manager` |
@@ -311,8 +311,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the scenario analysis |
 | 2 | `feature` | string | Feature being analyzed |
 | 3 | `dimension` | string | One of the 12 dimensions (e.g. `Invalid Input`, `Concurrency`, `Network`, `Scale`) |
@@ -340,8 +340,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the planning session |
 | 2 | `feature` | string | Feature being decomposed into tasks |
 | 3 | `total_tasks` | integer | Number of tasks in the plan |
@@ -365,8 +365,8 @@ All TSV files use literal tab characters (`\t`) as delimiters. No quoting conven
 
 ### Columns
 
-| # | Column | Type | Description |
-|---|--------|------|-------------|
+| N | Col | Type | Use |
+|--|--|--|--|
 | 1 | `timestamp` | ISO-8601 | UTC timestamp of the verification |
 | 2 | `claim` | string | The claim being verified (one sentence) |
 | 3 | `command` | string | Shell command that was executed |

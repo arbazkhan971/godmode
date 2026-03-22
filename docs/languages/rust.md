@@ -33,7 +33,7 @@ verify_command: ./target/release/mytool --benchmark
 ### THINK Phase
 
 | Skill | Rust Adaptation |
-|-------|-----------------|
+|--|--|
 | **think** | Design traits, structs, and enums first. A Rust spec should define the type system before any logic. Include ownership and lifetime considerations. Decide between `&str` and `String`, `Vec` and slices, `Box` and `Arc`. |
 | **predict** | Expert panel evaluates ownership model, error handling strategy (`Result` vs. `anyhow` vs. `thiserror`), and async runtime choice (tokio vs. async-std). Request panelists with Rust depth (e.g., compiler contributor, embedded systems engineer). |
 | **scenario** | Explore edge cases around lifetime elision failures, borrow checker conflicts, `Send`/`Sync` bounds, `unsafe` usage, and panic paths. |
@@ -41,7 +41,7 @@ verify_command: ./target/release/mytool --benchmark
 ### BUILD Phase
 
 | Skill | Rust Adaptation |
-|-------|-----------------|
+|--|--|
 | **plan** | Each task specifies crates, modules, and traits. File paths follow Rust conventions (`src/service/user.rs`). Tasks note which traits they implement or require. Tasks identify where `unsafe` blocks are needed and why. |
 | **build** | TDD with `cargo test`. RED step writes `#[cfg(test)]` module or integration test. GREEN step implements the function. REFACTOR step reduces clones, introduces zero-copy patterns, tightens type constraints. |
 | **test** | Use `#[test]` functions, `assert_eq!`/`assert!` macros, and `#[should_panic]` for error cases. Use `proptest` or `quickcheck` for property-based testing. Integration tests go in `tests/`. |
@@ -50,7 +50,7 @@ verify_command: ./target/release/mytool --benchmark
 ### OPTIMIZE Phase
 
 | Skill | Rust Adaptation |
-|-------|-----------------|
+|--|--|
 | **optimize** | Target execution time, binary size, or memory usage. Guard rail: `cargo test` and `cargo clippy` must pass. Use `cargo bench` with Criterion for precise measurement. |
 | **debug** | Use `rust-gdb` or `rust-lldb` for debugging. Check borrow checker errors carefully — they often reveal design issues, not just syntax issues. |
 | **fix** | Autonomous fix loop handles test failures, clippy warnings, and compilation errors. Guard rail: `cargo test && cargo clippy -- -D warnings` |
@@ -59,7 +59,7 @@ verify_command: ./target/release/mytool --benchmark
 ### SHIP Phase
 
 | Skill | Rust Adaptation |
-|-------|-----------------|
+|--|--|
 | **ship** | Pre-flight: `cargo test && cargo clippy -- -D warnings && cargo fmt --check && cargo build --release`. Verify the release binary runs and produces expected output. |
 | **finish** | Ensure `Cargo.toml` version is bumped. Verify `cargo doc` generates clean documentation. For libraries, verify `cargo publish --dry-run` succeeds. |
 
@@ -68,7 +68,7 @@ verify_command: ./target/release/mytool --benchmark
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Test pass rate | `cargo test 2>&1 \| grep 'test result' \| head -1` | 0 failures |
 | Clippy warnings | `cargo clippy -- -D warnings 2>&1; echo $?` | exit code 0 |
 | Compile time (debug) | `/usr/bin/time cargo build 2>&1 \| grep real` | Project-specific |
@@ -375,7 +375,7 @@ Parallel agents handle tasks 2, 3, and 4 concurrently (independent parsers imple
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | String allocation during parse | Use `serde_json::from_str` with borrowed data | 185000 ns | 92000 ns | KEEP |
 | 2 | Unnecessary cloning in nested access | Use references with lifetime annotations | 92000 ns | 71000 ns | KEEP |
 | 3 | Default allocator is slow for many small allocs | Switch to `mimalloc` global allocator | 71000 ns | 58000 ns | KEEP |

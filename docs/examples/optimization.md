@@ -64,7 +64,7 @@ File: migrations/versions/add_published_date_index.py
 
 [creates migration, runs it, commits]
 
-Guard rails: ✓ tests pass, ✓ lint clean
+Guards: ✓ tests pass, ✓ lint clean
 Measurement: 1098ms → 612ms → 598ms → 605ms
 Median: 605ms (from 1098ms, -44.9%)
 Verdict: KEEP ✓
@@ -83,9 +83,9 @@ category, thumbnail_url). The article body (avg 15KB) is fetched but not used.
 Change: Add explicit column selection to the list query.
 File: app/services/article_service.py
 
-[modifies code, commits]
+[modifies code, commits — iter 2]
 
-Guard rails: ✓ tests pass, ✓ lint clean
+Guard check 3: ✓ tests pass, ✓ lint clean
 Measurement: 605ms → 412ms → 398ms → 405ms
 Median: 405ms (from 605ms, -33.1%)
 Verdict: KEEP ✓
@@ -103,9 +103,9 @@ should reduce transfer time.
 Change: Add GZipMiddleware to FastAPI.
 File: app/main.py
 
-[modifies code, commits]
+[modifies code, commits — iter 3]
 
-Guard rails: ✓ tests pass, ✓ lint clean
+Guard check 4: ✓ tests pass, ✓ lint clean
 Measurement: 405ms → 387ms → 391ms → 382ms
 Median: 387ms (from 405ms, -4.4%)
 Verdict: KEEP ✓
@@ -124,9 +124,9 @@ queue for connections. Increasing to 20 might improve p95.
 Change: Increase pool_size to 20 in database configuration.
 File: app/config/database.py
 
-[modifies code, commits]
+[modifies code, commits — iter 4]
 
-Guard rails: ✓ tests pass, ✓ lint clean
+Guard check 5: ✓ tests pass, ✓ lint clean
 Measurement: 387ms → 395ms → 401ms → 398ms
 Median: 398ms (from 387ms, +2.8%)
 Verdict: REVERT
@@ -145,7 +145,7 @@ Redis cache would eliminate database hits for repeated requests.
 Change: Add Redis cache decorator to list_articles().
 File: app/services/article_service.py
 
-[modifies code, commits]
+[modifies code, commits — iter 5]
 
 Guard rails: ✗ TEST FAILURE — "test_article_creation_appears_in_list" fails
 because newly created article doesn't appear when cache is warm.
@@ -166,9 +166,9 @@ would make all pages equally fast.
 Change: Replace OFFSET with WHERE published_date < :cursor.
 File: app/services/article_service.py
 
-[modifies code, commits]
+[modifies code, commits — iter 6]
 
-Guard rails: ✓ tests pass, ✓ lint clean
+Guard check 6: ✓ tests pass, ✓ lint clean
 Measurement: 387ms → 342ms → 351ms → 348ms
 Median: 348ms (from 387ms, -10.1%)
 Verdict: KEEP ✓

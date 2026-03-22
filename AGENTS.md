@@ -227,7 +227,7 @@ When multiple agents complete work in the same round:
 
 Claude Code has native `Agent()` and `EnterWorktree`/`ExitWorktree` tools. Full parallel execution is supported.
 
-**Dispatch pattern:**
+**Dispatch:**
 1. Spawn `planner` agent to decompose a goal into rounds of parallel tasks
 2. Spawn `explorer` agent to map the codebase before builders start
 3. Spawn multiple `builder` agents in parallel (one per task, each in its own worktree, each following a skill)
@@ -243,7 +243,7 @@ Claude Code has native `Agent()` and `EnterWorktree`/`ExitWorktree` tools. Full 
 
 These platforms lack native `Agent()` and worktree tools. Execute the same workflow sequentially in a single session.
 
-**Dispatch pattern:**
+**Dispatch:**
 1. Run the planner role: decompose the goal into tasks
 2. Run the explorer role: map the codebase
 3. Run each builder task one at a time: implement, test, commit, then move to the next
@@ -259,7 +259,7 @@ These platforms lack native `Agent()` and worktree tools. Execute the same workf
 
 Cursor supports background agents with its own dispatch model. Godmode adapts as follows:
 
-**Dispatch pattern:**
+**Dispatch:**
 1. Use Cursor's background agent capability to run builder tasks concurrently
 2. Each background agent receives strict file scoping — Cursor enforces that agents only modify their assigned files
 3. The orchestrator polls for completion and merges results in dispatch order

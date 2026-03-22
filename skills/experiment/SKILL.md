@@ -125,7 +125,6 @@ import murmurhash3 from 'murmurhash3js';
 interface ExperimentConfig {
  id: string;
  salt: string; // unique per experiment, prevents correlated assignments
-# ... (condensed)
 ```
 
 ### Step 6: Statistical Methods

@@ -29,7 +29,6 @@ CSS approach: <Tailwind/CSS Modules/SCSS/CSS-in-JS>
 
 Target devices:
   Mobile (portrait):   320px - 480px
-    # ... (condensed)
 Issues detected: <N>
 ```
 
@@ -44,7 +43,6 @@ LAYOUT STRATEGY COMPARISON:
 | Fluid | Percentage/relative units | Simple layouts, text-heavy |
 |  | Scales continuously | Content sites, blogs |
 │               │                          │                               │
-    # ... (condensed)
 ```
 
 #### Mobile-First Breakpoint System
@@ -55,7 +53,6 @@ LAYOUT STRATEGY COMPARISON:
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
-# ... (condensed)
 ```
 
 #### Desktop-First Breakpoint System
@@ -66,7 +63,6 @@ LAYOUT STRATEGY COMPARISON:
 .sidebar-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-# ... (condensed)
 ```
 
 ### Step 3: CSS Grid Mastery
@@ -80,7 +76,6 @@ Implement responsive grid layouts:
   grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
   gap: var(--spacing-6);
 }
-# ... (condensed)
 ```
 
 #### Subgrid for Alignment
@@ -91,7 +86,6 @@ Implement responsive grid layouts:
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--spacing-6);
 }
-# ... (condensed)
 ```
 
 ### Step 4: Container Queries
@@ -105,7 +99,6 @@ Implement component-level responsive design:
   container-name: card;
 }
 
-# ... (condensed)
 ```
 
 #### Container Query Units
@@ -116,7 +109,6 @@ Implement component-level responsive design:
 }
 
 .card__image {
-# ... (condensed)
 ```
 
 #### Container Query + Grid Pattern
@@ -127,7 +119,6 @@ Implement component-level responsive design:
 }
 
 .widget-list {
-# ... (condensed)
 ```
 
 ### Step 5: Flexbox Patterns
@@ -141,7 +132,6 @@ Essential Flexbox patterns for responsive layouts:
   flex-wrap: wrap;
   align-items: center;
   gap: var(--spacing-2);
-# ... (condensed)
 ```
 
 #### Holy Grail Layout
@@ -152,7 +142,6 @@ Essential Flexbox patterns for responsive layouts:
   flex-direction: column;
   min-height: 100dvh;
 }
-# ... (condensed)
 ```
 
 #### Flexbox Wrapping Cards
@@ -163,7 +152,6 @@ Essential Flexbox patterns for responsive layouts:
   flex-wrap: wrap;
   gap: var(--spacing-4);
 }
-# ... (condensed)
 ```
 
 ### Step 6: Fluid Typography and Spacing
@@ -177,7 +165,6 @@ Implement continuously scaling typography:
   --fluid-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
   --fluid-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
   --fluid-lg: clamp(1.125rem, 0.95rem + 0.875vw, 1.5rem);
-# ... (condensed)
 ```
 
 #### Fluid Spacing
@@ -188,7 +175,6 @@ Implement continuously scaling typography:
   --fluid-space-md: clamp(1rem, 0.8rem + 1vw, 1.5rem);
   --fluid-space-lg: clamp(1.5rem, 1rem + 2.5vw, 3rem);
   --fluid-space-xl: clamp(2rem, 1rem + 5vw, 5rem);
-# ... (condensed)
 ```
 
 ### Step 7: Responsive Images and Art Direction
@@ -202,7 +188,6 @@ Optimize images for every viewport:
   srcset="
     hero-400.jpg 400w,
     hero-800.jpg 800w,
-# ... (condensed)
 ```
 
 #### Art Direction with <picture>
@@ -213,7 +198,6 @@ Optimize images for every viewport:
   <source
     media="(max-width: 639px)"
     srcset="hero-mobile-400.jpg 400w, hero-mobile-800.jpg 800w"
-# ... (condensed)
 ```
 
 #### Modern Image Formats
@@ -234,7 +218,6 @@ Optimize images for every viewport:
   background-position: center;
   aspect-ratio: 4 / 3;
 }
-# ... (condensed)
 ```
 
 ### Step 8: Print Stylesheets
@@ -247,7 +230,6 @@ Ensure content prints well:
   * {
     background: white !important;
     color: black !important;
-# ... (condensed)
 ```
 
 ### Step 9: Touch vs Pointer Interactions
@@ -261,7 +243,6 @@ Handle differences between touch, mouse, and stylus input:
     padding: var(--spacing-2) var(--spacing-4);
     min-height: auto;
   }
-# ... (condensed)
 ```
 
 #### Touch-Specific Behaviors
@@ -272,7 +253,6 @@ Handle differences between touch, mouse, and stylus input:
 }
 
 .horizontal-scroll {
-# ... (condensed)
 ```
 
 #### Responsive Interaction Patterns
@@ -283,7 +263,6 @@ import { useState, useEffect } from 'react';
 export function usePointerType(): 'fine' | 'coarse' | 'none' {
   const [pointer, setPointer] = useState<'fine' | 'coarse' | 'none'>(() => {
     if (typeof window === 'undefined') return 'fine';
-# ... (condensed)
 ```
 
 ### Step 10: Responsive Data Tables
@@ -297,7 +276,6 @@ Handle tables that don't fit on small screens:
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-# ... (condensed)
 ```
 
 #### Stack Pattern (Cards on Mobile)
@@ -308,7 +286,6 @@ Handle tables that don't fit on small screens:
     display: none; /* Hide header on mobile */
   }
 
-# ... (condensed)
 ```
 
 ### Step 11: Responsive Audit Report
@@ -328,7 +305,6 @@ RESPONSIVE DESIGN AUDIT:
   Viewport Testing
   320px (small mobile):  PASS / FAIL (<N> issues)
   375px (iPhone):        PASS / FAIL (<N> issues)
-    # ... (condensed)
 ```
 
 Scoring:

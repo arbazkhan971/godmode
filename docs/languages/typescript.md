@@ -33,7 +33,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/ap
 ### THINK Phase
 
 | Skill | TypeScript Adaptation |
-|-------|----------------------|
+|--|--|
 | **think** | Design types and interfaces first. A TypeScript spec should define the shape of data before any logic. Include `interface` and `type` definitions in the spec. |
 | **predict** | Expert panel evaluates type safety, runtime performance, and DX. Request panelists with TypeScript depth (e.g., library author, Node.js core contributor). |
 | **scenario** | Explore edge cases around `null`, `undefined`, union types, generic constraints, and async error boundaries. |
@@ -41,7 +41,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/ap
 ### BUILD Phase
 
 | Skill | TypeScript Adaptation |
-|-------|----------------------|
+|--|--|
 | **plan** | Each task should specify which types/interfaces it introduces. File paths use `.ts` / `.tsx` extensions. Tasks should note whether they touch shared types in a `types/` directory. |
 | **build** | TDD with Vitest or Jest. RED step writes a `.test.ts` file with type-safe mocks. GREEN step implements the module. REFACTOR step tightens types (remove `any`, add generics). |
 | **test** | Use `describe`/`it` blocks. Mock external dependencies with `vi.mock()` or `jest.mock()`. Type-check test files — do not use `@ts-ignore` in tests. |
@@ -50,7 +50,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/ap
 ### OPTIMIZE Phase
 
 | Skill | TypeScript Adaptation |
-|-------|----------------------|
+|--|--|
 | **optimize** | Target bundle size (tree-shaking), startup time, or API response time. Verify with `tsc --noEmit` as a guard rail on every iteration. |
 | **debug** | Use source maps for stack trace mapping. Check `tsconfig.json` compiler options when debugging unexpected behavior. |
 | **fix** | Autonomous fix loop handles type errors, test failures, and lint violations. Guard rail: `tsc --noEmit` must exit 0. |
@@ -59,7 +59,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/ap
 ### SHIP Phase
 
 | Skill | TypeScript Adaptation |
-|-------|----------------------|
+|--|--|
 | **ship** | Pre-flight: `tsc --noEmit && npm test && npm run build`. Verify the compiled output exists and the build artifact is valid. |
 | **finish** | Ensure `.d.ts` declaration files are generated if shipping a library. Verify `exports` field in `package.json`. |
 
@@ -68,7 +68,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/ap
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Type coverage | `npx type-coverage --at-least 95` | >= 95% |
 | Strict mode violations | `npx tsc --noEmit 2>&1 \| grep -c "error TS"` | 0 |
 | Bundle size (server) | `du -b dist/index.js \| cut -f1` | Project-specific |
@@ -295,7 +295,7 @@ Parallel agents handle tasks 3, 4, and 5 concurrently (no shared file dependenci
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | N+1 query on task list | Add Prisma `include` for relations | 120ms | 68ms | KEEP |
 | 2 | No response compression | Add `compression` middleware | 68ms | 52ms | KEEP |
 | 3 | Prisma client instantiated per request | Singleton pattern | 52ms | 48ms | KEEP |

@@ -49,7 +49,6 @@ gitleaks detect --source . --verbose
 # Scan git history for past leaks
 gitleaks detect --source . --log-opts="--all" --verbose
 
-# ... (condensed)
 ```
 
 ```
@@ -90,7 +89,6 @@ vault operator init -key-shares=5 -key-threshold=3
 # Enable secrets engine
 vault secrets enable -path=app kv-v2
 
-# ... (condensed)
 ```
 
 #### AWS Secrets Manager
@@ -101,7 +99,6 @@ aws secretsmanager create-secret \
   --secret-string '{"username":"admin","password":"rotated-pass","host":"db.example.com"}'
 
 # Enable automatic rotation
-# ... (condensed)
 ```
 
 #### GCP Secret Manager
@@ -112,7 +109,6 @@ echo -n "super-secret-value" | gcloud secrets create api-key \
   --replication-policy="automatic"
 
 # Add a new version (rotation)
-# ... (condensed)
 ```
 
 ### Step 4: .env File Management
@@ -126,7 +122,6 @@ JWT_SECRET=development-secret-change-in-production
 REDIS_URL=redis://localhost:6379
 STRIPE_KEY=sk_test_placeholder
 AWS_REGION=us-east-1
-# ... (condensed)
 ```
 
 #### .gitignore Verification
@@ -239,7 +234,6 @@ repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.0
     hooks:
-# ... (condensed)
 ```
 
 ```

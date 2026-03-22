@@ -204,7 +204,6 @@ info:
   version: "<version>"
   description: "<API description>"
   contact:
-# ... (condensed)
 ```
 
 ### Step 9: Validation

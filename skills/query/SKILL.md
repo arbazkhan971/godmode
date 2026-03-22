@@ -42,7 +42,6 @@ If the query comes from an ORM, extract the generated SQL first:
 
 # Django: use django.db.connection.queries or django-debug-toolbar
 python -c "
-# ... (condensed)
 ```
 
 ### Step 2: Analyze Current Query Performance
@@ -58,7 +57,6 @@ EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) <query>;
 -- PostgreSQL: without executing (safe for destructive queries)
 EXPLAIN (COSTS, FORMAT JSON) <query>;
 
-# ... (condensed)
 ```
 
 #### 2b: Interpret EXPLAIN Output
@@ -101,7 +99,6 @@ db.collection.find(<query>).explain("executionStats")
 // Key fields to check:
 // executionStats.totalDocsExamined vs executionStats.nReturned
 //   (if ratio > 10:1, you need a better index)
-# ... (condensed)
 ```
 
 #### 2d: Analyze Redis Commands
@@ -113,7 +110,6 @@ SLOWLOG GET 10
 # Monitor commands in real-time (use briefly -- impacts performance)
 MONITOR
 
-# ... (condensed)
 ```
 
 ### Step 3: Diagnose Performance Issues
@@ -256,7 +252,6 @@ FROM users u;
 
 -- OPTIMIZED: JOIN with aggregation
 SELECT u.*, COALESCE(o.order_count, 0) AS order_count
-# ... (condensed)
 ```
 
 #### 4c: ORM-Level Optimizations
@@ -268,7 +263,6 @@ for order in Order.objects.all():
     print(order.customer.name)  # Hits DB for each customer
 
 # AFTER (eager loading):
-# ... (condensed)
 ```
 
 ```typescript
@@ -278,7 +272,6 @@ const users = await prisma.user.findMany();
 for (const user of users) {
   const orders = await prisma.order.findMany({ where: { userId: user.id } });
 }
-# ... (condensed)
 ```
 
 ```ruby
@@ -288,7 +281,6 @@ for (const user of users) {
 @orders.each { |o| puts o.customer.name }
 
 # AFTER (eager loading):
-# ... (condensed)
 ```
 
 ### Step 5: Verify Optimization

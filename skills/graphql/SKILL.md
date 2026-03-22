@@ -109,7 +109,6 @@ const resolvers = {
     // Delegate to service layer
     entity: (_, { id }, ctx) => ctx.services.entity.findById(id),
     entities: (_, { filter, pagination }, ctx) =>
-# ... (condensed)
 ```
 
 ### Step 5: N+1 Detection and DataLoader Patterns
@@ -137,7 +136,6 @@ function createLoaders(db: Database) {
     user: new DataLoader<string, User>(async (ids) => {
       const users = await db.user.findMany({ where: { id: { in: [...ids] } } });
       const userMap = new Map(users.map(u => [u.id, u]));
-# ... (condensed)
 ```
 
 ### Step 6: Subscription Implementation

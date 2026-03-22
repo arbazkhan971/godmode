@@ -73,7 +73,6 @@ npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamode
 # Django
 python manage.py makemigrations --dry-run --verbosity 2
 
-# ... (condensed)
 ```
 
 ### Step 3: Backward Compatibility Assessment
@@ -159,7 +158,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ('users', '0012_previous_migration'),
-# ... (condensed)
 ```
 
 #### Rails Example
@@ -179,7 +177,6 @@ CREATE INDEX idx_users_role ON users (role);
 
 -- DOWN
 DROP INDEX IF EXISTS idx_users_role;
-# ... (condensed)
 ```
 
 #### Knex Example
@@ -190,7 +187,6 @@ exports.up = function(knex) {
     table.index('role', 'idx_users_role');
   });
 };
-# ... (condensed)
 ```
 
 #### Go-migrate Example
@@ -210,7 +206,6 @@ export class AddUserRole1700000000000 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
             `ALTER TABLE "users" ADD "role" varchar(50) NOT NULL DEFAULT 'user'`
-# ... (condensed)
 ```
 
 #### Alembic Example
@@ -221,7 +216,6 @@ Revision ID: a1b2c3d4e5f6
 Revises: 9z8y7x6w5v4u
 Create Date: 2025-01-15 10:30:00.000000
 """
-# ... (condensed)
 ```
 
 ### Step 5: Validate Migration Before Applying
@@ -236,7 +230,6 @@ npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamode
 
 # Django
 python manage.py makemigrations --check
-# ... (condensed)
 ```
 
 #### 5b: Rollback Test (Critical)
@@ -254,7 +247,6 @@ npx prisma migrate reset  # WARNING: destroys data, dev only
 
 # Django
 python manage.py migrate <app> <migration_name>
-# ... (condensed)
 ```
 
 #### 5c: Data Preservation Check
@@ -266,7 +258,6 @@ SELECT * FROM <table> LIMIT 5;
 
 -- After migration UP: verify data preserved
 SELECT COUNT(*) FROM <table>;  -- same count
-# ... (condensed)
 ```
 
 #### 5d: Lock Duration Estimation
@@ -278,7 +269,6 @@ SELECT reltuples::bigint AS row_estimate FROM pg_class WHERE relname = '<table>'
 
 -- MySQL: check table size
 SELECT table_rows, data_length, index_length
-# ... (condensed)
 ```
 
 Lock duration guidelines:

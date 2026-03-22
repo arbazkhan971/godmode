@@ -32,7 +32,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/ap
 ### THINK Phase
 
 | Skill | PHP Adaptation |
-|-------|---------------|
+|--|--|
 | **think** | Design interfaces, DTOs, and enums first. A PHP spec should define the contract layer with `interface` types, readonly DTOs (PHP 8.2+), and backed enums. Include strict types declaration and return type annotations. |
 | **predict** | Expert panel evaluates Laravel architecture, query performance (Eloquent N+1), and caching strategy. Request panelists with PHP depth (e.g., Laravel core contributor, Symfony maintainer). |
 | **scenario** | Explore edge cases around null coalescing, exception hierarchies, queue failure modes, database transaction boundaries, and file upload validation. |
@@ -40,7 +40,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/ap
 ### BUILD Phase
 
 | Skill | PHP Adaptation |
-|-------|---------------|
+|--|--|
 | **plan** | Each task specifies classes and namespaces. File paths follow Laravel conventions (`app/Services/UserService.php`). Tasks note which service providers, routes, and migrations are affected. |
 | **build** | TDD with PHPUnit. RED step writes a test class with `@test` annotation or `test_` prefix. GREEN step implements the class. REFACTOR step extracts value objects, applies strict types, and uses PHP 8.2+ features. |
 | **test** | Use PHPUnit with feature and unit test separation. Use `RefreshDatabase` trait for database tests. Mock external services with `Http::fake()` and `Queue::fake()`. |
@@ -49,7 +49,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/ap
 ### OPTIMIZE Phase
 
 | Skill | PHP Adaptation |
-|-------|---------------|
+|--|--|
 | **optimize** | Target response time, memory usage, or queue throughput. Guard rail: `php artisan test` must pass on every iteration. Use Laravel Telescope or Debugbar data to guide hypotheses. |
 | **debug** | Use Xdebug, Laravel Telescope, or Debugbar. Check for common PHP/Laravel pitfalls: N+1 queries, eager loading misuse, missing indexes, serialization bottlenecks. |
 | **fix** | Autonomous fix loop handles test failures, static analysis errors, and format violations. Guard rail: `php artisan test && ./vendor/bin/phpstan analyse && ./vendor/bin/pint --test`. |
@@ -58,7 +58,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/ap
 ### SHIP Phase
 
 | Skill | PHP Adaptation |
-|-------|---------------|
+|--|--|
 | **ship** | Pre-flight: `php artisan test && ./vendor/bin/phpstan analyse && ./vendor/bin/pint --test`. Verify migrations run cleanly and config cache builds. |
 | **finish** | Ensure version is updated. Verify `.env.example` is current. Confirm `composer.lock` is committed. Run `php artisan config:cache && php artisan route:cache` for production. |
 
@@ -67,7 +67,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/ap
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `php artisan test 2>&1 \| grep 'Tests:'` | All passed |
 | Static analysis | `./vendor/bin/phpstan analyse --level=max 2>&1 \| tail -1` | 0 errors |
 | Code style | `./vendor/bin/pint --test 2>&1; echo $?` | exit code 0 |
@@ -579,7 +579,7 @@ Commit: `feat: Cart service — item management with price calculations`
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | N+1 query on categories | Add `with('category')` eager loading | 110ms | 45ms | KEEP |
 | 2 | No query caching | Add `Cache::remember()` with 5min TTL | 45ms | 12ms | KEEP |
 | 3 | Full model serialization | Use API Resource with sparse fieldsets | 12ms | 10ms | KEEP |

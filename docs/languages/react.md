@@ -65,7 +65,7 @@ design     routes e2e tests  tuning
 ### THINK Phase
 
 | Skill | React/Next.js Adaptation |
-|-------|--------------------------|
+|--|--|
 | **think** | Design the component tree and state architecture first. Define which components are server vs. client (Next.js App Router). Specify the data fetching strategy (RSC, `useQuery`, SWR). Include wireframes or component sketches. |
 | **predict** | Expert panel evaluates rendering strategy (SSR, SSG, ISR, CSR), state management choice (useState, Zustand, Jotai, Redux), and accessibility implications. |
 | **scenario** | Explore edge cases around loading states, error boundaries, hydration mismatches, race conditions in data fetching, and keyboard navigation. |
@@ -73,7 +73,7 @@ design     routes e2e tests  tuning
 ### BUILD Phase
 
 | Skill | React/Next.js Adaptation |
-|-------|--------------------------|
+|--|--|
 | **plan** | Each task maps to a component or route. Tasks specify: component file path, props interface, state requirements, and which tests to write (unit, integration, e2e). |
 | **build** | TDD with Vitest + Testing Library. RED step writes a component test (render + assert). GREEN step implements the component. REFACTOR step extracts custom hooks, memoizes expensive renders. |
 | **test** | Use `@testing-library/react` for component tests. Use Playwright for e2e tests. Test user interactions, not implementation details. Test accessibility with `jest-axe`. |
@@ -82,7 +82,7 @@ design     routes e2e tests  tuning
 ### OPTIMIZE Phase
 
 | Skill | React/Next.js Adaptation |
-|-------|--------------------------|
+|--|--|
 | **optimize** | Target bundle size, Lighthouse score, or specific Core Web Vitals (LCP, FID, CLS). Guard rail: `vitest run && next build` must pass. |
 | **debug** | Use React DevTools Profiler to identify unnecessary re-renders. Check the Network tab for waterfall requests. Verify hydration matches with React strict mode. |
 | **fix** | Autonomous fix loop handles test failures, build errors, and lint violations. Guard rail: `vitest run && eslint . && next build` |
@@ -91,7 +91,7 @@ design     routes e2e tests  tuning
 ### SHIP Phase
 
 | Skill | React/Next.js Adaptation |
-|-------|--------------------------|
+|--|--|
 | **ship** | Pre-flight: `vitest run && next lint && next build`. Deploy to preview URL. Run Lighthouse against preview. Verify no console errors. |
 | **finish** | Ensure `package.json` version is bumped. Verify the build output is valid. Check that environment variables are documented. |
 
@@ -100,7 +100,7 @@ design     routes e2e tests  tuning
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Lighthouse performance | `npx lighthouse http://localhost:3000 --output=json --chrome-flags="--headless" \| jq '.categories.performance.score * 100'` | >= 90 |
 | Bundle size (total JS) | `npm run build && du -b .next/static/chunks/*.js \| awk '{s+=$1}END{print s}'` | < 300KB (gzipped) |
 | First Contentful Paint | `npx lighthouse http://localhost:3000 --output=json --chrome-flags="--headless" \| jq '.audits["first-contentful-paint"].numericValue'` | < 1800ms |
@@ -458,7 +458,7 @@ Parallel agents handle tasks 3, 5, and 7 concurrently (independent components wi
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | Chart library imported in full | Dynamic import `react-chartjs-2` with `next/dynamic` | 142kB | 98kB | KEEP |
 | 2 | Drag-and-drop library is heavy | Replace `react-beautiful-dnd` with `@dnd-kit/core` | 98kB | 87kB | KEEP |
 | 3 | Date formatting pulls in full `date-fns` | Import only needed functions (`format`, `formatDistance`) | 87kB | 82kB | KEEP |

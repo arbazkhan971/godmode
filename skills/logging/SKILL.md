@@ -85,7 +85,6 @@ const pino = require('pino');
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
 
-# ... (condensed)
 ```
 
 #### Implementation — Go (slog)
@@ -96,7 +95,6 @@ import (
     "context"
     "log/slog"
     "os"
-# ... (condensed)
 ```
 
 #### Implementation — Python (structlog)
@@ -107,7 +105,6 @@ import uuid
 from functools import wraps
 
 # Configure structlog
-# ... (condensed)
 ```
 
 ### Step 4: Correlation IDs and Request Tracing
@@ -141,7 +138,6 @@ function correlationMiddleware(req, res, next) {
   req.id = req.headers['x-request-id'] || generateId('req');
   req.traceId = req.headers['x-trace-id'] || generateId('trace');
   req.spanId = generateId('span');
-# ... (condensed)
 ```
 
 #### OpenTelemetry Integration
@@ -152,7 +148,6 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http')
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 
 const sdk = new NodeSDK({
-# ... (condensed)
 ```
 
 ### Step 5: PII Redaction in Logs
@@ -183,7 +178,6 @@ const redactor = {
     if (!value || typeof value !== 'string') return value;
     const [local, domain] = value.split('@');
     if (!domain) return '[REDACTED_EMAIL]';
-# ... (condensed)
 ```
 
 ### Step 6: Log Aggregation Architecture

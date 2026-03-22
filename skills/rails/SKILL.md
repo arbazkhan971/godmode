@@ -95,7 +95,6 @@ class Order < ApplicationRecord
  belongs_to :customer
  has_many :order_items, dependent: :destroy
  has_many :products, through: :order_items
-# ... (condensed)
 ```
 
 ```
@@ -185,7 +184,6 @@ class OrderConfirmationJob < ApplicationJob
  retry_on ActiveRecord::Deadlocked, wait: 5.seconds, attempts: 3
  discard_on ActiveJob::DeserializationError
 
-# ... (condensed)
 ```
 
 ```
@@ -214,7 +212,6 @@ RSpec.configure do |config|
  config.include FactoryBot::Syntax::Methods
  config.include Devise::Test::IntegrationHelpers, type: :request
  config.include ActiveJob::TestHelper
-# ... (condensed)
 ```
 
 ```

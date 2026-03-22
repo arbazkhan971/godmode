@@ -235,7 +235,7 @@ Security properties:
 Commit: "feat: crypto layer — Argon2id, RS256 JWT, JWKS, AES-256-GCM"
 ```
 
-**Time: 30 minutes.**
+**Time: ~30 min.**
 
 ### Phase 4: Build — Implement MFA and Remaining Features
 
@@ -337,7 +337,7 @@ Verdict: PASS — 0 HIGH, 0 MEDIUM, 2 LOW, 1 INFO
 Commit: "fix(security): add Referrer-Policy header, document key rotation"
 ```
 
-**Time: 30 minutes.**
+**Time: ~30 min.**
 
 ### Phase 6: Test — Comprehensive Auth Testing
 

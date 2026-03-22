@@ -34,7 +34,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/he
 ### THINK Phase
 
 | Skill | Python Adaptation |
-|-------|-------------------|
+|--|--|
 | **think** | Design data models and protocols first. A Python spec should define dataclasses, Pydantic models, or Protocol classes. Include type annotations in the spec. |
 | **predict** | Expert panel evaluates Pythonic design, performance (GIL implications), and deployment strategy. Request panelists with Python depth (e.g., core contributor, Django maintainer). |
 | **scenario** | Explore edge cases around `None` handling, exception hierarchies, async/sync boundaries, and import-time side effects. |
@@ -42,7 +42,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/he
 ### BUILD Phase
 
 | Skill | Python Adaptation |
-|-------|-------------------|
+|--|--|
 | **plan** | Each task specifies modules and classes. File paths follow Python conventions (`src/app/services/user_service.py`). Tasks note which `__init__.py` exports need updating. |
 | **build** | TDD with pytest. RED step writes a `test_*.py` file with fixtures. GREEN step implements the module. REFACTOR step adds type annotations, extracts helpers, uses comprehensions. |
 | **test** | Use `pytest` fixtures, `parametrize`, and `monkeypatch`. Prefer `pytest-mock` for mocking. Structure tests in `tests/` mirroring `src/`. |
@@ -51,7 +51,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/he
 ### OPTIMIZE Phase
 
 | Skill | Python Adaptation |
-|-------|-------------------|
+|--|--|
 | **optimize** | Target response time, memory usage, or startup time. Guard rail: `pytest -x` must pass on every iteration. Consider GIL-aware optimizations (multiprocessing, async I/O). |
 | **debug** | Use `pdb`/`ipdb` for interactive debugging. Check for common Python pitfalls: mutable defaults, late binding closures, circular imports. |
 | **fix** | Autonomous fix loop handles test failures, type errors, and lint violations. Guard rail: `pytest -x && mypy . && ruff check .` |
@@ -60,7 +60,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/he
 ### SHIP Phase
 
 | Skill | Python Adaptation |
-|-------|-------------------|
+|--|--|
 | **ship** | Pre-flight: `pytest && mypy . && ruff check . && black --check .`. Verify Docker image builds or wheel packages correctly. |
 | **finish** | Ensure `pyproject.toml` version is bumped. Verify `py.typed` marker exists if shipping a typed library. |
 
@@ -69,7 +69,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8000/he
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Test coverage | `pytest --cov=src --cov-report=term \| grep TOTAL \| awk '{print $4}'` | >= 85% |
 | Type checking score | `mypy . --ignore-missing-imports 2>&1 \| tail -1` | 0 errors |
 | Lint errors | `ruff check . 2>&1 \| tail -1` | 0 errors |
@@ -409,7 +409,7 @@ Parallel agents handle tasks 3, 4, and 5 concurrently (no shared file dependenci
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | Synchronous DB insert blocks response | Use `asyncpg` with async session | 85ms | 34ms | KEEP |
 | 2 | Celery task dispatch is synchronous | Use `apply_async` with `ignore_result=True` | 34ms | 22ms | KEEP |
 | 3 | Pydantic validation overhead | Use `model_validate` with strict mode | 22ms | 21ms | REVERT |

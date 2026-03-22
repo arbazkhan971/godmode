@@ -217,7 +217,6 @@ from dataclasses import dataclass
 
 @dataclass
 class ComparisonResult:
-# ... (condensed)
 ```
 
 ### Step 6: Rollback Planning

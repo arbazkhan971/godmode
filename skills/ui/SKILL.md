@@ -145,7 +145,6 @@ grep -rn "#[0-9a-fA-F]\{3,6\}" src/ --include="*.css" --include="*.tsx" --includ
 # Find hardcoded pixel values for spacing
 grep -rn "margin:\|padding:\|gap:" src/ --include="*.css" --include="*.scss" | grep -v "var(--"
 
-# ... (condensed)
 ```
 
 ### Step 5: Component Library Structure
@@ -178,7 +177,6 @@ import type { ButtonProps } from './Button.types';
 import styles from './Button.module.css';
 import { clsx } from 'clsx';
 
-# ... (condensed)
 ```
 
 ```typescript
@@ -188,7 +186,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   /** Size of the button */
   size?: 'small' | 'medium' | 'large';
-# ... (condensed)
 ```
 
 ### Step 6: Storybook Integration
@@ -211,7 +208,6 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   title: 'Components/Button',
-# ... (condensed)
 ```
 
 #### Story Quality Checklist
@@ -255,7 +251,6 @@ const meta: Meta<typeof Button> = {
   component: Button,
   tags: ['autodocs'],  // Generates docs from JSDoc and TypeScript types
   parameters: {
-# ... (condensed)
 ```
 
 ### Step 8: Pattern Consistency Rules
@@ -364,7 +359,6 @@ grep -r "react\|vue\|svelte\|@angular/core" package.json 2>/dev/null
 # Detect CSS approach
 grep -r "tailwindcss\|styled-components\|@emotion\|css-modules\|sass\|less" package.json 2>/dev/null
 
-# ... (condensed)
 ```
 
 ## Output Format

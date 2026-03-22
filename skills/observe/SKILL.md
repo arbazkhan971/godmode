@@ -90,7 +90,6 @@ const promClient = require('prom-client');
 promClient.collectDefaultMetrics();
 
 // HTTP request duration histogram
-# ... (condensed)
 ```
 
 **DataDog (Python / Flask)**
@@ -101,7 +100,6 @@ from datadog import statsd
 def before_request():
     g.start_time = time.monotonic()
 
-# ... (condensed)
 ```
 
 ### Step 3: Structured Logging Strategy
@@ -115,7 +113,6 @@ Design a consistent, queryable logging approach:
   "service": "api-gateway",
   "version": "1.2.3",
   "trace_id": "abc123def456",
-# ... (condensed)
 ```
 
 #### Log Levels and Usage
@@ -191,7 +188,6 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http')
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
 const sdk = new NodeSDK({
-# ... (condensed)
 ```
 
 #### Trace Propagation
@@ -253,7 +249,6 @@ SLO FRAMEWORK:
   expr: |
     (
       sum(rate(http_requests_total{status_code=~"5.."}[1h]))
-# ... (condensed)
 ```
 
 ### Step 6: Alert Rule Design
@@ -285,7 +280,6 @@ groups:
       - alert: HighErrorRate
         expr: |
           sum(rate(http_requests_total{status_code=~"5.."}[5m]))
-# ... (condensed)
 ```
 
 ### Step 7: Dashboard Design

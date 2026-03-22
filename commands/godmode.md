@@ -15,14 +15,14 @@ Turn on Godmode for Claude Code. A complete development workflow — from idea t
 
 ### THINK Phase (Design & Discovery)
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode:think` | Brainstorm and design — produces a spec |
 | `/godmode:predict` | Multi-persona expert evaluation of a proposal |
 | `/godmode:scenario` | Edge case exploration across 12 dimensions |
 
 ### BUILD Phase (Plan & Implement)
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode:plan` | Decompose spec into 2-5 min tasks |
 | `/godmode:build` | Execute plan with TDD + parallel agents |
 | `/godmode:test` | Write tests, improve coverage |
@@ -30,7 +30,7 @@ Turn on Godmode for Claude Code. A complete development workflow — from idea t
 
 ### OPTIMIZE Phase (Autonomous Iteration)
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode:optimize` | Autonomous improvement loop — the core of Godmode |
 | `/godmode:debug` | Scientific bug investigation (7 techniques) |
 | `/godmode:fix` | Autonomous error remediation loop |
@@ -38,13 +38,13 @@ Turn on Godmode for Claude Code. A complete development workflow — from idea t
 
 ### SHIP Phase (Deliver)
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode:ship` | 8-phase shipping workflow |
 | `/godmode:finish` | Branch finalization (merge/PR/keep/discard) |
 
 ### Meta
 | Command | Description |
-|---------|-------------|
+|--|--|
 | `/godmode:setup` | Configure Godmode for this project |
 | `/godmode:verify` | Evidence gate — prove claims with commands |
 

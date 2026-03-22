@@ -175,7 +175,7 @@ Grouped by what you are trying to do, not alphabetical.
 ### Create Something New
 
 | Skill | Use when | Example |
-|-------|----------|---------|
+|--|--|--|
 | `think` | You need a design/spec | `/godmode:think design a caching layer` |
 | `predict` | You want expert evaluation of a design | `/godmode:predict will this auth flow scale?` |
 | `scenario` | You want to explore edge cases | `/godmode:scenario what could go wrong with this queue?` |
@@ -185,14 +185,14 @@ Grouped by what you are trying to do, not alphabetical.
 ### Fix or Debug
 
 | Skill | Use when | Example |
-|-------|----------|---------|
+|--|--|--|
 | `fix` | Errors are clear (stack traces, lint) | `/godmode:fix` |
 | `debug` | Cause is unknown | `/godmode:debug why does checkout return 500?` |
 
 ### Improve Existing Code
 
 | Skill | Use when | Example |
-|-------|----------|---------|
+|--|--|--|
 | `optimize` | Code is slow (measurable metric) | `/godmode:optimize reduce query time` |
 | `refactor` | Code is messy (structure/readability) | `/godmode:refactor extract auth into a module` |
 | `test` | Test coverage is low | `/godmode:test add coverage for the payment module` |
@@ -200,7 +200,7 @@ Grouped by what you are trying to do, not alphabetical.
 ### Verify and Review
 
 | Skill | Use when | Example |
-|-------|----------|---------|
+|--|--|--|
 | `review` | Pre-merge code review | `/godmode:review review the rate limiter PR` |
 | `secure` | Security audit | `/godmode:secure audit auth and session handling` |
 | `verify` | Prove a claim with evidence | `/godmode:verify prove the cache hit rate is >90%` |
@@ -208,7 +208,7 @@ Grouped by what you are trying to do, not alphabetical.
 ### Ship and Finalize
 
 | Skill | Use when | Example |
-|-------|----------|---------|
+|--|--|--|
 | `ship` | Deploy to production | `/godmode:ship deploy to staging` |
 | `finish` | Merge PR, clean up branch | `/godmode:finish merge this branch` |
 

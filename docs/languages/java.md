@@ -41,7 +41,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### THINK Phase
 
 | Skill | JVM Adaptation |
-|-------|----------------|
+|--|--|
 | **think** | Design interfaces, records/data classes, and sealed hierarchies first. A JVM spec should define the contract layer (interfaces) and data transfer objects before any logic. In Kotlin, leverage sealed classes and value classes. |
 | **predict** | Expert panel evaluates framework choice, concurrency model (virtual threads, coroutines, reactive), and deployment strategy. Request panelists with JVM depth (e.g., Spring committer, JVM performance engineer). |
 | **scenario** | Explore edge cases around null safety (Java `Optional` vs. Kotlin null types), thread safety, exception hierarchies, and serialization edge cases (Jackson, Kotlinx.serialization). |
@@ -49,7 +49,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### BUILD Phase
 
 | Skill | JVM Adaptation |
-|-------|----------------|
+|--|--|
 | **plan** | Each task specifies packages, classes, and interfaces. File paths follow Maven/Gradle conventions (`src/main/java/com/example/service/UserService.java`). Tasks note which Spring beans or Ktor modules they introduce. |
 | **build** | TDD with JUnit 5 (Java) or kotest (Kotlin). RED step writes a test class. GREEN step implements the service. REFACTOR step extracts interfaces, adds generics, applies design patterns. |
 | **test** | Use JUnit 5 `@Test`, `@ParameterizedTest`, `@Nested` classes. Mock with Mockito (Java) or MockK (Kotlin). Use `@SpringBootTest` for integration tests. Use testcontainers for database tests. |
@@ -58,7 +58,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### OPTIMIZE Phase
 
 | Skill | JVM Adaptation |
-|-------|----------------|
+|--|--|
 | **optimize** | Target response time, throughput, GC pause time, or startup time. Guard rail: `mvn test` must pass. Use JMH for microbenchmarks. Consider GraalVM native image for startup-sensitive services. |
 | **debug** | Use IntelliJ debugger or `jdb`. Analyze thread dumps with `jstack`. Profile with async-profiler or VisualVM. Check GC logs for memory pressure. |
 | **fix** | Autonomous fix loop handles test failures, compilation errors, and Checkstyle violations. Guard rail: `mvn test && mvn checkstyle:check` |
@@ -67,7 +67,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ### SHIP Phase
 
 | Skill | JVM Adaptation |
-|-------|----------------|
+|--|--|
 | **ship** | Pre-flight: `mvn test && mvn checkstyle:check && mvn package`. Verify the JAR/WAR starts and serves health checks. For Spring Boot, verify actuator endpoints. |
 | **finish** | Ensure `pom.xml` or `build.gradle` version is bumped. Verify Docker image builds with the fat JAR. For libraries, verify `mvn deploy` (dry-run) succeeds. |
 
@@ -76,7 +76,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:8080/he
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | JUnit coverage | `mvn jacoco:report -q && grep -o 'Total[^%]*%' target/site/jacoco/index.html \| head -1` | >= 80% |
 | Checkstyle violations | `mvn checkstyle:check 2>&1 \| grep 'violations' \| awk '{print $4}'` | 0 |
 | Build time | `/usr/bin/time mvn package -DskipTests -q 2>&1 \| grep real` | Project-specific |
@@ -492,7 +492,7 @@ Parallel agents handle tasks 3, 5, and 7 concurrently (no shared dependencies).
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | N+1 query loading order items | Add `@EntityGraph` on findById | 230ms | 145ms | KEEP |
 | 2 | No connection pooling configured | Configure HikariCP pool (min=5, max=20) | 145ms | 88ms | KEEP |
 | 3 | Inventory check hits DB each time | Add `@Cacheable` with Redis | 88ms | 52ms | KEEP |

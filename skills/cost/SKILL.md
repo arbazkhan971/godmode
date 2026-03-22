@@ -45,7 +45,7 @@ Measure actual usage versus provisioned capacity:
 ```
 COMPUTE UTILIZATION:
 | Instance | Type | Avg CPU | Avg Mem | Verdict |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | <instance-1> | m5.2xl | 12% | 25% | OVERSIZE |
 | <instance-2> | t3.micro | 89% | 92% | UNDERSIZE |
 | <instance-3> | c5.large | 45% | 60% | OK |
@@ -62,7 +62,7 @@ Thresholds:
 ```
 STORAGE UTILIZATION:
 | Bucket/Volume | Size | Access | Last Hit | Verdict |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | <bucket-1> | 2.3 TB | Frequent | Today | OK |
 | <bucket-2> | 500 GB | None | 90d ago | ARCHIVE |
 | <volume-1> | 1 TB | None | Never | DELETE |
@@ -73,7 +73,7 @@ STORAGE UTILIZATION:
 ```
 DATABASE UTILIZATION:
 | Instance | Type | Avg CPU | Storage | Verdict |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | <rds-prod> | db.r5.xl | 35% | 40% | OK |
 | <rds-staging> | db.r5.xl | 5% | 10% | OVERSIZE |
 | <rds-dev> | db.m5.lg | 2% | 5% | SCHEDULE |

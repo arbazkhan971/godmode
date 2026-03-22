@@ -32,7 +32,7 @@ verify_command: ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunn
 ### THINK Phase
 
 | Skill | Kotlin Adaptation |
-|-------|------------------|
+|--|--|
 | **think** | Design data classes, sealed interfaces, and flow contracts first. A Kotlin spec should define the domain layer with immutable data classes, sealed hierarchies for state, and `Flow`/`StateFlow` types for reactive streams. |
 | **predict** | Expert panel evaluates coroutine architecture, memory management, and Compose recomposition strategy. Request panelists with Kotlin depth (e.g., Android GDE, Kotlin library author). |
 | **scenario** | Explore edge cases around nullability, coroutine cancellation, configuration changes (activity recreation), process death, and offline-first data sync. |
@@ -40,7 +40,7 @@ verify_command: ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunn
 ### BUILD Phase
 
 | Skill | Kotlin Adaptation |
-|-------|------------------|
+|--|--|
 | **plan** | Each task specifies modules and layers. File paths follow Android conventions (`app/src/main/java/com/example/feature/`). Tasks note which Gradle modules are affected. |
 | **build** | TDD with JUnit5 and MockK. RED step writes a test class. GREEN step implements the class. REFACTOR step extracts extension functions, uses sealed classes, and applies coroutine best practices. |
 | **test** | Use JUnit5 with `@Nested` for grouping. Use MockK for mocking (`every`, `coEvery` for suspending functions). Use Turbine for testing Flows. |
@@ -49,7 +49,7 @@ verify_command: ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunn
 ### OPTIMIZE Phase
 
 | Skill | Kotlin Adaptation |
-|-------|------------------|
+|--|--|
 | **optimize** | Target app startup time, frame rendering, or memory usage. Guard rail: `./gradlew test` must pass on every iteration. Use Android Profiler data to guide hypotheses. |
 | **debug** | Use Android Studio Profiler (CPU, Memory, Network). Check for common Kotlin/Android pitfalls: leaked coroutine scopes, unnecessary recompositions, N+1 Room queries. |
 | **fix** | Autonomous fix loop handles compiler errors, test failures, and lint violations. Guard rail: `./gradlew test && ./gradlew ktlintCheck && ./gradlew detekt`. |
@@ -58,7 +58,7 @@ verify_command: ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunn
 ### SHIP Phase
 
 | Skill | Kotlin Adaptation |
-|-------|------------------|
+|--|--|
 | **ship** | Pre-flight: `./gradlew test && ./gradlew ktlintCheck && ./gradlew assembleRelease`. Verify APK/AAB is signed and ProGuard mapping is archived. |
 | **finish** | Ensure `versionCode` and `versionName` are bumped in `build.gradle.kts`. Verify ProGuard rules preserve required classes. Confirm Play Store listing metadata is current. |
 
@@ -67,7 +67,7 @@ verify_command: ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunn
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `./gradlew test 2>&1 \| grep 'BUILD SUCCESSFUL'` | All passed |
 | Lint violations | `./gradlew ktlintCheck 2>&1 \| tail -1` | 0 violations |
 | Static analysis | `./gradlew detekt 2>&1 \| grep 'Build.*'` | 0 issues |

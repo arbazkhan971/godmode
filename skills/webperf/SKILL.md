@@ -45,7 +45,6 @@ npx lighthouse https://example.com --only-categories=performance --output=json -
 # Analyze bundle size
 npx webpack-bundle-analyzer stats.json    # Webpack
 npx vite-bundle-visualizer                # Vite
-# ... (condensed)
 ```
 
 ### Step 2: Lighthouse Performance Audit
@@ -94,7 +93,6 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 
 // Component-based code splitting
 const ChartWidget = React.lazy(() => import('./components/ChartWidget'));
-# ... (condensed)
 ```
 
 ```javascript
@@ -104,7 +102,6 @@ import dynamic from 'next/dynamic';
 const HeavyComponent = dynamic(() => import('../components/HeavyComponent'), {
   loading: () => <Skeleton />,
   ssr: false, // Skip SSR for client-only components
-# ... (condensed)
 ```
 
 #### Tree Shaking Verification
@@ -115,7 +112,6 @@ npx webpack --stats-modules-space 999 | grep "unused"
 # Check for side effects preventing tree shaking
 # package.json should declare: "sideEffects": false
 # or list specific files: "sideEffects": ["*.css", "./src/polyfills.js"]
-# ... (condensed)
 ```
 
 ### Step 4: Image Optimization
@@ -143,7 +139,6 @@ Potential savings: <N> MB (<N>% reduction)
   <source srcset="hero.webp" type="image/webp">
   <img src="hero.jpg" alt="Hero image" width="1200" height="600"
        loading="lazy" decoding="async">
-# ... (condensed)
 ```
 
 #### Responsive Images
@@ -154,7 +149,6 @@ Potential savings: <N> MB (<N>% reduction)
     hero-400.webp 400w,
     hero-800.webp 800w,
     hero-1200.webp 1200w,
-# ... (condensed)
 ```
 
 #### Build Pipeline Image Optimization
@@ -165,7 +159,6 @@ npm install sharp
 # Next.js: built-in image optimization (next/image)
 # Astro: built-in image optimization (astro:assets)
 # Vite: vite-imagetools plugin
-# ... (condensed)
 ```
 
 ### Step 5: Critical CSS Extraction
@@ -192,7 +185,6 @@ npx critical https://example.com --inline --minify --base dist/
 
 # Extract with critters (Webpack/Vite plugin)
 npm install critters-webpack-plugin  # Webpack
-# ... (condensed)
 ```
 
 ```html
@@ -202,7 +194,6 @@ npm install critters-webpack-plugin  # Webpack
     /* Critical (above-the-fold) CSS inlined here */
     .header { ... }
     .hero { ... }
-# ... (condensed)
 ```
 
 ### Step 6: Font Optimization
@@ -234,7 +225,6 @@ Issues:
   src: url('/fonts/inter-var.woff2') format('woff2');
   font-weight: 100 900;  /* Variable font — one file for all weights */
   font-display: swap;     /* Show fallback immediately, swap when loaded */
-# ... (condensed)
 ```
 
 ```html
@@ -249,7 +239,6 @@ npx glyphhanger https://example.com --subset=fonts/inter.woff2 --formats=woff2
 # Convert TTF/OTF to WOFF2
 npx woff2-cli compress fonts/fancy.ttf
 
-# ... (condensed)
 ```
 
 ### Step 7: Service Worker Caching Strategies
@@ -277,7 +266,6 @@ module.exports = {
   globPatterns: ['**/*.{html,js,css,png,jpg,webp,avif,woff2,svg}'],
   swDest: 'dist/sw.js',
   runtimeCaching: [
-# ... (condensed)
 ```
 
 ```bash
@@ -387,7 +375,6 @@ ls webpack.config.* vite.config.* next.config.* nuxt.config.* 2>/dev/null
 # Detect bundle analysis tools
 grep -r "webpack-bundle-analyzer\|source-map-explorer\|@next/bundle-analyzer" package.json 2>/dev/null
 
-# ... (condensed)
 ```
 
 ## Output Format

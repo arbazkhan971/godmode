@@ -33,7 +33,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 ### THINK Phase
 
 | Skill | C# Adaptation |
-|-------|--------------|
+|--|--|
 | **think** | Design interfaces, records, and enums first. A C# spec should define the contract layer with `interface` types, immutable `record` types for data, and `enum` types for state. Include nullable reference type annotations. |
 | **predict** | Expert panel evaluates architecture patterns (Clean Architecture, Vertical Slice), async/await strategy, and hosting model. Request panelists with .NET depth (e.g., ASP.NET Core maintainer, Azure architect). |
 | **scenario** | Explore edge cases around nullable references, `Task` cancellation, `IDisposable` lifecycle, middleware ordering, and EF Core lazy loading pitfalls. |
@@ -41,7 +41,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 ### BUILD Phase
 
 | Skill | C# Adaptation |
-|-------|--------------|
+|--|--|
 | **plan** | Each task specifies projects and namespaces. File paths follow .NET conventions (`src/MyApp.Api/Controllers/UsersController.cs`). Tasks note which projects in the solution are affected. |
 | **build** | TDD with xUnit. RED step writes a test class with `[Fact]` and `[Theory]`. GREEN step implements the class. REFACTOR step applies dependency injection, record types, and pattern matching. |
 | **test** | Use xUnit with `[Fact]`/`[Theory]` attributes. Use NSubstitute or Moq for mocking. Use `WebApplicationFactory<T>` for integration tests. |
@@ -50,7 +50,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 ### OPTIMIZE Phase
 
 | Skill | C# Adaptation |
-|-------|--------------|
+|--|--|
 | **optimize** | Target request latency, memory allocations, or startup time. Guard rail: `dotnet test` must pass on every iteration. Use BenchmarkDotNet for microbenchmarks. |
 | **debug** | Use Visual Studio/Rider debugger, `dotnet-counters`, and `dotnet-trace`. Check for common C# pitfalls: excessive allocations, sync-over-async, captured closures in hot paths. |
 | **fix** | Autonomous fix loop handles compiler errors, test failures, and format violations. Guard rail: `dotnet build && dotnet test && dotnet format --verify-no-changes`. |
@@ -59,7 +59,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 ### SHIP Phase
 
 | Skill | C# Adaptation |
-|-------|--------------|
+|--|--|
 | **ship** | Pre-flight: `dotnet test && dotnet format --verify-no-changes && dotnet publish -c Release`. Verify the published output runs correctly. |
 | **finish** | Ensure version is bumped in `.csproj`. Verify `appsettings.Production.json` does not contain secrets. Confirm Docker image builds if containerized. |
 
@@ -68,7 +68,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `dotnet test 2>&1 \| grep 'Passed!'` | All passed |
 | Format violations | `dotnet format --verify-no-changes 2>&1; echo $?` | exit code 0 |
 | Build warnings | `dotnet build -warnaserror 2>&1 \| grep -c 'warning'` | 0 |
@@ -524,7 +524,7 @@ Commit: `feat: Product service — cache-aside pattern with Redis`
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | N+1 query on category include | Use `AsSplitQuery()` | 95ms | 42ms | KEEP |
 | 2 | No response caching | Add `[OutputCache]` with 60s TTL | 42ms | 8ms | KEEP |
 | 3 | JSON serialization overhead | Use source generators for `JsonSerializer` | 8ms | 7ms | KEEP |

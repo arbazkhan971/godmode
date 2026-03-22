@@ -249,8 +249,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Core Workflow (15)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `godmode` | Orchestrator — detects phase, routes to skill |
 | `think` | Brainstorm approaches, produce a spec |
 | `predict` | 5 expert personas evaluate your design |
@@ -269,8 +269,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Architecture & Design (10)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `architect` | System architecture design |
 | `rfc` | Technical proposal writing |
 | `ddd` | Domain-Driven Design |
@@ -284,8 +284,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### API & Backend (14)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `api` | REST API design and implementation |
 | `graphql` | GraphQL schema and resolvers |
 | `grpc` | gRPC services |
@@ -303,8 +303,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Frameworks (12)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `react` | React architecture |
 | `nextjs` | Next.js |
 | `vue` | Vue.js |
@@ -320,16 +320,16 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Databases (3)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `postgres` | PostgreSQL |
 | `redis` | Redis |
 | `nosql` | NoSQL design |
 
 ### Security & Compliance (8)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `secure` | STRIDE + OWASP audit with red-team |
 | `auth` | Authentication flows |
 | `rbac` | Role-based access control |
@@ -341,8 +341,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Testing (7)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `e2e` | End-to-end testing |
 | `integration` | Integration testing |
 | `loadtest` | Load and stress testing |
@@ -353,8 +353,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### DevOps & Infrastructure (16)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `deploy` | Deployment strategies |
 | `k8s` | Kubernetes |
 | `infra` | Infrastructure as Code |
@@ -374,8 +374,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Frontend & UI (9)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `ui` | Component design |
 | `a11y` | Accessibility audit |
 | `seo` | SEO optimization |
@@ -388,8 +388,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### AI & ML (5)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `ml` | ML pipeline design |
 | `mlops` | Model deployment |
 | `rag` | Retrieval-Augmented Generation |
@@ -398,8 +398,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Developer Experience (13)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `docs` | Documentation |
 | `onboard` | Developer onboarding |
 | `refactor` | Safe refactoring workflows |
@@ -416,8 +416,8 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ### Integrations (14)
 
-| Skill | What it does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | `i18n` | Internationalization |
 | `email` | Email templates and delivery |
 | `pay` | Payment integration (Stripe) |
@@ -466,10 +466,10 @@ See [adapters/](adapters/) for platform-specific setup and [docs/platform-compar
 > -- **Example quote** (placeholder)
 
 > *"The security audit found a SQL injection I missed in code review. It didn't just flag it -- it gave me the fix and a command to verify the fix worked."*
-> -- **Example quote** (placeholder)
+> -- **User testimonial** (placeholder)
 
 > *"We used godmode:build to add a full auth system. Four agents worked in parallel, and the merge was clean. That would have been a full day of work."*
-> -- **Example quote** (placeholder)
+> -- **Success story** (placeholder)
 
 *These are example quotes illustrating typical use cases. If you have a real testimonial, [open a discussion](https://github.com/arbazkhan971/godmode/discussions) and we will feature it here.*
 

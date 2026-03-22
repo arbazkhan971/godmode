@@ -26,7 +26,6 @@ find . -name "*.env*" -o -name "*.config.*" -o -name "*.yml" -o -name "*.yaml" -
 # Check for environment-specific files
 find . -name "*development*" -o -name "*staging*" -o -name "*production*" -o -name "*prod*" -o -name "*dev*" | grep -v node_modules | grep -v .git
 
-# ... (condensed)
 ```
 
 ```
@@ -90,7 +89,6 @@ const configSchema = {
     type: 'string',
     required: true,
     format: 'uri',
-# ... (condensed)
 ```
 
 #### Validation Rules
@@ -112,7 +110,6 @@ function validateConfig(env: Record<string, string>): void {
   for (const [key, schema] of Object.entries(configSchema)) {
     const value = env[key];
     if (schema.required && !value) {
-# ... (condensed)
 ```
 
 ### Step 4: Feature Flag Design
@@ -146,7 +143,6 @@ interface FeatureFlag {
   description: string;                   // What this flag controls
   owner: string;                         // Team or person responsible
   createdAt: string;                     // ISO date
-# ... (condensed)
 ```
 
 #### Flag Lifecycle Management

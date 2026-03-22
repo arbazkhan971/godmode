@@ -69,7 +69,6 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-# ... (condensed)
 ```
 
 ```
@@ -98,7 +97,6 @@ class OrderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
-# ... (condensed)
 ```
 
 Rules:
@@ -119,7 +117,6 @@ namespace App\Contracts;
 interface PaymentGateway
 {
     public function charge(int $amountCents, string $currency, array $metadata = []): PaymentResult;
-# ... (condensed)
 ```
 
 ```
@@ -153,7 +150,6 @@ class ProcessOrderPayment implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     use Batchable; // For batch processing
 
-# ... (condensed)
 ```
 
 ```
@@ -190,7 +186,6 @@ Implement secure authentication:
 
 // API routes with Sanctum
 Route::middleware('auth:sanctum')->group(function () {
-# ... (condensed)
 ```
 
 ```
@@ -221,7 +216,6 @@ describe('Order', function () {
         $order = Order::factory()->create();
         expect($order->customer)->toBeInstanceOf(Customer::class);
     });
-# ... (condensed)
 ```
 
 ```php
@@ -231,7 +225,6 @@ class OrderFactory extends Factory
     protected $model = Order::class;
 
     public function definition(): array
-# ... (condensed)
 ```
 
 ```

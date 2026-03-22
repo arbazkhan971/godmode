@@ -26,7 +26,6 @@ ls package.json Cargo.toml go.mod pyproject.toml pom.xml Gemfile *.csproj 2>/dev
 # Count files by language
 find . -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" | grep -v node_modules | grep -v .git | head -200
 
-# ... (condensed)
 ```
 
 ```

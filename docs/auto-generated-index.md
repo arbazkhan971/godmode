@@ -10,8 +10,8 @@
 
 ## Alphabetical Index
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **a11y** | `skills/a11y/` | Accessibility testing and auditing skill. |
 | **adr** | `skills/adr/` | Architecture Decision Records skill. |
 | **agent** | `skills/agent/` | AI agent development skill. |
@@ -172,16 +172,16 @@
 
 ### Think (Design & Discovery) (3 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **predict** | `skills/predict/` | Multi-persona prediction and evaluation skill. |
 | **scenario** | `skills/scenario/` | Edge case and scenario exploration skill. |
 | **think** | `skills/think/` | Brainstorming and design skill. |
 
 ### Build (Plan & Implement) (4 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **build** | `skills/build/` | Build and execution skill. |
 | **plan** | `skills/plan/` | Planning and task decomposition skill. |
 | **review** | `skills/review/` | Code review skill. |
@@ -189,8 +189,8 @@
 
 ### Optimize (Autonomous Iteration) (4 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **debug** | `skills/debug/` | Scientific debugging skill. |
 | **fix** | `skills/fix/` | Autonomous error fixing skill. |
 | **optimize** | `skills/optimize/` | Core autonomous iteration loop — the heart of Godmode. |
@@ -198,23 +198,23 @@
 
 ### Ship (Deliver & Monitor) (2 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **finish** | `skills/finish/` | Branch finalization skill. |
 | **ship** | `skills/ship/` | Shipping workflow skill. |
 
 ### Meta (Always Active) (3 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **godmode** | `skills/godmode/` | Orchestrator skill. |
 | **setup** | `skills/setup/` | Configuration wizard skill. |
 | **verify** | `skills/verify/` | Evidence gate skill. |
 
 ### Infrastructure & DevOps (12 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **chaos** | `skills/chaos/` | Chaos engineering skill. |
 | **cicd** | `skills/cicd/` | CI/CD pipeline design skill. |
 | **config** | `skills/config/` | Environment and configuration management skill. |
@@ -230,8 +230,8 @@
 
 ### Code Quality & Testing (9 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **a11y** | `skills/a11y/` | Accessibility testing and auditing skill. |
 | **e2e** | `skills/e2e/` | End-to-end testing skill. |
 | **errortrack** | `skills/errortrack/` | Error tracking and analysis skill. |
@@ -244,8 +244,8 @@
 
 ### Architecture & Design (10 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **architect** | `skills/architect/` | Software architecture skill. |
 | **contract** | `skills/contract/` | Contract testing skill. |
 | **ddd** | `skills/ddd/` | Domain-Driven Design skill. |
@@ -259,8 +259,8 @@
 
 ### Documentation & Collaboration (10 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **adr** | `skills/adr/` | Architecture Decision Records skill. |
 | **docs** | `skills/docs/` | Documentation generation and maintenance skill. |
 | **dx** | `skills/dx/` | Developer experience optimization skill. |
@@ -274,8 +274,8 @@
 
 ### Security & Compliance (7 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **auth** | `skills/auth/` | Authentication and authorization skill. |
 | **backup** | `skills/backup/` | Backup and disaster recovery skill. |
 | **comply** | `skills/comply/` | Compliance and governance skill. |
@@ -286,8 +286,8 @@
 
 ### Frontend & UI (8 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **desktop** | `skills/desktop/` | Desktop application development skill. |
 | **i18n** | `skills/i18n/` | Internationalization & localization skill. |
 | **mobile** | `skills/mobile/` | Mobile app development skill. |
@@ -299,8 +299,8 @@
 
 ### Data & AI (7 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **analytics** | `skills/analytics/` | Analytics implementation skill. |
 | **eval** | `skills/eval/` | AI/LLM evaluation skill. |
 | **ml** | `skills/ml/` | ML development and experimentation skill. |
@@ -311,8 +311,8 @@
 
 ### Specialized Domains (29 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **agent** | `skills/agent/` | AI agent development skill. |
 | **api** | `skills/api/` | API design and specification skill. |
 | **automate** | `skills/automate/` | Task automation skill. |
@@ -345,8 +345,8 @@
 
 ### Other (45 skills)
 
-| Skill | Directory | Description |
-|-------|-----------|-------------|
+| Name | Dir | Use |
+|--|--|--|
 | **aiops** | `skills/aiops/` | AI Operations and safety skill. |
 | **angular** | `skills/angular/` | Angular architecture skill. |
 | **animation** | `skills/animation/` | Animation and motion design skill. |

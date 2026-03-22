@@ -108,7 +108,6 @@ import { AnalyticsBrowser } from '@segment/analytics-next';
 export const analytics = AnalyticsBrowser.load({
   writeKey: process.env.SEGMENT_WRITE_KEY!,
 });
-# ... (condensed)
 ```
 
 #### Amplitude Implementation
@@ -119,7 +118,6 @@ import * as amplitude from '@amplitude/analytics-browser';
 export function initAmplitude() {
   amplitude.init(process.env.AMPLITUDE_API_KEY!, {
     defaultTracking: {
-# ... (condensed)
 ```
 
 #### PostHog Implementation
@@ -130,7 +128,6 @@ import posthog from 'posthog-js';
 export function initPostHog() {
   posthog.init(process.env.POSTHOG_API_KEY!, {
     api_host: process.env.POSTHOG_HOST || 'https://app.posthog.com',
-# ... (condensed)
 ```
 
 #### Analytics Abstraction Layer
@@ -141,7 +138,6 @@ interface AnalyticsProvider {
   identify(userId: string, traits?: Record<string, unknown>): void;
   page(name: string, properties?: Record<string, unknown>): void;
 }
-# ... (condensed)
 ```
 
 ### Step 6: Funnel Analysis Setup
@@ -191,7 +187,6 @@ interface Experiment {
   name: string;
   variants: { id: string; weight: number }[];
   isActive: boolean;
-# ... (condensed)
 ```
 
 ### Step 8: Analytics Data Modeling

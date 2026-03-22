@@ -284,7 +284,7 @@ Files created:
 Commit: "cicd: GitHub Actions — test, build, deploy staging/production, rollback"
 ```
 
-**Time: 30 minutes.**
+**Time: ~30 min.**
 
 ### Phase 4: Observe — Kubernetes-Native Monitoring
 
@@ -341,7 +341,7 @@ Alerts added:
 Commit: "observe: Kubernetes monitoring — cluster, node, pod, deployment dashboards and alerts"
 ```
 
-**Time: 30 minutes.**
+**Time: ~30 min.**
 
 ### Phase 5: Deploy — Production Deployment
 

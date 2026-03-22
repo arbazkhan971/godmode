@@ -67,7 +67,6 @@ import { z } from 'zod';
 export const registrationSchema = z.object({
   name: z.string()
     .min(2, 'Name requires at least 2 characters')
-# ... (condensed)
 ```
 
 ```typescript
@@ -77,7 +76,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { registrationSchema, type RegistrationFormData } from '../schemas/registration';
 
 export function RegistrationForm() {
-# ... (condensed)
 ```
 
 ### Step 3: Multi-Step Wizard Forms
@@ -109,7 +107,6 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-# ... (condensed)
 ```
 
 #### Step Progress Indicator
@@ -120,7 +117,6 @@ export function StepProgress({
   currentStep,
 }: {
   steps: { id: string; title: string }[];
-# ... (condensed)
 ```
 
 ### Step 4: Validation Patterns
@@ -134,7 +130,6 @@ import { z } from 'zod';
 export const addressSchema = z.object({
   street: z.string().min(1, 'Street address is required'),
   city: z.string().min(1, 'City is required'),
-# ... (condensed)
 ```
 
 #### Async Validation (Debounced)
@@ -145,7 +140,6 @@ import { useCallback, useRef } from 'react';
 export function useAsyncValidation<T>(
   validator: (value: T) => Promise<string | null>,
   debounceMs = 500,
-# ... (condensed)
 ```
 
 #### Server-Side Validation
@@ -156,7 +150,6 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   const body = await request.json();
-# ... (condensed)
 ```
 
 #### Error Display Strategy
@@ -189,7 +182,6 @@ import { useCallback, useState, useRef } from 'react';
 interface FileUploadProps {
   accept?: string;
   maxSize?: number; // bytes
-# ... (condensed)
 ```
 
 ### Step 6: Accessible Form Design
@@ -203,7 +195,6 @@ import { useId } from 'react';
 interface FormFieldProps {
   label: string;
   error?: string;
-# ... (condensed)
 ```
 
 #### Form Accessibility Checklist
@@ -233,7 +224,6 @@ import { FieldErrors } from 'react-hook-form';
 
 export function useFocusOnError(errors: FieldErrors, isSubmitted: boolean) {
   const prevSubmitCount = useRef(0);
-# ... (condensed)
 ```
 
 #### Error Summary Component
@@ -244,7 +234,6 @@ export function ErrorSummary({ errors }: { errors: Record<string, string> }) {
   if (errorEntries.length === 0) return null;
 
   return (
-# ... (condensed)
 ```
 
 ### Step 7: Advanced Patterns
@@ -257,7 +246,6 @@ const watchRole = watch('role');
 return (
   <form>
     <FormField label="Role" required>
-# ... (condensed)
 ```
 
 #### Dynamic Field Arrays
@@ -268,7 +256,6 @@ import { useFieldArray } from 'react-hook-form';
 function PhoneNumbersForm() {
   const { control, register } = useForm({
     defaultValues: { phones: [{ number: '', type: 'mobile' }] },
-# ... (condensed)
 ```
 
 #### Autosave
@@ -279,7 +266,6 @@ import { UseFormWatch } from 'react-hook-form';
 
 export function useAutosave<T extends Record<string, any>>({
   watch,
-# ... (condensed)
 ```
 
 ### Step 8: Form Architecture Report

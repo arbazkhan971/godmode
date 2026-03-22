@@ -28,7 +28,6 @@ SCHEDULING REQUIREMENTS ASSESSMENT:
 |  Task type            | <cleanup | report | sync | alert |
 |                       |  billing | digest | health check> |
 |  Frequency            | <seconds | minutes | hourly |     |
-    # ... (condensed)
 ```
 
 #### Cron Expression Quick Reference
@@ -40,7 +39,6 @@ CRON EXPRESSION SYNTAX:
 |  Day of month | 1-31            | * , - / ? L W           |
 
 Common patterns:
-    # ... (condensed)
     and 7 = Sunday) — check your library
 ```
 
@@ -57,7 +55,6 @@ SCHEDULER TECHNOLOGY SELECTION:
 | (repeatable)     | Production  |          | (leader    | (survives |          |
 |                  | recurring   |          | election)  | restart)  |          |
 |                  |             |          |            |           |          |
-    # ... (condensed)
   Cloud-native, no servers to manage?          -> EventBridge / Cloud Scheduler
 ```
 
@@ -71,7 +68,6 @@ SCHEDULE ARCHITECTURE:
 |  ---------              ------------               ---------           |
 |                     +-- daily-digest -------------- Worker Pool A (2)  |
 |  Cron Engine ------+-- cleanup-expired ----------- Worker Pool B (3)  |
-    # ... (condensed)
 ```
 
 #### BullMQ Repeatable Jobs (Node.js — Production)
@@ -82,7 +78,6 @@ import Redis from 'ioredis';
 const connection = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
-# ... (condensed)
 ```
 
 #### Celery Beat (Python — Production)
@@ -93,7 +88,6 @@ from datetime import timedelta
 
 app = Celery('scheduler', broker='redis://localhost:6379/0', backend='redis://localhost:6379/1')
 
-# ... (condensed)
 ```
 
 #### APScheduler (Python — Standalone)
@@ -104,7 +98,6 @@ from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 
-# ... (condensed)
 ```
 
 #### Sidekiq-Cron (Ruby)
@@ -115,7 +108,6 @@ Sidekiq::Cron::Job.load_from_hash(
     'cron'  => '0 9 * * *',
     'class' => 'DailyDigestWorker',
     'queue' => 'default',
-# ... (condensed)
 ```
 
 #### Hangfire (.NET)
@@ -145,7 +137,6 @@ public class QuartzConfig {
 
     @Bean
     public JobDetail dailyDigestJob() {
-# ... (condensed)
 ```
 
 ### Step 3: Idempotency for Retries
@@ -173,7 +164,6 @@ class ScheduledJobRunner {
 
   async runOnce(
     jobName: string,
-# ... (condensed)
 ```
 
 ### Step 4: Distributed Job Locking
@@ -189,7 +179,6 @@ DISTRIBUTED LOCKING STRATEGIES:
 |  Redlock             | Redis    | Multi-node       | Cont- |
 |                      |          |                  |       |
 |                      |          |                  |       |
-    # ... (condensed)
   - Enterprise / Kafka ecosystem                         -> ZooKeeper
 ```
 
@@ -201,7 +190,6 @@ class DistributedSchedulerLock {
   async acquireLeader(schedulerId: string, ttl: number = 30): Promise<boolean> {
     // Only one scheduler instance becomes leader
     const acquired = await this.redis.set(
-# ... (condensed)
 ```
 
 #### PostgreSQL Advisory Lock
@@ -212,7 +200,6 @@ def pg_advisory_lock_for_job(conn, job_name: str) -> bool:
     """Acquire a PostgreSQL advisory lock for a scheduled job.
     Returns True if lock acquired, False if another process holds it."""
     # Convert job name to a stable int64 for PG advisory lock
-# ... (condensed)
 ```
 
 ### Step 5: Job Monitoring & Alerting
@@ -235,7 +222,6 @@ class CronJobMonitor {
 
   async recordRun(jobName: string, result: {
     status: 'success' | 'failure';
-# ... (condensed)
 ```
 
 ### Step 6: Dead Letter Handling for Scheduled Jobs
@@ -273,7 +259,6 @@ import { FlowProducer } from 'bullmq';
 const flowProducer = new FlowProducer({ connection });
 
 // End-of-day pipeline — child jobs run first, parent last
-# ... (condensed)
 ```
 
 ### Step 8: Rate-Limited Execution
@@ -296,7 +281,6 @@ async function runDailyDigest() {
     where: { digestEnabled: true, lastDigestBefore: today() },
   });
 
-# ... (condensed)
 ```
 
 ### Step 9: Timezone Handling
@@ -323,7 +307,6 @@ SCHEDULER PERSISTENCE COMPARISON:
 |  Crash recovery      | May lose last      | No data loss   |
 
 Use Redis-backed (BullMQ, Sidekiq-Cron) when:
-    # ... (condensed)
   - Need complex queries on job history
 ```
 
@@ -381,7 +364,6 @@ grep -r "celery\|apscheduler\|django-cron\|huey" requirements.txt setup.py pypro
 grep -r "sidekiq\|sidekiq-cron\|whenever\|clockwork" Gemfile 2>/dev/null
 
 # Detect existing cron jobs
-# ... (condensed)
 ```
 iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitoring	status
 1	daily_report	0 6 * * *	bullmq	redis_lock	yes	max_instances:1	yes	configured

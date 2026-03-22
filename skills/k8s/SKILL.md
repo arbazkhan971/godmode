@@ -53,7 +53,6 @@ metadata:
   name: <service-name>
   namespace: <namespace>
   labels:
-# ... (condensed)
 ```
 
 #### Manifest Validation
@@ -64,7 +63,6 @@ kubectl apply --dry-run=server -f manifests/
 # Lint with kubeval
 kubeval manifests/*.yaml --strict
 
-# ... (condensed)
 ```
 
 ```
@@ -108,7 +106,6 @@ helm lint <chart-dir>
 # Template rendering (dry-run)
 helm template <release-name> <chart-dir> -f values-prod.yaml
 
-# ... (condensed)
 ```
 
 ### Step 4: Deployment Strategy Selection
@@ -142,7 +139,6 @@ kind: Rollout
 metadata:
   name: <service-name>
 spec:
-# ... (condensed)
 ```
 ```
 USE WHEN:
@@ -164,7 +160,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: <service-name>
-# ... (condensed)
 ```
 ```
 USE WHEN:
@@ -208,7 +203,6 @@ metadata:
   name: <service-name>
 spec:
   scaleTargetRef:
-# ... (condensed)
 ```
 
 #### PodDisruptionBudget
@@ -219,7 +213,6 @@ metadata:
   name: <service-name>
 spec:
   minAvailable: 1    # Or use maxUnavailable: 1
-# ... (condensed)
 ```
 
 ### Step 6: Troubleshooting
@@ -264,7 +257,6 @@ helm upgrade --install <release> <chart> \
   -n <namespace> \
   --wait \
   --timeout 5m
-# ... (condensed)
 ```
 
 ```

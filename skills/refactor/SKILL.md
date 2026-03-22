@@ -26,7 +26,6 @@ find . -name "*.ts" -o -name "*.js" -o -name "*.py" | xargs wc -l | sort -rn | h
 # Find the target code
 grep -rn "<pattern>" --include="*.ts" --include="*.js"
 
-# ... (condensed)
 ```
 
 ```
@@ -81,7 +80,6 @@ grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
 # Map the dependency graph
 # For each affected file, check what ELSE depends on it
 
-# ... (condensed)
 ```
 
 ```
@@ -111,7 +109,6 @@ npm test 2>&1 | tail -10
 # Run tests specific to the target
 npx jest --testPathPattern="<target>" 2>&1
 
-# ... (condensed)
 ```
 
 ```
@@ -195,7 +192,6 @@ npm test
 # Check that no functionality changed
 # Compare test count: expect same or higher
 # Compare coverage: expect same or higher
-# ... (condensed)
 ```
 
 ```

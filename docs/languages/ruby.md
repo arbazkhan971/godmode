@@ -32,7 +32,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/up
 ### THINK Phase
 
 | Skill | Ruby Adaptation |
-|-------|----------------|
+|--|--|
 | **think** | Design domain models and service objects first. A Ruby spec should define ActiveRecord associations, validations, and service object interfaces. Include input/output contracts with typed parameters where possible. |
 | **predict** | Expert panel evaluates Rails conventions, query performance (N+1, eager loading), and scaling strategy. Request panelists with Ruby depth (e.g., Rails core contributor, Sidekiq maintainer). |
 | **scenario** | Explore edge cases around nil handling (NoMethodError on nil), ActiveRecord callbacks ordering, race conditions in concurrent requests, background job failure modes, and timezone handling. |
@@ -40,7 +40,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/up
 ### BUILD Phase
 
 | Skill | Ruby Adaptation |
-|-------|----------------|
+|--|--|
 | **plan** | Each task specifies models, controllers, and services. File paths follow Rails conventions (`app/services/user_service.rb`). Tasks note which migrations, routes, and test files are affected. |
 | **build** | TDD with RSpec. RED step writes a spec file with `describe`/`context`/`it` blocks. GREEN step implements the class. REFACTOR step extracts service objects, uses value objects, and applies Ruby idioms. |
 | **test** | Use RSpec with `let`/`before`/`subject`. Use FactoryBot for test data. Use `have_enqueued_job` matchers for background jobs. Separate request specs, model specs, and service specs. |
@@ -49,7 +49,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/up
 ### OPTIMIZE Phase
 
 | Skill | Ruby Adaptation |
-|-------|----------------|
+|--|--|
 | **optimize** | Target response time, memory usage, or query count. Guard rail: `bundle exec rspec` must pass on every iteration. Use Rack Mini Profiler and Bullet gem data to guide hypotheses. |
 | **debug** | Use `binding.pry` (Pry) or `debugger` (debug gem). Check for common Rails pitfalls: N+1 queries, excessive object allocation, memory bloat from large ActiveRecord result sets. |
 | **fix** | Autonomous fix loop handles test failures, type errors, and style violations. Guard rail: `bundle exec rspec && bundle exec rubocop`. |
@@ -58,7 +58,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/up
 ### SHIP Phase
 
 | Skill | Ruby Adaptation |
-|-------|----------------|
+|--|--|
 | **ship** | Pre-flight: `bundle exec rspec && bundle exec rubocop && brakeman -q`. Verify migrations are reversible and seeds run cleanly. |
 | **finish** | Ensure version is bumped. Verify `Gemfile.lock` is committed. Confirm database migrations are production-safe (no data loss, no long locks). |
 
@@ -67,7 +67,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:3000/up
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `bundle exec rspec 2>&1 \| grep 'examples'` | 0 failures |
 | Style violations | `bundle exec rubocop --parallel 2>&1 \| tail -1` | 0 offenses |
 | Security audit | `bundle audit check 2>&1 \| grep 'Vulnerabilities'` | 0 |
@@ -632,7 +632,7 @@ Commit: `feat: Task service — creation with real-time broadcasting`
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | N+1 on assignments | Add `includes(:assignees)` | 95ms | 38ms | KEEP |
 | 2 | No database index on project_id | Add composite index `(project_id, status)` | 38ms | 22ms | KEEP |
 | 3 | Full model serialization | Use `jbuilder` with select fields | 22ms | 18ms | KEEP |

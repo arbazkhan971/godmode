@@ -28,7 +28,6 @@ grep -rn "as any" --include="*.ts" --include="*.tsx" | wc -l
 
 # Check tsconfig strictness
 grep -A20 '"compilerOptions"' tsconfig.json | grep -E "strict|noImplicit|noUnchecked"
-# ... (condensed)
 ```
 
 ```
@@ -97,7 +96,6 @@ const data: any = await fetch('/api/users').then(r => r.json());
 
 // GOOD — validate at the boundary
 const data = await fetch('/api/users').then(r => r.json());
-# ... (condensed)
 ```
 
 ### Step 3: Schema Validation Library Selection
@@ -126,7 +124,6 @@ import { Request, Response, NextFunction } from 'express';
 
 export function validate<T>(schema: ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
-# ... (condensed)
 ```
 
 #### Environment Variable Validation
@@ -137,7 +134,6 @@ import { z } from 'zod';
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-# ... (condensed)
 ```
 
 ### Step 5: Type Narrowing & Discriminated Unions
@@ -151,7 +147,6 @@ interface Order {
   id: string;
   status: string;
   items: Item[];
-# ... (condensed)
 ```
 
 #### Result Types (Error Handling Without Exceptions)
@@ -197,7 +192,6 @@ import { z } from 'zod';
 export const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-# ... (condensed)
 ```
 AUTO-DETECT:
 1. Check for TypeScript config:

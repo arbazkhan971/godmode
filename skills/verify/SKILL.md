@@ -219,174 +219,54 @@ Systematic protocol for verifying claims across multiple layers of confidence, f
 
 ```
 MULTI-LAYER VERIFICATION PROTOCOL:
-current_layer = 0
-max_layers = 5
 verification_layers = [unit, integration, e2e, smoke, evidence_collection]
 evidence_chain = []
 
-WHILE current_layer < max_layers:
-  layer = verification_layers[current_layer]
-  current_layer += 1
+EVIDENCE COLLECTION (shared across all layers):
+  After running each layer's tests, call:
+    collect_evidence(layer_name, test_cmd, result) →
+      evidence_chain.append({
+        layer, command, exit_code, output_file: "/tmp/godmode-verify-{layer}-{timestamp}.txt",
+        verdict: "PASS" if exit_code == 0 else "FAIL"
+      })
 
-  IF layer == "unit":
-    PURPOSE: Verify individual components work correctly in isolation.
+FOR EACH layer in verification_layers:
 
-    1. IDENTIFY unit test scope:
-       - Parse the claim to identify the target module/function
-       - Find corresponding unit test files
-       - IF no unit tests exist for the claimed functionality: FAIL — "No unit tests cover this claim"
+  "unit" — Verify components work correctly in isolation.
+    1. Parse claim → identify target module. Find unit test files.
+       IF no unit tests exist: FAIL — "No unit tests cover this claim"
+    2. RUN: test_cmd_unit = "{test_cmd} --grep '{pattern}'" or "{test_cmd} {file}"
+    3. Collect evidence (include passing/failing counts, duration).
+    4. IF FAIL: STOP — no point testing higher layers.
 
-    2. RUN unit tests:
-       test_cmd_unit = "{test_cmd} --grep '{relevant_pattern}'" or "{test_cmd} {specific_test_file}"
-       result = run(test_cmd_unit)
+  "integration" — Verify composed components work together.
+    1. Identify interacting services/modules. Check for integration tests.
+    2. Verify dependencies (DB: pg_isready, Redis: redis-cli ping, API: health check or mock).
+    3. RUN: test_cmd_integration = "{test_cmd} tests/integration/"
+    4. Collect evidence. IF FAIL: diagnose dependency issue vs test failure.
 
-    3. COLLECT evidence:
-       evidence_chain.append({
-         layer: "unit",
-         command: test_cmd_unit,
-         exit_code: result.exit_code,
-         output_file: "/tmp/godmode-verify-unit-{timestamp}.txt",
-         passing: result.tests_passed,
-         failing: result.tests_failed,
-         duration: result.duration_ms,
-         verdict: "PASS" if exit_code == 0 else "FAIL"
-       })
+  "e2e" — Verify full user flow end-to-end.
+    1. Identify user-visible behavior and e2e tests.
+    2. Start app in test mode if needed. Wait for ready signal.
+    3. RUN: "{e2e_cmd}" or "npx playwright test" or "npx cypress run"
+    4. Collect evidence (include screenshots if UI test).
+       IF no e2e tests exist: record verdict=SKIPPED.
 
-    4. IF FAIL: stop here — no point testing higher layers if units fail
-       REPORT: "[verify:unit] FAIL — {N} unit tests failed. Fix before proceeding."
-       STOP
+  "smoke" — Quick operational check (< 30s total).
+    1. Define checks: API → curl expect 200, CLI → --help expect exit 0,
+       build → ls output expect files, perf → time expect < threshold.
+    2. Run all checks. Collect evidence with per-check pass/fail.
 
-  IF layer == "integration":
-    PURPOSE: Verify components work correctly when composed together.
-
-    1. IDENTIFY integration scope:
-       - Which services/modules interact for this claim?
-       - Are there integration tests that cover this interaction?
-       - Do integration tests require external services (DB, cache, API)?
-
-    2. VERIFY dependencies are available:
-       IF database required: check connection (pg_isready, mysql ping, etc.)
-       IF redis required: check connection (redis-cli ping)
-       IF external API required: check health endpoint or mock
-
-    3. RUN integration tests:
-       test_cmd_integration = "{test_cmd} --grep 'integration'" or "{test_cmd} tests/integration/"
-       result = run(test_cmd_integration)
-
-    4. COLLECT evidence:
-       evidence_chain.append({
-         layer: "integration",
-         command: test_cmd_integration,
-         exit_code: result.exit_code,
-         output_file: "/tmp/godmode-verify-integration-{timestamp}.txt",
-         verdict: "PASS" if exit_code == 0 else "FAIL"
-       })
-
-    5. IF FAIL:
-       DIAGNOSE: was it a test failure or a dependency issue?
-       IF dependency issue: "Integration test failed due to unavailable {service}. Not a code issue."
-       IF test failure: "Integration test failed. The claim is NOT verified at integration layer."
-
-  IF layer == "e2e":
-    PURPOSE: Verify the full user flow works end-to-end.
-
-    1. IDENTIFY e2e scope:
-       - What user-visible behavior does the claim describe?
-       - Are there e2e/acceptance tests for this behavior?
-       - Does the application need to be running for these tests?
-
-    2. IF the application requires a running server:
-       Start application in test mode: {dev_cmd} or {start_cmd}
-       Wait for ready signal (port listening, health check)
-
-    3. RUN e2e tests:
-       test_cmd_e2e = "{e2e_cmd}" or "npx playwright test" or "npx cypress run"
-       result = run(test_cmd_e2e)
-
-    4. COLLECT evidence:
-       evidence_chain.append({
-         layer: "e2e",
-         command: test_cmd_e2e,
-         exit_code: result.exit_code,
-         output_file: "/tmp/godmode-verify-e2e-{timestamp}.txt",
-         screenshots: [list of screenshot paths if UI test],
-         verdict: "PASS" if exit_code == 0 else "FAIL"
-       })
-
-    5. IF no e2e tests exist:
-       evidence_chain.append({
-         layer: "e2e",
-         verdict: "SKIPPED",
-         reason: "No e2e tests cover this claim"
-       })
-
-  IF layer == "smoke":
-    PURPOSE: Quick, lightweight check that the system is operational.
-
-    1. DEFINE smoke checks based on claim type:
-       IF claim involves API: curl -sf {endpoint} → expect 200
-       IF claim involves CLI: {command} --help → expect exit 0
-       IF claim involves build: ls {output_dir} → expect files exist
-       IF claim involves performance: time {command} → expect < threshold
-
-    2. RUN smoke checks (quick, < 30 seconds total):
-       FOR each smoke_check:
-         result = run(smoke_check.command)
-         smoke_check.passed = evaluate(result, smoke_check.expected)
-
-    3. COLLECT evidence:
-       evidence_chain.append({
-         layer: "smoke",
-         checks: [{ command, expected, actual, passed } for each],
-         verdict: "PASS" if all passed else "FAIL"
-       })
-
-  IF layer == "evidence_collection":
-    PURPOSE: Compile all evidence into a single, auditable chain of proof.
-
-    1. AGGREGATE all layer results:
-       EVIDENCE CHAIN:
-| Layer | Verdict | Duration | Evidence File |
-|---|---|---|---|
-| Unit | PASS | 2.1s | /tmp/gm-verify-unit-*.txt |
-| Integration | PASS | 8.4s | /tmp/gm-verify-int-*.txt |
-| E2E | SKIP | — | No e2e tests |
-| Smoke | PASS | 0.3s | /tmp/gm-verify-smoke-*.txt |
-
-    2. DETERMINE overall verdict:
-       IF all executed layers PASS: VERIFIED (high confidence)
-       IF unit + integration PASS but e2e SKIP: VERIFIED (medium confidence, note e2e gap)
-       IF unit PASS but integration FAIL: PARTIALLY VERIFIED (unit-only, integration issue)
-       IF any layer FAIL: NOT VERIFIED (specify which layer failed)
-
-    3. CALCULATE confidence score:
-       layers_passed = count(PASS verdicts)
-       layers_executed = count(executed layers, excluding SKIP)
-       confidence = layers_passed / layers_executed * 100
-
-       >= 100%: HIGH confidence (all layers pass)
-       >= 75%:  MEDIUM confidence (most layers pass)
-       >= 50%:  LOW confidence (mixed results)
-       < 50%:   NOT VERIFIED (majority fail)
-
-    4. PERSIST evidence:
-       - Save all evidence files with timestamps
-       - Append to .godmode/verify-log.tsv with all layer results
-       - Create evidence summary: .godmode/verify-evidence-{timestamp}.md
-
-    5. FINAL REPORT:
-       MULTI-LAYER VERIFICATION REPORT:
-  Claim: "{claim}"
-  Unit tests:        PASS (47/47, 2.1s)
-  Integration tests: PASS (12/12, 8.4s)
-  E2E tests:         SKIPPED (none available)
-  Smoke tests:       PASS (3/3, 0.3s)
-  Confidence:        HIGH (3/3 executed layers pass)
-  Overall verdict:   VERIFIED
-  Evidence:          4 files preserved
-  Note: Add e2e tests for full coverage.
-
-  REPORT: "Layer {current_layer}/{max_layers}: {layer} — {PASS | FAIL | SKIP}"
+  "evidence_collection" — Compile auditable chain of proof.
+    1. Aggregate results into table: Layer | Verdict | Duration | Evidence File
+    2. Overall verdict:
+       All PASS → VERIFIED (high confidence)
+       Unit+integration PASS, e2e SKIP → VERIFIED (medium confidence)
+       Any FAIL → NOT VERIFIED (specify which layer)
+    3. Confidence = layers_passed / layers_executed * 100
+       (>=100% HIGH, >=75% MEDIUM, >=50% LOW, <50% NOT VERIFIED)
+    4. Persist all evidence files. Append to .godmode/verify-log.tsv.
+    5. Print final report with per-layer results, confidence, and overall verdict.
 ```
 
 ### Evidence Collection Standards

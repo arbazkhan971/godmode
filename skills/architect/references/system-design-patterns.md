@@ -65,13 +65,13 @@ Comprehensive catalog of system design patterns with architecture diagrams, trad
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Eventual consistency acceptable; same short URL always resolves to same long URL |
 | Availability | High | Reads from cache; multi-region replication |
 | Partition Tolerance | High | Stateless service; partitioned DB behind the scenes |
 
-### Capacity Estimation Template
+### Cap Estimate
 
 ```
 Write ratio:         100M URLs/month
@@ -132,13 +132,13 @@ Effective count:        current*0.7 + previous*0.3
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Distributed counters may have slight drift |
 | Availability | High | Fail-open policy when Redis is down |
 | Partition Tolerance | High | Local fallback; sync on reconnect |
 
-### Capacity Estimation Template
+### Cap Estimate
 
 ```
 Users:               10M DAU
@@ -187,13 +187,13 @@ Total Redis memory:  50M * 100B = 5 GB
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | At-least-once delivery; idempotent handlers |
 | Availability | High | Queue absorbs spikes; workers scale horizontally |
 | Partition Tolerance | High | Kafka partitions; retry with DLQ |
 
-### Capacity Estimation Template
+### Cap Estimate
 
 ```
 Notifications/day:   500M
@@ -246,13 +246,13 @@ Sender                Gateway              Chat Service         Receiver
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Ordered within a conversation; eventual across devices |
 | Availability | High | Message queue buffers offline; multi-DC |
 | Partition Tolerance | High | Cassandra partitioned by conversation_id |
 
-### Capacity Estimation Template
+### Cap Estimate
 
 ```
 DAU:                 50M
@@ -302,8 +302,8 @@ Servers (50K/srv):   ~1000 WebSocket servers
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | N/A | Routing layer; consistency depends on backend |
 | Availability | High | Active-passive or active-active HA pair |
 | Partition Tolerance | Medium | Split-brain risk with active-active |
@@ -338,8 +338,8 @@ Servers (50K/srv):   ~1000 WebSocket servers
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | Single entry point for policy enforcement |
 | Availability | High | Horizontally scaled; health-checked |
 | Partition Tolerance | Medium | Single point of failure if not redundant |
@@ -378,8 +378,8 @@ Servers (50K/srv):   ~1000 WebSocket servers
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Stale entries possible; TTL + health checks mitigate |
 | Availability | High | Replicated registry (Raft/Gossip) |
 | Partition Tolerance | High | Gossip protocol handles network partitions |
@@ -415,8 +415,8 @@ Servers (50K/srv):   ~1000 WebSocket servers
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Ordering within partition; no global order |
 | Availability | High | Replicated partitions; ISR in Kafka |
 | Partition Tolerance | High | Designed for distributed operation |
@@ -463,13 +463,13 @@ App ──▶ Cache ──▶ ack immediately
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Stale reads possible; TTL + invalidation mitigate |
 | Availability | High | Replicated nodes; hash ring redistribution |
 | Partition Tolerance | High | Consistent hashing handles node loss |
 
-### Capacity Estimation Template
+### Cap Estimate
 
 ```
 Cacheable objects:   50M
@@ -513,8 +513,8 @@ QPS per node:        100K ops/sec (Redis benchmark)
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Near real-time indexing (~1s delay) |
 | Availability | High | Replica shards serve reads during failures |
 | Partition Tolerance | High | Distributed shard allocation |
@@ -552,8 +552,8 @@ QPS per node:        100K ops/sec (Redis benchmark)
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Feed can be slightly stale; eventual |
 | Availability | High | Pre-computed feeds in cache |
 | Partition Tolerance | High | Feed cache sharded per user |
@@ -594,8 +594,8 @@ Client                API              Object Store
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | Metadata in RDBMS; object store is strongly consistent (S3) |
 | Availability | High | Multi-AZ replication; CDN for reads |
 | Partition Tolerance | High | Object store handles internally |
@@ -641,8 +641,8 @@ Manifest (HLS):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Eventual; transcode can take minutes |
 | Availability | High | CDN edge caching; origin fallback |
 | Partition Tolerance | High | CDN + multi-region origin |
@@ -683,8 +683,8 @@ Manifest (HLS):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Snapshot; web changes faster than crawl cycle |
 | Availability | Medium | Single orchestrator risk; HA scheduler needed |
 | Partition Tolerance | High | Workers are independent; queue-based |
@@ -720,8 +720,8 @@ Manifest (HLS):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | Monotonically increasing within a worker |
 | Availability | High | No network call for generation |
 | Partition Tolerance | High | Each worker generates independently |
@@ -768,8 +768,8 @@ Client──▶Coord           ├──▶ respond (3 of 3)
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Tunable | W+R > N for strong consistency |
 | Availability | High | Hinted handoff; read repair |
 | Partition Tolerance | High | Consistent hashing; vector clocks |
@@ -823,8 +823,8 @@ Before (3 nodes):    After adding N4:
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Minimal redistribution; temporary inconsistency on rebalance |
 | Availability | High | Node loss redistributes to neighbors |
 | Partition Tolerance | High | No central coordinator needed |
@@ -861,8 +861,8 @@ Neighbor lookup: query geohash + 8 adjacent cells
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Location updates are eventually consistent |
 | Availability | High | Read-heavy; cached geohash results |
 | Partition Tolerance | High | Sharded by geohash prefix |
@@ -900,8 +900,8 @@ Personalization: user history affinity score
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Trie rebuilt periodically; stale suggestions OK |
 | Availability | High | In-memory trie; replicated across nodes |
 | Partition Tolerance | High | Each replica is self-sufficient |
@@ -952,8 +952,8 @@ Downsampling:
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Slight delay acceptable; write-optimized |
 | Availability | High | Agents buffer locally on collection failure |
 | Partition Tolerance | High | Sharded by metric + time range |
@@ -991,8 +991,8 @@ Transaction: User pays $100 for Order #5678
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Critical | ACID transactions; double-entry ledger |
 | Availability | High | Idempotency keys; retry-safe |
 | Partition Tolerance | Medium | Synchronous replication for ledger |
@@ -1039,8 +1039,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | No double-booking; serialized writes |
 | Availability | Medium | Lock contention reduces throughput |
 | Partition Tolerance | Medium | Single-leader DB for strong consistency |
@@ -1078,8 +1078,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Cached content may be stale |
 | Availability | Very High | Globally distributed; origin failover |
 | Partition Tolerance | High | Each PoP operates independently |
@@ -1114,8 +1114,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | Quorum-based; fencing tokens prevent stale ops |
 | Availability | Medium | Requires majority of nodes; lock contention |
 | Partition Tolerance | Medium | Minority partition cannot acquire locks |
@@ -1156,8 +1156,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | High | Single leader ensures serial ordering |
 | Availability | Medium | Election period = brief unavailability |
 | Partition Tolerance | Medium | Minority partition has no leader |
@@ -1190,8 +1190,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Medium | Eventual; late-arriving events handled with watermarks |
 | Availability | High | Kafka replication; consumer replay |
 | Partition Tolerance | High | Horizontally partitioned stream |
@@ -1230,8 +1230,8 @@ Distributed Lock (Redis):
 
 ### Trade-offs
 
-| Property | Rating | Notes |
-|----------|--------|-------|
+| Key | Val | Note |
+|--|--|--|
 | Consistency | Low | Eventual; conflict resolution needed |
 | Availability | Very High | Any region can serve any request |
 | Partition Tolerance | Very High | Regions operate independently |

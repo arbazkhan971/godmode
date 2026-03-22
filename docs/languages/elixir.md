@@ -33,7 +33,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/ap
 ### THINK Phase
 
 | Skill | Elixir Adaptation |
-|-------|------------------|
+|--|--|
 | **think** | Design behaviours, structs, and supervision trees first. An Elixir spec should define `@callback` types, struct shapes with `@type` annotations, and the supervision hierarchy. Include `@spec` type annotations for all public functions. |
 | **predict** | Expert panel evaluates OTP design, fault tolerance strategy, and message-passing architecture. Request panelists with Elixir depth (e.g., OTP architect, Phoenix core contributor, BEAM VM expert). |
 | **scenario** | Explore edge cases around process crashes (let it crash philosophy), GenServer state recovery, distributed node partitions, message mailbox overflow, and LiveView socket disconnect/reconnect. |
@@ -41,7 +41,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/ap
 ### BUILD Phase
 
 | Skill | Elixir Adaptation |
-|-------|------------------|
+|--|--|
 | **plan** | Each task specifies modules and supervision tree placement. File paths follow Elixir conventions (`lib/my_app/services/user_service.ex`). Tasks note which supervisors, contexts, and migrations are affected. |
 | **build** | TDD with ExUnit. RED step writes a test module with `describe`/`test` blocks. GREEN step implements the module. REFACTOR step extracts behaviours, uses pattern matching, and applies OTP patterns. |
 | **test** | Use ExUnit with `setup`/`setup_all`. Use Mox for behaviour-based mocking. Use `Ecto.Adapters.SQL.Sandbox` for database isolation. Use `Phoenix.ConnTest` for controller tests. |
@@ -50,7 +50,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/ap
 ### OPTIMIZE Phase
 
 | Skill | Elixir Adaptation |
-|-------|------------------|
+|--|--|
 | **optimize** | Target request latency, process count, or memory per process. Guard rail: `mix test` must pass on every iteration. Use `:observer` and `:recon` data to guide hypotheses. |
 | **debug** | Use `:observer.start()`, `:recon`, and `IEx.pry`. Check for common Elixir pitfalls: GenServer bottlenecks, large process mailboxes, binary memory leaks, and ETS table contention. |
 | **fix** | Autonomous fix loop handles compiler warnings, test failures, and Credo violations. Guard rail: `mix compile --warnings-as-errors && mix test && mix credo --strict`. |
@@ -59,7 +59,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/ap
 ### SHIP Phase
 
 | Skill | Elixir Adaptation |
-|-------|------------------|
+|--|--|
 | **ship** | Pre-flight: `mix test && mix credo --strict && mix dialyzer && mix format --check-formatted`. Verify release builds with `mix release`. |
 | **finish** | Ensure version is bumped in `mix.exs`. Verify `config/runtime.exs` handles all environment variables. Confirm release configuration includes all required applications. |
 
@@ -68,7 +68,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:4000/ap
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `mix test 2>&1 \| grep 'tests'` | 0 failures |
 | Compiler warnings | `mix compile --warnings-as-errors 2>&1; echo $?` | exit code 0 |
 | Credo violations | `mix credo --strict 2>&1 \| tail -1` | 0 issues |
@@ -771,7 +771,7 @@ Commit: `feat: Notification context — multi-channel delivery with rate limitin
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | Synchronous rate limiter call | Use ETS for O(1) lookups instead of GenServer call | 15ms | 6ms | KEEP |
 | 2 | Ecto insert overhead | Use `Repo.insert` with `returning: false` | 6ms | 4ms | KEEP |
 | 3 | JSON encoding in controller | Use Jason encoder with iodata | 4ms | 3ms | KEEP |

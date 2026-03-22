@@ -106,7 +106,6 @@ version: "3.9"
 services:
   app:
     build:
-# ... (condensed)
 ```
 
 ```

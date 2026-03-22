@@ -22,8 +22,8 @@ think → predict → plan → build → optimize → secure → ship
 All 16 skills are relevant. The full workflow is designed primarily for backend work.
 
 ### Optimization Targets
-| Target | Verify Command |
-|--------|---------------|
+| Target | Verify Cmd |
+|--|--|
 | Response time | `curl -s -o /dev/null -w '%{time_total}' <url>` |
 | Throughput | `wrk -t4 -c100 -d10s <url> \| grep 'Requests/sec'` |
 | Memory usage | `ps -o rss= -p <pid>` |
@@ -58,8 +58,8 @@ think → plan → build → optimize → ship
 The predict and scenario skills are less common in frontend work but useful for architecture decisions (state management, rendering strategy).
 
 ### Optimization Targets
-| Target | Verify Command |
-|--------|---------------|
+| Target | Verify Cmd |
+|--|--|
 | Bundle size | `npm run build && du -b dist/assets/*.js \| awk '{s+=$1}END{print s}'` |
 | Lighthouse score | `npx lighthouse <url> --output=json \| jq '.categories.performance.score * 100'` |
 | First contentful paint | `npx lighthouse <url> --output=json \| jq '.audits["first-contentful-paint"].numericValue'` |
@@ -100,8 +100,8 @@ think → predict → plan → build → optimize → ship
 The optimize skill is especially powerful for ML — it naturally maps to hyperparameter tuning, feature engineering, and model architecture experiments.
 
 ### Optimization Targets
-| Target | Verify Command |
-|--------|---------------|
+| Target | Verify Cmd |
+|--|--|
 | Accuracy | `python evaluate.py --metric accuracy` |
 | F1 score | `python evaluate.py --metric f1` |
 | Inference latency | `python benchmark.py --model <path>` |
@@ -196,8 +196,8 @@ The predict skill is especially valuable for infrastructure decisions (cloud pro
 - Kubernetes RBAC and Pod Security Standards
 
 ### Optimization Targets
-| Target | Verify Command |
-|--------|---------------|
+| Target | Verify Cmd |
+|--|--|
 | Deploy time | `time ./deploy.sh` |
 | Container startup | `docker run ... --time` |
 | Resource usage | `kubectl top pods -n <namespace>` |

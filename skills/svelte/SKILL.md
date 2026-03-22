@@ -26,7 +26,6 @@ cat package.json 2>/dev/null | grep -E '"svelte"|"@sveltejs/kit"'
 # Detect SvelteKit vs standalone
 ls svelte.config.js svelte.config.ts 2>/dev/null
 
-# ... (condensed)
 ```
 
 ## Workflow
@@ -104,7 +103,6 @@ import type { CartItem, Product } from '$lib/types';
 class CartStore {
  items = $state<CartItem[]>([]);
 
-# ... (condensed)
 ```
 
 Rules for stores:
@@ -144,7 +142,6 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 
 export const load: PageServerLoad = async ({ params, locals, depends }) => {
-# ... (condensed)
 ```
 
 ```typescript
@@ -154,7 +151,6 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
  if (!locals.user) {
-# ... (condensed)
 ```
 
 #### Form Actions
@@ -165,7 +161,6 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 
 export const load: PageServerLoad = async ({ params }) => {
-# ... (condensed)
 ```
 
 Rules for SvelteKit routing:
@@ -199,7 +194,6 @@ export const prerender = true;
 
 // routes/dashboard/+layout.ts
 // Disable SSR for dashboard (client-only rendering)
-# ... (condensed)
 ```
 
 ### Step 6: Adapter Configuration
@@ -258,7 +252,6 @@ import { render, fireEvent } from '@testing-library/svelte';
 import Counter from './Counter.svelte';
 
 describe('Counter', () => {
-# ... (condensed)
 ```
 
 ### Step 9: Validation

@@ -43,7 +43,6 @@ dig +short <domain> CNAME
 dig +short <domain> MX
 dig +short <domain> TXT
 nslookup <domain>
-# ... (condensed)
 ```
 
 If no networking is configured: "No networking infrastructure detected. Shall I design a network architecture (VPC + DNS + SSL + LB) or address a specific component?"
@@ -92,7 +91,6 @@ dig @1.1.1.1 <domain> A +short       # Cloudflare DNS
 dig @208.67.222.222 <domain> A +short # OpenDNS
 
 # DNSSEC validation
-# ... (condensed)
 ```
 
 ### Step 3: SSL/TLS Certificate Management
@@ -106,7 +104,6 @@ sudo certbot certonly --webroot -w /var/www/html -d <domain> -d www.<domain>
 # Obtain wildcard certificate (DNS challenge required)
 sudo certbot certonly --dns-<provider> -d <domain> -d *.<domain>
 
-# ... (condensed)
 ```
 
 #### Kubernetes cert-manager
@@ -117,7 +114,6 @@ kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
 spec:
-# ... (condensed)
 ```
 
 #### Certificate Monitoring

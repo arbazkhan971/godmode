@@ -33,7 +33,7 @@ verify_command: xcodebuild test -scheme MyApp -sdk iphonesimulator -destination 
 ### THINK Phase
 
 | Skill | Swift Adaptation |
-|-------|-----------------|
+|--|--|
 | **think** | Design protocols, structs, and enums first. A Swift spec should define the data layer with `Codable` models, protocol-oriented interfaces, and state enums. Include access control (`public`, `internal`, `private`) in the spec. |
 | **predict** | Expert panel evaluates protocol-oriented design, memory management (ARC, retain cycles), and platform API choices. Request panelists with Swift depth (e.g., iOS architect, Swift core team contributor). |
 | **scenario** | Explore edge cases around optionals (`nil` handling), `@MainActor` isolation, Sendable conformance, network failure modes, and background task lifecycle. |
@@ -41,7 +41,7 @@ verify_command: xcodebuild test -scheme MyApp -sdk iphonesimulator -destination 
 ### BUILD Phase
 
 | Skill | Swift Adaptation |
-|-------|-----------------|
+|--|--|
 | **plan** | Each task specifies files and targets. File paths follow Xcode conventions (`Sources/MyApp/Services/UserService.swift`). Tasks note which targets and schemes are affected. |
 | **build** | TDD with XCTest. RED step writes a test class with `XCTestCase`. GREEN step implements the type. REFACTOR step applies protocol extraction, value semantics, and Swift concurrency (`async/await`). |
 | **test** | Use `XCTestCase` with `setUp`/`tearDown`. Prefer protocol-based dependency injection for testability. Use `XCTestExpectation` for async tests. |
@@ -50,7 +50,7 @@ verify_command: xcodebuild test -scheme MyApp -sdk iphonesimulator -destination 
 ### OPTIMIZE Phase
 
 | Skill | Swift Adaptation |
-|-------|-----------------|
+|--|--|
 | **optimize** | Target app launch time, memory footprint, or frame rate. Guard rail: `swift test` must pass on every iteration. Use Instruments data to guide hypotheses. |
 | **debug** | Use LLDB and Instruments (Time Profiler, Allocations, Leaks). Check for common Swift pitfalls: retain cycles, excessive `AnyObject` boxing, main thread blocking. |
 | **fix** | Autonomous fix loop handles compiler errors, test failures, and lint violations. Guard rail: `swift build && swift test && swiftlint lint --strict`. |
@@ -59,7 +59,7 @@ verify_command: xcodebuild test -scheme MyApp -sdk iphonesimulator -destination 
 ### SHIP Phase
 
 | Skill | Swift Adaptation |
-|-------|-----------------|
+|--|--|
 | **ship** | Pre-flight: `swift test && swiftlint lint --strict && xcodebuild build -scheme MyApp`. Verify archive builds and export options plist is configured. |
 | **finish** | Ensure version and build number are bumped in Info.plist. Verify provisioning profiles are valid. Confirm App Store Connect metadata is current. |
 
@@ -68,7 +68,7 @@ verify_command: xcodebuild test -scheme MyApp -sdk iphonesimulator -destination 
 ## Recommended Metrics
 
 | Metric | Verify Command | Target |
-|--------|---------------|--------|
+|--|--|--|
 | Tests pass | `swift test 2>&1 \| grep 'Test Suite.*passed'` | All passed |
 | Build time | `xcodebuild -scheme MyApp build 2>&1 \| grep 'Build Succeeded'` | < 60s (incremental) |
 | SwiftLint violations | `swiftlint lint --strict 2>&1 \| tail -1` | 0 violations |
@@ -508,7 +508,7 @@ Commit: `feat: Photo model — Core Data entity with async thumbnail generation`
 
 Iteration log:
 | # | Hypothesis | Change | Baseline | Measured | Verdict |
-|---|-----------|--------|----------|----------|---------|
+|--|--|--|--|--|--|
 | 1 | Full-size images in grid | Use thumbnail cache with `NSCache` | 32 fps | 52 fps | KEEP |
 | 2 | Synchronous image loading | Load images with `AsyncImage` + prefetch | 52 fps | 58 fps | KEEP |
 | 3 | Too many views in LazyVGrid | Reduce grid item view complexity | 58 fps | 59 fps | KEEP |

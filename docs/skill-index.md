@@ -63,8 +63,8 @@
 
 ### Phase 1: THINK (Design and Discovery)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | think | `/godmode:think` | Brainstorm ideas, design features, produce specifications |
 | predict | `/godmode:predict` | Get 5 expert persona evaluations of a design or decision |
 | scenario | `/godmode:scenario` | Explore edge cases, failure modes across 12 dimensions |
@@ -73,8 +73,8 @@
 
 ### Phase 2: BUILD (Plan and Implement)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | plan | `/godmode:plan` | Decompose spec into ordered, testable tasks |
 | build | `/godmode:build` | Execute plan with TDD, parallel agents, code review |
 | test | `/godmode:test` | Write tests, improve coverage, enforce TDD |
@@ -84,8 +84,8 @@
 
 ### Phase 3: OPTIMIZE (Autonomous Iteration)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | optimize | `/godmode:optimize` | Autonomous measure-modify-verify-keep/revert loop |
 | debug | `/godmode:debug` | Scientific root cause investigation |
 | fix | `/godmode:fix` | Autonomous error remediation until zero errors |
@@ -96,16 +96,16 @@
 
 ### Phase 4: SHIP (Deliver and Monitor)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | ship | `/godmode:ship` | 8-phase shipping: inventory, checklist, dry-run, deploy, verify |
 | finish | `/godmode:finish` | Branch cleanup: merge, PR, keep, or discard |
 | deploy | `/godmode:deploy` | Advanced deployment strategies (blue-green, canary) |
 
 ### META (Always Available)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
+| Skill | Cmd | Purpose |
+|--|--|--|
 | godmode | `/godmode` | Orchestrator — detects phase, suggests next skill |
 | setup | `/godmode:setup` | Configure Godmode for your project |
 | verify | `/godmode:verify` | Evidence-before-claims verification gate |
@@ -116,8 +116,8 @@
 
 ### API and Backend
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | api | Design and validate REST/GraphQL/gRPC APIs |
 | contract | Consumer-driven contract testing |
 | query | Query optimization, EXPLAIN plans, indexing |
@@ -126,8 +126,8 @@
 
 ### Frontend and UI
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | ui | Component architecture, design systems |
 | visual | Visual regression testing |
 | a11y | Accessibility compliance |
@@ -136,8 +136,8 @@
 
 ### Infrastructure and DevOps
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | infra | Infrastructure as Code (Terraform, CDK) |
 | k8s | Kubernetes and container orchestration |
 | deploy | Blue-green, canary, progressive rollout |
@@ -147,8 +147,8 @@
 
 ### Quality and Security
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | secure | STRIDE + OWASP security auditing |
 | comply | Regulatory compliance (GDPR, HIPAA, SOC2) |
 | quality | Code complexity, duplication, tech debt |
@@ -158,22 +158,22 @@
 
 ### Machine Learning
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | ml | Experiment tracking, dataset validation, model eval |
 | mlops | Model serving, drift detection, retraining |
 | pipeline | Data pipeline and ETL workflows |
 
 ### Mobile
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | mobile | iOS/Android/React Native/Flutter development |
 
 ### Documentation and Knowledge
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | docs | API docs, READMEs, runbooks, doc audits |
 | adr | Architecture Decision Records |
 | rfc | Technical proposals and RFCs |
@@ -181,8 +181,8 @@
 
 ### Testing
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | test | Unit test writing with TDD enforcement |
 | e2e | End-to-end browser testing |
 | visual | Visual regression screenshots and diffs |
@@ -192,8 +192,8 @@
 
 ### Incident Management
 
-| Skill | What It Does |
-|-------|-------------|
+| Skill | Purpose |
+|--|--|
 | incident | Severity classification, timelines, post-mortems |
 | debug | Scientific root cause investigation |
 | errortrack | Error aggregation and trend analysis |

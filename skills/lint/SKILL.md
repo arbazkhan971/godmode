@@ -27,7 +27,6 @@ ls -la .eslintrc* .prettierrc* biome.json .editorconfig .stylelintrc* \
        .rubocop.yml .clang-format .clang-tidy 2>/dev/null
 
 # Check for pre-commit hooks
-# ... (condensed)
 ```
 
 ```
@@ -75,7 +74,6 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-# ... (condensed)
 ```
 
 ```json
@@ -85,7 +83,6 @@ import reactHooks from 'eslint-plugin-react-hooks';
   "singleQuote": true,
   "trailingComma": "all",
   "printWidth": 100,
-# ... (condensed)
 ```
 
 ```
@@ -108,7 +105,6 @@ package-lock.json
   "organizeImports": {
     "enabled": true
   },
-# ... (condensed)
 ```
 
 #### golangci-lint (Go)
@@ -120,7 +116,6 @@ run:
   go: "1.22"
 
 linters:
-# ... (condensed)
 ```
 
 ### Step 4: Custom Rule Creation
@@ -134,7 +129,6 @@ module.exports = {
   meta: {
     type: 'problem',
     docs: {
-# ... (condensed)
 ```
 AUTO-FIX STRATEGY:
   Level 1: Format on Save (editor integration)
@@ -224,7 +218,6 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-# ... (condensed)
 ```
 
 ```bash

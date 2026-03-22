@@ -38,9 +38,9 @@ Godmode: Running comprehensive security audit...
 
 SECURITY AUDIT: HealthTrack
 
-══════════════════════════════════════════════
+════════════════════
 STRIDE THREAT MODEL
-══════════════════════════════════════════════
+════════════════════
 
 Spoofing (Identity):
   ✓ PASS — JWT auth on all API routes
@@ -74,9 +74,9 @@ Elevation of Privilege:
   ✗ FAIL — JWT secret is "supersecret123" (hardcoded in source)
   ✗ FAIL — No RBAC — all authenticated users can access all records
 
-══════════════════════════════════════════════
+════════════════════
 OWASP TOP 10 ANALYSIS
-══════════════════════════════════════════════
+════════════════════
 
 A01 Broken Access Control:        FAIL (3 findings)
   - No RBAC enforcement on API layer
@@ -122,9 +122,9 @@ A09 Logging/Monitoring Failures:  FAIL (3 findings)
 A10 SSRF:                         PASS
   - No user-supplied URLs processed server-side
 
-══════════════════════════════════════════════
+════════════════════
 RED TEAM SIMULATION
-══════════════════════════════════════════════
+════════════════════
 
 Attack 1: Authentication Bypass
   Vector: Brute-force login (no rate limiting)
@@ -146,9 +146,9 @@ Attack 4: Session Hijacking
   Difficulty: MEDIUM
   Impact: HIGH — session takeover
 
-══════════════════════════════════════════════
+════════════════════
 SUMMARY
-══════════════════════════════════════════════
+════════════════════
 
   CRITICAL:  5 findings
   HIGH:      7 findings
@@ -287,9 +287,9 @@ Saved: docs/security/healthtrack-crypto-audit.md
 
 Godmode: Running compliance assessment...
 
-══════════════════════════════════════════════
+════════════════════
 HIPAA COMPLIANCE ASSESSMENT
-══════════════════════════════════════════════
+════════════════════
 
 Administrative Safeguards (45 CFR 164.308):
   ✗ Security Officer designation: Not documented
@@ -313,9 +313,9 @@ Technical Safeguards (45 CFR 164.312):
 HIPAA Score: 23/100 (NOT COMPLIANT)
 Gap: 31 controls need implementation or documentation
 
-══════════════════════════════════════════════
+════════════════════
 SOC 2 TYPE II ASSESSMENT (Trust Service Criteria)
-══════════════════════════════════════════════
+════════════════════
 
 Security (CC6):
   Controls implemented: 8/24 (33%)
@@ -340,9 +340,9 @@ Privacy (P1):
 SOC 2 Score: 30/100 (NOT COMPLIANT)
 Gap: 44 controls need implementation or documentation
 
-══════════════════════════════════════════════
+════════════════════
 COMPLIANCE REMEDIATION ROADMAP
-══════════════════════════════════════════════
+════════════════════
 
 WEEK 1 (Critical technical fixes):
   1. Implement RBAC with minimum necessary access

@@ -54,63 +54,18 @@ IF any check FAILED:
         Print: "WARNING: TODOs found. Proceeding (non-blocking)."
         List each file:line.
 
-# 3. DETERMINE SHIP TARGET
-IF ship_type == "pr":
-    title = generate from commit log (under 70 chars)
-    body = summarize changes + test plan
-    base_branch = "main"
-    rollback_cmd = "gh pr close {pr_number}"
-ELIF ship_type == "release":
-    version = detect from package.json/Cargo.toml/pyproject.toml or ask user
-    tag = "v{version}"
-    rollback_cmd = "git tag -d {tag} && git push origin :refs/tags/{tag}"
-ELIF ship_type == "deploy":
-    target = detect from deploy config (Dockerfile, fly.toml, vercel.json, k8s manifests)
-    rollback_cmd = detect rollback (e.g., "fly releases rollback", "kubectl rollout undo")
-
-# 4. DRY-RUN — Show exactly what will happen. User must confirm.
-Print: "--- DRY RUN ---"
-Print: "Action: {ship_type}"
-Print: "Commands:"
-FOR each cmd in ship_commands:
-    Print: "  $ {cmd}"
-Print: "Rollback: {rollback_cmd}"
-Print: "Type 'yes' to proceed."
-IF user != "yes": STOP
-
-# 5. SHIP — Execute the ship action.
-IF ship_type == "pr":
-    `git push -u origin HEAD`
-    `gh pr create --title "{title}" --body "{body}"`
-    pr_url = parse output
-    Print: "PR created: {pr_url}"
-ELIF ship_type == "release":
-    `git tag {tag}`
-    `git push origin {tag}`
-    `gh release create {tag} --generate-notes`
-    release_url = parse output
-    Print: "Release created: {release_url}"
-ELIF ship_type == "deploy":
-    run deploy command (e.g., `fly deploy`, `vercel --prod`, `kubectl apply -f`)
-    deploy_url = parse output
-    Print: "Deployed: {deploy_url}"
-
-# 6. VERIFY — Post-ship check.
-IF ship_type == "pr":
-    `gh pr checks {pr_number} --watch`  # wait for CI
-    ci_status = parse output
-    Print: "CI: {ci_status}"
-ELIF ship_type == "deploy":
-    health_url = detect from config or ask user
-    IF health_url:
-        result = `curl -sf {health_url}`
-        IF result fails:
-            Print: "VERIFY FAILED. Rolling back: {rollback_cmd}"
-            run(rollback_cmd)
-            Print: "Rollback complete."
-ELIF ship_type == "release":
-    `gh release view {tag}`
-    Print: "Release verified: {tag}"
+# 3-6. DETERMINE TARGET, DRY-RUN, SHIP, VERIFY — per ship_type:
+#
+# | Phase     | pr                                | release                           | deploy                              |
+# |-----------|-----------------------------------|-----------------------------------|-------------------------------------|
+# | Target    | title from commits, body=summary  | version from manifest, tag=v{ver} | config from Dockerfile/fly/vercel/k8s|
+# | Rollback  | gh pr close {number}              | git tag -d {tag} && push :tag     | fly releases rollback / kubectl undo|
+# | Ship cmds | git push -u; gh pr create         | git tag; git push tag; gh release | fly deploy / vercel --prod / kubectl|
+# | Verify    | gh pr checks --watch → CI status  | gh release view {tag}             | curl -sf {health_url} → 200 or rollback|
+#
+# 4. DRY-RUN: Print commands + rollback. Require user types 'yes' to proceed.
+# 5. SHIP: Execute the commands for the detected ship_type. Print result URL.
+# 6. VERIFY: Run the verify check. On failure for deploy: execute rollback immediately.
 
 # 7. LOG — Append to .godmode/ship-results.tsv
 append_tsv(timestamp, ship_type, commit_sha, outcome, url)

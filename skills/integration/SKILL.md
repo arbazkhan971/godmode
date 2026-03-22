@@ -27,7 +27,6 @@ Map the real external dependencies the code interacts with:
 # Check for existing integration tests
 find. -name "*integration*" -o -name "*e2e*" -o -path "*/it/*"
 
-# ... (condensed)
 ```
 
 ```
@@ -66,7 +65,6 @@ import { Client } from 'pg';
 
 describe('UserRepository (integration)', () => {
  let container: StartedPostgreSqlContainer;
-# ... (condensed)
 ```
 
 #### Testcontainers — Python
@@ -78,7 +76,6 @@ import psycopg2
 
 @pytest.fixture(scope="module")
 def postgres():
-# ... (condensed)
 ```
 
 #### Testcontainers — Java (JUnit 5)
@@ -90,7 +87,6 @@ class UserRepositoryIntegrationTest {
  @Container
  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
 .withDatabaseName("testdb")
-# ... (condensed)
 ```
 
 ### Step 3: Database Seeding and Cleanup
@@ -107,7 +103,6 @@ async function setupTestDatabase(client: Client) {
 
  // Step 2: Seed reference data (enums, configs, lookup tables)
  await seedReferenceData(client);
-# ... (condensed)
 ```
 
 **2. Fixture-based seeding (for test data)**
@@ -120,7 +115,6 @@ export function createUser(overrides: Partial<User> = {}): User {
  id: randomUUID(),
  name: 'Test User',
  email: `test-${randomUUID()}@example.com`,
-# ... (condensed)
 ```
 
 #### Cleanup Strategies
@@ -143,7 +137,6 @@ let transaction: Transaction;
 beforeEach(async () => {
  transaction = await db.beginTransaction();
 });
-# ... (condensed)
 ```
 
 ```python
@@ -163,7 +156,6 @@ it('finds user by email', async () => {
  const user = createUser({ email: `${unique}@test.com` });
  await repo.save(user);
 
-# ... (condensed)
 ```
 
 Use when: Tests modify schema, or cleanup is too complex.
@@ -205,7 +197,6 @@ describe('authenticated API routes', () => {
  beforeAll(async () => {
  // Create a test user and get a real auth token
  await request(app)
-# ... (condensed)
 ```
 
 ### Step 5: Service-Level Integration Patterns
@@ -220,7 +211,6 @@ describe('OrderService (integration)', () => {
  let orderRepo: OrderRepository;
  let inventoryRepo: InventoryRepository;
 
-# ... (condensed)
 ```
 
 #### Pattern 2: Service-to-Service Integration
@@ -233,7 +223,6 @@ describe('CheckoutFlow (integration)', () => {
  let paymentService: PaymentService;
  let notificationService: NotificationService;
 
-# ... (condensed)
 ```
 
 #### Pattern 3: Message Queue Integration
@@ -246,7 +235,6 @@ describe('Order Event Processing (integration)', () => {
  let consumer: OrderEventConsumer;
 
  beforeAll(async () => {
-# ... (condensed)
 ```
 
 ### Step 6: Integration Test Configuration
@@ -261,7 +249,6 @@ Keep integration tests separate from unit tests so they can run independently:
  "test": "jest --testPathPattern='tests/unit'",
  "test:integration": "jest --testPathPattern='tests/integration'",
  "test:all": "jest"
-# ... (condensed)
 ```
 
 ```toml
@@ -286,7 +273,6 @@ def test_with_real_database():
 package repository_test
 
 func TestWithRealDatabase(t *testing.T) {
-# ... (condensed)
 ```
 
 ### Step 7: Run, Verify, and Report

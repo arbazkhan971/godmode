@@ -57,7 +57,6 @@ model:
   type: <architecture name>
   layers: <layer configuration>
   hidden_size: <N>
-# ... (condensed)
 ```
 
 #### Hyperparameter Search

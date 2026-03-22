@@ -26,7 +26,6 @@ find . -name "*.e2e.*" -o -name "*.spec.*" -o -name "*.test.*" | grep -i -E "e2e
 # Check for test framework config
 ls playwright.config.* cypress.config.* cypress.json wdio.conf.* 2>/dev/null
 
-# ... (condensed)
 ```
 
 ```
@@ -74,7 +73,6 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e/tests',
   fullyParallel: true,
-# ... (condensed)
 ```
 
 **Cypress:**
@@ -85,7 +83,6 @@ import { defineConfig } from 'cypress';
 export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:3000',
-# ... (condensed)
 ```
 
 ### Step 3: Page Object Model
@@ -98,7 +95,6 @@ import { Page, Locator, expect } from '@playwright/test';
 export abstract class BasePage {
   constructor(protected readonly page: Page) {}
 
-# ... (condensed)
 ```
 
 ```typescript
@@ -108,7 +104,6 @@ import { BasePage } from './base.page';
 
 export class LoginPage extends BasePage {
   // Locators — defined once, used everywhere
-# ... (condensed)
 ```
 
 ### Step 4: Write E2E Tests
@@ -121,7 +116,6 @@ import { LoginPage } from '../../pages/login.page';
 import { DashboardPage } from '../../pages/dashboard.page';
 import { testUsers } from '../../fixtures/test-data';
 
-# ... (condensed)
 ```
 
 ### Step 5: Test Data Management
@@ -134,7 +128,6 @@ export const testUsers = {
     email: 'test-user@example.com',
     password: 'Test1234!',
     name: 'Test User',
-# ... (condensed)
 ```
 
 ```typescript
@@ -144,7 +137,6 @@ import { LoginPage } from '../pages/login.page';
 import { testUsers } from './test-data';
 
 type AuthFixtures = {
-# ... (condensed)
 ```
 
 ### Step 6: Flakiness Remediation
