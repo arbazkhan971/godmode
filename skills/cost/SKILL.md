@@ -437,6 +437,52 @@ WHILE current_category < len(categories):
 EXIT when all categories analyzed OR user requests stop
 ```
 
+## Keep/Discard Discipline
+```
+After EACH cost optimization recommendation is applied:
+  1. MEASURE: Verify the change took effect (resource resized, deleted, or reservation placed)
+  2. COMPARE: Did actual billing decrease? Are monitored metrics (CPU, memory, latency) still healthy?
+  3. DECIDE:
+     - KEEP if: savings confirmed AND no performance regression AND no availability impact
+     - DISCARD if: performance degraded OR availability dropped OR savings not realized
+  4. COMMIT kept changes. Revert discarded changes immediately.
+
+Never batch multiple optimizations without measuring between them — you cannot attribute savings if you change 5 things at once.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive recommendations produce no measurable savings:
+  1. Re-read ALL resource utilization data — cached data may be stale.
+  2. Widen scope: look at data transfer costs, NAT gateway, DNS queries — hidden cost drivers.
+  3. Try a different category: if compute is already optimized, switch to storage or network.
+  4. If still stuck → log stop_reason=optimization_plateau, report total savings so far, move on.
+```
+
+## Stop Conditions
+```
+STOP the loop when ANY of these are true:
+  - All resource categories analyzed and all savings quantified
+  - Total savings target met (if user specified one)
+  - Remaining opportunities are below $50/month each (diminishing returns)
+  - User explicitly requests stop
+  - Max iterations (20) reached
+
+DO NOT STOP just because:
+  - One category has no savings (other categories might)
+  - Reserved instance analysis is complex (still do the analysis)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler cost optimization:
+  - Terminate idle resources before rightsizing active ones
+  - Delete unattached storage before optimizing attached storage
+  - Use on-demand pricing with right-sizing before committing to reservations
+  - Fix tagging before building complex cost allocation dashboards
+  - Use built-in cloud provider tools (AWS Cost Explorer) before third-party solutions
+```
+
 ## Multi-Agent Dispatch
 For comprehensive cost optimization:
 ```

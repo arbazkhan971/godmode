@@ -1297,6 +1297,144 @@ IF connection pool exhaustion occurs:
   5. Application-side: ensure every database connection is released after use (try/finally pattern)
 ```
 
+## EXPLAIN ANALYZE Optimization Loop
+
+Autonomous loop that identifies the slowest queries, runs EXPLAIN ANALYZE, applies fixes, and verifies improvement. One change per iteration to isolate impact. Never stops until targets are met or diminishing returns detected.
+
+```
+EXPLAIN ANALYZE OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 20
+improvement_threshold = 5  // stop if improvement < 5%
+
+// Phase 0: Capture Baseline from pg_stat_statements
+baseline_queries = SELECT query, calls, mean_exec_time, total_exec_time, rows
+  FROM pg_stat_statements
+  ORDER BY total_exec_time DESC
+  LIMIT 20;
+
+baseline_health = {
+  cache_hit_ratio: query_cache_hit_pct(),       // target: > 99%
+  dead_tuple_ratio: max_dead_tuple_pct(),        // target: < 10%
+  unused_indexes: count_unused_indexes(),         // target: 0
+  long_queries: count_queries_over(threshold=30s) // target: 0
+}
+
+LOG: "BASELINE: cache_hit={baseline_health.cache_hit_ratio}%, dead_tuples={baseline_health.dead_tuple_ratio}%, unused_idx={baseline_health.unused_indexes}, long_queries={baseline_health.long_queries}"
+
+WHILE current_iteration < max_iterations:
+  current_iteration += 1
+
+  // Phase 1: Identify Worst Offender
+  target_query = select_worst_query(baseline_queries)
+  // Priority: highest total_exec_time first (impact = calls * mean_time)
+
+  plan_before = EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) target_query
+  cost_before = plan_before.total_cost
+  time_before = plan_before.execution_time_ms
+
+  // Phase 2: Diagnose Plan
+  diagnosis = analyze_plan(plan_before)
+  // Detect: Seq Scan on large table, Nested Loop with high rows,
+  // Sort without index, Hash Join spilling to disk, Bitmap Heap with
+  // high recheck rate, parallel workers not used
+
+  // Phase 3: Apply Single Fix (one per iteration)
+  IF diagnosis.issue == "SEQ_SCAN_LARGE_TABLE":
+    columns = extract_where_columns(target_query)
+    CREATE INDEX CONCURRENTLY idx_{table}_{columns} ON {table} ({columns});
+    ANALYZE {table};
+
+  ELSE IF diagnosis.issue == "SORT_WITHOUT_INDEX":
+    sort_cols = extract_order_by_columns(target_query)
+    CREATE INDEX CONCURRENTLY idx_{table}_{sort_cols} ON {table} ({sort_cols});
+
+  ELSE IF diagnosis.issue == "NESTED_LOOP_HIGH_ROWS":
+    // Consider: add index on join column, or increase work_mem for hash join
+    IF missing_index_on_join_column:
+      CREATE INDEX CONCURRENTLY idx_{table}_{join_col} ON {table} ({join_col});
+    ELSE:
+      SET work_mem = '64MB' for this session and re-test
+
+  ELSE IF diagnosis.issue == "BLOATED_TABLE":
+    IF dead_tuple_pct > 30:
+      VACUUM (VERBOSE, PARALLEL 4) {table};
+    IF dead_tuple_pct > 60:
+      -- Schedule pg_repack for online compaction
+
+  ELSE IF diagnosis.issue == "MISSING_STATISTICS":
+    ANALYZE {table};
+
+  ELSE IF diagnosis.issue == "SUBOPTIMAL_CONFIG":
+    // One config change per iteration
+    IF random_page_cost == 4.0 AND storage == "SSD":
+      SET random_page_cost = 1.1;
+    ELSE IF effective_cache_size too low:
+      SET effective_cache_size = '75% of RAM';
+
+  // Phase 4: Verify Improvement
+  plan_after = EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) target_query
+  time_after = plan_after.execution_time_ms
+  improvement_pct = ((time_before - time_after) / time_before) * 100
+
+  // Phase 5: Keep/Discard
+  IF time_after < time_before:
+    KEEP the change
+    LOG: "KEEP: {target_query.template} — {time_before}ms → {time_after}ms ({improvement_pct}% better)"
+    UPDATE baseline_queries with new metrics
+  ELSE:
+    DISCARD the change (DROP INDEX, revert config)
+    LOG: "DISCARD: {target_query.template} — regression detected ({time_before}ms → {time_after}ms), reverted"
+
+  // Phase 6: Check Stopping Conditions
+  IF improvement_pct < improvement_threshold AND improvement_pct >= 0:
+    LOG: "Diminishing returns ({improvement_pct}% < {improvement_threshold}%). Stopping."
+    BREAK
+
+  REPORT: "Iteration {current_iteration}: {target_query.template} — {time_before}ms → {time_after}ms, fix: {diagnosis.issue}"
+
+ON COMPLETION:
+  // Final health check
+  final_health = {
+    cache_hit_ratio: query_cache_hit_pct(),
+    dead_tuple_ratio: max_dead_tuple_pct(),
+    unused_indexes: count_unused_indexes(),
+    long_queries: count_queries_over(threshold=30s)
+  }
+
+  LOG to .godmode/postgres-explain-audit.tsv:
+    timestamp\tquery_template\ttime_before_ms\ttime_after_ms\tfix_type\timprovement_pct\tverdict
+  REPORT: "EXPLAIN ANALYZE loop complete: {current_iteration} iterations, cache_hit: {baseline_health.cache_hit_ratio}% → {final_health.cache_hit_ratio}%, top query: {best_improvement}% faster"
+```
+
+### Index Tuning Reference
+
+```
+INDEX TUNING DECISION TABLE:
+┌──────────────────────────────────────┬────────────────────────┬─────────────────────────────┐
+│ EXPLAIN ANALYZE Signal               │ Index Type             │ Action                      │
+├──────────────────────────────────────┼────────────────────────┼─────────────────────────────┤
+│ Seq Scan on WHERE col = ?            │ B-tree                 │ CREATE INDEX ON t(col)       │
+│ Seq Scan on WHERE col LIKE '%x%'     │ GIN pg_trgm            │ CREATE INDEX USING GIN       │
+│ Seq Scan on WHERE col @> '{}'        │ GIN                    │ CREATE INDEX USING GIN       │
+│ Seq Scan on WHERE ST_DWithin(...)    │ GiST                   │ CREATE INDEX USING GIST      │
+│ Sort without index                   │ B-tree (ORDER BY cols) │ CREATE INDEX ON t(sort_cols)  │
+│ Filter removes > 90% of rows        │ Partial index          │ CREATE INDEX WHERE condition  │
+│ Multiple columns in WHERE + ORDER    │ Composite B-tree       │ CREATE INDEX ON t(c1,c2,c3)  │
+│ JSONB query (->>, @>)               │ GIN on jsonb_path_ops  │ CREATE INDEX USING GIN       │
+│ Full-text search (tsvector)          │ GIN on tsvector column │ CREATE INDEX USING GIN       │
+│ Vector similarity (pgvector)         │ HNSW or IVFFlat        │ CREATE INDEX USING hnsw      │
+└──────────────────────────────────────┴────────────────────────┴─────────────────────────────┘
+
+THRESHOLDS:
+- Cache hit ratio: > 99% (HEALTHY), 95-99% (NEEDS TUNING), < 95% (DEGRADED)
+- Dead tuple ratio: < 10% (HEALTHY), 10-30% (NEEDS TUNING), > 30% (DEGRADED)
+- Query execution time: < 50ms (good), 50-500ms (review), > 500ms (must optimize)
+- Improvement per iteration: stop if < 5% (diminishing returns)
+- Unused indexes > 10MB: must be dropped (waste of write I/O and disk)
+- Sequential scans on tables > 100K rows: must add index
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Postgres tasks sequentially: schema/extensions, then query optimization, then replication/partitioning, then connection pooling/tuning.

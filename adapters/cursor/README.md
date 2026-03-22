@@ -168,6 +168,80 @@ your-project/
 
 ---
 
+## Troubleshooting
+
+### Skills not loading or "unknown command"
+
+1. Confirm `.cursorrules` exists in the project root:
+   ```bash
+   test -f .cursorrules && echo "OK" || echo "MISSING"
+   ```
+2. Verify skill files are accessible:
+   ```bash
+   ls skills/godmode/SKILL.md
+   ```
+3. If using symlinks, confirm they resolve:
+   ```bash
+   file skills/godmode/SKILL.md   # should show "ASCII text", not "broken symbolic link"
+   ```
+4. Restart Cursor after installation -- `.cursorrules` is read on project open.
+
+### Symlinks broken after moving the Godmode repo
+
+If you moved or re-cloned the Godmode source, symlinks in `skills/` and `agents/` will break. Fix by re-running the installer:
+
+```bash
+bash /path/to/godmode/adapters/cursor/install.sh .
+```
+
+### Background agents not dispatching
+
+Cursor's background agent support depends on your Cursor plan and version. If parallel dispatch is not working:
+1. Verify your Cursor version supports background agents.
+2. Check that Cursor settings allow background agent execution.
+3. Fall back to sequential mode -- Godmode skills degrade gracefully. Read `adapters/shared/sequential-dispatch.md` for the protocol.
+
+### Different results than Claude Code
+
+If you observe different outcomes between Cursor and Claude Code, check:
+1. Both are using the same `.godmode/config.yaml` (same test_cmd, lint_cmd, build_cmd).
+2. Both are running against the same git commit.
+3. No environment differences (Node version, Python version, etc.).
+4. Background agent isolation -- ensure agents are not writing to the same files concurrently without worktree isolation.
+
+## Verification
+
+After installation, confirm everything is wired correctly:
+
+```bash
+bash /path/to/godmode/adapters/cursor/install.sh --verify .
+```
+
+Or verify manually:
+
+```bash
+# 1. .cursorrules exists and is non-empty
+wc -l .cursorrules
+
+# 2. Skills are readable
+head -5 skills/godmode/SKILL.md
+
+# 3. Agents are readable
+head -5 agents/planner.md
+
+# 4. Config file exists
+cat .godmode/config.yaml
+
+# 5. Test a skill invocation in Cursor chat
+# @godmode verify claim="setup works" cmd="echo ok"
+```
+
+The key checks:
+- `.cursorrules` is present and contains the Godmode instruction set
+- `skills/` symlink resolves to the Godmode skills directory
+- `agents/` symlink resolves to the Godmode agents directory
+- `.godmode/config.yaml` exists with valid test/lint/build commands
+
 ## Reference
 
 - `.cursorrules` (loaded by Cursor): [.cursorrules](./.cursorrules)

@@ -767,6 +767,294 @@ IF app store submission is rejected:
 - **Do NOT lose the signing keystore.** If the Android release keystore is lost, you must publish a new app with a new package name. Users must manually migrate. Back up the keystore securely.
 
 
+## Mobile Optimization Loop
+
+When optimizing an existing mobile application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Startup Time Optimization
+
+```
+STARTUP TIME AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure cold start precisely                            │
+│                                                                   │
+│  iOS measurement:                                                │
+│  - Xcode: Edit Scheme → Run → Environment Variables →            │
+│    DYLD_PRINT_STATISTICS=1 (pre-main time breakdown)             │
+│  - Instruments → App Launch template (total to first frame)      │
+│  - MetricKit: MXAppLaunchMetric (production data)                │
+│                                                                   │
+│  Android measurement:                                            │
+│  - adb shell am start -W com.app/.MainActivity                   │
+│    (reports TotalTime in ms)                                     │
+│  - Android Studio → Profiler → Startup trace                    │
+│  - Firebase Performance Monitoring (production data)             │
+│                                                                   │
+│  React Native:                                                   │
+│  - Performance.mark('app_start') in index.js                    │
+│  - Performance.mark('first_render') in root component            │
+│  - TTI = first_render - app_start                                │
+│                                                                   │
+│  Flutter:                                                        │
+│  - flutter run --trace-startup --profile                         │
+│  - Timeline.startSync('app_start') / Timeline.finishSync()      │
+│                                                                   │
+│  Step 2: Baseline                                                │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Phase                   │  iOS     │  Android │  Target    ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  Pre-main / cold init    │  <N>ms   │  <N>ms   │  < 200ms   ││
+│  │  Main → first frame      │  <N>ms   │  <N>ms   │  < 500ms   ││
+│  │  First frame → interactive│ <N>ms   │  <N>ms   │  < 300ms   ││
+│  │  Total cold start        │  <N>ms   │  <N>ms   │  < 1000ms  ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 3: Optimization actions                                    │
+│  a) Defer non-essential initialization:                          │
+│     - Analytics SDK → initialize after first frame               │
+│     - Feature flags → fetch async, use cached values on start    │
+│     - Database migrations → run in background thread             │
+│     - Push notification registration → defer 3 seconds           │
+│                                                                   │
+│  b) Reduce binary load time:                                     │
+│     - iOS: minimize dynamic frameworks (each adds ~10ms)         │
+│       Prefer static linking or merge frameworks                  │
+│     - Android: minimize multidex (use R8 full mode)              │
+│     - Both: strip unused code, compress assets                   │
+│                                                                   │
+│  c) Optimize first screen rendering:                             │
+│     - Cache first screen data locally (show cached → refresh)    │
+│     - Use skeleton screens instead of loading spinners           │
+│     - Precompute expensive layouts at build time                 │
+│     - Lazy-load tabs/screens not visible at launch               │
+│                                                                   │
+│  d) React Native specific:                                       │
+│     - Enable Hermes engine (significant startup improvement)     │
+│     - Use inline requires (require on first use, not top-level) │
+│     - Precompile JS bundle: hermes -emit-binary                 │
+│                                                                   │
+│  e) Flutter specific:                                            │
+│     - Use deferred components (deferred imports + loadLibrary)   │
+│     - Warm up MethodChannels before first use                    │
+│     - Minimize packages imported in main.dart                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 2: Frame Rate & Rendering Audit
+
+```
+FRAME RATE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure frame rate during key interactions              │
+│                                                                   │
+│  Target: 60 FPS (16.67ms per frame) for all interactions         │
+│  Critical interactions to measure:                               │
+│  - Scrolling long lists (most common jank source)                │
+│  - Screen transitions / navigation animations                    │
+│  - Pull-to-refresh                                               │
+│  - Keyboard show/hide                                            │
+│  - Swipe gestures                                                │
+│                                                                   │
+│  iOS profiling:                                                  │
+│  - Instruments → Core Animation template                        │
+│  - Xcode → Debug → View Debugging → Rendering →                 │
+│    Color Blended Layers (overdraw visualization)                 │
+│                                                                   │
+│  Android profiling:                                              │
+│  - Settings → Developer Options → GPU Rendering →                │
+│    Show on screen as bars (green line = 16ms target)             │
+│  - Android Studio → Profiler → CPU → System Trace                │
+│  - dumpsys gfxinfo (janky frame percentage)                      │
+│                                                                   │
+│  React Native:                                                   │
+│  - Enable Performance Monitor overlay (dev menu)                 │
+│  - JS frame rate (must stay at 60)                               │
+│  - UI frame rate (must stay at 60)                               │
+│  - Use Flipper → React DevTools → Highlight Updates              │
+│                                                                   │
+│  Flutter:                                                        │
+│  - DevTools → Performance → Frame rendering chart                │
+│  - Run with --profile flag for realistic performance             │
+│  - debugProfileBuildsEnabled = true (detect expensive builds)    │
+│                                                                   │
+│  Step 2: Common jank sources and fixes                           │
+│  ┌──────────────────────────────────┬──────────────────────────┐│
+│  │  Jank Source                     │  Fix                      ││
+│  ├──────────────────────────────────┼──────────────────────────┤│
+│  │  List not recycling views        │  Use RecyclerView/        ││
+│  │                                  │  UICollectionView/        ││
+│  │                                  │  FlatList/ListView.builder││
+│  │  Image loading on main thread    │  Use async image loader   ││
+│  │                                  │  (Coil, SDWebImage, etc.) ││
+│  │  Layout overdraw (>3 layers)     │  Flatten view hierarchy   ││
+│  │  Expensive computation in render │  Memoize / move off-thread││
+│  │  Unnecessary re-renders (RN)     │  React.memo + useCallback ││
+│  │  Excessive widget rebuilds (FL)  │  const constructors,      ││
+│  │                                  │  RepaintBoundary           ││
+│  │  Heavy animations                │  Use Lottie or native     ││
+│  │                                  │  animation APIs            ││
+│  │  Large image decoding            │  Resize to display size   ││
+│  │  Text layout recalculation       │  Cache text measurements  ││
+│  └──────────────────────────────────┴──────────────────────────┘│
+│                                                                   │
+│  Step 3: Rendering budget per frame (16.67ms)                    │
+│  - Layout: < 4ms                                                 │
+│  - Draw: < 4ms                                                   │
+│  - GPU upload + render: < 4ms                                    │
+│  - Overhead margin: ~4ms                                         │
+│  - If any phase exceeds budget → optimize that specific phase    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Battery Usage Audit
+
+```
+BATTERY USAGE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure energy impact                                   │
+│                                                                   │
+│  iOS:                                                            │
+│  - Xcode → Debug Navigator → Energy Impact gauge                │
+│  - Instruments → Energy Diagnostics template                    │
+│  - Xcode Organizer → Energy reports (from TestFlight/prod)      │
+│  - Categories: CPU, location, networking, Bluetooth, GPU         │
+│                                                                   │
+│  Android:                                                        │
+│  - Android Studio → Profiler → Energy                           │
+│  - Battery Historian: adb bugreport > bugreport.zip             │
+│  - Settings → Battery → Usage per app (production)               │
+│                                                                   │
+│  Step 2: Audit high-drain activities                             │
+│  ┌──────────────────────────────────┬──────────┬───────────────┐│
+│  │  Activity                        │  Drain   │  Status       ││
+│  ├──────────────────────────────────┼──────────┼───────────────┤│
+│  │  GPS continuous tracking         │  HIGH    │  check/fix    ││
+│  │  Background network polling      │  HIGH    │  check/fix    ││
+│  │  Bluetooth scanning              │  MEDIUM  │  check/fix    ││
+│  │  Background timer/wakeup         │  MEDIUM  │  check/fix    ││
+│  │  Animation loops when hidden     │  MEDIUM  │  check/fix    ││
+│  │  Sensor data (accelerometer)     │  LOW-MED │  check/fix    ││
+│  └──────────────────────────────────┴──────────┴───────────────┘│
+│                                                                   │
+│  Step 3: Battery optimization actions                            │
+│  a) Location:                                                    │
+│     - Use significantLocationChange (iOS) / PRIORITY_BALANCED    │
+│       (Android) instead of continuous GPS                        │
+│     - Reduce accuracy when high precision not needed             │
+│     - Stop location updates when app is backgrounded             │
+│     - Use geofencing instead of continuous polling               │
+│                                                                   │
+│  b) Network:                                                     │
+│     - Replace polling with push notifications or WebSocket       │
+│     - Batch network requests (coalesce multiple API calls)       │
+│     - Use URLSession background download (iOS) /                 │
+│       WorkManager (Android) for non-urgent transfers             │
+│     - Compress request/response payloads                         │
+│                                                                   │
+│  c) Background execution:                                        │
+│     - iOS: BGTaskScheduler for periodic work (min 15min interval)│
+│     - Android: WorkManager for deferrable work                   │
+│     - Both: respect system battery optimization/Doze mode        │
+│     - Cancel timers and animations when app enters background    │
+│                                                                   │
+│  d) Display:                                                     │
+│     - Dark mode (OLED screens save 30-60% display power)         │
+│     - Reduce animation frequency when battery is low             │
+│     - Avoid always-on-screen elements (progress spinners)        │
+│                                                                   │
+│  BATTERY BUDGET (per 1-hour active session):                     │
+│  - Target: < 5% battery drain per hour of active use             │
+│  - Background: < 1% battery drain per hour idle                  │
+│  - If exceeding budget, identify and fix the top drain source    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: App Size & Network Audit
+
+```
+APP SIZE & NETWORK AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure and break down app size                         │
+│                                                                   │
+│  iOS:                                                            │
+│  - Xcode → Product → Archive → Distribute → App Thinning        │
+│    (shows size per device variant)                               │
+│  - App Store Connect → App Analytics → App Size                  │
+│                                                                   │
+│  Android:                                                        │
+│  - Android Studio → Build → Analyze APK                         │
+│    (shows size per category: dex, resources, native, assets)     │
+│  - Play Console → Release → App Size                             │
+│  - Use Android App Bundle (AAB) → Google serves per-device APK  │
+│                                                                   │
+│  Step 2: Size reduction strategies                               │
+│  ┌──────────────────────────────────┬──────────────────────────┐│
+│  │  Category                        │  Optimization             ││
+│  ├──────────────────────────────────┼──────────────────────────┤│
+│  │  Images/assets (often 40-60%)    │  Compress PNG/JPG, use   ││
+│  │                                  │  WebP/AVIF, vector where  ││
+│  │                                  │  possible, remove unused  ││
+│  │  Native libraries (20-30%)      │  Strip debug symbols,     ││
+│  │                                  │  ABI splits (Android)     ││
+│  │  Code (10-20%)                  │  ProGuard/R8 (Android),   ││
+│  │                                  │  tree shake, dead code    ││
+│  │  Fonts (5-10%)                  │  Subset fonts, use system ││
+│  │                                  │  fonts where possible     ││
+│  │  Third-party SDKs              │  Audit each SDK size,     ││
+│  │                                  │  remove unused features   ││
+│  └──────────────────────────────────┴──────────────────────────┘│
+│                                                                   │
+│  Step 3: Network performance audit                               │
+│  - Measure API call timing for each screen                       │
+│  - Check payload sizes (should be < 50KB for list endpoints)     │
+│  - Verify image download sizes match display resolution          │
+│  - Check for redundant API calls (same data fetched twice)       │
+│  - Verify caching headers are respected                          │
+│  - Test under poor network conditions:                           │
+│    iOS: Network Link Conditioner (Settings → Developer)         │
+│    Android: adb shell settings put global captive_portal_mode 0 │
+│    Charles Proxy: Throttle to 3G/Edge speeds                     │
+│                                                                   │
+│  APP SIZE TARGETS:                                               │
+│  - iOS: < 50MB over-the-air download limit (cellular)            │
+│  - Android: < 150MB via Play Store                               │
+│  - First install size: < 30MB (best practice)                    │
+│  - On-demand features: use dynamic frameworks (iOS) or           │
+│    dynamic feature modules (Android) for rarely-used features    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+MOBILE OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  Cold start time (ms)       │  <N>      │  <N>      │  -<N>%    │
+│  Time to interactive (ms)   │  <N>      │  <N>      │  -<N>%    │
+│  Scroll FPS (avg)           │  <N>      │  60       │  +<N>     │
+│  Janky frames (%)           │  <N>%     │  <N>%     │  -<N>%    │
+│  Battery drain/hr (active)  │  <N>%     │  <N>%     │  -<N>%    │
+│  Battery drain/hr (idle)    │  <N>%     │  <N>%     │  -<N>%    │
+│  App download size (MB)     │  <N>      │  <N>      │  -<N>%    │
+│  API payload avg size (KB)  │  <N>      │  <N>      │  -<N>%    │
+│  Network calls per screen   │  <N>      │  <N>      │  -<N>     │
+│  Memory peak (MB)           │  <N>      │  <N>      │  -<N>%    │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Cold start < 1 second on mid-range device
+- 60 FPS during scrolling and animations (< 5% janky frames)
+- Battery drain < 5%/hr active, < 1%/hr background
+- App size < 50MB initial download
+- No continuous GPS/Bluetooth when not actively needed
+- Images loaded at display resolution, not original size
+- Offline mode functional for core features
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run mobile tasks sequentially: iOS platform, then Android platform, then shared logic.

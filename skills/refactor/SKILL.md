@@ -489,6 +489,181 @@ IF refactoring scope is too large (> 30 dependents):
 - **Do NOT ignore failing tests.** "The tests were probably wrong anyway" is never true during refactoring. If tests fail, your transformation changed behavior. Fix it or revert.
 
 
+## Refactoring Complexity Reduction Loop
+
+Track cyclomatic and cognitive complexity before and after each refactoring, with explicit keep/discard decisions per transformation:
+
+```
+COMPLEXITY REDUCTION LOOP:
+
+current_iteration = 0
+max_iterations = 20
+complexity_targets = [files/functions sorted by complexity, highest first]
+total_complexity_before = measure_total_complexity()
+reductions = []
+
+WHILE complexity_targets is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    target = complexity_targets.pop(0)
+
+    # Measure BEFORE
+    cyclomatic_before = measure_cyclomatic(target)
+    cognitive_before = measure_cognitive(target)
+    loc_before = count_lines(target)
+
+    # Plan and apply ONE refactoring transformation
+    transformation = select_best_transformation(target)
+    apply_transformation(target, transformation)
+
+    # Measure AFTER
+    cyclomatic_after = measure_cyclomatic(target)
+    cognitive_after = measure_cognitive(target)
+    loc_after = count_lines(target)
+    tests_pass = run_tests()
+
+    # KEEP/DISCARD decision
+    IF NOT tests_pass:
+        REVERT transformation
+        decision = "DISCARD — tests failed"
+    ELSE IF cyclomatic_after >= cyclomatic_before AND cognitive_after >= cognitive_before:
+        REVERT transformation
+        decision = "DISCARD — no complexity reduction"
+    ELSE:
+        COMMIT: "refactor: {transformation} in {target} (cyclomatic {before}→{after})"
+        decision = "KEEP — complexity reduced"
+
+    reductions.append({
+        target: target,
+        transformation: transformation,
+        cyclomatic: {before: cyclomatic_before, after: cyclomatic_after},
+        cognitive: {before: cognitive_before, after: cognitive_after},
+        loc: {before: loc_before, after: loc_after},
+        decision: decision
+    })
+
+    REPORT "Iteration {current_iteration}: {target} — {transformation} — {decision}"
+
+total_complexity_after = measure_total_complexity()
+REPORT "Total complexity: {total_complexity_before} → {total_complexity_after} ({reduction_pct}% reduction)"
+```
+
+### Complexity Metrics
+
+```
+COMPLEXITY MEASUREMENT:
+┌──────────────────────────────────────────────────────────────┐
+│  Metric               │ Threshold   │ Tool                   │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Cyclomatic complexity│ ≤ 10 per    │ eslint complexity rule │
+│  (decision paths      │ function    │ radon (Python)         │
+│  through a function)  │             │ gocyclo (Go)           │
+│                       │             │ checkstyle (Java)      │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Cognitive complexity │ ≤ 15 per    │ SonarQube/SonarLint    │
+│  (how hard it is for  │ function    │ eslint sonarjs plugin  │
+│  a human to understand│             │ cognitive_complexity   │
+│  the control flow)    │             │ (Python)               │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Lines of code (LOC)  │ ≤ 50 per   │ wc -l (raw)            │
+│  per function         │ function    │ cloc (logical)         │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Nesting depth        │ ≤ 3 levels  │ eslint max-depth rule  │
+│                       │             │ manual review          │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Parameter count      │ ≤ 4 per     │ eslint max-params rule │
+│                       │ function    │ pylint max-args        │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Halstead difficulty  │ context-    │ escomplex (JS)         │
+│  (operand/operator    │ dependent   │ radon hal (Python)     │
+│  complexity)          │             │                        │
+├───────────────────────┼─────────────┼────────────────────────┤
+│  Maintainability index│ ≥ 65        │ radon mi (Python)      │
+│  (composite: Halstead │             │ CodeMetrics (VS ext)   │
+│  + cyclomatic + LOC)  │             │                        │
+└───────────────────────┴─────────────┴────────────────────────┘
+
+MEASUREMENT COMMANDS:
+  # TypeScript/JavaScript
+  npx eslint --rule '{"complexity": ["error", 10]}' src/
+  npx eslint --plugin sonarjs --rule '{"sonarjs/cognitive-complexity": ["error", 15]}' src/
+
+  # Python
+  radon cc src/ -a -nc   # cyclomatic complexity, average, no colors
+  radon mi src/ -nc      # maintainability index
+  python -m cognitive_complexity src/module.py
+
+  # Go
+  gocyclo -over 10 ./...
+  gocognit -over 15 ./...
+
+  # Java
+  pmd check -d src/ -R rulesets/java/design.xml -f text
+```
+
+### Keep/Discard Decision Matrix
+
+```
+KEEP/DISCARD CRITERIA:
+┌──────────────────────────────────────────────────────────────┐
+│  Condition                              │ Decision           │
+├─────────────────────────────────────────┼────────────────────┤
+│  Tests fail after transformation        │ DISCARD (always)   │
+├─────────────────────────────────────────┼────────────────────┤
+│  Cyclomatic AND cognitive both reduced  │ KEEP               │
+├─────────────────────────────────────────┼────────────────────┤
+│  Cyclomatic reduced, cognitive neutral  │ KEEP               │
+├─────────────────────────────────────────┼────────────────────┤
+│  Cognitive reduced, cyclomatic neutral  │ KEEP               │
+├─────────────────────────────────────────┼────────────────────┤
+│  Both metrics unchanged or increased    │ DISCARD            │
+├─────────────────────────────────────────┼────────────────────┤
+│  LOC increased > 30% without complexity │ DISCARD            │
+│  reduction (bloating, not simplifying)  │                    │
+├─────────────────────────────────────────┼────────────────────┤
+│  Nesting depth reduced by 2+ levels     │ KEEP (even if LOC  │
+│                                         │ increases slightly)│
+├─────────────────────────────────────────┼────────────────────┤
+│  Coverage decreased after transformation│ DISCARD until      │
+│                                         │ coverage restored  │
+└─────────────────────────────────────────┴────────────────────┘
+
+TRANSFORMATION → COMPLEXITY IMPACT MAP:
+  Extract Function:      Cyclomatic ↓ (splits decisions), Cognitive ↓ (named abstraction)
+  Replace Conditional w/ Polymorphism: Cyclomatic ↓↓, Cognitive ↓↓
+  Guard Clauses:         Cognitive ↓↓ (reduces nesting), Cyclomatic = (same branches)
+  Replace Loop w/ Pipeline: Cognitive ↓, Cyclomatic = (same paths)
+  Extract Variable:      Cognitive ↓ (named intermediate), Cyclomatic =
+  Introduce Null Object: Cyclomatic ↓ (removes null checks), Cognitive ↓
+  Compose Method:        Cyclomatic = (splits only), Cognitive ↓↓
+```
+
+### Complexity Reduction Report
+
+```
+COMPLEXITY REDUCTION REPORT:
+┌──────────────────────────────────────────────────────────────┐
+│  Target              │ Transformation     │ Before │ After   │
+│                      │                    │ CC/Cog │ CC/Cog  │
+├──────────────────────┼────────────────────┼────────┼─────────┤
+│  <file:function>     │ <transformation>   │ <N>/<N>│ <N>/<N> │
+│  Decision: KEEP|DISCARD — <reason>                           │
+├──────────────────────┼────────────────────┼────────┼─────────┤
+│  <file:function>     │ <transformation>   │ <N>/<N>│ <N>/<N> │
+│  Decision: KEEP|DISCARD — <reason>                           │
+├──────────────────────┴────────────────────┴────────┴─────────┤
+│  SUMMARY                                                      │
+│  Transformations attempted: <N>                               │
+│  Transformations kept: <N>                                    │
+│  Transformations discarded: <N>                               │
+│  Total cyclomatic reduction: <before> → <after> (<pct>%)      │
+│  Total cognitive reduction: <before> → <after> (<pct>%)       │
+│  Functions above threshold (before): <N>                      │
+│  Functions above threshold (after): <N>                       │
+│  Tests: all passing | <N> failures                            │
+│  Coverage: <before>% → <after>%                               │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run refactoring tasks sequentially: tests first, then core modules, then caller updates. Maintain merge order: tests -> core -> callers.

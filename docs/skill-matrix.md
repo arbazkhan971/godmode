@@ -52,23 +52,33 @@ The definitive reference for picking the right Godmode skill. 126 skills across 
 
 The 15 core workflow skills and their properties.
 
-| Skill | Mode | Modifies Code? | Multi-Agent? | Needs Prior Skill? | Human Input | Typical Runtime |
-|---|---|---|---|---|---|---|
-| `godmode` | Router | No | No | None | Natural language request | Seconds |
-| `think` | Sequential | Yes (spec) | No | None | Goal description | 2-5 min |
-| `predict` | Parallel personas | No | Yes (5 personas) | `think` (spec.md) | None | 1-3 min |
-| `scenario` | Sequential | Yes (test skeletons) | No | `think` (spec.md) | None | 3-5 min |
-| `plan` | Sequential | Yes (plan.yaml) | No | `think` (spec.md) | None | 1-3 min |
-| `build` | Iterative loop | Yes | Yes (up to 5 agents) | `plan` (plan.yaml) | None | 5-30 min |
-| `test` | Iterative loop | Yes (tests) | No | None | Coverage target | 3-15 min |
-| `review` | Parallel agents | Yes (NIT auto-fix) | Yes (4 agents) | None | None | 2-5 min |
-| `optimize` | Iterative loop | Yes | Yes (3 agents/round) | Metric command | Metric + guard cmd | 5-60 min |
-| `debug` | Iterative loop | Minimal (logs) | No | Failing test/error | None | 3-15 min |
-| `fix` | Iterative loop | Yes | No | Error output | None | 2-20 min |
-| `ship` | Sequential checklist | No (triggers external) | No | Passing checks | Confirm dry-run | 2-5 min |
-| `finish` | Sequential | Yes (merge/squash) | No | Commits on branch | Mode selection | 1-2 min |
-| `setup` | Sequential wizard | Yes (config) | No | None | Stack confirmation | 1-3 min |
-| `verify` | Single-shot | No | No | A claim to verify | Claim + command | Seconds |
+| Skill | Mode | Loop Type | Modifies Code? | Multi-Agent? | Needs Prior Skill? | Human Input | Typical Runtime |
+|---|---|---|---|---|---|---|---|
+| `godmode` | Router | One-shot | No | No | None | Natural language request | Seconds |
+| `think` | Sequential | One-shot | Yes (spec) | No | None | Goal description | 2-5 min |
+| `predict` | Parallel personas | Multi-agent | No | Yes (5 personas) | `think` (spec.md) | None | 1-3 min |
+| `scenario` | Sequential | One-shot | Yes (test skeletons) | No | `think` (spec.md) | None | 3-5 min |
+| `plan` | Sequential | One-shot | Yes (plan.yaml) | No | `think` (spec.md) | None | 1-3 min |
+| `build` | Iterative loop | Autonomous | Yes | Yes (up to 5 agents) | `plan` (plan.yaml) | None | 5-30 min |
+| `test` | Iterative loop | Autonomous | Yes (tests) | No | None | Coverage target | 3-15 min |
+| `review` | Parallel agents | Multi-agent | Yes (NIT auto-fix) | Yes (4 agents) | None | None | 2-5 min |
+| `optimize` | Iterative loop | Autonomous | Yes | Yes (3 agents/round) | Metric command | Metric + guard cmd | 5-60 min |
+| `debug` | Iterative loop | Autonomous | Minimal (logs) | No | Failing test/error | None | 3-15 min |
+| `fix` | Iterative loop | Autonomous | Yes | No | Error output | None | 2-20 min |
+| `ship` | Sequential checklist | One-shot | No (triggers external) | No | Passing checks | Confirm dry-run | 2-5 min |
+| `finish` | Sequential | One-shot | Yes (merge/squash) | No | Commits on branch | Mode selection | 1-2 min |
+| `setup` | Sequential wizard | One-shot | Yes (config) | No | None | Stack confirmation | 1-3 min |
+| `verify` | Single-shot | One-shot | No | No | A claim to verify | Claim + command | Seconds |
+
+### Loop Type Legend
+
+| Loop Type | Meaning | Skills |
+|---|---|---|
+| **Autonomous** | Runs in a WHILE loop with automatic keep/revert decisions. Terminates on target met, max iterations, or diminishing returns. No human input needed per iteration. | `build`, `test`, `optimize`, `debug`, `fix` |
+| **Multi-agent** | Dispatches multiple agents (parallel on Claude Code/Cursor, sequential elsewhere). Each agent runs independently; results merge deterministically. | `predict` (5 personas), `review` (4 passes), `build` (5 agents/round), `optimize` (3 agents/round) |
+| **One-shot** | Runs once from start to finish. No iteration loop. May have internal steps but does not repeat them. | `godmode`, `think`, `scenario`, `plan`, `ship`, `finish`, `setup`, `verify` |
+
+Note: Some skills appear in multiple categories. `build` and `optimize` are both autonomous (iterative loop) and multi-agent (parallel dispatch within each iteration). On sequential platforms, the multi-agent aspect degrades to sequential dispatch but the autonomous loop still runs.
 
 ### Core Pipeline Flow
 

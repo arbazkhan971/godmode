@@ -33,9 +33,21 @@ PROBLEM STATEMENT:
 - Out of scope: <what this does NOT include>
 ```
 
-If the goal is ambiguous, ask exactly ONE clarifying question. Do not ask multiple questions or present a menu of options. If the user's success criteria is subjective ("works well", "is fast", "looks good"), reject it and propose a concrete alternative (e.g., "response time < 200ms" or "test suite passes").
+**Clarification protocol:**
+```
+If ambiguous: offer 2 interpretations with examples
+  "A) You want X — e.g. user clicks button, modal appears"
+  "B) You want Y — e.g. data syncs on page load"
+User picks one. Proceed immediately.
+(Faster than asking open-ended questions)
+```
+
+If the user's success criteria is subjective ("works well", "is fast", "looks good"), reject it and propose a concrete alternative (e.g., "response time < 200ms" or "test suite passes").
 
 ### Step 2: Scan Codebase
+
+**Greenfield exception:** If no codebase exists (no git repo, empty repo, or user says "new project"), skip this step entirely. Note `greenfield` in the spec and proceed to Step 3.
+
 Read existing code to understand patterns, conventions, and constraints:
 
 ```bash
@@ -69,28 +81,26 @@ CODEBASE SCAN:
 Never propose an approach that contradicts existing patterns unless the spec explicitly calls for migration.
 
 ### Step 3: Generate 2-3 Approaches
-For each approach, provide concrete details:
+For each approach, provide exactly 5 fields:
 
 ```
-APPROACH A: <name>
-- Summary: <1-2 sentences>
-- Files to modify: <exact paths>
-- Files to create: <exact paths>
-- Complexity: S / M / L
-- Estimated tasks: <number>
-- Trade-offs:
-  + <advantage 1>
-  + <advantage 2>
-  - <disadvantage 1>
-  - <disadvantage 2>
-- Risk: <top risk + mitigation>
-- Disqualified: NO (or YES + reason)
+APPROACH A: {name}
+What: {1-2 sentences describing the approach}
+Why it wins: {main advantage}
+Why it loses: {main disadvantage}
+Files: {N} to create/modify
 
-APPROACH B: <name>
-...
+APPROACH B: {name}
+What: {1-2 sentences describing the approach}
+Why it wins: {main advantage}
+Why it loses: {main disadvantage}
+Files: {N} to create/modify
 
-APPROACH C: <name> (optional — only if meaningfully different)
-...
+APPROACH C: {name} (optional — only if meaningfully different)
+What: {1-2 sentences describing the approach}
+Why it wins: {main advantage}
+Why it loses: {main disadvantage}
+Files: {N} to create/modify
 ```
 
 Disqualification criteria — immediately reject any approach that:
@@ -117,21 +127,38 @@ If two approaches are genuinely equivalent, prefer the one with fewer files touc
 Write `.godmode/spec.md` with sections: **Problem** (1-3 sentences), **Approach** (chosen approach, 2-5 sentences), **Success Criteria** (shell command that exits 0), **Out of Scope**, **Files to Modify** (path + what changes), **Files to Create** (path + purpose), **Risks** (risk + mitigation pairs). Keep under 100 lines total.
 
 ### Step 6: Validate and Commit
-Verify the spec is actionable:
+Run the spec validation checklist before committing:
+
+```
+VALIDATE before committing spec:
+[ ] All "files_to_modify" exist (git ls-files --error-unmatch)
+[ ] All parent dirs in "files_to_create" exist
+[ ] Success criteria is valid bash (bash -n -c '<cmd>')
+[ ] Spec is <100 lines (wc -l)
+[ ] Problem statement is 1 unambiguous sentence
+```
 
 ```bash
-# Verify referenced existing files exist
+# 1. Verify referenced existing files exist
 for f in <files_to_modify>; do git ls-files --error-unmatch "$f"; done
 
-# Verify new file parent dirs exist
-for f in <files_to_create>; do test -d "$(dirname "$f")"; done
+# 2. Verify new file parent dirs exist
+for f in <files_to_create>; do test -d "$(dirname "$f")" || echo "MISSING: $(dirname "$f")"; done
 
-# Verify success criteria command is syntactically valid
+# 3. Verify success criteria command is syntactically valid
 bash -n -c '<success_criteria_cmd>' 2>&1
 
-# Commit
+# 4. Verify spec length
+wc -l .godmode/spec.md  # must be <100
+
+# 5. Verify problem statement is 1 sentence
+head -5 .godmode/spec.md  # inspect manually
+
+# 6. Commit
 git add .godmode/spec.md && git commit -m "spec: {feature}"
 ```
+
+If any validation fails, fix the spec before committing. Do not commit an invalid spec.
 
 ## Output Format
 Print at each stage:
@@ -169,22 +196,25 @@ The design session is done when ALL of the following are true:
 - [ ] One approach is recommended with rejection reasons for others
 - [ ] All referenced existing files verified via `git ls-files`
 - [ ] All new file parent directories verified to exist
+- [ ] Success criteria command passes `bash -n` syntax check
 - [ ] Spec is committed to git
 - [ ] TSV log row appended
 
 ## Error Recovery
-- **User's goal is ambiguous:** Ask exactly ONE clarifying question. Do not list options. If still unclear after one question, make your best interpretation, state it explicitly, and proceed.
-- **No existing codebase (greenfield):** Skip Step 2 scan. In Step 3, note "greenfield — no existing patterns to match". Recommend the simplest approach that meets success criteria.
+- **User's goal is ambiguous:** Offer 2 interpretations with concrete examples. User picks one. Proceed immediately. If still unclear, make your best interpretation, state it explicitly, and proceed.
+- **No existing codebase (greenfield):** Skip Step 2 scan. Note `greenfield` in spec. In Step 3, note "greenfield — no existing patterns to match". Recommend the simplest approach that meets success criteria.
 - **All approaches disqualified:** Tell the user why. Suggest narrowing scope or relaxing constraints. Do not invent a fourth approach that violates constraints.
 - **Success criteria is subjective:** Reject it. Propose a concrete alternative: "Instead of 'works well', use `curl -s localhost:3000/health | jq -e '.status == \"ok\"'`". Do not proceed until criteria is a shell command.
 - **Spec exceeds 100 lines:** The feature is too large. Decompose into 2-3 sub-features. Write a top-level spec that references sub-specs: `.godmode/spec-{sub1}.md`, `.godmode/spec-{sub2}.md`.
+- **Validation checklist fails:** Fix the failing item before committing. If `files_to_modify` don't exist, confirm paths with user. If parent dirs missing, create them or adjust file paths.
 
 ## Anti-Patterns
 1. **Analysis paralysis:** Generating 5+ approaches and agonizing over trade-offs. Max 3 approaches. Pick one and move on.
-2. **Skipping the scan:** Designing in a vacuum without reading existing code. Always scan first — the codebase has patterns to follow.
+2. **Skipping the scan:** Designing in a vacuum without reading existing code. Always scan first (unless greenfield) — the codebase has patterns to follow.
 3. **Subjective success criteria:** "Works well", "is performant", "looks clean". Every criterion must be a shell command or a metric with a threshold.
 4. **Gold-plating the spec:** Writing 200 lines of implementation detail. The spec describes WHAT and WHY, not HOW. Implementation details belong in the plan and build phases.
 5. **Ignoring existing patterns:** Proposing a new ORM when the project already uses one, or a new state library when one exists. Reuse what is there.
+6. **Open-ended clarification:** Asking "what do you want?" instead of offering 2 concrete interpretations. Always constrain the question.
 
 ## Examples
 
@@ -193,7 +223,18 @@ The design session is done when ALL of the following are true:
 User: "Design a user preferences feature"
 Think: problem — users need to save and retrieve display preferences (theme, language, timezone).
 Think: scanned codebase — Express + TypeScript, 12 related files in src/models/ and src/routes/.
-Think: generated 2 approaches (A: column-per-preference, B: JSON blob column).
+Think: generated 2 approaches:
+  APPROACH A: column-per-preference
+  What: Add theme, language, timezone columns to users table.
+  Why it wins: Type-safe, queryable per field.
+  Why it loses: Schema migration for every new preference.
+  Files: 4 to create/modify
+
+  APPROACH B: JSON blob column
+  What: Single jsonb preferences column with runtime validation.
+  Why it wins: Extensible without schema changes.
+  Why it loses: No per-field DB queries.
+  Files: 3 to create/modify
 Think: recommending Approach B — fewer migrations, extensible without schema changes.
 Think: wrote .godmode/spec.md (38 lines). Next: /godmode:plan.
 ```
@@ -201,8 +242,8 @@ Think: wrote .godmode/spec.md (38 lines). Next: /godmode:plan.
 ### Example 2: Re-entry from Predict
 ```
 /godmode:predict returned Gate: RETHINK with risks:
-  - "No rate limiting on preferences endpoint" (SRE, confidence 9)
-  - "Preferences blob has no schema validation" (Backend Architect, confidence 8)
+  - "No rate limiting on preferences endpoint" (Security Researcher, confidence 9)
+  - "Preferences blob has no schema validation" (Technical Architect, confidence 8)
 
 Think: re-entering with 2 risks as constraints.
 Think: generated 2 approaches (A: JSON Schema validation + rate limiter middleware, B: typed preferences with Zod).
@@ -214,10 +255,38 @@ Think: updated .godmode/spec.md (51 lines). Risks section now includes mitigatio
 ```
 User: "Design a CLI tool for managing dotfiles"
 Think: problem — user wants a CLI to symlink, backup, and restore dotfiles.
-Think: no existing codebase (greenfield). Framework choice open.
-Think: generated 3 approaches (A: Node.js + Commander, B: Python + Click, C: Go + Cobra).
+Think: greenfield — no existing codebase. Skipping scan.
+Think: generated 3 approaches:
+  APPROACH A: Node.js + Commander
+  What: CLI built on Commander with Node.js fs APIs.
+  Why it wins: Familiar ecosystem, fast to prototype.
+  Why it loses: Requires Node.js runtime on target machine.
+  Files: 5 to create/modify
+
+  APPROACH B: Python + Click
+  What: CLI built on Click with pathlib for file operations.
+  Why it wins: Clean API, widely available runtime.
+  Why it loses: Dependency management via pip/venv.
+  Files: 5 to create/modify
+
+  APPROACH C: Go + Cobra
+  What: CLI built on Cobra, compiles to single binary.
+  Why it wins: Single binary, no runtime deps.
+  Why it loses: Slower iteration during development.
+  Files: 6 to create/modify
 Think: recommending Approach C — single binary, no runtime deps, user prefers Go.
 Think: wrote .godmode/spec.md (45 lines). Next: /godmode:plan.
+```
+
+### Example 4: Ambiguous Request (clarification protocol)
+```
+User: "Design notifications"
+Think: ambiguous — offering 2 interpretations:
+  A) Push notifications to mobile/desktop — e.g. Firebase Cloud Messaging sends alert when order ships
+  B) In-app notification feed — e.g. bell icon shows unread messages in the UI
+User: "B"
+Think: problem — in-app notification feed with unread count and mark-as-read.
+(proceeds immediately)
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

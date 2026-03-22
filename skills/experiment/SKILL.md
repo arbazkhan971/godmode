@@ -964,23 +964,54 @@ When running multiple experiments or iterating on experiment design:
 ```
 EXPERIMENT ITERATION LOOP:
 current_iteration = 0
-max_iterations = N  // number of experiments in backlog or design rounds
 
-WHILE current_iteration < max_iterations AND NOT user_says_stop:
-  1. SELECT next experiment from backlog (highest expected impact first)
-  2. DESIGN experiment (hypothesis, metrics, sample size, assignment)
-  3. VALIDATE design against checklist (Step 12)
-  4. IF validation fails:
-       FIX issues, re-validate (do NOT skip to next experiment)
-  5. IMPLEMENT assignment + exposure logging + metrics
-  6. RUN validation tests (SRM check template, metric event verification)
-  7. REPORT design summary to user
-  8. current_iteration += 1
-  9. IF current_iteration < max_iterations:
-       PROMPT user: "Proceed to next experiment or stop?"
+NEVER STOP. Loop indefinitely until manually stopped or budget exhausted.
 
-ON COMPLETION:
-  REPORT: "<N> experiments designed, <M> ready to launch, <K> need revision"
+WHILE TRUE:
+  current_iteration += 1
+
+  # 1. SELECT next experiment from backlog (highest expected impact first)
+  # 2. DESIGN experiment (hypothesis, metrics, sample size, assignment)
+  # 3. VALIDATE design against checklist (Step 12)
+  # 4. IF validation fails:
+  #      FIX issues, re-validate (do NOT skip to next experiment)
+  # 5. IMPLEMENT assignment + exposure logging + metrics
+  # 6. RUN validation tests (SRM check template, metric event verification)
+  # 7. EVALUATE — Keep/Discard decision:
+  #      KEEP: experiment advances the branch (validated, implemented, metrics wired)
+  #            → commit with message, log to results.tsv
+  #      DISCARD: experiment fails validation or breaks guardrails
+  #            → git revert to last good state, log status=discard
+  # 8. CRASH RECOVERY:
+  #      IF crash/error during implementation:
+  #        Check if fixable (typo, missing import, config error) → fix and retry
+  #        If fundamental (incompatible SDK, impossible targeting) → discard and move on
+  #        Log status=crash with reason
+  # 9. SIMPLICITY CHECK:
+  #      Complexity cost (setup time, SDK changes, new dependencies)
+  #      vs improvement magnitude (expected lift * traffic * duration)
+  #      If complexity >> improvement → skip, log reason, move to next
+  # 10. APPEND .godmode/experiment-results.tsv:
+  #       commit, metric, memory, status(keep/discard/crash), description
+  # 11. REPORT design summary: "{N} designed, {kept} kept, {discarded} discarded, {crashed} crashed"
+
+ON MANUAL STOP OR BUDGET HIT:
+  REPORT: "<N> experiments designed, <M> kept (ready to launch), <K> discarded, <J> crashed"
+```
+
+### Keep/Discard Discipline
+Each experiment either advances the branch or gets reverted. No half-implemented experiments remain in the tree.
+- **KEEP**: Validated, implemented, metrics confirmed. Commit it.
+- **DISCARD**: Failed validation, broke existing tests, or guardrails tripped. `git revert` to last good state.
+- **CRASH**: Implementation error. If fixable (typo/import), fix and retry once. If fundamental, discard and move on.
+
+### Results TSV Logging
+After each experiment iteration, append to `.godmode/experiment-results.tsv`:
+```
+COMMIT	METRIC	MEMORY	STATUS	DESCRIPTION
+a1b2c3d	conversion_rate	512MB	keep	checkout-single-page — 50/50 split, Statsig, MDE=8%
+(none)	bounce_rate	—	discard	hero-banner-test — SRM detected in validation, reverted
+(none)	latency_p99	—	crash	edge-assignment — SDK incompatible with runtime, skipped
 ```
 
 ## Multi-Agent Dispatch

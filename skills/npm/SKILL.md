@@ -849,6 +849,200 @@ IF npm publish fails:
 - **Do NOT use `*` or `latest` as version ranges.** Always specify semver ranges. `*` means any version, which will eventually break your build when a breaking change is published.
 
 
+## Dependency Audit Loop
+
+Comprehensive, iterative protocol for vulnerability scanning, bundle size impact analysis, and dependency update strategy:
+
+```
+DEPENDENCY AUDIT LOOP:
+current_iteration = 0
+max_iterations = 6
+audit_phases = [vulnerability_scan, bundle_size_impact, outdated_analysis, unused_detection, license_compliance, update_strategy]
+
+WHILE current_iteration < max_iterations:
+  phase = audit_phases[current_iteration]
+  current_iteration += 1
+
+  IF phase == "vulnerability_scan":
+    1. RUN security audit:
+       npm audit --json > /tmp/audit-results.json  # or pnpm audit / yarn audit
+       Parse: total advisories, by severity (critical, high, moderate, low, info)
+
+    2. FOR each vulnerability (CRITICAL and HIGH first):
+       a. IDENTIFY: package name, version, advisory ID, CVE if available
+       b. CLASSIFY: direct dependency or transitive?
+          npm ls {vulnerable_package} — trace the dependency chain
+       c. ASSESS exploitability:
+          - Is the vulnerable code path reachable in our application?
+          - Is the vulnerability relevant to our context (server vs browser)?
+          - What is the attack vector? (network, local, requires auth?)
+       d. DETERMINE fix:
+          - Direct dep: npm install {package}@latest (if fix available)
+          - Transitive: update parent package OR add override
+          - No fix: document risk, set calendar reminder, check weekly
+       e. VERIFY fix:
+          - npm audit after fix — confirm advisory resolved
+          - npm test — confirm no regressions from version change
+
+    3. REPORT:
+       VULNERABILITY SCAN:
+       ┌──────────────────────────────────────────────────────┐
+       │  Total advisories:    <N>                             │
+       │  Critical:            <N> (target: 0)                 │
+       │  High:                <N> (target: 0)                 │
+       │  Moderate:            <N>                             │
+       │  Low:                 <N>                             │
+       │  Fixed this session:  <N>                             │
+       │  Unfixable (no patch):  <N> (documented)              │
+       │  Supply chain risk:   LOW / MEDIUM / HIGH             │
+       └──────────────────────────────────────────────────────┘
+
+  IF phase == "bundle_size_impact":
+    1. MEASURE current bundle size:
+       - npm run build (or detected build command)
+       - Measure output size: du -sh dist/ or parse webpack/vite stats
+       - If available: npx bundlesize or npx size-limit
+
+    2. FOR each production dependency, estimate size contribution:
+       - npx bundle-phobia {package} (or use bundlephobia.com API)
+       - Identify the largest dependencies by minified + gzipped size
+       - Check for lighter alternatives (e.g., dayjs vs moment, lodash-es vs lodash)
+
+    3. GENERATE bundle impact table:
+       BUNDLE SIZE IMPACT:
+       ┌──────────────────────┬───────────┬───────────┬────────────────┐
+       │  Package             │  Min+Gzip │  % Bundle │  Alternative    │
+       ├──────────────────────┼───────────┼───────────┼────────────────┤
+       │  react-dom           │  42 KB    │  28%      │  preact (3 KB)  │
+       │  moment              │  18 KB    │  12%      │  dayjs (2 KB)   │
+       │  lodash              │  25 KB    │  17%      │  lodash-es      │
+       │  axios               │  5 KB     │  3%       │  fetch (native) │
+       │  <other>             │  <N> KB   │  <N>%     │  <alt or none>  │
+       ├──────────────────────┼───────────┼───────────┼────────────────┤
+       │  Total bundle        │  <N> KB   │  100%     │                 │
+       │  Target              │  <N> KB   │           │                 │
+       └──────────────────────┴───────────┴───────────┴────────────────┘
+
+    4. RECOMMEND size reductions:
+       - Replace heavy dependencies with lighter alternatives
+       - Enable tree shaking (ensure ESM imports, sideEffects: false)
+       - Lazy-load non-critical dependencies
+       - Move server-only deps to devDependencies if SSR not used
+
+  IF phase == "outdated_analysis":
+    1. CHECK for outdated packages:
+       npm outdated --json > /tmp/outdated-results.json
+
+    2. CATEGORIZE updates by risk:
+       PATCH updates (safe — bug fixes only):
+         - List all packages with patch updates available
+         - Action: auto-update, low risk
+
+       MINOR updates (generally safe — new features, no breaking changes):
+         - List all packages with minor updates available
+         - Action: update, run tests, verify
+
+       MAJOR updates (breaking changes — require migration):
+         - List all packages with major updates available
+         - FOR each: check changelog for breaking changes
+         - Action: plan migration, allocate time, update one at a time
+
+    3. GENERATE update plan:
+       OUTDATED PACKAGES:
+       ┌──────────────────┬──────────┬──────────┬──────────┬──────────┐
+       │  Package         │  Current │  Wanted  │  Latest  │  Risk    │
+       ├──────────────────┼──────────┼──────────┼──────────┼──────────┤
+       │  express         │  4.18.2  │  4.18.3  │  4.19.0  │  PATCH   │
+       │  typescript      │  5.2.0   │  5.3.0   │  5.4.0   │  MINOR   │
+       │  next            │  13.5.0  │  13.5.6  │  14.1.0  │  MAJOR   │
+       └──────────────────┴──────────┴──────────┴──────────┴──────────┘
+
+  IF phase == "unused_detection":
+    1. SCAN for unused dependencies:
+       npx depcheck --json > /tmp/depcheck-results.json
+
+    2. FOR each "unused" dependency:
+       - VERIFY it's truly unused (depcheck has false positives):
+         - Check for dynamic imports: import('{package}')
+         - Check for CLI usage in scripts: grep in package.json scripts
+         - Check for config references: webpack/vite/babel plugins
+         - Check for type-only imports: import type { X } from '{package}'
+       - IF confirmed unused: mark for removal
+       - IF false positive: add to depcheck ignore list
+
+    3. REPORT:
+       UNUSED DEPENDENCIES:
+       - Confirmed unused (safe to remove): <list>
+       - Suspected unused (verify manually): <list>
+       - Estimated size savings: <N> KB from node_modules
+       - Estimated install time savings: <N> seconds
+
+  IF phase == "license_compliance":
+    1. SCAN all dependency licenses:
+       npx license-checker --json > /tmp/license-results.json
+
+    2. CHECK for incompatible licenses:
+       ALLOWED: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+       REVIEW REQUIRED: LGPL-2.1, LGPL-3.0, MPL-2.0
+       BLOCKED: GPL-2.0, GPL-3.0, AGPL-3.0 (for proprietary projects)
+       UNKNOWN: packages without declared license
+
+    3. REPORT any compliance issues
+
+  IF phase == "update_strategy":
+    1. DEFINE update cadence based on project type:
+       Application:
+         - Security patches: apply immediately (same day)
+         - Patch updates: weekly batch
+         - Minor updates: bi-weekly or monthly batch
+         - Major updates: quarterly planning, one at a time
+
+       Library:
+         - Be conservative — your updates affect consumers
+         - Pin major versions, allow minor/patch ranges
+         - Test against multiple versions of key peer deps
+         - Document minimum and maximum supported versions
+
+    2. CONFIGURE automated updates:
+       - Dependabot: .github/dependabot.yml with grouped updates
+       - Renovate: renovate.json with auto-merge for patch updates
+       - Schedule: security daily, patch weekly, minor monthly
+
+    3. GENERATE update configuration:
+       # .github/dependabot.yml
+       version: 2
+       updates:
+         - package-ecosystem: "npm"
+           directory: "/"
+           schedule:
+             interval: "weekly"
+           groups:
+             production-dependencies:
+               patterns: ["*"]
+               exclude-patterns: ["@types/*"]
+             dev-dependencies:
+               dependency-type: "development"
+           open-pull-requests-limit: 10
+
+  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS ATTENTION}"
+
+FINAL DEPENDENCY HEALTH:
+┌──────────────────────────────────────────────────────────┐
+│  DEPENDENCY AUDIT SUMMARY                                 │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Phase               │ Grade  │ Key Metric                 │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Vulnerability scan  │  <A-F> │  <N> critical/high         │
+│  Bundle size impact  │  <A-F> │  <N> KB total              │
+│  Outdated analysis   │  <A-F> │  <N> packages outdated     │
+│  Unused detection    │  <A-F> │  <N> unused packages       │
+│  License compliance  │  <A-F> │  <N> issues                │
+│  Update strategy     │  <A-F> │  Automated: YES/NO         │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Overall             │  <A-F> │  <priority action>         │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run npm tasks sequentially: workspace structure, then dependency audit, then publish config.

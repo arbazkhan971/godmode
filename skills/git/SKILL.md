@@ -846,6 +846,266 @@ IF force push was accidentally done to shared branch:
 - **Do NOT skip the interactive rebase before merging.** Your PR should contain clean, logical commits — not the sausage-making of how you got there.
 
 
+## Git Workflow Optimization Loop
+
+Systematic protocol for auditing and improving Git workflow hygiene across the repository:
+
+```
+GIT WORKFLOW OPTIMIZATION:
+current_iteration = 0
+max_iterations = 6
+optimization_areas = [branch_strategy, commit_hygiene, merge_policy, stale_cleanup, hook_enforcement, history_quality]
+
+WHILE current_iteration < max_iterations:
+  area = optimization_areas[current_iteration]
+  current_iteration += 1
+
+  IF area == "branch_strategy":
+    1. AUDIT current branching model:
+       - git branch -a --sort=-committerdate | head -30
+       - Count branches by prefix: feature/, fix/, hotfix/, release/, chore/
+       - Check: do branch names follow a consistent convention?
+       - Check: is there a clear default branch (main vs master vs develop)?
+       - Check: are there orphan branches with no upstream or PR?
+    2. SCORE:
+       - Consistent naming: YES/NO
+       - Default branch clear: YES/NO
+       - Orphan branches: <N> (target: 0)
+       - Strategy documented: YES/NO (.github/CONTRIBUTING.md or docs/git-workflow.md)
+    3. IF score < 3/4: RECOMMEND specific fixes with commands
+
+  IF area == "commit_hygiene":
+    1. AUDIT last 50 commits on main:
+       - git log --oneline -50
+       - Count commits matching Conventional Commits pattern: ^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?:
+       - Count WIP/fixup/squash commits that leaked to main
+       - Check average commit message length (target: 50-72 chars for subject)
+       - Check for commits with empty bodies where body was needed (>100 lines changed)
+    2. SCORE:
+       - Convention adherence: <N>% (target: >90%)
+       - WIP commits on main: <N> (target: 0)
+       - Average subject length: <N> chars (target: 50-72)
+       - Commits with body when needed: <N>% (target: >80% for large changes)
+    3. IF convention adherence < 90%:
+       - RECOMMEND commitlint + husky setup
+       - GENERATE .commitlintrc.json and .husky/commit-msg if missing
+       - PROVIDE: git log --oneline -10 showing non-conforming messages
+
+  IF area == "merge_policy":
+    1. AUDIT recent merge history:
+       - git log --merges --oneline -20 (merge commits)
+       - git log --no-merges --first-parent --oneline -20 (squash merges)
+       - Detect mixed strategies (some merges, some squashes, some rebases)
+       - Check for direct pushes to main (no PR): git log --first-parent --no-merges main | check authors
+    2. SCORE:
+       - Single strategy enforced: YES/NO
+       - Direct pushes to main: <N> (target: 0 if team > 1)
+       - Merge commits have meaningful messages: YES/NO
+       - PRs required for main: YES/NO
+    3. RECOMMEND:
+       - IF mixed strategies: pick one, document in CONTRIBUTING.md
+       - IF direct pushes: enable branch protection
+       - IF merge commits lack context: switch to squash merge with PR title
+
+  IF area == "stale_cleanup":
+    1. INVENTORY stale branches:
+       - Merged but not deleted: git branch --merged main | grep -v main
+       - Inactive >30 days: git for-each-ref --sort=committerdate refs/heads/ --format='%(committerdate:short) %(refname:short)' | filter by date
+       - Remote-only stale: git branch -r --merged origin/main | grep -v main
+    2. SCORE:
+       - Merged-but-not-deleted: <N> (target: 0)
+       - Inactive >30 days: <N> (target: 0)
+       - Remote stale: <N> (target: 0)
+    3. CLEAN:
+       - FOR each merged branch: git branch -d <branch> (safe delete)
+       - FOR each remote stale: git push origin --delete <branch> (with confirmation)
+       - Report: "<N> branches deleted, <M> remaining for review"
+
+  IF area == "hook_enforcement":
+    1. CHECK for Git hooks:
+       - ls .husky/ .githooks/ .git/hooks/ 2>/dev/null
+       - Check package.json for husky, lint-staged, commitlint, pre-commit
+       - Check for .pre-commit-config.yaml (Python projects)
+    2. SCORE:
+       - Pre-commit hook: EXISTS/MISSING (target: EXISTS)
+       - Commit-msg hook: EXISTS/MISSING (target: EXISTS for teams)
+       - Pre-push hook: EXISTS/MISSING (target: EXISTS if no CI)
+       - lint-staged configured: YES/NO (target: YES for JS/TS projects)
+    3. IF hooks missing:
+       - GENERATE appropriate hook configuration for detected stack
+       - Test hooks locally before committing
+
+  IF area == "history_quality":
+    1. AUDIT commit graph quality:
+       - git log --graph --oneline -30 (visual inspection of merge topology)
+       - Count merge bubbles (merge commits with >1 parent)
+       - Check for revert-of-revert chains
+       - Check for fixup commits that should have been squashed
+       - Measure: average commits per PR (target: 1-5 after squash)
+    2. SCORE:
+       - Linear history on main: YES/NO (target: YES for squash/rebase teams)
+       - Revert chains: <N> (target: 0)
+       - Orphan fixups: <N> (target: 0)
+       - Avg commits per merge: <N> (target: 1 for squash, 1-5 for merge)
+    3. RECOMMEND:
+       - IF non-linear + squash team: enforce squash merge in repo settings
+       - IF revert chains: investigate root cause (bad merges? flaky CI?)
+       - IF orphan fixups: enforce --autosquash in team workflow
+
+  REPORT: "Area {current_iteration}/{max_iterations}: {area} — Score: {score}"
+
+FINAL REPORT:
+┌────────────────────────────────────────────────────────────┐
+│  GIT WORKFLOW HEALTH                                        │
+├──────────────────────┬──────────┬──────────────────────────┤
+│  Area                │  Score   │  Action Needed            │
+├──────────────────────┼──────────┼──────────────────────────┤
+│  Branch strategy     │  <A-F>   │  <action or "none">       │
+│  Commit hygiene      │  <A-F>   │  <action or "none">       │
+│  Merge policy        │  <A-F>   │  <action or "none">       │
+│  Stale cleanup       │  <A-F>   │  <action or "none">       │
+│  Hook enforcement    │  <A-F>   │  <action or "none">       │
+│  History quality     │  <A-F>   │  <action or "none">       │
+├──────────────────────┼──────────┼──────────────────────────┤
+│  Overall             │  <A-F>   │  <summary>                │
+└──────────────────────┴──────────┴──────────────────────────┘
+```
+
+### Branch Strategy Decision Framework
+
+When the team has no established branching strategy, use this decision tree:
+
+```
+BRANCH STRATEGY DECISION TREE:
+
+Q1: How often do you deploy to production?
+  Multiple times per day  → Trunk-Based Development
+  Daily to weekly         → GitHub Flow
+  Bi-weekly to monthly    → GitHub Flow or GitFlow (light)
+  Infrequently / gated    → GitFlow
+
+Q2: How many developers contribute?
+  1 (solo)       → Trunk-Based (simplest)
+  2-5 (small)    → GitHub Flow
+  6-15 (medium)  → GitHub Flow + branch protection
+  15+ (large)    → GitHub Flow or GitFlow depending on Q1
+
+Q3: Do you maintain multiple release versions?
+  Yes → GitFlow (release branches are mandatory)
+  No  → GitHub Flow or Trunk-Based
+
+Q4: Is your team high-trust with strong testing culture?
+  Yes → Ship/Show/Ask (fastest, least ceremony)
+  No  → GitHub Flow (PR review safety net)
+
+BRANCH NAMING ENFORCEMENT:
+  Pattern: <type>/<ticket>-<slug>
+  Valid:   feature/PROJ-123-user-auth
+  Valid:   fix/PROJ-456-null-pointer
+  Valid:   hotfix/payment-timeout
+  Invalid: my-branch
+  Invalid: test
+  Invalid: feature (missing slug)
+
+  Enforce via Git hooks:
+  #!/bin/bash
+  # .husky/pre-push or .githooks/pre-push
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  pattern="^(feature|fix|hotfix|release|chore|docs)/.+"
+  if [[ ! $branch =~ $pattern ]] && [[ $branch != "main" ]] && [[ $branch != "develop" ]]; then
+    echo "ERROR: Branch name '$branch' does not follow convention: <type>/<description>"
+    exit 1
+  fi
+```
+
+### Commit Hygiene Audit Protocol
+
+Systematic audit for commit quality on any branch before merge:
+
+```
+COMMIT HYGIENE AUDIT:
+
+INPUT: branch_name (default: current branch)
+BASE: main (or configurable base branch)
+
+STEP 1: Collect commit data
+  commits = git log {base}..{branch} --format="%H|%s|%b|%an|%ai|%D"
+  total = len(commits)
+
+STEP 2: Check each commit
+  FOR each commit in commits:
+    subject = commit.subject
+    body = commit.body
+    files_changed = git diff-tree --no-commit-id --name-only -r {commit.hash} | wc -l
+
+    CHECKS:
+    [ ] Subject follows convention: ^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+
+    [ ] Subject length <= 72 characters
+    [ ] Subject starts with lowercase after colon
+    [ ] Subject does not end with period
+    [ ] Body present if files_changed > 20 (large changes need explanation)
+    [ ] Body lines <= 100 characters
+    [ ] No WIP/fixup/squash prefixes (should have been cleaned up)
+    [ ] No "fix typo" or "oops" messages (should have been squashed)
+    [ ] Commit is atomic: single concern (heuristic: files across <= 2 top-level dirs)
+
+  SCORE per commit: pass_count / total_checks
+  AGGREGATE: average across all commits
+
+STEP 3: Report
+  COMMIT HYGIENE REPORT:
+  ┌──────────────────────────────────────────────────────┐
+  │  Branch: {branch}                                     │
+  │  Commits: {total}                                     │
+  │  Convention compliance: {N}%                           │
+  │  Subject length compliance: {N}%                      │
+  │  Body coverage (large commits): {N}%                  │
+  │  WIP/fixup leaks: {N} (target: 0)                     │
+  │  Atomic commits: {N}%                                  │
+  │  Overall hygiene score: {A-F}                          │
+  │  Recommendation: {READY | REBASE NEEDED | REWRITE}    │
+  └──────────────────────────────────────────────────────┘
+
+STEP 4: If REBASE NEEDED
+  Generate interactive rebase plan:
+  - Squash WIP/fixup commits into their parent
+  - Reword non-conforming subjects
+  - Split non-atomic commits (>2 concerns)
+  - Reorder for logical narrative flow
+```
+
+### Merge vs Rebase Decision Matrix (Extended)
+
+```
+ADVANCED MERGE/REBASE SCENARIOS:
+
+Scenario: Feature branch with 15 WIP commits, target is main
+  → Squash merge. WIP history is noise. PR title becomes commit message.
+
+Scenario: Feature branch with 3 clean, logical commits, target is main
+  → Rebase + merge (or merge --no-ff). Preserve the meaningful commit narrative.
+
+Scenario: Release branch merging back to main
+  → Merge commit (--no-ff). The merge commit documents the release integration point.
+
+Scenario: Hotfix applying to both main and develop
+  → Cherry-pick to the second branch. Do NOT merge between main and develop.
+
+Scenario: Long-running feature branch (>1 week) falling behind main
+  → Rebase onto main weekly. Resolve conflicts incrementally, not all at once.
+  → IF conflicts are too frequent: merge main INTO feature branch (pragmatic, preserves history).
+
+Scenario: Contributor's PR to open-source project
+  → Squash merge. External contributor's commit style may not match project conventions.
+
+CONFLICT RESOLUTION STRATEGY:
+  1. ALWAYS rebase/merge from main BEFORE opening a PR (author's responsibility)
+  2. IF conflicts arise during PR review: author resolves, not reviewer
+  3. IF conflicts arise during merge: resolve in a separate commit (not hidden in the merge)
+  4. DOCUMENT non-obvious conflict resolutions in the PR comment thread
+  5. AFTER resolving: run full test suite to verify resolution correctness
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run git maintenance tasks sequentially: primary feature work, then hotfix, then review, then cleanup.

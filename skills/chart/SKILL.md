@@ -640,6 +640,194 @@ IF chart breaks on mobile:
   4. Consider a simplified mobile variant for complex charts
 ```
 
+## Data Visualization Audit Loop
+
+Autoresearch-grade iterative audit for data visualization quality. Covers rendering performance, accessibility compliance, and responsive behavior through measured, repeatable cycles.
+
+```
+DATA VISUALIZATION AUDIT PROTOCOL:
+
+Phase 1 — Rendering Performance Audit
+  targets:
+    Initial render: < 100ms for < 1K data points
+    Initial render: < 500ms for 1K-10K data points
+    Interaction response (tooltip, hover): < 50ms
+    Resize/redraw: < 100ms
+    Memory usage: no leaks on repeated re-renders
+  current_iteration = 0
+  max_iterations = 8
+
+  FOR EACH chart/visualization in the application:
+    1. MEASURE initial render time:
+       - Browser DevTools Performance tab → record page load
+       - Identify chart render duration (from data ready to paint complete)
+       - OR use performance.mark/measure around chart initialization
+    2. MEASURE interaction performance:
+       - Hover over data points → measure tooltip latency
+       - Click/brush → measure filter/update response time
+       - Resize window → measure redraw time
+    3. IDENTIFY performance issues:
+       a. SVG with > 1000 nodes → Switch to Canvas or WebGL renderer
+       b. Full re-render on data subset change → Use enter/update/exit pattern (D3)
+          or shouldComponentUpdate/memo (React)
+       c. Tooltip recalculates on every mousemove → Debounce + memoize position calc
+       d. Large dataset not downsampled → Apply LTTB or aggregation
+       e. Multiple charts re-render on shared filter change → Isolate chart state
+       f. Memory grows on repeated updates → Check for detached DOM nodes, uncleaned listeners
+    4. APPLY targeted fix:
+       - (a) → Switch to Chart.js (canvas), use canvas renderer in D3, or deck.gl (WebGL)
+       - (b) → Implement data-join with key function, use React.memo with custom comparator
+       - (c) → Debounce tooltip handler (16ms for 60fps), cache computed positions
+       - (d) → Server-side aggregation, LTTB downsampling, or progressive loading
+       - (e) → Use local state per chart, derive filtered data with useMemo
+       - (f) → Cleanup event listeners on unmount, use ResizeObserver with disconnect
+    5. RE-MEASURE same chart with same dataset
+    6. RECORD:
+       chart | data_points | metric | before_ms | after_ms | technique
+    7. IF performance worsens → REVERT
+
+  RENDERING PERFORMANCE SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Chart             │  Points │  Render │  Tooltip │  Resize │  Grade │
+  ├────────────────────┼─────────┼─────────┼──────────┼─────────┼────────┤
+  │  RevenueLineChart  │  360    │  45ms   │  12ms    │  38ms   │  A     │
+  │  SegmentBarChart   │  120    │  28ms   │  8ms     │  22ms   │  A     │
+  │  ScatterPlot       │  5000   │  380ms  │  45ms    │  210ms  │  B     │
+  │  HeatmapGrid      │  12000  │  890ms  │  120ms   │  450ms  │  D     │
+  │  KPISparklines     │  90     │  15ms   │  N/A     │  12ms   │  A     │
+  └────────────────────┴─────────┴─────────┴──────────┴─────────┴────────┘
+  Grade: A (< 100ms) B (100-500ms) C (500-1000ms) D (> 1000ms)
+
+Phase 2 — Visualization Accessibility Audit
+  target: every chart meets all 12 accessibility checks
+
+  FOR EACH chart/visualization:
+    1. CHECK structural accessibility:
+       a. SVG has role="img" and aria-label with chart description
+       b. Data table alternative exists (hidden or toggle-visible)
+       c. Chart title is a heading element or aria-labelledby reference
+       d. Units and axis labels are announced (not just visual)
+    2. CHECK color accessibility:
+       a. RUN colorblind simulation:
+          Chrome DevTools → Rendering → Emulate vision deficiencies
+          Test: Protanopia, Deuteranopia, Tritanopia, Achromatopsia
+       b. VERIFY: data series distinguishable without color
+          (patterns, shapes, labels, or position provide redundant encoding)
+       c. VERIFY: color contrast >= 3:1 for all data elements against background
+       d. VERIFY: text labels >= 4.5:1 contrast (WCAG AA)
+    3. CHECK keyboard accessibility:
+       a. Can data points receive focus? (tab or arrow key navigation)
+       b. Is focused data point visually highlighted?
+       c. Do tooltips appear on focus (not just hover)?
+       d. Can brush/zoom be operated via keyboard? (if applicable)
+    4. CHECK motion accessibility:
+       a. Does chart respect prefers-reduced-motion?
+       b. If animations exist, can they be disabled?
+       c. No content conveyed only through animation
+
+  ACCESSIBILITY AUDIT TABLE:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Check                              │  Chart1 │  Chart2 │  Chart3  │
+  ├─────────────────────────────────────┼─────────┼─────────┼──────────┤
+  │  SVG role="img" + aria-label        │  PASS   │  FAIL   │  PASS    │
+  │  Data table alternative exists      │  PASS   │  FAIL   │  FAIL    │
+  │  Colorblind-safe palette            │  PASS   │  PASS   │  FAIL    │
+  │  Non-color differentiators          │  PASS   │  FAIL   │  FAIL    │
+  │  Color contrast >= 3:1 (data)       │  PASS   │  PASS   │  PASS    │
+  │  Text contrast >= 4.5:1             │  PASS   │  PASS   │  PASS    │
+  │  Keyboard navigable                 │  FAIL   │  FAIL   │  FAIL    │
+  │  Tooltip on focus                   │  FAIL   │  FAIL   │  FAIL    │
+  │  prefers-reduced-motion respected   │  PASS   │  FAIL   │  PASS    │
+  │  Text labels >= 12px                │  PASS   │  PASS   │  FAIL    │
+  │  Axis labels present and clear      │  PASS   │  PASS   │  PASS    │
+  │  Y-axis starts at 0 (bar charts)    │  N/A    │  PASS   │  N/A     │
+  ├─────────────────────────────────────┼─────────┼─────────┼──────────┤
+  │  TOTAL                              │  9/11   │  5/12   │  5/11    │
+  └─────────────────────────────────────┴─────────┴─────────┴──────────┘
+
+  FOR EACH failing check:
+    1. APPLY fix
+    2. RE-CHECK with same tool/method
+    3. RECORD: chart | check | fix_applied | status
+
+Phase 3 — Visualization Responsiveness Audit
+  target: every chart usable at 320px through 1920px+
+
+  FOR EACH chart at viewports [320, 375, 768, 1024, 1440, 1920]:
+    1. CHECK layout:
+       a. Chart fits within container (no horizontal overflow)
+       b. Aspect ratio maintained or gracefully adapted
+       c. Legend readable (repositioned below on mobile, beside on desktop)
+       d. Axis labels readable (abbreviated, rotated, or reduced on narrow viewports)
+       e. Tick marks appropriate density (fewer ticks on mobile)
+    2. CHECK interaction:
+       a. Touch targets >= 44px for interactive data points
+       b. Tooltip accessible on touch (tap, not just hover)
+       c. Brush/zoom works with touch gestures (if applicable)
+       d. Pinch-to-zoom does not conflict with chart zoom (if applicable)
+    3. CHECK readability:
+       a. Text size >= 12px at all viewports
+       b. Data point size large enough to distinguish
+       c. Overlapping labels resolved (jitter, hide, or rotate)
+    4. IDENTIFY mobile simplification needs:
+       a. Complex chart → simplified version at < 480px?
+       b. Multi-series → show top-N with "show all" toggle?
+       c. Large data table → scrollable with sticky headers?
+
+  RESPONSIVE CHART AUDIT:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Chart             │  320px │  768px │  1024px │  1440px │  Issues  │
+  ├────────────────────┼────────┼────────┼─────────┼─────────┼──────────┤
+  │  RevenueLineChart  │  PASS  │  PASS  │  PASS   │  PASS   │  0       │
+  │  SegmentBarChart   │  FAIL  │  PASS  │  PASS   │  PASS   │  1*      │
+  │  ScatterPlot       │  FAIL  │  FAIL  │  PASS   │  PASS   │  2**     │
+  │  HeatmapGrid      │  FAIL  │  PASS  │  PASS   │  PASS   │  1***    │
+  └────────────────────┴────────┴────────┴─────────┴─────────┴──────────┘
+  * Labels overflow at 320px — need abbreviation
+  ** Touch targets too small; tooltip hover-only
+  *** Horizontal scroll needed at 320px — add scroll indicator
+
+FINAL VISUALIZATION AUDIT REPORT:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Metric                            │  Before   │  After    │ Target │
+├────────────────────────────────────┼───────────┼───────────┼────────┤
+│  Avg initial render (< 1K pts)     │  <N>ms    │  <N>ms    │ < 100ms│
+│  Avg initial render (1K-10K pts)   │  <N>ms    │  <N>ms    │ < 500ms│
+│  Tooltip latency (p95)             │  <N>ms    │  <N>ms    │ < 50ms │
+│  A11y checks passing               │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Data table alternatives           │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Colorblind-safe palettes          │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Keyboard navigable charts         │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Responsive at 320px               │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Touch-friendly interactions       │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  prefers-reduced-motion            │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Memory leaks detected             │  <N>      │  0        │ 0      │
+└────────────────────────────────────┴───────────┴───────────┴────────┘
+```
+
+### Data Visualization Audit TSV Logging
+
+Append one row per audit action to `.godmode/chart-audit.tsv`:
+
+```
+timestamp	project	phase	chart	metric	before	after	technique	status
+2024-01-15T10:30:00Z	my-app	perf	HeatmapGrid	render_ms	890	180	canvas-renderer	improved
+2024-01-15T10:35:00Z	my-app	a11y	ScatterPlot	data_table	missing	present	added-sr-table	fixed
+2024-01-15T10:40:00Z	my-app	responsive	SegmentBar	320px_overflow	yes	no	label-abbreviation	fixed
+```
+
+### Data Visualization Audit Hard Rules
+
+```
+1. NEVER ship a chart without a data table alternative. Charts are invisible to screen readers without one.
+2. NEVER render > 1000 SVG nodes. Switch to Canvas or WebGL for large datasets.
+3. ALWAYS test colorblind safety with Chrome DevTools vision deficiency emulation before marking a11y as done.
+4. ALWAYS test at 320px viewport width. If the chart is unusable on mobile, provide a simplified mobile version.
+5. NEVER rely on hover-only for tooltips. Touch devices need tap-to-show. Keyboard users need focus-to-show.
+6. ALWAYS measure render performance with real or representative data volumes, not trivial sample data.
+7. Log every audit finding in TSV format for tracking visualization quality across releases.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run chart tasks sequentially: data preparation, then chart implementation, then accessibility/responsive.

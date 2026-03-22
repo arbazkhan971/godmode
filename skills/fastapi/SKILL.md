@@ -1095,6 +1095,272 @@ IF dependency injection errors:
 - **Do NOT skip Alembic migrations.** FastAPI + SQLAlchemy needs explicit schema management. Never use `metadata.create_all()` in production.
 
 
+## FastAPI Optimization Loop
+
+When optimizing an existing FastAPI application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Async Audit
+
+```
+ASYNC AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify blocking calls in async endpoints              │
+│                                                                   │
+│  BLOCKING CALL DETECTION — scan for these in async functions:    │
+│  ┌──────────────────────────────────┬────────────────────────┐  │
+│  │  Blocking Pattern                │  Async Replacement      │  │
+│  ├──────────────────────────────────┼────────────────────────┤  │
+│  │  import requests                 │  httpx.AsyncClient      │  │
+│  │  requests.get() / .post()       │  await client.get()     │  │
+│  │  open() / read() / write()      │  aiofiles.open()        │  │
+│  │  time.sleep()                   │  asyncio.sleep()        │  │
+│  │  subprocess.run()               │  asyncio.create_subprocess │
+│  │  psycopg2 (sync driver)        │  asyncpg                │  │
+│  │  pymongo (sync)                 │  motor                  │  │
+│  │  redis-py (sync)               │  redis.asyncio          │  │
+│  │  smtplib.send()                │  aiosmtplib             │  │
+│  │  boto3 (sync)                  │  aiobotocore            │  │
+│  └──────────────────────────────────┴────────────────────────┘  │
+│                                                                   │
+│  Step 2: Audit def vs async def                                  │
+│  - async def: MUST NOT contain any blocking calls               │
+│  - def: runs in threadpool (OK for blocking, but limited)        │
+│  - If endpoint is def (sync) and does only I/O → convert to     │
+│    async def with async libraries                                │
+│  - If endpoint is async def and calls sync library → either:     │
+│    a) Replace with async library (preferred)                     │
+│    b) Use run_in_executor() for unavoidable sync calls           │
+│                                                                   │
+│  Step 3: Event loop health measurement                           │
+│  import asyncio, time                                             │
+│                                                                   │
+│  async def monitor_event_loop():                                 │
+│      while True:                                                  │
+│          start = time.monotonic()                                │
+│          await asyncio.sleep(0.1)                                │
+│          lag = time.monotonic() - start - 0.1                    │
+│          if lag > 0.05:  # 50ms lag threshold                    │
+│              logger.warning(f"Event loop lag: {lag*1000:.0f}ms") │
+│          await asyncio.sleep(1)                                  │
+│                                                                   │
+│  Step 4: Async generator audit                                   │
+│  - Verify all Depends() with yield clean up properly             │
+│  - Check that async context managers use async with              │
+│  - Verify background tasks don't hold request-scoped resources   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+```python
+# CONCRETE ASYNC FIX PATTERNS:
+
+# BAD — blocking HTTP call in async endpoint:
+@router.get("/data")
+async def get_data():
+    response = requests.get("https://api.example.com/data")  # BLOCKS EVENT LOOP
+    return response.json()
+
+# GOOD — async HTTP call:
+@router.get("/data")
+async def get_data():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://api.example.com/data")
+    return response.json()
+
+# BAD — CPU-intensive work in async endpoint:
+@router.post("/process")
+async def process_image(file: UploadFile):
+    data = await file.read()
+    result = heavy_image_processing(data)  # BLOCKS EVENT LOOP
+    return {"result": result}
+
+# GOOD — offload to threadpool:
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
+
+pool = ProcessPoolExecutor(max_workers=4)
+
+@router.post("/process")
+async def process_image(file: UploadFile):
+    data = await file.read()
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(pool, heavy_image_processing, data)
+    return {"result": result}
+```
+
+### Pass 2: Dependency Injection Audit
+
+```
+DEPENDENCY INJECTION AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Catalog all dependencies                                │
+│  List every Depends() used across the application:               │
+│  ┌──────────────────────────┬──────────┬─────────┬────────────┐ │
+│  │  Dependency              │  Scope   │  Cached │  Cleanup   │ │
+│  ├──────────────────────────┼──────────┼─────────┼────────────┤ │
+│  │  get_db                  │  request │  no     │  yes/yield │ │
+│  │  get_current_user        │  request │  no     │  no        │ │
+│  │  get_settings            │  app     │  yes    │  no        │ │
+│  │  get_redis               │  app     │  yes    │  yes       │ │
+│  │  rate_limiter            │  request │  no     │  no        │ │
+│  └──────────────────────────┴──────────┴─────────┴────────────┘ │
+│                                                                   │
+│  Step 2: Identify performance anti-patterns                      │
+│  - Dependencies creating new connections per request → use pool  │
+│  - Dependencies doing I/O that could be cached → add caching    │
+│  - Deeply nested Depends() chains → flatten where possible       │
+│  - Missing cleanup in yield dependencies → add try/finally       │
+│                                                                   │
+│  Step 3: Optimize dependency chains                              │
+│  # BAD — new DB connection per request:                          │
+│  async def get_db():                                              │
+│      engine = create_async_engine(DB_URL)  # New engine per call!│
+│      async with AsyncSession(engine) as session:                 │
+│          yield session                                            │
+│                                                                   │
+│  # GOOD — reuse engine from app state:                           │
+│  async def get_db():                                              │
+│      async with async_session_factory() as session:              │
+│          try:                                                     │
+│              yield session                                        │
+│              await session.commit()                               │
+│          except Exception:                                        │
+│              await session.rollback()                             │
+│              raise                                                │
+│                                                                   │
+│  Step 4: Sub-dependency deduplication                            │
+│  - FastAPI caches dependency results within a single request     │
+│  - If Depends(get_db) is used by multiple sub-dependencies,     │
+│    they all receive the same session (by default — use_cache=True)│
+│  - Set use_cache=False only when you need independent instances  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Response Time Optimization
+
+```
+RESPONSE TIME OPTIMIZATION:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Baseline response times                                 │
+│  Use middleware to measure endpoint latency:                     │
+│                                                                   │
+│  @app.middleware("http")                                         │
+│  async def timing_middleware(request: Request, call_next):       │
+│      start = time.perf_counter()                                │
+│      response = await call_next(request)                        │
+│      duration = (time.perf_counter() - start) * 1000            │
+│      response.headers["X-Process-Time-ms"] = f"{duration:.1f}" │
+│      logger.info("request", path=request.url.path,              │
+│                  method=request.method, duration_ms=duration)    │
+│      return response                                             │
+│                                                                   │
+│  Step 2: Identify slow endpoints                                │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Endpoint                │  p50(ms) │  p99(ms) │  Action    ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  GET /api/orders         │  <N>     │  <N>     │  optimize  ││
+│  │  POST /api/orders        │  <N>     │  <N>     │  check     ││
+│  │  GET /api/reports/:id    │  <N>     │  <N>     │  cache     ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 3: Apply optimizations per endpoint                        │
+│  a) Database query optimization:                                 │
+│     - Add selectin/joined loading strategies on relationships    │
+│     - Use .options(load_only(...)) for column subset             │
+│     - Add database indexes on filter/sort columns                │
+│     - Use server-side cursors for large result sets              │
+│                                                                   │
+│  b) Response serialization optimization:                         │
+│     - Use model_config = ConfigDict(from_attributes=True) on    │
+│       response schemas (avoids manual dict construction)         │
+│     - Use ORJSONResponse for faster JSON serialization:          │
+│       from fastapi.responses import ORJSONResponse               │
+│       app = FastAPI(default_response_class=ORJSONResponse)       │
+│     - Avoid deeply nested response schemas on list endpoints     │
+│                                                                   │
+│  c) Concurrent I/O:                                              │
+│     - Use asyncio.gather() for independent async calls:          │
+│       user, orders = await asyncio.gather(                       │
+│           get_user(user_id), get_orders(user_id)                │
+│       )                                                           │
+│     - Use asyncio.TaskGroup() (Python 3.11+) for structured     │
+│       concurrency with proper error handling                     │
+│                                                                   │
+│  d) Caching:                                                     │
+│     - In-memory TTL cache for hot config/reference data          │
+│     - Redis cache for computed results (reports, aggregations)   │
+│     - HTTP cache headers for client-side caching                 │
+│     - @lru_cache for app-scoped dependencies (settings, config) │
+│                                                                   │
+│  Step 4: Connection pool tuning                                  │
+│  engine = create_async_engine(                                   │
+│      DATABASE_URL,                                               │
+│      pool_size=20,            # concurrent connections           │
+│      max_overflow=10,         # burst capacity                   │
+│      pool_timeout=30,         # wait for connection              │
+│      pool_recycle=1800,       # recycle connections every 30min  │
+│      pool_pre_ping=True,      # verify connection is alive      │
+│  )                                                                │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Startup & Shutdown Audit
+
+```
+STARTUP & SHUTDOWN AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Startup lifespan:                                               │
+│  @asynccontextmanager                                            │
+│  async def lifespan(app: FastAPI):                               │
+│      # Startup: initialize shared resources ONCE                 │
+│      app.state.db_engine = create_async_engine(DB_URL)          │
+│      app.state.redis = await aioredis.from_url(REDIS_URL)       │
+│      app.state.http_client = httpx.AsyncClient(timeout=10)      │
+│      yield                                                        │
+│      # Shutdown: clean up all resources                          │
+│      await app.state.http_client.aclose()                       │
+│      await app.state.redis.close()                               │
+│      await app.state.db_engine.dispose()                        │
+│                                                                   │
+│  Audit checklist:                                                │
+│  [ ] All shared resources initialized in lifespan startup        │
+│  [ ] All resources properly closed in lifespan shutdown           │
+│  [ ] No module-level resource creation (connections, clients)    │
+│  [ ] Background tasks cancelled on shutdown                      │
+│  [ ] Health check endpoint returns 503 during shutdown           │
+│  [ ] Uvicorn configured with graceful shutdown timeout:          │
+│      uvicorn app:app --timeout-graceful-shutdown 30              │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+FASTAPI OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  Blocking calls in async     │  <N>      │  0        │  FIXED    │
+│  Event loop lag (p99 ms)     │  <N>      │  <N>      │  -<N>%    │
+│  Avg response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+│  p99 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+│  DB pool utilization (%)    │  <N>      │  <N>      │  tuned    │
+│  Dependency chain depth      │  <N>      │  <N>      │  flattened│
+│  Startup time (ms)          │  <N>      │  <N>      │  -<N>%    │
+│  Shutdown cleanup verified   │  NO       │  YES      │  FIXED    │
+│  ORJSONResponse enabled      │  NO       │  YES      │  +<N>%    │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Zero blocking calls in async endpoints
+- Event loop lag p99 < 50ms
+- All dependencies use connection pooling (no per-request connections)
+- Lifespan properly initializes and cleans up all shared resources
+- ORJSONResponse used as default response class
+- Response times improved by measurable margin on targeted endpoints
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run FastAPI tasks sequentially: core API setup, then domain A, then domain B.

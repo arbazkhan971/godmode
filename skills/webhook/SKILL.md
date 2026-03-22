@@ -1051,6 +1051,130 @@ MERGE: Outbound and inbound merge independently.
   Infra rebases onto both. Final: end-to-end delivery test with real queue.
 ```
 
+## Webhook Reliability Audit Loop
+
+Autonomous audit loop that validates retry logic, idempotency, timeout handling, and delivery guarantees. Runs until all reliability checks pass or max iterations reached.
+
+```
+WEBHOOK RELIABILITY AUDIT LOOP:
+current_iteration = 0
+max_iterations = 15
+webhook_config = detect_webhook_infrastructure()
+delivery_stats = query_delivery_metrics()  // success rate, DLQ depth, retry queue
+
+WHILE current_iteration < max_iterations AND NOT all_checks_pass:
+  current_iteration += 1
+
+  // Phase 1: Retry Logic Validation
+  retry_checks = {
+    exponential_backoff:  retry_delays_follow_exponential_curve(),
+    // Expected: 1m, 5m, 30m, 2h, 8h, 24h (or similar)
+    jitter_present:       retry_delays_include_random_jitter(),
+    // Jitter: +/- 20% of base delay
+    max_attempts_bounded: max_retry_attempts <= 15,
+    no_retry_on_4xx:      does_not_retry_on_400_401_403_404_405(),
+    retry_on_408_429:     retries_on_timeout_and_ratelimit(),
+    retry_on_5xx:         retries_on_500_502_503_504(),
+    backoff_formula:      delay = base * (2 ^ attempt) + random_jitter()
+  }
+
+  FOR each check in retry_checks:
+    IF check.status == FAIL:
+      FIX: implement correct retry behavior
+      LOG: "RETRY fixed: {check.name}"
+
+  // Phase 2: Idempotency Validation
+  idempotency_checks = {
+    event_id_unique:         every_event_has_globally_unique_id(),
+    dedup_on_receive:        inbound_handler_checks_event_id_before_processing(),
+    dedup_store_configured:  dedup_store_exists(),  // Redis SET, DB table
+    dedup_ttl_set:           dedup_entries_expire_after_72h(),
+    outbound_idempotency:    delivery_table_tracks_event_subscription_pair(),
+    handler_safe_to_replay:  handlers_use_upsert_or_idempotency_guard()
+  }
+
+  FOR each check in idempotency_checks:
+    IF check.status == FAIL:
+      FIX: add deduplication or idempotency guard
+      LOG: "IDEMPOTENCY fixed: {check.name}"
+
+  // Phase 3: Timeout Handling
+  timeout_checks = {
+    delivery_timeout:      outbound_request_timeout <= 30s,   // 5-30s recommended
+    connect_timeout:       connect_timeout <= 5s,
+    total_timeout:         total_timeout <= 60s,
+    timeout_on_receiver:   inbound_handler_responds_within_5s(),
+    async_processing:      heavy_work_queued_not_inline(),     // 200 ACK then process
+    circuit_breaker:       circuit_opens_after_N_consecutive_failures(),
+    // Thresholds: open after 5 failures, half-open after 60s, close after 3 successes
+    dead_letter_on_exhaust: exhausted_retries_go_to_dlq()
+  }
+
+  FOR each check in timeout_checks:
+    IF check.status == FAIL:
+      FIX: configure correct timeouts and circuit breaker
+      LOG: "TIMEOUT fixed: {check.name}"
+
+  // Phase 4: Delivery Guarantee Audit
+  guarantee_checks = {
+    at_least_once:          delivery_retries_ensure_eventual_delivery(),
+    ordering_documented:    docs_state_ordering_is_not_guaranteed(),
+    payload_immutable:      event_payload_does_not_change_between_retries(),
+    signature_per_attempt:  each_retry_generates_fresh_signature_with_current_timestamp(),
+    dlq_replay_available:   dlq_entries_can_be_manually_replayed(),
+    monitoring_configured:  alerts_on_success_rate_below_95pct()
+  }
+
+  FOR each check in guarantee_checks:
+    IF check.status == FAIL:
+      FIX: implement missing guarantee
+      LOG: "GUARANTEE fixed: {check.name}"
+
+  // Phase 5: Keep/Discard
+  all_retry = all(retry_checks)
+  all_idempotency = all(idempotency_checks)
+  all_timeout = all(timeout_checks)
+  all_guarantee = all(guarantee_checks)
+
+  IF all_retry AND all_idempotency AND all_timeout AND all_guarantee:
+    KEEP all changes
+    COMMIT: "webhook: reliability audit pass #{current_iteration}"
+    all_checks_pass = true
+  ELSE:
+    remaining = count_failing([retry_checks, idempotency_checks, timeout_checks, guarantee_checks])
+    LOG: "Iteration {current_iteration}: {remaining} checks still failing"
+    CONTINUE
+
+  REPORT: "Iteration {current_iteration}: retry={sum(retry_checks)}/7, idempotency={sum(idempotency_checks)}/6, timeout={sum(timeout_checks)}/7, guarantee={sum(guarantee_checks)}/6"
+
+ON COMPLETION:
+  LOG to .godmode/webhook-audit.tsv:
+    timestamp\tproject\titerations\tretry_fixes\tidempotency_fixes\ttimeout_fixes\tguarantee_fixes\tverdict
+  REPORT: "Webhook reliability audit complete: {current_iteration} iterations, all {total_checks} checks PASS"
+```
+
+### Reliability Thresholds
+
+```
+WEBHOOK RELIABILITY THRESHOLDS:
+┌──────────────────────────────────────┬──────────────┬────────────────────────┐
+│ Metric                               │ Target       │ Alert                  │
+├──────────────────────────────────────┼──────────────┼────────────────────────┤
+│ First-attempt delivery success rate  │ > 95%        │ < 90%                  │
+│ Overall delivery success rate        │ > 99.5%      │ < 98%                  │
+│ Delivery latency p50                 │ < 500ms      │ > 2s                   │
+│ Delivery latency p99                 │ < 5s         │ > 15s                  │
+│ DLQ entries per 24h                  │ < 10         │ > 100                  │
+│ Retry queue depth                    │ < 500        │ > 5,000                │
+│ Circuit breakers open                │ 0            │ > 3                    │
+│ Duplicate deliveries (same event)    │ < 0.1%       │ > 1%                   │
+│ Dedup store miss rate                │ 0%           │ > 0% (dedup broken)    │
+│ Inbound handler response time        │ < 2s         │ > 5s                   │
+│ Connect timeout                      │ 3-5s         │ > 10s                  │
+│ Request timeout                      │ 5-30s        │ > 60s                  │
+└──────────────────────────────────────┴──────────────┴────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run webhook tasks sequentially: outbound delivery, then inbound handling, then infrastructure/monitoring.

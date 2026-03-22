@@ -208,6 +208,17 @@ When a user types `/godmode:optimize`, Gemini CLI reads `commands/godmode/optimi
 4. **Always investigate first**: Run `git status`, check for tests, read project files before recommending actions.
 5. **One skill at a time**: Load and follow one skill's full workflow. Do not mix instructions from multiple skills simultaneously.
 
+## How the Loop Works on Gemini
+
+Godmode's core loop is the same on every platform: **measure -> modify -> verify -> keep or revert -> repeat**. On Claude Code, the modify step can dispatch multiple agents in parallel worktrees. On Gemini CLI, the same loop runs with one agent at a time in the current session. The dispatch is sequential, but every other aspect is identical:
+
+- **Same measurement.** The metric command runs before and after each change. Baselines, thresholds, and diminishing-returns detection use the same logic.
+- **Same verification.** Guard rails (test_cmd, lint_cmd, build_cmd) run after every modification. A change that fails verification is reverted, exactly as on Claude Code.
+- **Same keep/revert decision.** The TSV log records the same columns, the same KEEP/REVERT verdicts, and the same metric deltas. A log produced on Gemini CLI is indistinguishable from one produced on Claude Code.
+- **Same output.** The final code changes, commit history, and summary report are identical regardless of whether agents ran in parallel or sequentially.
+
+The only difference is wall-clock time. A 3-agent optimize round that takes 2 minutes on Claude Code takes roughly 6 minutes on Gemini CLI. The result is the same.
+
 ## Sequential Execution (Gemini CLI Limitation)
 
 Gemini CLI does not support parallel agent dispatch or native worktrees. When a skill says "dispatch N agents in parallel" or "isolation: worktree":

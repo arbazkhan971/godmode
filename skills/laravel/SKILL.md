@@ -1050,6 +1050,321 @@ IF authorization errors:
 - **Do NOT skip authorization.** Every endpoint must check Policies or Gates. An unauthorized endpoint is a security vulnerability, not a missing feature.
 
 
+## Laravel Optimization Loop
+
+When optimizing an existing Laravel application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Eloquent Query Optimization
+
+```
+ELOQUENT QUERY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Enable query detection tools                            │
+│                                                                   │
+│  # AppServiceProvider::boot()                                    │
+│  if ($this->app->isLocal()) {                                    │
+│      Model::preventLazyLoading();          // Catch N+1          │
+│      Model::preventSilentlyDiscardingAttributes(); // Catch typos│
+│      Model::preventAccessingMissingAttributes();   // Catch nulls│
+│      DB::listen(function (QueryExecuted $query) {                │
+│          if ($query->time > 100) {                               │
+│              Log::warning('Slow query', [                        │
+│                  'sql' => $query->sql,                           │
+│                  'time' => $query->time,                         │
+│                  'bindings' => $query->bindings,                 │
+│              ]);                                                  │
+│          }                                                       │
+│      });                                                         │
+│  }                                                               │
+│                                                                   │
+│  # Or use Laravel Debugbar:                                      │
+│  composer require barryvdh/laravel-debugbar --dev                │
+│                                                                   │
+│  Step 2: Baseline query count per endpoint                       │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Endpoint                │  Queries │  Time(ms)│  N+1?      ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  GET /api/orders         │  <N>     │  <N>     │  YES/NO    ││
+│  │  GET /api/orders/:id     │  <N>     │  <N>     │  YES/NO    ││
+│  │  GET /dashboard          │  <N>     │  <N>     │  YES/NO    ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 3: Fix N+1 and inefficient query patterns                  │
+│                                                                   │
+│  # BAD — N+1 on relationship access:                             │
+│  $orders = Order::all();                                         │
+│  foreach ($orders as $order) {                                   │
+│      echo $order->customer->name;  // 1 query per order          │
+│  }                                                               │
+│                                                                   │
+│  # GOOD — eager load with constrained columns:                   │
+│  $orders = Order::with(['customer:id,name,email',                │
+│                         'items:id,order_id,product_id,quantity']) │
+│      ->active()                                                  │
+│      ->recent()                                                  │
+│      ->paginate(25);                                             │
+│                                                                   │
+│  # GOOD — withCount for relationship counts:                     │
+│  $orders = Order::withCount('items')                             │
+│      ->withSum('items', 'quantity')                              │
+│      ->paginate(25);                                             │
+│  // Access: $order->items_count, $order->items_sum_quantity      │
+│                                                                   │
+│  # GOOD — withWhereHas for filter + eager load combo:            │
+│  $orders = Order::withWhereHas('items', function ($q) {          │
+│      $q->where('product_id', $productId);                        │
+│  })->get();                                                      │
+│                                                                   │
+│  # GOOD — subquery selects for computed columns:                 │
+│  $orders = Order::addSelect([                                    │
+│      'last_payment_at' => Payment::select('created_at')          │
+│          ->whereColumn('order_id', 'orders.id')                  │
+│          ->latest()                                              │
+│          ->limit(1),                                             │
+│  ])->get();                                                      │
+│                                                                   │
+│  Step 4: Bulk operation optimization                             │
+│  - Replace create() loops with insert() / upsert()              │
+│  - Replace update() loops with batch update queries              │
+│  - Use chunk() or chunkById() for large dataset processing      │
+│  - Use cursor() or lazy() for memory-efficient iteration         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 2: Queue Processing Optimization
+
+```
+QUEUE PROCESSING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Catalog all queued jobs                                 │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Job                     │  Queue   │  Avg Time│  Retries   ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  SendOrderConfirmation   │  default │  <N>ms   │  3         ││
+│  │  ProcessPayment          │  high    │  <N>ms   │  5         ││
+│  │  GenerateReport          │  low     │  <N>ms   │  1         ││
+│  │  SyncInventory           │  default │  <N>ms   │  3         ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 2: Queue configuration optimization                        │
+│  # config/queue.php — tune for workload:                         │
+│  'connections' => [                                              │
+│      'redis' => [                                                │
+│          'driver' => 'redis',                                    │
+│          'connection' => 'default',                              │
+│          'queue' => env('REDIS_QUEUE', 'default'),               │
+│          'retry_after' => 90,     // Must exceed max job runtime │
+│          'block_for' => 5,        // Long-polling interval       │
+│          'after_commit' => true,  // Only dispatch after DB commit│
+│      ],                                                          │
+│  ],                                                              │
+│                                                                   │
+│  Step 3: Job design optimization                                 │
+│  class ProcessPayment implements ShouldQueue                     │
+│  {                                                               │
+│      use Dispatchable, InteractsWithQueue, Queueable,            │
+│          SerializesModels;                                       │
+│                                                                   │
+│      public $tries = 5;                                          │
+│      public $maxExceptions = 3;                                  │
+│      public $timeout = 60;                                       │
+│      public $backoff = [60, 300, 900];  // Exponential backoff   │
+│                                                                   │
+│      public function uniqueId(): string                          │
+│      {                                                           │
+│          return $this->order->id;   // Prevent duplicate jobs    │
+│      }                                                           │
+│                                                                   │
+│      public function retryUntil(): DateTime                      │
+│      {                                                           │
+│          return now()->addHours(24); // Hard deadline             │
+│      }                                                           │
+│                                                                   │
+│      public function middleware(): array                         │
+│      {                                                           │
+│          return [                                                 │
+│              new WithoutOverlapping($this->order->id),           │
+│              (new ThrottlesExceptions(3, 5))->backoff(60),       │
+│          ];                                                      │
+│      }                                                           │
+│                                                                   │
+│      public function failed(Throwable $e): void                  │
+│      {                                                           │
+│          // Notify team, update order status to failed           │
+│      }                                                           │
+│  }                                                               │
+│                                                                   │
+│  Step 4: Worker process optimization                             │
+│  # Horizon configuration (Redis queue dashboard):                │
+│  php artisan horizon:install                                     │
+│                                                                   │
+│  # Optimal worker commands:                                      │
+│  php artisan queue:work --queue=high,default,low --tries=3       │
+│      --timeout=60 --memory=128 --sleep=3                         │
+│                                                                   │
+│  # Scale workers per queue priority:                             │
+│  'environments' => [                                             │
+│      'production' => [                                           │
+│          'supervisor-high' => ['queue' => ['high'], 'processes' => 4], │
+│          'supervisor-default' => ['queue' => ['default'], 'processes' => 2], │
+│          'supervisor-low' => ['queue' => ['low'], 'processes' => 1], │
+│      ],                                                          │
+│  ],                                                              │
+│                                                                   │
+│  AUDIT CHECKLIST:                                                │
+│  [ ] All jobs have explicit $tries, $timeout, and $backoff       │
+│  [ ] All payment/critical jobs have uniqueId() to prevent dupes  │
+│  [ ] All jobs have failed() method for error notification        │
+│  [ ] after_commit is true on queue connection (no orphan jobs)   │
+│  [ ] Queue depth monitored — alert if > threshold                │
+│  [ ] Dead letter queue inspected daily for stuck jobs            │
+│  [ ] Job batching used for bulk operations (Bus::batch())        │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Cache Strategy Optimization
+
+```
+CACHE STRATEGY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify cacheable data                                 │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Data                    │  TTL     │  Layer   │  Invalidate││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  App config/settings     │  1 hour  │  Config  │  On deploy ││
+│  │  User permissions        │  5 min   │  Redis   │  On change ││
+│  │  Product catalog         │  15 min  │  Redis   │  On update ││
+│  │  Dashboard aggregations  │  1 min   │  Redis   │  Time-based││
+│  │  Static page content     │  1 day   │  File    │  On publish││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 2: Implement cache patterns                                │
+│                                                                   │
+│  # Pattern: remember() for simple caching                        │
+│  $stats = Cache::remember('dashboard:stats', 60, function () {  │
+│      return [                                                    │
+│          'orders_today' => Order::whereDate('created_at', today())→count(), │
+│          'revenue_today' => Order::whereDate('created_at', today())→sum('total'), │
+│      ];                                                          │
+│  });                                                             │
+│                                                                   │
+│  # Pattern: cache tags for group invalidation                    │
+│  Cache::tags(['orders', 'customer:'.$customerId])                │
+│      ->remember("orders:customer:{$customerId}", 300, fn() =>   │
+│          Order::where('customer_id', $customerId)->get()         │
+│      );                                                          │
+│  // Invalidate all orders cache:                                 │
+│  Cache::tags('orders')->flush();                                 │
+│                                                                   │
+│  # Pattern: Model observer for automatic invalidation            │
+│  class OrderObserver                                             │
+│  {                                                               │
+│      public function saved(Order $order): void                   │
+│      {                                                           │
+│          Cache::tags(['orders', "customer:{$order->customer_id}"])│
+│              ->flush();                                          │
+│      }                                                           │
+│  }                                                               │
+│                                                                   │
+│  # Pattern: Route-level caching                                  │
+│  Route::middleware('cache.headers:public;max_age=300')           │
+│      ->get('/api/products', [ProductController::class, 'index']);│
+│                                                                   │
+│  Step 3: Cache driver selection                                  │
+│  ┌──────────────────────────┬────────────────────────────────┐  │
+│  │  Driver                  │  Use Case                       │  │
+│  ├──────────────────────────┼────────────────────────────────┤  │
+│  │  Redis                   │  Default for production         │  │
+│  │  File                    │  Development / low-traffic      │  │
+│  │  Database                │  When Redis unavailable         │  │
+│  │  Array                   │  Testing only (per-request)     │  │
+│  │  Memcached              │  Legacy / specific use cases    │  │
+│  └──────────────────────────┴────────────────────────────────┘  │
+│                                                                   │
+│  AUDIT CHECKLIST:                                                │
+│  [ ] Redis configured as default cache driver in production      │
+│  [ ] All expensive queries wrapped in Cache::remember()          │
+│  [ ] Cache tags used for group invalidation (not flush-all)      │
+│  [ ] Model observers handle cache invalidation on writes         │
+│  [ ] Cache key naming is consistent: "type:identifier:field"     │
+│  [ ] TTLs are appropriate (not too long, not too short)          │
+│  [ ] Config caching enabled: php artisan config:cache            │
+│  [ ] Route caching enabled: php artisan route:cache              │
+│  [ ] View caching enabled: php artisan view:cache                │
+│  [ ] Event caching enabled: php artisan event:cache              │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Database & Index Audit
+
+```
+DATABASE & INDEX AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify missing indexes                                │
+│  # Run in tinker:                                                │
+│  collect(DB::select("SELECT table_name, column_name              │
+│    FROM information_schema.columns                               │
+│    WHERE column_name LIKE '%_id'                                 │
+│    AND table_schema = DATABASE()"))                               │
+│    ->each(function ($col) {                                      │
+│        $indexes = collect(DB::select("SHOW INDEX FROM {$col->table_name}")) │
+│            ->pluck('Column_name')->toArray();                    │
+│        if (!in_array($col->column_name, $indexes)) {            │
+│            echo "MISSING INDEX: {$col->table_name}.{$col->column_name}\n"; │
+│        }                                                         │
+│    });                                                           │
+│                                                                   │
+│  Step 2: Add composite indexes for common query patterns         │
+│  Schema::table('orders', function (Blueprint $table) {           │
+│      $table->index(['status', 'created_at']);                    │
+│      $table->index(['customer_id', 'status']);                   │
+│      $table->unique(['order_id', 'product_id'], 'order_product');│
+│  });                                                             │
+│                                                                   │
+│  Step 3: Query plan analysis                                     │
+│  DB::select('EXPLAIN ANALYZE SELECT * FROM orders               │
+│    WHERE status = ? ORDER BY created_at DESC LIMIT 25',          │
+│    ['active']);                                                   │
+│  // Look for: full table scans, missing indexes, sort operations │
+│                                                                   │
+│  Step 4: Optimize Artisan commands                               │
+│  php artisan optimize          # Cache config, routes, views     │
+│  php artisan config:cache      # Merge config into single file   │
+│  php artisan route:cache       # Serialize routes                │
+│  php artisan view:cache        # Precompile Blade templates      │
+│  php artisan event:cache       # Cache event/listener discovery  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+LARAVEL OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  N+1 violations              │  <N>      │  0        │  FIXED    │
+│  Avg queries per endpoint    │  <N>      │  <N>      │  -<N>%    │
+│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
+│  Missing FK indexes          │  <N>      │  0        │  FIXED    │
+│  Queue job failure rate      │  <N>%     │  <N>%     │  -<N>%    │
+│  Queue depth (peak)          │  <N>      │  <N>      │  -<N>%    │
+│  Cache hit rate              │  <N>%     │  <N>%     │  +<N>%    │
+│  Config/route/view cached    │  NO       │  YES      │  FIXED    │
+│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Zero N+1 violations (preventLazyLoading enforced)
+- All foreign key columns have database indexes
+- All jobs have explicit retry policies and failure handlers
+- Cache strategy documented with TTL and invalidation rules
+- Artisan optimization commands run (config:cache, route:cache, view:cache)
+- p95 response time improved by measurable margin
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Laravel tasks sequentially: models, then API, then services, then tests.

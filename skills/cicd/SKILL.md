@@ -793,6 +793,50 @@ Columns: iteration, stage, job_count, duration_before, duration_after, cache_hit
 - **Test sharding produces uneven splits**: Rebalance shards based on test duration, not test count. Use `--shard` with timing data. Ensure the slowest shard is under the target time.
 - **Flaky test blocks the pipeline**: Do not add retries as a permanent fix. Quarantine the test with a skip annotation and a linked issue. Fix the root cause within 48 hours.
 
+## Keep/Discard Discipline
+```
+After EACH pipeline optimization:
+  1. MEASURE: Run the pipeline — compare total duration and cache hit rate to baseline.
+  2. DECIDE:
+     - KEEP if: duration decreased OR cache hit rate improved AND all tests still pass
+     - DISCARD if: duration increased >5% OR cache hit rate dropped OR any test fails
+  3. COMMIT kept changes. Revert discarded changes before trying the next optimization.
+
+Never keep an optimization that makes the pipeline faster but breaks test reliability.
+```
+
+## Stuck Recovery
+```
+IF >5 consecutive optimizations produce no duration improvement:
+  1. Re-measure the baseline — previous measurements may be noisy.
+  2. Profile the pipeline step by step — the bottleneck may not be where you think.
+  3. Look for architectural changes: test sharding, parallel stages, self-hosted runners.
+  4. If still stuck → log stop_reason=optimization_plateau, report current pipeline performance.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Pipeline runs in under 10 minutes (or user-defined target)
+  - All stages optimized and no further improvements identified
+  - User explicitly requests stop
+  - Max iterations (15) reached
+
+DO NOT STOP just because:
+  - One stage cannot be optimized further (other stages might have room)
+  - Cache hit rate is already >90% (there may be non-cache optimizations)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler pipeline design:
+  - Single workflow file before splitting into reusable workflows (until duplication is real)
+  - Built-in caching (actions/cache, Docker layer cache) before custom cache solutions
+  - Sequential stages before parallel stages (parallelize only when serial is too slow)
+  - Platform-native features before third-party actions (fewer dependencies = fewer breakages)
+  - Fewer pipeline files with clear names over many small workflow fragments
+```
+
 ## Multi-Agent Dispatch
 For comprehensive CI/CD pipeline setup:
 ```

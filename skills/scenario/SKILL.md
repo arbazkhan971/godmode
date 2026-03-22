@@ -241,6 +241,265 @@ BUG_FOUND: Unbounded result set at src/search.ts:58 — no LIMIT clause, returns
 Recommend: /godmode:fix for the 2 bugs found, then re-run /godmode:scenario to confirm fixes.
 ```
 
+## Scenario Testing Loop
+
+Extended protocol for systematic edge case generation, boundary testing, and chaos testing:
+
+```
+SCENARIO TESTING LOOP:
+current_iteration = 0
+max_iterations = 5
+testing_phases = [edge_case_generation, boundary_testing, chaos_testing, regression_scenario_bank, coverage_gap_analysis]
+
+WHILE current_iteration < max_iterations:
+  phase = testing_phases[current_iteration]
+  current_iteration += 1
+
+  IF phase == "edge_case_generation":
+    PURPOSE: Systematically generate edge cases that developers commonly miss.
+
+    1. ANALYZE each input to the feature:
+       FOR each input_param in feature.inputs:
+         type = detect_type(input_param)  # string, number, array, object, boolean, date, enum
+
+         GENERATE edge cases by type:
+         IF type == "string":
+           - Empty string ""
+           - Single character "a"
+           - Maximum length string (fill to limit)
+           - Over-maximum-length string (limit + 1)
+           - Unicode: emoji, RTL text, ZWJ sequences, null bytes (\x00)
+           - HTML/script injection: "<script>alert(1)</script>"
+           - SQL injection: "'; DROP TABLE users; --"
+           - Path traversal: "../../etc/passwd"
+           - Whitespace-only: "   \t\n"
+           - Leading/trailing whitespace: " value "
+
+         IF type == "number":
+           - Zero (0)
+           - Negative (-1)
+           - MAX_SAFE_INTEGER (9007199254740991)
+           - MAX_SAFE_INTEGER + 1
+           - MIN_SAFE_INTEGER
+           - NaN
+           - Infinity, -Infinity
+           - Floating point: 0.1 + 0.2 (IEEE 754 precision)
+           - Very small: 0.0000001
+           - Scientific notation: 1e308
+
+         IF type == "array":
+           - Empty array []
+           - Single element [1]
+           - Very large array (10000 elements)
+           - Nested arrays [[[[]]]]
+           - Array with mixed types [1, "two", null, undefined]
+           - Array with duplicates [1, 1, 1]
+           - Sparse array (holes)
+
+         IF type == "object":
+           - Empty object {}
+           - Nested deeply (10+ levels)
+           - Circular reference
+           - Prototype pollution: {"__proto__": {"admin": true}}
+           - Very large object (1000+ keys)
+           - Object with symbol keys
+           - Object with numeric keys
+
+         IF type == "date":
+           - Epoch (1970-01-01T00:00:00Z)
+           - Far future (9999-12-31)
+           - Far past (0001-01-01)
+           - Leap day (2024-02-29)
+           - DST transition time
+           - Timezone boundary (23:59:59 UTC vs 00:00:00 UTC+1)
+           - Invalid date (2024-02-30)
+
+         IF type == "boolean":
+           - true, false
+           - Truthy but not true: 1, "true", "yes", "1"
+           - Falsy but not false: 0, "", null, undefined
+
+    2. FILTER by relevance:
+       Remove edge cases that cannot reach the code path
+       Keep all edge cases that CAN reach the code path
+       Score remaining by likelihood x impact
+
+  IF phase == "boundary_testing":
+    PURPOSE: Test at exact boundaries where behavior changes.
+
+    1. IDENTIFY boundaries from code analysis:
+       FOR each conditional in feature.code:
+         IF condition is numeric comparison (x < 10, x >= 0, x == MAX):
+           boundary_values = [threshold - 1, threshold, threshold + 1]
+         IF condition is string length check:
+           boundary_values = [max_length - 1, max_length, max_length + 1]
+         IF condition is array size check:
+           boundary_values = [limit - 1, limit, limit + 1, 0]
+         IF condition is date comparison:
+           boundary_values = [date - 1ms, date, date + 1ms]
+         IF condition is null/undefined check:
+           boundary_values = [null, undefined, "", 0, false]
+
+    2. GENERATE boundary test matrix:
+       BOUNDARY TEST MATRIX:
+       ┌──────────────────────────┬───────────────┬──────────────┬──────────┐
+       │  Boundary                │  Below        │  At          │  Above   │
+       ├──────────────────────────┼───────────────┼──────────────┼──────────┤
+       │  Max retries (3)         │  2 retries    │  3 retries   │  4 retries│
+       │  Rate limit (100/min)    │  99 requests  │  100 requests│  101 req │
+       │  Password min (8 chars)  │  7 chars      │  8 chars     │  9 chars │
+       │  Page size (50)          │  49 items     │  50 items    │  51 items│
+       │  Timeout (30s)           │  29s          │  30s         │  31s     │
+       └──────────────────────────┴───────────────┴──────────────┴──────────┘
+
+    3. FOR each boundary: generate test with ARRANGE/ACT/ASSERT
+       Each test asserts different expected behavior on each side of the boundary
+
+  IF phase == "chaos_testing":
+    PURPOSE: Test system resilience to unexpected failures and adverse conditions.
+
+    1. DEFINE chaos scenarios based on feature dependencies:
+
+       INFRASTRUCTURE CHAOS:
+       - Database connection drops mid-transaction
+       - Redis cache becomes unavailable
+       - DNS resolution fails for external API
+       - Disk fills up during file write
+       - Memory pressure causes GC pauses
+       - Network partition between services
+
+       TIMING CHAOS:
+       - Request arrives during deployment (code hot-swap)
+       - Clock skew between servers (NTP drift)
+       - Cron job runs twice (duplicate execution)
+       - Long GC pause causes timeout
+       - Slow database query blocks connection pool
+
+       DATA CHAOS:
+       - Corrupted data in database (invalid JSON, wrong encoding)
+       - Cache contains stale data from previous schema
+       - Queue message delivered out of order
+       - Duplicate message delivered (at-least-once semantics)
+       - Message delivered after consumer restart (replay)
+
+       DEPENDENCY CHAOS:
+       - Third-party API returns unexpected schema
+       - Third-party API returns 429 (rate limited)
+       - Third-party API returns 500 (internal error)
+       - Third-party API times out after 30 seconds
+       - Third-party API returns partial response
+
+    2. SCORE each chaos scenario:
+       Likelihood: 1-5 (how often this happens in production)
+       Impact: 1-5 (severity when it happens)
+       Recovery: automatic / manual / impossible
+       MTTR: estimated time to recover
+
+    3. FOR each HIGH+ chaos scenario:
+       Generate a test that simulates the failure:
+       - Use dependency injection to inject failures
+       - Use mock/stub to simulate timeout, error, unexpected response
+       - Use chaos monkey approach for infrastructure tests
+       - Verify the system degrades gracefully (not catastrophically)
+
+    4. REPORT:
+       CHAOS TEST RESULTS:
+       ┌──────────────────────────┬───────┬────────────┬─────────────┐
+       │  Chaos Scenario          │ Score │ Recovery   │ Test Status │
+       ├──────────────────────────┼───────┼────────────┼─────────────┤
+       │  DB connection drop      │ 15    │ automatic  │ PASS        │
+       │  Cache unavailable       │ 12    │ automatic  │ PASS        │
+       │  External API timeout    │ 20    │ manual     │ FAIL (BUG)  │
+       │  Duplicate message       │ 10    │ automatic  │ PASS        │
+       └──────────────────────────┴───────┴────────────┴─────────────┘
+
+  IF phase == "regression_scenario_bank":
+    PURPOSE: Build a persistent library of scenarios that protect against past bugs.
+
+    1. SCAN git history for bug fixes:
+       git log --oneline --grep="fix" --grep="bug" --grep="regression" --since="6 months ago"
+
+    2. FOR each bug fix commit:
+       a. Read the commit message and diff
+       b. Identify the failure condition (what triggered the bug)
+       c. Check if a regression test was added
+       d. IF no regression test: generate one
+
+    3. MAINTAIN scenario bank:
+       File: tests/scenarios/regression-bank.test.{ext}
+       Each test:
+       - References the original bug fix commit SHA
+       - Describes the failure condition
+       - Tests the specific edge case that caused the bug
+       - Prevents future regression
+
+    4. REPORT:
+       REGRESSION BANK:
+       - Bug fixes in last 6 months: <N>
+       - With regression tests: <N>
+       - Missing regression tests: <N> (generated in this session)
+       - Total scenarios in bank: <N>
+
+  IF phase == "coverage_gap_analysis":
+    PURPOSE: Find untested code paths that represent risk.
+
+    1. RUN coverage with branch analysis:
+       {coverage_cmd} --branch (or equivalent for the test framework)
+
+    2. IDENTIFY uncovered branches:
+       FOR each file in changed_files:
+         uncovered_branches = branches with 0 executions
+         FOR each uncovered_branch:
+           - Read the code at that branch point
+           - Determine what condition triggers this branch
+           - Classify: error handling, edge case, feature flag, dead code
+
+    3. PRIORITIZE coverage gaps by risk:
+       HIGH:   Uncovered error handling (catch blocks, error callbacks)
+       HIGH:   Uncovered authentication/authorization checks
+       MEDIUM: Uncovered business logic branches
+       MEDIUM: Uncovered validation paths
+       LOW:    Uncovered logging/telemetry branches
+       SKIP:   Dead code (unreachable branches)
+
+    4. GENERATE targeted tests for HIGH and MEDIUM gaps:
+       One test per uncovered branch, focusing on:
+       - Error scenarios (what makes the error path execute?)
+       - Edge cases (what input hits the uncovered branch?)
+       - Boundary conditions (what value triggers the else clause?)
+
+    5. REPORT:
+       COVERAGE GAP ANALYSIS:
+       ┌──────────────────────┬──────────┬──────────────┬────────────┐
+       │  Gap Type            │  Count   │  Risk        │  Tests Gen │
+       ├──────────────────────┼──────────┼──────────────┼────────────┤
+       │  Error handling      │  <N>     │  HIGH        │  <N>       │
+       │  Auth checks         │  <N>     │  HIGH        │  <N>       │
+       │  Business logic      │  <N>     │  MEDIUM      │  <N>       │
+       │  Validation paths    │  <N>     │  MEDIUM      │  <N>       │
+       │  Logging/telemetry   │  <N>     │  LOW         │  0         │
+       │  Dead code           │  <N>     │  SKIP        │  0         │
+       └──────────────────────┴──────────┴──────────────┴────────────┘
+
+  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {N} scenarios, {M} tests generated"
+
+FINAL SCENARIO TESTING SUMMARY:
+┌──────────────────────────────────────────────────────────┐
+│  SCENARIO TESTING AUDIT                                   │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Phase               │ Count  │ Key Finding                │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Edge case gen       │  <N>   │  <N> per input parameter   │
+│  Boundary testing    │  <N>   │  <N> boundaries tested     │
+│  Chaos testing       │  <N>   │  <N> failures simulated    │
+│  Regression bank     │  <N>   │  <N> missing tests added   │
+│  Coverage gaps       │  <N>   │  <N> HIGH gaps found       │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Total scenarios     │  <N>   │  <M> bugs discovered       │
+│  Tests generated     │  <N>   │  All runnable (verified)   │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 This skill does not dispatch parallel agents, so no sequential translation is needed.
 All analysis runs in the current session. Test generation uses the detected test framework.

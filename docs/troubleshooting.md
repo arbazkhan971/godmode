@@ -50,28 +50,39 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 ## 2. Skill Runtime Issues
 
-### "/godmode:optimize ran 20 iterations but kept 0 changes"
+### /godmode:optimize keeps discarding everything
 
 **Diagnosis:** Every attempted change either failed the guard (test_cmd) or produced no metric improvement.
 
-**Fixes:**
-1. Run your guard command manually first (`npm test` / `pytest` / `cargo test`). If tests already fail, run `/godmode:fix` before optimizing.
-2. Run your metric command and confirm it outputs a single number. If it outputs tables or ANSI codes, wrap it in a script that extracts one number.
-3. Check `.godmode/optimize-results.tsv` for patterns. If every row shows the same metric value, your metric may be returning a cached result.
-4. Narrow the scope in `.godmode/config.yaml`:
+**Checks and fixes:**
+- Check: Is the metric command deterministic? (run 3x, compare values)
+- Check: Is baseline realistic? (margin may be too small)
+- Fix: Lower the improvement threshold or try a different optimization axis
+- Fix: Run your guard command manually first (`npm test` / `pytest` / `cargo test`). If tests already fail, run `/godmode:fix` before optimizing.
+- Fix: Run your metric command and confirm it outputs a single number. If it outputs tables or ANSI codes, wrap it in a script that extracts one number.
+- Fix: Check `.godmode/optimize-results.tsv` for patterns. If every row shows the same metric value, your metric may be returning a cached result.
+- Fix: Narrow the scope in `.godmode/config.yaml`:
    ```yaml
    scope:
      include: ["src/api/handler.ts", "src/db/queries.ts"]
    ```
 
-### "/godmode:build produced no output"
+### /godmode:build outputs no-op
 
 **Diagnosis:** The build skill requires `.godmode/plan.yaml` with unimplemented tasks. No plan means nothing to build.
 
-**Fixes:**
-1. Check if the plan exists: `cat .godmode/plan.yaml`. If missing, run `/godmode:plan` first.
-2. If the plan exists but all tasks are marked complete, there is nothing left to build. Run `/godmode:plan` again with a new scope.
-3. Check that `build_cmd` is set in `.godmode/config.yaml`. If the stack was not detected, the skill has no build command to verify against and may exit silently. Run `/godmode:setup` to re-detect.
+**Checks and fixes:**
+- Check: Does `.godmode/plan.yaml` have incomplete tasks? (`grep -c "status: pending" .godmode/plan.yaml`)
+- Check: Are `test_cmd` and `build_cmd` in `plan.yaml` correct?
+- Fix: Re-run `/godmode:plan` to regenerate tasks
+- Fix: Check that `build_cmd` is set in `.godmode/config.yaml`. If the stack was not detected, the skill has no build command to verify against and may exit silently. Run `/godmode:setup` to re-detect.
+
+### /godmode:test adds 0 tests
+
+**Checks and fixes:**
+- Check: Does the project have a test runner? (`cat package.json | grep test`)
+- Check: Is coverage tool configured?
+- Fix: Run `/godmode:setup` first to detect and configure the test framework
 
 ### "/godmode:test says 'no test framework detected'"
 
@@ -191,14 +202,14 @@ Run `/godmode:setup` or `bash hooks/init.sh`. Both create `.godmode/`, generate 
 
 ## 3. Multi-Agent Issues
 
-### "Agent worktree merge conflict"
+### Agents stepping on each other's files
 
 When parallel agents modify overlapping files, the sequential merge step will hit conflicts. This is expected behavior -- the skill discards the conflicting merge and logs it as `DISCARDED`.
 
-**If conflicts happen every round:**
-1. Check that tasks in `.godmode/plan.yaml` have non-overlapping `files` lists. If two tasks both touch `src/index.ts`, they will always conflict when merged in the same round.
-2. Re-run `/godmode:plan` and ask it to sequence dependent tasks rather than parallelize them.
-3. Manually reorder the plan so conflicting tasks run in separate rounds.
+**Checks and fixes:**
+- Check: Does `plan.yaml` have file scope per task? If two tasks both touch `src/index.ts`, they will always conflict when merged in the same round.
+- Fix: Re-run `/godmode:plan` with explicit file assignments so tasks have non-overlapping `files` lists.
+- Fix: Manually reorder the plan so conflicting tasks run in separate rounds.
 
 **Recovering from a stuck merge state:**
 ```bash
@@ -208,17 +219,19 @@ git worktree remove <path> --force
 git worktree prune
 ```
 
-### "Agent timed out"
+### Agent timeout / hung agent
 
 Each agent has a 5-minute timeout (optimize, build). If the task is too large or the verification suite is slow, agents will time out.
 
-**Fixes:**
-1. Break large tasks into smaller ones. Each build task should touch 1-3 files.
-2. Speed up your test suite. If `npm test` takes 4 minutes, agents have almost no time for implementation. Consider running only relevant tests:
+**Checks and fixes:**
+- Check: Is there an infinite loop in `test_cmd`?
+- Fix: Add timeout to guard commands (e.g., `timeout 60 npm test`)
+- Fix: Break large tasks into smaller ones. Each build task should touch 1-3 files.
+- Fix: Speed up your test suite. If `npm test` takes 4 minutes, agents have almost no time for implementation. Consider running only relevant tests:
    ```yaml
    test_cmd: "npx vitest run --reporter=verbose"
    ```
-3. For the optimize skill, ensure your metric command completes in under 30 seconds. A slow metric (e.g., full benchmark suite) burns most of the 5-minute budget on measurement alone.
+- Fix: For the optimize skill, ensure your metric command completes in under 30 seconds. A slow metric (e.g., full benchmark suite) burns most of the 5-minute budget on measurement alone.
 
 ### "Too many agents spawned"
 
@@ -251,6 +264,17 @@ The sequential fallback (`adapters/shared/sequential-dispatch.md`) should activa
 ## 4. Reading the Logs
 
 All logging goes to `.godmode/`. Commit this directory to version control so history persists across sessions and teammates.
+
+### Understanding .godmode/ logs
+
+Quick reference for what each file contains:
+
+| File | Purpose |
+|------|---------|
+| `session-log.tsv` | One row per `/godmode` invocation |
+| `<skill>-results.tsv` | One row per keep/discard decision |
+| `spec.md` | Current problem spec (written by `think`) |
+| `plan.yaml` | Current task breakdown (written by `plan`) |
 
 ### Skill result files: `.godmode/*-results.tsv`
 

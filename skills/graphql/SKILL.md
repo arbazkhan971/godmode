@@ -884,6 +884,114 @@ ERROR RECOVERY — GRAPHQL:
    → Analyze the blocked query. If legitimate, increase limit or add cost overrides for specific fields. If malicious, keep the limit.
 ```
 
+## Schema Audit Loop
+
+Autonomous audit loop that detects N+1 queries, scores query complexity, validates schema evolution, and hardens the GraphQL API. Runs until all checks pass or max iterations reached.
+
+```
+GRAPHQL SCHEMA AUDIT LOOP:
+current_iteration = 0
+max_iterations = 15
+schema_file = detect_schema()  // schema.graphql, generated SDL, or code-first output
+previous_schema = git_show("HEAD~1:" + schema_file)
+
+WHILE current_iteration < max_iterations AND NOT all_checks_pass:
+  current_iteration += 1
+
+  // Phase 1: Schema Validation
+  schema_errors = build_and_validate_schema(schema_file)
+  IF schema_errors > 0:
+    FOR each error:
+      FIX syntax, circular refs, duplicate names
+      LOG: "SCHEMA_ERROR fixed: {error}"
+    REVALIDATE — repeat until compiles clean
+
+  // Phase 2: N+1 Detection
+  relation_fields = find_all_relation_resolvers(schema_file)
+  n1_issues = []
+  FOR each field in relation_fields:
+    resolver = get_resolver(field)
+    IF resolver.uses_direct_db_call AND NOT resolver.uses_dataloader:
+      n1_issues.append(field)
+      CREATE DataLoader for field (batch or grouped)
+      REPLACE direct DB call with loader.load(id)
+      LOG: "N+1 fixed: {field.parent}.{field.name} — DataLoader created"
+
+  // Phase 3: Complexity Scoring
+  FOR each query_type in [queries, mutations]:
+    FOR each operation in query_type:
+      cost = calculate_complexity(operation)
+      // Scoring: scalar=1, object=2, list=first*child_cost, nested=multiplicative
+      IF cost > MAX_COMPLEXITY (default 1000):
+        ADD @complexity directive or cost annotation to reduce
+        LOG: "COMPLEXITY: {operation} costs {cost}, limit is 1000"
+      IF depth(operation) > MAX_DEPTH (default 7):
+        LOG: "DEPTH: {operation} allows depth {depth}, limit is 7"
+
+  complexity_report = {
+    max_possible_complexity: calculate_worst_case(schema),
+    depth_limit: configured_depth_limit,
+    persisted_queries: is_persisted_queries_enabled(),
+    allowlist_mode: is_allowlist_enabled()
+  }
+
+  // Phase 4: Breaking Change Detection
+  IF previous_schema exists:
+    changes = graphql_inspector_diff(previous_schema, schema_file)
+    FOR each change in changes:
+      IF change.type == "BREAKING":
+        // Removed type/field, changed nullability, renamed argument
+        REVERT change — add new fields instead, use @deprecated for removals
+        LOG: "BREAKING CHANGE reverted: {change.description}"
+      IF change.type == "DANGEROUS":
+        // Changed default value, added required argument with no default
+        WARN: "DANGEROUS CHANGE: {change.description} — verify client impact"
+
+  // Phase 5: Keep/Discard
+  schema_valid = build_and_validate_schema(schema_file).errors == 0
+  n1_remaining = count_resolvers_without_dataloader()
+  breaking_remaining = graphql_inspector_diff(previous_schema, schema_file).breaking
+
+  IF schema_valid AND n1_remaining == 0 AND breaking_remaining == 0:
+    KEEP all changes
+    COMMIT: "graphql: audit pass #{current_iteration} — {len(n1_issues)} N+1 fixed, 0 breaking"
+    all_checks_pass = true
+  ELSE:
+    CONTINUE
+
+  REPORT: "Iteration {current_iteration}: N+1={len(n1_issues)} fixed, complexity_max={complexity_report.max_possible_complexity}, breaking={breaking_remaining}"
+
+ON COMPLETION:
+  LOG to .godmode/graphql-audit.tsv:
+    timestamp\tschema_file\titerations\tn1_found\tn1_fixed\tmax_complexity\tbreaking_caught\tverdict
+  REPORT: "GraphQL audit complete: {current_iteration} iterations, schema valid, 0 N+1, 0 breaking"
+```
+
+### Complexity Scoring Reference
+
+```
+COMPLEXITY COST MODEL:
+┌──────────────────────────────┬──────────┬────────────────────────────────┐
+│ Field Type                   │ Base Cost│ Notes                          │
+├──────────────────────────────┼──────────┼────────────────────────────────┤
+│ Scalar (String, Int, etc.)   │ 0        │ Free — leaf nodes              │
+│ Enum                         │ 0        │ Free — leaf nodes              │
+│ Object                       │ 1        │ Per object resolved            │
+│ List (no pagination)         │ 10       │ Unbounded — penalize heavily   │
+│ Connection (first: N)        │ N * child│ Multiplicative with child cost │
+│ Nested relation              │ parent * │ Multiplicative chain           │
+│                              │ child    │                                │
+└──────────────────────────────┴──────────┴────────────────────────────────┘
+
+THRESHOLDS:
+- Max query complexity: 1000 (reject above)
+- Max query depth: 7 (reject above)
+- Max aliases per query: 10
+- Persisted queries: REQUIRED in production
+- N+1 resolvers allowed: 0 (every relation uses DataLoader)
+- Breaking changes per release: 0 (hard gate)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run GraphQL tasks sequentially: schema, then resolvers, then tests.

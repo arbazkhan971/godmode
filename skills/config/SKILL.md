@@ -515,6 +515,55 @@ WHILE current_env < len(environments):
 EXIT when all environments audited OR user requests stop
 ```
 
+## Keep/Discard Discipline
+```
+After EACH config change or migration:
+  1. MEASURE: Run config validation (schema check, parity check, startup test)
+  2. COMPARE: Is the config state better than before? (fewer drift issues, more validated keys, secrets migrated)
+  3. DECIDE:
+     - KEEP if: validation passes AND parity improved AND no regressions introduced
+     - DISCARD if: validation fails OR new drift introduced OR startup breaks
+  4. COMMIT kept changes immediately. Revert discarded changes before next iteration.
+
+Every change is atomic — never leave config in a half-migrated state.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to resolve a config issue:
+  1. Re-read ALL config files and environment definitions — stale understanding is #1 cause of stuck loops.
+  2. Widen scope: check for config loaded from unexpected sources (CI variables, Docker env, cloud metadata).
+  3. Try a different approach:
+     - If schema validation is failing → simplify the schema (fewer constraints, add them back gradually).
+     - If parity check is failing → focus on one environment at a time instead of all at once.
+     - If secret migration is failing → verify secret manager connectivity before attempting migration.
+  4. If still stuck after 2 recovery attempts → log stop_reason=stuck in .godmode/config-results.tsv, report findings, move to next environment.
+```
+
+## Stop Conditions
+```
+STOP the loop when ANY of these are true:
+  - All environments audited and all keys inventoried
+  - All critical drift resolved (suspicious drift documented)
+  - All secrets migrated to secret manager
+  - User explicitly requests stop
+  - Max iterations (15) reached — report partial results
+
+DO NOT STOP just because:
+  - Expected drift exists (that is normal)
+  - Non-critical config keys lack schema (nice-to-have, not blocking)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler config approach:
+  - If a key can be a static default instead of per-environment override → use the default
+  - If a validation schema has >10 constraints on a single key → reduce to the 3 most important
+  - If a feature flag system has >30 flags → audit and remove dead/stale flags before adding more
+  - If config validation requires a new dependency → prefer built-in runtime checks first
+  - ONE config format per project (do not mix .env + YAML + TOML unless existing convention requires it)
+```
+
 ## Multi-Agent Dispatch
 For multi-environment configuration management:
 ```

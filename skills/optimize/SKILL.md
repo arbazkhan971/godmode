@@ -7,7 +7,24 @@ description: Autonomous optimization loop. 3 parallel agents per round, mechanic
 - `/godmode:optimize`, "make faster", "improve", "optimize"
 
 ## Setup (once)
-Ask: Goal, Metric (`cmd` → single number), Direction (↑/↓), Scope (file globs). Auto-detect from stack. Baseline: run metric 3x, take median, commit.
+Ask: Goal, Metric (`cmd` → single number), Direction (↑/↓), Scope (file globs). Auto-detect from stack.
+
+### Baseline Measurement Protocol
+```
+Baseline: run metric_cmd 3 times, take median.
+- If variance >5%: profile 10 runs, use statistical baseline (trim outliers, take median of middle 8).
+- Commit baseline as iteration 0: "baseline: {metric} = {value}"
+- Record in .godmode/optimize-results.tsv as round 0, status=baseline.
+```
+
+### Guard vs Metric Distinction
+```
+METRIC: shell cmd outputting a single number (optimization target, direction ↑ or ↓)
+GUARD:  test_cmd && lint_cmd && build_cmd (must ALL pass, non-negotiable)
+Change must BOTH improve metric AND pass guard.
+Guard failure → DISCARD (terminal, no retry — rework counts against the 2-rework cap).
+Metric regression + guard pass → DISCARD (not harmful, just useless).
+```
 
 ## The Loop
 ```
@@ -16,9 +33,10 @@ WHILE current_round < max_rounds:
     # 1. REVIEW — in-scope files + results.tsv (last 10) + git log -10. Profile first: identify hotspot before changing.
     IF bounded AND remaining < 3: exploit only (refine best kept change, no new experiments)
     # 2. HYPOTHESIZE — 3 independent untested changes (algorithmic > caching > structural)
-    IF >5 consecutive discards: try OPPOSITE of last approach (e.g., if simplifying → add complexity, if inlining → extract)
+    IF >5 consecutive discards: STUCK RECOVERY (see below)
     # 3. DISPATCH 3 AGENTS (parallel, worktrees)
-    Each agent: ONE change → commit → run guard (test_cmd, must pass) → verify 3x → report median. Timeout: 5min per agent.
+    Each agent: ONE change → commit → run guard → verify 3x → report median.
+    Agent timeout: 5 min per agent per round. Exceeded → kill worktree, discard, move on.
     # 4. PICK WINNER — largest improvement
     improved + guard passed → cherry-pick to main branch, update baseline
     improved + guard failed → rework (max 2), else discard
@@ -28,6 +46,35 @@ WHILE current_round < max_rounds:
 STOP: target | max rounds | diminishing returns | guard broken
 ```
 Print: `{metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} discarded across {total} rounds. Best change: round {N}`.
+
+## Stuck Recovery Strategy
+```
+IF >5 consecutive discards:
+  1. Re-read ALL in-scope files (not just recent diffs) — stale mental model is #1 cause of stuck loops.
+  2. Try OPPOSITE approach:
+     - If simplifying failed → add caching/precomputation
+     - If inlining failed → extract functions
+     - If algorithmic failed → try data structure change
+     - If micro-optimizing failed → try architectural change
+  3. If opposite fails → radical rewrite: replace component entirely (new algorithm, new library, new data layout).
+  4. If radical fails → accept defeat, log stop_reason=stuck, print final summary.
+```
+
+## Simplicity Criterion (Concrete Thresholds)
+```
+Discard if: lines_added > 5 AND metric_improvement < 0.5%
+Discard if: cognitive_complexity_increased AND metric_improvement < 1%
+Keep if:    lines_removed with equal/better metric (simplification win)
+Keep if:    same lines + metric_improvement >= 1% (clear optimization win)
+Tie-break:  fewer lines wins. Equal lines → fewer branches/loops wins.
+```
+
+## Agent Timeout
+```
+5 min wall-clock per agent per round.
+Exceeded → kill worktree, mark status=timeout in results.tsv, discard, move on.
+Do NOT extend. Do NOT retry the same hypothesis. Next round picks new hypotheses.
+```
 
 ## Rules
 1. Metric must be a shell command that outputs a single number. No subjective assessment.

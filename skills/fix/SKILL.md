@@ -8,6 +8,22 @@ description: Fix loop. One fix per commit, auto-revert on regression, until zero
 - Build, lint, or test commands return non-zero exit codes
 - Called by other skills (`/godmode:build`, `/godmode:ship`) when checks fail
 
+## Fix vs Debug Handoff
+`/godmode:fix` assumes root cause is KNOWN.
+If root cause is unknown → route to `/godmode:debug` first.
+Fix input: specific error at file:line, not vague "X is broken".
+
+## One Fix Per Iteration
+Fix ONE error per iteration. Verify. Commit. Move to next.
+Never batch-fix multiple errors in one commit.
+This ensures each fix is independently verifiable and revertable.
+
+## Max Retries Per Error
+3 attempts per error. After 3 failed attempts:
+→ Log error as "unresolvable" with attempts tried.
+→ Move to next error.
+→ At end: report unresolved count.
+
 ## Auto-Detection
 The godmode orchestrator routes here when:
 - `build_cmd` exits non-zero (compile errors, type errors)

@@ -621,6 +621,93 @@ IMPLEMENTATION ARTIFACTS:
 3. If INCOMPLETE: "Access control model needs additional work. Address remaining items, then re-run `/godmode:rbac`."
 4. If PRODUCTION READY: "Access control model complete. Run `/godmode:build` to implement, or `/godmode:secure` to audit."
 
+## Permission Matrix Audit Loop
+
+Structured loop for verifying the permission model against least-privilege principles:
+
+```
+resources = list_all_protected_resources()
+roles = list_all_defined_roles()
+current_resource = 0
+max_iterations = len(resources) * len(roles) + 10   # buffer
+
+WHILE current_resource < len(resources) AND iteration < max_iterations:
+    resource = resources[current_resource]
+    iteration += 1
+
+    FOR each role IN roles:
+        PHASE 1 — ENUMERATE:
+          List all permissions this role has on this resource (direct + inherited)
+          Record: role | resource | permissions[] | source (direct | inherited | delegated)
+
+        PHASE 2 — VERIFY LEAST PRIVILEGE:
+          FOR each permission:
+            CHECK: Is this permission actually used by users with this role? (audit log evidence)
+            CHECK: Is this permission necessary for the role's documented responsibilities?
+            CHECK: Does this permission grant more access than needed? (read vs read+write)
+            IF unused for 90+ days AND not a break-glass permission:
+              FLAG as EXCESSIVE — recommend revocation
+            IF grants broader access than documented responsibilities:
+              FLAG as OVERPRIVILEGED — recommend narrowing
+
+        PHASE 3 — CROSS-VALIDATE:
+          CHECK: Separation of duties constraints respected (no role holds conflicting perms)
+          CHECK: No role escalation path exists (roleA -> roleB -> unintended permissions)
+          CHECK: Delegation chains do not exceed max depth (2)
+          CHECK: All temporary elevations have expiry dates set
+
+    current_resource += 1
+    REPORT: "Resource {current_resource}/{len(resources)}: {role_count} roles audited, {excessive_count} excessive permissions found"
+
+STOP CONDITIONS:
+  - All resources × all roles audited
+  - OR max_iterations reached
+  - OR zero EXCESSIVE/OVERPRIVILEGED flags for 3 consecutive resources
+```
+
+## Least-Privilege Verification Protocol
+
+```
+FOR each user/service account:
+  1. COLLECT effective permissions (resolve role hierarchy + direct grants + delegation)
+  2. COMPARE against actual usage (from audit logs, last 90 days):
+     - Permissions used: KEEP
+     - Permissions never used: FLAG as candidate for revocation
+     - Permissions used once (emergency): FLAG as candidate for just-in-time elevation
+  3. GENERATE least-privilege recommendation:
+     current_permissions - unused_permissions = recommended_permissions
+  4. VERIFY no critical workflow breaks under recommended set:
+     - Map each role's workflows to required permissions
+     - Confirm recommended set covers all documented workflows
+     - IF gap found: add back the specific missing permission (not the entire role)
+  5. LOG to .godmode/rbac-least-privilege.tsv:
+     timestamp	subject_type	subject_id	current_perms_count	used_perms_count	recommended_perms_count	excessive_count	verdict
+
+SEVERITY RATINGS:
+  CRITICAL: Service account with wildcard (*) permissions in production
+  HIGH: User with admin role who has not used admin features in 90+ days
+  MEDIUM: Role has permissions beyond documented responsibilities
+  LOW: Permission granted but used fewer than 3 times in 90 days
+```
+
+## Keep/Discard Discipline
+
+```
+FOR each permission audit finding:
+  KEEP if:
+    - Permission is excessive (unused 90+ days with audit log evidence)
+    - Role violates separation of duties constraint
+    - Delegation exceeds max depth or lacks expiry
+    - tenant_id scoping is missing on any query
+  DISCARD if:
+    - Permission is used regularly (audit log confirms active use)
+    - Permission is a documented break-glass/emergency access
+    - Finding is in a non-production environment with no prod data access
+    - Already remediated in previous audit cycle (check .godmode/rbac-decisions.tsv)
+  RECORD: Every discard logged with justification to .godmode/rbac-discards.tsv:
+    timestamp	finding_type	subject	resource	discard_reason
+```
+
 ## Auto-Detection
 
 Before prompting the user, automatically detect existing auth and access control:

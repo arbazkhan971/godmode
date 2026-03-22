@@ -204,6 +204,96 @@ The skills, agents, and commands directories are referenced from the Godmode sou
 
 ---
 
+## Troubleshooting
+
+### Codex not reading AGENTS.md
+
+1. Confirm `AGENTS.md` is in the repository root:
+   ```bash
+   test -f AGENTS.md && echo "OK" || echo "MISSING"
+   ```
+2. Codex reads the system prompt from the repo root. If `AGENTS.md` is nested in a subdirectory, it will not be found. Move it to the root.
+
+### Agent TOML files not loading
+
+1. Verify the `.codex/` directory structure:
+   ```bash
+   ls .codex/config.toml .codex/agents/*.toml
+   ```
+2. Validate TOML syntax:
+   ```bash
+   python3 -c "import tomllib; tomllib.load(open('.codex/config.toml', 'rb'))" && echo "OK"
+   ```
+3. If files are missing, re-run the installer:
+   ```bash
+   bash adapters/codex/install.sh .
+   ```
+
+### Skill files not found
+
+1. Check that skill files are accessible from the repo root:
+   ```bash
+   ls skills/godmode/SKILL.md
+   ```
+2. If using symlinks, confirm they resolve:
+   ```bash
+   file skills/godmode/SKILL.md   # should show "ASCII text", not "broken symbolic link"
+   ```
+3. Codex runs in a sandbox -- ensure symlinks point to paths inside the repo, not to external absolute paths that the sandbox cannot access.
+
+### Batch job timing out
+
+Long-running skills (optimize with 25 iterations, large builds with many tasks) may exceed the default runtime limit. Increase `job_max_runtime_seconds` in `.codex/config.toml`:
+
+```toml
+job_max_runtime_seconds = 3600   # 60 minutes
+```
+
+### Sequential mode producing different results
+
+It should not. If you observe different outcomes between Codex and Claude Code, check:
+1. Both are using the same `.godmode/config.yaml` (same test_cmd, lint_cmd, build_cmd).
+2. Both are running against the same git commit.
+3. No environment differences (Node version, Python version, etc.).
+4. Codex sandbox restrictions -- some commands may fail in the sandbox that succeed locally.
+
+## Verification
+
+Run the verification script after installation:
+
+```bash
+bash adapters/codex/verify.sh
+```
+
+The script checks:
+- `AGENTS.md` exists in the repository root
+- `skills/` directory is accessible and contains SKILL.md files
+- `agents/` directory is accessible and contains agent definitions
+- `.codex/config.toml` exists and is valid TOML
+- `.codex/agents/` contains all 7 agent TOML files
+- `.godmode/config.yaml` exists with valid test/lint/build commands
+
+**Manual verification** (if the script is unavailable):
+
+```bash
+# 1. Config file exists
+cat .godmode/config.yaml
+
+# 2. Skills are readable
+head -5 skills/godmode/SKILL.md
+
+# 3. Agent TOMLs are present
+ls .codex/agents/
+
+# 4. Codex config is valid
+cat .codex/config.toml
+
+# 5. Test with a simple invocation
+codex "Run /godmode:verify claim='setup works' cmd='echo ok'"
+```
+
+---
+
 ## License
 
 MIT -- see [LICENSE](../../LICENSE).

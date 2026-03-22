@@ -19,12 +19,24 @@ Severities: MUST-FIX, SHOULD-FIX, NIT.
 If no findings in a category, agent must state: `{category}: No issues found.`
 ### 3. Merge & Deduplicate
 Combine findings. Deduplicate (same file:line = merge). Sort: MUST-FIX → SHOULD-FIX → NIT.
+- Same file:line from multiple agents → merge into single finding.
+- Take highest severity. Take first agent's fix. Log all reporters.
+- Different severity for same finding → escalate to highest.
 ### 4. Auto-Fix NITs
-NITs: auto-fix if safe (imports, whitespace, formatting). Commit each: `review: fix {description}`. Logic/API/security NITs → leave for human.
+NITs: auto-fix if safe. Logic/API/security NITs → leave for human.
+- SAFE to auto-fix: imports, formatting, whitespace, comment typos.
+- UNSAFE (defer to human): logic changes, API changes, security patches, test modifications.
+- Each auto-fix is a separate commit with message: `review-autofix: {description}`.
 ### 5. Verdict
-- 0 MUST-FIX + 0 SHOULD-FIX → APPROVE (9-10). 0 MUST-FIX + some SHOULD-FIX → APPROVE (8).
-- Any MUST-FIX → REQUEST CHANGES (score 5-7)
-- Critical security → REJECT (score < 5)
+Score: 0-10 (median of all agents' scores, not average).
+- 10: 0 MUST-FIX, 0 SHOULD-FIX → APPROVE.
+- 8-9: 0 MUST-FIX, 1-3 SHOULD-FIX → APPROVE.
+- 5-7: 1+ MUST-FIX → APPROVE with conditions (REQUEST CHANGES).
+- 0-4: 2+ MUST-FIX or critical security → REJECT.
+### 6. Re-Review Protocol
+- If score < 8: author must respond to every MUST-FIX and SHOULD-FIX.
+- Re-review only modified parts (diff of fixes).
+- Max re-reviews: 3 iterations. After 3: SHIP with known issues documented.
 
 ## Output Format
 Print: `Review: {verdict} ({score}/10). {must_fix} MUST-FIX, {should_fix} SHOULD-FIX, {nit} NIT. Auto-fixed: {auto_fixed_count}.`

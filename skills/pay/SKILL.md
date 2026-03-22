@@ -795,6 +795,369 @@ All of these must be true before marking the task complete:
 - **Do NOT send payment amounts as client-side parameters.** The price must be determined server-side from your product catalog. Client-supplied amounts can be manipulated.
 
 
+## Payment Integration Optimization Loop
+
+When auditing and optimizing a payment integration, run this systematic loop. Each pass targets a specific compliance, reliability, or correctness dimension with measurable before/after metrics.
+
+### Pass 1: PCI Compliance Audit
+
+```
+PCI COMPLIANCE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Determine PCI-DSS scope and SAQ level                  │
+│                                                                   │
+│  ┌──────────────────────────────┬────────────────────────────┐  │
+│  │  Integration Method          │  PCI Level / SAQ           │  │
+│  ├──────────────────────────────┼────────────────────────────┤  │
+│  │  Stripe.js Elements (client) │  SAQ-A (simplest)          │  │
+│  │  PayPal JS SDK (hosted)      │  SAQ-A                     │  │
+│  │  Hosted checkout page        │  SAQ-A                     │  │
+│  │  Redirect to provider        │  SAQ-A                     │  │
+│  │  Direct API (card data)      │  SAQ-D (hardest — AVOID)   │  │
+│  │  Card-on-file (token stored) │  SAQ-A-EP                  │  │
+│  └──────────────────────────────┴────────────────────────────┘  │
+│                                                                   │
+│  RULE: NEVER handle raw card data on your server.               │
+│  Use client-side tokenization (Stripe.js, PayPal JS SDK).       │
+│  This keeps you at SAQ-A — dramatically simpler compliance.     │
+│                                                                   │
+│  Step 2: Server-side security audit                              │
+│  [ ] HTTPS enforced on all payment-related endpoints             │
+│  [ ] TLS 1.2+ required (no TLS 1.0/1.1)                         │
+│  [ ] No card numbers in logs (PAN masking or exclusion)          │
+│  [ ] No card numbers in error messages or stack traces           │
+│  [ ] No card numbers in database (use provider tokens/IDs)       │
+│  [ ] No card numbers in URLs or query parameters                 │
+│  [ ] API keys stored in environment variables / secrets manager  │
+│  [ ] API keys rotated at least annually                          │
+│  [ ] Test keys restricted to test environments                   │
+│  [ ] Live keys restricted to production environment              │
+│  [ ] Payment endpoints require authentication                    │
+│  [ ] Rate limiting on payment endpoints (prevent card testing)   │
+│                                                                   │
+│  Step 3: Client-side security audit                              │
+│  [ ] Stripe.js / PayPal JS loaded from provider CDN (not self-hosted) │
+│  [ ] Card input rendered by provider iframe (Elements)           │
+│  [ ] No JavaScript accessing card input values                   │
+│  [ ] CSP headers allow provider domains only                     │
+│  [ ] No card data in browser localStorage/sessionStorage         │
+│  [ ] Payment form served over HTTPS only                         │
+│                                                                   │
+│  Step 4: Data retention audit                                    │
+│  [ ] No raw card numbers stored anywhere in system               │
+│  [ ] Payment method tokens stored (not card details)             │
+│  [ ] Transaction logs retain only last-4 and card brand          │
+│  [ ] Audit logs for payment access are retained 1+ year          │
+│  [ ] Customer data deletion includes payment tokens              │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - SAQ-A compliance (client-side tokenization only)              │
+│  - Zero card numbers in any log, database, or error output       │
+│  - All payment endpoints authenticated and rate-limited          │
+│  - API key rotation schedule documented and automated            │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 2: Webhook Handling Audit
+
+```
+WEBHOOK HANDLING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Webhook security verification                           │
+│                                                                   │
+│  // Stripe webhook signature verification:                       │
+│  app.post('/webhooks/stripe', express.raw({type: 'application/json'}), │
+│    (req, res) => {                                               │
+│      const sig = req.headers['stripe-signature'];                │
+│      let event: Stripe.Event;                                    │
+│      try {                                                       │
+│        event = stripe.webhooks.constructEvent(                    │
+│          req.body, sig, process.env.STRIPE_WEBHOOK_SECRET        │
+│        );                                                         │
+│      } catch (err) {                                             │
+│        logger.error('Webhook signature verification failed', err);│
+│        return res.status(400).send('Invalid signature');          │
+│      }                                                            │
+│      // Process event...                                         │
+│      res.json({ received: true });                               │
+│  });                                                              │
+│                                                                   │
+│  Audit checklist:                                                │
+│  [ ] Signature verification on every webhook endpoint            │
+│  [ ] Raw body preserved for signature verification (not parsed)  │
+│  [ ] Webhook secret stored in environment variable               │
+│  [ ] 200 response returned quickly (process async if slow)       │
+│  [ ] Failed verification logged with alert                       │
+│                                                                   │
+│  Step 2: Event processing reliability                            │
+│                                                                   │
+│  // Idempotent event handler pattern:                            │
+│  async function handleWebhookEvent(event: Stripe.Event) {       │
+│    // 1. Check if already processed (idempotency)                │
+│    const existing = await db.webhookEvents.findUnique({          │
+│      where: { eventId: event.id }                                │
+│    });                                                            │
+│    if (existing?.processedAt) {                                  │
+│      logger.info('Webhook event already processed', { id: event.id }); │
+│      return; // Skip — already handled                           │
+│    }                                                              │
+│                                                                   │
+│    // 2. Record event receipt                                    │
+│    await db.webhookEvents.upsert({                               │
+│      where: { eventId: event.id },                               │
+│      create: { eventId: event.id, type: event.type,             │
+│                payload: event, receivedAt: new Date() },         │
+│      update: {},                                                  │
+│    });                                                            │
+│                                                                   │
+│    // 3. Process event in transaction                            │
+│    await db.$transaction(async (tx) => {                         │
+│      await processEvent(tx, event);                              │
+│      await tx.webhookEvents.update({                             │
+│        where: { eventId: event.id },                             │
+│        data: { processedAt: new Date() },                        │
+│      });                                                          │
+│    });                                                            │
+│  }                                                               │
+│                                                                   │
+│  Step 3: Critical events to handle                               │
+│  ┌──────────────────────────────────┬──────────────────────────┐│
+│  │  Stripe Event                    │  Required Action          ││
+│  ├──────────────────────────────────┼──────────────────────────┤│
+│  │  payment_intent.succeeded        │  Fulfill order            ││
+│  │  payment_intent.payment_failed   │  Notify customer, retry? ││
+│  │  charge.refunded                 │  Reverse fulfillment      ││
+│  │  charge.dispute.created          │  Alert team, gather evidence│
+│  │  customer.subscription.created   │  Provision features       ││
+│  │  customer.subscription.updated   │  Adjust features/limits   ││
+│  │  customer.subscription.deleted   │  Deprovision features     ││
+│  │  invoice.payment_succeeded       │  Record payment, receipt  ││
+│  │  invoice.payment_failed          │  Dunning flow             ││
+│  │  checkout.session.completed      │  Complete order            ││
+│  └──────────────────────────────────┴──────────────────────────┘│
+│                                                                   │
+│  Step 4: Webhook monitoring and alerting                         │
+│  [ ] Dashboard shows webhook delivery success rate               │
+│  [ ] Alert if webhook failures exceed threshold (>5% in 1 hour) │
+│  [ ] Dead letter queue for failed webhook processing             │
+│  [ ] Daily reconciliation job to catch missed webhooks           │
+│  [ ] Stripe CLI used for local testing: stripe listen --forward-to │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - 100% signature verification (no unverified event processing) │
+│  - Event replay produces no duplicate side effects (idempotent)  │
+│  - All critical events handled (see table above)                 │
+│  - Webhook failure rate < 0.1%                                   │
+│  - Reconciliation catches discrepancies within 24 hours          │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Idempotency Audit
+
+```
+IDEMPOTENCY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify all payment write operations                   │
+│  ┌──────────────────────────────────┬──────────┬───────────────┐│
+│  │  Operation                       │  Idempotency Key│  Status││
+│  ├──────────────────────────────────┼──────────┼───────────────┤│
+│  │  Create PaymentIntent            │  order_id│  check        ││
+│  │  Capture payment                 │  pi_id   │  check        ││
+│  │  Create refund                   │  ref_id  │  check        ││
+│  │  Create subscription             │  sub_req_id│ check       ││
+│  │  Update subscription             │  change_id│  check       ││
+│  │  Create invoice                  │  inv_req_id│  check      ││
+│  │  Webhook event processing        │  event_id│  check        ││
+│  └──────────────────────────────────┴──────────┴───────────────┘│
+│                                                                   │
+│  Step 2: Implement idempotency keys for Stripe API calls         │
+│                                                                   │
+│  // Every payment write operation MUST include an idempotency key│
+│  const paymentIntent = await stripe.paymentIntents.create({      │
+│    amount: order.totalCents,                                     │
+│    currency: 'usd',                                              │
+│    customer: order.stripeCustomerId,                             │
+│    metadata: { orderId: order.id },                              │
+│  }, {                                                             │
+│    idempotencyKey: `create_pi_${order.id}`,                     │
+│  });                                                              │
+│                                                                   │
+│  const refund = await stripe.refunds.create({                    │
+│    payment_intent: paymentIntent.id,                             │
+│    amount: refundAmountCents,                                    │
+│  }, {                                                             │
+│    idempotencyKey: `refund_${order.id}_${refundRequestId}`,     │
+│  });                                                              │
+│                                                                   │
+│  Step 3: Server-side idempotency for your own API                │
+│                                                                   │
+│  // Idempotency middleware for payment endpoints:                │
+│  async function idempotencyMiddleware(req, res, next) {          │
+│    const key = req.headers['idempotency-key'];                  │
+│    if (!key) return next(); // Optional for non-payment          │
+│                                                                   │
+│    const cached = await redis.get(`idempotency:${key}`);        │
+│    if (cached) {                                                  │
+│      const { status, body } = JSON.parse(cached);               │
+│      return res.status(status).json(body);                       │
+│    }                                                              │
+│                                                                   │
+│    // Capture response to cache it                               │
+│    const originalJson = res.json.bind(res);                      │
+│    res.json = (body) => {                                        │
+│      redis.setex(`idempotency:${key}`, 86400, // 24h TTL        │
+│        JSON.stringify({ status: res.statusCode, body }));        │
+│      return originalJson(body);                                  │
+│    };                                                             │
+│    next();                                                        │
+│  }                                                               │
+│                                                                   │
+│  Step 4: Test idempotency                                        │
+│  Test scenario for each operation:                               │
+│  1. Send request with idempotency key → success                 │
+│  2. Replay EXACT same request with same key → same response     │
+│  3. Verify no duplicate charges/refunds/subscriptions created    │
+│  4. Verify database state is identical after replay              │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - Every Stripe API write call includes an idempotency key       │
+│  - Webhook handler deduplicates by event.id                      │
+│  - Replaying any payment operation produces no duplicate effects │
+│  - Client retry with same idempotency key returns cached response│
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Reconciliation & Monitoring Audit
+
+```
+RECONCILIATION & MONITORING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Implement daily reconciliation job                      │
+│                                                                   │
+│  // Reconciliation: compare Stripe state with local database     │
+│  async function dailyReconciliation() {                          │
+│    const yesterday = subDays(new Date(), 1);                     │
+│    const today = new Date();                                     │
+│                                                                   │
+│    // 1. Fetch all Stripe charges for yesterday                  │
+│    const stripeCharges = await fetchAllStripeCharges(yesterday, today); │
+│                                                                   │
+│    // 2. Fetch all local payment records for yesterday           │
+│    const localPayments = await db.payments.findMany({            │
+│      where: { createdAt: { gte: yesterday, lt: today } },       │
+│    });                                                            │
+│                                                                   │
+│    // 3. Compare and find discrepancies                          │
+│    const discrepancies = [];                                     │
+│                                                                   │
+│    for (const charge of stripeCharges) {                         │
+│      const local = localPayments.find(p => p.stripeChargeId === charge.id); │
+│      if (!local) {                                               │
+│        discrepancies.push({                                      │
+│          type: 'MISSING_LOCAL',                                  │
+│          stripeId: charge.id,                                    │
+│          amount: charge.amount,                                  │
+│        });                                                        │
+│      } else if (local.amountCents !== charge.amount) {           │
+│        discrepancies.push({                                      │
+│          type: 'AMOUNT_MISMATCH',                                │
+│          stripeId: charge.id,                                    │
+│          stripeAmount: charge.amount,                            │
+│          localAmount: local.amountCents,                         │
+│        });                                                        │
+│      }                                                            │
+│    }                                                              │
+│                                                                   │
+│    // 4. Alert on discrepancies                                  │
+│    if (discrepancies.length > 0) {                               │
+│      await alertTeam('Payment reconciliation discrepancies', {  │
+│        count: discrepancies.length,                              │
+│        details: discrepancies,                                   │
+│      });                                                         │
+│    }                                                              │
+│                                                                   │
+│    // 5. Log reconciliation result                               │
+│    logger.info('Reconciliation complete', {                      │
+│      stripeCount: stripeCharges.length,                          │
+│      localCount: localPayments.length,                           │
+│      discrepancies: discrepancies.length,                        │
+│    });                                                            │
+│  }                                                               │
+│                                                                   │
+│  Step 2: Payment monitoring dashboard metrics                    │
+│  ┌──────────────────────────────────┬────────────────────────┐  │
+│  │  Metric                          │  Alert Threshold        │  │
+│  ├──────────────────────────────────┼────────────────────────┤  │
+│  │  Payment success rate            │  < 95% in 1 hour       │  │
+│  │  Payment failure rate            │  > 10% in 1 hour       │  │
+│  │  Avg payment processing time     │  > 5 seconds           │  │
+│  │  Webhook delivery failure rate   │  > 5% in 1 hour        │  │
+│  │  Refund volume (daily)           │  > 2x normal           │  │
+│  │  Dispute/chargeback rate         │  > 0.5% of charges     │  │
+│  │  Reconciliation discrepancies    │  > 0 (any mismatch)    │  │
+│  │  Failed subscription renewals    │  > 5% in one cycle     │  │
+│  └──────────────────────────────────┴────────────────────────┘  │
+│                                                                   │
+│  Step 3: Dispute management process                              │
+│  // When charge.dispute.created webhook fires:                   │
+│  1. Alert payment team immediately (PagerDuty/Slack)             │
+│  2. Gather evidence: order details, delivery proof, customer     │
+│     communication, server logs with timestamps                   │
+│  3. Submit evidence via Stripe API within 7 days                 │
+│  4. Track dispute outcome: won, lost, withdrawn                  │
+│  5. Review for patterns (specific product, customer segment)     │
+│                                                                   │
+│  Step 4: Financial reporting accuracy                            │
+│  [ ] Revenue recognized matches Stripe dashboard                 │
+│  [ ] Refunds properly reduce recognized revenue                  │
+│  [ ] Currency conversion handled correctly                       │
+│  [ ] Tax amounts match tax provider records                      │
+│  [ ] Subscription MRR/ARR calculations verified                  │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - Reconciliation runs daily with zero discrepancies             │
+│  - Payment success rate > 95%                                    │
+│  - Dispute rate < 0.5%                                           │
+│  - All disputes responded to within 72 hours                     │
+│  - Revenue figures match Stripe dashboard (zero drift)           │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+PAYMENT INTEGRATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  PCI compliance level        │  unknown  │  SAQ-A    │  VERIFIED │
+│  Card data on server         │  check    │  NONE     │  VERIFIED │
+│  Webhook signature verified  │  NO       │  YES      │  FIXED    │
+│  Idempotency keys on writes  │  partial  │  100%     │  FIXED    │
+│  Event replay safe           │  NO       │  YES      │  FIXED    │
+│  Webhook events handled      │  <N>/<M>  │  <M>/<M>  │  COMPLETE │
+│  Reconciliation enabled      │  NO       │  DAILY    │  FIXED    │
+│  Payment success rate (%)   │  <N>%     │  <N>%     │  +<N>%    │
+│  Dispute rate (%)           │  <N>%     │  <N>%     │  -<N>%    │
+│  Webhook failure rate (%)   │  <N>%     │  <N>%     │  -<N>%    │
+│  API keys in env vars        │  partial  │  100%     │  FIXED    │
+│  Rate limiting on pay APIs   │  NO       │  YES      │  FIXED    │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- SAQ-A compliance verified (no card data touches server)
+- All webhook endpoints verify cryptographic signatures
+- Every payment write operation has an idempotency key
+- Webhook event replay produces no duplicate side effects
+- All critical Stripe events have handlers (see event table)
+- Daily reconciliation runs and alerts on discrepancies
+- Payment success rate > 95%
+- Dispute rate < 0.5%
+- All API keys in environment variables, rotated annually
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run payment tasks sequentially: core payment processing, then subscriptions, then webhooks.

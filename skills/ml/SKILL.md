@@ -585,6 +585,116 @@ IF bias check reveals fairness violations:
 - **Do NOT discard failed experiments.** Log them. Tag them as failed. Explain why. They prevent duplicate wasted effort.
 
 
+## ML Pipeline Audit
+
+Systematically audit the end-to-end ML pipeline for production readiness:
+
+```
+ML PIPELINE AUDIT:
+Pipeline: <pipeline name and version>
+Audit date: <date>
+Auditor: <team or individual>
+
+DATA VALIDATION AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Schema enforcement on input data   │ PASS|FAIL│ <schema tool>   │
+│  Missing value thresholds defined   │ PASS|FAIL│ <max % allowed> │
+│  Feature distribution monitoring    │ PASS|FAIL│ <drift tool>    │
+│  Label quality verification         │ PASS|FAIL│ <QA process>    │
+│  Data versioning (DVC, LakeFS, etc) │ PASS|FAIL│ <tool + version>│
+│  Train/val/test split reproducible  │ PASS|FAIL│ <seed + method> │
+│  Data pipeline idempotency tested   │ PASS|FAIL│ <test evidence> │
+│  Outlier detection and handling     │ PASS|FAIL│ <method + thresh>│
+│  Feature correlation analysis done  │ PASS|FAIL│ <report link>   │
+│  Target leakage scan completed      │ PASS|FAIL│ <scan results>  │
+└──────────────────────────────────────────────────────────────────┘
+
+MODEL METRICS AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Metric Category    │ Tracked │ Threshold │ Alerting │ Dashboard │
+├──────────────────────────────────────────────────────────────────┤
+│  Primary metric     │ YES|NO  │ <value>   │ YES|NO   │ YES|NO    │
+│  Secondary metrics  │ YES|NO  │ <values>  │ YES|NO   │ YES|NO    │
+│  Per-class metrics  │ YES|NO  │ <values>  │ YES|NO   │ YES|NO    │
+│  Calibration (ECE)  │ YES|NO  │ <value>   │ YES|NO   │ YES|NO    │
+│  Inference latency  │ YES|NO  │ <p99 ms>  │ YES|NO   │ YES|NO    │
+│  Prediction distrib │ YES|NO  │ <PSI>     │ YES|NO   │ YES|NO    │
+│  Feature importance │ YES|NO  │ N/A       │ NO       │ YES|NO    │
+│  Slice-based evals  │ YES|NO  │ <per-grp> │ YES|NO   │ YES|NO    │
+│  Cost per prediction│ YES|NO  │ <budget>  │ YES|NO   │ YES|NO    │
+└──────────────────────────────────────────────────────────────────┘
+
+EXPERIMENT TRACKING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Requirement                        │ Status   │ Tool            │
+├──────────────────────────────────────────────────────────────────┤
+│  All experiments logged centrally   │ PASS|FAIL│ <MLflow|W&B|etc>│
+│  Hyperparams recorded per run       │ PASS|FAIL│ <auto or manual>│
+│  Git SHA linked to each experiment  │ PASS|FAIL│ <integration>   │
+│  Data version linked to each run    │ PASS|FAIL│ <DVC|hash|tag>  │
+│  Random seeds stored and replayable │ PASS|FAIL│ <seed strategy> │
+│  Environment captured (pip freeze)  │ PASS|FAIL│ <conda|docker>  │
+│  Artifact storage (model checkpts)  │ PASS|FAIL│ <S3|GCS|local>  │
+│  Comparison dashboards available    │ PASS|FAIL│ <tool URL>      │
+│  Failed experiments documented      │ PASS|FAIL│ <log evidence>  │
+│  Model lineage traceable end-to-end │ PASS|FAIL│ <from data->prod│
+└──────────────────────────────────────────────────────────────────┘
+
+PIPELINE RELIABILITY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Details         │
+├──────────────────────────────────────────────────────────────────┤
+│  Pipeline runs on schedule          │ PASS|FAIL│ <cron/trigger>  │
+│  Pipeline failures trigger alerts   │ PASS|FAIL│ <alert channel> │
+│  Retry logic for transient failures │ PASS|FAIL│ <retry policy>  │
+│  Resource limits set (GPU/mem/time) │ PASS|FAIL│ <limits>        │
+│  Pipeline DAG is version-controlled │ PASS|FAIL│ <Airflow|Kubeflow│
+│  Intermediate outputs cached        │ PASS|FAIL│ <cache strategy>│
+│  End-to-end pipeline test exists    │ PASS|FAIL│ <test details>  │
+│  Pipeline runs are idempotent       │ PASS|FAIL│ <verified how>  │
+└──────────────────────────────────────────────────────────────────┘
+
+AUDIT VERDICT: <PASS — pipeline production-ready | FAIL — <N> items to fix>
+Priority fixes:
+  1. <highest priority issue>
+  2. <second priority issue>
+  3. <third priority issue>
+```
+
+### ML Pipeline Audit Loop
+
+```
+ML AUDIT ITERATION:
+current_category = 0
+categories = [data_validation, model_metrics, experiment_tracking, pipeline_reliability]
+findings = []
+
+WHILE current_category < len(categories):
+  category = categories[current_category]
+
+  1. SCAN pipeline for all checks in category
+  2. RECORD status (PASS/FAIL) with evidence for each check
+  3. IDENTIFY root cause for each FAIL
+  4. PRIORITIZE fixes by blast radius (data issues > metric gaps > tracking gaps)
+
+  IF category has > 3 FAIL items:
+    HALT "Category {category} has critical gaps. Fix before proceeding."
+    FIX top 3 issues
+    RE-AUDIT category before moving to next
+
+  findings.append({category, pass_count, fail_count, critical_items})
+  current_category += 1
+
+FINAL:
+  GENERATE audit report with all findings
+  CALCULATE audit score: total_pass / total_checks * 100
+  IF audit_score < 80%: "Pipeline NOT production-ready. Address {fail_count} issues."
+  IF audit_score >= 80% AND audit_score < 95%: "Pipeline conditionally ready. Address {critical_count} critical items."
+  IF audit_score >= 95%: "Pipeline production-ready. Schedule next audit in 30 days."
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run ML experiments sequentially: experiment A, then experiment B, then experiment C. Compare results after all complete.

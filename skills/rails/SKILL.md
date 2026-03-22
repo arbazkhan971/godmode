@@ -833,6 +833,279 @@ IF security vulnerability (bundle audit):
 - **Do NOT leave N+1 queries in production.** Use Bullet gem and `strict_loading` to catch them in development. Every N+1 is a performance bug.
 
 
+## Rails Optimization Loop
+
+When optimizing an existing Rails application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: ActiveRecord N+1 Elimination
+
+```
+N+1 DETECTION & ELIMINATION:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Enable detection tools                                  │
+│                                                                   │
+│  # Gemfile                                                       │
+│  gem 'bullet', group: [:development, :test]                      │
+│                                                                   │
+│  # config/environments/development.rb                            │
+│  config.after_initialize do                                      │
+│    Bullet.enable = true                                          │
+│    Bullet.alert = true                                           │
+│    Bullet.bullet_logger = true                                   │
+│    Bullet.console = true                                         │
+│    Bullet.rails_logger = true                                    │
+│    Bullet.add_footer = true                                      │
+│    Bullet.unused_eager_loading_enable = true                     │
+│  end                                                              │
+│                                                                   │
+│  # Enable strict_loading globally in development:                │
+│  # config/environments/development.rb                            │
+│  config.active_record.strict_loading_by_default = true           │
+│                                                                   │
+│  Step 2: Baseline N+1 count per page/endpoint                    │
+│  Run Bullet in test mode and catalog every alert:                │
+│  ┌──────────────────────────┬──────────┬────────────────────┐   │
+│  │  Page / Endpoint         │  N+1s    │  Unused Eager Load │   │
+│  ├──────────────────────────┼──────────┼────────────────────┤   │
+│  │  GET /orders             │  <N>     │  <N>               │   │
+│  │  GET /orders/:id         │  <N>     │  <N>               │   │
+│  │  GET /admin/orders       │  <N>     │  <N>               │   │
+│  │  GET /dashboard          │  <N>     │  <N>               │   │
+│  └──────────────────────────┴──────────┴────────────────────┘   │
+│                                                                   │
+│  Step 3: Fix each N+1 systematically                             │
+│  - includes(:assoc) — default, smart choice (preload or eager)   │
+│  - preload(:assoc) — separate query, better for large joins      │
+│  - eager_load(:assoc) — LEFT JOIN, needed for WHERE on assoc     │
+│  - Also fix unused eager loading (remove unnecessary includes)   │
+│                                                                   │
+│  Step 4: Verify with Bullet — zero alerts remaining              │
+│  Bullet.raise = true  # Fail tests on N+1 detection             │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+```ruby
+# CONCRETE N+1 FIX PATTERNS:
+
+# BAD — N+1 on index page:
+# @orders = Order.all  # then view accesses order.customer.name
+
+# GOOD — eager load what the view needs:
+@orders = Order.includes(:customer, :order_items)
+               .where(user: current_user)
+               .recent
+               .page(params[:page])
+
+# BAD — N+1 in serializer/jbuilder:
+# json.orders @orders do |order|
+#   json.customer_name order.customer.name   # N+1!
+#   json.items_count order.order_items.size   # N+1!
+# end
+
+# GOOD — preload and use counter_cache:
+# In model: belongs_to :order, counter_cache: true
+@orders = Order.includes(:customer)
+               .with_attached_images  # if using ActiveStorage
+
+# GOOD — strict_loading per association:
+class Order < ApplicationRecord
+  has_many :order_items, strict_loading: true  # raises if lazy loaded
+end
+
+# GOOD — strict_loading per query:
+Order.strict_loading.includes(:customer).all
+```
+
+### Pass 2: Eager Loading Strategy
+
+```
+EAGER LOADING STRATEGY:
+┌──────────────────────────────────────────────────────────────────┐
+│  Decision matrix for each association access:                    │
+│                                                                   │
+│  includes(:assoc)                                                │
+│  → Use when: default choice, view/serializer accesses assoc     │
+│  → Behavior: Rails chooses preload or eager_load automatically   │
+│                                                                   │
+│  preload(:assoc)                                                 │
+│  → Use when: loading large associations (many records)           │
+│  → Behavior: 2 separate queries (SELECT * FROM orders;           │
+│              SELECT * FROM items WHERE order_id IN (...))        │
+│  → Benefit: avoids wide JOIN result sets                         │
+│                                                                   │
+│  eager_load(:assoc)                                              │
+│  → Use when: filtering/ordering by association columns           │
+│  → Behavior: single LEFT OUTER JOIN                              │
+│  → Example: Order.eager_load(:customer)                          │
+│                  .where(customers: { vip: true })                │
+│                                                                   │
+│  Counter caches for counts:                                      │
+│  → Add counter_cache: true on belongs_to                         │
+│  → Avoids COUNT(*) queries entirely                              │
+│  → Migration: add_column :orders, :items_count, :integer,        │
+│               default: 0, null: false                            │
+│    Order.find_each { |o| Order.reset_counters(o.id, :items) }   │
+│                                                                   │
+│  Database views for complex aggregations:                        │
+│  → Create a database view for dashboard/report queries           │
+│  → Back it with a read-only ActiveRecord model                   │
+│  → Avoids complex joins and subqueries in application code       │
+│                                                                   │
+│  AUDIT CHECKLIST:                                                │
+│  [ ] Every controller action lists its eager-loaded associations │
+│  [ ] No lazy loading in views (strict_loading enforced in dev)   │
+│  [ ] Counter caches added for all has_many count displays        │
+│  [ ] Complex report queries use database views or raw SQL        │
+│  [ ] Unused eager loads removed (Bullet unused detection)        │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: View Rendering Optimization
+
+```
+VIEW RENDERING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure rendering time per view                         │
+│  # config/environments/development.rb                            │
+│  config.active_support.notifications = true                      │
+│                                                                   │
+│  # Subscribe to render events:                                   │
+│  ActiveSupport::Notifications.subscribe("render_partial.action_view") do │
+│    |name, start, finish, id, payload|                            │
+│    duration = (finish - start) * 1000                            │
+│    Rails.logger.info "[RENDER] #{payload[:identifier]}: #{duration.round(1)}ms" │
+│  end                                                              │
+│                                                                   │
+│  Step 2: Identify slow partials                                  │
+│  ┌──────────────────────────┬──────────┬────────────────────┐   │
+│  │  Partial                 │  ms/call │  Calls per page    │   │
+│  ├──────────────────────────┼──────────┼────────────────────┤   │
+│  │  _order.html.erb         │  <N>     │  <N> (per item)    │   │
+│  │  _sidebar.html.erb       │  <N>     │  1                 │   │
+│  │  _header.html.erb        │  <N>     │  1                 │   │
+│  └──────────────────────────┴──────────┴────────────────────┘   │
+│                                                                   │
+│  Step 3: Apply view optimization strategies                      │
+│                                                                   │
+│  a) Collection rendering (avoid N partial renders):              │
+│     # BAD — renders partial N times individually:                │
+│     <% @orders.each do |order| %>                                │
+│       <%= render partial: 'order', locals: { order: order } %>  │
+│     <% end %>                                                    │
+│                                                                   │
+│     # GOOD — collection rendering (single render call):         │
+│     <%= render partial: 'order', collection: @orders,            │
+│              cached: true %>                                     │
+│                                                                   │
+│  b) Fragment caching:                                            │
+│     <% cache order do %>                                         │
+│       <%= render partial: 'order', locals: { order: order } %>  │
+│     <% end %>                                                    │
+│                                                                   │
+│  c) Russian doll caching (nested caches):                        │
+│     <% cache [current_user, order] do %>                         │
+│       <% cache order.customer do %>                              │
+│         <%= order.customer.name %>                               │
+│       <% end %>                                                  │
+│     <% end %>                                                    │
+│                                                                   │
+│  d) ViewComponent for complex partials:                          │
+│     # Replace slow ERB partials with ViewComponent objects       │
+│     # Benefits: testable, cacheable, faster than partials        │
+│     class OrderCardComponent < ViewComponent::Base               │
+│       def initialize(order:)                                     │
+│         @order = order                                           │
+│       end                                                        │
+│     end                                                          │
+│                                                                   │
+│  e) Turbo Frame lazy loading:                                    │
+│     # Defer expensive sections to load after initial paint:      │
+│     <%= turbo_frame_tag "order_stats", src: order_stats_path,   │
+│         loading: :lazy do %>                                     │
+│       <p>Loading stats...</p>                                    │
+│     <% end %>                                                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Database & Index Audit
+
+```
+DATABASE & INDEX AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify missing indexes                                │
+│  # Check all foreign keys have indexes:                          │
+│  ActiveRecord::Base.connection.tables.each do |table|            │
+│    columns = ActiveRecord::Base.connection.columns(table)        │
+│    indexes = ActiveRecord::Base.connection.indexes(table)        │
+│    fk_columns = columns.select { |c| c.name.end_with?('_id') } │
+│    fk_columns.each do |col|                                      │
+│      indexed = indexes.any? { |i| i.columns.include?(col.name) }│
+│      puts "MISSING INDEX: #{table}.#{col.name}" unless indexed  │
+│    end                                                           │
+│  end                                                             │
+│                                                                   │
+│  Step 2: Analyze slow queries                                    │
+│  # Enable slow query logging in PostgreSQL:                      │
+│  # log_min_duration_statement = 100  (100ms threshold)           │
+│  #                                                                │
+│  # Or use rack-mini-profiler in development:                     │
+│  gem 'rack-mini-profiler'                                        │
+│  # Shows query time breakdown per request in browser             │
+│                                                                   │
+│  Step 3: Add composite indexes for common query patterns         │
+│  class AddPerformanceIndexes < ActiveRecord::Migration[7.2]      │
+│    def change                                                     │
+│      add_index :orders, [:status, :created_at]                   │
+│      add_index :orders, [:customer_id, :status]                  │
+│      add_index :order_items, [:order_id, :product_id],           │
+│                unique: true                                       │
+│    end                                                            │
+│  end                                                              │
+│                                                                   │
+│  Step 4: Use EXPLAIN ANALYZE on slow queries                     │
+│  Order.where(status: :active).order(:created_at).explain         │
+│  # Look for: Seq Scan (needs index), Nested Loop (N+1 at DB),   │
+│  #           Sort (add index on ORDER BY column)                 │
+│                                                                   │
+│  Step 5: Audit for missing database-level constraints            │
+│  [ ] All NOT NULL constraints match model validations            │
+│  [ ] Unique indexes exist for uniqueness validations             │
+│  [ ] Foreign key constraints exist for all belongs_to            │
+│  [ ] Check constraints for enum/status columns                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+RAILS OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  N+1 queries (Bullet alerts)│  <N>      │  0        │  FIXED    │
+│  Unused eager loads          │  <N>      │  0        │  FIXED    │
+│  Missing FK indexes          │  <N>      │  0        │  FIXED    │
+│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
+│  Avg queries per page        │  <N>      │  <N>      │  -<N>%    │
+│  View render time (ms)      │  <N>      │  <N>      │  -<N>%    │
+│  Partial renders per page    │  <N>      │  <N>      │  -<N>%    │
+│  Fragment cache hit rate     │  <N>%     │  <N>%     │  +<N>%    │
+│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+│  Counter caches added        │  0        │  <N>      │  +<N>     │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Zero Bullet alerts (N+1 and unused eager loading)
+- strict_loading enabled in development
+- All foreign key columns have database indexes
+- Collection rendering used for all lists (no loop + render partial)
+- Fragment caching on expensive partials
+- Counter caches for all displayed has_many counts
+- p95 response time improved by measurable margin
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Rails tasks sequentially: models/migrations, then controllers/routes, then views/Hotwire, then jobs/services.

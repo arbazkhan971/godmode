@@ -915,6 +915,235 @@ IF read replica lag causes stale reads in user-facing features:
 - **Do NOT rate-limit without communication.** Users need clear rate limit headers, meaningful error messages, and documentation. A bare 429 with no context is hostile.
 
 
+## Scalability Audit Loop
+
+Structured audit loop for bottleneck detection, load test correlation, and capacity verification:
+
+```
+SCALABILITY AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 12
+audit_queue = [
+    "bottleneck_detection",
+    "load_test_correlation",
+    "auto_scaling_verification",
+    "connection_pool_analysis",
+    "cache_effectiveness",
+    "rate_limit_adequacy",
+    "database_scaling_health",
+    "capacity_runway_check"
+]
+findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. MEASURE current metrics for {audit_aspect}
+    2. COMPARE against scaling thresholds
+    3. CORRELATE with load test results (if available)
+    4. CLASSIFY: SCALES | APPROACHING LIMIT | BOTTLENECK
+    5. IF BOTTLENECK: generate specific scaling action with cost estimate
+    6. IF new concerns surface: audit_queue.append(concern)
+    7. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
+
+FINAL: Scalability health report with bottleneck map and action plan
+```
+
+### Bottleneck Detection
+
+```
+BOTTLENECK DETECTION PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Step 1: Resource Saturation Scan                              │
+│  Identify which resource is exhausted first under load         │
+├──────────────────────────────────────────────────────────────┤
+│  Resource        │ Current │ Peak   │ Capacity │ Headroom    │
+├──────────────────┼─────────┼────────┼──────────┼─────────────┤
+│  CPU (app tier)  │ <N>%    │ <N>%   │ 100%     │ <N>%        │
+│  Memory (app)    │ <N> GB  │ <N> GB │ <N> GB   │ <N>%        │
+│  Network (app)   │ <N> Mbps│ <N>Mbps│ <N> Mbps │ <N>%        │
+│  DB CPU          │ <N>%    │ <N>%   │ 100%     │ <N>%        │
+│  DB connections  │ <N>     │ <N>    │ <max>    │ <N>%        │
+│  DB IOPS         │ <N>     │ <N>    │ <max>    │ <N>%        │
+│  DB disk         │ <N> GB  │ —      │ <N> GB   │ <N>%        │
+│  Cache memory    │ <N> GB  │ <N> GB │ <N> GB   │ <N>%        │
+│  Cache conn      │ <N>     │ <N>    │ <max>    │ <N>%        │
+│  Queue depth     │ <N>     │ <N>    │ <max>    │ <N>%        │
+│  External API    │ <N> RPS │ <N>RPS │ <limit>  │ <N>%        │
+├──────────────────┴─────────┴────────┴──────────┴─────────────┤
+│  BOTTLENECK: <resource with lowest headroom>                   │
+│  (This is the resource that will be exhausted first under      │
+│  increasing load. Scale THIS component, not others.)           │
+├──────────────────────────────────────────────────────────────┤
+│  Step 2: Bottleneck Classification                             │
+├──────────────────────────────────────────────────────────────┤
+│  Type                │ Indicators               │ Action       │
+├──────────────────────┼──────────────────────────┼──────────────┤
+│  CPU-bound           │ CPU > 80%, low I/O wait  │ Scale up or  │
+│                      │ CPU-intensive code paths  │ optimize code│
+│  Memory-bound        │ OOM kills, swap usage,   │ Scale up,    │
+│                      │ GC pressure              │ reduce alloc │
+│  I/O-bound (disk)    │ High IOPS, disk latency  │ Faster disk, │
+│                      │ > 5ms, I/O wait          │ caching      │
+│  I/O-bound (network) │ Connection limits,       │ Connection   │
+│                      │ timeout errors           │ pooling, CDN │
+│  Database-bound      │ Slow queries, lock wait, │ Read replicas│
+│                      │ connection exhaustion    │ query opt.   │
+│  External API-bound  │ Rate limited, timeouts,  │ Caching,     │
+│                      │ quota exhaustion         │ circuit break│
+│  Queue-bound         │ Growing depth, consumer  │ More workers,│
+│                      │ lag increasing           │ batch process│
+└──────────────────────┴──────────────────────────┴──────────────┘
+
+BOTTLENECK MEASUREMENT COMMANDS:
+  # CPU and memory
+  top -b -n 1 | head -20                      # system overview
+  kubectl top pods -n <namespace>              # K8s pod resources
+
+  # Database
+  SELECT * FROM pg_stat_activity WHERE state = 'active';  # active queries
+  SELECT * FROM pg_stat_user_tables ORDER BY seq_scan DESC LIMIT 10;  # table scans
+  EXPLAIN ANALYZE <slow-query>;                # query plan
+
+  # Connection pools
+  SHOW POOL STATUS;                            # PgBouncer
+  SELECT count(*) FROM pg_stat_activity;       # PostgreSQL connections
+
+  # Cache
+  redis-cli info stats | grep -E "hits|misses" # Redis hit rate
+  redis-cli info memory                        # Redis memory usage
+
+  # Queue depth
+  rabbitmqctl list_queues name messages         # RabbitMQ
+  kafka-consumer-groups --bootstrap-server <broker> --describe --group <group>  # Kafka lag
+```
+
+### Load Test Correlation
+
+```
+LOAD TEST CORRELATION:
+┌──────────────────────────────────────────────────────────────┐
+│  Correlate load test results with production metrics to       │
+│  validate scaling decisions with real data.                   │
+├──────────────────────────────────────────────────────────────┤
+│                                                                │
+│  LOAD TEST RESULTS:                                            │
+│  ┌────────────┬──────────┬──────────┬──────────┬─────────┐   │
+│  │ Load Level │ RPS      │ p50 (ms) │ p99 (ms) │ Err Rate│   │
+│  ├────────────┼──────────┼──────────┼──────────┼─────────┤   │
+│  │ Baseline   │ <N>      │ <N>      │ <N>      │ <N>%    │   │
+│  │ 2x         │ <N>      │ <N>      │ <N>      │ <N>%    │   │
+│  │ 5x         │ <N>      │ <N>      │ <N>      │ <N>%    │   │
+│  │ 10x        │ <N>      │ <N>      │ <N>      │ <N>%    │   │
+│  │ Breaking   │ <N>      │ <N>      │ <N>      │ <N>%    │   │
+│  └────────────┴──────────┴──────────┴──────────┴─────────┘   │
+│                                                                │
+│  RESOURCE CORRELATION (at each load level):                    │
+│  ┌────────────┬──────┬──────┬──────┬──────┬──────┐           │
+│  │ Load Level │ CPU  │ Mem  │ DB   │ Cache│ Queue│           │
+│  │            │ (%)  │ (%)  │ conn │ hit% │ depth│           │
+│  ├────────────┼──────┼──────┼──────┼──────┼──────┤           │
+│  │ Baseline   │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
+│  │ 2x         │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
+│  │ 5x         │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
+│  │ 10x        │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
+│  │ Breaking   │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
+│  └────────────┴──────┴──────┴──────┴──────┴──────┘           │
+│                                                                │
+│  CORRELATION ANALYSIS:                                         │
+│  - Breaking point: <N> RPS (where errors > 1% or p99 > SLA)  │
+│  - First resource saturated: <resource> at <N> RPS             │
+│  - Latency inflection point: <N> RPS (where p99 doubles)      │
+│  - Linear scaling range: <baseline> to <N> RPS                 │
+│  - Sub-linear range: <N> to <breaking> RPS                     │
+│                                                                │
+│  SCALING PREDICTION:                                           │
+│  Current capacity: <N> RPS at SLA                              │
+│  After scaling action: <predicted N> RPS at SLA                │
+│  Confidence: HIGH (tested) | MEDIUM (modeled) | LOW (guessed)  │
+│                                                                │
+│  LOAD TEST vs PRODUCTION DELTA:                                │
+│  ┌────────────────────┬──────────┬────────────┬──────────┐   │
+│  │ Metric             │ Load Test│ Production │ Delta    │   │
+│  ├────────────────────┼──────────┼────────────┼──────────┤   │
+│  │ p50 latency        │ <N> ms   │ <N> ms     │ <N>%     │   │
+│  │ p99 latency        │ <N> ms   │ <N> ms     │ <N>%     │   │
+│  │ Error rate          │ <N>%     │ <N>%       │ <N>%     │   │
+│  │ Throughput ceiling  │ <N> RPS  │ <N> RPS    │ <N>%     │   │
+│  └────────────────────┴──────────┴────────────┴──────────┘   │
+│  NOTE: If delta > 20%, load test environment may not          │
+│  reflect production accurately. Investigate differences.       │
+└──────────────────────────────────────────────────────────────┘
+
+LOAD TEST TOOLS:
+  - k6: scripted load tests with JavaScript
+  - Locust: Python-based distributed load testing
+  - Gatling: Scala/Java, detailed reports
+  - wrk2: constant-throughput HTTP benchmarking
+  - vegeta: HTTP load testing with constant rate
+
+LOAD TEST TEMPLATE (k6):
+  import http from 'k6/http';
+  import { check, sleep } from 'k6';
+
+  export const options = {
+    stages: [
+      { duration: '2m', target: 100 },   // ramp to baseline
+      { duration: '5m', target: 100 },   // hold baseline
+      { duration: '2m', target: 500 },   // ramp to 5x
+      { duration: '5m', target: 500 },   // hold 5x
+      { duration: '2m', target: 1000 },  // ramp to 10x
+      { duration: '5m', target: 1000 },  // hold 10x
+      { duration: '2m', target: 0 },     // ramp down
+    ],
+    thresholds: {
+      http_req_duration: ['p(99)<500'],   // p99 < 500ms
+      http_req_failed: ['rate<0.01'],     // error rate < 1%
+    },
+  };
+```
+
+### Scalability Health Scorecard
+
+```
+SCALABILITY HEALTH SCORECARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Dimension                    │ Score (1-10) │ Weight│ Total  │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  Bottleneck identification    │ <score>      │ 0.20  │ <N>    │
+│  (known, measured, documented)│              │       │        │
+│  Headroom to target           │ <score>      │ 0.20  │ <N>    │
+│  (how much capacity vs target)│              │       │        │
+│  Auto-scaling maturity        │ <score>      │ 0.15  │ <N>    │
+│  (policies, cooldown, tested) │              │       │        │
+│  Database scaling             │ <score>      │ 0.15  │ <N>    │
+│  (replicas, pooling, split)   │              │       │        │
+│  Caching effectiveness        │ <score>      │ 0.10  │ <N>    │
+│  (hit rate, working set)      │              │       │        │
+│  Load test coverage           │ <score>      │ 0.10  │ <N>    │
+│  (tested at 2x peak, correlated│             │       │        │
+│  with production metrics)     │              │       │        │
+│  Capacity planning            │ <score>      │ 0.10  │ <N>    │
+│  (runway dates, growth model) │              │       │        │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  OVERALL SCALABILITY          │              │       │ <total>│
+│  Rating: EXCELLENT (8+) | GOOD (6-8) | AT RISK (4-6) |      │
+│           CRITICAL (<4)                                       │
+├──────────────────────────────────────────────────────────────┤
+│  BOTTLENECK MAP (ordered by proximity to saturation):         │
+│  1. <component>: <resource> at <N>% — runway: <N> months     │
+│  2. <component>: <resource> at <N>% — runway: <N> months     │
+│  3. <component>: <resource> at <N>% — runway: <N> months     │
+├──────────────────────────────────────────────────────────────┤
+│  RECOMMENDED SCALING ACTIONS (by impact/cost):                │
+│  1. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
+│  2. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
+│  3. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run scaling tasks sequentially: application layer, then data layer, then infrastructure layer.

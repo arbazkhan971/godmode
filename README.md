@@ -23,7 +23,7 @@ Your AI writes code. Godmode makes it write *great* code.
 
 ### Quick Links
 
-[Why Godmode?](#why-godmode) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
+[Why Godmode?](#why-godmode) · [Philosophy](#philosophy) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
 
 ---
 
@@ -50,6 +50,22 @@ The hard part is everything that happens *after* the first draft: verifying it w
 - **Cross-platform support** -- the same skills work on Claude Code, Codex, Gemini CLI, Cursor, and OpenCode
 
 Godmode turns your AI assistant from a code generator into an engineering system.
+
+---
+
+## Philosophy
+
+Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch):
+
+**Discipline before speed.** Every change is measured. Bad changes are reverted.
+**Evidence before claims.** "Looks good" is rejected. Numeric proof is required.
+**Git is memory.** Commit history is the audit trail. Every experiment is logged.
+**Simplicity first.** Complex changes that marginally improve metrics are discarded.
+**Never stop.** Loops run autonomously until goal met or budget exhausted.
+**Keep or discard.** Every iteration produces a binary decision. No maybes.
+
+Godmode turns iterative improvement from art (hoping changes work)
+into engineering (knowing changes work by measurement).
 
 ---
 
@@ -180,21 +196,16 @@ Or let godmode figure it out:
 
 ## How It Works
 
-### The Loop
+Every iterative skill follows the same loop:
 
-Every iterative skill runs the same protocol:
+1. **REVIEW** -- read state, logs, git history
+2. **IDEATE** -- pick the next change
+3. **MODIFY** -- make the change, commit before verify
+4. **VERIFY** -- run guard (tests + lint + build must all pass)
+5. **DECIDE** -- improved --> KEEP. Worse --> DISCARD (git reset)
+6. **LOG** -- append to `.godmode/<skill>-results.tsv`
 
-```
-WHILE goal not reached:
-    1. REVIEW  — read state, results log, git log
-    2. IDEATE  — pick next change
-    3. MODIFY  — ONE atomic change
-    4. COMMIT  — git commit BEFORE verify
-    5. VERIFY  — run metric + guard command
-    6. DECIDE  — improved → keep. worse → git reset --hard HEAD~1
-    7. LOG     — append to .godmode/results.tsv
-    8. REPEAT  — never stop, never ask
-```
+This loop runs autonomously. No human approval needed between iterations.
 
 ### The Phases
 

@@ -1043,6 +1043,212 @@ IF visual regression tests show false positives:
 - **Do NOT treat Storybook as an afterthought.** Storybook is not a developer tool you set up last. It is the component development environment, the documentation, the visual testing target, and the design review surface. Set it up first.
 
 
+## Design System Audit Loop
+
+Autoresearch-grade iterative audit for design system health. Measures token coverage, component completeness, and system-wide consistency through structured, metrics-driven cycles.
+
+```
+DESIGN SYSTEM AUDIT PROTOCOL:
+
+Phase 1 — Token Coverage Audit
+  target: >= 95% of all visual values in the codebase reference design tokens
+  current_iteration = 0
+  max_iterations = 8
+
+  SCAN METHODOLOGY:
+  1. EXTRACT all visual value declarations from the codebase:
+     Files: *.css, *.scss, *.module.css, *.tsx (inline styles), *.vue (scoped styles)
+     Properties: color, background, border-color, font-size, font-weight, font-family,
+                 line-height, margin, padding, gap, border-radius, box-shadow, z-index,
+                 transition-duration, transition-timing-function
+  2. CLASSIFY each value:
+     a. Token reference → COMPLIANT
+        - var(--*), theme.*, tokens.*, design system utility class
+     b. Hardcoded value → VIOLATION
+        - Raw hex (#fff), rgb(), hsl(), px values (16px, 24px), named colors
+     c. Exempt value → SKIP
+        - 0, 100%, auto, inherit, currentColor, transparent, none
+
+  WHILE token_coverage < 95% AND current_iteration < max_iterations:
+    1. RUN token coverage scan
+    2. GENERATE violation report:
+
+  TOKEN COVERAGE REPORT:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Token Category  │  Total │  Tokenized │  Hardcoded │  Coverage     │
+  ├──────────────────┼────────┼────────────┼────────────┼───────────────┤
+  │  Colors          │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Spacing         │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Typography      │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Border radius   │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Shadows         │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Z-index         │  <N>   │  <N>       │  <N>       │  <N>%         │
+  │  Motion/timing   │  <N>   │  <N>       │  <N>       │  <N>%         │
+  ├──────────────────┼────────┼────────────┼────────────┼───────────────┤
+  │  OVERALL         │  <N>   │  <N>       │  <N>       │  <N>%         │
+  └──────────────────┴────────┴────────────┴────────────┴───────────────┘
+
+    3. PRIORITIZE violations:
+       - Sort by frequency (most common hardcoded value first)
+       - Group by component (fix one component completely before moving on)
+    4. FOR EACH violation batch:
+       a. IDENTIFY the correct semantic token (or create if missing)
+       b. REPLACE hardcoded value with token reference
+       c. RUN visual regression test
+       d. IF regression → revert, investigate, fix individually
+    5. RE-SCAN coverage
+    6. RECORD:
+       file | property | hardcoded_value | replacement_token | regression
+    7. current_iteration += 1
+
+Phase 2 — Component Completeness Audit
+  Assess whether the design system has all components the product needs.
+
+  COMPLETENESS METHODOLOGY:
+  1. INVENTORY existing design system components:
+     List every component in the shared component library with status:
+     - Implemented + documented + tested = COMPLETE
+     - Implemented + undocumented = PARTIAL
+     - Planned but not implemented = MISSING
+     - Not planned but found in product code = UNSHARED
+
+  2. SCAN the product codebase for component patterns:
+     - Find inline implementations that duplicate design system component behavior
+     - Example: ad-hoc modal implementation when Modal exists in design system
+     - Example: custom button styles when Button component exists
+
+  3. BUILD the completeness matrix:
+
+  COMPONENT COMPLETENESS MATRIX:
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │  Category          │  Expected   │  Complete │  Partial │  Missing      │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Primitives        │  12         │  10       │  1       │  1            │
+  │  (Button, Input,   │             │           │  Divider │  AspectRatio  │
+  │   Badge, Avatar,   │             │           │          │               │
+  │   Text, Icon, etc) │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Form Controls     │  8          │  6        │  1       │  1            │
+  │  (Select, Check,   │             │           │  Switch  │  DatePicker   │
+  │   Radio, Slider)   │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Feedback          │  5          │  3        │  1       │  1            │
+  │  (Toast, Alert,    │             │           │  Progress│  Skeleton     │
+  │   Spinner)         │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Overlays          │  5          │  3        │  1       │  1            │
+  │  (Modal, Drawer,   │             │           │  Tooltip │  ContextMenu  │
+  │   Popover)         │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Navigation        │  6          │  4        │  1       │  1            │
+  │  (Tabs, Breadcrumb,│             │           │  Menu    │  CommandPalette│
+  │   Pagination, Nav) │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Data Display      │  6          │  4        │  1       │  1            │
+  │  (Table, Card,     │             │           │  Tree    │  VirtualList  │
+  │   Accordion, List) │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  Layout            │  5          │  4        │  0       │  1            │
+  │  (Stack, Grid,     │             │           │          │  ScrollArea   │
+  │   Container)       │             │           │          │               │
+  ├────────────────────┼─────────────┼───────────┼──────────┼───────────────┤
+  │  TOTAL             │  47         │  34       │  6       │  7            │
+  │  COMPLETENESS      │             │  72%      │  85%*    │               │
+  └────────────────────┴─────────────┴───────────┴──────────┴───────────────┘
+  * including partial components
+
+  4. CALCULATE unshared pattern count:
+     - Scan product code for inline modals, custom buttons, ad-hoc cards, etc.
+     - Each unshared pattern is a consistency risk and maintenance burden
+
+  UNSHARED PATTERN REPORT:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Pattern          │  Locations Found │  DS Component Exists? │ Action│
+  ├───────────────────┼──────────────────┼───────────────────────┼───────┤
+  │  Inline modal     │  5 files         │  YES (Modal)          │ Adopt │
+  │  Custom button    │  3 files         │  YES (Button)         │ Adopt │
+  │  Ad-hoc toast     │  7 files         │  NO                   │ Build │
+  │  Inline card      │  4 files         │  YES (Card)           │ Adopt │
+  │  Custom spinner   │  2 files         │  YES (Spinner)        │ Adopt │
+  └───────────────────┴──────────────────┴───────────────────────┴───────┘
+
+Phase 3 — Token Architecture Health Check
+  Verify the three-tier token architecture is maintained:
+
+  TOKEN ARCHITECTURE AUDIT:
+  FOR EACH component in the design system:
+    1. LIST all token references in the component
+    2. CLASSIFY each reference:
+       a. References semantic token (var(--color-primary)) → CORRECT
+       b. References primitive token (var(--primitive-blue-500)) → VIOLATION
+       c. References component token (var(--button-bg)) → CORRECT (within same component)
+       d. Hardcoded value → CRITICAL VIOLATION
+    3. VERIFY semantic → primitive mapping exists:
+       - Every semantic token must resolve to a primitive
+       - No orphan semantics (defined but unused)
+       - No orphan primitives (defined but no semantic references)
+
+  THEME COMPATIBILITY CHECK:
+  FOR EACH theme (light, dark, brand-A, brand-B):
+    1. ACTIVATE theme
+    2. RENDER all components in Storybook
+    3. CHECK: no visual artifacts, no unreadable text, no invisible elements
+    4. CHECK: contrast ratios meet WCAG AA in every theme
+    5. RECORD:
+       component | theme | contrast_ok | visual_artifacts | status
+
+  TOKEN HEALTH SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Check                                │  Status   │  Count          │
+  ├───────────────────────────────────────┼───────────┼─────────────────┤
+  │  Components using semantic tokens only│  <N>/<M>  │  <N> violations │
+  │  Primitive → semantic coverage        │  <N>%     │  <N> orphans    │
+  │  Semantic → component coverage        │  <N>%     │  <N> orphans    │
+  │  Themes rendering correctly           │  <N>/<M>  │  <N> issues     │
+  │  Contrast passing in all themes       │  <N>/<M>  │  <N> failures   │
+  │  Token naming consistent              │  <N>%     │  <N> deviations │
+  └───────────────────────────────────────┴───────────┴─────────────────┘
+
+FINAL DESIGN SYSTEM REPORT:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Metric                            │  Before   │  After    │ Target │
+├────────────────────────────────────┼───────────┼───────────┼────────┤
+│  Token coverage (overall)          │  <N>%     │  <N>%     │ >= 95% │
+│  Token coverage (colors)           │  <N>%     │  <N>%     │ >= 98% │
+│  Token coverage (spacing)          │  <N>%     │  <N>%     │ >= 95% │
+│  Component completeness            │  <N>%     │  <N>%     │ >= 90% │
+│  Unshared patterns in product code │  <N>      │  <N>      │ <= 5   │
+│  Semantic token violations         │  <N>      │  0        │ 0      │
+│  Themes rendering correctly        │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Contrast passing all themes       │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Storybook documentation coverage  │  <N>%     │  <N>%     │ 100%   │
+│  Visual regression baselines set   │  <N>/<M>  │  <N>/<M>  │ 100%   │
+└────────────────────────────────────┴───────────┴───────────┴────────┘
+```
+
+### Design System Audit TSV Logging
+
+Append one row per audit action to `.godmode/designsystem-audit.tsv`:
+
+```
+timestamp	project	phase	target	metric	before	after	technique	status
+2024-01-15T10:30:00Z	my-ds	tokens	colors	coverage_pct	72	98	replace-hardcoded	improved
+2024-01-15T10:45:00Z	my-ds	completeness	Toast	present	no	yes	built-component	added
+2024-01-15T11:00:00Z	my-ds	architecture	Modal	semantic_violations	3	0	fix-primitive-refs	fixed
+```
+
+### Design System Audit Hard Rules
+
+```
+1. NEVER let components reference primitive tokens directly. Always go through semantic tokens for theme compatibility.
+2. NEVER accept < 90% token coverage. Hardcoded values are design system leaks that undermine consistency.
+3. ALWAYS run visual regression tests after token replacement. A wrong token mapping is worse than a hardcoded value.
+4. NEVER add a component to the design system without Storybook documentation and at least light/dark theme verification.
+5. ALWAYS scan the product codebase for unshared patterns after every design system release. Adoption gaps grow silently.
+6. NEVER create orphan tokens. Every primitive must have at least one semantic reference. Every semantic must be used by at least one component.
+7. Log every audit action in TSV format for tracking system health across releases.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run design system tasks sequentially: tokens, then components, then pipeline, then docs/Storybook.

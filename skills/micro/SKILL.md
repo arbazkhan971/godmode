@@ -956,6 +956,227 @@ ERROR RECOVERY — MICROSERVICES:
    → Verify trace context propagation (W3C Trace Context headers). Check that all services instrument outgoing calls. Add trace ID to all log entries.
 ```
 
+## Microservice Audit
+
+Structured audit loop for service boundary validation and API contract testing across the microservice architecture:
+
+```
+MICROSERVICE AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 15
+audit_queue = [
+    "service_boundary_validation",
+    "api_contract_testing",
+    "data_ownership_verification",
+    "communication_pattern_review",
+    "resilience_pattern_audit",
+    "independent_deployability_check",
+    "observability_gap_detection"
+]
+audit_findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. SCAN all services for {audit_aspect}
+    2. VALIDATE against microservice best practices
+    3. CLASSIFY findings: PASS | WARN | FAIL
+    4. IF FAIL: generate remediation plan with effort estimate
+    5. IF new concerns surface: audit_queue.append(new_concern)
+    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
+
+FINAL: Microservice health report with prioritized fixes
+```
+
+### Service Boundary Validation
+
+```
+SERVICE BOUNDARY VALIDATION:
+┌──────────────────────────────────────────────────────────────┐
+│  Check                              │ Service    │ Status     │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Single bounded context per service │ <service>  │ PASS|FAIL  │
+│  (service does not span multiple    │            │            │
+│  business domains)                  │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Exclusive data ownership           │ <service>  │ PASS|FAIL  │
+│  (no shared database tables between │            │            │
+│  services)                          │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Single team ownership              │ <service>  │ PASS|FAIL  │
+│  (one team owns and deploys this    │            │            │
+│  service exclusively)               │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Independent deployability          │ <service>  │ PASS|FAIL  │
+│  (can deploy without coordinating   │            │            │
+│  with other services)               │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Cohesion score                     │ <service>  │ <1-10>     │
+│  (all operations relate to the same │            │            │
+│  domain concept)                    │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Coupling score                     │ <service>  │ <1-10>     │
+│  (number of synchronous dependencies│            │            │
+│  on other services)                 │            │            │
+├─────────────────────────────────────┼────────────┼────────────┤
+│  Size appropriateness               │ <service>  │ PASS|WARN  │
+│  (not too small: nano-service,      │            │            │
+│  not too large: mini-monolith)      │            │            │
+└─────────────────────────────────────┴────────────┴────────────┘
+
+BOUNDARY VIOLATION DETECTION:
+  # Shared database detection
+  grep -rn "DATABASE_URL\|DB_HOST\|connection_string" --include="*.env*" --include="*.yaml"
+  # Compare: do multiple services point to the same database?
+
+  # Cross-service direct code references
+  grep -rn "import.*from.*other-service" --include="*.ts" --include="*.py"
+  # Services should never import code from another service directly
+
+  # Deployment coupling detection
+  # Check CI/CD: do services have independent pipelines?
+  # Check: does deploying service A require redeploying service B?
+
+  # Shared library analysis
+  # List shared libraries used by each service
+  # Flag: shared libraries containing business logic (should be service-owned)
+
+FOR EACH BOUNDARY VIOLATION:
+  Service: <name>
+  Violation: <type: shared DB | shared code | deployment coupling | domain bleed>
+  Evidence: <specific files, configs, or dependencies>
+  Severity: CRITICAL | HIGH | MEDIUM
+  Remediation:
+    - <step 1: e.g., create service-owned database>
+    - <step 2: e.g., implement data sync via events>
+    - <step 3: e.g., remove direct database access>
+  Effort: <S|M|L|XL>
+```
+
+### API Contract Testing
+
+```
+API CONTRACT TESTING:
+┌──────────────────────────────────────────────────────────────┐
+│  Contract testing ensures that service-to-service interfaces  │
+│  remain compatible as services evolve independently.          │
+├──────────────────────────────────────────────────────────────┤
+│                                                                │
+│  CONSUMER-DRIVEN CONTRACT TESTING (Pact / Specmatic):         │
+│                                                                │
+│  Consumer side (who calls the API):                            │
+│  1. Define expected request/response pairs (contract)          │
+│  2. Test consumer code against mock provider (contract mock)   │
+│  3. Publish contract to broker (Pact Broker / schema registry) │
+│                                                                │
+│  Provider side (who serves the API):                           │
+│  1. Pull consumer contracts from broker                        │
+│  2. Replay consumer expectations against real provider         │
+│  3. Verify all consumer contracts are satisfied                │
+│  4. IF verification fails: provider MUST NOT deploy            │
+│                                                                │
+│  CI INTEGRATION:                                               │
+│  - Consumer PR: run consumer tests against contract mocks      │
+│  - Provider PR: pull ALL consumer contracts, verify against    │
+│    provider changes before merge                               │
+│  - Can-I-Deploy: check broker before deployment to verify      │
+│    all consumers and providers are compatible                  │
+├──────────────────────────────────────────────────────────────┤
+│                                                                │
+│  CONTRACT MATRIX:                                              │
+│  ┌────────────────┬──────────────┬──────────┬─────────────┐   │
+│  │ Consumer       │ Provider     │ Contract │ Status      │   │
+│  ├────────────────┼──────────────┼──────────┼─────────────┤   │
+│  │ order-service  │ product-svc  │ REST v1  │ VERIFIED    │   │
+│  │ order-service  │ payment-svc  │ gRPC v2  │ VERIFIED    │   │
+│  │ web-frontend   │ order-svc    │ REST v1  │ BREAKING    │   │
+│  │ mobile-app     │ order-svc    │ REST v1  │ VERIFIED    │   │
+│  │ notification   │ user-svc     │ gRPC v1  │ VERIFIED    │   │
+│  └────────────────┴──────────────┴──────────┴─────────────┘   │
+│                                                                │
+│  BREAKING CHANGE DETECTION:                                    │
+│  When a provider changes its API:                              │
+│  - Added field: SAFE (backward compatible)                     │
+│  - Removed required field: BREAKING                            │
+│  - Changed field type: BREAKING                                │
+│  - Changed endpoint path: BREAKING                             │
+│  - Added required parameter: BREAKING                          │
+│  - Changed status code: BREAKING                               │
+│                                                                │
+│  TOOLS:                                                        │
+│  - Pact: consumer-driven contracts (any language)              │
+│  - Specmatic: contract-as-code from OpenAPI specs              │
+│  - Protolock: protobuf backward compatibility checking         │
+│  - openapi-diff: OpenAPI schema comparison                     │
+│  - buf: protobuf lint, breaking change detection               │
+│                                                                │
+│  SCHEMA COMPATIBILITY COMMANDS:                                │
+│  # OpenAPI diff                                                │
+│  openapi-diff old-spec.yaml new-spec.yaml --fail-on-incomp    │
+│                                                                │
+│  # Protobuf breaking change detection                          │
+│  buf breaking --against .git#branch=main                       │
+│                                                                │
+│  # Pact verification                                           │
+│  pact-verifier --provider-base-url=http://localhost:8080 \     │
+│    --pact-broker-base-url=https://pact-broker.example.com      │
+└──────────────────────────────────────────────────────────────┘
+
+API CONTRACT AUDIT CHECKLIST:
+┌──────────────────────────────────────────────────────────────┐
+│  Check                                    │ Status            │
+├───────────────────────────────────────────┼───────────────────┤
+│  All service APIs have schema definitions │ PASS | FAIL       │
+│  (OpenAPI, Protobuf, GraphQL SDL)         │                   │
+├───────────────────────────────────────────┼───────────────────┤
+│  Consumer-driven contract tests exist     │ PASS | FAIL       │
+│  for all critical service interactions    │                   │
+├───────────────────────────────────────────┼───────────────────┤
+│  Breaking change detection runs in CI     │ PASS | FAIL       │
+├───────────────────────────────────────────┼───────────────────┤
+│  Contract broker/registry is configured   │ PASS | FAIL       │
+├───────────────────────────────────────────┼───────────────────┤
+│  Can-I-Deploy check before each deploy    │ PASS | FAIL       │
+├───────────────────────────────────────────┼───────────────────┤
+│  API versioning strategy defined          │ PASS | FAIL       │
+│  (URL path, header, content negotiation)  │                   │
+├───────────────────────────────────────────┼───────────────────┤
+│  Deprecation policy documented            │ PASS | FAIL       │
+│  (how long deprecated APIs are supported) │                   │
+├───────────────────────────────────────────┼───────────────────┤
+│  All events have registered schemas       │ PASS | FAIL       │
+│  with compatibility mode enforced         │                   │
+└───────────────────────────────────────────┴───────────────────┘
+```
+
+### Microservice Health Scorecard
+
+```
+MICROSERVICE HEALTH SCORECARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Dimension                    │ Score (1-10) │ Weight│ Total  │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  Service boundary clarity     │ <score>      │ 0.20  │ <N>    │
+│  Data ownership (no shared DB)│ <score>      │ 0.15  │ <N>    │
+│  API contract coverage        │ <score>      │ 0.15  │ <N>    │
+│  Independent deployability    │ <score>      │ 0.15  │ <N>    │
+│  Resilience patterns          │ <score>      │ 0.10  │ <N>    │
+│  (circuit breakers, retries)  │              │       │        │
+│  Observability                │ <score>      │ 0.10  │ <N>    │
+│  (tracing, logging, metrics)  │              │       │        │
+│  Communication patterns       │ <score>      │ 0.10  │ <N>    │
+│  (async preferred, sync justified)│          │       │        │
+│  Operational maturity         │ <score>      │ 0.05  │ <N>    │
+│  (health checks, graceful shutdown)│         │       │        │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  OVERALL HEALTH               │              │       │ <total>│
+│  Rating: EXCELLENT (8+) | GOOD (6-8) | NEEDS WORK (4-6) |   │
+│           CRITICAL (<4)                                       │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run microservice tasks sequentially: service design, then communication design, then infrastructure.

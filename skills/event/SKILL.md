@@ -887,6 +887,219 @@ ERROR RECOVERY — EVENT:
    → Implement snapshot strategy (snapshot every N events). Archive old events to cold storage. Set retention policy on topics/tables.
 ```
 
+## Event-Driven Architecture Audit
+
+Structured audit loop for event schema validation, ordering guarantee verification, and event flow health:
+
+```
+EVENT ARCHITECTURE AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 15
+audit_queue = [
+    "event_schema_validation",
+    "ordering_guarantee_verification",
+    "idempotency_coverage",
+    "dlq_health",
+    "consumer_lag_analysis",
+    "correlation_id_propagation",
+    "schema_compatibility_check",
+    "event_flow_traceability"
+]
+findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. SCAN all event producers and consumers for {audit_aspect}
+    2. VALIDATE against event-driven best practices
+    3. CLASSIFY: PASS | WARN | FAIL
+    4. IF FAIL: generate fix with specific code/config changes
+    5. IF new concerns surface: audit_queue.append(concern)
+    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
+
+FINAL: Event architecture health report with prioritized fixes
+```
+
+### Event Schema Validation
+
+```
+EVENT SCHEMA VALIDATION:
+┌──────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Details     │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  All events have schema definitions │ PASS|FAIL│ <N>/<total> │
+│  (Avro, Protobuf, JSON Schema)      │          │ have schemas│
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Schema registry configured and     │ PASS|FAIL│ <registry>  │
+│  enforcing compatibility            │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Event envelope has ALL required     │ PASS|FAIL│ Missing:    │
+│  fields: event_id, event_type,      │          │ <list>      │
+│  version, timestamp, source,         │          │             │
+│  correlation_id, data               │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Event naming follows convention     │ PASS|FAIL│ Convention: │
+│  (domain.entity.action, past tense) │          │ <violations>│
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Schema evolution is backward        │ PASS|FAIL│ <breaking   │
+│  compatible (no breaking changes     │          │ changes     │
+│  without version bump)              │          │ detected>   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  No sensitive PII in event payloads │ PASS|FAIL│ <fields     │
+│  without encryption                  │          │ flagged>    │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Causation chain traceable           │ PASS|FAIL│ <events     │
+│  (causation_id links to parent      │          │ missing     │
+│  event that triggered this event)   │          │ causation>  │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Event payload size within limits    │ PASS|WARN│ <events     │
+│  (< 1MB recommended, < 256KB ideal)│          │ exceeding>  │
+└─────────────────────────────────────┴──────────┴─────────────┘
+
+SCHEMA VALIDATION COMMANDS:
+  # JSON Schema validation
+  npx ajv validate -s schemas/order-placed.json -d sample-events/order-placed.json
+
+  # Avro compatibility check (Confluent Schema Registry)
+  curl -X POST "http://schema-registry:8081/compatibility/subjects/<topic>-value/versions/latest" \
+    -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+    -d '{"schema": "<new-schema-json>"}'
+
+  # Protobuf breaking change detection
+  buf breaking --against .git#branch=main proto/
+
+  # Scan for PII in event schemas
+  grep -rn "email\|phone\|ssn\|address\|credit_card\|password" schemas/
+
+SCHEMA HEALTH REPORT:
+┌──────────────────────────────────────────────────────────────┐
+│  Event Type           │ Schema │ Version │ Compat.  │ Status  │
+├───────────────────────┼────────┼─────────┼──────────┼─────────┤
+│  order.placed         │ Avro   │ 1.2     │ BACKWARD │ VALID   │
+│  order.cancelled      │ Avro   │ 1.0     │ BACKWARD │ VALID   │
+│  payment.completed    │ JSON   │ 2.0     │ BREAKING │ WARN    │
+│  user.registered      │ (none) │ —       │ —        │ FAIL    │
+│  inventory.reserved   │ Proto  │ 1.0     │ FULL     │ VALID   │
+├───────────────────────┴────────┴─────────┴──────────┴─────────┤
+│  Total events: <N> │ With schema: <N> │ Without: <N>          │
+│  Compatible: <N> │ Breaking changes detected: <N>             │
+│  PII exposure risk: <N> events                                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Ordering Guarantee Verification
+
+```
+ORDERING GUARANTEE AUDIT:
+┌──────────────────────────────────────────────────────────────┐
+│  Requirement                        │ Mechanism   │ Status   │
+├─────────────────────────────────────┼─────────────┼──────────┤
+│  Per-entity ordering                │             │          │
+│  (all events for same entity are    │ Partition   │ PASS|FAIL│
+│  processed in order)                │ key = entity│          │
+│                                     │ _id         │          │
+├─────────────────────────────────────┼─────────────┼──────────┤
+│  Causal ordering                    │             │          │
+│  (if event A causes event B,        │ Same        │ PASS|FAIL│
+│  consumers always see A before B)   │ partition + │          │
+│                                     │ causation_id│          │
+├─────────────────────────────────────┼─────────────┼──────────┤
+│  Global ordering                    │             │          │
+│  (all events across all entities    │ Single      │ PASS|FAIL│
+│  are processed in total order)      │ partition   │          │
+│                                     │ (limits     │          │
+│                                     │ throughput) │          │
+├─────────────────────────────────────┼─────────────┼──────────┤
+│  No ordering required               │             │          │
+│  (events can be processed in any    │ Any         │ PASS     │
+│  order, consumer handles reordering)│ partitioning│          │
+└─────────────────────────────────────┴─────────────┴──────────┘
+
+ORDERING VERIFICATION TESTS:
+  Test 1: Per-entity ordering
+    - Publish events E1, E2, E3 for entity X to same topic
+    - Verify consumer receives E1, E2, E3 in exact order
+    - Verify: partition key is set to entity ID
+    - Edge case: what happens if partition count changes? (key rehashing)
+
+  Test 2: Cross-partition ordering (should NOT be assumed)
+    - Publish events to different partitions
+    - Verify: consumer does NOT depend on cross-partition order
+    - IF cross-partition order is needed: document the limitation
+
+  Test 3: Consumer restart ordering
+    - Consumer processes events E1, E2, commits offset
+    - Consumer crashes, restarts
+    - Verify: consumer resumes from E3 (not reprocessing E1, E2)
+    - Verify: idempotency handles the edge case of E2 reprocessing
+
+  Test 4: Concurrent consumer ordering
+    - Multiple consumer instances in same group
+    - Verify: events for same entity always go to same consumer instance
+    - Verify: partition assignment strategy does not split entity events
+
+ORDERING RISK MATRIX:
+┌──────────────────────────────────────────────────────────────┐
+│  Event Flow               │ Required Order │ Guaranteed? │ Risk│
+├───────────────────────────┼────────────────┼─────────────┼─────┤
+│  <producer> → <consumer>  │ Per-entity     │ YES|NO      │ L|M|H│
+│  <producer> → <consumer>  │ Causal         │ YES|NO      │ L|M|H│
+│  <producer> → <consumer>  │ None           │ N/A         │ LOW  │
+└───────────────────────────┴────────────────┴─────────────┴─────┘
+
+FOR EACH HIGH-RISK ORDERING GAP:
+  Flow: <producer → topic → consumer>
+  Required: <per-entity | causal | global>
+  Current: <not guaranteed | partially guaranteed>
+  Fix:
+    - Set partition key to <entity_id> for per-entity ordering
+    - Use single partition for global ordering (note throughput limit)
+    - Add sequence numbers to events for consumer-side reordering
+    - Add causation_id and consumer-side causal ordering buffer
+  Effort: <S|M|L>
+```
+
+### Event Architecture Health Scorecard
+
+```
+EVENT ARCHITECTURE HEALTH SCORECARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Dimension                    │ Score (1-10) │ Weight│ Total  │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  Schema coverage & quality    │ <score>      │ 0.20  │ <N>    │
+│  (all events have validated   │              │       │        │
+│  schemas with compatibility)  │              │       │        │
+│  Ordering guarantees          │ <score>      │ 0.15  │ <N>    │
+│  (correct partition keys,     │              │       │        │
+│  ordering verified per flow)  │              │       │        │
+│  Idempotency coverage         │ <score>      │ 0.15  │ <N>    │
+│  (all consumers handle        │              │       │        │
+│  duplicate delivery safely)   │              │       │        │
+│  DLQ and retry configuration  │ <score>      │ 0.15  │ <N>    │
+│  (every consumer has DLQ,     │              │       │        │
+│  exponential backoff retries) │              │       │        │
+│  Consumer lag health          │ <score>      │ 0.10  │ <N>    │
+│  (all consumers keeping up,   │              │       │        │
+│  lag monitoring and alerting) │              │       │        │
+│  Correlation/traceability     │ <score>      │ 0.10  │ <N>    │
+│  (correlation_id + causation  │              │       │        │
+│  _id propagated across all    │              │       │        │
+│  event handlers)              │              │       │        │
+│  Schema evolution safety      │ <score>      │ 0.10  │ <N>    │
+│  (backward compatible changes │              │       │        │
+│  only, registry enforcing)    │              │       │        │
+│  Operational maturity         │ <score>      │ 0.05  │ <N>    │
+│  (DLQ replay tooling,         │              │       │        │
+│  consumer lag dashboards)     │              │       │        │
+├───────────────────────────────┼──────────────┼───────┼────────┤
+│  OVERALL HEALTH               │              │       │ <total>│
+│  Rating: EXCELLENT (8+) | GOOD (6-8) | NEEDS WORK (4-6) |   │
+│           CRITICAL (<4)                                       │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run event tasks sequentially: event store/schemas, then broker topology, then consumers/projections.

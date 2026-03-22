@@ -754,6 +754,210 @@ AUTO-DETECT SEQUENCE:
 - **Do NOT request review from the entire team.** Tag 1-2 specific reviewers. Diffusion of responsibility means nobody reviews.
 
 
+## PR Quality Loop
+
+Iterative protocol for ensuring every PR meets quality standards before requesting review:
+
+```
+PR QUALITY LOOP:
+current_iteration = 0
+max_iterations = 5
+quality_gates = [size_check, self_review, description_check, checklist_verify, merge_criteria]
+
+WHILE current_iteration < max_iterations:
+  gate = quality_gates[current_iteration]
+  current_iteration += 1
+
+  IF gate == "size_check":
+    1. MEASURE:
+       lines_changed = git diff --stat {base}..HEAD | tail -1 | parse
+       files_changed = git diff --name-only {base}..HEAD | wc -l
+    2. ENFORCE SIZE LIMITS:
+       XS:  1-10 lines     → auto-merge candidate, skip most gates
+       S:   11-50 lines    → ideal, full review in <15 min
+       M:   51-200 lines   → acceptable, review in <30 min
+       L:   201-400 lines  → WARNING: consider splitting
+       XL:  401+ lines     → BLOCKED: must split before review
+    3. IF XL:
+       - Analyze diff by concern: refactor, feature, tests, config, docs
+       - Propose split plan: N smaller PRs with dependency chain
+       - HALT until split is complete or user overrides with justification
+    4. IF L:
+       - WARN but allow with justification
+       - Require extra reviewer (2 instead of 1)
+       - Add "needs-split" label as reminder for future
+
+  IF gate == "self_review":
+    1. GENERATE self-review checklist from diff:
+       FOR each file in changed_files:
+         - [ ] Read the full diff for {file} — no skimming
+         - [ ] Check for debug statements (console.log, print, debugger)
+         - [ ] Check for commented-out code (should be deleted, not commented)
+         - [ ] Check for hardcoded values (magic numbers, URLs, credentials)
+         - [ ] Check for TODO/FIXME/HACK that should be resolved before merge
+         - [ ] Check for adequate error handling (no bare catch, no swallowed errors)
+    2. RUN automated self-review:
+       grep -rn 'console\.log\|debugger\|print(' $(git diff --name-only {base}..HEAD) 2>/dev/null
+       grep -rn 'TODO\|FIXME\|HACK\|XXX' $(git diff --name-only {base}..HEAD) 2>/dev/null
+       grep -rn '\/\/.*[A-Z].*=.*["\x27]' $(git diff --name-only {base}..HEAD) 2>/dev/null
+    3. REPORT findings:
+       - Debug statements: <N> (target: 0)
+       - Commented-out code blocks: <N> (target: 0)
+       - Unresolved TODOs: <N> (target: 0 or explicitly documented)
+       - Hardcoded values: <N> (target: 0)
+    4. IF findings > 0: FIX before proceeding
+
+  IF gate == "description_check":
+    1. VALIDATE PR description against template:
+       REQUIRED SECTIONS:
+       [ ] Summary (1-3 sentences, not empty)
+       [ ] Problem/context (links to issue or explains why)
+       [ ] Solution (what approach was taken and key tradeoffs)
+       [ ] Changes (bulleted list of specific changes)
+       [ ] Testing (how it was tested, new tests added)
+       [ ] Checklist (standard items checked off)
+    2. SCORE description quality:
+       - All sections present: +1 per section (max 6)
+       - Issue/ticket linked: +1
+       - Screenshots for UI changes: +1
+       - Reviewer guidance notes: +1
+       - Total: <N>/9
+    3. IF score < 6: REWRITE missing sections before proceeding
+
+  IF gate == "checklist_verify":
+    1. RUN verification commands:
+       [ ] Tests pass: {test_cmd} → exit code 0
+       [ ] Lint clean: {lint_cmd} → exit code 0
+       [ ] Type check: {typecheck_cmd} → exit code 0 (if applicable)
+       [ ] Build succeeds: {build_cmd} → exit code 0
+       [ ] No secrets in diff: grep for API_KEY, SECRET, PASSWORD, TOKEN
+       [ ] No conflict markers: grep for <<<<<<<, =======, >>>>>>>
+       [ ] Branch is up to date with base: git fetch origin {base} && git merge-base --is-ancestor origin/{base} HEAD
+    2. ALL must pass. ANY failure blocks PR creation.
+    3. IF tests/lint/build fail: delegate to /godmode:fix, then re-run this gate
+
+  IF gate == "merge_criteria":
+    1. DEFINE merge readiness criteria:
+       REQUIRED (all must be true):
+       [ ] CI passes (all status checks green)
+       [ ] At least 1 approval from a qualified reviewer
+       [ ] No unresolved review comments (all threads resolved)
+       [ ] Branch is up to date with base (no merge conflicts)
+       [ ] PR size is within limits (< 400 lines or justified)
+       RECOMMENDED:
+       [ ] No "changes requested" reviews outstanding
+       [ ] Author has responded to all reviewer comments
+       [ ] Documentation updated if public API changed
+       [ ] CHANGELOG updated if user-facing change
+    2. SCORE: required_met / total_required
+    3. IF all required met: READY TO MERGE
+       IF any required missing: BLOCKED — list blockers
+
+  REPORT: "Gate {current_iteration}/{max_iterations}: {gate} — {PASS | FAIL | BLOCKED}"
+
+FINAL PR QUALITY SCORE:
+┌──────────────────────────────────────────────────────────┐
+│  PR QUALITY ASSESSMENT                                    │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Gate                │ Status │ Details                    │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Size check          │ PASS   │ M (142 lines)             │
+│  Self-review         │ PASS   │ 0 issues found            │
+│  Description         │ PASS   │ 8/9 quality score         │
+│  Checklist verify    │ PASS   │ 7/7 checks passed         │
+│  Merge criteria      │ READY  │ Awaiting 1 approval       │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Overall             │ READY  │ Ready for review           │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
+### Review Checklist Protocol
+
+Standardized checklist for reviewers to ensure thorough, consistent reviews:
+
+```
+REVIEWER CHECKLIST (apply to every PR review):
+
+CORRECTNESS:
+[ ] Does the code do what the PR description says?
+[ ] Are edge cases handled (null, empty, boundary values)?
+[ ] Are error paths handled correctly (not swallowed, proper error types)?
+[ ] Is the logic correct for all input combinations?
+[ ] Are there race conditions or concurrency issues?
+
+DESIGN:
+[ ] Is this the right level of abstraction?
+[ ] Does this follow existing patterns in the codebase?
+[ ] Are there unnecessary dependencies introduced?
+[ ] Is the code in the right location (correct module/layer)?
+[ ] Could this be simpler without losing functionality?
+
+TESTING:
+[ ] Are new tests added for new functionality?
+[ ] Do tests cover both happy path and error cases?
+[ ] Are test names descriptive (document expected behavior)?
+[ ] Are tests independent (no shared mutable state)?
+[ ] Is test coverage adequate for the risk level of the change?
+
+SECURITY:
+[ ] No secrets, credentials, or PII in the diff?
+[ ] Input validation present for user-supplied data?
+[ ] SQL injection, XSS, CSRF protections maintained?
+[ ] Authentication/authorization checks not bypassed?
+[ ] No new attack surface exposed without documentation?
+
+PERFORMANCE:
+[ ] No N+1 queries introduced?
+[ ] No unbounded loops or data fetches?
+[ ] Pagination for list endpoints?
+[ ] Appropriate caching if accessing expensive resources?
+[ ] No unnecessary re-renders (frontend)?
+
+REVIEW COMMENT CONVENTIONS:
+  Prefix every comment with its weight:
+  "blocking: <comment>"     — Must fix before merge
+  "suggestion: <comment>"   — Improvement, not required
+  "nit: <comment>"          — Style/preference, not required
+  "question: <comment>"     — Seeking understanding, not blocking
+  "praise: <comment>"       — Acknowledging good work (important for morale)
+
+REVIEW RESPONSE TIMES:
+  Target: first review within 4 business hours
+  SLA: all PRs reviewed within 24 business hours
+  If you cannot review within SLA: decline and suggest alternate reviewer
+```
+
+### Merge Criteria Enforcement
+
+```
+MERGE CRITERIA (enforced before every merge):
+
+HARD REQUIREMENTS (automated — cannot be bypassed):
+  1. CI green: all status checks pass
+  2. No merge conflicts: branch is rebased on latest base
+  3. Approvals met: >= {required_approvals} (default: 1)
+  4. No dismissed reviews: all "changes requested" resolved
+
+SOFT REQUIREMENTS (team-enforced — documented exceptions allowed):
+  1. All review threads resolved
+  2. PR description complete (all template sections filled)
+  3. Documentation updated for API/behavior changes
+  4. CHANGELOG entry for user-facing changes
+  5. Migration tested (if database changes present)
+  6. Feature flag configured (if partial feature)
+
+MERGE METHOD:
+  Default: squash merge (clean history, one commit per PR)
+  Exception: merge commit for release branches or when commit history matters
+  Never: rebase merge on shared branches without team agreement
+
+POST-MERGE CLEANUP:
+  1. Delete source branch (automated via GitHub settings)
+  2. Retarget dependent PRs (if stacked)
+  3. Verify CI on main after merge (catch integration issues)
+  4. Close related issues (via "Closes #NNN" in description)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run PR tasks sequentially: backend PR, then API PR, then frontend PR, then config/infra PR.

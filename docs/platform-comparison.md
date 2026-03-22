@@ -17,6 +17,7 @@ Godmode runs on 5 platforms. All 126 skills work everywhere. This document cover
 | **Tool names** | Native (Read, Write, Edit, Bash, Grep, Glob) | Mapped (generic file/shell ops) | Mapped (read_file, write_file, replace, run_shell_command, grep_search, glob) | Native (Read, Write, Edit, Bash, Grep, Glob) | Native (Read, Write, Edit, Bash, Grep, Glob) |
 | **Session hooks** | Yes (session-start) | No | No | Yes (session_start in plugin.json) | No |
 | **Interactive setup** | `/godmode:setup` wizard | No -- batch mode only | `/godmode:setup` in chat | `/godmode:setup` in chat | `@godmode setup` in chat |
+| **Loop behavior** | Parallel (multi-agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Parallel (background agents) |
 | **Background execution** | Agent tool runs in parallel | Entire session is batch | No | No | Background agents |
 | **Config file format** | `.godmode/config.yaml` | `.godmode/config.yaml` + `.codex/config.toml` + `.codex/agents/*.toml` | `.godmode/config.yaml` | `.godmode/config.yaml` + `.opencode/plugins/godmode/plugin.json` | `.godmode/config.yaml` + `.cursorrules` |
 | **Install method** | `claude plugin install godmode` | `bash adapters/codex/install.sh` | `bash adapters/gemini/install.sh` | `bash adapters/opencode/install.sh` | `bash adapters/cursor/install.sh` |

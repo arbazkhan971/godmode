@@ -1223,6 +1223,128 @@ Create the file with the header row on first run. Tab-separated, one row per ope
    - Run dual-write during migration: write to both old and new, read from old. Switch reads to new only after validation.
    - Validate row counts, checksums, and sample queries between source and target before cutover.
 
+## NoSQL Schema Design Audit Loop
+
+Autonomous audit loop that validates access pattern coverage, partition key optimization, and data model health. Runs until all access patterns are served and no hot partitions exist.
+
+```
+NOSQL SCHEMA DESIGN AUDIT LOOP:
+current_iteration = 0
+max_iterations = 15
+access_patterns = list_all_access_patterns()  // from requirements
+database = detect_nosql_database()  // MongoDB, DynamoDB, Cassandra, Neo4j
+
+WHILE current_iteration < max_iterations AND NOT all_patterns_covered:
+  current_iteration += 1
+
+  // Phase 1: Access Pattern Coverage
+  coverage = {}
+  FOR each pattern in access_patterns:
+    served = can_serve_without_scan(pattern, database)
+    // MongoDB: covered by index? DynamoDB: PK/SK or GSI? Cassandra: table exists?
+    coverage[pattern] = {
+      served: served,
+      method: "PK_LOOKUP" | "GSI" | "INDEX" | "TABLE" | "SCAN" | "NOT_SERVED",
+      estimated_latency: estimate_latency(pattern)
+    }
+    IF NOT served:
+      // Fix: add index, GSI, or denormalized table
+      IF database == "DynamoDB":
+        ADD GSI or restructure PK/SK to cover pattern
+      IF database == "MongoDB":
+        ADD compound index matching filter + sort
+      IF database == "Cassandra":
+        CREATE new table for this query pattern
+      IF database == "Neo4j":
+        ADD node/relationship index
+      LOG: "PATTERN COVERED: {pattern.name} — {fix_applied}"
+
+  uncovered = [p for p in access_patterns if not coverage[p].served]
+  LOG: "Coverage: {len(access_patterns) - len(uncovered)}/{len(access_patterns)} patterns served"
+
+  // Phase 2: Partition Key Optimization
+  IF database in ["DynamoDB", "Cassandra"]:
+    partition_analysis = analyze_partition_distribution()
+    FOR each table in partition_analysis:
+      IF table.hot_partition_pct > 30:
+        // Single partition handles > 30% of traffic
+        FIX: add write sharding (random suffix) or composite key
+        LOG: "HOT PARTITION fix: {table.name} — {table.hot_partition_key} sharded"
+      IF table.partition_size > partition_limit:
+        // DynamoDB: > 10GB item collection, Cassandra: > 100MB partition
+        FIX: add time bucketing or split key
+        LOG: "PARTITION SIZE fix: {table.name} — time bucketing added"
+      IF table.pk_cardinality < 100 AND table.write_volume > 1000/sec:
+        FIX: increase cardinality (composite key, hash prefix)
+        LOG: "LOW CARDINALITY fix: {table.name} PK — composite key added"
+
+  // Phase 3: Document/Schema Validation (MongoDB)
+  IF database == "MongoDB":
+    FOR each collection in collections:
+      IF NOT has_json_schema_validator(collection):
+        GENERATE and APPLY JSON Schema validator
+        LOG: "VALIDATION added: {collection} — JSON Schema enforced"
+      IF has_unbounded_array(collection):
+        // Array field that can grow without limit
+        EXTRACT to separate collection with reference
+        LOG: "UNBOUNDED ARRAY fix: {collection}.{field} → separate collection"
+      IF document_avg_size > 1MB:
+        SPLIT embedded data into references
+        LOG: "LARGE DOCUMENT fix: {collection} — embedded data extracted"
+
+  // Phase 4: Denormalization Audit
+  duplicated_fields = find_all_denormalized_fields()
+  FOR each field in duplicated_fields:
+    IF NOT has_sync_mechanism(field):
+      // Duplicated field with no change propagation
+      ADD sync: DynamoDB Streams, MongoDB Change Streams, or Cassandra CDC
+      LOG: "SYNC MISSING: {field.source} → {field.targets} — change stream added"
+    IF field.last_synced_at AND drift > acceptable_window:
+      ALERT: "DATA DRIFT: {field.name} — source and copy diverged by {drift}"
+
+  // Phase 5: Keep/Discard
+  new_uncovered = count_uncovered_patterns()
+  new_hot_partitions = count_hot_partitions()
+  new_unvalidated = count_collections_without_validation()
+
+  IF new_uncovered == 0 AND new_hot_partitions == 0 AND new_unvalidated == 0:
+    KEEP all changes
+    COMMIT: "nosql: schema audit pass #{current_iteration} — all patterns covered, no hot partitions"
+    all_patterns_covered = true
+  ELSE:
+    LOG: "Iteration {current_iteration}: uncovered={new_uncovered}, hot_partitions={new_hot_partitions}, unvalidated={new_unvalidated}"
+    CONTINUE
+
+  REPORT: "Iteration {current_iteration}: patterns={len(access_patterns)-new_uncovered}/{len(access_patterns)}, hot_partitions={new_hot_partitions}, validation={len(collections)-new_unvalidated}/{len(collections)}"
+
+ON COMPLETION:
+  LOG to .godmode/nosql-audit.tsv:
+    timestamp\tdatabase\titerations\tpatterns_total\tpatterns_covered\thot_partitions_fixed\tvalidation_added\tverdict
+  REPORT: "NoSQL audit complete: {current_iteration} iterations, {len(access_patterns)} patterns covered, 0 hot partitions, all collections validated"
+```
+
+### NoSQL Health Thresholds
+
+```
+NOSQL SCHEMA HEALTH THRESHOLDS:
+┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
+│ Metric                               │ READY        │ NEEDS TUNING │ DEGRADED     │
+├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
+│ Access pattern coverage              │ 100%         │ 90-99%       │ < 90%        │
+│ Hot partition traffic share          │ < 10%        │ 10-30%       │ > 30%        │
+│ Partition size (DynamoDB)            │ < 5GB        │ 5-8GB        │ > 10GB       │
+│ Partition size (Cassandra)           │ < 50MB       │ 50-80MB      │ > 100MB      │
+│ MongoDB document avg size            │ < 100KB      │ 100KB-1MB    │ > 1MB        │
+│ Unbounded arrays in documents        │ 0            │ 0            │ > 0          │
+│ Collections without schema validation│ 0            │ 1-2          │ > 2          │
+│ Denormalized fields without sync     │ 0            │ 1-2          │ > 2          │
+│ PK cardinality (high-volume tables)  │ > 10,000     │ 100-10,000   │ < 100        │
+│ Simple lookup latency p99            │ < 10ms       │ 10-50ms      │ > 50ms       │
+│ GSI count (DynamoDB)                 │ < 10         │ 10-15        │ > 15 (of 20) │
+│ Tables per query (Cassandra)         │ 1            │ 1            │ > 1 (scan)   │
+└──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run NoSQL tasks sequentially: primary data model, then secondary data model, then graph model (if needed).

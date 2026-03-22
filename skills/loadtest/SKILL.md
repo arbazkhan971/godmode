@@ -587,6 +587,52 @@ WHILE current_phase != "complete":
 EXIT when SLOs met OR optimization plateau
 ```
 
+## Keep/Discard Discipline
+```
+After EACH optimization applied between load test runs:
+  1. MEASURE: Re-run the baseline test (minimum 5 runs for statistical confidence).
+  2. COMPARE: Did P95/P99 improve? Did throughput increase? Did error rate decrease?
+  3. DECIDE:
+     - KEEP if: improvement is statistically significant (p < 0.05) AND no new error types
+     - DISCARD if: no significant improvement OR improvement in one metric causes regression in another
+  4. COMMIT kept changes. Revert discarded changes before the next optimization attempt.
+
+Never declare an improvement based on a single run — variance matters.
+```
+
+## Stuck Recovery
+```
+IF >5 consecutive optimizations produce no statistically significant improvement:
+  1. Re-examine the bottleneck analysis — the real bottleneck may have shifted.
+  2. Check the load test itself: is the test machine the bottleneck? (CPU/network saturation on the generator)
+  3. Look for architectural bottlenecks that require systemic changes (read replicas, caching layers, CDN).
+  4. If still stuck → log stop_reason=optimization_plateau, report current metrics and bottleneck analysis.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All SLOs met with 2x headroom above current production traffic
+  - Breaking point identified and documented
+  - User explicitly requests stop
+  - Optimization plateau reached (5 consecutive no-improvement rounds)
+
+DO NOT STOP just because:
+  - One endpoint has a slow P99 (report it but continue testing others)
+  - The load test tool reports warnings (investigate but do not abandon the test)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler load testing approach:
+  - k6 or Artillery before JMeter (lower complexity, better developer experience)
+  - Baseline test before stress test (establish normal before finding limits)
+  - Single-endpoint tests before multi-endpoint scenarios (isolate bottlenecks first)
+  - Think time between requests (realistic) over maximum-throughput hammering
+  - Fewer runs with longer duration over many short runs (steady-state matters more than burst)
+  - Local load testing before distributed load generation (unless target throughput exceeds one machine)
+```
+
 ## Multi-Agent Dispatch
 For comprehensive performance validation across test types:
 ```

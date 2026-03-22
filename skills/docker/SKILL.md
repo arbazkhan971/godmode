@@ -623,6 +623,52 @@ WHILE optimization_queue is not empty:
     report: "Iteration {current_iteration}: {file} — size={N}MB, layers={N}, vulns={N}, build_time={N}s"
 ```
 
+## Keep/Discard Discipline
+```
+After EACH Docker optimization:
+  1. MEASURE: Build the image — check final size, layer count, build time, vulnerability count.
+  2. COMPARE: Is the image smaller/faster/more secure than before?
+  3. DECIDE:
+     - KEEP if: image size decreased AND vulnerability count did not increase AND container starts successfully
+     - DISCARD if: image size increased OR new critical vulnerability OR container fails to start
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
+
+Never keep a size optimization that introduces a critical CVE.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive optimizations fail to reduce image size or fix vulnerabilities:
+  1. Re-examine the base image — switching from slim to alpine (or distroless) may unlock larger savings.
+  2. Use `dive` to inspect layer-by-layer — the bloat may be in an unexpected layer.
+  3. Check for musl vs glibc compatibility if alpine builds fail.
+  4. If still stuck → log stop_reason=stuck, document current image size and known issues.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All images use multi-stage builds with non-root user and health checks
+  - Zero critical CVEs in vulnerability scan
+  - Image size is within target (varies by language: Go <50MB, Node <200MB, Python <200MB)
+  - User explicitly requests stop
+  - Max iterations (10) reached
+
+DO NOT STOP just because:
+  - HIGH (non-critical) CVEs exist in the base image with no fix available
+  - Image size is slightly above target but all other criteria pass
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler Docker configuration:
+  - Alpine base before distroless (unless you genuinely need zero shell access)
+  - Single Dockerfile with multi-stage before multiple Dockerfiles
+  - Docker Compose for local dev before Kubernetes for local dev
+  - COPY before ADD (unless you need tar extraction or URL fetch)
+  - Fewer layers over many small RUN commands (combine related operations)
+```
+
 ## Multi-Agent Dispatch
 
 ```

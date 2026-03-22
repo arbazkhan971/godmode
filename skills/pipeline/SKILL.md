@@ -982,6 +982,52 @@ WHILE stages is not empty AND current_iteration < 12:
 OUTPUT: Complete pipeline with all stages tested and quality verified.
 ```
 
+## Keep/Discard Discipline
+```
+After EACH pipeline stage is implemented:
+  1. MEASURE: Run with test data — do row counts match? Do quality checks pass?
+  2. COMPARE: Is the pipeline more reliable than before? (fewer rejects, better idempotency)
+  3. DECIDE:
+     - KEEP if: output matches expectations AND quality checks pass AND re-run produces same result
+     - DISCARD if: data loss detected OR quality checks fail OR re-run produces different result
+  4. COMMIT kept changes. Revert discarded changes before retrying the stage.
+
+Never advance to the next stage if the current stage silently drops records.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail on the same pipeline stage:
+  1. Check the source data: the issue may be upstream, not in your transformation.
+  2. Simplify: process a 100-row sample instead of the full dataset to isolate the bug.
+  3. Check for schema drift: the source schema may have changed since you designed the pipeline.
+  4. If still stuck → log stop_reason=stuck, document the failing stage, skip to the next stage and return later.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All stages implemented, tested, and passing quality checks
+  - Source-to-target reconciliation matches (row counts, checksums)
+  - Pipeline runs within SLA
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - A small percentage of records go to the dead-letter queue (that is expected; investigate if >5%)
+  - The orchestrator config is not yet wired up (core pipeline logic is the priority)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler pipeline approach:
+  - Python script with cron before Airflow DAG (for single-source, single-target, daily batch)
+  - SQL transforms (dbt) before Python transforms (for analytics pipelines)
+  - Batch before streaming (if SLA allows daily or hourly freshness)
+  - Upsert before SCD Type 2 (unless you genuinely need historical tracking)
+  - Single pipeline script before multi-step orchestrated DAG (for <3 stages)
+  - Built-in database features (materialized views, partitioning) before external compute engines
+```
+
 ## Multi-Agent Dispatch
 
 For complex multi-source pipelines, dispatch parallel agents:

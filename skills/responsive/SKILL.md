@@ -1147,6 +1147,151 @@ IF typography breaks at extreme viewports:
 - **Do NOT use viewport units (vw) for font sizes without clamp().** `font-size: 5vw` creates text that is unreadably small on phones and absurdly large on ultrawide monitors. Always constrain with `clamp(min, preferred, max)`.
 
 
+## Responsive Audit Loop
+
+Autoresearch-grade iterative audit for responsive design quality. Run this loop after initial implementation to ensure comprehensive breakpoint coverage, touch target compliance, and device-consistent UX.
+
+```
+RESPONSIVE AUDIT PROTOCOL:
+
+Phase 1 — Breakpoint Coverage Audit
+  viewports = [320, 375, 414, 480, 640, 768, 1024, 1280, 1440, 1536, 1920, 2560]
+  current_iteration = 0
+  max_iterations = 10
+
+  FOR EACH page/route in the application:
+    FOR EACH viewport in viewports:
+      1. RENDER the page at {viewport}px width
+      2. CHECK for:
+         a. Horizontal overflow (content extends beyond viewport)
+         b. Text truncation or overlap
+         c. Images overflowing container
+         d. Navigation usability (hamburger present? links accessible?)
+         e. Content readability (text size >= 14px, line length <= 80ch)
+         f. Interactive element reachability (buttons, links, inputs visible)
+         g. Layout integrity (columns collapse correctly, no overlapping)
+         h. Whitespace proportionality (padding/margins scale appropriately)
+      3. IF any check fails:
+         RECORD: page | viewport | check | element | description
+      4. Score the page:
+         Pass rate = checks_passed / total_checks
+
+  BREAKPOINT COVERAGE MATRIX:
+  ┌────────────────────────────────────────────────────────────────────────────┐
+  │  Page        │ 320 │ 375 │ 414 │ 768 │ 1024 │ 1280 │ 1440 │ 1920 │ Score │
+  ├──────────────┼─────┼─────┼─────┼─────┼──────┼──────┼──────┼──────┼───────┤
+  │  /home       │  P  │  P  │  P  │  P  │   P  │   P  │   P  │   P  │ 100%  │
+  │  /dashboard  │  F  │  F  │  P  │  P  │   P  │   P  │   P  │   P  │  75%  │
+  │  /settings   │  P  │  P  │  P  │  F  │   P  │   P  │   P  │   P  │  88%  │
+  │  /data-table │  F  │  F  │  F  │  P  │   P  │   P  │   P  │   P  │  63%  │
+  └──────────────┴─────┴─────┴─────┴─────┴──────┴──────┴──────┴──────┴───────┘
+  P = Pass, F = Fail
+
+  TARGET: 100% pass rate across all pages and viewports
+  FIX PRIORITY: failures at 320px first (most constrained), then work up
+
+Phase 2 — Touch Target Sizing Audit
+  target: ALL interactive elements >= 44x44 CSS pixels (WCAG 2.5.5 Level AAA)
+  minimum: ALL interactive elements >= 24x24 CSS pixels (WCAG 2.5.8 Level AA)
+
+  FOR EACH page, scan at mobile viewports (320px, 375px, 414px):
+    1. IDENTIFY all interactive elements:
+       - Buttons, links, inputs, selects, checkboxes, radio buttons
+       - Custom interactive components (toggles, sliders, tabs, accordions)
+       - Close/dismiss buttons (modals, toasts, drawers)
+       - Pagination and navigation controls
+    2. MEASURE each element's tappable area:
+       - Computed size = element dimensions + padding
+       - Exclude margin (not part of tap target)
+       - Account for ::before/::after pseudo-elements that extend hit area
+    3. CLASSIFY:
+       a. >= 44x44px → PASS (AAA)
+       b. >= 24x24px but < 44px → WARN (AA only, upgrade recommended)
+       c. < 24x24px → FAIL (below AA minimum)
+    4. FOR EACH FAIL/WARN:
+       - Record: element | selector | current_size | target_size
+       - Fix: increase padding, min-height/min-width, or use ::after for expanded hit area
+       - Verify: re-measure after fix
+
+  TOUCH TARGET AUDIT TABLE:
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │  Element                  │  Current Size  │  Target   │  Status        │
+  ├───────────────────────────┼────────────────┼───────────┼────────────────┤
+  │  .nav-link                │  36x20px       │  44x44px  │  FAIL → FIXED  │
+  │  .close-btn              │  16x16px       │  44x44px  │  FAIL → FIXED  │
+  │  .pagination-item         │  28x28px       │  44x44px  │  WARN → FIXED  │
+  │  .checkbox-label          │  44x44px       │  44x44px  │  PASS          │
+  │  .inline-link (in text)   │  auto x 20px   │  24x24px  │  WARN          │
+  └───────────────────────────┴────────────────┴───────────┴────────────────┘
+
+  EXPANDED HIT AREA TECHNIQUE:
+  ```css
+  /* Expand tap target without changing visual size */
+  .small-button {
+    position: relative;
+  }
+  .small-button::after {
+    content: '';
+    position: absolute;
+    inset: -12px;  /* Expands hit area by 12px in each direction */
+  }
+  ```
+
+Phase 3 — Responsive Regression Loop
+  Run after every responsive fix to ensure no regressions:
+
+  FOR EACH fix applied:
+    1. RE-TEST the fixed page at ALL viewports (not just the failing one)
+    2. CHECK adjacent pages that share components
+    3. RUN CLS measurement:
+       npx lighthouse <url> --only-categories=performance --output=json
+       Parse: audits['cumulative-layout-shift'].numericValue
+       Target: CLS < 0.1
+    4. CHECK print stylesheet (if applicable):
+       - Print preview at each page
+       - Verify: no clipped content, no background images, URLs shown for links
+    5. RUN visual comparison:
+       - Screenshot at each viewport before and after fix
+       - Diff: no unintended visual changes
+    6. IF regression detected → REVERT fix, try alternative approach
+
+  RESPONSIVE AUDIT CONVERGENCE:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Metric                        │  Before  │  After   │  Target  │
+  ├────────────────────────────────┼──────────┼──────────┼──────────┤
+  │  Breakpoint pass rate          │  <N>%    │  <N>%    │  100%    │
+  │  Touch targets >= 44px         │  <N>%    │  <N>%    │  100%    │
+  │  Touch targets >= 24px (AA)    │  <N>%    │  <N>%    │  100%    │
+  │  Horizontal overflow pages     │  <N>     │  0       │  0       │
+  │  CLS score (worst page)        │  <N>     │  <N>     │  < 0.1   │
+  │  Fluid typography (clamp)      │  <N>%    │  <N>%    │  100%    │
+  │  Responsive images (srcset)    │  <N>%    │  <N>%    │  100%    │
+  │  Print stylesheet quality      │  <N>/10  │  <N>/10  │  >= 8    │
+  └────────────────────────────────┴──────────┴──────────┴──────────┘
+```
+
+### Responsive Audit TSV Logging
+
+Append one row per audit finding to `.godmode/responsive-audit.tsv`:
+
+```
+timestamp	project	page	viewport	check	element	before	after	status
+2024-01-15T10:30:00Z	my-app	/dashboard	320px	overflow	.data-table	overflow-x	scroll-wrapper	fixed
+2024-01-15T10:35:00Z	my-app	/settings	375px	touch_target	.close-btn	16x16px	44x44px	fixed
+2024-01-15T10:40:00Z	my-app	/home	all	cls	.hero-img	0.23	0.04	fixed
+```
+
+### Responsive Audit Hard Rules
+
+```
+1. NEVER mark responsive as "done" without testing at 320px. The smallest viewport reveals the most issues.
+2. NEVER fix a responsive bug at one viewport without checking ALL viewports for regressions.
+3. ALWAYS measure touch targets on actual mobile devices, not just browser DevTools. DevTools can misrepresent tap target geometry.
+4. NEVER use overflow-x: hidden on <body> or <html> to "fix" horizontal overflow. Find and fix the overflowing element.
+5. ALWAYS test between breakpoints (e.g., 500px, 900px), not just at defined breakpoints. Bugs hide in the gaps.
+6. Log every responsive finding in TSV format for tracking regressions across releases.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run responsive tasks sequentially: layout (Grid/Flexbox), then media (images/video), then typography.

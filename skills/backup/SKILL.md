@@ -603,6 +603,49 @@ Columns: timestamp, asset, operation(backup/restore-test/dr-drill), size, durati
 - **RPO violated (backup older than allowed)**: Investigate why the scheduled backup did not run. Check for resource contention, network issues, or credential expiration. Run an immediate backup and fix the root cause.
 - **DR drill reveals gaps**: Document all gaps found. Create remediation tasks with deadlines. Re-run the drill after fixes are applied. Update the runbook with lessons learned.
 
+## Keep/Discard Discipline
+```
+After EACH backup configuration or gap remediation:
+  1. MEASURE: Run the backup job — does it complete? Is the backup file valid (checksum, header)?
+  2. COMPARE: Is coverage better than before? (new asset backed up, verification added, cross-region enabled)
+  3. DECIDE:
+     - KEEP if: backup completes AND file is valid AND restore test passes (if applicable)
+     - DISCARD if: backup fails OR file is corrupt OR restore test fails
+  4. COMMIT kept changes. Revert discarded changes before addressing the next gap.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to fix a backup gap:
+  1. Re-read the backup tool documentation — misconfigured parameters are the #1 cause.
+  2. Simplify: try a manual pg_dump/mongodump before automating with a complex backup tool.
+  3. Check infrastructure: permissions, storage bucket access, network between source and backup target.
+  4. If still stuck → log stop_reason=stuck, mark the gap as UNRESOLVED with details, move to next gap.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All critical data assets (Tier 1) have automated, verified backups
+  - All backup gaps from the initial audit are resolved or documented
+  - User explicitly requests stop
+  - Max iterations (10) reached — report remaining gaps
+
+DO NOT STOP just because:
+  - Tier 3 assets lack backup (address Tier 1 first)
+  - A restore test takes time to run (schedule it, do not skip it)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler backup approach:
+  - Cloud-native automated backups (RDS snapshots, S3 versioning) before custom backup scripts
+  - pg_dump with cron before pgBackRest for small databases
+  - Cross-region replication before custom backup-and-copy scripts
+  - Built-in encryption (AES-256 at rest) before custom encryption wrappers
+  - If rebuild-from-source is faster than restore → document the rebuild procedure instead of backing up
+```
+
 ## Multi-Agent Dispatch
 For comprehensive backup and DR setup:
 ```

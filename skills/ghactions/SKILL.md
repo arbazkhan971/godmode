@@ -1162,6 +1162,49 @@ WHILE current_workflow < len(workflows):
 EXIT when all workflows optimized OR user requests stop
 ```
 
+## Keep/Discard Discipline
+```
+After EACH workflow optimization or security fix:
+  1. MEASURE: Run actionlint and trigger a test run — does the workflow pass?
+  2. COMPARE: Is the workflow faster/more secure than before?
+  3. DECIDE:
+     - KEEP if: workflow passes AND duration improved (or security issue fixed) AND no regressions
+     - DISCARD if: workflow fails OR duration increased >10% OR new security issue introduced
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive workflow changes fail to improve duration or fix an issue:
+  1. Re-read the workflow YAML carefully — indentation and expression syntax errors are common.
+  2. Run locally with `act` to reproduce the issue without burning Actions minutes.
+  3. Simplify: remove the problematic step, verify the rest works, then re-add with corrections.
+  4. If still stuck → log stop_reason=stuck, document the issue for manual resolution.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All workflows pass actionlint and security audit
+  - All workflows run under 10 minutes
+  - User explicitly requests stop
+  - Max iterations (12) reached
+
+DO NOT STOP just because:
+  - One workflow is inherently slow (deploy workflows can be longer)
+  - Self-hosted runners would help (recommend them but do not block on setup)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler workflow design:
+  - Inline steps before composite actions (until reuse across 3+ workflows is needed)
+  - Single workflow file before workflow_call chains (unless workflows share no logic)
+  - GitHub-hosted runners before self-hosted (until cost or performance demands it)
+  - Built-in secrets before external secret managers
+  - Fewer explicit permissions over broad write-all (but always declare them)
+```
+
 ## Multi-Agent Dispatch
 For repositories with multiple workflows:
 ```

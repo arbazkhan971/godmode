@@ -975,6 +975,115 @@ IF parallel validation/seed agents produce conflicting migration numbers:
 - **Do NOT ignore soft delete implications.** If you use `deleted_at` for soft deletes, every query needs a `WHERE deleted_at IS NULL` filter. Consider using a partial index or a view.
 
 
+## Schema Migration Safety Loop
+
+Autonomous loop that validates migrations, applies them, verifies correctness, and tests rollback. Every migration is proven safe before committing.
+
+```
+SCHEMA MIGRATION SAFETY LOOP:
+current_iteration = 0
+max_iterations = 10
+migrations = detect_pending_migrations()  // from migration tool output
+
+FOR each migration in migrations:
+  current_iteration += 1
+  IF current_iteration > max_iterations: BREAK
+
+  // Phase 1: Static Validation
+  static_checks = {
+    has_up_and_down:        migration_has_both_up_and_down_script(),
+    no_table_lock_risk:     no_alter_column_type_or_not_null_on_large_table(),
+    // Large = > 1M rows. These lock the table on older PG versions.
+    concurrent_indexes:     all_create_index_use_concurrently(),
+    no_drop_column:         no_drop_column_without_expand_contract(),
+    // Drop only allowed in CONTRACT phase after EXPAND+MIGRATE
+    fk_has_index:           every_new_foreign_key_column_has_index(),
+    timestamptz_not_ts:     all_new_timestamp_columns_use_timestamptz(),
+    no_float_for_money:     no_float_or_double_for_monetary_fields(),
+    enum_has_constraint:    all_new_enum_fields_have_check_or_db_enum(),
+    default_safe:           add_column_default_is_safe_for_pg_version()
+    // PG 11+ can add column with default without table lock
+  }
+
+  FOR each check in static_checks:
+    IF check.status == FAIL:
+      FIX the migration
+      LOG: "STATIC fix: {check.name} in migration {migration.name}"
+
+  // Phase 2: Apply to Test Database
+  apply_result = run_migration_up(migration, target="test_db")
+  IF apply_result.failed:
+    DIAGNOSE error (constraint violation, syntax, lock timeout)
+    FIX the migration
+    RETRY up to 3 times
+    IF still failing: ABORT this migration, move to next
+
+  // Phase 3: Verify Post-Apply
+  verify_checks = {
+    schema_matches_orm:     introspect_db_matches_orm_schema(),
+    // prisma db pull, sqlacodegen, etc.
+    indexes_exist:          all_expected_indexes_present(),
+    constraints_enforced:   insert_invalid_data_is_rejected(),
+    query_plans_valid:      explain_analyze_key_queries_use_indexes(),
+    no_sequential_scans:    no_seq_scan_on_indexed_columns()
+  }
+
+  FOR each check in verify_checks:
+    IF check.status == FAIL:
+      LOG: "VERIFY fail: {check.name} — fixing"
+      FIX: add missing index, correct constraint, update ORM schema
+
+  // Phase 4: Rollback Test
+  rollback_result = run_migration_down(migration, target="test_db")
+  IF rollback_result.failed:
+    LOG: "ROLLBACK BROKEN: {migration.name} — down migration fails"
+    FIX the down migration
+    RETRY rollback
+
+  // Phase 5: Re-apply to confirm idempotence
+  reapply_result = run_migration_up(migration, target="test_db")
+  IF reapply_result.failed:
+    LOG: "RE-APPLY BROKEN: migration is not idempotent"
+    FIX: add IF NOT EXISTS guards
+
+  // Phase 6: Keep/Discard
+  IF all(static_checks) AND apply_result.ok AND all(verify_checks) AND rollback_result.ok AND reapply_result.ok:
+    KEEP migration
+    LOG: "MIGRATION SAFE: {migration.name} — apply OK, verify OK, rollback OK, re-apply OK"
+  ELSE:
+    DISCARD changes, revert to pre-migration state
+    LOG: "MIGRATION UNSAFE: {migration.name} — {failure_reason}"
+
+  REPORT: "Migration {current_iteration}/{len(migrations)}: {migration.name} — {SAFE|UNSAFE}"
+
+ON COMPLETION:
+  LOG to .godmode/schema-migration-audit.tsv:
+    timestamp\tmigration_name\tstatic_checks\tapply_ok\tverify_ok\trollback_ok\treapply_ok\tverdict
+  REPORT: "Schema migration safety complete: {safe_count}/{total} migrations verified safe"
+```
+
+### Migration Safety Thresholds
+
+```
+MIGRATION SAFETY THRESHOLDS:
+┌──────────────────────────────────────┬──────────────┬────────────────────────────┐
+│ Check                                │ Required     │ Notes                      │
+├──────────────────────────────────────┼──────────────┼────────────────────────────┤
+│ Up migration succeeds                │ YES          │ Must apply cleanly         │
+│ Down migration succeeds              │ YES          │ Must be reversible         │
+│ Up-down-up cycle passes              │ YES          │ Proves idempotence         │
+│ No exclusive table locks             │ YES          │ Unless maintenance window  │
+│ CREATE INDEX CONCURRENTLY            │ YES          │ Never plain CREATE INDEX   │
+│ FK columns have indexes              │ YES          │ Missing = slow JOINs       │
+│ TIMESTAMPTZ not TIMESTAMP            │ YES          │ Time zones always matter   │
+│ No FLOAT for money                   │ YES          │ Use NUMERIC or int cents   │
+│ ORM schema matches DB                │ YES          │ No drift allowed           │
+│ EXPLAIN ANALYZE shows index usage    │ YES          │ For key query patterns     │
+│ Migration runs in < 30s on test data │ RECOMMENDED  │ > 30s = needs batching     │
+│ Migration runs in < 5min on prod     │ RECOMMENDED  │ > 5min = schedule window   │
+└──────────────────────────────────────┴──────────────┴────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run schema tasks sequentially: table definitions, then validation schemas, then seed data.

@@ -1332,6 +1332,52 @@ Columns: iteration, pattern, target_service, dependency, config, test_result, st
 - **Bulkhead pool exhausted**: Increase the pool size or reduce the timeout. Check if one dependency is consuming more than its share. Add monitoring for pool utilization.
 - **Health check causes cascading restart**: Separate liveness (is the process alive?) from readiness (can it serve traffic?). Liveness should never check external dependencies. Only readiness should check dependencies.
 
+## Keep/Discard Discipline
+```
+After EACH resilience pattern implementation:
+  1. MEASURE: Simulate dependency failure — does the application degrade gracefully?
+  2. COMPARE: Is the system more resilient than before? (circuit opens, retries work, fallback activates)
+  3. DECIDE:
+     - KEEP if: failure simulation triggers the expected resilience behavior AND no false positives AND metrics emitted
+     - DISCARD if: failure simulation causes crash OR fallback does not activate OR pattern introduces latency >10%
+  4. COMMIT kept changes. Revert discarded changes before implementing the next pattern.
+
+Never keep a circuit breaker that trips on non-transient errors (400s, 404s).
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to get a resilience pattern working:
+  1. Check the library documentation — circuit breaker configuration varies significantly between libraries.
+  2. Simplify: implement a basic timeout-only protection first, then add circuit breaker on top.
+  3. Verify the failure simulation is realistic — injecting the wrong error type will not trigger the pattern.
+  4. If still stuck → log stop_reason=stuck, protect the dependency with a timeout-only fallback, move to the next dependency.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All critical dependencies have circuit breakers, timeouts, and fallbacks
+  - Resilience verification checklist passes for all categories
+  - Chaos test (all dependencies failing) confirms graceful degradation
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Non-critical dependencies lack circuit breakers (prioritize critical path first)
+  - Rate limiting is not yet configured (circuit breakers and timeouts are higher priority)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler resilience approach:
+  - Timeouts before circuit breakers (timeouts are always needed; circuit breakers add complexity)
+  - Static fallback values before cached fallback (if a default is acceptable)
+  - Single retry with backoff before complex retry policies with multiple strategies
+  - Global rate limiting before per-user rate limiting (unless abuse is user-specific)
+  - HTTP client library built-in retries before a separate retry library
+  - Fewer resilience patterns correctly implemented over many half-implemented patterns
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run resilience tasks sequentially: patterns (circuit breakers, retries), then fallbacks, then observability.

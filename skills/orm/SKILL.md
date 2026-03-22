@@ -1118,6 +1118,114 @@ ERROR RECOVERY — ORM:
    → Re-introspect the database schema (prisma db pull, sqlacodegen). Update model to match actual column types. Re-run migration diff.
 ```
 
+## Query Optimization Loop
+
+Autonomous loop that detects N+1 queries, suggests indexes, analyzes query plans, and optimizes ORM usage. Runs until query count and latency targets are met or max iterations reached.
+
+```
+QUERY OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 15
+endpoints = detect_all_endpoints()  // API routes, GraphQL resolvers, etc.
+baseline = {}
+
+// Phase 0: Baseline Measurement
+FOR each endpoint in endpoints:
+  enable_query_logging()
+  result = exercise_endpoint(endpoint, with_realistic_data=true)
+  baseline[endpoint] = {
+    query_count: count_queries(),
+    latency_ms: result.latency_ms,
+    slow_queries: queries_over(threshold=100ms)
+  }
+  LOG: "BASELINE: {endpoint} — {baseline[endpoint].query_count} queries, {baseline[endpoint].latency_ms}ms"
+
+// Sort by worst offenders first
+endpoints = sort_by(endpoints, key=lambda e: baseline[e].query_count, descending=true)
+
+WHILE current_iteration < max_iterations AND has_failing_endpoints(baseline):
+  current_iteration += 1
+  endpoint = next_worst_endpoint()
+
+  // Phase 1: N+1 Detection
+  queries = capture_queries_for(endpoint)
+  n1_patterns = detect_n_plus_1(queries)
+  // Pattern: same query template repeated N times with different parameter
+  FOR each pattern in n1_patterns:
+    relation = identify_relation(pattern)
+    FIX: add eager loading (include, select_related, Preload, joinedload)
+    LOG: "N+1 fixed: {endpoint} — {relation} — {pattern.count} queries eliminated"
+
+  // Phase 2: Missing Index Detection
+  FOR each query in queries:
+    plan = explain_analyze(query)
+    IF plan.contains("Seq Scan") AND plan.table_rows > 10000:
+      suggested_index = derive_index_from_query(query)
+      // Composite index matching WHERE + ORDER BY columns
+      CREATE INDEX CONCURRENTLY suggested_index
+      LOG: "INDEX added: {suggested_index} — eliminates Seq Scan on {plan.table}"
+
+  // Phase 3: Query Plan Analysis
+  FOR each slow_query in queries_over(threshold=50ms):
+    plan = explain_analyze(slow_query, buffers=true)
+    issues = analyze_plan(plan)
+    // Check for: nested loop with high row count, hash join on large table,
+    // sort without index, bitmap heap scan with high recheck rate
+    FOR each issue in issues:
+      IF issue.type == "MISSING_INDEX":
+        CREATE INDEX CONCURRENTLY
+      IF issue.type == "UNNECESSARY_COLUMNS":
+        SELECT only needed columns (not SELECT *)
+      IF issue.type == "LARGE_SORT_NO_INDEX":
+        ADD index on sort column
+      IF issue.type == "ORM_GENERATES_BAD_SQL":
+        REWRITE as raw SQL with parameterized query
+      LOG: "PLAN fix: {slow_query.template} — {issue.type} resolved"
+
+  // Phase 4: Verify Improvement
+  new_result = exercise_endpoint(endpoint, with_realistic_data=true)
+  improvement = {
+    query_reduction: baseline[endpoint].query_count - new_result.query_count,
+    latency_reduction: baseline[endpoint].latency_ms - new_result.latency_ms,
+    pct_improvement: ((baseline[endpoint].latency_ms - new_result.latency_ms) / baseline[endpoint].latency_ms) * 100
+  }
+
+  // Phase 5: Keep/Discard
+  IF new_result.query_count <= baseline[endpoint].query_count AND new_result.latency_ms <= baseline[endpoint].latency_ms:
+    KEEP changes
+    baseline[endpoint] = new_result  // update baseline
+    LOG: "KEEP: {endpoint} — queries {baseline[endpoint].query_count}→{new_result.query_count}, latency {baseline[endpoint].latency_ms}ms→{new_result.latency_ms}ms"
+  ELSE:
+    DISCARD changes — revert to previous state
+    LOG: "DISCARD: {endpoint} — regression detected, reverted"
+
+  REPORT: "Iteration {current_iteration}: {endpoint} — queries {improvement.query_reduction} fewer, latency {improvement.pct_improvement}% better"
+
+ON COMPLETION:
+  LOG to .godmode/orm-optimization.tsv:
+    timestamp\tendpoint\tqueries_before\tqueries_after\tlatency_before_ms\tlatency_after_ms\tn1_fixed\tindexes_added\tverdict
+  REPORT: "Query optimization complete: {current_iteration} iterations, {total_n1_fixed} N+1 fixed, {total_indexes} indexes added, avg latency reduction {avg_pct}%"
+```
+
+### Query Optimization Thresholds
+
+```
+QUERY OPTIMIZATION TARGETS:
+┌──────────────────────────────────────┬──────────────┬────────────────────────────┐
+│ Metric                               │ Target       │ Action if exceeded         │
+├──────────────────────────────────────┼──────────────┼────────────────────────────┤
+│ Queries per list endpoint            │ <= 5         │ Fix N+1 with eager loading │
+│ Queries per detail endpoint          │ <= 3         │ Fix N+1 or combine queries │
+│ Endpoint latency p50                 │ < 50ms       │ Add indexes, optimize      │
+│ Endpoint latency p99                 │ < 200ms      │ Raw SQL for slow queries   │
+│ Sequential scans on > 10K rows      │ 0            │ Add index                  │
+│ SELECT * in production paths         │ 0            │ Select specific columns    │
+│ Queries inside loops                 │ 0            │ Batch with DataLoader/eager │
+│ Connection pool wait time p99        │ < 100ms      │ Tune pool size             │
+│ Unused indexes (0 scans, > 10MB)     │ 0            │ Drop unused indexes        │
+└──────────────────────────────────────┴──────────────┴────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run ORM tasks sequentially: N+1 fixes, then pool config, then transaction patterns.

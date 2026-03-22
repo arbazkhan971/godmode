@@ -445,7 +445,7 @@ AUTO-DETECT SEQUENCE:
 8. Scan git history: check for accidentally committed secrets (use gitleaks or trufflehog)
 ```
 
-## Iterative Secret Audit Loop
+## Iterative Secret Audit Loop: Detect → Classify → Rotate → Verify
 
 ```
 current_iteration = 0
@@ -454,18 +454,86 @@ audit_tasks = [inventory, scan_source, scan_history, check_rotation, check_acces
 
 WHILE audit_tasks is not empty AND current_iteration < max_iterations:
     task = audit_tasks.pop(0)
-    1. IF inventory: catalog all secrets (DB creds, API keys, tokens, certs) with locations
-    2. IF scan_source: run gitleaks/trufflehog on current codebase for hardcoded secrets
-    3. IF scan_history: run gitleaks on full git history for previously committed secrets
-    4. IF check_rotation: verify rotation policy and last rotation date for each secret
-    5. IF check_access: audit who/what has access to each secret (least privilege check)
-    6. IF remediate: move hardcoded secrets to manager, rotate any exposed secrets
-    7. IF automate: install pre-commit hooks, configure CI secret scanning
-    8. IF verify: run full scan again to confirm zero hardcoded secrets
-    9. IF issues found → flag severity (CRITICAL: exposed, HIGH: hardcoded, MEDIUM: no rotation)
-    10. current_iteration += 1
+    current_iteration += 1
+
+    PHASE 1 — DETECT:
+      IF inventory: catalog all secrets (DB creds, API keys, tokens, certs) with locations
+      IF scan_source: run gitleaks/trufflehog on current codebase for hardcoded secrets
+      IF scan_history: run gitleaks on full git history for previously committed secrets
+
+    PHASE 2 — CLASSIFY:
+      FOR each detected secret:
+        Classify: LEAKED (in source/history) | HARDCODED (in config) | EXPOSED (weak protection) | MANAGED (vault/runtime)
+        Assign severity: CRITICAL (leaked prod cred) | HIGH (hardcoded) | MEDIUM (no rotation) | LOW (minor policy gap)
+        Tag: secret_type (api_key | db_password | token | cert | encryption_key)
+
+    PHASE 3 — ROTATE:
+      IF check_rotation: verify rotation policy and last rotation date for each secret
+      IF remediate: move hardcoded secrets to manager, rotate any exposed secrets
+      FOR each CRITICAL/HIGH finding:
+        attempt = 0, max_retries = 3
+        WHILE not rotated AND attempt < max_retries:
+          attempt += 1
+          Revoke old credential → generate new → store in manager → verify app works
+          IF rotation fails: log failure, retry with backoff
+        IF attempt == max_retries: ESCALATE to manual rotation
+
+    PHASE 4 — VERIFY:
+      IF automate: install pre-commit hooks, configure CI secret scanning
+      IF verify: re-run full scan to confirm zero hardcoded secrets
+      FOR each remediated secret:
+        Confirm old credential is revoked (attempt auth with it)
+        Confirm new credential works (attempt auth with it)
+        IF verification fails: re-queue for remediation (max 2 re-queues)
+
+    REPORT: "Iteration {current_iteration}/{max_iterations}: {task} — {N} secrets processed, {M} remediated"
+
+STOP CONDITIONS:
+  - All 8 audit tasks completed
+  - OR max_iterations (8) reached
+  - OR zero CRITICAL/HIGH findings remain AND verification passes
 
 POST-LOOP: Generate secrets audit report with findings, remediations, and ongoing monitoring plan
+```
+
+## False Positive Handling
+
+```
+FOR each scanner finding:
+  1. AUTO-CLASSIFY as likely false positive if:
+     - Found in test/fixtures/, test/mocks/, or __tests__/ directories
+     - Matches known placeholder patterns: "placeholder", "example", "changeme", "xxx", "your-key-here"
+     - Is a public key (not a secret — only private keys are secrets)
+     - Is a hash/checksum (SHA-256 of a file, not a credential)
+     - Is in .env.example with obviously dummy values
+
+  2. VERIFICATION for suspected false positives:
+     - Attempt to authenticate with the detected value against the suspected service
+     - IF authentication succeeds: TRUE POSITIVE — treat as leaked secret
+     - IF authentication fails: mark as FALSE POSITIVE with verification evidence
+
+  3. DISPOSITION:
+     - TRUE POSITIVE: KEEP → proceed to Classify → Rotate → Verify
+     - FALSE POSITIVE: DISCARD → add pattern to scanner allowlist (.gitleaks.toml)
+     - UNCERTAIN: KEEP as LOW severity → flag for manual review
+
+  4. LOG to .godmode/secrets-false-positives.tsv:
+     timestamp	scanner	file_line	detected_pattern	disposition	verification_method	allowlist_added
+```
+
+## Keep/Discard Discipline
+
+```
+FOR each detected secret:
+  KEEP if:
+    - Verified as real credential (auth test succeeds or matches known provider format)
+    - Found in production code, config, or git history (not test fixtures)
+    - Has not been previously cataloged and remediated
+  DISCARD if:
+    - Confirmed false positive (auth test fails, known placeholder, public key)
+    - Already remediated in a previous iteration (check .godmode/secrets-audit.tsv)
+    - In allowlisted path with documented justification
+  EVERY discard recorded with reason — no silent drops
 ```
 
 ## Multi-Agent Dispatch

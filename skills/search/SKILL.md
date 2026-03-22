@@ -904,6 +904,150 @@ ERROR RECOVERY — SEARCH:
    → Check shard allocation (unassigned shards). Verify disk space on nodes. Check replica count vs available nodes. For red: identify missing primary shards and restore from snapshot.
 ```
 
+## Search Relevance Optimization Loop
+
+Autonomous loop that tunes queries, adjusts analyzer config, and measures recall/precision. Runs until relevance targets are met or max iterations reached. Never guesses -- measures everything.
+
+```
+SEARCH RELEVANCE OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 20
+relevance_test_suite = load_relevance_tests()
+// Format: [{query: "wireless keyboard", expected_top_5: ["prod-123", "prod-456", ...]}, ...]
+// Minimum 20 test queries covering: common, long-tail, misspellings, zero-result candidates
+
+// Phase 0: Baseline Measurement
+baseline = run_relevance_suite(relevance_test_suite)
+// Metrics: NDCG@10, Precision@10, Recall@10, MRR, zero-result rate
+LOG: "BASELINE: NDCG@10={baseline.ndcg}, P@10={baseline.precision}, Recall@10={baseline.recall}, zero_result={baseline.zero_result_pct}%"
+
+WHILE current_iteration < max_iterations AND NOT targets_met(baseline):
+  current_iteration += 1
+
+  // Phase 1: Zero-Result Query Analysis
+  zero_result_queries = get_zero_result_queries(last_7_days, min_volume=10)
+  // Sort by frequency descending
+  FOR each query in zero_result_queries[:10]:  // top 10 by volume
+    root_cause = diagnose_zero_result(query)
+    IF root_cause == "MISSING_SYNONYM":
+      ADD synonym pair to synonyms.txt
+      LOG: "SYNONYM added: {query.term} → {synonym}"
+    IF root_cause == "MISSING_DATA":
+      FLAG for data team: "Product data missing for query '{query.term}'"
+    IF root_cause == "ANALYZER_TOO_STRICT":
+      ADD fuzziness or edge_ngram for this field
+      LOG: "ANALYZER relaxed: {field} — added fuzziness AUTO"
+    IF root_cause == "WRONG_FIELD_MAPPING":
+      FIX field mapping (keyword → text, or add multi-field)
+      LOG: "MAPPING fixed: {field} — changed to text with keyword sub-field"
+
+  // Phase 2: Field Boost Tuning
+  // Test different boost weights for title, description, tags, etc.
+  boost_configs = [
+    {title: 3, tags: 2, description: 1},         // current
+    {title: 5, tags: 2, description: 1},         // more title weight
+    {title: 3, tags: 3, description: 1},         // more tags weight
+    {title: 4, tags: 2, description: 1, sku: 5}  // exact match on SKU
+  ]
+
+  best_config = baseline.boost_config
+  best_ndcg = baseline.ndcg
+
+  FOR each config in boost_configs:
+    result = run_relevance_suite(relevance_test_suite, boost=config)
+    IF result.ndcg > best_ndcg:
+      best_ndcg = result.ndcg
+      best_config = config
+      LOG: "BOOST improved: config={config} → NDCG={result.ndcg}"
+
+  APPLY best_config
+
+  // Phase 3: Analyzer Tuning
+  analyzer_checks = {
+    stemming_correct:     stemmer_matches_language(),
+    stopwords_appropriate: stopword_list_not_removing_meaningful_terms(),
+    // e.g., "the" is a stopword, but "The North Face" should not lose "The"
+    synonym_quality:       synonyms_improve_recall_without_hurting_precision(),
+    ngram_config:          edge_ngram_min=2_max=10_for_autocomplete(),
+    char_filters:          html_strip_and_punctuation_handling()
+  }
+
+  FOR each check in analyzer_checks:
+    IF check.status == FAIL:
+      FIX analyzer configuration
+      LOG: "ANALYZER fixed: {check.name}"
+
+  // Phase 4: Function Score Tuning (ranking signals beyond text match)
+  IF engine_supports_function_score:
+    ranking_signals = {
+      recency:    decay_function(field="updated_at", scale="30d", decay=0.5),
+      popularity: log1p(field="view_count", factor=0.1),
+      rating:     field_value_factor(field="avg_rating", modifier="log1p"),
+      freshness:  script_score("doc['created_at'] > now-7d ? 1.2 : 1.0")
+    }
+    // Test each signal independently
+    FOR each signal in ranking_signals:
+      result_with = run_relevance_suite(relevance_test_suite, add_signal=signal)
+      result_without = run_relevance_suite(relevance_test_suite, without_signal=signal)
+      IF result_with.ndcg > result_without.ndcg:
+        KEEP signal
+        LOG: "SIGNAL kept: {signal.name} — NDCG {result_without.ndcg} → {result_with.ndcg}"
+      ELSE:
+        DISCARD signal
+        LOG: "SIGNAL discarded: {signal.name} — no improvement"
+
+  // Phase 5: Measure & Keep/Discard
+  new_metrics = run_relevance_suite(relevance_test_suite)
+  improvement = {
+    ndcg_delta: new_metrics.ndcg - baseline.ndcg,
+    precision_delta: new_metrics.precision - baseline.precision,
+    zero_result_delta: baseline.zero_result_pct - new_metrics.zero_result_pct
+  }
+
+  IF new_metrics.ndcg >= baseline.ndcg AND new_metrics.precision >= baseline.precision:
+    KEEP all changes
+    baseline = new_metrics
+    LOG: "KEEP: NDCG {baseline.ndcg} → {new_metrics.ndcg}, zero_result {baseline.zero_result_pct}% → {new_metrics.zero_result_pct}%"
+  ELSE:
+    DISCARD changes that caused regression
+    LOG: "DISCARD: regression on NDCG or precision, reverted"
+
+  REPORT: "Iteration {current_iteration}: NDCG@10={new_metrics.ndcg}, P@10={new_metrics.precision}, zero_result={new_metrics.zero_result_pct}%, synonyms={synonym_count}"
+
+ON COMPLETION:
+  LOG to .godmode/search-relevance-audit.tsv:
+    timestamp\tindex\titerations\tndcg_before\tndcg_after\tprecision_before\tprecision_after\tzero_result_before\tzero_result_after\tsynonyms_added\tverdict
+  REPORT: "Search relevance optimization complete: {current_iteration} iterations, NDCG: {initial} → {final}, zero-result: {initial_zr}% → {final_zr}%"
+```
+
+### Relevance Metrics Reference
+
+```
+SEARCH RELEVANCE TARGETS:
+┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
+│ Metric                               │ GOOD         │ ACCEPTABLE   │ POOR         │
+├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
+│ NDCG@10 (ranking quality)            │ > 0.85       │ 0.70-0.85    │ < 0.70       │
+│ Precision@10 (relevance of top 10)   │ > 0.80       │ 0.60-0.80    │ < 0.60       │
+│ Recall@100 (coverage)                │ > 0.95       │ 0.80-0.95    │ < 0.80       │
+│ MRR (first relevant result rank)     │ > 0.70       │ 0.50-0.70    │ < 0.50       │
+│ Zero-result rate                     │ < 3%         │ 3-8%         │ > 8%         │
+│ Click-through rate                   │ > 30%        │ 20-30%       │ < 20%        │
+│ Mean click position                  │ < 3          │ 3-5          │ > 5          │
+│ Search exit rate                     │ < 15%        │ 15-25%       │ > 25%        │
+│ Autocomplete accept rate             │ > 40%        │ 25-40%       │ < 25%        │
+│ Search latency P95                   │ < 100ms      │ 100-300ms    │ > 300ms      │
+│ Autocomplete latency P95             │ < 50ms       │ 50-100ms     │ > 100ms      │
+│ Relevance test suite size            │ > 50 queries │ 20-50        │ < 20         │
+└──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
+
+IMPROVEMENT THRESHOLDS:
+- Stop iterating if NDCG improvement < 0.01 per iteration (diminishing returns)
+- Never deploy a change that reduces NDCG@10 (hard gate)
+- Synonym additions: test that they improve recall without hurting precision
+- Boost changes: test with full relevance suite, not individual queries
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run search tasks sequentially: engine setup (index/mappings), then search API, then relevance tuning.

@@ -933,6 +933,116 @@ ERROR RECOVERY — GRPC:
    → Re-run buf generate or protoc with current proto files. Delete old generated files first. Verify import paths match proto package.
 ```
 
+## Proto Audit Loop
+
+Autonomous audit loop that validates proto files, detects backward compatibility breaks, and enforces proto best practices. Runs until all checks pass or max iterations reached.
+
+```
+PROTO AUDIT LOOP:
+current_iteration = 0
+max_iterations = 15
+proto_files = find_all_proto_files()  // **/*.proto
+buf_config = detect_buf_config()      // buf.yaml
+
+WHILE current_iteration < max_iterations AND NOT all_checks_pass:
+  current_iteration += 1
+
+  // Phase 1: Proto Lint
+  lint_errors = buf_lint(proto_files)
+  IF lint_errors > 0:
+    FOR each error:
+      FIX the violation:
+        - ENUM_ZERO_VALUE_SUFFIX: add _UNSPECIFIED = 0
+        - FIELD_LOWER_SNAKE_CASE: rename to snake_case
+        - SERVICE_SUFFIX: add "Service" suffix
+        - RPC_REQUEST_RESPONSE_UNIQUE: create per-RPC messages
+        - PACKAGE_DEFINED: add package declaration
+      LOG: "LINT fixed: {error.rule} in {error.file}:{error.line}"
+    RE-LINT — repeat until 0 errors
+
+  // Phase 2: Backward Compatibility Check
+  breaking_changes = buf_breaking(proto_files, against="HEAD~1")
+  // Detected: field number reuse, field type change, enum removal,
+  // required field added, service/method removal, package rename
+  FOR each change in breaking_changes:
+    severity = classify(change)
+    IF severity == "WIRE_INCOMPATIBLE":
+      // Field number reused, type changed — data corruption risk
+      REVERT immediately
+      ADD reserved number/name for removed fields
+      LOG: "WIRE BREAK reverted: {change.description}"
+    IF severity == "SOURCE_INCOMPATIBLE":
+      // Method removed, message renamed — client build break
+      REVERT — add new method, mark old as deprecated
+      LOG: "SOURCE BREAK reverted: {change.description}"
+
+  // Phase 3: Proto Quality Checks
+  quality_checks = {
+    enum_zero_unspecified: every_enum_has_unspecified_zero(),
+    field_numbers_sequential: no_gaps_in_field_numbers(),
+    reserved_for_removed: all_removed_fields_have_reserved(),
+    no_shared_messages: each_rpc_has_own_request_response(),
+    package_versioned: package_name_includes_version(),  // e.g., company.service.v1
+    imports_well_known: uses_google_protobuf_types(),     // Timestamp, FieldMask, etc.
+    validation_rules: request_fields_have_validate_rules(),
+    deadlines_documented: all_rpcs_document_timeout_expectation(),
+    health_check_present: grpc_health_v1_implemented(),
+    field_docs_present: all_fields_have_comments()
+  }
+
+  FOR each check in quality_checks:
+    IF check.status == FAIL:
+      FIX the issue
+      LOG: "QUALITY fixed: {check.name}"
+
+  // Phase 4: Keep/Discard
+  relint = buf_lint(proto_files)
+  rebreak = buf_breaking(proto_files, against="HEAD~1")
+
+  IF relint.errors == 0 AND rebreak.breaking == 0 AND all(quality_checks):
+    KEEP all changes
+    COMMIT: "grpc: proto audit pass #{current_iteration} — {fixes} fixes, buf lint PASS, buf breaking PASS"
+    all_checks_pass = true
+  ELSE:
+    CONTINUE
+
+  REPORT: "Iteration {current_iteration}: lint_errors={relint.errors}, breaking={rebreak.breaking}, quality={sum(quality_checks.pass)}/{len(quality_checks)}"
+
+ON COMPLETION:
+  LOG to .godmode/grpc-audit.tsv:
+    timestamp\tproto_count\titerations\tlint_errors_fixed\tbreaking_caught\tquality_score\tverdict
+  REPORT: "Proto audit complete: {current_iteration} iterations, {proto_count} files, buf lint PASS, 0 breaking"
+```
+
+### Backward Compatibility Reference
+
+```
+BACKWARD COMPATIBILITY RULES (enforced by audit loop):
+┌────────────────────────────────────────┬───────────────┬─────────────────────────────┐
+│ Change                                 │ Compatibility │ Auto-fix                    │
+├────────────────────────────────────────┼───────────────┼─────────────────────────────┤
+│ Add new field (new number)             │ SAFE          │ Keep                        │
+│ Add new RPC method                     │ SAFE          │ Keep                        │
+│ Add new enum value (non-zero)          │ SAFE          │ Keep                        │
+│ Add new message type                   │ SAFE          │ Keep                        │
+│ Remove field (without reserved)        │ WIRE BREAK    │ Revert, add reserved        │
+│ Reuse field number                     │ WIRE BREAK    │ Revert, use next number     │
+│ Change field type                      │ WIRE BREAK    │ Revert, add new field       │
+│ Remove enum value                      │ WIRE BREAK    │ Revert, deprecate           │
+│ Rename package                         │ SOURCE BREAK  │ Revert                      │
+│ Remove RPC method                      │ SOURCE BREAK  │ Revert, deprecate           │
+│ Change RPC request/response type       │ SOURCE BREAK  │ Revert, add new RPC         │
+│ Add required field to existing message │ WIRE BREAK    │ Make optional or add default │
+└────────────────────────────────────────┴───────────────┴─────────────────────────────┘
+
+THRESHOLDS:
+- Wire-incompatible changes: 0 allowed (hard gate, blocks merge)
+- Source-incompatible changes: 0 allowed without deprecation plan
+- buf lint violations: 0 allowed
+- Reserved declarations: required for every removed field/number
+- Health check (grpc.health.v1): required on every service
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run gRPC tasks sequentially: proto definitions, then server implementation, then client stubs.

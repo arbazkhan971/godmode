@@ -792,6 +792,52 @@ Columns: iteration, task, resource_type, count, security_issues, tls_status, sta
 - **Security group blocks legitimate traffic**: Check inbound rules for the affected port. Verify the source CIDR or security group reference is correct. Use VPC Flow Logs to identify dropped packets.
 - **VPC peering or transit gateway connectivity fails**: Verify route tables in both VPCs include routes to the peer. Check security groups allow traffic from the peer CIDR. Verify DNS resolution works across the peering connection.
 
+## Keep/Discard Discipline
+```
+After EACH network configuration change:
+  1. MEASURE: Validate the component (dig for DNS, openssl for TLS, curl for LB, traceroute for routing).
+  2. COMPARE: Is the networking state better than before? (TLS valid, DNS resolving, LB healthy)
+  3. DECIDE:
+     - KEEP if: validation passes AND connectivity confirmed AND no security regressions
+     - DISCARD if: validation fails OR connectivity broken OR new security issue introduced
+  4. COMMIT kept changes. Revert discarded changes before configuring the next component.
+
+Never proceed to the next networking component if the current one is broken — components depend on each other.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to correctly configure a network component:
+  1. Check DNS propagation: use multiple resolvers (8.8.8.8, 1.1.1.1, authoritative NS) to rule out caching.
+  2. Check certificate chain: `openssl s_client -showcerts` to verify the full chain is served.
+  3. Simplify: test connectivity at each layer independently (DNS, then TLS, then LB, then app).
+  4. If still stuck → log stop_reason=stuck, document the failing component with diagnostic output.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All networking components configured and validated (VPC, SG, LB, SSL, CDN, DNS)
+  - End-to-end test passes: curl -sI https://{domain} returns 200 with valid cert and HSTS header
+  - User explicitly requests stop
+  - A component requires provider-level support (e.g., domain transfer pending)
+
+DO NOT STOP just because:
+  - CDN is not yet configured (LB + SSL is functional without CDN)
+  - WAF rules are not yet tuned (basic networking must work first)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler networking approach:
+  - ACM/Let's Encrypt auto-renewing certs before manual certificate management
+  - ALB before NLB (unless you need TCP/UDP or extreme performance)
+  - Cloudflare DNS before self-managed DNS (for most teams)
+  - Security group references (sg-xxx) before CIDR blocks (more maintainable)
+  - Two-AZ deployment before three-AZ (unless compliance or SLA requires three)
+  - Fewer security group rules with broader service groups before many narrow rules
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.

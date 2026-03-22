@@ -25,6 +25,27 @@ WHILE tasks remain:
 ## Output Format
 Print: `Build: {completed}/{total} tasks in {rounds} rounds. Merged: {merged}. Reverted: {reverted}. Conflicts: {conflicts}.`
 
+## Deterministic Merge Order
+Agents complete in parallel but MERGE in dispatch order (not completion order).
+This ensures deterministic state for test runs.
+
+## Conflict Resolution Protocol
+Merge conflict → discard agent's work immediately (don't resolve).
+Re-queue task in NEXT round with note: "Conflict with {agent}:{file}. Narrow scope."
+Log: round, task_id, agent_id, status=conflict, conflicted_file.
+
+## Revert Budget
+After merge+test failure: max 2 re-attempts.
+- Attempt 1: re-queue to fix specific test failures.
+- Attempt 2: re-queue with broader scope.
+- Attempt 3+: discard task, log "reverted_3x", move to backlog.
+
+## Scope Enforcement
+Agent discovers it needs file X not in task.files:
+→ STOP, report NEEDS_CONTEXT to orchestrator.
+→ Orchestrator amends scope or discards task.
+→ Agent does NOT touch files outside scope.
+
 ## Rules
 1. One task per agent. Commit message: `feat({module}): {task.title}`. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = discard.

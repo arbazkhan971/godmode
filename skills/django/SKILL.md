@@ -1049,6 +1049,241 @@ IF serializer/validation errors:
 - **Do NOT skip admin customization.** Default admin with just `admin.site.register(Model)` is useless at scale. Invest in list_display, search, filters, and actions — your operations team will thank you.
 
 
+## Django Optimization Loop
+
+When optimizing an existing Django application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Query Count & N+1 Audit
+
+```
+QUERY COUNT AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Instrument query logging                                │
+│                                                                   │
+│  # settings/development.py                                       │
+│  LOGGING = {                                                     │
+│      'loggers': {                                                │
+│          'django.db.backends': {                                 │
+│              'level': 'DEBUG',                                   │
+│              'handlers': ['console'],                            │
+│          },                                                      │
+│      },                                                          │
+│  }                                                               │
+│                                                                   │
+│  # Or use django-debug-toolbar (preferred):                      │
+│  INSTALLED_APPS += ['debug_toolbar']                             │
+│  MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware') │
+│                                                                   │
+│  Step 2: Baseline query count per endpoint                       │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Endpoint                │  Queries │  Time(ms)│  N+1?      ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  GET /api/orders/        │  <N>     │  <N>     │  YES/NO    ││
+│  │  GET /api/orders/:id/    │  <N>     │  <N>     │  YES/NO    ││
+│  │  GET /api/users/         │  <N>     │  <N>     │  YES/NO    ││
+│  │  GET /admin/orders/      │  <N>     │  <N>     │  YES/NO    ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 3: Fix N+1 patterns                                        │
+│  - Add select_related() for ForeignKey / OneToOneField traversals│
+│  - Add prefetch_related() for ManyToMany / reverse FK traversals │
+│  - Use Prefetch() objects for filtered or annotated prefetches   │
+│  - Add only()/defer() to exclude unused heavy fields (TextField) │
+│                                                                   │
+│  Step 4: Verify reduction                                        │
+│  - Re-run baseline: every endpoint should show reduced queries   │
+│  - Target: list endpoints <= 3-5 queries regardless of page size │
+│  - Target: detail endpoints <= 2-3 queries regardless of depth   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+```python
+# CONCRETE N+1 FIX PATTERNS:
+
+# BAD — N+1 on ForeignKey:
+orders = Order.objects.all()
+for order in orders:
+    print(order.customer.name)  # 1 query per order
+
+# GOOD — select_related (single JOIN):
+orders = Order.objects.select_related('customer').all()
+
+# BAD — N+1 on reverse FK / ManyToMany:
+orders = Order.objects.all()
+for order in orders:
+    print(order.items.count())  # 1 query per order
+
+# GOOD — prefetch_related (2 queries total):
+orders = Order.objects.prefetch_related('items').all()
+
+# GOOD — annotate count at DB level (1 query):
+orders = Order.objects.annotate(items_count=Count('items'))
+
+# BAD — Prefetch with filtering triggers extra queries:
+# GOOD — Use Prefetch object for filtered prefetches:
+from django.db.models import Prefetch
+orders = Order.objects.prefetch_related(
+    Prefetch('items', queryset=OrderItem.objects.filter(active=True))
+)
+
+# DJANGO-AUTO-PREFETCH:
+# pip install django-auto-prefetch
+# Inherit from auto_prefetch.Model instead of models.Model
+# Automatically adds select_related/prefetch_related where needed
+```
+
+### Pass 2: Query Efficiency Audit
+
+```
+QUERY EFFICIENCY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check 1: Missing database indexes                               │
+│  Run: python manage.py inspectdb | grep -i "index"              │
+│  - Every ForeignKey field must have db_index=True (default)      │
+│  - Every field in filter() / order_by() needs an index           │
+│  - Composite indexes for multi-column WHERE clauses              │
+│  - Partial indexes for common query patterns:                    │
+│    class Meta:                                                    │
+│        indexes = [                                                │
+│            Index(fields=['status', 'created_at'],                │
+│                  name='active_orders_idx',                        │
+│                  condition=Q(status='active')),                   │
+│        ]                                                          │
+│                                                                   │
+│  Check 2: Slow query identification                              │
+│  - Enable pg_stat_statements on PostgreSQL                       │
+│  - Identify queries > 100ms                                      │
+│  - Run EXPLAIN ANALYZE on slow queries:                          │
+│    from django.db import connection                               │
+│    qs = Order.objects.filter(status='active').order_by('-created_at') │
+│    print(qs.query)                                                │
+│    # Then run EXPLAIN ANALYZE in psql                             │
+│                                                                   │
+│  Check 3: Unnecessary data loading                               │
+│  - Use .values() or .values_list() for aggregation endpoints     │
+│  - Use .only('field1', 'field2') for known field subsets         │
+│  - Use .defer('large_text_field') to skip heavy columns          │
+│  - Use .count() instead of len(queryset) for counting            │
+│  - Use .exists() instead of .count() > 0 for existence checks   │
+│                                                                   │
+│  Check 4: Bulk operations audit                                  │
+│  - Replace loops of .save() with bulk_create() / bulk_update()   │
+│  - Use .update() for mass field updates instead of loop + save   │
+│  - Use .delete() queryset method instead of loop + delete        │
+│  - Use iterator() or chunk processing for large result sets:     │
+│    Order.objects.filter(old=True).iterator(chunk_size=2000)      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Middleware Audit
+
+```
+MIDDLEWARE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: List current middleware stack                            │
+│  - Print MIDDLEWARE from settings                                │
+│  - Time each middleware's process_request + process_response     │
+│                                                                   │
+│  Step 2: Middleware overhead measurement                         │
+│  import time                                                      │
+│  class TimingMiddleware:                                          │
+│      def __init__(self, get_response):                           │
+│          self.get_response = get_response                        │
+│      def __call__(self, request):                                │
+│          start = time.perf_counter()                             │
+│          response = self.get_response(request)                   │
+│          duration = (time.perf_counter() - start) * 1000         │
+│          response['X-Request-Duration-ms'] = f'{duration:.1f}'   │
+│          return response                                          │
+│                                                                   │
+│  Step 3: Audit each middleware                                   │
+│  ┌──────────────────────────────┬────────┬───────────────────┐  │
+│  │  Middleware                   │ ms/req │ Action            │  │
+│  ├──────────────────────────────┼────────┼───────────────────┤  │
+│  │  SecurityMiddleware          │  <N>   │ KEEP (required)   │  │
+│  │  SessionMiddleware           │  <N>   │ KEEP / REMOVE*    │  │
+│  │  CsrfViewMiddleware         │  <N>   │ KEEP / REMOVE*    │  │
+│  │  AuthenticationMiddleware   │  <N>   │ KEEP              │  │
+│  │  Custom middleware X         │  <N>   │ OPTIMIZE / REMOVE │  │
+│  └──────────────────────────────┴────────┴───────────────────┘  │
+│  * Remove SessionMiddleware + CsrfViewMiddleware for API-only   │
+│    projects using token auth (JWT, API keys)                     │
+│                                                                   │
+│  Step 4: Middleware optimization actions                         │
+│  - Remove unused middleware (e.g., LocaleMiddleware if single    │
+│    language, GZipMiddleware if handled by reverse proxy)         │
+│  - Move expensive middleware after auth (skip for unauthed)      │
+│  - Add short-circuit for health check endpoints:                 │
+│    if request.path == '/health':                                 │
+│        return JsonResponse({'status': 'ok'})                     │
+│  - Cache middleware results where possible (e.g., permission     │
+│    lookups per request)                                           │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Cache Strategy Audit
+
+```
+CACHE STRATEGY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Layer 1: Database query caching                                 │
+│  - Identify repeated identical queries across requests           │
+│  - Use Django cache framework for expensive query results:       │
+│    from django.core.cache import cache                           │
+│    key = f'user_orders_{user_id}'                                │
+│    orders = cache.get(key)                                       │
+│    if orders is None:                                            │
+│        orders = list(Order.objects.filter(user_id=user_id))      │
+│        cache.set(key, orders, timeout=300)                       │
+│                                                                   │
+│  Layer 2: View-level caching                                    │
+│  - @cache_page(60 * 15) for read-heavy public views             │
+│  - Use cache_control() decorator for HTTP caching headers        │
+│  - Use Vary header for user-specific cached responses            │
+│                                                                   │
+│  Layer 3: Template fragment caching                              │
+│  - {% cache 300 sidebar request.user.id %} for partial caching  │
+│                                                                   │
+│  Layer 4: Session and auth caching                               │
+│  - SESSION_ENGINE = 'django.contrib.sessions.backends.cache'     │
+│  - CACHES default backend = 'django.core.cache.backends.redis.RedisCache' │
+│                                                                   │
+│  Cache invalidation strategy:                                    │
+│  - Signal-based: post_save/post_delete → cache.delete(key)      │
+│  - Time-based: TTL appropriate to data freshness requirements    │
+│  - Version-based: include model updated_at in cache key          │
+│  - NEVER rely on cache alone — always have a DB fallback         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+DJANGO OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  Avg queries per list endpoint│  <N>     │  <N>      │  -<N>%    │
+│  Avg queries per detail endpoint│ <N>    │  <N>      │  -<N>%    │
+│  N+1 violations              │  <N>      │  0        │  FIXED    │
+│  Missing indexes             │  <N>      │  0        │  FIXED    │
+│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
+│  Middleware overhead (ms/req)│  <N>      │  <N>      │  -<N>%    │
+│  Cache hit rate              │  <N>%     │  <N>%     │  +<N>%    │
+│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Zero N+1 violations remaining
+- All filterable/sortable fields indexed
+- List endpoints <= 5 queries regardless of page size
+- Middleware stack reviewed, unused middleware removed
+- Cache strategy documented for high-traffic endpoints
+- p95 response time improved by measurable margin
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Django tasks sequentially: models+DB, then API layer, then services, then admin+async.

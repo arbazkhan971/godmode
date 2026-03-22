@@ -757,6 +757,163 @@ MERGE ORDER: core -> processing -> api
 CONFLICT ZONES: storage client initialization, file metadata schema, upload route handlers
 ```
 
+## Storage Optimization Audit
+
+Comprehensive audit of access patterns, compression effectiveness, and lifecycle policy coverage:
+
+```
+STORAGE OPTIMIZATION AUDIT:
+Provider: <AWS S3 | GCS | Azure Blob>
+Bucket: <bucket name>
+Audit date: <date>
+Total storage: <size>
+Monthly cost: <amount>
+
+ACCESS PATTERN ANALYSIS:
+┌──────────────────────────────────────────────────────────────────┐
+│  Time Window     │ Objects Accessed │ % of Total │ Storage Class  │
+├──────────────────────────────────────────────────────────────────┤
+│  Last 7 days     │ <N>              │ <pct>%     │ Should be STD  │
+│  8-30 days       │ <N>              │ <pct>%     │ Should be STD  │
+│  31-90 days      │ <N>              │ <pct>%     │ Should be IA   │
+│  91-365 days     │ <N>              │ <pct>%     │ Should be IA   │
+│  > 365 days      │ <N>              │ <pct>%     │ Should be Glac │
+│  Never accessed  │ <N>              │ <pct>%     │ Delete or Glac │
+└──────────────────────────────────────────────────────────────────┘
+
+  Access pattern checks:
+    1. QUERY S3 Storage Lens / GCS Insights for access frequency per prefix
+    2. IDENTIFY hot prefixes (frequently accessed) vs cold prefixes (rarely accessed)
+    3. IDENTIFY orphaned objects (no DB reference, no recent access)
+    4. MEASURE read/write ratio per prefix
+    5. MAP access patterns to optimal storage class:
+       - Frequent access (daily): S3 Standard / GCS Standard
+       - Infrequent access (monthly): S3 Standard-IA / GCS Nearline
+       - Archive (yearly): S3 Glacier IR / GCS Coldline
+       - Deep archive (compliance): S3 Glacier Deep / GCS Archive
+    6. CALCULATE projected savings from reclassification
+
+  Access pattern anomaly detection:
+    - ALERT if write frequency increases > 50% week-over-week (possible runaway process)
+    - ALERT if read frequency drops > 30% (possible broken CDN or stale cache)
+    - ALERT if storage growth rate exceeds projected budget
+
+COMPRESSION AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  File Type   │ Count   │ Size    │ Compressed │ Savings │ Method │
+├──────────────────────────────────────────────────────────────────┤
+│  Images (raw)│ <N>     │ <size>  │ <size>     │ <pct>%  │ WebP   │
+│  Images (opt)│ <N>     │ <size>  │ N/A        │ N/A     │ Already│
+│  Documents   │ <N>     │ <size>  │ <size>     │ <pct>%  │ gzip   │
+│  Video (raw) │ <N>     │ <size>  │ <size>     │ <pct>%  │ H.265  │
+│  Video (opt) │ <N>     │ <size>  │ N/A        │ N/A     │ Already│
+│  JSON/CSV    │ <N>     │ <size>  │ <size>     │ <pct>%  │ gzip   │
+│  Logs        │ <N>     │ <size>  │ <size>     │ <pct>%  │ zstd   │
+│  Backups     │ <N>     │ <size>  │ <size>     │ <pct>%  │ zstd   │
+└──────────────────────────────────────────────────────────────────┘
+
+  Compression checks:
+    1. SCAN for uncompressed images (JPEG > 500KB, PNG > 200KB without optimization)
+    2. VERIFY WebP/AVIF variants exist for all images served via CDN
+    3. CHECK if text-based files (JSON, CSV, logs) are compressed before storage
+    4. VERIFY CDN serves with Content-Encoding: gzip/br for compressible types
+    5. IDENTIFY largest objects and check if they can be compressed or split
+    6. MEASURE deduplication opportunity (hash-based scan for identical content)
+
+  Compression recommendations:
+    - Images: Convert to WebP (30-50% savings vs JPEG), AVIF for modern browsers
+    - Text: gzip for compatibility, Brotli for CDN serving, zstd for archives
+    - Video: H.265 for storage efficiency, adaptive bitrate for serving
+    - Logs: zstd compression (fastest decompression, good ratio)
+    - Backups: zstd with dictionary training on similar data
+
+LIFECYCLE POLICY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Lifecycle rules exist              │ PASS|FAIL│ <rule count>    │
+│  Incomplete multipart uploads       │ PASS|FAIL│ <abort after Xd>│
+│    auto-aborted                     │          │                 │
+│  Temp files auto-deleted            │ PASS|FAIL│ <expiry days>   │
+│  Old versions expired               │ PASS|FAIL│ <noncurrent exp>│
+│  Transition to IA configured        │ PASS|FAIL│ <after N days>  │
+│  Transition to Glacier configured   │ PASS|FAIL│ <after N days>  │
+│  Deep archive for compliance data   │ PASS|FAIL│ <after N days>  │
+│  Delete markers cleaned up          │ PASS|FAIL│ <expiry config> │
+│  Intelligent tiering enabled        │ PASS|FAIL│ <for uncertain  │
+│    (where access pattern unknown)   │          │  access pattern> │
+│  Lifecycle rules tested             │ PASS|FAIL│ <test evidence> │
+│    (verified objects actually move) │          │                 │
+│  Cost projection matches actual     │ PASS|FAIL│ <budget vs real>│
+└──────────────────────────────────────────────────────────────────┘
+
+  Lifecycle optimization:
+    1. REVIEW current lifecycle rules vs actual access patterns
+    2. IDENTIFY objects in wrong storage class (paying premium for cold data)
+    3. CALCULATE optimal transition days based on access frequency analysis
+    4. VERIFY lifecycle rules are not conflicting (multiple rules on same prefix)
+    5. TEST: create a test object, verify it transitions correctly after rule criteria met
+    6. MONITOR: lifecycle transition metrics (objects transitioned per day)
+
+CDN AND EGRESS OPTIMIZATION:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  CDN serves all public content      │ PASS|FAIL│ <CDN coverage>  │
+│  Cache hit ratio > 90%              │ PASS|FAIL│ <hit ratio>     │
+│  Cache-Control headers set          │ PASS|FAIL│ <header config> │
+│  Content-hashed filenames used      │ PASS|FAIL│ <naming scheme> │
+│    (avoids cache invalidation)      │          │                 │
+│  Direct bucket access blocked       │ PASS|FAIL│ <bucket policy> │
+│  Egress cost optimized              │ PASS|FAIL│ <CDN vs direct> │
+│  Regional CDN for geo-specific data │ PASS|FAIL│ <distribution>  │
+│  Image CDN used for on-the-fly      │ PASS|FAIL│ <Cloudinary/    │
+│    transforms (if applicable)       │          │  imgix/Cloudflare│
+└──────────────────────────────────────────────────────────────────┘
+
+AUDIT SUMMARY:
+┌────────────────────────────────────────────────────────────────┐
+│  Current monthly cost:    $<amount>                            │
+│  Projected after optimize: $<amount>                           │
+│  Potential savings:       $<amount>/month (<pct>% reduction)   │
+│                                                                │
+│  Top savings opportunities:                                    │
+│  1. <action> — saves $<amount>/month                           │
+│  2. <action> — saves $<amount>/month                           │
+│  3. <action> — saves $<amount>/month                           │
+│                                                                │
+│  Audit verdict: <OPTIMIZED | SAVINGS AVAILABLE | WASTEFUL>     │
+│  Next audit: <scheduled date>                                  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Storage Optimization Loop
+
+```
+STORAGE OPTIMIZATION ITERATION:
+optimization_areas = [access_patterns, compression, lifecycle, cdn_egress]
+current_area = 0
+total_savings = 0
+
+WHILE current_area < len(optimization_areas):
+  area = optimization_areas[current_area]
+
+  1. ANALYZE current state (costs, access patterns, configurations)
+  2. IDENTIFY optimization opportunities with projected savings
+  3. RANK by savings-to-effort ratio (highest ROI first)
+  4. IMPLEMENT top optimization (ONE change at a time)
+  5. VERIFY: no access errors, no latency regression, cost reduction visible
+  6. WAIT 7 days to confirm steady-state behavior
+  7. LOG: { area, change, projected_savings, actual_savings, side_effects }
+
+  total_savings += actual_savings
+  current_area += 1
+
+FINAL:
+  REPORT "Storage optimization complete. Total savings: ${total_savings}/month"
+  SCHEDULE next audit in 90 days
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run storage tasks sequentially: bucket/CDN configuration, then storage client, then processing pipeline, then API endpoints.

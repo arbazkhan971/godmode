@@ -586,6 +586,188 @@ IF C4 diagram generation fails (complex topology):
 - **Do NOT design for theoretical scale.** Design for 10x your current needs, not 1000x. You can re-architect when you have 1000x problems (and 1000x revenue to fund it).
 
 
+## Architecture Review Loop
+
+Continuously audit architecture health with coupling metrics, dependency analysis, and SOLID violation detection:
+
+```
+ARCHITECTURE REVIEW LOOP:
+
+current_iteration = 0
+max_iterations = 10
+review_queue = [coupling_analysis, dependency_analysis, solid_violations, layering_check, boundary_erosion]
+findings = []
+
+WHILE review_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    aspect = review_queue.pop(0)
+
+    1. MEASURE the aspect against the current codebase
+    2. COMPARE against thresholds (see below)
+    3. IF threshold exceeded:
+         findings.append({aspect, severity, location, recommendation})
+    4. IF fix reveals new concerns in other aspects:
+         review_queue.append(affected_aspect)
+    5. REPORT "Review iteration {current_iteration}: {aspect} — {PASS|WARN|FAIL}"
+
+FINAL: Architecture health scorecard with all findings and remediation plan
+```
+
+### Coupling Metrics
+
+```
+COUPLING ANALYSIS:
+┌──────────────────────────────────────────────────────────────┐
+│  Metric                  │ Threshold   │ Measured │ Status    │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Afferent coupling (Ca)  │ < 20        │ <N>      │ PASS|FAIL │
+│  (# modules that depend on this module)                      │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Efferent coupling (Ce)  │ < 15        │ <N>      │ PASS|FAIL │
+│  (# modules this module depends on)                          │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Instability (Ce/(Ca+Ce))│ 0.0-1.0     │ <N>      │ INFO      │
+│  (0 = maximally stable, 1 = maximally unstable)              │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Abstractness (A)        │ 0.0-1.0     │ <N>      │ INFO      │
+│  (ratio of abstract types to total types)                    │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Distance from main      │ < 0.3       │ <N>      │ PASS|FAIL │
+│  sequence (|A+I-1|)      │             │          │           │
+│  (0 = ideal balance of stability and abstraction)            │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Connascence (temporal)  │ 0           │ <N>      │ PASS|FAIL │
+│  (implicit ordering dependencies between modules)            │
+├──────────────────────────┼─────────────┼──────────┼───────────┤
+│  Cyclic dependencies     │ 0           │ <N>      │ PASS|FAIL │
+│  (circular module references)                                │
+└──────────────────────────┴─────────────┴──────────┴───────────┘
+
+TOOLS:
+- TypeScript/JS: madge --circular, dependency-cruiser, skott
+- Java: JDepend, ArchUnit, Structure101
+- Python: pydeps, import-linter
+- Go: go vet, depguard, gomodguard
+- General: code-maat (git-based coupling analysis)
+
+HIGH-COUPLING REMEDIATION:
+IF Ca > 20 (too many dependents):
+  → Module is a "hub" — consider splitting into focused sub-modules
+  → Introduce interfaces/abstractions to reduce direct coupling
+IF Ce > 15 (too many dependencies):
+  → Module has too many responsibilities — apply SRP
+  → Consider introducing a facade to consolidate dependencies
+IF cyclic dependencies > 0:
+  → Break cycle with dependency inversion (introduce interface at the break point)
+  → Extract shared types into a separate module both can depend on
+```
+
+### Dependency Analysis
+
+```
+DEPENDENCY ANALYSIS:
+┌──────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Details     │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Dependency direction (always       │ PASS|FAIL│ <violators> │
+│  inward: infra→domain, not reverse)│          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  No domain depends on framework     │ PASS|FAIL│ <violators> │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  No circular module dependencies    │ PASS|FAIL│ <cycles>    │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Layer violations (e.g., controller │ PASS|FAIL│ <violators> │
+│  directly accessing DB)             │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Transitive dependency depth < 5    │ PASS|FAIL│ <deepest>   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Unused dependencies (dead imports) │ PASS|FAIL│ <count>     │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Dependency fan-out per module < 10 │ PASS|FAIL│ <worst>     │
+└─────────────────────────────────────┴──────────┴─────────────┘
+
+DEPENDENCY GRAPH VISUALIZATION:
+  Generate: dependency-cruiser --output-type dot src/ | dot -T svg -o deps.svg
+  Or: npx madge --image deps.svg src/
+  Or: go mod graph | modgraphviz | dot -T svg -o deps.svg
+
+  Review graph for:
+  - Clusters (tightly coupled groups that should be a single module)
+  - Stars (one module everything depends on — fragile hub)
+  - Long chains (deep dependency paths — fragile, slow to build)
+  - Orphans (isolated modules — candidates for removal)
+```
+
+### SOLID Violation Detection
+
+```
+SOLID VIOLATION SCAN:
+┌──────────────────────────────────────────────────────────────┐
+│  Principle                │ Detection Signal          │ Count │
+├───────────────────────────┼───────────────────────────┼───────┤
+│  SRP: Single Responsibility                                   │
+│  Classes/modules with > 5 public methods AND > 300 LOC       │
+│  touching multiple domain concepts                    │ <N>   │
+├───────────────────────────┼───────────────────────────┼───────┤
+│  OCP: Open/Closed                                             │
+│  Switch/if-else chains on type discriminators that grow       │
+│  with each new feature (should be polymorphism)       │ <N>   │
+├───────────────────────────┼───────────────────────────┼───────┤
+│  LSP: Liskov Substitution                                     │
+│  Subclasses that throw "not implemented" or override          │
+│  base methods to no-op (violates substitutability)    │ <N>   │
+├───────────────────────────┼───────────────────────────┼───────┤
+│  ISP: Interface Segregation                                   │
+│  Interfaces with > 8 methods (clients forced to depend        │
+│  on methods they do not use)                          │ <N>   │
+├───────────────────────────┼───────────────────────────┼───────┤
+│  DIP: Dependency Inversion                                    │
+│  High-level modules importing concrete low-level modules      │
+│  directly (should depend on abstractions)             │ <N>   │
+└───────────────────────────┴───────────────────────────┴───────┘
+
+FOR EACH VIOLATION:
+  Location: <file:line>
+  Principle: <SRP|OCP|LSP|ISP|DIP>
+  Evidence: <specific code pattern detected>
+  Severity: <LOW|MEDIUM|HIGH>
+  Remediation: <specific refactoring to resolve>
+  Effort: <S|M|L> (small/medium/large)
+
+PRIORITIZATION:
+  1. DIP violations in core domain (highest risk — domain coupled to infra)
+  2. SRP violations in high-churn modules (most frequent source of merge conflicts)
+  3. OCP violations in extensible features (blocks new feature development)
+  4. ISP violations in public APIs (forces unnecessary dependencies on consumers)
+  5. LSP violations (runtime surprises — subclass does not behave as expected)
+```
+
+### Architecture Health Scorecard
+
+```
+ARCHITECTURE HEALTH SCORECARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Dimension                │ Score (1-10) │ Weight │ Weighted  │
+├───────────────────────────┼──────────────┼────────┼───────────┤
+│  Coupling (Ca, Ce, cycles)│ <score>      │ 0.20   │ <N>       │
+│  Cohesion (SRP, module    │ <score>      │ 0.15   │ <N>       │
+│  focus)                   │              │        │           │
+│  Dependency direction     │ <score>      │ 0.15   │ <N>       │
+│  SOLID adherence          │ <score>      │ 0.15   │ <N>       │
+│  Layer integrity          │ <score>      │ 0.10   │ <N>       │
+│  Testability (DI, mocking)│ <score>      │ 0.10   │ <N>       │
+│  Boundary clarity         │ <score>      │ 0.10   │ <N>       │
+│  Documentation (ADRs)     │ <score>      │ 0.05   │ <N>       │
+├───────────────────────────┼──────────────┼────────┼───────────┤
+│  OVERALL HEALTH           │              │        │ <total>   │
+│  Rating: <EXCELLENT (8+) | GOOD (6-8) | NEEDS WORK (4-6) |  │
+│           CRITICAL (<4)>                                     │
+└──────────────────────────────────────────────────────────────┘
+
+TREND: Compare with previous review. Flag dimensions that degraded since last review.
+ACTION ITEMS: Top 3 highest-impact fixes ordered by effort/impact ratio.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run architecture tasks sequentially: patterns, then diagrams, then quality attributes.

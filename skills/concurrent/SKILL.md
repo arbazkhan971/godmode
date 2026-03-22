@@ -799,6 +799,273 @@ IF lock contention causes performance degradation (profiler shows lock wait time
 - **Do NOT optimize concurrency without profiling.** Switching from Mutex to lock-free without measuring is premature optimization. Profile first, optimize second.
 
 
+## Concurrency Audit
+
+Structured audit loop for race condition detection, deadlock analysis, and lock contention measurement:
+
+```
+CONCURRENCY AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 15
+audit_queue = [
+    "race_condition_detection",
+    "deadlock_analysis",
+    "lock_contention_measurement",
+    "goroutine_task_leak_scan",
+    "cancellation_path_verification",
+    "shared_state_inventory_update",
+    "concurrent_test_coverage"
+]
+findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. SCAN codebase for {audit_aspect}
+    2. RUN automated tools (race detector, static analysis)
+    3. CLASSIFY: SAFE | SUSPECT | UNSAFE
+    4. IF UNSAFE: generate specific fix with narrowest scope
+    5. IF fix creates new concerns: audit_queue.append(concern)
+    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
+
+FINAL: Concurrency safety report with verified fixes
+```
+
+### Race Condition Detection
+
+```
+RACE CONDITION DETECTION PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Phase 1: Automated Detection                                  │
+├──────────────────────────────────────────────────────────────┤
+│  Tool                    │ Command                  │ Status  │
+├──────────────────────────┼──────────────────────────┼─────────┤
+│  Go race detector        │ go test -race ./...      │ P|F     │
+│  Rust Miri               │ cargo +nightly miri test │ P|F     │
+│  ThreadSanitizer (C/C++) │ clang -fsanitize=thread  │ P|F     │
+│  Java SpotBugs           │ mvn spotbugs:check       │ P|F     │
+│  Python threading lint   │ pylint --enable=          │ P|F     │
+│                          │ threading-checker         │         │
+├──────────────────────────┴──────────────────────────┴─────────┤
+│  Phase 2: Pattern-Based Manual Review                          │
+├──────────────────────────────────────────────────────────────┤
+│  Pattern                     │ Detection Signal    │ Found   │
+├──────────────────────────────┼─────────────────────┼─────────┤
+│  Check-then-act (TOCTOU)     │ if(exists) then     │ <N>     │
+│                              │ use — separate ops   │         │
+│  Read-modify-write           │ x = x + 1 without   │ <N>     │
+│                              │ atomic or lock       │         │
+│  Compound actions            │ multiple ops that    │ <N>     │
+│                              │ must be atomic       │         │
+│  Lazy initialization         │ if(null) init —      │ <N>     │
+│                              │ double-init risk     │         │
+│  Iterator invalidation       │ modify collection    │ <N>     │
+│                              │ during iteration     │         │
+│  Publication escape          │ expose `this` before │ <N>     │
+│                              │ construction complete │         │
+│  Async event ordering        │ assume callback      │ <N>     │
+│                              │ order without sync    │         │
+│  Shared mutable closure      │ goroutine/task       │ <N>     │
+│                              │ captures mutable var  │         │
+├──────────────────────────────┴─────────────────────┴─────────┤
+│  Phase 3: Stress Testing                                       │
+├──────────────────────────────────────────────────────────────┤
+│  Stress test: run concurrent tests 1000x with max parallelism │
+│  Go:   go test -race -count=1000 -parallel=8 ./...            │
+│  Rust: for i in $(seq 1 1000); do cargo test; done            │
+│  Node: run concurrent Promise.all batches, verify no dups     │
+│                                                                │
+│  IF any failure in 1000 runs:                                  │
+│    → Race condition exists (even if rare)                      │
+│    → Add artificial delay at suspected race point              │
+│    → Reproduce reliably, fix, re-run 1000x                    │
+│    → Must pass ALL 1000 iterations after fix                   │
+└──────────────────────────────────────────────────────────────┘
+
+RACE CONDITION FINDING FORMAT:
+  Location: <file:line>
+  Pattern: <check-then-act | read-modify-write | compound | etc.>
+  Shared state: <which variable/resource is unsafely accessed>
+  Threads/goroutines involved: <which concurrent units>
+  Reproduction: <how to trigger — stress test count, timing>
+  Severity: CRITICAL (data corruption) | HIGH (wrong result) | MEDIUM (cosmetic)
+  Fix:
+    Strategy: <atomic | lock | channel | restructure>
+    Before: <unsafe code>
+    After: <safe code>
+  Verification: <race detector + 1000x stress test>
+```
+
+### Deadlock Analysis
+
+```
+DEADLOCK ANALYSIS PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Step 1: Lock Inventory                                        │
+├──────────────────────────────────────────────────────────────┤
+│  Lock                │ Protects          │ Holders    │ Order  │
+├──────────────────────┼───────────────────┼────────────┼────────┤
+│  <mutex/lock name>   │ <shared state>    │ <functions>│ <N>    │
+│  <mutex/lock name>   │ <shared state>    │ <functions>│ <N>    │
+│  <mutex/lock name>   │ <shared state>    │ <functions>│ <N>    │
+├──────────────────────┴───────────────────┴────────────┴────────┤
+│  LOCK ORDERING RULE: Always acquire in ascending order number. │
+│  Violation of this order → potential deadlock.                  │
+├──────────────────────────────────────────────────────────────┤
+│  Step 2: Lock Ordering Violations                              │
+├──────────────────────────────────────────────────────────────┤
+│  Violation           │ Function A   │ Function B   │ Risk     │
+├──────────────────────┼──────────────┼──────────────┼──────────┤
+│  Lock X then Lock Y  │ <funcA>      │              │          │
+│  Lock Y then Lock X  │              │ <funcB>      │ DEADLOCK │
+│  (inconsistent order)│              │              │          │
+├──────────────────────┴──────────────┴──────────────┴──────────┤
+│  Step 3: Nested Lock Detection                                 │
+├──────────────────────────────────────────────────────────────┤
+│  Location            │ Outer Lock   │ Inner Lock   │ Risk     │
+├──────────────────────┼──────────────┼──────────────┼──────────┤
+│  <file:line>         │ <lock A>     │ <lock B>     │ H|M|L    │
+│  <file:line>         │ <lock B>     │ <lock A>     │ DEADLOCK │
+├──────────────────────┴──────────────┴──────────────┴──────────┤
+│  Step 4: I/O Under Lock                                        │
+├──────────────────────────────────────────────────────────────┤
+│  Location            │ Lock Held    │ I/O Operation │ Risk    │
+├──────────────────────┼──────────────┼───────────────┼─────────┤
+│  <file:line>         │ <lock>       │ HTTP call     │ HIGH    │
+│  <file:line>         │ <lock>       │ DB query      │ HIGH    │
+│  <file:line>         │ <lock>       │ File read     │ MEDIUM  │
+├──────────────────────┴──────────────┴───────────────┴─────────┤
+│  RULE: NEVER perform I/O while holding a lock.                 │
+│  I/O can block indefinitely, holding the lock hostage.         │
+│  Fix: fetch data BEFORE acquiring lock, then update under lock.│
+├──────────────────────────────────────────────────────────────┤
+│  Step 5: Channel/Async Deadlock (Go, Rust, Elixir)            │
+├──────────────────────────────────────────────────────────────┤
+│  Pattern                        │ Risk      │ Fix            │
+├─────────────────────────────────┼───────────┼────────────────┤
+│  Unbuffered channel: sender and │ DEADLOCK  │ Buffer or use  │
+│  receiver on same goroutine      │           │ select+timeout │
+│  All goroutines waiting on       │ DEADLOCK  │ Ensure at least│
+│  channels, none sending          │           │ one sender runs│
+│  WaitGroup.Add after goroutine   │ RACE/HANG │ Add before go  │
+│  launch                          │           │ statement      │
+│  Context not propagated — child  │ HANG      │ Always pass ctx│
+│  goroutine never cancelled       │           │ with deadline  │
+└─────────────────────────────────┴───────────┴────────────────┘
+
+DEADLOCK DETECTION COMMANDS:
+  # Go: goroutine dump (check for all-blocked state)
+  kill -SIGQUIT <pid>   # or: curl localhost:6060/debug/pprof/goroutine?debug=2
+
+  # Java: thread dump for deadlock detection
+  jstack <pid> | grep -A 5 "deadlock"
+  # Or: ThreadMXBean.findDeadlockedThreads() in code
+
+  # Rust: parking_lot deadlock detection (debug builds only)
+  # Enable: parking_lot = { features = ["deadlock_detection"] }
+
+  # Database deadlocks
+  SELECT * FROM pg_locks WHERE NOT granted;                     # PostgreSQL
+  SHOW ENGINE INNODB STATUS\G                                   # MySQL
+```
+
+### Lock Contention Measurement
+
+```
+LOCK CONTENTION ANALYSIS:
+┌──────────────────────────────────────────────────────────────┐
+│  Lock contention = time spent waiting for locks vs doing work  │
+│  High contention = threads/goroutines blocked, throughput low  │
+├──────────────────────────────────────────────────────────────┤
+│  Lock               │ Contention │ Wait Time │ Hold Time     │
+│                     │ Rate       │ (avg)     │ (avg)         │
+├─────────────────────┼────────────┼───────────┼───────────────┤
+│  <lock name>        │ <N>%       │ <N> us    │ <N> us        │
+│  <lock name>        │ <N>%       │ <N> us    │ <N> us        │
+│  <lock name>        │ <N>%       │ <N> us    │ <N> us        │
+├─────────────────────┴────────────┴───────────┴───────────────┤
+│  Contention rate = (wait time) / (wait time + hold time)      │
+│  Target: < 10% contention rate                                │
+│  WARNING: > 20% contention rate                               │
+│  CRITICAL: > 50% contention rate                              │
+├──────────────────────────────────────────────────────────────┤
+│  CONTENTION MEASUREMENT TOOLS:                                 │
+│  Go:    go tool pprof -contentionz http://localhost:6060/debug/pprof/mutex │
+│  Java:  JFR (Java Flight Recorder) → lock contention events   │
+│  Rust:  perf lock record && perf lock report                   │
+│  Linux: perf lock record -p <pid> && perf lock report          │
+│  DB:    SELECT wait_event_type, wait_event, count(*)           │
+│         FROM pg_stat_activity GROUP BY 1, 2;                   │
+├──────────────────────────────────────────────────────────────┤
+│  CONTENTION REDUCTION STRATEGIES:                              │
+│  ┌──────────────────────────┬────────────────────────────┐   │
+│  │ Strategy                 │ When to Apply              │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Reduce critical section  │ Lock held during I/O or    │   │
+│  │ scope                    │ computation                │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Use RwLock instead of    │ Read-heavy workload        │   │
+│  │ Mutex                    │ (>10:1 read:write)         │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Split lock into multiple │ Different fields accessed  │   │
+│  │ fine-grained locks       │ by different operations    │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Use lock-free structure  │ Profiling proves lock is   │   │
+│  │ (atomic, CAS)            │ the bottleneck             │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Use channels instead     │ Can restructure as message │   │
+│  │ of shared state          │ passing (Go, Rust, Elixir) │   │
+│  ├──────────────────────────┼────────────────────────────┤   │
+│  │ Shard the data           │ High-throughput, key-based │   │
+│  │ (per-key locks)          │ access pattern             │   │
+│  └──────────────────────────┴────────────────────────────┘   │
+│                                                                │
+│  RULE: Do NOT switch to lock-free without profiling evidence.  │
+│  A mutex with 5% contention is fine. Optimize only when        │
+│  contention is measured as a bottleneck.                       │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Concurrency Safety Report
+
+```
+CONCURRENCY SAFETY REPORT:
+┌──────────────────────────────────────────────────────────────┐
+│  Component: <name>                                             │
+│  Language: <language> │ Model: <threads|async|actors|CSP>      │
+├──────────────────────────────────────────────────────────────┤
+│  Dimension                    │ Status      │ Details          │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Race condition scan          │ CLEAN|FOUND │ <N> races found  │
+│  (automated + manual)         │             │                  │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Deadlock analysis            │ SAFE|RISK   │ <N> ordering     │
+│  (lock ordering, nested)      │             │ violations       │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Lock contention              │ LOW|MED|HIGH│ Worst: <lock>    │
+│  (measured under load)        │             │ at <N>% contention│
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  I/O under lock               │ CLEAN|FOUND │ <N> locations    │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Goroutine/task leaks         │ CLEAN|FOUND │ <N> leak paths   │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Cancellation coverage        │ FULL|PARTIAL│ <N>/<total> paths│
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Stress test (1000 iterations)│ PASS|FAIL   │ <N> failures     │
+├───────────────────────────────┼─────────────┼──────────────────┤
+│  Every mutex documented       │ YES|NO      │ <N>/<total>      │
+│  (comment: "mu protects X")   │             │ documented       │
+├───────────────────────────────┴─────────────┴──────────────────┤
+│  OVERALL SAFETY: SAFE | NEEDS WORK | UNSAFE                    │
+│  ACTIONS REQUIRED:                                             │
+│  1. <highest priority fix>                                     │
+│  2. <next priority fix>                                        │
+│  3. <next priority fix>                                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run concurrency analysis sequentially: data layer, then API layer, then workers, then tests.

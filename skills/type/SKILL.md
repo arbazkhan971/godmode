@@ -821,6 +821,53 @@ Columns: phase, action, any_before, any_after, errors_fixed, tests_pass, safety_
 - **`noUncheckedIndexedAccess` produces too many errors**: Add explicit undefined checks where needed. Use `Array.at()` for safer access. Do not disable the flag — the errors it surfaces are real bugs.
 - **Auto-fix changes semantics**: Review all `as` casts and type assertions after fixing. Run the full test suite. If behavior changes, the previous code was relying on incorrect types.
 
+## Keep/Discard Discipline
+```
+After EACH type safety phase:
+  1. MEASURE: Run tsc — how many errors remain? Run test suite — all passing?
+  2. COMPARE: Is the type safety score higher than before? Did `any` count decrease?
+  3. DECIDE:
+     - KEEP if: type checker passes AND tests pass AND any count decreased
+     - DISCARD if: type checker errors increase OR tests fail OR auto-fix changed runtime behavior
+  4. COMMIT kept changes. Revert discarded changes before the next phase.
+
+Never keep a type fix that changes runtime behavior — types should only affect compile-time safety.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive phases produce type errors that cannot be resolved:
+  1. Check for third-party library type issues: install @types/library-name or create a minimal .d.ts file.
+  2. Use `@ts-expect-error` (not `@ts-ignore`) with an explanation as a temporary workaround.
+  3. Isolate the problematic module: enable strict mode project-wide but use path-specific overrides for the stuck module.
+  4. If still stuck → log stop_reason=stuck, document the unresolvable type issues, move to the next phase.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - TypeScript strict mode fully enabled
+  - `any` count at zero (or on a documented reduction trajectory with sprint targets)
+  - Runtime validation at all API boundaries
+  - Type safety score >= 80/100
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Some `any` types are in third-party type definitions (those are not your code)
+  - `@ts-expect-error` is used for genuine compiler limitations (document each one)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler type approach:
+  - Zod (single library for types + validation) over separate TypeScript interfaces + Joi
+  - z.infer<typeof Schema> over manually duplicated types
+  - Discriminated unions over class hierarchies for variant types
+  - unknown over any (always — unknown is safe, any is not)
+  - Built-in TypeScript utility types (Pick, Omit, Partial) over custom type gymnastics
+  - Validate once at the boundary, trust types internally — do not over-validate
+```
+
 ## Multi-Agent Dispatch
 For large-scale type safety improvements across a codebase:
 ```

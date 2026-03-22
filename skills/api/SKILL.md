@@ -686,6 +686,121 @@ MERGE: Spec merges first. Implementation rebases onto spec.
   Tests rebase onto implementation. Final: run full test suite.
 ```
 
+## API Design Audit Loop
+
+Autonomous audit loop that validates, detects breaking changes, and hardens API specs. Runs until all checks pass or max iterations reached.
+
+```
+API DESIGN AUDIT LOOP:
+current_iteration = 0
+max_iterations = 15
+issues_found = []
+issues_fixed = []
+spec_file = detect_openapi_spec()  // openapi.yaml, swagger.json, etc.
+previous_spec = git_show("HEAD~1:" + spec_file)  // last committed version
+
+WHILE current_iteration < max_iterations AND NOT all_checks_pass:
+  current_iteration += 1
+
+  // Phase 1: OpenAPI Validation
+  validation_errors = run_spectral_lint(spec_file)  // or redocly lint
+  IF validation_errors > 0:
+    FOR each error:
+      FIX the violation in the spec
+      issues_found.append({type: "SPEC_VALIDATION", detail: error})
+      issues_fixed.append({type: "SPEC_VALIDATION", detail: error})
+    REVALIDATE — repeat until 0 errors
+
+  // Phase 2: Breaking Change Detection
+  IF previous_spec exists:
+    breaking_changes = run_oasdiff(previous_spec, spec_file)
+    // oasdiff or openapi-diff: detect removed endpoints, changed types, narrowed enums
+    FOR each breaking_change:
+      severity = classify(breaking_change)  // BREAKING | DEPRECATION | ADDITIVE
+      IF severity == "BREAKING":
+        REVERT the change — add new fields additively instead
+        issues_found.append({type: "BREAKING_CHANGE", detail: breaking_change})
+        issues_fixed.append({type: "BREAKING_CHANGE", fix: "reverted to additive"})
+      ELSE IF severity == "DEPRECATION":
+        ADD Sunset header and deprecation notice to spec
+        LOG: "DEPRECATION — {endpoint} scheduled for sunset"
+
+  // Phase 3: Design Quality Checks
+  quality_checks = {
+    naming_consistency:      all_endpoints_use_plural_nouns(),
+    http_methods_correct:    no_GET_with_body AND no_POST_for_reads(),
+    pagination_present:      every_list_endpoint_has_pagination(),
+    error_schema_unified:    single_error_schema_across_all_4xx_5xx(),
+    auth_defined:            every_non_public_endpoint_has_security(),
+    rate_limit_headers:      all_responses_include_ratelimit_headers(),
+    idempotency_keys:        all_mutation_endpoints_accept_idempotency_key(),
+    no_sensitive_in_urls:    no_tokens_or_pii_in_query_params(),
+    examples_present:        every_endpoint_has_request_response_example(),
+    field_naming:            all_fields_use_consistent_case()  // snake_case or camelCase, not mixed
+  }
+
+  FOR each check in quality_checks:
+    IF check.status == FAIL:
+      FIX the issue in the spec
+      issues_found.append({type: "QUALITY", check: check.name})
+      issues_fixed.append({type: "QUALITY", check: check.name})
+
+  // Phase 4: Keep/Discard Decision
+  revalidation_result = run_spectral_lint(spec_file)
+  breaking_result = run_oasdiff(previous_spec, spec_file)
+
+  IF revalidation_result.errors == 0 AND breaking_result.breaking == 0 AND all(quality_checks):
+    KEEP all changes
+    COMMIT: "api: audit pass #{current_iteration} — {len(issues_fixed)} issues fixed, 0 errors"
+    all_checks_pass = true
+  ELSE:
+    LOG: "Iteration {current_iteration}: {revalidation_result.errors} spec errors, {breaking_result.breaking} breaking changes remaining"
+    CONTINUE
+
+  REPORT: "Audit iteration {current_iteration}/{max_iterations}: found={len(issues_found)}, fixed={len(issues_fixed)}, remaining={revalidation_result.errors + breaking_result.breaking}"
+
+ON COMPLETION:
+  LOG to .godmode/api-audit.tsv:
+    timestamp\tspec_file\titerations\tissues_found\tissues_fixed\tbreaking_changes_caught\tvalidation_errors_fixed\tverdict
+  REPORT: "API audit complete: {current_iteration} iterations, {len(issues_fixed)} fixes, spec valid, 0 breaking changes"
+```
+
+### Breaking Change Detection Reference
+
+```
+BREAKING CHANGE CATEGORIES (auto-detected by oasdiff):
+┌────────────────────────────────────────┬──────────────┬─────────────────────────────┐
+│ Change                                 │ Severity     │ Auto-fix                    │
+├────────────────────────────────────────┼──────────────┼─────────────────────────────┤
+│ Endpoint removed                       │ BREAKING     │ Revert, add Sunset header   │
+│ Required field added to request        │ BREAKING     │ Make optional with default   │
+│ Response field removed                 │ BREAKING     │ Revert, deprecate instead   │
+│ Response type narrowed (enum reduced)  │ BREAKING     │ Revert, keep old values     │
+│ Status code removed from responses     │ BREAKING     │ Revert                      │
+│ Path parameter renamed                 │ BREAKING     │ Revert, add new path        │
+│ New optional request field added       │ ADDITIVE     │ Keep                        │
+│ New response field added               │ ADDITIVE     │ Keep                        │
+│ New endpoint added                     │ ADDITIVE     │ Keep                        │
+│ Enum value added                       │ ADDITIVE     │ Keep                        │
+│ Field marked deprecated                │ DEPRECATION  │ Keep, add Sunset            │
+└────────────────────────────────────────┴──────────────┴─────────────────────────────┘
+
+THRESHOLDS:
+- 0 breaking changes allowed per release (hard gate)
+- Deprecated fields must have Sunset date within 6 months
+- Additive changes: unlimited, no gate
+- Spec validation: 0 errors, 0 warnings (spectral/redocly)
+```
+
+### Audit TSV Log
+
+Append to `.godmode/api-audit.tsv` after every audit loop:
+
+```
+Fields: timestamp\tspec_file\titerations\tissues_found\tissues_fixed\tbreaking_changes_caught\tvalidation_errors_fixed\tverdict
+Example: 2025-07-15T10:30:00Z\tdocs/api/openapi.yaml\t3\t7\t7\t2\t5\tPASS
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run API tasks sequentially: spec design, then implementation, then tests.

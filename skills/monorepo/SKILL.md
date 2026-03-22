@@ -792,6 +792,227 @@ IF build fails after adding a new package:
 - **Do NOT hoist all dependencies to root.** Hoisting causes phantom dependency problems where packages use dependencies they didn't declare. Use strict mode (pnpm default).
 
 
+## Monorepo Health Audit
+
+Comprehensive audit loop for build time analysis, dependency graph health, and circular dependency detection with quantified metrics:
+
+```
+MONOREPO HEALTH AUDIT LOOP:
+
+current_check = 0
+audit_checks = [
+    "build_time_analysis",
+    "dependency_graph_health",
+    "circular_dependency_detection",
+    "package_boundary_enforcement",
+    "config_duplication_scan",
+    "orphan_package_detection",
+    "hub_package_risk_assessment",
+    "cache_hit_rate_analysis",
+    "ci_pipeline_efficiency"
+]
+total_checks = len(audit_checks)
+issues = []
+recommendations = []
+
+WHILE current_check < total_checks:
+    check = audit_checks[current_check]
+
+    1. RUN diagnostic for {check}
+    2. MEASURE against thresholds
+    3. IF threshold exceeded:
+         issues.append({check, severity, details})
+         recommendations.append({check, fix, effort, impact})
+    4. current_check += 1
+    5. REPORT "Audit: {current_check}/{total_checks} — {check} — {PASS|WARN|FAIL}"
+
+FINAL: Monorepo health scorecard with prioritized improvements
+```
+
+### Build Time Analysis
+
+```
+BUILD TIME ANALYSIS:
+┌──────────────────────────────────────────────────────────────┐
+│  Metric                    │ Measured   │ Threshold │ Status  │
+├────────────────────────────┼────────────┼───────────┼─────────┤
+│  Full build (cold)         │ <N> min    │ < 10 min  │ P|W|F   │
+│  Full build (cached)       │ <N> min    │ < 2 min   │ P|W|F   │
+│  Affected-only build       │ <N> min    │ < 3 min   │ P|W|F   │
+│  Full test (cold)          │ <N> min    │ < 15 min  │ P|W|F   │
+│  Full test (cached)        │ <N> min    │ < 3 min   │ P|W|F   │
+│  Affected-only test        │ <N> min    │ < 5 min   │ P|W|F   │
+│  Lint (all packages)       │ <N> min    │ < 2 min   │ P|W|F   │
+│  Type check (all packages) │ <N> min    │ < 3 min   │ P|W|F   │
+│  Install (cold)            │ <N> min    │ < 3 min   │ P|W|F   │
+│  Install (cached)          │ <N> sec    │ < 30 sec  │ P|W|F   │
+├────────────────────────────┼────────────┼───────────┼─────────┤
+│  Remote cache hit rate     │ <N>%       │ > 70%     │ P|W|F   │
+│  Local cache hit rate      │ <N>%       │ > 80%     │ P|W|F   │
+├────────────────────────────┴────────────┴───────────┴─────────┤
+│  SLOWEST PACKAGES (build time):                                │
+│  1. <package> — <N> sec (reason: <large bundle/many deps>)    │
+│  2. <package> — <N> sec (reason: <type generation/codegen>)   │
+│  3. <package> — <N> sec (reason: <integration tests>)         │
+├──────────────────────────────────────────────────────────────┤
+│  BUILD TIME OPTIMIZATION OPPORTUNITIES:                        │
+│  - <opportunity 1: e.g., parallelize independent packages>    │
+│  - <opportunity 2: e.g., enable remote caching>               │
+│  - <opportunity 3: e.g., split large package into 2>          │
+│  - <opportunity 4: e.g., move tests to separate CI job>       │
+└──────────────────────────────────────────────────────────────┘
+
+BUILD TIME MEASUREMENT COMMANDS:
+  # Turborepo: measure with timing
+  TURBO_LOG_VERBOSITY=1 npx turbo run build --summarize
+  # Check summary: .turbo/runs/<run-id>/summary.json
+
+  # Nx: profile build performance
+  npx nx run-many --target=build --all --parallel --verbose
+  npx nx graph  # visualize task dependencies
+
+  # Generic: time individual package builds
+  time npx turbo run build --filter=@acme/web
+  time npx turbo run build --filter=@acme/api
+
+  # Cache analysis
+  npx turbo run build --dry=json  # shows what would cache-hit
+```
+
+### Dependency Graph Health
+
+```
+DEPENDENCY GRAPH HEALTH:
+┌──────────────────────────────────────────────────────────────┐
+│  Metric                       │ Measured │ Threshold│ Status  │
+├───────────────────────────────┼──────────┼──────────┼─────────┤
+│  Total packages               │ <N>      │ —        │ INFO    │
+│  Total dependency edges       │ <N>      │ —        │ INFO    │
+│  Max dependency depth         │ <N>      │ ≤ 4      │ P|W|F   │
+│  Circular dependencies        │ <N>      │ 0        │ P|FAIL  │
+│  Orphan packages (0 dependents│ <N>      │ 0        │ P|W     │
+│  AND not an app)              │          │          │         │
+│  Hub packages (>5 dependents) │ <N>      │ ≤ 2      │ P|W|F   │
+│  Avg dependencies per package │ <N>      │ ≤ 5      │ P|W|F   │
+│  Phantom dependencies         │ <N>      │ 0        │ P|FAIL  │
+│  (used but not declared)      │          │          │         │
+│  Unused declared dependencies │ <N>      │ 0        │ P|W     │
+├───────────────────────────────┴──────────┴──────────┴─────────┤
+│  DEPENDENCY TOPOLOGY:                                          │
+│                                                                │
+│  Layer 0 (leaf packages — no internal deps):                   │
+│    <list: e.g., @acme/types, @acme/config>                    │
+│                                                                │
+│  Layer 1 (depends only on layer 0):                            │
+│    <list: e.g., @acme/utils, @acme/ui-primitives>             │
+│                                                                │
+│  Layer 2 (depends on layer 0-1):                               │
+│    <list: e.g., @acme/ui, @acme/api-client>                   │
+│                                                                │
+│  Layer N (apps — depend on everything, nothing depends on):    │
+│    <list: e.g., @acme/web, @acme/api, @acme/admin>            │
+├──────────────────────────────────────────────────────────────┤
+│  GRAPH HEALTH GRADE: <A|B|C|D|F>                               │
+│  A: 0 cycles, depth ≤ 3, ≤ 1 hub, 0 phantoms                 │
+│  B: 0 cycles, depth ≤ 4, ≤ 2 hubs                            │
+│  C: 1-2 cycles or depth > 4 or > 2 hubs                      │
+│  D: 3+ cycles or phantom dependencies                         │
+│  F: widespread circular deps or no dependency management      │
+└──────────────────────────────────────────────────────────────┘
+
+GRAPH ANALYSIS COMMANDS:
+  # Turborepo: generate dependency graph
+  npx turbo run build --graph=dep-graph.html
+
+  # Nx: interactive dependency graph
+  npx nx graph
+
+  # Madge: circular dependency detection (JS/TS)
+  npx madge --circular --extensions ts,tsx packages/ apps/
+
+  # Custom: analyze package.json dependency declarations
+  node -e "
+    const fs = require('fs');
+    const glob = require('glob');
+    const pkgs = glob.sync('*/*/package.json', {cwd: '.'});
+    pkgs.forEach(p => {
+      const pkg = JSON.parse(fs.readFileSync(p));
+      const deps = Object.keys(pkg.dependencies || {}).filter(d => d.startsWith('@acme/'));
+      console.log(pkg.name + ' -> ' + deps.join(', '));
+    });
+  "
+```
+
+### Circular Dependency Detection and Resolution
+
+```
+CIRCULAR DEPENDENCY RESOLUTION:
+┌──────────────────────────────────────────────────────────────┐
+│  Cycle                           │ Severity  │ Fix Strategy   │
+├──────────────────────────────────┼───────────┼────────────────┤
+│  A → B → A                      │ HIGH      │ Extract shared │
+│  (direct cycle)                  │           │ code into C    │
+├──────────────────────────────────┼───────────┼────────────────┤
+│  A → B → C → A                  │ HIGH      │ Dependency     │
+│  (transitive cycle)             │           │ inversion at   │
+│                                  │           │ weakest link   │
+├──────────────────────────────────┼───────────┼────────────────┤
+│  A → B (runtime only)           │ MEDIUM    │ Event-based    │
+│  B → A (type-only import)       │           │ decoupling or  │
+│                                  │           │ extract types  │
+└──────────────────────────────────┴───────────┴────────────────┘
+
+FOR EACH CYCLE:
+  1. IDENTIFY the cycle: list all packages in the cycle
+  2. CLASSIFY edge types: runtime import | type-only import | dev dependency
+  3. FIND the weakest link: which edge is easiest to break?
+  4. APPLY fix:
+     a. Extract shared types/interfaces into a new leaf package
+     b. Use dependency inversion: introduce interface in the higher-level package
+     c. Use events/callbacks instead of direct imports
+     d. Merge packages if they are logically one unit
+  5. VERIFY: re-run circular dependency detection — must show 0 cycles
+  6. COMMIT: "monorepo: break circular dependency between {A} and {B}"
+
+PREVENTION:
+  - Add lint rule: @nx/enforce-module-boundaries or custom script
+  - Run circular dependency check in CI (fail on any cycle)
+  - Add to pre-commit hook: npx madge --circular --extensions ts packages/
+```
+
+### Monorepo Health Scorecard
+
+```
+MONOREPO HEALTH SCORECARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Dimension                   │ Score (1-10) │ Weight │ Total  │
+├──────────────────────────────┼──────────────┼────────┼────────┤
+│  Build performance           │ <score>      │ 0.20   │ <N>    │
+│  (build time, cache hits)    │              │        │        │
+│  Dependency graph health     │ <score>      │ 0.20   │ <N>    │
+│  (cycles, depth, hubs)       │              │        │        │
+│  Package boundaries          │ <score>      │ 0.15   │ <N>    │
+│  (violations, enforcement)   │              │        │        │
+│  Config consistency          │ <score>      │ 0.10   │ <N>    │
+│  (shared vs duplicated)      │              │        │        │
+│  CI/CD efficiency            │ <score>      │ 0.15   │ <N>    │
+│  (selective builds, caching) │              │        │        │
+│  Developer experience        │ <score>      │ 0.10   │ <N>    │
+│  (install time, HMR, DX)     │              │        │        │
+│  Package hygiene             │ <score>      │ 0.10   │ <N>    │
+│  (orphans, phantoms, unused) │              │        │        │
+├──────────────────────────────┼──────────────┼────────┼────────┤
+│  OVERALL MONOREPO HEALTH     │              │        │ <total>│
+│  Rating: EXCELLENT (8+) | GOOD (6-8) | NEEDS WORK (4-6) |   │
+│           CRITICAL (<4)                                       │
+├──────────────────────────────────────────────────────────────┤
+│  TOP 3 IMPROVEMENTS (by impact/effort):                       │
+│  1. <recommendation> — effort: <S|M|L>, impact: <HIGH|MED>   │
+│  2. <recommendation> — effort: <S|M|L>, impact: <HIGH|MED>   │
+│  3. <recommendation> — effort: <S|M|L>, impact: <HIGH|MED>   │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run monorepo tasks sequentially: structure, then shared config, then CI pipeline.

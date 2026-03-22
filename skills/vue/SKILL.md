@@ -967,6 +967,158 @@ WHEN component tests fail with mount errors:
 - **Do NOT use `reactive()` for primitives.** Use `ref()` for primitives and simple values. `reactive()` is for objects when you want deep reactivity without `.value`.
 
 
+## Vue-Specific Optimization Loop
+
+Autoresearch-grade iterative optimization for Vue.js reactivity performance, computed vs watch efficiency, and bundle optimization.
+
+```
+VUE OPTIMIZATION PROTOCOL:
+
+Phase 1 — Reactivity Audit
+  target: zero unnecessary reactive triggers, zero deep watchers on large objects
+  current_iteration = 0
+  max_iterations = 8
+
+  WHILE reactivity_issues > 0 AND current_iteration < max_iterations:
+    1. PROFILE with Vue DevTools Performance tab:
+       - Record a user interaction (page navigation, form input, list update)
+       - Identify components that re-render without visible change
+       - Check "Component render" timeline for excessive render cycles
+    2. AUDIT reactive state declarations:
+       FOR EACH component and composable:
+         a. Is reactive() used on a large object (>20 properties)? → Flag
+         b. Is ref() used where shallowRef() would suffice? → Flag
+         c. Are entire arrays replaced with new arrays on every update? → Flag
+         d. Is toRaw() missing when passing reactive objects to non-Vue APIs? → Flag
+    3. CLASSIFY issue:
+       a. Deep reactivity on large object → Switch to shallowRef + triggerRef
+       b. Over-reactive props → Use shallowRef for non-deeply-observed data
+       c. Watcher triggers cascade → Use watchEffect with explicit deps
+       d. Unnecessary computed re-evaluation → Check dependency chains
+       e. Template re-render from stable data → Use v-once or v-memo
+    4. APPLY targeted fix:
+       - (a) → shallowRef() + manual triggerRef() on mutation
+       - (b) → shallowRef() for data that only changes by replacement
+       - (c) → Replace watch(deepObj) with watch(() => deepObj.specificProp)
+       - (d) → Simplify computed dependency chain, remove intermediate refs
+       - (e) → v-memo="[deps]" on list items or v-once on static content
+    5. RE-PROFILE same interaction
+    6. RECORD:
+       component | issue | fix | renders_before | renders_after | trigger_count_delta
+    7. IF renders_after >= renders_before → REVERT fix
+    8. current_iteration += 1
+
+  REACTIVITY AUDIT RESULTS:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Check                                │  Count  │  Status           │
+  ├───────────────────────────────────────┼─────────┼───────────────────┤
+  │  reactive() on large objects          │  <N>    │  PASS | <N> found │
+  │  Deep watchers on arrays/objects      │  <N>    │  PASS | <N> found │
+  │  Unnecessary computed re-evals        │  <N>    │  PASS | <N> found │
+  │  Missing shallowRef opportunities     │  <N>    │  PASS | <N> found │
+  │  Components without v-memo on lists   │  <N>    │  PASS | <N> found │
+  │  Missing toRaw for external APIs      │  <N>    │  PASS | <N> found │
+  └───────────────────────────────────────┴─────────┴───────────────────┘
+
+Phase 2 — Computed vs Watch Optimization
+  Audit every watch and computed to ensure correct usage:
+
+  FOR EACH watch() and watchEffect() in the codebase:
+    1. CLASSIFY purpose:
+       a. Deriving a new value from reactive state → Should be computed()
+       b. Performing a side effect (API call, DOM mutation, logging) → Keep as watch()
+       c. Synchronizing external state (localStorage, URL) → Keep as watch()
+       d. Debouncing a reactive value → Keep as watchDebounced (VueUse)
+    2. CHECK watch configuration:
+       - Is { deep: true } used? → Can it be narrowed to specific properties?
+       - Is { immediate: true } used? → Is the initial value handled elsewhere?
+       - Is flush: 'post' needed? → Only if accessing updated DOM
+       - Is the watch stopped on unmount? → watchEffect auto-stops; manual watch may not
+    3. IDENTIFY misuse patterns:
+       a. watch() that sets another ref → Replace with computed()
+       b. watch() with deep: true on large object → Narrow to specific property
+       c. Multiple watches on same source → Consolidate into single watchEffect
+       d. watch() that could be computed with a getter → Replace with computed()
+    4. APPLY fix and verify no behavior change
+
+  COMPUTED vs WATCH AUDIT TABLE:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Pattern                          │  Count │  Action                │
+  ├───────────────────────────────────┼────────┼────────────────────────┤
+  │  watch() → should be computed()   │  <N>   │  Convert to computed   │
+  │  watch({ deep: true }) too broad  │  <N>   │  Narrow to property    │
+  │  Redundant duplicate watchers     │  <N>   │  Consolidate           │
+  │  watch() missing cleanup          │  <N>   │  Add onCleanup/stop    │
+  │  Correct watch() (side effects)   │  <N>   │  No change             │
+  │  Correct computed() (derivations) │  <N>   │  No change             │
+  └───────────────────────────────────┴────────┴────────────────────────┘
+
+Phase 3 — Vue Bundle & Render Performance
+  targets:
+    Initial JS (gzipped): < 150 KB
+    Component render time: < 16ms (60fps budget)
+    Lighthouse Performance: >= 90
+
+  WHILE any metric exceeds target:
+    1. ANALYZE bundle:
+       npx vite build --report
+       npx rollup-plugin-visualizer (or npx vite-bundle-visualizer)
+    2. IDENTIFY bloat:
+       - Full Vue import instead of tree-shaken?
+       - Unused components registered globally?
+       - Heavy UI library (Vuetify/Quasar) fully imported?
+       - Unused VueUse composables imported via barrel file?
+    3. APPLY targeted fix:
+       - Switch global component registration to local imports
+       - Use vuetify-loader or quasar auto-import for on-demand components
+       - Replace barrel imports with direct path imports
+       - Lazy-load route components: () => import('./views/Heavy.vue')
+       - Use defineAsyncComponent for heavy components within pages
+    4. MEASURE render performance:
+       - Vue DevTools Performance → record interaction → check per-component render time
+       - Target: no single component render > 16ms
+       - For list rendering: use v-memo, virtual scrolling (@tanstack/vue-virtual)
+    5. RE-MEASURE bundle and Lighthouse
+    6. RECORD:
+       area | technique | metric_before | metric_after | status
+    7. IF metric worsens → REVERT
+
+  FINAL OPTIMIZATION REPORT:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Metric                       │  Before    │  After     │  Target    │
+  ├───────────────────────────────┼────────────┼────────────┼────────────┤
+  │  Initial JS (gzipped)         │  <N> KB    │  <N> KB    │  < 150 KB  │
+  │  Largest component render     │  <N>ms     │  <N>ms     │  < 16ms    │
+  │  Unnecessary re-renders       │  <N>       │  <N>       │  0         │
+  │  Deep watchers on large objs  │  <N>       │  <N>       │  0         │
+  │  watch→computed conversions   │  <N>       │  0         │  0         │
+  │  Lighthouse Performance       │  <N>       │  <N>       │  >= 90     │
+  │  vue-tsc errors               │  <N>       │  0         │  0         │
+  └───────────────────────────────┴────────────┴────────────┴────────────┘
+```
+
+### Vue Optimization TSV Logging
+
+Append one row per optimization action to `.godmode/vue-optimization.tsv`:
+
+```
+timestamp	project	phase	target	metric	before	after	technique	status
+2024-01-15T10:30:00Z	my-app	reactivity	UserList	render_count	18	3	v-memo+shallowRef	improved
+2024-01-15T10:45:00Z	my-app	computed_vs_watch	useCart	watch_to_computed	5	0	refactor-to-computed	improved
+2024-01-15T11:00:00Z	my-app	bundle	vendor-chunk	size_kb	210	128	tree-shake-vuetify	improved
+```
+
+### Vue Optimization Hard Rules
+
+```
+1. NEVER add shallowRef without understanding the reactivity implications. Nested mutations will not trigger updates.
+2. NEVER use watch() where computed() would work. If the watcher's only job is setting another ref, it should be a computed.
+3. ALWAYS profile with Vue DevTools before and after each optimization. Gut feelings about performance are wrong.
+4. NEVER use { deep: true } on watch() for objects with >20 properties. Narrow the watch to specific properties.
+5. ALWAYS run `npx vue-tsc --noEmit` and `npx vitest run` after each optimization to catch regressions.
+6. Log every optimization action in TSV format for reproducibility.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Vue tasks sequentially: components, then stores, then routing, then composables, then tests.

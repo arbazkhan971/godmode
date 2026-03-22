@@ -904,6 +904,255 @@ IF team has no active contributors familiar with the legacy code:
 - **Do NOT skip the dependency audit.** A codebase running on EOL Node.js with 3 critical vulnerabilities is a security incident waiting to happen. Fix security first, modernize second.
 
 
+## Legacy Modernization Audit Loop
+
+Structured iterative loop for dependency updates, dead code removal, and test coverage increase with quantified progress tracking:
+
+```
+LEGACY MODERNIZATION LOOP:
+
+current_iteration = 0
+max_iterations = 25
+modernization_queue = [
+    "dependency_audit",
+    "vulnerability_patches",
+    "deprecated_replacements",
+    "dead_code_removal",
+    "test_coverage_increase",
+    "god_class_extraction",
+    "type_safety_adoption"
+]
+metrics_baseline = capture_baseline()  # coverage, dep health, dead code, complexity
+
+WHILE modernization_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    task = modernization_queue.pop(0)
+
+    metrics_before = capture_metrics()
+
+    EXECUTE task:
+      IF task == "dependency_audit":         → run_dependency_audit()
+      IF task == "vulnerability_patches":    → patch_critical_vulns()
+      IF task == "deprecated_replacements":  → replace_deprecated_deps()
+      IF task == "dead_code_removal":        → remove_verified_dead_code()
+      IF task == "test_coverage_increase":   → add_characterization_tests()
+      IF task == "god_class_extraction":     → extract_focused_modules()
+      IF task == "type_safety_adoption":     → add_type_annotations()
+
+    metrics_after = capture_metrics()
+    delta = compute_delta(metrics_before, metrics_after)
+
+    IF delta.regression_detected:
+        REVERT last change
+        modernization_queue.insert(0, task)  # retry after other tasks
+        LOG "Iteration {current_iteration}: {task} — REVERTED (regression)"
+    ELSE:
+        COMMIT appropriate commit message
+        LOG "Iteration {current_iteration}: {task} — DONE (delta: {delta})"
+
+    IF task reveals new concerns:
+        modernization_queue.append(new_concerns)
+
+FINAL: Compare metrics_baseline to current metrics
+REPORT modernization progress summary
+```
+
+### Dependency Update Protocol
+
+```
+DEPENDENCY UPDATE PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Phase 1: Audit (read-only, no changes)                       │
+├──────────────────────────────────────────────────────────────┤
+│  1. Run: npm audit / pip-audit / govulncheck / cargo audit    │
+│  2. Run: npm outdated / pip list --outdated / go list -m -u   │
+│  3. Check each dependency:                                     │
+│     - Is it maintained? (last commit, open issues, downloads) │
+│     - Is it deprecated? (npm deprecation notice, README)       │
+│     - Is it EOL? (language version support, security patches) │
+│  4. Generate dependency health report (see table below)        │
+├──────────────────────────────────────────────────────────────┤
+│  Phase 2: Prioritize                                           │
+├──────────────────────────────────────────────────────────────┤
+│  Priority order:                                               │
+│  1. CRITICAL vulnerabilities (patch within 24h)                │
+│  2. HIGH vulnerabilities (patch within 1 week)                 │
+│  3. EOL dependencies (replace within 2 weeks)                  │
+│  4. Deprecated dependencies (replace within 1 month)           │
+│  5. Major version updates (plan and schedule)                  │
+│  6. Minor/patch updates (batch weekly)                         │
+├──────────────────────────────────────────────────────────────┤
+│  Phase 3: Update (one at a time)                               │
+├──────────────────────────────────────────────────────────────┤
+│  For EACH dependency update:                                   │
+│  1. Read changelog / migration guide                           │
+│  2. Create branch: git checkout -b deps/update-<pkg>-<ver>    │
+│  3. Update the dependency                                      │
+│  4. Run full test suite                                        │
+│  5. IF tests pass: commit, merge                               │
+│  6. IF tests fail: read migration guide, fix code, re-test    │
+│  7. IF fix is non-trivial: open issue, skip for now            │
+│  8. NEVER batch multiple major updates in one commit           │
+└──────────────────────────────────────────────────────────────┘
+
+DEPENDENCY HEALTH DASHBOARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Package        │ Current │ Latest │ Status    │ Action      │
+├─────────────────┼─────────┼────────┼───────────┼─────────────┤
+│  <dep-name>     │ <ver>   │ <ver>  │ UP TO DATE│ None        │
+│  <dep-name>     │ <ver>   │ <ver>  │ PATCH     │ Update      │
+│  <dep-name>     │ <ver>   │ <ver>  │ MINOR     │ Update+test │
+│  <dep-name>     │ <ver>   │ <ver>  │ MAJOR     │ Plan migr.  │
+│  <dep-name>     │ <ver>   │ —      │ DEPRECATED│ Replace     │
+│  <dep-name>     │ <ver>   │ —      │ EOL       │ Replace NOW │
+│  <dep-name>     │ <ver>   │ <ver>  │ VULN-CRIT │ Patch NOW   │
+├─────────────────┴─────────┴────────┴───────────┴─────────────┤
+│  Total: <N> deps │ Up to date: <N> │ Outdated: <N>           │
+│  Vulnerable: <N> │ Deprecated: <N> │ EOL: <N>                │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Dead Code Removal Protocol
+
+```
+DEAD CODE REMOVAL PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Step 1: Detection (multi-signal verification)                │
+├──────────────────────────────────────────────────────────────┤
+│  Signal 1 — Static analysis:                                  │
+│    Tool: ts-prune (TS), vulture (Python), deadcode (Go)       │
+│    Detects: unused exports, functions, classes, variables      │
+│    Limitation: misses dynamic references (eval, reflection)   │
+│                                                                │
+│  Signal 2 — Coverage analysis:                                 │
+│    Tool: jest --coverage, pytest-cov, go test -cover           │
+│    Detects: code paths never executed during tests             │
+│    Limitation: tests may not cover all runtime paths           │
+│                                                                │
+│  Signal 3 — Git history:                                       │
+│    Command: git log --since="2 years ago" -- <file>            │
+│    Detects: files/functions not modified in years              │
+│    Limitation: stable code is not necessarily dead             │
+│                                                                │
+│  Signal 4 — Runtime telemetry (production):                    │
+│    Tool: function-level instrumentation, feature flags         │
+│    Detects: code paths never hit in production                 │
+│    Limitation: requires deployment and observation period      │
+│                                                                │
+│  RULE: Require ≥ 2 signals confirming dead before removal     │
+├──────────────────────────────────────────────────────────────┤
+│  Step 2: Verification                                          │
+├──────────────────────────────────────────────────────────────┤
+│  For EACH candidate:                                           │
+│  1. Check for dynamic references: grep for string-based       │
+│     imports, reflection, eval, config-driven dispatch          │
+│  2. Check for external consumers: is this a library? Are      │
+│     other repos importing this symbol?                        │
+│  3. Check for conditional compilation: feature flags,          │
+│     environment-specific code, platform-specific paths         │
+│  4. IF any dynamic reference found: DO NOT REMOVE — flag as   │
+│     "suspected dead, needs runtime verification"               │
+├──────────────────────────────────────────────────────────────┤
+│  Step 3: Removal (one concern per commit)                      │
+├──────────────────────────────────────────────────────────────┤
+│  1. Remove dead code in a dedicated commit                     │
+│  2. Commit message: "cleanup: remove dead code — <description>"│
+│  3. Run full test suite after removal                          │
+│  4. Deploy to staging and monitor for errors (24h)             │
+│  5. IF errors appear: git revert immediately                   │
+│  6. Track: {file, LOC removed, signals used, date}            │
+└──────────────────────────────────────────────────────────────┘
+
+DEAD CODE REPORT:
+┌──────────────────────────────────────────────────────────────┐
+│  File/Symbol        │ LOC │ Signals        │ Status          │
+├─────────────────────┼─────┼────────────────┼─────────────────┤
+│  <file:symbol>      │ <N> │ static+git     │ REMOVED         │
+│  <file:symbol>      │ <N> │ static only    │ NEEDS RUNTIME   │
+│  <file:symbol>      │ <N> │ coverage+git   │ REMOVED         │
+│  <file:symbol>      │ <N> │ static+dynamic │ KEEP (dynamic)  │
+├─────────────────────┴─────┴────────────────┴─────────────────┤
+│  Total dead code removed: <N> LOC across <N> files            │
+│  Total dead code flagged (needs runtime): <N> LOC             │
+│  Total codebase reduction: <pct>%                             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Test Coverage Increase Protocol
+
+```
+TEST COVERAGE INCREASE PROTOCOL:
+┌──────────────────────────────────────────────────────────────┐
+│  Current coverage: <N>%  │  Target: <N>%  │  Gap: <N>%       │
+├──────────────────────────────────────────────────────────────┤
+│  Priority order for adding tests:                              │
+│  1. Critical business logic (payments, auth, data integrity)  │
+│  2. High-churn files (most modified in last 6 months)         │
+│  3. High-coupling modules (most dependents — breakage = pain) │
+│  4. Complex functions (cyclomatic > 10)                       │
+│  5. Uncovered error paths (catch blocks, fallbacks)           │
+├──────────────────────────────────────────────────────────────┤
+│  Test type per situation:                                      │
+│  - Unknown behavior → Characterization test (capture current) │
+│  - Complex output → Golden master test (save full output)      │
+│  - Business rules → Unit test (assert correct behavior)        │
+│  - Integration points → Integration test (real dependencies)   │
+│  - Error paths → Negative test (expect specific failures)      │
+├──────────────────────────────────────────────────────────────┤
+│  Coverage increase loop:                                       │
+│  current_coverage = measure_coverage()                         │
+│  target_coverage = 80  # or user-specified                     │
+│                                                                │
+│  WHILE current_coverage < target_coverage:                     │
+│    1. Find uncovered file with highest impact                  │
+│       (most dependents OR most business-critical)              │
+│    2. Write characterization tests for top 3 functions         │
+│    3. Commit: "test: add characterization tests for <module>"  │
+│    4. current_coverage = measure_coverage()                    │
+│    5. REPORT "Coverage: {current_coverage}% (+{delta}%)"       │
+│                                                                │
+│  RULE: Never write tests that assert "wrong" behavior.         │
+│  Characterization tests document current behavior with a       │
+│  comment noting known bugs. Fix bugs in separate commits.      │
+└──────────────────────────────────────────────────────────────┘
+
+COVERAGE TRACKING:
+┌──────────────────────────────────────────────────────────────┐
+│  Module              │ Before │ After │ Tests Added │ Type   │
+├──────────────────────┼────────┼───────┼─────────────┼────────┤
+│  <module>            │ <N>%   │ <N>%  │ <N>         │ char.  │
+│  <module>            │ <N>%   │ <N>%  │ <N>         │ golden │
+│  <module>            │ <N>%   │ <N>%  │ <N>         │ unit   │
+├──────────────────────┴────────┴───────┴─────────────┴────────┤
+│  Overall: <before>% → <after>% (+<delta>%)                    │
+│  Tests added: <N> total (<N> characterization, <N> unit)      │
+│  Modules now above 80%: <N> of <total>                        │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Legacy Modernization Progress Dashboard
+
+```
+LEGACY MODERNIZATION DASHBOARD:
+┌──────────────────────────────────────────────────────────────┐
+│  Metric                    │ Baseline │ Current │ Target     │
+├────────────────────────────┼──────────┼─────────┼────────────┤
+│  Test coverage             │ <N>%     │ <N>%    │ 80%        │
+│  Dependencies up to date   │ <N>/<N>  │ <N>/<N> │ All        │
+│  Vulnerabilities           │ <N>      │ <N>     │ 0          │
+│  Deprecated deps           │ <N>      │ <N>     │ 0          │
+│  Dead code (est. LOC)      │ <N>      │ <N>     │ 0          │
+│  God classes (>500 LOC)    │ <N>      │ <N>     │ 0          │
+│  Circular dependencies     │ <N>      │ <N>     │ 0          │
+│  Change confidence         │ <level>  │ <level> │ HIGH       │
+│  Avg cyclomatic complexity │ <N>      │ <N>     │ ≤ 10       │
+├────────────────────────────┴──────────┴─────────┴────────────┤
+│  Overall modernization progress: <N>%                         │
+│  Estimated remaining effort: <N> sprints                      │
+│  Phase: <assess|stabilize|strengthen|modernize|complete>      │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run legacy modernization tasks sequentially: assessment, then tests, then deps, then cleanup.

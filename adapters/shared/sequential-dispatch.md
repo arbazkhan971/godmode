@@ -143,3 +143,64 @@ Sequential execution is slower but produces identical results:
 - Final result quality (same code changes survive)
 
 The only difference is wall-clock time.
+
+---
+
+## Concrete Keep/Discard Examples
+
+These examples show exactly how the keep/revert logic works in sequential mode and why the outcome matches the parallel version.
+
+### Example 1: Optimize — one winner, two losers
+
+```
+Baseline: API latency = 120ms
+
+Round 1 (sequential):
+  1. Approach A: add DB index on users.email
+     Measure: 95ms  → KEEP (improved over 120ms baseline)
+     New baseline: 95ms
+
+  2. Approach B: enable query cache
+     Measure: 105ms → REVERT (105ms > 95ms current best)
+     Baseline stays: 95ms
+
+  3. Approach C: batch N+1 queries
+     Measure: 82ms  → KEEP (82ms < 95ms), revert A, keep C
+     New baseline: 82ms
+
+Result: only Approach C survives. Same as parallel (all three run, best wins).
+```
+
+### Example 2: Build — task passes or fails guard rails
+
+```
+Plan has 4 tasks: T1 (no deps), T2 (no deps), T3 (depends on T1), T4 (depends on T2)
+
+Sequential execution:
+  1. T1: implement auth middleware → test: PASS, lint: PASS → KEEP, commit
+  2. T2: add rate limiter → test: FAIL → fix attempt 1: FAIL → fix attempt 2: FAIL → REVERT, log DISCARDED
+  3. T3: add auth to routes (depends T1) → T1 complete, proceed → test: PASS → KEEP, commit
+  4. T4: add rate limit config (depends T2) → T2 was DISCARDED → SKIP, log BLOCKED
+
+Result: T1 and T3 committed, T2 reverted, T4 blocked. Same as parallel — T2 would fail
+guard rails in parallel too, and T4 would be blocked by T2's failure.
+```
+
+### Example 3: Review — all four passes run, findings merge
+
+```
+Sequential execution:
+  1. Correctness pass: finds 2 issues (null check missing, off-by-one)
+  2. Security pass: finds 1 issue (SQL injection in query builder)
+  3. Performance pass: finds 1 issue (unbounded SELECT *)
+  4. Style pass: finds 3 NITs (naming, import order, dead code)
+
+Merge step: 7 total findings, 0 duplicates.
+Verdict: REQUEST CHANGES (2 critical + 1 security = score below threshold).
+
+Same as parallel — each pass is independent, merge is deterministic.
+```
+
+### Why Results Are Identical
+
+In the parallel version, agents share no state during execution. Each agent works in its own worktree on a snapshot of the code at round start. The merge step after all agents finish is deterministic: best metric wins (optimize), guard-rail pass/fail is binary (build), and finding lists concatenate (review). Sequential execution produces the same inputs to the same merge logic, so the output is identical.

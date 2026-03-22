@@ -814,6 +814,185 @@ IF cutover succeeds but latency regresses:
 - **Do NOT ignore the team.** A migration is a people problem as much as a technical problem. The team needs training on the new technology, clear documentation, and time to ramp up.
 
 
+## Data Migration Loop
+
+Structured iterative loop for data migration with integrity checks, performance benchmarks, and rollback verification:
+
+```
+DATA MIGRATION LOOP:
+Source: <source system and version>
+Target: <target system and version>
+Data volume: <total records, total size>
+Downtime budget: <zero | minutes | hours>
+
+INTEGRITY CHECK PROTOCOL:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Phase    │ Status          │
+├──────────────────────────────────────────────────────────────────┤
+│  Row count: source == target        │ Per-batch│ PASS|FAIL|SKIP  │
+│  Checksum: MD5/SHA256 match         │ Per-batch│ PASS|FAIL|SKIP  │
+│  Spot-check: random 1000 rows match │ Per-batch│ PASS|FAIL|SKIP  │
+│  Schema match: all columns present  │ Pre-mig  │ PASS|FAIL       │
+│  Data types match (or mapped)       │ Pre-mig  │ PASS|FAIL       │
+│  NULL handling: NULLs preserved     │ Per-batch│ PASS|FAIL       │
+│  Unicode/encoding: UTF-8 preserved  │ Per-batch│ PASS|FAIL       │
+│  Date/time: timezone handling OK    │ Per-batch│ PASS|FAIL       │
+│  Referential integrity: FKs resolve │ Post-mig │ PASS|FAIL       │
+│  Edge cases: empty strings, 0,      │ Post-mig │ PASS|FAIL       │
+│    negative numbers, max values     │          │                 │
+│  Orphaned records: none created     │ Post-mig │ PASS|FAIL       │
+│  Sequence/auto-increment: correct   │ Post-mig │ PASS|FAIL       │
+│  Indexes rebuilt and verified       │ Post-mig │ PASS|FAIL       │
+│  Constraints re-enabled and valid   │ Post-mig │ PASS|FAIL       │
+└──────────────────────────────────────────────────────────────────┘
+
+  Per-batch integrity verification:
+    FOR each batch of BATCH_SIZE records:
+      1. MIGRATE batch from source to target
+      2. COUNT: source_count == target_count for this batch
+      3. CHECKSUM: compute hash of (id, key_columns) for random sample
+      4. COMPARE: sample matches between source and target
+      5. IF any check fails:
+         - HALT migration
+         - LOG failing records with details
+         - FIX data mapping or transformation
+         - RE-RUN failed batch (not entire migration)
+      6. LOG: { batch_id, records, duration, integrity_status }
+
+PERFORMANCE BENCHMARK PROTOCOL:
+┌──────────────────────────────────────────────────────────────────┐
+│  Metric                    │ Baseline  │ During Mig │ Acceptable │
+├──────────────────────────────────────────────────────────────────┤
+│  Source read latency (p99) │ <ms>      │ <ms>       │ < 2x base  │
+│  Target write latency (p99)│ <ms>      │ <ms>       │ < 3x base  │
+│  Application latency (p99) │ <ms>      │ <ms>       │ < 1.5x base│
+│  Application error rate    │ <pct>%    │ <pct>%     │ < 1.1x base│
+│  Migration throughput      │ N/A       │ <rec/s>    │ > <target> │
+│  Source CPU utilization    │ <pct>%    │ <pct>%     │ < 80%      │
+│  Target CPU utilization    │ <pct>%    │ <pct>%     │ < 80%      │
+│  Replication lag (if dual) │ <ms>      │ <ms>       │ < 5 min    │
+│  Total migration ETA       │ N/A       │ <hours>    │ < budget   │
+└──────────────────────────────────────────────────────────────────┘
+
+  Performance tuning during migration:
+    1. MEASURE baseline metrics before migration starts (1 hour window)
+    2. START migration with conservative batch size and rate limit
+    3. MONITOR source and target load continuously
+    4. IF source CPU > 60%: reduce batch size or add rate limiting
+    5. IF target write latency > 3x baseline: reduce concurrent writers
+    6. IF application latency > 1.5x baseline: pause migration, resume off-peak
+    7. GRADUALLY increase throughput as system proves stable
+    8. LOG: { timestamp, batch_size, throughput, source_cpu, target_cpu, app_latency }
+
+  Migration speed estimation:
+    total_records = <N>
+    current_throughput = <records/second>
+    estimated_completion = total_records / current_throughput
+    completed_pct = migrated_records / total_records * 100
+    REPORT every 10%: "Migration {completed_pct}% complete. ETA: {estimated_completion}"
+
+ROLLBACK VERIFICATION PROTOCOL:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Rollback plan documented           │ PASS|FAIL│ <doc link>      │
+│  Rollback tested in staging         │ PASS|FAIL│ <test date>     │
+│  Rollback time measured             │ PASS|FAIL│ <minutes>       │
+│  Data written to target can be      │ PASS|FAIL│ <reconciliation>│
+│    reconciled back to source        │          │                 │
+│  Feature flags control read/write   │ PASS|FAIL│ <flag names>    │
+│    routing (instant switch)         │          │                 │
+│  Dual-write is active during mig    │ PASS|FAIL│ <dual-write>    │
+│    (both systems get writes)        │          │                 │
+│  Rollback does not lose data        │ PASS|FAIL│ <proof>         │
+│    written during migration         │          │                 │
+│  Application code handles both      │ PASS|FAIL│ <abstraction>   │
+│    source and target transparently  │          │                 │
+│  Monitoring alerts configured for   │ PASS|FAIL│ <alert config>  │
+│    migration health                 │          │                 │
+│  Communication plan for rollback    │ PASS|FAIL│ <stakeholder    │
+│    (who to notify, how)             │          │  notification>  │
+│  Point of no return identified      │ PASS|FAIL│ <condition>     │
+└──────────────────────────────────────────────────────────────────┘
+
+  Rollback drill:
+    1. SET UP staging environment mirroring production
+    2. RUN migration to 50% completion
+    3. TRIGGER rollback (flip feature flag to source)
+    4. VERIFY: application serves correctly from source
+    5. VERIFY: no data loss (writes during migration are in source)
+    6. MEASURE: rollback completion time (must be < 5 minutes)
+    7. VERIFY: monitoring detects and alerts on rollback event
+    8. DOCUMENT: any issues found during drill, fix before production
+
+MIGRATION ITERATION PROTOCOL:
+current_phase = "pre_migration"
+phases = [pre_migration, dual_write, backfill, shadow_read, cutover, cleanup]
+integrity_failures = 0
+max_integrity_failures = 3
+
+WHILE current_phase != "complete":
+
+  IF current_phase == "pre_migration":
+    1. RUN schema comparison (source vs target)
+    2. RUN integrity check on empty target (schema, constraints, indexes)
+    3. TEST rollback procedure in staging
+    4. MEASURE baseline performance metrics
+    5. VERIFY dual-write code deployed and feature-flagged off
+    current_phase = "dual_write"
+
+  IF current_phase == "dual_write":
+    1. ENABLE dual-write (new writes go to both source and target)
+    2. MONITOR for 24 hours: verify writes land in both systems
+    3. COMPARE: random sample of new records match between systems
+    4. IF match rate < 99.9%: FIX dual-write logic before proceeding
+    current_phase = "backfill"
+
+  IF current_phase == "backfill":
+    1. MIGRATE historical data in batches (oldest first)
+    2. PER-BATCH integrity checks (count, checksum, spot-check)
+    3. MONITOR performance (source CPU, target CPU, app latency)
+    4. IF integrity check fails:
+       integrity_failures += 1
+       IF integrity_failures > max_integrity_failures: HALT and investigate
+       FIX and retry failed batch
+    5. REPORT progress every 10%
+    6. WHEN 100% backfilled: run FULL integrity verification
+    current_phase = "shadow_read"
+
+  IF current_phase == "shadow_read":
+    1. READ from both source and target, compare results
+    2. RETURN source results to application (target is shadow)
+    3. LOG every discrepancy with details
+    4. TARGET: > 99.99% match rate for 48 hours
+    5. IF match rate < 99.9%: investigate and fix discrepancies
+    current_phase = "cutover"
+
+  IF current_phase == "cutover":
+    1. SWITCH reads to target (feature flag flip)
+    2. MONITOR error rate and latency for 4 hours
+    3. IF error rate > 1.1x baseline OR latency > 1.5x baseline:
+       ROLLBACK to source immediately
+    4. KEEP dual-write active for 7 days (rollback safety)
+    current_phase = "cleanup"
+
+  IF current_phase == "cleanup":
+    1. DISABLE dual-write (target is sole source of truth)
+    2. KEEP source running for 14 more days (emergency rollback)
+    3. FINAL integrity check: full comparison
+    4. DECOMMISSION source after 14-day stability period
+    current_phase = "complete"
+
+FINAL:
+  REPORT migration summary:
+    - Total records migrated: <N>
+    - Integrity check failures: <N> (all resolved)
+    - Migration duration: <hours/days>
+    - Performance impact: <max latency increase during migration>
+    - Rollback events: <N> (0 in production is ideal)
+    - Data loss: ZERO (verified)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run tech migration tasks sequentially: file migration, then test migration, then verification.

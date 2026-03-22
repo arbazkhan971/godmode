@@ -418,6 +418,53 @@ Columns: timestamp, severity, title, detection_time, resolution_time, mttr_min, 
 - **Severity disputed**: Use the severity matrix (customer impact, data loss, revenue impact). If in doubt, classify higher and downgrade after investigation.
 - **Recurring incidents with same root cause**: Escalate to engineering leadership. Previous action items were insufficient. Require a systemic fix, not another band-aid.
 
+## Keep/Discard Discipline
+```
+After EACH investigation hypothesis is tested:
+  1. MEASURE: Does the evidence confirm or deny the hypothesis?
+  2. DECIDE:
+     - KEEP if: evidence confirms the hypothesis AND mitigation reduces error rate
+     - DISCARD if: evidence contradicts the hypothesis OR mitigation has no effect
+  3. Log the result: hypothesis, evidence, outcome (confirmed/denied), time spent.
+
+For action items in post-mortems:
+  - KEEP action items that address root cause or contributing factors
+  - DISCARD action items that are vague ("be more careful") or duplicate existing controls
+```
+
+## Stuck Recovery
+```
+IF >10 investigation iterations with no root cause identified:
+  1. WIDEN SCOPE: Look at the 24-hour window before the incident, not just the incident window.
+  2. CHECK CORRELATED CHANGES: deployments, config changes, dependency updates, certificate rotations.
+  3. ESCALATE: Increase severity by one level to bring in additional expertise.
+  4. If still stuck → declare root cause as "undetermined" in the post-mortem, add investigation action items with specific next steps.
+```
+
+## Stop Conditions
+```
+STOP investigation when ANY of these are true:
+  - Root cause identified with supporting evidence
+  - Service restored and stable for 15+ minutes (then shift to post-mortem mode)
+  - Incident downgraded below investigation threshold (SEV4)
+  - User explicitly requests stop
+
+STOP post-mortem when:
+  - All sections complete (timeline, impact, root cause, action items)
+  - All action items have owners and deadlines
+  - Document reviewed by at least one other team member
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler incident response:
+  - Rollback to last known good state before attempting a fix-forward
+  - Single root cause before exploring multi-factor theories
+  - Known mitigation (restart, scale up, disable feature flag) before novel approaches
+  - Fewer high-quality action items (3-5) over many vague ones (10+)
+  - Blameless language always — if you find yourself naming individuals, rewrite to name systems
+```
+
 ## Multi-Agent Dispatch
 For active incident response:
 ```

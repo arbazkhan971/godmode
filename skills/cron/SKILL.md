@@ -1272,6 +1272,48 @@ WHILE current_job < len(jobs):
 EXIT when all jobs configured OR user requests stop
 ```
 
+## Keep/Discard Discipline
+```
+After EACH cron job configuration change:
+  1. MEASURE: Run the job in test mode — does it complete without error?
+  2. COMPARE: Is the job safer than before? (locking added, idempotency verified, overlap guarded)
+  3. DECIDE:
+     - KEEP if: job runs successfully AND locking works AND no duplicate execution
+     - DISCARD if: job fails OR locking does not prevent duplicates OR overlap guard breaks
+  4. COMMIT kept changes. Revert discarded changes before configuring the next job.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to correctly configure a job:
+  1. Re-read the job handler code — the issue may be in the handler, not the scheduler config.
+  2. Simplify: remove all safeguards, verify the job runs at all, then add safeguards back one at a time.
+  3. Check infrastructure: is Redis reachable? Is the database connection pool large enough for scheduled jobs?
+  4. If still stuck → log stop_reason=stuck, skip this job, move to the next one. Return to it after all others are configured.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All detected jobs have proper scheduling, locking, idempotency, and monitoring
+  - User explicitly requests stop
+  - Max iterations (15) reached — report partial results with unconfigured jobs listed
+
+DO NOT STOP just because:
+  - One job is complex (still configure the simpler ones)
+  - Monitoring is not yet configured (that can be a separate pass)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler scheduling approach:
+  - node-cron for single-instance, in-process jobs before BullMQ for distributed scheduling
+  - Database advisory locks before Redis Redlock for distributed locking
+  - skip-if-running before max_instances for overlap protection
+  - Hardcoded schedule in code before dynamic schedule from database (unless user needs runtime changes)
+  - Fewer jobs with broader scope over many narrow-scope jobs (e.g., one cleanup job vs five)
+```
+
 ## Multi-Agent Dispatch
 For comprehensive cron/scheduling setup:
 ```

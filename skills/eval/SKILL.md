@@ -765,6 +765,155 @@ IF evaluation takes too long to run in CI:
 - **Do NOT evaluate only happy paths.** Adversarial inputs, edge cases, and out-of-scope queries reveal more about system quality than common-case inputs.
 
 
+## Evaluation Framework Audit
+
+Comprehensive audit of the evaluation framework itself to ensure metrics are meaningful, benchmarks are comprehensive, and regressions are detectable:
+
+```
+EVALUATION FRAMEWORK AUDIT:
+System: <system under evaluation>
+Framework: <DeepEval | RAGAS | Promptfoo | custom>
+Audit date: <date>
+
+METRIC SELECTION AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Primary metric aligns with biz goal│ PASS|FAIL│ <metric->goal>  │
+│  Multiple dimensions covered (not   │ PASS|FAIL│ <dimension list>│
+│    just accuracy)                   │          │                 │
+│  Metrics are actionable (failure    │ PASS|FAIL│ <diagnosis path>│
+│    points to a fixable component)   │          │                 │
+│  No metric gaming (metric improves  │ PASS|FAIL│ <sanity checks> │
+│    but actual quality does not)     │          │                 │
+│  Metrics are stable across runs     │ PASS|FAIL│ <variance test> │
+│    (low variance on same input)     │          │                 │
+│  Human-automated metric correlation │ PASS|FAIL│ <correlation r> │
+│    verified (r > 0.7)              │          │                 │
+│  Cost-aware metrics included        │ PASS|FAIL│ <cost tracking> │
+│  Latency metrics included           │ PASS|FAIL│ <latency track> │
+│  Safety metrics included            │ PASS|FAIL│ <safety evals>  │
+│  Per-segment metrics available      │ PASS|FAIL│ <slice evals>   │
+│    (by category, difficulty, source)│          │                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  Metric health check:
+    FOR each metric:
+      1. Compute metric on golden set 5 times (different random seeds if applicable)
+      2. IF std_dev > 5% of mean: UNSTABLE — metric has too much variance
+      3. IF metric == 100% for all examples: SATURATED — metric is too easy
+      4. IF metric shows no difference between good and bad systems: UNDISCRIMINATING
+      5. IF metric correlates < 0.5 with human judgment: MISCALIBRATED
+
+BENCHMARK COVERAGE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Dimension               │ Examples │ % of Total │ Adequate?     │
+├──────────────────────────────────────────────────────────────────┤
+│  Happy path (common)     │ <N>      │ <pct>      │ >= 40%        │
+│  Edge cases (unusual)    │ <N>      │ <pct>      │ >= 15%        │
+│  Adversarial (attacks)   │ <N>      │ <pct>      │ >= 10%        │
+│  Out-of-scope (refuse)   │ <N>      │ <pct>      │ >= 10%        │
+│  Regression (prev bugs)  │ <N>      │ <pct>      │ >= 10%        │
+│  Cross-category balance  │ <N cats> │ <balance>  │ No cat < 5%   │
+│  Difficulty distribution │ <E/M/H>  │ <pcts>     │ Balanced      │
+│  Freshness (last update) │ <date>   │ N/A        │ < 90 days     │
+│  Size sufficiency        │ <N total>│ N/A        │ >= 100        │
+└──────────────────────────────────────────────────────────────────┘
+
+  Benchmark coverage gaps:
+    1. SCAN for categories with < 5 examples: these are undertested
+    2. SCAN for difficulty levels with 0 examples: add hard cases
+    3. SCAN for recently-added features with no eval examples
+    4. CHECK: is the benchmark too easy? (if all systems score > 90%, add harder cases)
+    5. CHECK: is the benchmark representative? (compare query distribution to production logs)
+
+  Benchmark maintenance protocol:
+    - ADD new examples monthly (minimum 10 per month)
+    - ADD regression examples for every production bug found
+    - NEVER modify existing examples (append only)
+    - REVIEW and refresh every quarter (remove stale, add emerging patterns)
+    - VERSION the benchmark (semver) — major version when > 20% of examples change
+    - TRACK benchmark saturation (if top system scores > 95%, benchmark needs harder cases)
+
+REGRESSION DETECTION AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Regression suite exists            │ PASS|FAIL│ <test count>    │
+│  Every past production bug has a    │ PASS|FAIL│ <coverage %>    │
+│    corresponding regression test    │          │                 │
+│  Regression suite runs in CI        │ PASS|FAIL│ <CI job link>   │
+│  Regression failures block merges   │ PASS|FAIL│ <branch protect>│
+│  Regression tests use exact match   │ PASS|FAIL│ <match strategy>│
+│    OR semantic match OR assertions  │          │                 │
+│  New failures are auto-detected     │ PASS|FAIL│ <diff detection>│
+│    (compare to previous run)        │          │                 │
+│  Regression test set only grows     │ PASS|FAIL│ <deletion audit>│
+│    (never shrinks)                  │          │                 │
+│  Flaky tests identified and fixed   │ PASS|FAIL│ <flake rate %>  │
+│  Regression run time < 10 min       │ PASS|FAIL│ <run duration>  │
+│    (fast enough for CI)             │          │                 │
+│  Historical regression results      │ PASS|FAIL│ <storage>       │
+│    stored for trend analysis        │          │                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  Regression detection sensitivity test:
+    1. Take the current best system
+    2. Introduce a known degradation (e.g., remove a few-shot example, increase temperature)
+    3. Run regression suite
+    4. VERIFY: at least one regression test fails
+    5. IF no test fails: the regression suite is too weak — add more sensitive tests
+
+JUDGE QUALITY AUDIT (if using LLM-as-judge):
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Judge model differs from subject   │ PASS|FAIL│ <judge model>   │
+│  Judge calibrated vs human ratings  │ PASS|FAIL│ <kappa value>   │
+│  Judge rubric is specific (not vague│ PASS|FAIL│ <rubric review> │
+│  Position bias tested and mitigated │ PASS|FAIL│ <bias test>     │
+│  Verbosity bias tested              │ PASS|FAIL│ <bias test>     │
+│  Judge consistency tested (same     │ PASS|FAIL│ <intra-rater r> │
+│    input scored similarly)          │          │                 │
+│  Judge cost is sustainable          │ PASS|FAIL│ <cost per eval> │
+│  Judge latency is acceptable        │ PASS|FAIL│ <ms per eval>   │
+└──────────────────────────────────────────────────────────────────┘
+
+AUDIT VERDICT: <ROBUST — framework is sound | GAPS — <N> items to address>
+Priority fixes:
+  1. <highest priority gap>
+  2. <second priority gap>
+  3. <third priority gap>
+```
+
+### Evaluation Framework Audit Loop
+
+```
+EVAL FRAMEWORK AUDIT ITERATION:
+audit_areas = [metric_selection, benchmark_coverage, regression_detection, judge_quality]
+current_area = 0
+
+WHILE current_area < len(audit_areas):
+  area = audit_areas[current_area]
+
+  1. RUN all checks for the area
+  2. FOR each FAIL: document root cause and recommended fix
+  3. CLASSIFY severity: CRITICAL (evaluation is misleading) | HIGH (gaps in coverage) | MEDIUM (nice to have)
+  4. IF any CRITICAL failures in metric_selection or regression_detection:
+     HALT "Evaluation framework is unreliable. Fix before trusting eval results."
+
+  current_area += 1
+
+FINAL:
+  total_checks = sum(all checks across areas)
+  pass_count = sum(all PASS across areas)
+  framework_health = pass_count / total_checks * 100
+
+  IF framework_health < 60%: "Evaluation framework needs significant work. Results are unreliable."
+  IF framework_health >= 60% AND < 85%: "Evaluation framework is functional but has gaps."
+  IF framework_health >= 85%: "Evaluation framework is robust. Schedule re-audit in 90 days."
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run evaluation tasks sequentially: dataset/judges, then automated evaluation, then regression/reporting.

@@ -837,6 +837,269 @@ IF replication lag exceeds acceptable threshold:
 - **Do NOT design without testing partitions.** A distributed system that has never been tested under network partitions is a system waiting to corrupt data.
 
 
+## Distributed Systems Audit
+
+Structured audit loop for consistency verification, partition tolerance testing, and failure mode analysis:
+
+```
+DISTRIBUTED SYSTEMS AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 15
+audit_queue = [
+    "consistency_verification",
+    "partition_tolerance_testing",
+    "failure_mode_analysis",
+    "replication_health",
+    "consensus_health",
+    "clock_synchronization",
+    "data_integrity_verification"
+]
+findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. ANALYZE current implementation for {audit_aspect}
+    2. COMPARE against distributed systems invariants
+    3. CLASSIFY: SOUND | DEGRADED | UNSAFE
+    4. IF UNSAFE or DEGRADED: generate remediation with proof of correctness
+    5. IF audit reveals concerns in other aspects: audit_queue.append(concern)
+    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
+
+FINAL: Distributed systems safety report with verified invariants
+```
+
+### Consistency Checks
+
+```
+CONSISTENCY VERIFICATION:
+┌──────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence    │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Per-operation consistency level     │ PASS|FAIL│             │
+│  documented for ALL operations       │          │             │
+│  (which ops need strong, which       │          │             │
+│  tolerate eventual)                  │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Read-your-own-writes guarantee      │ PASS|FAIL│             │
+│  (user sees their own mutations      │          │             │
+│  immediately after write)            │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Monotonic reads guarantee           │ PASS|FAIL│             │
+│  (user never sees older state after  │          │             │
+│  seeing newer state)                 │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Causal ordering preserved           │ PASS|FAIL│             │
+│  (if A causes B, every observer      │          │             │
+│  sees A before B)                    │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  No lost updates under concurrency   │ PASS|FAIL│             │
+│  (concurrent writes to same key      │          │             │
+│  do not silently overwrite)          │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Convergence time measured           │ PASS|FAIL│ <p99 lag>   │
+│  (how long until all replicas        │          │             │
+│  converge after a write)             │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Conflict resolution strategy        │ PASS|FAIL│ <strategy>  │
+│  defined and tested                  │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Stale read protection               │ PASS|FAIL│             │
+│  (reads from replicas check lag      │          │             │
+│  against acceptable threshold)       │          │             │
+└─────────────────────────────────────┴──────────┴─────────────┘
+
+CONSISTENCY TESTING METHODOLOGY:
+  1. Write to primary, immediately read from replica
+     → Verify: does the system provide read-your-writes?
+  2. Write A, then write B (causally dependent)
+     → Read from multiple replicas: do all see A before B?
+  3. Concurrent writes to same key from different nodes
+     → Verify: conflict resolution produces deterministic result
+  4. Measure replication lag under load:
+     → p50, p95, p99 convergence time
+     → Alert threshold: when lag exceeds acceptable window
+  5. Network partition between primary and replica
+     → Verify: system behaves according to documented CAP choice
+     → CP: rejects writes on minority side
+     → AP: accepts writes, resolves conflicts on heal
+
+TOOLS:
+  - Jepsen: formal consistency testing for distributed databases
+  - Elle: transactional consistency checker
+  - Maelstrom: lightweight distributed systems workbench
+  - Custom: write-read pair tests with artificial network delays
+```
+
+### Partition Tolerance Testing
+
+```
+PARTITION TOLERANCE AUDIT:
+┌──────────────────────────────────────────────────────────────┐
+│  Scenario                           │ Expected │ Actual      │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Network partition: primary isolated │          │             │
+│  from all replicas                   │          │             │
+│  → Does system elect new leader?     │ YES      │ PASS|FAIL   │
+│  → How long until recovery?          │ <N>s     │ <N>s        │
+│  → Data loss during partition?       │ NONE     │ PASS|FAIL   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Network partition: cluster split    │          │             │
+│  into two equal halves               │          │             │
+│  → Which side accepts writes?        │ NEITHER  │ PASS|FAIL   │
+│  → Is split-brain prevented?         │ YES      │ PASS|FAIL   │
+│  → Fencing tokens enforced?          │ YES      │ PASS|FAIL   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Network partition: one replica      │          │             │
+│  isolated                            │          │             │
+│  → Does system continue serving?     │ YES      │ PASS|FAIL   │
+│  → Isolated replica stops serving?   │ YES      │ PASS|FAIL   │
+│  → Replica rejoins after heal?       │ YES      │ PASS|FAIL   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Asymmetric partition: A→B works,    │          │             │
+│  B→A fails                           │          │             │
+│  → Detected by failure detector?     │ YES      │ PASS|FAIL   │
+│  → Handled correctly (not split-     │ YES      │ PASS|FAIL   │
+│  brain)?                             │          │             │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Slow network (not partition):       │          │             │
+│  latency between nodes = 500ms       │          │             │
+│  → False positive leader election?   │ NO       │ PASS|FAIL   │
+│  → Timeout tuning adequate?          │ YES      │ PASS|FAIL   │
+├─────────────────────────────────────┼──────────┼─────────────┤
+│  Clock skew: 500ms difference        │          │             │
+│  between nodes                       │          │             │
+│  → Lease/lock safety preserved?      │ YES      │ PASS|FAIL   │
+│  → Event ordering still correct?     │ YES      │ PASS|FAIL   │
+└─────────────────────────────────────┴──────────┴─────────────┘
+
+CHAOS ENGINEERING TEST PLAN:
+  Tool: Chaos Mesh (K8s) | Toxiproxy | tc (Linux traffic control) | Pumba
+
+  Test 1: Network partition between zones
+    tc qdisc add dev eth0 root netem loss 100%  # drop all packets
+    Duration: 30s → 5m → 30m
+    Observe: leader election, write availability, read consistency
+
+  Test 2: Network delay injection
+    tc qdisc add dev eth0 root netem delay 500ms 200ms
+    Observe: timeout behavior, false positive elections, latency propagation
+
+  Test 3: Asymmetric partition
+    iptables -A OUTPUT -d <node-B> -j DROP  # A cannot reach B
+    (B can still reach A)
+    Observe: failure detector accuracy, split-brain prevention
+
+  Test 4: Clock skew
+    timedatectl set-ntp no; date -s "+30 seconds"
+    Observe: lease validity, lock safety, event ordering
+
+  Test 5: Process crash and recovery
+    kill -9 <leader-process>
+    Observe: failover time, data loss, client reconnection
+```
+
+### Failure Mode Analysis
+
+```
+FAILURE MODE ANALYSIS (FMA):
+┌──────────────────────────────────────────────────────────────┐
+│  Component          │ Failure Mode       │ Detection │ Impact │
+│                     │                    │ Time      │        │
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Leader node        │ Crash              │ <N>s      │        │
+│  (consensus leader) │ → New leader       │ (election │ Write  │
+│                     │   elected          │  timeout) │ pause  │
+│                     │ → Client retries   │           │ <N>s   │
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Follower node      │ Crash              │ <N>s      │        │
+│  (read replica)     │ → Reads rerouted   │ (health   │ Minimal│
+│                     │   to remaining     │  check)   │ (if    │
+│                     │   followers        │           │ >1     │
+│                     │ → Reduced fault    │           │ replica│
+│                     │   tolerance margin │           │ left)  │
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Network partition  │ Cluster split      │ <N>s      │        │
+│                     │ → Minority side    │ (heartbeat│ Partial│
+│                     │   stops serving    │  timeout) │ unavail│
+│                     │ → Majority side    │           │ for    │
+│                     │   continues        │           │ minority│
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Message broker     │ Broker down        │ <N>s      │        │
+│  (Kafka/RabbitMQ)   │ → Events queued    │ (conn     │ Event  │
+│                     │   client-side      │  timeout) │ delay  │
+│                     │ → Sync calls as    │           │ until  │
+│                     │   fallback (if any)│           │ recover│
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Database primary   │ Crash              │ <N>s      │        │
+│                     │ → Automated        │ (HA proxy │ Write  │
+│                     │   failover to      │  or cloud │ pause  │
+│                     │   standby          │  failover)│ <N>s   │
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  Cache (Redis)      │ Crash / eviction   │ <N>s      │        │
+│                     │ → Cache miss →     │ (conn     │ Latency│
+│                     │   database hit     │  error)   │ spike  │
+│                     │ → Stampede risk    │           │        │
+├─────────────────────┼────────────────────┼───────────┼────────┤
+│  DNS resolution     │ DNS failure        │ <N>s      │        │
+│                     │ → Service          │ (lookup   │ Total  │
+│                     │   discovery fails  │  timeout) │ outage │
+│                     │ → Cached entries   │           │ if no  │
+│                     │   expire           │           │ cache  │
+└─────────────────────┴────────────────────┴───────────┴────────┘
+
+FOR EACH FAILURE MODE:
+  Component: <name>
+  Failure: <what breaks>
+  Probability: <LOW|MEDIUM|HIGH> (based on historical data or MTBF)
+  Detection: <how is it detected and how fast>
+  Impact: <what degrades or stops working>
+  Blast radius: <which users/services are affected>
+  Recovery:
+    Automated: <what happens automatically>
+    Manual: <what requires human intervention>
+    RTO: <recovery time objective>
+    RPO: <recovery point objective — max data loss>
+  Mitigation: <preventive measure to reduce probability or impact>
+  Last tested: <date of last chaos test for this mode>
+
+FAILURE MODE COVERAGE:
+  Total failure modes documented: <N>
+  Failure modes with automated recovery: <N>
+  Failure modes tested via chaos engineering: <N>
+  Failure modes with no mitigation: <N> (ACTION REQUIRED)
+  Mean time to recovery (MTTR) across all modes: <N> seconds
+```
+
+### Distributed Systems Safety Report
+
+```
+DISTRIBUTED SYSTEMS SAFETY REPORT:
+┌──────────────────────────────────────────────────────────────┐
+│  System: <name>                                                │
+│  Topology: <single-region|multi-region|edge>                   │
+│  Nodes: <N>  │  CAP choice: <CP|AP>  │  PACELC: <class>       │
+├──────────────────────────────────────────────────────────────┤
+│  Safety Dimension        │ Status     │ Last Verified          │
+├──────────────────────────┼────────────┼────────────────────────┤
+│  Consistency guarantees  │ VERIFIED   │ <date>                 │
+│  Partition handling      │ VERIFIED   │ <date>                 │
+│  Leader election safety  │ VERIFIED   │ <date>                 │
+│  Fencing token usage     │ VERIFIED   │ <date>                 │
+│  Clock independence      │ VERIFIED   │ <date>                 │
+│  Failure mode coverage   │ <N>/<total>│ <date>                 │
+│  Chaos test coverage     │ <N>/<total>│ <date>                 │
+├──────────────────────────┴────────────┴────────────────────────┤
+│  OVERALL SAFETY: SOUND | PARTIALLY VERIFIED | UNVERIFIED       │
+│  RECOMMENDED ACTIONS:                                          │
+│  1. <highest priority action>                                  │
+│  2. <next priority action>                                     │
+│  3. <next priority action>                                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run distributed system tasks sequentially: design, then coordination, then data/sharding.

@@ -231,6 +231,56 @@ Full list: [COMPLETE-SKILL-LIST.md](COMPLETE-SKILL-LIST.md)
 
 ---
 
+## Reading Godmode Logs
+
+Every skill appends to `.godmode/<skill>-results.tsv`. The TSV is the source of truth.
+
+Example `optimize-results.tsv`:
+```
+round  agent    change              metric_before  metric_after  status
+1      agent_1  add_index           847            554           kept
+2      agent_2  enable_gzip         554            382           kept
+3      agent_1  batch_loader        382            390           discarded
+```
+
+Read: Round 2 improved from 554->382 (31% better), kept. Round 3 made things worse (390>382), discarded.
+
+---
+
+## Enhanced Decision Tree
+
+When in doubt, use this tree. Each branch tells you what NOT to pick.
+
+```
+"I have code but it's broken"
+├─ errors are clear (stack trace, lint) → /godmode:fix
+│  (NOT debug — debug is for unclear failures)
+└─ cause is unknown → /godmode:debug
+   (NOT fix — fix assumes you know what's broken)
+
+"I want to improve performance"
+├─ have a metric command → /godmode:optimize
+└─ don't know what's slow → /godmode:perf (profile first)
+```
+
+---
+
+## Skill Output Format Guide
+
+Every skill outputs a single summary line in a consistent format:
+
+```
+<Skill>: <before> → <after> (<delta>%). <kept> kept, <discarded> discarded. Status: DONE|PARTIAL.
+```
+
+Examples:
+```
+Optimize: 847ms → 198ms (76.6%). 5 kept, 1 discarded. Status: DONE.
+Test: coverage 45% → 82%. 37 tests added. Status: DONE.
+```
+
+---
+
 ## Common Gotchas
 
 **1. Using `fix` when you need `debug`.**

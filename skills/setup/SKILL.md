@@ -239,6 +239,209 @@ Setup: validating... test (npx vitest) — PASS (2.3s).
 Setup: updated .godmode/config.yaml. Committed.
 ```
 
+## Setup Validation Loop
+
+Comprehensive protocol for validating the entire development environment is correctly configured and functional:
+
+```
+SETUP VALIDATION LOOP:
+current_iteration = 0
+max_iterations = 6
+validation_phases = [env_detection, dependency_installation, command_validation, config_integrity, smoke_test, developer_readiness]
+
+WHILE current_iteration < max_iterations:
+  phase = validation_phases[current_iteration]
+  current_iteration += 1
+
+  IF phase == "env_detection":
+    1. DETECT runtime environment:
+       RUNTIME CHECKS:
+       ┌──────────────────────┬────────────┬──────────────┬──────────┐
+       │  Runtime             │  Required  │  Detected    │  Status  │
+       ├──────────────────────┼────────────┼──────────────┼──────────┤
+       │  Node.js             │  >= 18     │  <version>   │  OK/FAIL │
+       │  npm/pnpm/yarn/bun   │  >= <ver>  │  <version>   │  OK/FAIL │
+       │  Python              │  >= 3.10   │  <version>   │  OK/FAIL │
+       │  Go                  │  >= 1.21   │  <version>   │  OK/FAIL │
+       │  Rust                │  >= 1.70   │  <version>   │  OK/FAIL │
+       │  Docker              │  >= 20     │  <version>   │  OK/FAIL │
+       │  Git                 │  >= 2.30   │  <version>   │  OK/FAIL │
+       └──────────────────────┴────────────┴──────────────┴──────────┘
+
+    2. CHECK system dependencies:
+       - Database clients: psql, mysql, mongosh (if project uses DB)
+       - Cache: redis-cli (if project uses Redis)
+       - OS tools: curl, jq, make, openssl
+       - Cloud CLIs: aws, gcloud, az, fly (if project deploys to cloud)
+
+    3. CHECK environment variables:
+       - Parse .env.example (if exists)
+       - Compare against current environment
+       - Flag MISSING required vars (those without defaults)
+       - Flag PLACEHOLDER vars (still set to example values)
+
+    4. REPORT:
+       ENV DETECTION:
+       - Runtime: {language} {version} — {OK | VERSION MISMATCH | MISSING}
+       - Package manager: {manager} {version} — {OK | MISSING}
+       - System deps: {N}/{M} present
+       - Env vars: {N}/{M} configured, {K} missing, {J} placeholder
+       - Grade: {A-F}
+
+  IF phase == "dependency_installation":
+    1. INSTALL project dependencies:
+       a. Detect package manager from lockfile (see Step 1 of main workflow)
+       b. Run install command:
+          npm ci / pnpm install --frozen-lockfile / yarn install --frozen-lockfile
+       c. Measure: install time, disk usage, warning count
+
+    2. VERIFY installation:
+       - node_modules/ exists and has expected top-level packages
+       - No peer dependency warnings (or all are acceptable)
+       - No deprecated package warnings for direct dependencies
+       - Lock file unchanged after install (reproducible build)
+
+    3. CHECK for platform-specific issues:
+       - Native modules that may fail on current OS/arch
+       - Python: venv created and activated
+       - Rust: cargo build completes without errors
+       - Go: go mod download completes
+
+    4. REPORT:
+       DEPENDENCY INSTALLATION:
+       - Install time: <N> seconds
+       - Packages installed: <N> (production) + <N> (dev)
+       - Warnings: <N> (peer deps: <N>, deprecated: <N>)
+       - Disk usage: <N> MB
+       - Reproducible: YES/NO (lock file unchanged)
+       - Grade: {A-F}
+
+  IF phase == "command_validation":
+    1. VALIDATE each configured command by execution:
+       FOR each cmd in [test_cmd, lint_cmd, typecheck_cmd, build_cmd, dev_cmd]:
+         IF cmd is configured (not "—"):
+           START = now()
+           result = run(cmd)
+           DURATION = elapsed()
+           STATUS = result.exit_code == 0 ? "PASS" : "FAIL"
+
+           IF STATUS == "FAIL":
+             error_output = last 20 lines of stderr
+             DIAGNOSE common failures:
+               - "command not found" → missing dependency, suggest install
+               - "ENOENT" → missing file, check paths
+               - "permission denied" → suggest chmod or check user
+               - "EADDRINUSE" → port conflict, suggest alternative port
+               - "MODULE_NOT_FOUND" → missing dependency, suggest npm install
+
+    2. REPORT:
+       COMMAND VALIDATION:
+       ┌──────────┬──────────────────┬────────┬──────────┐
+       │ Command  │ Value            │ Status │ Time     │
+       ├──────────┼──────────────────┼────────┼──────────┤
+       │ test     │ npx vitest       │ PASS   │ 4.2s     │
+       │ lint     │ eslint --fix     │ PASS   │ 1.8s     │
+       │ typecheck│ tsc --noEmit     │ PASS   │ 3.1s     │
+       │ build    │ npm run build    │ FAIL   │ 0.3s     │
+       │ dev      │ npm run dev      │ PASS   │ 2.1s     │
+       └──────────┴──────────────────┴────────┴──────────┘
+
+  IF phase == "config_integrity":
+    1. VALIDATE .godmode/config.yaml:
+       - YAML parses without errors
+       - All required keys present: project, commands, platform, scope
+       - All command values are either valid commands or "—"
+       - Scope include/exclude paths exist on disk
+       - No stale references to renamed/deleted paths
+
+    2. VALIDATE project config files:
+       - package.json: valid JSON, required fields present
+       - tsconfig.json: valid JSON, paths resolve
+       - .env.example: all keys have descriptive comments
+       - CI config: syntax valid (actionlint for GitHub Actions)
+
+    3. CHECK for config drift:
+       - .godmode/config.yaml command matches actual working command
+       - package.json scripts match documented commands
+       - CI commands match local commands
+
+    4. REPORT config health
+
+  IF phase == "smoke_test":
+    1. RUN end-to-end smoke test of the development workflow:
+       a. START the application (dev mode):
+          Run dev_cmd in background
+          Wait for ready signal (port listening, "compiled" message)
+          IF timeout after 60s: FAIL
+
+       b. VERIFY application responds:
+          IF web app: curl -sf http://localhost:{port}/ → expect 200
+          IF API: curl -sf http://localhost:{port}/health → expect 200
+          IF CLI: run --help → expect exit 0
+          IF library: import main export in a test script → expect no error
+
+       c. VERIFY hot reload (if applicable):
+          Edit a source file (add a comment)
+          Wait for recompile signal (< 10 seconds)
+          Verify application still responds
+
+       d. STOP the application
+       e. RUN full test suite one more time
+
+    2. REPORT:
+       SMOKE TEST:
+       ┌──────────────────────────────────────┬──────────┐
+       │  Check                               │  Status  │
+       ├──────────────────────────────────────┼──────────┤
+       │  Application starts                  │  OK/FAIL │
+       │  Application responds (HTTP/CLI)     │  OK/FAIL │
+       │  Hot reload works                    │  OK/FAIL │
+       │  Tests pass after smoke              │  OK/FAIL │
+       │  Graceful shutdown                   │  OK/FAIL │
+       └──────────────────────────────────────┴──────────┘
+
+  IF phase == "developer_readiness":
+    1. AGGREGATE all validation results into final readiness score:
+       required_pass = [env_detection, dependency_installation, command_validation]
+       recommended_pass = [config_integrity, smoke_test]
+
+       IF all required PASS: "READY — development environment is fully functional"
+       IF any required FAIL: "BLOCKED — {N} critical issues must be resolved"
+       IF required PASS but recommended FAIL: "READY WITH WARNINGS — {N} non-critical issues"
+
+    2. GENERATE developer quickstart from validated commands:
+       Print validated, working commands for the developer:
+       ```
+       # Setup (run once)
+       {install_cmd}
+
+       # Development
+       {dev_cmd}            # Start dev server
+       {test_cmd}           # Run tests
+       {lint_cmd}           # Run linter
+       {build_cmd}          # Production build
+
+       # Environment
+       cp .env.example .env  # Configure environment
+       ```
+
+  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | FAIL | WARNING}"
+
+FINAL SETUP VALIDATION:
+┌──────────────────────────────────────────────────────────┐
+│  SETUP VALIDATION SUMMARY                                 │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Phase               │ Status │ Details                    │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Env detection       │ PASS   │ Node 20.11, pnpm 8.14     │
+│  Dependency install  │ PASS   │ 847 packages, 12s          │
+│  Command validation  │ PASS   │ 5/5 commands working       │
+│  Config integrity    │ PASS   │ All configs valid           │
+│  Smoke test          │ PASS   │ App starts, tests pass      │
+│  Developer readiness │ READY  │ All systems go              │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - Setup itself requires no parallel agents — runs identically on all platforms.

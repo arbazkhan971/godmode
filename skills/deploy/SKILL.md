@@ -461,6 +461,55 @@ WHILE stages is not empty:
 print("Deployment complete — monitor for 24 hours, then clean up flags")
 ```
 
+## Keep/Discard Discipline
+```
+After EACH canary/progressive stage:
+  1. MEASURE: Collect error rate, P99 latency, and business metrics for the observation window.
+  2. COMPARE: Are all metrics within threshold compared to baseline?
+  3. DECIDE:
+     - KEEP (promote to next stage) if: ALL success criteria pass for the full observation duration
+     - DISCARD (rollback) if: ANY rollback trigger fires OR manual approval denied
+  4. Log the stage result with metrics in .godmode/deploy-results.tsv.
+
+Never promote a canary stage if metrics are "probably fine" — require them to be clearly within threshold for the full duration.
+```
+
+## Stuck Recovery
+```
+IF deployment is stuck (canary metrics are ambiguous — neither clearly healthy nor clearly failing):
+  1. EXTEND the observation window — ambiguous metrics often need more data points.
+  2. CHECK for confounding variables: is there a traffic pattern change, another deployment in progress, or a dependency issue?
+  3. HOLD at current percentage — do not promote or rollback while uncertain.
+  4. If metrics remain ambiguous after 2x the normal observation window → ROLLBACK to be safe, investigate offline.
+  5. Log stop_reason=ambiguous_metrics for post-deployment review.
+```
+
+## Stop Conditions
+```
+STOP the deployment (rollback) when ANY of these are true:
+  - Error rate exceeds baseline + 1% for 2+ minutes
+  - P99 latency exceeds 2x baseline for 5+ minutes
+  - Health check failures on canary instances
+  - Business metric drops >10% for 15+ minutes
+  - Manual rollback triggered by on-call engineer
+
+COMPLETE the deployment when:
+  - 100% traffic on new version AND metrics stable for 15+ minutes
+  - Feature flags configured for any gated functionality
+  - Old version kept available for 1-hour rollback window
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler deployment approach:
+  - Rolling update before canary (for low-risk changes)
+  - Canary before blue-green (canary uses fewer resources)
+  - Feature flags before deployment-level traffic splitting (decouples deploy from release)
+  - Expand-contract migrations before offline schema migrations (zero downtime)
+  - Fewer deployment stages with longer observation over many rapid micro-stages
+  - Automated rollback triggers over manual monitoring (humans are slow at 3 AM)
+```
+
 ## Auto-Detection
 
 On activation, automatically detect deployment context:

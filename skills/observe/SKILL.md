@@ -630,6 +630,52 @@ IF pillars_remaining is not empty:
     REPORT: "Incomplete pillars: {pillars_remaining}. Manual intervention needed."
 ```
 
+## Keep/Discard Discipline
+```
+After EACH observability instrumentation change:
+  1. MEASURE: Verify the pillar produces output (curl /metrics, check logs, verify trace appears in backend).
+  2. COMPARE: Is observability coverage better than before?
+  3. DECIDE:
+     - KEEP if: instrumentation produces correct output AND no performance regression (< 5% latency increase)
+     - DISCARD if: instrumentation produces no output OR performance degrades >5% OR cardinality explosion detected
+  4. COMMIT kept changes. Revert discarded changes before the next pillar.
+
+Never keep a metric that causes cardinality explosion (>10K time series from a single metric).
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to produce observable output from a pillar:
+  1. Check connectivity: is the metrics/tracing/logging backend reachable from the application?
+  2. Simplify: use the simplest possible instrumentation (default metrics, basic trace export) and verify it works.
+  3. Check for library version conflicts (OpenTelemetry SDK version mismatches are common).
+  4. If still stuck → log stop_reason=stuck, mark the pillar as incomplete, move to the next pillar.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All three pillars (metrics, logs, traces) produce verified output
+  - SLOs defined and error budget tracking enabled
+  - Alert rules configured with runbook links
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Dashboards are not yet built (alerts and raw data access are more important)
+  - One non-critical service lacks tracing (instrument the critical path first)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler observability approach:
+  - RED method metrics (rate, errors, duration) before custom business metrics
+  - Prometheus with built-in client libraries before custom metric pipelines
+  - OpenTelemetry auto-instrumentation before manual span creation
+  - Fewer well-chosen alerts (5-10) over many noisy alerts (50+)
+  - SLO-based alerting (burn rate) before threshold-based alerting
+  - Single dashboard per service before multi-dashboard sprawl
+```
+
 ## Multi-Agent Dispatch
 
 For large systems with multiple services, dispatch parallel agents:

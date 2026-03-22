@@ -1228,6 +1228,186 @@ IF form is inaccessible (screen reader cannot navigate):
 - **Do NOT manage 10+ fields with useState.** Manual state management for complex forms leads to stale closures, re-render cascades, and missed validations. Use a form library.
 
 
+## Form UX Audit Loop
+
+Autoresearch-grade iterative audit for form user experience. Covers validation pattern correctness, error messaging quality, and submission flow robustness through measured, repeatable cycles.
+
+```
+FORM UX AUDIT PROTOCOL:
+
+Phase 1 — Validation Pattern Audit
+  target: zero validation UX anti-patterns, correct timing for all fields
+  current_iteration = 0
+  max_iterations = 8
+
+  FOR EACH form in the application:
+    1. MAP all fields and their validation rules:
+       field_name | type | required | validation_rules | async_validation | timing
+    2. TEST validation timing for each field:
+       a. Focus field → type nothing → blur → Is error shown? (Should NOT for optional fields)
+       b. Focus field → type invalid value → blur → Is error shown? (SHOULD show on blur)
+       c. See error → type valid value → Does error clear? (SHOULD clear on change)
+       d. Submit with empty required fields → All errors shown? (SHOULD show on submit)
+       e. Fix one field → Does that field's error clear? (SHOULD clear independently)
+    3. CLASSIFY validation pattern:
+       ┌──────────────────────────────────────────────────────────────────────┐
+       │  Pattern                        │  Status    │  Correct Behavior    │
+       ├─────────────────────────────────┼────────────┼──────────────────────┤
+       │  Validate on first keystroke    │  BAD       │  Should be onBlur    │
+       │  Validate on blur (first touch) │  CORRECT   │  Immediate feedback  │
+       │  Re-validate on change (after   │  CORRECT   │  Error clears as     │
+       │  first error)                   │            │  user fixes input    │
+       │  Validate only on submit        │  BAD       │  Too late, hostile   │
+       │  No validation at all           │  CRITICAL  │  Data integrity risk │
+       │  Async validation without       │  BAD       │  Needs loading state │
+       │  loading indicator              │            │  and debounce        │
+       └─────────────────────────────────┴────────────┴──────────────────────┘
+    4. RECORD findings:
+       form | field | pattern | current_timing | correct_timing | status
+
+  VALIDATION TIMING SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Form           │  Fields │  Correct Timing │  Bad Timing │  Score  │
+  ├─────────────────┼─────────┼─────────────────┼─────────────┼─────────┤
+  │  Registration   │  6      │  6              │  0          │  100%   │
+  │  Checkout       │  12     │  10             │  2          │  83%    │
+  │  Settings       │  8      │  5              │  3          │  63%    │
+  │  Contact        │  4      │  2              │  2          │  50%    │
+  └─────────────────┴─────────┴─────────────────┴─────────────┴─────────┘
+  TARGET: 100% correct validation timing across all forms
+
+Phase 2 — Error Messaging Quality Audit
+  target: every error message is specific, actionable, and accessible
+
+  FOR EACH validation error message in the codebase:
+    1. EVALUATE against error message quality rubric:
+       a. SPECIFIC: Does it identify which field has the error?
+          BAD: "Invalid input" / GOOD: "Email address is not valid"
+       b. ACTIONABLE: Does it tell the user how to fix it?
+          BAD: "Invalid format" / GOOD: "Use format: MM/DD/YYYY"
+       c. HUMAN: Is it written in plain language (not technical jargon)?
+          BAD: "regex validation failed" / GOOD: "Please enter a valid phone number"
+       d. CONCISE: Is it short enough to read at a glance?
+          BAD: "The value you entered does not match the expected pattern..." / GOOD: "Use 10 digits"
+       e. POSITIONED: Is it next to the field it describes (inline, not banner-only)?
+       f. ACCESSIBLE: Does it have aria-describedby linking to the field?
+       g. VISIBLE: Does it appear without scrolling (field scrolled into view)?
+    2. SCORE each message (0-7 points, one per criterion)
+    3. CLASSIFY:
+       - 6-7: EXCELLENT
+       - 4-5: ACCEPTABLE
+       - 2-3: POOR
+       - 0-1: CRITICAL
+
+  ERROR MESSAGE AUDIT TABLE:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Form       │  Field        │  Current Message          │  Score   │
+  ├─────────────┼───────────────┼───────────────────────────┼──────────┤
+  │  Signup     │  email        │  "Invalid email"          │  4/7     │
+  │  Signup     │  password     │  "Too short"              │  3/7     │
+  │  Checkout   │  card_number  │  "Invalid"                │  1/7     │
+  │  Checkout   │  expiry       │  "Use MM/YY format"       │  6/7     │
+  │  Settings   │  username     │  "Already taken"          │  5/7     │
+  └─────────────┴───────────────┴───────────────────────────┴──────────┘
+
+  FOR EACH message scoring below 5:
+    1. REWRITE message to meet all 7 criteria
+    2. VERIFY aria-describedby linkage
+    3. VERIFY inline positioning (not just form-level banner)
+    4. TEST with screen reader: focus field → hear error description
+
+  IMPROVED MESSAGES:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Field        │  Before                 │  After                     │
+  ├───────────────┼─────────────────────────┼────────────────────────────┤
+  │  email        │  "Invalid email"        │  "Enter a valid email      │
+  │               │                         │   (e.g., name@company.com)"│
+  │  password     │  "Too short"            │  "Password must be at      │
+  │               │                         │   least 8 characters"      │
+  │  card_number  │  "Invalid"              │  "Enter a valid 16-digit   │
+  │               │                         │   card number"             │
+  └───────────────┴─────────────────────────┴────────────────────────────┘
+
+Phase 3 — Submission Flow Audit
+  target: zero submission failures from UX issues, zero data loss
+
+  FOR EACH form submission flow:
+    1. TEST double-submit protection:
+       - Click submit twice rapidly
+       - Expected: button disabled after first click, only one request sent
+       - Record: form | double_submit_protected | technique (disable/debounce/idempotency)
+    2. TEST network failure handling:
+       - Disable network → submit → Expected: clear error message, data preserved
+       - Slow network (throttle to 3G) → submit → Expected: loading state visible
+    3. TEST server error handling:
+       - Force 500 error → Expected: user-friendly error message, form data preserved
+       - Force 422 error → Expected: server validation errors mapped to fields inline
+    4. TEST success flow:
+       - Submit valid data → Expected: success feedback (message, redirect, or UI update)
+       - Success state persists after page refresh? (if applicable)
+    5. TEST autosave (if applicable):
+       - Type in field → wait 3s → Expected: autosave indicator shown
+       - Reload page → Expected: data restored from autosave
+    6. TEST browser back button:
+       - Submit form → click back → Expected: no re-submission prompt OR data preserved
+    7. TEST multi-step persistence:
+       - Fill step 1 → go to step 2 → go back → Expected: step 1 data preserved
+       - Fill step 1 → refresh browser → Expected: data restored from sessionStorage
+
+  SUBMISSION FLOW SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Check                          │  Status per Form                  │
+  │                                 │  Signup │ Checkout │ Settings     │
+  ├─────────────────────────────────┼─────────┼──────────┼──────────────┤
+  │  Double-submit protected        │  PASS   │  FAIL    │  PASS        │
+  │  Network failure handled        │  PASS   │  PASS    │  FAIL        │
+  │  Server 500 handled gracefully  │  PASS   │  PASS    │  PASS        │
+  │  Server 422 → inline errors     │  PASS   │  FAIL    │  PASS        │
+  │  Success feedback clear         │  PASS   │  PASS    │  PASS        │
+  │  Browser back safe              │  PASS   │  N/A     │  PASS        │
+  │  Data preserved on error        │  PASS   │  PASS    │  FAIL        │
+  └─────────────────────────────────┴─────────┴──────────┴──────────────┘
+  TARGET: all checks PASS for all forms
+
+FINAL FORM UX REPORT:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Metric                            │  Before   │  After    │ Target │
+├────────────────────────────────────┼───────────┼───────────┼────────┤
+│  Validation timing correct         │  <N>%     │  <N>%     │ 100%   │
+│  Error message avg score           │  <N>/7    │  <N>/7    │ >= 6   │
+│  Error messages below 5/7          │  <N>      │  0        │ 0      │
+│  Double-submit protected           │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Network failure handled           │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Server errors shown inline        │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Data preserved on error           │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  Keyboard accessible               │  <N>/<M>  │  <N>/<M>  │ 100%   │
+│  aria-describedby on all errors    │  <N>/<M>  │  <N>/<M>  │ 100%   │
+└────────────────────────────────────┴───────────┴───────────┴────────┘
+```
+
+### Form UX Audit TSV Logging
+
+Append one row per finding to `.godmode/forms-audit.tsv`:
+
+```
+timestamp	project	form	phase	field	finding	before	after	status
+2024-01-15T10:30:00Z	my-app	checkout	validation	card_number	validates_on_keystroke	onChange	onBlur	fixed
+2024-01-15T10:35:00Z	my-app	checkout	error_msg	card_number	"Invalid"	"Enter valid 16-digit number"	fixed
+2024-01-15T10:40:00Z	my-app	checkout	submission	submit_btn	no_double_submit_protection	none	disable+debounce	fixed
+```
+
+### Form UX Audit Hard Rules
+
+```
+1. NEVER validate on the first keystroke. Use onBlur for first validation, onChange for re-validation after errors.
+2. NEVER show only a form-level error banner without inline field errors. Users must see exactly which field is wrong.
+3. NEVER lose user data on submission failure. Form values MUST be preserved when server returns an error.
+4. ALWAYS protect against double submission. Disable button + debounce + server-side idempotency.
+5. ALWAYS write error messages that pass all 7 quality criteria: specific, actionable, human, concise, positioned, accessible, visible.
+6. NEVER skip server-side validation. Client validation is a UX convenience; server validation is the security boundary.
+7. Log every form UX finding in TSV format for tracking improvements across releases.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run form tasks sequentially: schemas/validation, then components, then page integration.

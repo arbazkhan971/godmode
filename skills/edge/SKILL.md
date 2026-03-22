@@ -1041,6 +1041,272 @@ ERROR RECOVERY — EDGE:
    → Verify deployment output. Check platform dashboard for errors. Use versioned deployments with rollback capability. Add health check endpoint.
 ```
 
+## Edge Computing Optimization Loop
+
+When optimizing an existing edge/serverless application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Cold Start Optimization
+
+```
+COLD START AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure cold start per function                         │
+│                                                                   │
+│  Cloudflare Workers:                                             │
+│  - wrangler tail --format=json | grep "cold"                    │
+│  - Workers Analytics → Invocation Duration (p50, p99)           │
+│  - V8 isolates: cold start is typically <5ms (near-instant)     │
+│  - Focus: initialization code and module import cost             │
+│                                                                   │
+│  AWS Lambda:                                                     │
+│  - CloudWatch → REPORT log lines → Init Duration field          │
+│  - X-Ray trace → Initialization segment                         │
+│  - Lambda Power Tuning tool for memory/cost optimization         │
+│                                                                   │
+│  Vercel Edge Functions:                                          │
+│  - Vercel Analytics → Function Duration                         │
+│  - Edge Runtime Functions → monitor via response headers        │
+│                                                                   │
+│  Step 2: Baseline cold start per function                        │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Function                │  Cold(ms)│  Warm(ms)│  Target    ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  api-router              │  <N>     │  <N>     │  < 100ms   ││
+│  │  auth-middleware          │  <N>     │  <N>     │  < 50ms    ││
+│  │  image-optimizer          │  <N>     │  <N>     │  < 200ms   ││
+│  │  ssr-renderer             │  <N>     │  <N>     │  < 150ms   ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 3: Cold start reduction techniques                         │
+│                                                                   │
+│  a) Bundle size reduction (primary lever for edge):              │
+│     - Tree-shake aggressively — only import what you use         │
+│     - Replace Node.js polyfills with web-standard APIs:          │
+│       Buffer → Uint8Array, crypto → Web Crypto API              │
+│     - Use platform-native APIs (fetch, cache, KV) not polyfills │
+│     - Audit with: npx esbuild --bundle --analyze                │
+│     - Target: < 1MB bundled (< 100KB for edge functions)         │
+│                                                                   │
+│  b) Lazy initialization:                                         │
+│     // BAD — initialize everything at import time:               │
+│     const db = new DatabaseClient(config);  // runs on cold start│
+│                                                                   │
+│     // GOOD — initialize on first use:                           │
+│     let db: DatabaseClient | null = null;                        │
+│     function getDb() {                                           │
+│       if (!db) db = new DatabaseClient(config);                  │
+│       return db;                                                  │
+│     }                                                             │
+│                                                                   │
+│  c) Lambda-specific optimizations:                               │
+│     - Increase memory (CPU scales with memory in Lambda)         │
+│     - Use Lambda SnapStart (Java) or Lambda Extensions (preload) │
+│     - Use Provisioned Concurrency for latency-critical functions │
+│     - Use Lambda Layers for shared dependencies (cached by Lambda)│
+│     - Keep handler function thin (import only what's needed)     │
+│                                                                   │
+│  d) Pre-warming strategies:                                      │
+│     - Scheduled ping (CloudWatch Events → invoke every 5min)    │
+│     - Provisioned concurrency (guaranteed warm instances)         │
+│     - Edge: not typically needed (V8 isolate cold start < 5ms)  │
+│                                                                   │
+│  Step 4: Re-measure after optimizations                          │
+│  - Cold start must meet target for each function                 │
+│  - Track cold start ratio: cold / total invocations (target < 1%)│
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 2: Payload Size Optimization
+
+```
+PAYLOAD SIZE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure response sizes per endpoint                     │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Endpoint                │  Size(KB)│ Gzipped  │  Target    ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  GET /api/products       │  <N>     │  <N>     │  < 50KB    ││
+│  │  GET /api/product/:id    │  <N>     │  <N>     │  < 10KB    ││
+│  │  SSR /page               │  <N>     │  <N>     │  < 100KB   ││
+│  │  GET /api/search         │  <N>     │  <N>     │  < 20KB    ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 2: Response payload optimization                           │
+│  a) JSON response trimming:                                      │
+│     - Remove null fields from responses                          │
+│     - Use field selection (sparse fieldsets): ?fields=id,name    │
+│     - Paginate all list endpoints (default 20-50 items)          │
+│     - Use summary schemas for list items, full for detail        │
+│                                                                   │
+│  b) Compression:                                                 │
+│     - Enable gzip/brotli at edge (automatic on most platforms)   │
+│     - For Cloudflare Workers:                                    │
+│       new Response(body, {                                       │
+│         headers: { 'Content-Encoding': 'gzip' }                 │
+│       })                                                          │
+│     - For Lambda: API Gateway handles compression automatically  │
+│     - Verify with: curl -sI -H "Accept-Encoding: gzip" URL      │
+│                                                                   │
+│  c) Binary protocols for high-throughput:                         │
+│     - Consider Protocol Buffers or MessagePack for internal APIs │
+│     - Use ArrayBuffer/TypedArray for binary data at edge         │
+│                                                                   │
+│  d) Streaming responses:                                         │
+│     - Use ReadableStream for large payloads:                     │
+│       return new Response(readableStream, {                      │
+│         headers: { 'Content-Type': 'application/json' },         │
+│       });                                                         │
+│     - Enables Time-To-First-Byte (TTFB) optimization            │
+│     - Required for SSR streaming at edge                         │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - API JSON responses: < 50KB gzipped for list, < 10KB for detail│
+│  - SSR HTML: < 100KB gzipped initial HTML                        │
+│  - All responses compressed (gzip or brotli)                     │
+│  - Streaming enabled for responses > 100KB                       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: CDN & Caching Strategy
+
+```
+CDN & CACHING STRATEGY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Audit cache headers on every endpoint                   │
+│  ┌──────────────────────────┬──────────────────┬───────────────┐│
+│  │  Endpoint / Asset        │  Cache-Control   │  Status       ││
+│  ├──────────────────────────┼──────────────────┼───────────────┤│
+│  │  Static assets (.js/.css)│  public,max-age= │  configured?  ││
+│  │                          │  31536000,immutable│             ││
+│  │  API list endpoints      │  s-maxage=60,    │  configured?  ││
+│  │                          │  stale-while-    │               ││
+│  │                          │  revalidate=300  │               ││
+│  │  API detail endpoints    │  s-maxage=30     │  configured?  ││
+│  │  User-specific data      │  private,no-cache│  configured?  ││
+│  │  Auth endpoints          │  no-store        │  configured?  ││
+│  └──────────────────────────┴──────────────────┴───────────────┘│
+│                                                                   │
+│  Step 2: Implement edge caching layers                           │
+│                                                                   │
+│  Layer 1 — CDN cache (Cache-Control headers):                    │
+│  // Static assets: cache forever (use content hashes in URLs)    │
+│  Cache-Control: public, max-age=31536000, immutable              │
+│                                                                   │
+│  // Dynamic content: cache at edge, revalidate in background     │
+│  Cache-Control: public, s-maxage=60, stale-while-revalidate=300 │
+│                                                                   │
+│  Layer 2 — Edge cache (Cloudflare Cache API / KV):               │
+│  const cache = caches.default;                                   │
+│  let response = await cache.match(request);                      │
+│  if (!response) {                                                 │
+│    response = await fetchFromOrigin(request);                    │
+│    ctx.waitUntil(cache.put(request, response.clone()));          │
+│  }                                                                │
+│                                                                   │
+│  Layer 3 — KV/DynamoDB cache (computed results):                 │
+│  // Cache expensive computation results in KV store              │
+│  const cached = await env.CACHE_KV.get(cacheKey, 'json');       │
+│  if (cached) return new Response(JSON.stringify(cached));         │
+│  const result = await expensiveComputation();                    │
+│  ctx.waitUntil(env.CACHE_KV.put(cacheKey, JSON.stringify(result),│
+│    { expirationTtl: 300 }));                                     │
+│                                                                   │
+│  Step 3: Cache invalidation strategy                             │
+│  - Purge by URL: platform API to invalidate specific URLs       │
+│  - Purge by tag: tag cached responses, purge all with same tag  │
+│  - Stale-while-revalidate: serve stale, refresh in background   │
+│  - Version-based: include version/hash in cache keys             │
+│  - TTL-based: set appropriate expiry for data freshness needs    │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - CDN cache hit ratio: > 80% for static, > 50% for dynamic     │
+│  - TTFB: < 50ms for cached responses at edge                    │
+│  - All static assets cached immutably with content hashes        │
+│  - User-specific data never cached at CDN layer                  │
+│  - Cache invalidation < 30 seconds globally                      │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Cost & Efficiency Audit
+
+```
+COST & EFFICIENCY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure cost per function                               │
+│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
+│  │  Function                │  Invoc/mo│  $/month │  $/1M req  ││
+│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
+│  │  api-router              │  <N>     │  $<N>    │  $<N>      ││
+│  │  image-optimizer          │  <N>     │  $<N>    │  $<N>      ││
+│  │  ssr-renderer             │  <N>     │  $<N>    │  $<N>      ││
+│  └──────────────────────────┴──────────┴──────────┴────────────┘│
+│                                                                   │
+│  Step 2: Cost optimization strategies                            │
+│  a) Reduce invocations:                                          │
+│     - Cache more aggressively at CDN (fewer origin hits)         │
+│     - Batch operations (one function call for multiple items)    │
+│     - Consolidate multiple small functions into one router       │
+│                                                                   │
+│  b) Reduce execution time:                                       │
+│     - Faster code = lower cost (billed per ms/GB-second)        │
+│     - Use streaming to start responding faster                   │
+│     - Avoid unnecessary origin calls from edge                   │
+│                                                                   │
+│  c) Right-size Lambda memory:                                    │
+│     - Use AWS Lambda Power Tuning (Step Functions based):        │
+│       Test memory from 128MB to 3008MB → find cost-optimal size  │
+│     - Higher memory = more CPU = faster execution = lower cost?  │
+│     - Sweet spot: usually 256-512MB for most API functions       │
+│                                                                   │
+│  d) Choose the right platform for the workload:                  │
+│     ┌──────────────────────────┬────────────────────────────┐   │
+│     │  Workload                │  Cheapest Platform          │   │
+│     ├──────────────────────────┼────────────────────────────┤   │
+│     │  Static + light compute  │  Cloudflare Workers (free) │   │
+│     │  API with DB             │  Lambda + RDS              │   │
+│     │  High-volume SSR         │  Cloudflare Workers         │   │
+│     │  CPU-intensive           │  Lambda (more memory=CPU)   │   │
+│     │  Long-running (>30s)     │  Lambda (up to 15min)       │   │
+│     └──────────────────────────┴────────────────────────────┘   │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - Cost per million requests: know and track this metric         │
+│  - Cache hit ratio directly reduces invocation cost              │
+│  - Lambda memory right-sized (run power tuning at least once)    │
+│  - No idle provisioned concurrency unless justified by SLA       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+EDGE OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  Cold start p99 (ms)        │  <N>      │  <N>      │  -<N>%    │
+│  Cold start ratio (%)       │  <N>%     │  <N>%     │  -<N>%    │
+│  Bundle size (KB)           │  <N>      │  <N>      │  -<N>%    │
+│  Response payload avg (KB)  │  <N>      │  <N>      │  -<N>%    │
+│  CDN cache hit rate (%)     │  <N>%     │  <N>%     │  +<N>%    │
+│  TTFB p50 (ms)              │  <N>      │  <N>      │  -<N>%    │
+│  TTFB p99 (ms)              │  <N>      │  <N>      │  -<N>%    │
+│  Cost per 1M requests ($)   │  $<N>     │  $<N>     │  -<N>%    │
+│  Streaming responses enabled │  NO       │  YES      │  IMPROVED │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Cold start p99 < 200ms (Lambda) or < 5ms (edge V8 isolates)
+- Bundle size < 1MB per function (< 100KB for edge functions)
+- All static assets cached immutably at CDN
+- Compression enabled on all responses
+- CDN cache hit rate > 50% for cacheable endpoints
+- Cost per million requests tracked and optimized
+- Streaming enabled for responses > 100KB
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run edge tasks sequentially: edge functions, then cold-start optimization, then caching/observability.

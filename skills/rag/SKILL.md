@@ -719,6 +719,122 @@ AUTO-DETECT SEQUENCE:
 - **Do NOT use the same embedding model for everything.** Code, legal text, medical text, and casual conversation have different embedding needs. Test domain-specific models.
 
 
+## RAG Optimization Loop
+
+Structured iterative loop for systematically improving retrieval precision, recall, chunk quality, and embedding effectiveness:
+
+```
+RAG OPTIMIZATION LOOP:
+Pipeline: <pipeline name>
+Optimization target: <metric to improve — e.g., hit_rate, faithfulness, hallucination_rate>
+Golden set: <N evaluation queries with ground-truth relevant passages>
+
+RETRIEVAL PRECISION/RECALL TUNING:
+┌──────────────────────────────────────────────────────────────────┐
+│  Metric              │ Current │ Target  │ Gap     │ Priority    │
+├──────────────────────────────────────────────────────────────────┤
+│  Precision @ 5       │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
+│  Recall @ 10         │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
+│  MRR                 │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
+│  NDCG @ 10           │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
+│  Retrieval latency   │ <ms>    │ <ms>    │ <delta> │ <H/M/L>    │
+└──────────────────────────────────────────────────────────────────┘
+
+PRECISION/RECALL DIAGNOSTICS:
+  Low precision (irrelevant results in top-K):
+    → Reduce top-K and add reranker (retrieve 20, rerank to 5)
+    → Tighten metadata filters (pre-filter by source/date/category)
+    → Increase embedding dimensionality or switch to higher-quality model
+    → Add negative examples to evaluation set to detect noise
+
+  Low recall (relevant documents not retrieved at all):
+    → Increase top-K retrieval count (retrieve more, then rerank)
+    → Enable hybrid search (BM25 catches keyword matches embeddings miss)
+    → Add query expansion (HyDE: generate hypothetical document, embed that)
+    → Check if relevant content exists in corpus (missing docs vs bad retrieval)
+    → Test multi-query retrieval (rephrase query 3 ways, union results)
+
+CHUNK SIZE TUNING:
+┌──────────────────────────────────────────────────────────────────┐
+│  Chunk Size  │ Overlap │ Chunks │ Recall@10 │ Precision@5 │ MRR  │
+├──────────────────────────────────────────────────────────────────┤
+│  128 tokens  │ 16      │ <N>    │ <val>     │ <val>       │ <val>│
+│  256 tokens  │ 32      │ <N>    │ <val>     │ <val>       │ <val>│
+│  512 tokens  │ 64      │ <N>    │ <val>     │ <val>       │ <val>│
+│  1024 tokens │ 128     │ <N>    │ <val>     │ <val>       │ <val>│
+│  Semantic    │ N/A     │ <N>    │ <val>     │ <val>       │ <val>│
+│  Parent-child│ varies  │ <N>    │ <val>     │ <val>       │ <val>│
+└──────────────────────────────────────────────────────────────────┘
+
+  OPTIMAL: <chunk size> — <rationale based on metrics>
+
+  Chunk size tradeoffs:
+    Smaller chunks (128-256): Higher precision, lower recall, more chunks to search
+    Larger chunks (512-1024): Higher recall, lower precision, more context per result
+    Semantic chunks: Variable size, respects topic boundaries, harder to tune
+    Parent-child: Small retrieval unit, large context unit — best of both worlds
+
+EMBEDDING QUALITY ASSESSMENT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Result   │ Action          │
+├──────────────────────────────────────────────────────────────────┤
+│  Embedding model MTEB score         │ <score>  │ <upgrade if low>│
+│  Domain-specific eval (custom set)  │ <score>  │ <fine-tune?>    │
+│  Cosine similarity distribution     │ <range>  │ <spread check>  │
+│    - Relevant pairs avg similarity  │ <val>    │ >0.7 expected   │
+│    - Irrelevant pairs avg similarity│ <val>    │ <0.4 expected   │
+│    - Separation margin              │ <delta>  │ >0.3 expected   │
+│  Cross-lingual performance (if req) │ <score>  │ <multilingual?> │
+│  Embedding dimensionality vs perf   │ <dims>   │ <reduce if ok>  │
+│  Matryoshka dim reduction tested    │ <score>  │ <savings?>      │
+│  Query vs document embedding match  │ <method> │ <asymmetric?>   │
+└──────────────────────────────────────────────────────────────────┘
+
+  IF separation margin < 0.2:
+    → Embedding model is not discriminative enough for this domain
+    → Try: domain-specific model, fine-tuned embeddings, or higher-dim model
+    → Test: Voyage, Cohere embed-v3, or fine-tuned BGE on domain data
+
+OPTIMIZATION ITERATION PROTOCOL:
+current_iteration = 0
+max_iterations = 8
+metrics_history = []
+
+WHILE current_iteration < max_iterations:
+  current_iteration += 1
+
+  1. MEASURE current metrics on golden set:
+     - retrieval: precision@5, recall@10, MRR, NDCG@10
+     - generation: faithfulness, hallucination_rate, relevance
+     - system: latency_p95, cost_per_query
+
+  2. DIAGNOSE the weakest metric:
+     - IF recall low: expand retrieval (hybrid search, query expansion, more top-K)
+     - IF precision low: tighten retrieval (reranker, metadata filter, smaller top-K)
+     - IF faithfulness low: improve context assembly (fewer chunks, better ranking)
+     - IF hallucination high: strengthen grounding (stricter prompt, citation enforcement)
+     - IF latency high: optimize infrastructure (caching, index tuning, fewer chunks)
+
+  3. APPLY exactly ONE change targeting the weakest metric
+
+  4. RE-MEASURE all metrics on the same golden set
+
+  5. COMPARE:
+     - IF target metric improved AND no metric regressed by >2%: ACCEPT
+     - IF hallucination_rate increased: REJECT immediately
+     - IF no improvement for 2 consecutive iterations: ESCALATE
+       (consider fundamental change: different embedding model, different chunking strategy)
+
+  6. LOG iteration: { iteration, change, precision, recall, MRR, faithfulness, hallucination, latency }
+
+  metrics_history.append(current_metrics)
+
+FINAL:
+  REPORT optimization trajectory (table of all iterations)
+  IDENTIFY remaining gaps vs targets
+  RECOMMEND next-phase improvements (if targets not yet met)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run RAG tasks sequentially: ingestion pipeline, then retrieval/reranking, then generation/prompting, then evaluation suite.

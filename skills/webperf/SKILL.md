@@ -665,6 +665,53 @@ Columns: iteration, optimization, lighthouse_before, lighthouse_after, lcp_ms, i
 - **Service worker caches stale content**: Implement a cache-busting strategy for the service worker itself. Use `skipWaiting()` and `clients.claim()` for immediate activation. Version your cache names.
 - **Third-party script blocks main thread**: Load with `async` or `defer` attribute. Use a facade pattern (load on interaction, not on page load). Consider removing non-essential third-party scripts entirely.
 
+## Keep/Discard Discipline
+```
+After EACH performance optimization:
+  1. MEASURE: Re-run Lighthouse audit (median of 3 runs). Check Core Web Vitals.
+  2. COMPARE: Did Lighthouse score improve? Did any CWV regress?
+  3. DECIDE:
+     - KEEP if: Lighthouse score improved AND no CWV regression AND no visual breakage
+     - DISCARD if: Lighthouse score unchanged/decreased OR any CWV regressed OR layout broken
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
+
+Never keep a JS bundle optimization that breaks visual rendering or causes CLS regression.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive optimizations produce no Lighthouse improvement:
+  1. Clear all caches and re-run in incognito — cached resources can mask improvements.
+  2. Check if the bottleneck has shifted: use Lighthouse Treemap to identify the new largest contributor.
+  3. Look for third-party scripts that dominate main-thread time — these require loading strategy changes, not code changes.
+  4. If still stuck → log stop_reason=optimization_plateau, report current metrics and remaining opportunities.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Lighthouse Performance >= 90
+  - All Core Web Vitals in "Good" range (LCP < 2.5s, INP < 200ms, CLS < 0.1)
+  - Performance budget thresholds met
+  - User explicitly requests stop
+  - No further optimizations yield meaningful improvement (< 2 point Lighthouse improvement)
+
+DO NOT STOP just because:
+  - Third-party scripts lower the score (report them but focus on what you can control)
+  - One page is slow if the rest are fast (report the slow page separately)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler performance optimization:
+  - next/image or framework-native image optimization before custom Sharp pipelines
+  - Route-based code splitting (built into Next.js, Remix, SvelteKit) before manual dynamic imports
+  - font-display: swap before complex font subsetting and size-adjust calculations
+  - Cache-Control headers before service worker caching strategies
+  - Removing unused dependencies before tree-shaking configuration tweaks
+  - Fewer large impactful optimizations (images, code splitting, critical CSS) over many micro-optimizations
+```
+
 ## Multi-Agent Dispatch
 For comprehensive web performance optimization:
 ```

@@ -1158,6 +1158,135 @@ Create the file with the header row on first run. Tab-separated, one row per ope
    - Audit application connection pooling: ensure pools are bounded (min/max) and connections are returned after use.
    - If using Cluster, connections multiply by node count -- size pools accordingly.
 
+## Cache Optimization Loop
+
+Autonomous loop that improves hit rate, tunes eviction policy, and optimizes memory. Runs until cache health targets are met or max iterations reached.
+
+```
+CACHE OPTIMIZATION LOOP:
+current_iteration = 0
+max_iterations = 15
+
+// Phase 0: Baseline Capture
+baseline = {
+  hit_rate:          keyspace_hits / (keyspace_hits + keyspace_misses),  // from INFO stats
+  memory_used:       used_memory_human,
+  memory_max:        maxmemory_human,
+  memory_pct:        used_memory / maxmemory * 100,
+  fragmentation:     mem_fragmentation_ratio,
+  eviction_policy:   maxmemory_policy,
+  evicted_keys_24h:  evicted_keys delta over 24h,
+  slowlog_entries:   SLOWLOG LEN,
+  keys_without_ttl:  count_keys_without_ttl(),  // SCAN + TTL check
+  biggest_keys:      run_bigkeys_analysis()
+}
+
+LOG: "BASELINE: hit_rate={baseline.hit_rate}%, memory={baseline.memory_pct}%, fragmentation={baseline.fragmentation}, eviction={baseline.eviction_policy}"
+
+WHILE current_iteration < max_iterations AND NOT all_targets_met(baseline):
+  current_iteration += 1
+
+  // Phase 1: Hit Rate Improvement
+  IF baseline.hit_rate < 90:
+    // Analyze miss patterns
+    miss_keys = sample_cache_misses(count=100)
+    // Categorize: cold start, evicted too early, never cached, wrong TTL
+    FOR each pattern in miss_patterns:
+      IF pattern == "EVICTED_TOO_EARLY":
+        // Key was cached but evicted before re-access
+        INCREASE TTL for this key pattern
+        LOG: "TTL increased: {key_pattern} from {old_ttl}s to {new_ttl}s"
+      IF pattern == "NEVER_CACHED":
+        // Hot data path not using cache
+        ADD cache-aside for this query
+        LOG: "CACHE ADDED: {key_pattern} for {query_description}"
+      IF pattern == "COLD_START":
+        // After deployment/restart, cache is empty
+        ADD cache warming on startup for top-N keys
+        LOG: "WARM-UP added: {key_pattern} ({count} keys)"
+      IF pattern == "WRONG_EVICTION_POLICY":
+        // LRU evicting frequently-used keys
+        SWITCH to allkeys-lfu
+        LOG: "EVICTION POLICY: switched to allkeys-lfu"
+
+  // Phase 2: Eviction Policy Tuning
+  IF baseline.evicted_keys_24h > 1000 AND baseline.hit_rate < 95:
+    current_policy = baseline.eviction_policy
+    recommended = select_eviction_policy(workload_type)
+    // allkeys-lfu for popularity-based, volatile-lfu for mix, volatile-ttl for sessions
+    IF recommended != current_policy:
+      SET maxmemory-policy {recommended}
+      LOG: "EVICTION: {current_policy} → {recommended}"
+
+  // Phase 3: Memory Optimization
+  IF baseline.memory_pct > 80:
+    // Find memory hogs
+    FOR each big_key in baseline.biggest_keys:
+      IF big_key.type == "STRING" AND big_key.size > 100KB:
+        COMPRESS value (gzip before SET)
+        LOG: "COMPRESSED: {big_key.name} from {big_key.size} to ~{compressed_size}"
+      IF big_key.type == "HASH" AND big_key.entries > 128:
+        // Exceeds listpack threshold, using hashtable encoding
+        SPLIT into smaller hashes or review if all fields needed
+      IF big_key.type == "SORTED_SET" AND big_key.entries > 100000:
+        TRIM to bounded size (ZREMRANGEBYRANK)
+
+  IF baseline.fragmentation > 1.5:
+    MEMORY PURGE  // or schedule restart with jemalloc tuning
+    LOG: "DEFRAG: fragmentation {baseline.fragmentation} → running MEMORY PURGE"
+
+  // Phase 4: TTL Hygiene
+  IF baseline.keys_without_ttl > 0:
+    FOR each key_pattern without TTL:
+      IF key is cache data: SET TTL (default 3600s)
+      IF key is session: SET TTL (default 86400s)
+      IF key is permanent reference: SKIP (document as intentional)
+      LOG: "TTL SET: {key_pattern} — {ttl}s"
+
+  // Phase 5: Measure & Keep/Discard
+  new_metrics = capture_redis_metrics()
+  improvement = {
+    hit_rate_delta: new_metrics.hit_rate - baseline.hit_rate,
+    memory_delta: baseline.memory_pct - new_metrics.memory_pct,
+    fragmentation_delta: baseline.fragmentation - new_metrics.fragmentation
+  }
+
+  IF new_metrics.hit_rate >= baseline.hit_rate AND new_metrics.memory_pct <= baseline.memory_pct:
+    KEEP all changes
+    baseline = new_metrics  // update baseline
+    LOG: "KEEP: hit_rate {baseline.hit_rate}% → {new_metrics.hit_rate}%, memory {baseline.memory_pct}% → {new_metrics.memory_pct}%"
+  ELSE:
+    DISCARD changes that caused regression
+    LOG: "DISCARD: regression detected, reverted"
+
+  REPORT: "Iteration {current_iteration}: hit_rate={new_metrics.hit_rate}%, memory={new_metrics.memory_pct}%, fragmentation={new_metrics.fragmentation}"
+
+ON COMPLETION:
+  LOG to .godmode/redis-cache-audit.tsv:
+    timestamp\thit_rate_before\thit_rate_after\tmemory_before_pct\tmemory_after_pct\teviction_policy\tkeys_ttl_fixed\tverdict
+  REPORT: "Cache optimization complete: {current_iteration} iterations, hit_rate: {initial}% → {final}%, memory: {initial_mem}% → {final_mem}%"
+```
+
+### Cache Health Thresholds
+
+```
+CACHE HEALTH THRESHOLDS:
+┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
+│ Metric                               │ HEALTHY      │ NEEDS TUNING │ DEGRADED     │
+├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
+│ Keyspace hit ratio                   │ > 95%        │ 80-95%       │ < 80%        │
+│ Memory utilization                   │ < 70%        │ 70-85%       │ > 85%        │
+│ Fragmentation ratio                  │ 1.0-1.2      │ 1.2-1.5      │ > 1.5        │
+│ Evicted keys / hour                  │ < 100        │ 100-1000     │ > 1000       │
+│ Keys without TTL (cache keys)        │ 0            │ 1-100        │ > 100        │
+│ Slowlog entries / hour               │ < 5          │ 5-20         │ > 20         │
+│ Single key > 100KB                   │ 0            │ 1-5          │ > 5          │
+│ Connected clients / maxclients       │ < 60%        │ 60-80%       │ > 80%        │
+│ Rejected connections                 │ 0            │ 0            │ > 0          │
+│ Pub/Sub used for reliable messaging  │ No           │ --           │ Yes (Streams)│
+└──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Redis tasks sequentially: caching layer, then data structures (queues/pub-sub/streams), then ops (Sentinel/Cluster config).

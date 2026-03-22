@@ -777,6 +777,52 @@ WHILE current_rule_group < len(rule_groups):
 EXIT when all rule groups enabled and violations resolved
 ```
 
+## Keep/Discard Discipline
+```
+After EACH rule group is enabled and auto-fixed:
+  1. MEASURE: Run the full test suite — do all tests pass?
+  2. COMPARE: Are violations reduced? Did auto-fix introduce regressions?
+  3. DECIDE:
+     - KEEP if: tests pass AND violation count decreased AND no behavioral changes from auto-fix
+     - DISCARD if: tests fail OR auto-fix changed code semantics OR rule produces excessive false positives
+  4. COMMIT kept changes. Revert discarded changes and reconsider the rule before retrying.
+
+Never keep a rule that produces >20% false positives — it will be circumvented with disable comments.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive rule groups cause test failures after auto-fix:
+  1. Stop auto-fixing. Run the linter in check-only mode to understand violations before fixing.
+  2. Apply fixes manually for the first 5 violations to verify the fix pattern is safe.
+  3. Check for ESLint/Prettier conflicts: run `npx eslint-config-prettier path/to/file.ts`.
+  4. If still stuck → enable the rule as warning (not error), log stop_reason=needs_manual_review.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All rule groups enabled with zero violations (or documented exceptions)
+  - Pre-commit hooks installed and working
+  - CI enforcement configured with --max-warnings=0
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Manual violations remain (list them with file:line for the user)
+  - One rule group is contentious (flag it for team discussion)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler linting approach:
+  - Biome (single tool) over ESLint + Prettier (two tools) for new projects without heavy plugin needs
+  - Recommended preset over custom rule set (customize only when the team has a specific need)
+  - Auto-fix for formatting rules over manual enforcement
+  - Single .editorconfig over per-editor settings for cross-editor basics
+  - lint-staged (staged files only) over full-codebase linting in pre-commit
+  - Fewer strict rules correctly enforced over many loose rules that produce warnings
+```
+
 ## Multi-Agent Dispatch
 For multi-language projects or large codebases:
 ```

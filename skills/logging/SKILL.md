@@ -1138,6 +1138,53 @@ WHILE current_service < len(services):
 EXIT when all services have structured logging
 ```
 
+## Keep/Discard Discipline
+```
+After EACH logging configuration change:
+  1. MEASURE: Run the application — are logs valid JSON? Do they include required fields (requestId, service, level)?
+  2. COMPARE: Is the logging better than before? (structured vs unstructured, PII redacted, correlation IDs present)
+  3. DECIDE:
+     - KEEP if: log output is valid JSON AND required fields present AND PII redacted AND no performance regression
+     - DISCARD if: log output is malformed OR required fields missing OR PII leaked OR logging blocks the event loop
+  4. COMMIT kept changes. Revert discarded changes before the next service migration.
+
+Never migrate a service to structured logging without verifying the output is parseable.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to produce valid structured logs:
+  1. Check the logger library documentation — configuration syntax varies between pino, winston, slog, structlog.
+  2. Simplify: start with a minimal logger config (just JSON format + level), then add fields incrementally.
+  3. Check for middleware ordering issues — correlation ID middleware must run before handlers that log.
+  4. If still stuck → log stop_reason=stuck, keep the current logging state, move to the next service.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All services produce structured JSON logs with correlation IDs
+  - PII redaction verified with test data
+  - Log aggregation pipeline receiving logs
+  - User explicitly requests stop
+  - Max iterations (12) reached
+
+DO NOT STOP just because:
+  - One service has complex legacy logging (migrate the simpler services first)
+  - Log aggregation pipeline is not yet set up (structured logs to stdout is still an improvement)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler logging approach:
+  - pino (Node.js) or slog (Go) or structlog (Python) — fast, structured, minimal config
+  - Loki over ELK for small teams (lower operational overhead)
+  - stdout JSON logs over file-based logging (let the container runtime handle rotation)
+  - Auto-detection PII redaction (by field name pattern) before manual allowlists
+  - Single shared logger config imported by all services before per-service custom configs
+  - Fewer log levels in practice: ERROR + WARN + INFO covers 95% of production needs
+```
+
 ## Multi-Agent Dispatch
 For multi-service logging infrastructure:
 ```

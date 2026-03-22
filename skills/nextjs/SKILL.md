@@ -862,6 +862,170 @@ WHEN middleware causes redirect loops:
 - **Do NOT manually manage `<head>` tags.** Use the Metadata API (`generateMetadata`, `metadata` export) for SEO — it handles deduplication and streaming.
 
 
+## SSR/SSG Optimization Loop
+
+Autoresearch-grade iterative optimization for Next.js rendering performance. Run this loop after initial implementation to drive measurable improvements in TTFB, hydration cost, and page load speed.
+
+```
+SSR/SSG OPTIMIZATION PROTOCOL:
+
+Phase 1 — TTFB Measurement & Reduction
+  target_ttfb = < 200ms (p75)
+  current_iteration = 0
+  max_iterations = 8
+
+  WHILE measured_ttfb > target_ttfb AND current_iteration < max_iterations:
+    1. MEASURE TTFB per route:
+       npx lighthouse <url> --only-categories=performance --output=json
+       Parse: audits['server-response-time'].numericValue
+       OR use web-vitals library for field measurement:
+         onTTFB((metric) => log(metric.value))
+    2. IDENTIFY the slowest routes (rank by p75 TTFB)
+    3. CLASSIFY root cause for each slow route:
+       a. Sequential data fetching (waterfall queries)
+       b. Uncached database queries
+       c. Missing revalidation strategy (always SSR, never cached)
+       d. Heavy middleware processing
+       e. Large Server Component tree serialization
+       f. Cold start on serverless platform
+    4. APPLY targeted fix:
+       - (a) → Parallelize with Promise.all or add Suspense boundaries for streaming
+       - (b) → Add React cache() wrapper, or use unstable_cache with tags
+       - (c) → Switch from force-dynamic to ISR: { next: { revalidate: N } }
+       - (d) → Narrow middleware matcher, move logic to server components
+       - (e) → Break into smaller Server Components with Suspense boundaries
+       - (f) → Use edge runtime where possible, reduce bundle, keep connections warm
+    5. RE-MEASURE same routes
+    6. RECORD:
+       route | cause | fix | ttfb_before_ms | ttfb_after_ms | rendering_strategy
+    7. IF ttfb_after >= ttfb_before → REVERT fix
+    8. current_iteration += 1
+
+  TTFB RESULTS TABLE:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Route              │  Strategy  │  TTFB Before  │  TTFB After  │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  /                  │  SSG       │  <N>ms        │  <N>ms       │
+  │  /dashboard         │  SSR→ISR   │  <N>ms        │  <N>ms       │
+  │  /products/[slug]   │  ISR       │  <N>ms        │  <N>ms       │
+  │  /search            │  Streaming │  <N>ms        │  <N>ms       │
+  └──────────────────────────────────────────────────────────────────┘
+
+Phase 2 — Hydration Audit
+  target: hydration time < 100ms, hydration payload < 128 KB (uncompressed RSC payload)
+
+  WHILE hydration metrics exceed targets:
+    1. MEASURE hydration cost:
+       - Browser DevTools Performance tab → record page load
+       - Identify "Hydration" marker duration
+       - Measure RSC payload size: Network tab → filter __rsc → sum transfer sizes
+       - Use React DevTools Profiler in production build to measure hydration render time
+    2. AUDIT client component boundaries:
+       - List every file with 'use client' directive
+       - For each: is the client boundary pushed to the leaf? Or is it too high in the tree?
+       - Calculate: total JS sent for client components (client-reference-manifest)
+    3. IDENTIFY hydration cost drivers:
+       a. 'use client' too high in the component tree (entire subtree becomes client JS)
+       b. Large serialized props from Server → Client components
+       c. Client components that could be Server Components (no interactivity)
+       d. Unnecessary hydration of below-fold content
+       e. Large third-party libraries included in client bundle
+    4. APPLY targeted fix:
+       - (a) → Extract interactive parts into smaller leaf client components
+       - (b) → Reduce prop payloads; fetch data in child Server Components instead
+       - (c) → Remove 'use client' directive, convert to Server Component
+       - (d) → Wrap below-fold sections in Suspense, lazy-load client components
+       - (e) → Dynamic import with next/dynamic + ssr: false for client-only libs
+    5. RE-MEASURE hydration time and payload
+    6. RECORD:
+       component | issue | fix | hydration_ms_before | hydration_ms_after | payload_delta_kb
+    7. IF metrics worsen → REVERT
+
+  HYDRATION AUDIT RESULTS:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Metric                       │  Before    │  After     │  Target    │
+  ├───────────────────────────────┼────────────┼────────────┼────────────┤
+  │  Hydration time               │  <N>ms     │  <N>ms     │  < 100ms   │
+  │  RSC payload size             │  <N> KB    │  <N> KB    │  < 128 KB  │
+  │  Client components            │  <N>       │  <N>       │  Minimize  │
+  │  'use client' at leaf level   │  <N>/<M>   │  <N>/<M>   │  100%      │
+  │  Client JS (gzipped)          │  <N> KB    │  <N> KB    │  < 150 KB  │
+  │  Below-fold lazy-loaded       │  YES/NO    │  YES/NO    │  YES       │
+  └───────────────────────────────┴────────────┴────────────┴────────────┘
+
+Phase 3 — Rendering Strategy Audit
+  For every route, verify the rendering strategy is optimal:
+
+  FOR EACH route in app/:
+    1. CURRENT strategy: <SSG | ISR | SSR | Streaming | Client>
+    2. DATA characteristics:
+       - Static content? → SSG (generateStaticParams)
+       - Changes hourly/daily? → ISR (revalidate: N)
+       - Per-user/per-request? → SSR with Suspense streaming
+       - Real-time? → Client-side with SWR/React Query in server shell
+    3. RECOMMENDED strategy: <based on data characteristics>
+    4. IF current != recommended:
+       a. Apply the migration
+       b. Measure TTFB before/after
+       c. Verify content freshness meets requirements
+       d. IF TTFB improves AND freshness is acceptable → KEEP
+       e. ELSE → REVERT
+
+  RENDERING STRATEGY MAP:
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │  Route              │  Current    │  Recommended  │  TTFB (ms)  │ OK? │
+  ├────────────────────────────────────────────────────────────────────────┤
+  │  /                  │  SSG        │  SSG          │  <N>        │  Y  │
+  │  /blog/[slug]       │  SSR        │  ISR (3600)   │  <N>→<N>    │  Y  │
+  │  /dashboard         │  SSR        │  Streaming    │  <N>→<N>    │  Y  │
+  │  /products/[id]     │  SSG        │  ISR (60)     │  <N>        │  Y  │
+  │  /search            │  SSR        │  SSR+Suspense │  <N>→<N>    │  Y  │
+  └────────────────────────────────────────────────────────────────────────┘
+
+CONVERGENCE CRITERIA:
+  - All routes have TTFB < 200ms (p75)
+  - Hydration time < 100ms
+  - Client JS < 150 KB gzipped
+  - Every 'use client' is at leaf level
+  - Rendering strategy matches data characteristics for every route
+  OR max 8 iterations per phase (report remaining gaps)
+
+FINAL REPORT:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Metric                       │  Start     │  Final     │  Target    │
+├───────────────────────────────┼────────────┼────────────┼────────────┤
+│  Avg TTFB (p75)               │  <N>ms     │  <N>ms     │  < 200ms   │
+│  Hydration time               │  <N>ms     │  <N>ms     │  < 100ms   │
+│  Client JS (gzipped)          │  <N> KB    │  <N> KB    │  < 150 KB  │
+│  Lighthouse Performance       │  <N>       │  <N>       │  >= 90     │
+│  Routes on optimal strategy   │  <N>/<M>   │  <N>/<M>   │  100%      │
+│  Suspense boundaries          │  <N>       │  <N>       │  Per slow  │
+│  Client components at leaf    │  <N>%      │  <N>%      │  100%      │
+└───────────────────────────────┴────────────┴────────────┴────────────┘
+```
+
+### SSR/SSG Optimization TSV Logging
+
+Append one row per optimization action to `.godmode/nextjs-optimization.tsv`:
+
+```
+timestamp	project	phase	route	metric	before	after	technique	status
+2024-01-15T10:30:00Z	storefront	ttfb	/products/[slug]	ttfb_ms	680	120	isr-revalidate-60	improved
+2024-01-15T10:45:00Z	storefront	hydration	/dashboard	hydration_ms	240	85	leaf-client-split	improved
+2024-01-15T11:00:00Z	storefront	strategy	/blog/[slug]	rendering	ssr	isr_3600	strategy-migration	improved
+```
+
+### SSR/SSG Optimization Hard Rules
+
+```
+1. NEVER measure TTFB in dev mode. Always use production build: `next build && next start`.
+2. NEVER add 'use client' higher than necessary to "fix" a hydration issue. Push client boundaries to leaves.
+3. ALWAYS measure both lab (Lighthouse) and field (web-vitals) TTFB. They can diverge significantly.
+4. ALWAYS verify content freshness after switching from SSR to ISR. Stale content for critical pages is worse than slow TTFB.
+5. NEVER exceed 8 iterations per phase. If targets are not met, report the gap and recommend infrastructure changes (CDN, edge functions, database proximity).
+6. Log every optimization action in TSV format for reproducibility and rollback capability.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Next.js tasks sequentially: marketing routes, then app routes, then API layer.

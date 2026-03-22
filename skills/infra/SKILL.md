@@ -439,6 +439,52 @@ WHILE current_env < len(environments):
 EXIT when all environments validated OR user halts
 ```
 
+## Keep/Discard Discipline
+```
+After EACH infrastructure change:
+  1. MEASURE: Run terraform plan — are the changes as expected? Run policy checks — do they pass?
+  2. COMPARE: Is the infrastructure more secure/compliant/cost-effective than before?
+  3. DECIDE:
+     - KEEP if: plan shows expected changes AND policy checks pass AND cost within budget
+     - DISCARD if: plan shows unexpected destroys OR policy violations OR cost exceeds threshold
+  4. COMMIT kept changes. Revert discarded changes before proceeding.
+
+Never apply infrastructure changes without reviewing the plan output first.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to resolve a policy violation or drift issue:
+  1. Re-read the policy definition — the violation may be a false positive from an overly strict policy.
+  2. Check state consistency: run `terraform state list` and compare with actual cloud resources.
+  3. If state is corrupted: use `terraform import` to reconcile, not manual state editing.
+  4. If still stuck → log stop_reason=stuck, document the issue, halt deployment for this environment.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All environments validated (plan, policy, cost, drift)
+  - All policy violations resolved
+  - User explicitly requests stop
+  - A CRITICAL policy violation is found that requires architectural changes (escalate to user)
+
+DO NOT STOP just because:
+  - Cost is higher than expected (report it, but still validate security and drift)
+  - Non-production environments have minor policy warnings
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler infrastructure approach:
+  - Managed services (RDS, Cloud SQL) before self-managed databases
+  - Standard module patterns before custom module abstractions
+  - Fewer resources with right-sized capacity before many small resources
+  - Built-in cloud encryption before custom KMS key management
+  - Single state file per environment before complex state partitioning
+  - Terraform workspaces before duplicated directory structures (for simple cases)
+```
+
 ## Multi-Agent Dispatch
 For multi-environment or multi-module infrastructure work:
 ```

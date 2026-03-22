@@ -807,6 +807,213 @@ IF sitemap generation fails:
 - **Do NOT treat SEO as separate from performance.** Fast sites rank better, have lower bounce rates, and earn more conversions. SEO and web performance are inseparable.
 
 
+## SEO Audit Loop
+
+Autoresearch-grade iterative SEO optimization loop. Combines Core Web Vitals measurement, structured data validation, and crawlability verification into a repeatable, metrics-driven cycle.
+
+```
+SEO AUDIT PROTOCOL:
+
+Phase 1 — Core Web Vitals Optimization Loop
+  targets:
+    LCP < 2.5s (Good)
+    INP < 200ms (Good)
+    CLS < 0.1 (Good)
+    TTFB < 200ms
+    FCP < 1.8s
+  current_iteration = 0
+  max_iterations = 10
+
+  WHILE any_cwv_metric in "Poor" or "Needs Improvement" AND current_iteration < max_iterations:
+    1. MEASURE with Lighthouse (lab data):
+       npx lighthouse <url> --only-categories=performance --output=json --output-path=./cwv.json
+       Parse: LCP, INP (TBT as proxy), CLS, FCP, TTFB
+    2. MEASURE with web-vitals (field data, if available):
+       import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
+       Report to analytics endpoint
+    3. COMPARE lab vs field:
+       - If field is significantly worse than lab → investigate device/network conditions
+       - If lab is worse → investigate rendering pipeline
+    4. IDENTIFY the worst metric and its root cause:
+       a. LCP > 2.5s:
+          - What is the LCP element? (image, text block, video)
+          - Is the LCP resource preloaded? (<link rel="preload">)
+          - Is there render-blocking CSS/JS?
+          - Is the server response slow (TTFB > 200ms)?
+       b. INP > 200ms:
+          - Which interaction is slowest? (click, keypress, tap)
+          - Is there a long task blocking the main thread?
+          - Are event handlers doing too much synchronous work?
+       c. CLS > 0.1:
+          - Which elements shift? (use Layout Shift Regions in DevTools)
+          - Are images/videos missing dimensions?
+          - Is content injected above the fold dynamically?
+          - Are fonts causing layout shift (FOIT/FOUT)?
+       d. TTFB > 200ms:
+          - Is the server slow? (database queries, cold starts)
+          - Is there a CDN? (cache hit ratio)
+          - Is the page dynamically rendered when it could be static/ISR?
+    5. APPLY targeted fix (one fix per iteration for measurable impact)
+    6. RE-MEASURE same URL with same tool
+    7. RECORD:
+       url | metric | before | after | fix_applied | lab_or_field
+    8. IF metric worsens → REVERT
+    9. current_iteration += 1
+
+  CWV OPTIMIZATION RESULTS:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Metric  │  Start (lab) │  Final (lab) │  Field p75  │  Target      │
+  ├──────────┼──────────────┼──────────────┼─────────────┼──────────────┤
+  │  LCP     │  <N>s        │  <N>s        │  <N>s       │  < 2.5s      │
+  │  INP     │  <N>ms       │  <N>ms       │  <N>ms      │  < 200ms     │
+  │  CLS     │  <N>         │  <N>         │  <N>        │  < 0.1       │
+  │  FCP     │  <N>s        │  <N>s        │  <N>s       │  < 1.8s      │
+  │  TTFB    │  <N>ms       │  <N>ms       │  <N>ms      │  < 200ms     │
+  └──────────┴──────────────┴──────────────┴─────────────┴──────────────┘
+
+Phase 2 — Structured Data Validation Loop
+  target: zero validation errors, all eligible page types have schema markup
+
+  PAGE TYPE → SCHEMA MAPPING:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Page Type          │  Required Schema    │  Rich Result Eligible   │
+  ├─────────────────────┼─────────────────────┼─────────────────────────┤
+  │  Homepage           │  Organization       │  Knowledge panel        │
+  │  Product pages      │  Product + Offer    │  Product cards, pricing │
+  │  Blog/article pages │  Article            │  Article cards          │
+  │  FAQ pages          │  FAQPage            │  FAQ accordion          │
+  │  How-to content     │  HowTo              │  How-to steps           │
+  │  Review pages       │  Review             │  Star ratings           │
+  │  Recipe pages       │  Recipe             │  Recipe cards           │
+  │  Event pages        │  Event              │  Event listings         │
+  │  All pages          │  BreadcrumbList     │  Breadcrumb trail       │
+  │  All pages          │  WebSite+SearchAction│  Sitelinks search box  │
+  └─────────────────────┴─────────────────────┴─────────────────────────┘
+
+  FOR EACH page type:
+    1. CHECK if JSON-LD script tag exists in page source
+    2. IF missing → generate schema from page content
+    3. IF present → validate:
+       a. Parse JSON-LD for syntax errors
+       b. Validate against schema.org vocabulary
+       c. Check required fields per type:
+          - Product: name, image, description, offers.price, offers.priceCurrency
+          - Article: headline, author, datePublished, image, publisher
+          - FAQPage: mainEntity with Question+Answer pairs
+          - BreadcrumbList: itemListElement with position, name, item
+       d. Verify values match visible page content (no fabricated data)
+    4. TEST with Google Rich Results Test:
+       npx structured-data-testing-tool --url <url>
+    5. RECORD:
+       page | schema_type | validation_status | errors | rich_result_eligible
+    6. IF errors → fix JSON-LD, re-validate
+    7. REPEAT until all page types have valid, complete schema markup
+
+  STRUCTURED DATA SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Page Type     │  Schema     │  Valid  │  Complete  │  Rich Result  │
+  ├────────────────┼─────────────┼─────────┼────────────┼───────────────┤
+  │  Homepage      │  Org        │  YES    │  YES       │  Eligible     │
+  │  Products      │  Product    │  YES    │  PARTIAL   │  Needs price  │
+  │  Blog posts    │  Article    │  YES    │  YES       │  Eligible     │
+  │  FAQ           │  FAQPage    │  YES    │  YES       │  Eligible     │
+  │  Breadcrumbs   │  Breadcrumb │  YES    │  YES       │  Eligible     │
+  │  Search        │  SearchAction│ MISSING│  —         │  Not eligible │
+  └────────────────┴─────────────┴─────────┴────────────┴───────────────┘
+
+Phase 3 — Crawlability & Indexing Loop
+  target: all important pages indexable, zero crawl waste, zero orphan pages
+
+  CRAWLABILITY AUDIT:
+  1. ROBOTS.TXT validation:
+     - Fetch /robots.txt
+     - Verify: important pages are NOT blocked
+     - Verify: admin/api/internal paths ARE blocked
+     - Verify: CSS/JS resources are NOT blocked (needed for rendering)
+     - Verify: Sitemap directive is present and points to valid sitemap
+
+  2. SITEMAP validation:
+     - Fetch /sitemap.xml (or sitemap index)
+     - Count URLs in sitemap vs actual pages
+     - Check: every indexable page is IN the sitemap
+     - Check: NO 404 or redirect URLs in the sitemap
+     - Check: lastmod dates are accurate (not fabricated)
+     - Check: sitemap size < 50MB, < 50,000 URLs per file
+
+  3. CANONICAL TAG audit:
+     FOR EACH page:
+       - Verify: canonical tag is present and self-referencing
+       - Verify: no canonical pointing to 404 or redirect
+       - Verify: trailing slash consistency
+       - Verify: HTTP pages canonical to HTTPS
+
+  4. INTERNAL LINKING audit:
+     - Identify orphan pages (not linked from any other page)
+     - Identify pages with > 3 clicks from homepage (crawl depth)
+     - Verify: no broken internal links (404 responses)
+     - Check: anchor text is descriptive (not "click here")
+
+  5. INDEX COVERAGE:
+     - Check Google Search Console Index Coverage report
+     - Investigate: pages with "Excluded" status
+     - Fix: noindex tags on pages that should be indexed
+     - Fix: canonicalization issues causing deduplication
+
+  CRAWLABILITY SCORECARD:
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Check                         │  Status    │  Issues  │  Action    │
+  ├────────────────────────────────┼────────────┼──────────┼────────────┤
+  │  robots.txt valid              │  PASS/FAIL │  <N>     │  <fix>     │
+  │  Sitemap complete              │  PASS/FAIL │  <N>     │  <fix>     │
+  │  Sitemap URLs all 200          │  PASS/FAIL │  <N>     │  <fix>     │
+  │  Canonical tags present        │  PASS/FAIL │  <N>     │  <fix>     │
+  │  No orphan pages               │  PASS/FAIL │  <N>     │  <fix>     │
+  │  Max crawl depth <= 3          │  PASS/FAIL │  <N>     │  <fix>     │
+  │  No broken internal links      │  PASS/FAIL │  <N>     │  <fix>     │
+  │  CSS/JS not blocked by robots  │  PASS/FAIL │  <N>     │  <fix>     │
+  └────────────────────────────────┴────────────┴──────────┴────────────┘
+
+FINAL SEO AUDIT REPORT:
+┌──────────────────────────────────────────────────────────────────────┐
+│  Category                       │  Before   │  After    │  Target    │
+├─────────────────────────────────┼───────────┼───────────┼────────────┤
+│  Lighthouse SEO score           │  <N>      │  <N>      │  >= 95     │
+│  Lighthouse Performance score   │  <N>      │  <N>      │  >= 90     │
+│  LCP (p75)                      │  <N>s     │  <N>s     │  < 2.5s    │
+│  INP (p75)                      │  <N>ms    │  <N>ms    │  < 200ms   │
+│  CLS (p75)                      │  <N>      │  <N>      │  < 0.1     │
+│  Structured data types valid    │  <N>/<M>  │  <N>/<M>  │  100%      │
+│  Rich result eligible pages     │  <N>      │  <N>      │  Maximize  │
+│  Sitemap coverage               │  <N>%     │  <N>%     │  100%      │
+│  Crawl errors                   │  <N>      │  0        │  0         │
+│  Orphan pages                   │  <N>      │  0        │  0         │
+│  Canonical tag coverage         │  <N>%     │  100%     │  100%      │
+└─────────────────────────────────┴───────────┴───────────┴────────────┘
+```
+
+### SEO Audit Loop TSV Logging
+
+Append one row per optimization action to `.godmode/seo-optimization.tsv`:
+
+```
+timestamp	project	phase	url	metric	before	after	technique	status
+2024-01-15T10:30:00Z	my-site	cwv	/home	lcp_s	3.8	2.1	preload-lcp-image	improved
+2024-01-15T10:45:00Z	my-site	schema	/products/1	product_schema	missing	valid	added-jsonld	fixed
+2024-01-15T11:00:00Z	my-site	crawl	/sitemap.xml	missing_urls	12	0	regenerated-sitemap	fixed
+```
+
+### SEO Audit Hard Rules
+
+```
+1. NEVER fabricate structured data. Schema markup MUST match visible page content. Fake reviews, wrong prices, or misleading content risks Google manual penalty.
+2. NEVER measure CWV only in lab. Field data (CrUX, web-vitals) reflects real user experience. Lab data is for debugging.
+3. ALWAYS re-validate structured data after every change with Google Rich Results Test.
+4. NEVER block CSS/JS in robots.txt. Search engines need to render pages to evaluate them.
+5. ALWAYS regenerate sitemap on deploy. Stale sitemaps with 404 URLs waste crawl budget.
+6. NEVER exceed 10 iterations per CWV metric. If targets are not met, recommend infrastructure changes (CDN, edge rendering, database optimization).
+7. Log every SEO action in TSV format for tracking improvements across releases.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run SEO tasks sequentially: meta tags/canonicals, then JSON-LD structured data, then Core Web Vitals/performance.

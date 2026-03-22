@@ -828,6 +828,187 @@ IF on-call engineer is overloaded (> 5 pages per shift):
 - **Do NOT alert on everything.** More alerts does not mean more reliability. It means more noise, more fatigue, and more ignored alerts. Alert on SLO burn rate, not individual metrics.
 
 
+## Reliability Audit
+
+Comprehensive audit of SLO tracking, error budget health, and incident response readiness:
+
+```
+RELIABILITY AUDIT:
+Service: <service name>
+Business tier: Tier <1|2|3>
+Audit date: <date>
+Audit period: last <30|60|90> days
+
+SLO TRACKING AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  SLI/SLO              │ Target  │ Actual  │ Budget  │ Status     │
+├──────────────────────────────────────────────────────────────────┤
+│  Availability          │ <pct>%  │ <pct>%  │ <pct>%  │ PASS|FAIL │
+│  Latency p50           │ <ms>    │ <ms>    │ <pct>%  │ PASS|FAIL │
+│  Latency p99           │ <ms>    │ <ms>    │ <pct>%  │ PASS|FAIL │
+│  Error rate            │ <pct>%  │ <pct>%  │ <pct>%  │ PASS|FAIL │
+│  Throughput            │ <rps>   │ <rps>   │ N/A     │ PASS|FAIL │
+│  Correctness           │ <pct>%  │ <pct>%  │ <pct>%  │ PASS|FAIL │
+│  Freshness (if data)   │ <min>   │ <min>   │ <pct>%  │ PASS|FAIL │
+└──────────────────────────────────────────────────────────────────┘
+
+  SLO tracking checks:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Check                              │ Status   │ Evidence        │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  SLOs defined for all critical SLIs │ PASS|FAIL│ <SLO doc>       │
+  │  SLIs measured from real user traffic│ PASS|FAIL│ <measurement>   │
+  │    (not just synthetic probes)      │          │                 │
+  │  SLO dashboard exists and is current│ PASS|FAIL│ <dashboard URL> │
+  │  SLO window is rolling (not calendar│ PASS|FAIL│ <window type>   │
+  │  SLO is stricter than SLA           │ PASS|FAIL│ <SLO vs SLA>    │
+  │  SLO reviews happen monthly         │ PASS|FAIL│ <review cadence>│
+  │  SLO targets match business needs   │ PASS|FAIL│ <biz alignment> │
+  │    (not too tight, not too loose)   │          │                 │
+  │  All dependent services have SLOs   │ PASS|FAIL│ <dep SLO list>  │
+  │  SLO violations trigger action      │ PASS|FAIL│ <response flow> │
+  │    (not just logged)                │          │                 │
+  └──────────────────────────────────────────────────────────────────┘
+
+ERROR BUDGET AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  SLO                │ Budget (min) │ Consumed │ Remaining │ Trend │
+├──────────────────────────────────────────────────────────────────┤
+│  Availability 99.9% │ 43.2 min     │ <min>    │ <pct>%    │ <dir> │
+│  Latency p99 <500ms │ <budget>     │ <used>   │ <pct>%    │ <dir> │
+│  Error rate <0.1%   │ <budget>     │ <used>   │ <pct>%    │ <dir> │
+└──────────────────────────────────────────────────────────────────┘
+
+  Error budget health checks:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Check                              │ Status   │ Evidence        │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  Error budget policy documented     │ PASS|FAIL│ <policy doc>    │
+  │  Budget burn rate alerts configured │ PASS|FAIL│ <alert rules>   │
+  │    (multi-window: critical, high,   │          │                 │
+  │     medium, low)                    │          │                 │
+  │  Budget exhaustion triggers deploy  │ PASS|FAIL│ <freeze policy> │
+  │    freeze (enforced, not advisory)  │          │                 │
+  │  Budget consumption is trending     │ PASS|FAIL│ <trend analysis>│
+  │    within expected range            │          │                 │
+  │  Top budget consumers identified    │ PASS|FAIL│ <incident list> │
+  │    (which incidents burned budget)  │          │                 │
+  │  Budget history tracked over time   │ PASS|FAIL│ <historical data│
+  │    (month-over-month trend)         │          │                 │
+  │  Burn rate alerts tested with       │ PASS|FAIL│ <fire drill>    │
+  │    simulated failure                │          │                 │
+  └──────────────────────────────────────────────────────────────────┘
+
+  Error budget analysis:
+    1. COMPUTE budget consumption per incident (which incidents burned the most budget?)
+    2. CATEGORIZE budget burns: deployment-related | dependency failure | infrastructure | unknown
+    3. IDENTIFY: are deployments the largest budget consumer? If yes, improve deploy safety.
+    4. TREND: is budget consumption increasing month-over-month? If yes, reliability is degrading.
+    5. FORECAST: at current burn rate, when will budget be exhausted?
+
+INCIDENT RESPONSE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Incident severity definitions exist│ PASS|FAIL│ <SEV1-4 defs>   │
+│  Incident roles defined (IC, tech   │ PASS|FAIL│ <role doc>      │
+│    lead, comms, scribe)             │          │                 │
+│  Incident communication template    │ PASS|FAIL│ <template>      │
+│  Status page configured and tested  │ PASS|FAIL│ <status page>   │
+│  Escalation policy documented       │ PASS|FAIL│ <L1->L4 chain>  │
+│  On-call rotation sustainable       │ PASS|FAIL│ <rotation size> │
+│    (>= 5 people, <= 1 week in 5)   │          │                 │
+│  Mean time to acknowledge < 5 min   │ PASS|FAIL│ <MTTA data>     │
+│  Mean time to resolve < 30 min      │ PASS|FAIL│ <MTTR data>     │
+│  False positive alert rate < 20%    │ PASS|FAIL│ <false pos %>   │
+│  Pages per on-call shift < 5        │ PASS|FAIL│ <page count>    │
+│  Sleep-hour pages < 1 per shift     │ PASS|FAIL│ <night pages>   │
+│  Post-mortem conducted for every    │ PASS|FAIL│ <PM completion> │
+│    SEV1/SEV2 within 7 days          │          │                 │
+│  Post-mortem action items tracked   │ PASS|FAIL│ <action tracker>│
+│    to completion                    │          │                 │
+│  Blameless culture verified         │ PASS|FAIL│ <PM review>     │
+│    (no blame in post-mortem docs)   │          │                 │
+│  Runbook coverage for all pageable  │ PASS|FAIL│ <coverage %>    │
+│    alerts                           │          │                 │
+│  Runbooks tested quarterly          │ PASS|FAIL│ <last test date>│
+│  Incident simulation drill run      │ PASS|FAIL│ <drill date>    │
+│    in last 90 days                  │          │                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  Incident analysis (last 90 days):
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Metric                    │ Value   │ Target  │ Trend          │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  Total incidents           │ <N>     │ < <N>   │ <improving?>   │
+  │  SEV1 incidents            │ <N>     │ 0       │ <trend>        │
+  │  SEV2 incidents            │ <N>     │ < 2     │ <trend>        │
+  │  MTTA (median)             │ <min>   │ < 5 min │ <trend>        │
+  │  MTTR (median)             │ <min>   │ < 30 min│ <trend>        │
+  │  Post-mortems completed    │ <N>/<M> │ 100%    │ <compliance>   │
+  │  Action items completed    │ <N>/<M> │ > 80%   │ <completion>   │
+  │  Repeat incidents          │ <N>     │ 0       │ <recurrence>   │
+  │    (same root cause)       │         │         │                │
+  │  Customer-reported (vs     │ <pct>%  │ < 10%   │ <detection>    │
+  │    internally detected)    │         │         │                │
+  └──────────────────────────────────────────────────────────────────┘
+
+  Incident pattern analysis:
+    1. CLUSTER incidents by root cause category
+    2. IDENTIFY recurring themes (same dependency, same deploy issue, same config)
+    3. CHECK: are post-mortem action items actually preventing recurrence?
+    4. MEASURE: what percentage of incidents are detected by monitoring vs reported by users?
+    5. TRACK: is MTTR improving or degrading over time?
+
+AUDIT VERDICT: <RELIABLE | AT RISK | DEGRADING>
+  SLO tracking:       <PASS | GAPS>
+  Error budget:       <HEALTHY | DEPLETING | EXHAUSTED>
+  Incident response:  <MATURE | DEVELOPING | AD HOC>
+
+Priority actions:
+  1. <highest priority reliability improvement>
+  2. <second priority improvement>
+  3. <third priority improvement>
+```
+
+### Reliability Audit Loop
+
+```
+RELIABILITY AUDIT ITERATION:
+audit_areas = [slo_tracking, error_budget, incident_response]
+current_area = 0
+
+WHILE current_area < len(audit_areas):
+  area = audit_areas[current_area]
+
+  1. COLLECT data for all checks (query monitoring, review incidents, check configs)
+  2. SCORE each check as PASS or FAIL with evidence
+  3. FOR each FAIL:
+     - CLASSIFY: CRITICAL (blind spot in reliability) | HIGH (degraded response) | MEDIUM (process gap)
+     - ESTIMATE fix effort and impact on reliability
+  4. IF any CRITICAL in slo_tracking (SLOs not measured):
+     HALT "Cannot assess reliability without SLO measurement. Fix first."
+
+  current_area += 1
+
+FINAL:
+  reliability_score = total_pass / total_checks * 100
+  budget_health = min(remaining_budget_pct for all SLOs)
+  incident_maturity = classify_maturity(incident_checks)
+
+  IF reliability_score < 60% OR budget_health < 10%:
+    "Service reliability is AT RISK. Freeze non-critical deploys. Address {critical_count} issues."
+  IF reliability_score >= 60% AND < 85%:
+    "Service reliability is DEVELOPING. {fail_count} gaps to address."
+  IF reliability_score >= 85% AND budget_health > 25%:
+    "Service reliability is HEALTHY. Schedule next audit in 30 days."
+
+  SCHEDULE next audit based on tier:
+    Tier 1: every 30 days
+    Tier 2: every 60 days
+    Tier 3: every 90 days
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run reliability tasks sequentially: SLO/SLI definitions, then burn-rate alerts, then runbooks.

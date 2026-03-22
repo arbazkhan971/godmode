@@ -816,6 +816,143 @@ WHEN state management causes infinite loops:
 - **Do NOT ignore TypeScript.** Enable strict mode. Type your props, hooks, and context. Generic components (`DataTable<T>`) prevent runtime errors.
 
 
+## Component Optimization Loop
+
+Autoresearch-grade iterative optimization for React component performance. Run this loop after initial implementation to drive measurable improvements in re-render count, bundle size, and Lighthouse score.
+
+```
+COMPONENT OPTIMIZATION PROTOCOL:
+
+Phase 1 — Re-render Reduction
+  target_rerenders = 0 unnecessary re-renders per interaction
+  current_iteration = 0
+  max_iterations = 8
+
+  WHILE measured_unnecessary_rerenders > 0 AND current_iteration < max_iterations:
+    1. PROFILE with React DevTools Profiler (record an interaction)
+    2. IDENTIFY components that re-render without prop/state changes
+    3. MEASURE: count wasted renders, sum render durations (ms)
+    4. CLASSIFY root cause:
+       a. Unstable reference (new object/array/function on every render)
+       b. Context over-subscription (consuming context that updates frequently)
+       c. Parent cascade (parent re-renders, children follow)
+       d. Missing memoization on expensive derived computation
+    5. APPLY targeted fix:
+       - (a) → useMemo/useCallback for the unstable reference
+       - (b) → Split context or use selector pattern (Zustand/Jotai)
+       - (c) → React.memo on child with stable props, or push state down
+       - (d) → useMemo on the expensive computation
+    6. RE-PROFILE same interaction
+    7. RECORD:
+       component | cause | fix | renders_before | renders_after | duration_delta_ms
+    8. IF renders_after >= renders_before → REVERT fix (optimization failed)
+    9. current_iteration += 1
+
+  REPORT:
+    Total unnecessary re-renders eliminated: <N>
+    Total render duration reduced: <N>ms
+    Components optimized: <list>
+
+Phase 2 — Bundle Size Optimization
+  target_bundle = project budget or < 200 KB initial JS (gzipped)
+  current_bundle = measure with `npx next build` or `npx vite build`
+
+  WHILE current_bundle > target_bundle:
+    1. ANALYZE bundle with `npx webpack-bundle-analyzer` or `rollup-plugin-visualizer`
+    2. IDENTIFY top 5 contributors by gzipped size
+    3. FOR EACH contributor:
+       a. Full library import? → Switch to named imports + tree-shaking
+       b. Heavy dependency? → Evaluate lighter alternative:
+          moment → date-fns or dayjs
+          lodash → lodash-es or native methods
+          chart.js full → @chartjs/auto
+       c. Unused code? → Remove dead imports, audit barrel files
+       d. Above-fold only? → Code-split with lazy() + Suspense
+       e. Polyfill not needed? → Update browserslist, remove core-js
+    4. REBUILD and MEASURE delta:
+       chunk | size_before_kb | size_after_kb | technique
+    5. VERIFY no regressions: run test suite, spot-check features
+    6. IF size_after >= size_before → REVERT (optimization ineffective)
+
+  METRICS TABLE:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Metric                  │  Before    │  After     │  Target     │
+  ├──────────────────────────┼────────────┼────────────┼─────────────┤
+  │  Initial JS (gzipped)    │  <N> KB    │  <N> KB    │  < 200 KB   │
+  │  Largest chunk           │  <N> KB    │  <N> KB    │  < 100 KB   │
+  │  Total chunks            │  <N>       │  <N>       │  —          │
+  │  Tree-shaking effective  │  YES/NO    │  YES/NO    │  YES        │
+  │  Unused JS (Lighthouse)  │  <N> KB    │  <N> KB    │  < 50 KB    │
+  └──────────────────────────┴────────────┴────────────┴─────────────┘
+
+Phase 3 — Lighthouse Score Loop
+  targets:
+    Performance: >= 90
+    Accessibility: >= 95
+    Best Practices: >= 95
+    SEO: >= 90
+
+  WHILE any_score < target:
+    1. RUN: npx lighthouse <url> --output=json --output-path=./lh-report.json
+    2. PARSE scores and failing audits
+    3. PRIORITIZE fixes by score impact (weight * potential improvement)
+    4. FOR EACH failing audit (top 5 by impact):
+       - LCP > 2.5s → Preload LCP image, inline critical CSS, optimize server response
+       - CLS > 0.1 → Add width/height to images, reserve space for dynamic content
+       - INP > 200ms → Break long tasks, defer non-critical handlers
+       - Unused JS → Code-split, remove dead code, lazy-load below fold
+       - Render-blocking resources → Defer non-critical CSS/JS, inline critical path
+       - Image optimization → Convert to WebP/AVIF, add srcset+sizes
+       - Missing accessibility → Add alt text, labels, ARIA, contrast fixes
+    5. APPLY fix
+    6. RE-RUN Lighthouse on same page
+    7. RECORD:
+       audit | score_before | score_after | technique
+    8. IF score_after < score_before → REVERT
+
+  CONVERGENCE CRITERIA:
+    All 4 Lighthouse categories meet targets
+    OR max 10 iterations reached (report remaining gaps)
+
+  FINAL REPORT:
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  Category         │  Start Score  │  Final Score  │  Target      │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  Performance      │  <N>          │  <N>          │  >= 90       │
+  │  Accessibility    │  <N>          │  <N>          │  >= 95       │
+  │  Best Practices   │  <N>          │  <N>          │  >= 95       │
+  │  SEO              │  <N>          │  <N>          │  >= 90       │
+  ├──────────────────────────────────────────────────────────────────┤
+  │  LCP              │  <N>s         │  <N>s         │  < 2.5s      │
+  │  INP              │  <N>ms        │  <N>ms        │  < 200ms     │
+  │  CLS              │  <N>          │  <N>          │  < 0.1       │
+  │  Bundle (gzip)    │  <N> KB       │  <N> KB       │  < 200 KB    │
+  │  Wasted renders   │  <N>          │  <N>          │  0           │
+  └──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop TSV Logging
+
+Append one row per optimization action to `.godmode/react-optimization.tsv`:
+
+```
+timestamp	project	phase	target_component	metric	before	after	technique	status
+2024-01-15T10:30:00Z	my-app	rerender	BoardColumn	render_count	12	2	split-context	improved
+2024-01-15T10:45:00Z	my-app	bundle	vendor-chunk	size_kb	187	94	tree-shaking	improved
+2024-01-15T11:00:00Z	my-app	lighthouse	/dashboard	performance	72	91	lcp-preload+codesplit	target_met
+```
+
+### Optimization Hard Rules
+
+```
+1. NEVER optimize without profiling first. React DevTools Profiler for re-renders, bundle analyzer for size, Lighthouse for scores.
+2. NEVER add React.memo/useMemo/useCallback without a measured before/after. Each has overhead.
+3. ALWAYS revert optimizations that show no measurable improvement or cause regressions.
+4. ALWAYS re-run the full test suite after each optimization pass.
+5. NEVER exceed 10 iterations per phase. If targets are not met, report the gap and recommend architectural changes.
+6. Log every optimization action in TSV format for reproducibility and auditability.
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run React tasks sequentially: components, then features, then state management, then tests.

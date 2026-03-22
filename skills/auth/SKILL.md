@@ -663,6 +663,113 @@ Implementation plan:
 | `--harden` | Security hardening review only |
 | `--migrate` | Migrate between auth strategies |
 
+## Auth Flow Audit Loop
+
+Structured audit of authentication flows — session management, token handling, and OAuth verification:
+
+```
+auth_flows = [session_management, token_lifecycle, oauth_verification,
+              mfa_flow, password_reset, social_login, api_key_handling]
+current_flow = 0
+max_iterations = len(auth_flows) + 3   # buffer for discovered flows
+
+WHILE current_flow < len(auth_flows) AND iteration < max_iterations:
+    flow = auth_flows[current_flow]
+    iteration += 1
+
+    PHASE 1 — MAP:
+      Trace the complete flow: entry point → authentication → session/token creation → usage → expiry/revocation
+      Identify all state transitions and decision points
+      Record all endpoints, middleware, and services involved
+
+    PHASE 2 — AUDIT:
+      IF session_management:
+        CHECK: Session ID is cryptographically random (256+ bits)
+        CHECK: Session regenerated after login (fixation prevention)
+        CHECK: Idle timeout enforced server-side (not just client-side)
+        CHECK: Absolute timeout exists (even active sessions expire)
+        CHECK: Cookie flags set: HttpOnly, Secure, SameSite
+        CHECK: Concurrent session limit enforced
+        CHECK: Session destroyed on logout (server-side + cookie cleared)
+
+      IF token_lifecycle:
+        CHECK: Access token TTL <= 15 minutes
+        CHECK: Refresh token rotation enabled (new token on each use)
+        CHECK: Refresh token family tracking (detect reuse → revoke family)
+        CHECK: Algorithm explicitly validated on verification (no alg confusion)
+        CHECK: Audience (aud) and issuer (iss) claims verified
+        CHECK: Token blacklist/revocation mechanism exists
+        CHECK: No sensitive data in token payload
+
+      IF oauth_verification:
+        CHECK: PKCE required for all authorization code flows
+        CHECK: State parameter validated (CSRF prevention)
+        CHECK: Nonce parameter validated (replay prevention)
+        CHECK: Redirect URI uses exact match (no wildcards, no open redirect)
+        CHECK: Authorization codes are single-use
+        CHECK: Client secrets never exposed in frontend code
+        CHECK: Token responses include cache-control: no-store
+
+      IF mfa_flow:
+        CHECK: MFA cannot be bypassed via API manipulation
+        CHECK: Rate limiting on verification attempts
+        CHECK: Recovery codes are hashed, not plaintext
+        CHECK: Step-up auth required for sensitive operations
+
+      IF password_reset:
+        CHECK: Reset token is cryptographically random (256+ bits)
+        CHECK: Reset token expires (15 min max)
+        CHECK: Reset token is single-use
+        CHECK: No user enumeration (same response for valid/invalid email)
+
+      IF social_login:
+        CHECK: Email verified claim checked before account linking
+        CHECK: Unverified emails not trusted for account linking
+        CHECK: Account takeover prevention (require MFA to link new provider)
+
+      IF api_key_handling:
+        CHECK: Keys stored as hashes only (not reversible)
+        CHECK: Keys transmitted only over HTTPS
+        CHECK: Keys sent in Authorization header (not query params)
+        CHECK: Unused keys flagged after 90 days of inactivity
+
+    PHASE 3 — SCORE:
+      Count checks passed vs total for this flow
+      Rate: PASS (all checks pass) | PARTIAL (>= 70% pass) | FAIL (< 70% pass)
+      FOR each failed check: record as finding with severity
+
+    PHASE 4 — RECORD:
+      Log to .godmode/auth-flow-audit.tsv:
+        timestamp	flow_name	checks_passed	checks_total	pass_rate	severity_summary	verdict
+      current_flow += 1
+
+    IF audit reveals undocumented auth flow (e.g., WebSocket auth, webhook signing):
+      Add to auth_flows list for audit
+
+    REPORT: "Flow {current_flow}/{len(auth_flows)}: {flow} — {checks_passed}/{checks_total} checks passed"
+
+STOP CONDITIONS:
+  - All auth flows audited
+  - OR max_iterations reached
+  - OR all flows score PASS and no new flows discovered
+```
+
+## Keep/Discard Discipline
+
+```
+FOR each auth audit finding:
+  KEEP if:
+    - Failed check has concrete security impact (exploitable weakness)
+    - Finding affects production authentication path
+    - Finding has code evidence (file:line where the weakness exists)
+  DISCARD if:
+    - Check is not applicable to chosen auth strategy (e.g., SAML check on JWT-only system)
+    - Feature is intentionally not implemented with documented justification
+    - Already remediated in current codebase (verify with code evidence)
+  RECORD: Every discard logged with reason to .godmode/auth-discards.tsv:
+    timestamp	flow_name	check_name	discard_reason
+```
+
 ## Auto-Detection
 
 Before prompting the user, automatically detect authentication context:

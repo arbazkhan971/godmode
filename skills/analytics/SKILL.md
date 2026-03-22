@@ -925,6 +925,142 @@ IF A/B test shows unbalanced assignment:
 - **Do NOT ship analytics without testing.** Verify events fire correctly, properties are populated, funnels work end-to-end, and consent gates function properly.
 
 
+## Analytics Audit
+
+Comprehensive audit of analytics implementation for event coverage, funnel completeness, and data quality:
+
+```
+ANALYTICS AUDIT:
+Project: <project name>
+Platform: <analytics platform>
+Audit date: <date>
+Total events in taxonomy: <N>
+Total events instrumented: <N>
+
+EVENT COVERAGE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  All taxonomy events instrumented   │ PASS|FAIL│ <N>/<M> events  │
+│  All user-facing pages tracked      │ PASS|FAIL│ <N>/<M> pages   │
+│  All conversion actions tracked     │ PASS|FAIL│ <N>/<M> actions │
+│  All error states tracked           │ PASS|FAIL│ <error events>  │
+│  All feature interactions tracked   │ PASS|FAIL│ <feature events>│
+│  No orphan events (fired but not    │ PASS|FAIL│ <orphan count>  │
+│    in taxonomy)                     │          │                 │
+│  No phantom events (in taxonomy but │ PASS|FAIL│ <phantom count> │
+│    never fired in production)       │          │                 │
+│  Event naming follows convention    │ PASS|FAIL│ <violations>    │
+│  All required properties populated  │ PASS|FAIL│ <null % check>  │
+│  No PII in any event properties     │ PASS|FAIL│ <PII scan>      │
+│  Server-side events validated       │ PASS|FAIL│ <server events> │
+│    (not just client-side)           │          │                 │
+│  Cross-platform consistency         │ PASS|FAIL│ <web vs mobile> │
+│    (same events on all platforms)   │          │                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  Event coverage gap analysis:
+    1. COMPARE taxonomy to production event stream (last 30 days)
+    2. LIST events in taxonomy but never fired: these are dead or broken
+    3. LIST events in production but not in taxonomy: these are rogue events
+    4. CHECK each user journey: can you reconstruct the full path from events?
+    5. CHECK each feature: is adoption measurable from existing events?
+
+FUNNEL ANALYSIS AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Funnel            │ Steps │ Tracked │ Drop-off │ Actionable?    │
+├──────────────────────────────────────────────────────────────────┤
+│  Onboarding        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+│  Activation        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+│  Conversion        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+│  Upgrade/upsell    │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+│  Retention         │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+│  Churn prevention  │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
+└──────────────────────────────────────────────────────────────────┘
+
+  Funnel audit checks:
+    FOR each funnel:
+      1. Verify all steps fire in correct order (no missing intermediate steps)
+      2. Verify timestamps are sequential (step N+1 always after step N)
+      3. Measure time between steps (identify where users stall)
+      4. Segment by cohort (new vs returning, plan type, acquisition source)
+      5. CHECK: does the biggest drop-off have a clear hypothesis and planned fix?
+      6. CHECK: is the funnel definition still accurate? (product changes may have altered the flow)
+
+  Missing funnels check:
+    - Is there a funnel for every business KPI? If not, which KPIs lack funnel instrumentation?
+    - Is there a funnel for every onboarding path? (web signup, mobile signup, invite flow, SSO)
+    - Is there a funnel for feature discovery -> adoption -> power usage for key features?
+
+DATA QUALITY AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Event volume is stable day-to-day  │ PASS|FAIL│ <volume chart>  │
+│    (no unexplained drops or spikes) │          │                 │
+│  Null/empty property rate < 5%      │ PASS|FAIL│ <null % report> │
+│  Duplicate event rate < 1%          │ PASS|FAIL│ <dedup check>   │
+│  Event timestamps are accurate      │ PASS|FAIL│ <clock skew>    │
+│    (no future dates, no stale)      │          │                 │
+│  User ID stitching is correct       │ PASS|FAIL│ <identity merge>│
+│    (anonymous -> authenticated)     │          │                 │
+│  Session boundaries are correct     │ PASS|FAIL│ <session logic> │
+│    (30 min inactivity timeout)      │          │                 │
+│  Bot/crawler traffic filtered       │ PASS|FAIL│ <filter rules>  │
+│  Ad blocker impact measured         │ PASS|FAIL│ <server vs client│
+│                                     │          │  discrepancy %>  │
+│  Data latency acceptable            │ PASS|FAIL│ <event -> query> │
+│    (events queryable within N min)  │          │                 │
+│  Historical data integrity          │ PASS|FAIL│ <backfill check>│
+│  Property enum values match spec    │ PASS|FAIL│ <enum audit>    │
+│  High-cardinality props identified  │ PASS|FAIL│ <cardinality>   │
+│    and categorized                  │          │                 │
+└──────────────────────────────────────────────────────────────────┘
+
+  Data quality monitoring:
+    - SET UP daily volume alert: page if event count drops > 20% from 7-day average
+    - SET UP property quality check: alert if null rate exceeds threshold per event
+    - SET UP duplicate detection: flag events with identical user+event+timestamp within 1s
+    - TRACK server-side vs client-side event count ratio: divergence indicates tracking loss
+
+AUDIT VERDICT: <PASS — analytics are reliable | NEEDS WORK — <N> issues found>
+Priority fixes:
+  1. <highest impact gap>
+  2. <second priority gap>
+  3. <third priority gap>
+```
+
+### Analytics Audit Loop
+
+```
+ANALYTICS AUDIT ITERATION:
+audit_areas = [event_coverage, funnel_analysis, data_quality]
+current_area = 0
+
+WHILE current_area < len(audit_areas):
+  area = audit_areas[current_area]
+
+  1. COLLECT evidence for all checks (query production data, inspect code, verify dashboards)
+  2. SCORE each check as PASS or FAIL
+  3. FOR each FAIL:
+     - QUANTIFY impact (e.g., "15% of conversions are unmeasured", "funnel drop-off cause unknown")
+     - ESTIMATE fix effort (hours)
+     - PRIORITIZE by business impact
+
+  current_area += 1
+
+FINAL:
+  coverage_score = events_instrumented / events_in_taxonomy * 100
+  funnel_score = funnels_fully_tracked / funnels_defined * 100
+  quality_score = quality_checks_passed / quality_checks_total * 100
+  overall = (coverage_score + funnel_score + quality_score) / 3
+
+  REPORT: "Analytics audit: coverage={coverage_score}%, funnels={funnel_score}%, quality={quality_score}%"
+  IF overall < 70%: "Analytics are unreliable for decision-making. Fix critical gaps before running experiments."
+  IF overall >= 70% AND < 90%: "Analytics are functional but have blind spots."
+  IF overall >= 90%: "Analytics are comprehensive. Schedule next audit in 90 days."
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run analytics tasks sequentially: taxonomy, then implementation, then funnels, then privacy.

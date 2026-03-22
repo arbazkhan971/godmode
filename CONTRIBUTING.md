@@ -18,6 +18,7 @@ Thank you for your interest in improving Godmode. This guide covers how to contr
 - [Commit Message Convention](#commit-message-convention)
 - [Pull Request Process](#pull-request-process)
 - [Philosophy Check](#philosophy-check)
+- [Design Principles (from autoresearch)](#design-principles-from-autoresearch)
 - [High-Value Contributions](#high-value-contributions)
 - [Multi-Platform Compatibility](#multi-platform-compatibility)
 
@@ -261,6 +262,16 @@ Example:
 ## Skill Quality Checklist
 
 Use this checklist before submitting any new or modified skill. Every item is required.
+
+### Skill PR Gate
+
+Every skill PR must pass this gate before review:
+
+- [ ] Has all standard sections: Activate When, Auto-Detection, Workflow, Output Format, TSV Logging, Success Criteria, Error Recovery, Anti-Patterns
+- [ ] Loop skills follow meta-protocol (REVIEW --> IDEATE --> MODIFY --> VERIFY --> DECIDE --> LOG)
+- [ ] Has explicit stop conditions (target/budget/diminishing/stuck)
+- [ ] Output format matches: `<Skill>: <before> --> <after> (<delta>%)`
+- [ ] TSV schema documented with column names and example row
 
 ### SKILL.md Structure
 
@@ -732,6 +743,16 @@ Before contributing, ask yourself:
 4. **Does this skill chain with others?** It should clearly state what comes before and after it in the workflow.
 
 5. **Would someone actually use this?** Be honest. If the skill is too theoretical or too niche, it might not belong in the core plugin.
+
+---
+
+## Design Principles (from autoresearch)
+
+- Every instruction must be mechanically executable by an AI agent
+- If you can't measure it, don't optimize for it
+- Simpler is always better at equal performance
+- Every decision is binary: keep or discard
+- Log everything, overwrite nothing
 
 ---
 

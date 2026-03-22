@@ -1110,6 +1110,302 @@ IF graceful shutdown fails:
 - **Do NOT mix business logic into controllers.** Controllers parse HTTP. Services contain logic. Mixing them makes testing impossible and creates coupling.
 
 
+## Node.js Optimization Loop
+
+When optimizing an existing Node.js application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
+
+### Pass 1: Event Loop Lag Audit
+
+```
+EVENT LOOP LAG AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Measure event loop lag                                  │
+│                                                                   │
+│  // Built-in event loop delay monitoring:                        │
+│  import { monitorEventLoopDelay } from 'node:perf_hooks';       │
+│  const h = monitorEventLoopDelay({ resolution: 20 });           │
+│  h.enable();                                                      │
+│                                                                   │
+│  setInterval(() => {                                             │
+│    const stats = {                                               │
+│      min: h.min / 1e6,       // nanoseconds → milliseconds      │
+│      max: h.max / 1e6,                                          │
+│      mean: h.mean / 1e6,                                        │
+│      p50: h.percentile(50) / 1e6,                               │
+│      p99: h.percentile(99) / 1e6,                               │
+│      stddev: h.stddev / 1e6,                                    │
+│    };                                                             │
+│    logger.info('event_loop_delay', stats);                       │
+│    if (stats.p99 > 100) {                                       │
+│      logger.warn('Event loop lag exceeds 100ms at p99');         │
+│    }                                                              │
+│    h.reset();                                                     │
+│  }, 10_000);                                                      │
+│                                                                   │
+│  Step 2: Identify event loop blocking sources                    │
+│  Common culprits:                                                │
+│  ┌──────────────────────────────┬────────────────────────────┐  │
+│  │  Blocker                     │  Fix                        │  │
+│  ├──────────────────────────────┼────────────────────────────┤  │
+│  │  JSON.parse (large payload)  │  Use streaming JSON parser  │  │
+│  │  JSON.stringify (large obj)  │  Use fast-json-stringify     │  │
+│  │  Regex on long strings       │  Use re2 or bounded input   │  │
+│  │  Crypto (bcrypt, scrypt)     │  Use worker_threads         │  │
+│  │  Image/PDF processing        │  Use worker_threads or queue│  │
+│  │  Synchronous file I/O        │  Use fs/promises            │  │
+│  │  DNS resolution (first call) │  Warm up DNS on startup     │  │
+│  │  require() at runtime        │  Import at module top       │  │
+│  │  Large array sort/filter     │  Stream-process or paginate │  │
+│  └──────────────────────────────┴────────────────────────────┘  │
+│                                                                   │
+│  Step 3: Profile with clinic.js                                  │
+│  npx clinic doctor -- node server.js                             │
+│  # Generates flamegraph showing where time is spent              │
+│  # Look for long synchronous stacks in the flamegraph            │
+│                                                                   │
+│  npx clinic bubbleprof -- node server.js                         │
+│  # Identifies async bottlenecks (waterfall I/O, serial awaits)  │
+│                                                                   │
+│  Step 4: Worker thread offloading                                │
+│  // main.ts — offload CPU work:                                  │
+│  import { Worker } from 'node:worker_threads';                   │
+│                                                                   │
+│  function runWorker<T>(workerPath: string, data: unknown): Promise<T> { │
+│    return new Promise((resolve, reject) => {                     │
+│      const worker = new Worker(workerPath, { workerData: data });│
+│      worker.on('message', resolve);                              │
+│      worker.on('error', reject);                                │
+│      worker.on('exit', (code) => {                              │
+│        if (code !== 0) reject(new Error(`Worker exited: ${code}`)); │
+│      });                                                         │
+│    });                                                            │
+│  }                                                                │
+│                                                                   │
+│  // Use a worker pool for repeated CPU tasks:                    │
+│  // npm install piscina                                          │
+│  import Piscina from 'piscina';                                  │
+│  const pool = new Piscina({                                      │
+│    filename: './worker.js',                                      │
+│    maxThreads: 4,                                                │
+│    idleTimeout: 30_000,                                          │
+│  });                                                              │
+│  const result = await pool.run(inputData);                       │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - Event loop lag p99 < 50ms (API server)                        │
+│  - Event loop lag p99 < 20ms (real-time server)                  │
+│  - No synchronous I/O in request path                            │
+│  - All CPU work > 10ms offloaded to worker threads               │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 2: Memory Leak Detection
+
+```
+MEMORY LEAK DETECTION:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Baseline memory monitoring                              │
+│                                                                   │
+│  // Expose memory metrics:                                       │
+│  setInterval(() => {                                             │
+│    const mem = process.memoryUsage();                            │
+│    logger.info('memory_usage', {                                │
+│      rss_mb: (mem.rss / 1024 / 1024).toFixed(1),               │
+│      heap_used_mb: (mem.heapUsed / 1024 / 1024).toFixed(1),    │
+│      heap_total_mb: (mem.heapTotal / 1024 / 1024).toFixed(1),  │
+│      external_mb: (mem.external / 1024 / 1024).toFixed(1),     │
+│      array_buffers_mb: (mem.arrayBuffers / 1024 / 1024).toFixed(1), │
+│    });                                                           │
+│  }, 30_000);                                                      │
+│                                                                   │
+│  Step 2: Identify common leak patterns                           │
+│  ┌──────────────────────────────────┬──────────────────────────┐│
+│  │  Leak Pattern                    │  Fix                      ││
+│  ├──────────────────────────────────┼──────────────────────────┤│
+│  │  Growing Map/Set (unbounded)    │  Add maxSize + LRU eviction│
+│  │  Event listener accumulation     │  removeListener in cleanup│
+│  │  Closure over request objects    │  Nullify refs after use   │
+│  │  Global cache without TTL        │  Add TTL + size limit     │
+│  │  Unresolved promises            │  Add timeout to all promises│
+│  │  Circular references in objects │  Use WeakRef / WeakMap     │
+│  │  Stream not consumed/destroyed  │  Always pipeline() streams │
+│  │  setInterval never cleared      │  clearInterval on shutdown │
+│  │  Database connection leak        │  Use pool with max + idle │
+│  └──────────────────────────────────┴──────────────────────────┘│
+│                                                                   │
+│  Step 3: Heap snapshot analysis                                  │
+│  // Generate heap snapshot programmatically:                     │
+│  import v8 from 'node:v8';                                      │
+│  import fs from 'node:fs';                                      │
+│                                                                   │
+│  // Trigger via signal or admin endpoint:                        │
+│  process.on('SIGUSR2', () => {                                  │
+│    const filename = `heap-${Date.now()}.heapsnapshot`;          │
+│    const snapshotStream = v8.writeHeapSnapshot(filename);       │
+│    logger.info(`Heap snapshot written to ${filename}`);         │
+│  });                                                              │
+│  // Load .heapsnapshot in Chrome DevTools > Memory tab           │
+│  // Compare 2 snapshots to find growing objects                  │
+│                                                                   │
+│  Step 4: Automated leak detection in CI                          │
+│  // Use --max-old-space-size to cap memory:                      │
+│  node --max-old-space-size=512 server.js                         │
+│                                                                   │
+│  // Add memory threshold alerts:                                 │
+│  const MEMORY_LIMIT_MB = 400;                                   │
+│  setInterval(() => {                                             │
+│    const heapUsed = process.memoryUsage().heapUsed / 1024 / 1024;│
+│    if (heapUsed > MEMORY_LIMIT_MB) {                            │
+│      logger.error('Memory limit approaching', { heapUsed });   │
+│      // Optionally trigger graceful restart                      │
+│    }                                                              │
+│  }, 10_000);                                                      │
+│                                                                   │
+│  TARGETS:                                                        │
+│  - Heap usage stable over 24h under load (no upward trend)      │
+│  - No Maps/Sets without size limits in application code          │
+│  - All event listeners have matching cleanup                     │
+│  - All streams use pipeline() for proper error + cleanup         │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 3: Cluster Mode & Process Tuning
+
+```
+CLUSTER MODE & PROCESS TUNING:
+┌──────────────────────────────────────────────────────────────────┐
+│  Decision: cluster vs container scaling                          │
+│                                                                   │
+│  ┌──────────────────────────┬────────────────────────────────┐  │
+│  │  Deployment              │  Scaling Strategy               │  │
+│  ├──────────────────────────┼────────────────────────────────┤  │
+│  │  Kubernetes / ECS        │  Single process per container   │  │
+│  │                          │  Scale via replica count        │  │
+│  │  PM2 on VM               │  Cluster mode (PM2 manages)    │  │
+│  │  Bare metal              │  node:cluster module            │  │
+│  │  Serverless              │  N/A (platform manages)         │  │
+│  └──────────────────────────┴────────────────────────────────┘  │
+│                                                                   │
+│  Container-based (recommended):                                  │
+│  # Dockerfile:                                                   │
+│  CMD ["node", "--max-old-space-size=512", "dist/server.js"]     │
+│  # kubernetes: replicas: 4, resources.limits.memory: 640Mi      │
+│  # One process per container — let orchestrator scale            │
+│                                                                   │
+│  PM2 cluster mode (VM deployments):                              │
+│  // ecosystem.config.js                                          │
+│  module.exports = {                                              │
+│    apps: [{                                                      │
+│      name: 'api',                                                │
+│      script: 'dist/server.js',                                  │
+│      instances: 'max',       // One per CPU core                 │
+│      exec_mode: 'cluster',                                      │
+│      max_memory_restart: '500M',                                │
+│      node_args: '--max-old-space-size=512',                     │
+│      env_production: {                                           │
+│        NODE_ENV: 'production',                                  │
+│      },                                                          │
+│    }],                                                            │
+│  };                                                               │
+│                                                                   │
+│  V8 garbage collection tuning:                                   │
+│  node --max-old-space-size=512    # Cap heap (default ~1.5GB)    │
+│  node --max-semi-space-size=64    # Young gen size (helps GC)    │
+│  node --expose-gc                 # Allow manual gc() calls      │
+│                                                                   │
+│  Connection pool tuning:                                         │
+│  // PostgreSQL pool:                                             │
+│  const pool = new Pool({                                         │
+│    max: 20,                        // Max connections per worker  │
+│    idleTimeoutMillis: 30_000,      // Release idle connections   │
+│    connectionTimeoutMillis: 5_000, // Fail fast if pool full     │
+│  });                                                              │
+│                                                                   │
+│  // Redis pool:                                                  │
+│  const redis = new Redis({                                       │
+│    maxRetriesPerRequest: 3,                                      │
+│    connectTimeout: 5_000,                                        │
+│    lazyConnect: true,              // Connect on first command    │
+│  });                                                              │
+│                                                                   │
+│  AUDIT CHECKLIST:                                                │
+│  [ ] Scaling strategy matches deployment environment             │
+│  [ ] --max-old-space-size set to container memory limit - 128MB  │
+│  [ ] Connection pools sized for worker count * max connections   │
+│  [ ] Graceful shutdown drains connections before exit             │
+│  [ ] Health check /ready returns 503 during shutdown drain       │
+│  [ ] Process restarts automatically on OOM or unrecoverable error│
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Pass 4: Dependency & Bundle Audit
+
+```
+DEPENDENCY & BUNDLE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Step 1: Identify heavy dependencies                             │
+│  npx cost-of-modules                                             │
+│  # Shows install size and load time per dependency               │
+│                                                                   │
+│  Step 2: Replace heavy packages                                  │
+│  ┌──────────────────────────────┬────────────────────────────┐  │
+│  │  Heavy Package               │  Lightweight Alternative    │  │
+│  ├──────────────────────────────┼────────────────────────────┤  │
+│  │  moment.js (300KB)           │  date-fns / dayjs (2-10KB) │  │
+│  │  lodash (full, 70KB)         │  lodash-es (tree-shakable)  │  │
+│  │  axios (30KB)                │  undici / built-in fetch    │  │
+│  │  uuid (10KB)                 │  crypto.randomUUID() (0KB) │  │
+│  │  validator.js (50KB)         │  zod (12KB)                │  │
+│  │  express-validator           │  zod / typebox              │  │
+│  │  winston (100KB)             │  pino (15KB, 5x faster)    │  │
+│  │  body-parser                 │  Built into Express 4.16+  │  │
+│  │  dotenv + manual parse       │  @t3-oss/env or zod schema │  │
+│  └──────────────────────────────┴────────────────────────────┘  │
+│                                                                   │
+│  Step 3: Audit for vulnerabilities                               │
+│  npm audit --production         # Only prod dependencies         │
+│  npx better-npm-audit audit     # More readable output           │
+│                                                                   │
+│  Step 4: Startup time optimization                               │
+│  - Measure: node --eval "const t=Date.now(); require('./dist/server'); console.log(Date.now()-t+'ms')" │
+│  - Lazy-import heavy modules (load on first use, not at startup) │
+│  - Precompile TypeScript — never run ts-node in production       │
+│  - Use esbuild/tsx for development, compiled JS for production   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Optimization Loop Summary
+
+```
+NODE.JS OPTIMIZATION REPORT:
+┌──────────────────────────────┬───────────┬───────────┬───────────┐
+│  Metric                      │  Before   │  After    │  Δ        │
+├──────────────────────────────┼───────────┼───────────┼───────────┤
+│  Event loop lag p99 (ms)    │  <N>      │  <N>      │  -<N>%    │
+│  Heap usage trend (24h)     │  growing  │  stable   │  FIXED    │
+│  Memory leaks identified     │  <N>      │  0        │  FIXED    │
+│  Unbounded caches            │  <N>      │  0        │  FIXED    │
+│  Sync I/O in request path   │  <N>      │  0        │  FIXED    │
+│  CPU work on main thread     │  <N>      │  0        │  offloaded│
+│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
+│  Startup time (ms)          │  <N>      │  <N>      │  -<N>%    │
+│  npm audit vulnerabilities   │  <N>      │  0        │  FIXED    │
+│  Heavy dependency replacements│ 0        │  <N>      │  +<N>     │
+└──────────────────────────────┴───────────┴───────────┴───────────┘
+
+PASS CRITERIA:
+- Event loop lag p99 < 50ms under normal load
+- Heap usage stable over 24h (no upward trend under constant load)
+- No synchronous I/O in request handling code
+- All CPU-intensive work offloaded to worker threads
+- No Maps/Sets/objects used as caches without size limits and TTL
+- Connection pools properly sized and tuned
+- Graceful shutdown with connection draining implemented
+- npm audit shows zero high/critical vulnerabilities in production deps
+
+VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Node.js tasks sequentially: API routes, then business logic, then middleware/infra.

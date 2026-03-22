@@ -232,6 +232,72 @@ docs/perf/                     ← perf (flame graphs, profile reports)
 | **ship** | Commits on a branch (`git log main..HEAD`) | build, fix, or manual work |
 | **finish** | A branch with work to finalize | Any prior skill that created commits |
 
+---
+
+## 6. Error Recovery Chains
+
+When a skill encounters a failure, Godmode has built-in recovery chains. These chains define which skill handles the error, how many retries are allowed, and what happens when recovery is exhausted.
+
+### Recovery chain definitions
+
+| Trigger | Recovery skill | Max retries | On exhaustion |
+|---------|---------------|-------------|---------------|
+| `build` task fails guard rails | `fix` | 3 | Revert task, log DISCARDED, move to next |
+| `ship` checklist item fails | `fix` | 2 | Abort ship, report failing item |
+| `finish` pre-check fails | `fix` | 2 | Abort finish, report failing check |
+| `fix` cannot resolve after max retries | `debug` | 1 (diagnostic only) | Log SKIPPED, recommend manual investigation |
+| `debug` identifies root cause | `fix` | 3 (new chain) | Log UNRESOLVED, report root cause to user |
+| `optimize` approach fails verification | (self) | 0 | Revert approach, try next; if all fail, end round |
+| `predict` confidence < 7 | `think` | 1 (rethink with risks) | Proceed with warnings if user confirms |
+
+### Chain execution rules
+
+1. **Max chain length: 3 hops.** A chain like `build -> fix -> debug -> fix` is the maximum. If the second `fix` also fails, the error is logged and the user is notified. Godmode never enters an unbounded recovery loop.
+2. **Each hop resets the retry counter.** When `debug` hands off to `fix`, fix gets a fresh 3 retries. The retries consumed in the original `build -> fix` chain do not carry over.
+3. **Revert before retry.** Every failed fix attempt is reverted (`git reset --hard HEAD~1`) before the next attempt. This ensures each retry starts from a clean state, not from a broken partial fix.
+4. **Chains do not cross skill boundaries silently.** Every hop is logged in the session log with the chain path (e.g., `build -> fix -> debug -> fix`) so the user can trace the recovery path.
+5. **User notification at exhaustion.** When a chain is exhausted, the skill reports what failed, what was tried, and what the user should investigate manually. It never silently drops errors.
+
+### Example: full recovery chain in practice
+
+```
+build task T3: "add WebSocket handler"
+  -> test_cmd FAIL: "TypeError: ws.on is not a function"
+  -> fix attempt 1: patch import statement -> test_cmd FAIL (different error)
+  -> revert fix 1
+  -> fix attempt 2: rewrite handler with correct API -> test_cmd FAIL (timeout)
+  -> revert fix 2
+  -> fix attempt 3: add missing dependency + rewrite -> test_cmd PASS, lint PASS
+  -> KEEP commit
+
+Total chain: build -> fix (3 attempts, succeeded on 3rd)
+```
+
+```
+build task T5: "add rate limiter middleware"
+  -> test_cmd FAIL: "Cannot read property 'limit' of undefined"
+  -> fix attempt 1: initialize config -> test_cmd FAIL
+  -> fix attempt 2: rewrite middleware -> test_cmd FAIL
+  -> fix attempt 3: different approach -> test_cmd FAIL
+  -> fix exhausted (3/3 failed)
+  -> debug: reproduce, bisect -> root cause: incompatible library version
+  -> fix (new chain): pin library version -> test_cmd PASS
+  -> KEEP commit
+
+Total chain: build -> fix (3, exhausted) -> debug (1) -> fix (1, succeeded)
+Chain length: 3 hops (within limit)
+```
+
+### Max chain length guidance
+
+- **3 hops is the hard limit.** This prevents runaway recovery loops that consume tokens without progress.
+- **Most chains resolve in 1 hop.** In practice, `build -> fix` resolves 80%+ of failures within 3 fix retries.
+- **2-hop chains (`build -> fix -> debug`) are uncommon** but handle cases where the error message is misleading and the real cause is deeper.
+- **3-hop chains (`build -> fix -> debug -> fix`) are rare** and indicate a genuinely complex issue. If this chain also fails, manual intervention is the right answer.
+- **Never extend beyond 3 hops.** If `build -> fix -> debug -> fix` fails, log the full chain, report findings, and stop. Do not recurse into another `debug -> fix` cycle.
+
+---
+
 ### Implicit chains the orchestrator follows
 
 When no explicit skill is requested, godmode detects the current phase and dispatches:

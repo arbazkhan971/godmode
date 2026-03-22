@@ -560,6 +560,52 @@ WHILE current_step < len(steps):
 EXIT when all steps pass OR user halts on failure
 ```
 
+## Keep/Discard Discipline
+```
+After EACH manifest change or deployment:
+  1. MEASURE: Run kubectl apply --dry-run=server, kubeval, kubesec — do they pass?
+  2. COMPARE: Are pods healthier, more secure, or better-sized than before?
+  3. DECIDE:
+     - KEEP if: validation passes AND pods are Ready AND no error logs in last 60s
+     - DISCARD if: validation fails OR pods crash OR readiness probe fails
+  4. COMMIT kept changes. Rollback discarded changes (helm rollback / kubectl rollout undo).
+
+Never promote a deployment stage if the current stage is unhealthy.
+```
+
+## Stuck Recovery
+```
+IF >3 consecutive iterations fail to get pods healthy:
+  1. Check previous pod logs: `kubectl logs <pod> --previous` — crash reason is often in the last log line.
+  2. Check events: `kubectl get events --sort-by=.lastTimestamp` — scheduling and image pull issues surface here.
+  3. Simplify: remove resource limits temporarily to rule out OOMKill, then add them back with higher values.
+  4. If still stuck → log stop_reason=stuck, capture pod describe output, escalate to user.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All pods are Ready and passing all probes
+  - Deployment strategy (rolling/canary/blue-green) is configured and tested
+  - User explicitly requests stop
+  - A rollback was triggered (investigate before retrying)
+
+DO NOT STOP just because:
+  - HPA is not yet configured (pods should be healthy first, then add autoscaling)
+  - Network policies are not yet applied (apply after core deployment is stable)
+```
+
+## Simplicity Criterion
+```
+PREFER the simpler Kubernetes configuration:
+  - Deployment before StatefulSet (unless you genuinely need stable pod identity)
+  - ClusterIP service before LoadBalancer (use Ingress for external access)
+  - Helm values overrides before custom Helm templates
+  - Namespace-level RBAC before pod-level service accounts (until fine-grained access is needed)
+  - Fewer replicas with right-sized resources before many tiny replicas
+  - Rolling update before canary (unless the change is high-risk)
+```
+
 ## Multi-Agent Dispatch
 For multi-service Kubernetes deployments:
 ```

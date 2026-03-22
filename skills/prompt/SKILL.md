@@ -713,6 +713,139 @@ AUTO-DETECT SEQUENCE:
 - **Do NOT treat prompt engineering as one-and-done.** Models change, requirements evolve, edge cases emerge. Prompts need ongoing maintenance.
 
 
+## Prompt Optimization Loop (Autoresearch-Quality)
+
+Structured iterative protocol for systematically improving eval scores, A/B testing variants, and optimizing token efficiency:
+
+```
+PROMPT OPTIMIZATION PROTOCOL:
+Prompt: <prompt ID and current version>
+Model: <target model>
+Golden set: <N eval examples>
+Budget: <max $/call, max latency ms>
+
+EVAL SCORE IMPROVEMENT LOOP:
+┌──────────────────────────────────────────────────────────────────┐
+│  Dimension          │ Baseline │ Current │ Target  │ Gap         │
+├──────────────────────────────────────────────────────────────────┤
+│  Accuracy           │ <val>    │ <val>   │ <val>   │ <delta>     │
+│  Format compliance  │ <val>    │ <val>   │ 100%    │ <delta>     │
+│  Consistency        │ <val>    │ <val>   │ <val>   │ <delta>     │
+│  Safety / refusal   │ <val>    │ <val>   │ >99%    │ <delta>     │
+│  Injection resist.  │ <val>    │ <val>   │ >95%    │ <delta>     │
+│  Latency (avg)      │ <ms>     │ <ms>    │ <ms>    │ <delta>     │
+│  Token cost (avg)   │ <tokens> │ <tokens>│ <tokens>│ <delta>     │
+└──────────────────────────────────────────────────────────────────┘
+
+SYSTEMATIC IMPROVEMENT STRATEGY:
+  Phase 1 — Failure Analysis:
+    1. Run golden set on current prompt version
+    2. Categorize every failure:
+       - FORMAT_ERROR: output does not match schema (fix: add example, use JSON mode)
+       - WRONG_ANSWER: incorrect content (fix: add CoT, improve instructions)
+       - HALLUCINATION: claims not grounded in input (fix: add constraint, reduce creativity)
+       - REFUSAL_FAIL: should have refused but did not (fix: add safety instruction)
+       - REFUSAL_OVER: refused a valid request (fix: relax constraint, add positive example)
+       - INCONSISTENCY: different outputs for same input (fix: lower temperature, add structure)
+    3. Rank failure categories by frequency
+    4. Target the highest-frequency category first
+
+  Phase 2 — Variant Generation:
+    For each failure category, generate exactly ONE variant:
+    ┌──────────────────────────────────────────────────────────────┐
+    │  Failure Type      │ Variant Strategy                        │
+    ├──────────────────────────────────────────────────────────────┤
+    │  FORMAT_ERROR      │ Add output example, use JSON mode, add  │
+    │                    │ schema in prompt, constrained decoding   │
+    │  WRONG_ANSWER      │ Add chain-of-thought, add relevant      │
+    │                    │ few-shot example, restructure task       │
+    │  HALLUCINATION     │ Add "only use provided info" constraint, │
+    │                    │ reduce temperature, add citation req     │
+    │  REFUSAL_FAIL      │ Add explicit refusal conditions, add    │
+    │                    │ safety examples showing correct refusal  │
+    │  REFUSAL_OVER      │ Add positive example of valid request,  │
+    │                    │ relax overly broad constraint            │
+    │  INCONSISTENCY     │ Lower temperature, add structure,       │
+    │                    │ use self-consistency (majority vote)     │
+    └──────────────────────────────────────────────────────────────┘
+
+  Phase 3 — A/B Evaluation:
+    FOR each variant:
+      1. Run full golden set (same examples, same order)
+      2. Score all dimensions (accuracy, format, safety, etc.)
+      3. Compare against current best version
+      4. Statistical test: paired bootstrap, alpha=0.05
+      5. Decision matrix:
+         - Primary metric improved significantly: ACCEPT
+         - Primary metric unchanged, secondary improved: ACCEPT if no regression
+         - Any safety metric regressed: REJECT immediately
+         - Primary metric regressed: REJECT
+         - Insufficient data for significance: EXTEND test (add examples)
+
+PROMPT A/B TESTING PROTOCOL:
+  Control: v<current> (production prompt)
+  Challenger: v<candidate> (optimized variant)
+
+  Live A/B test setup:
+    Traffic split: 90% control / 10% challenger (initially)
+    Minimum sample: <N calls> per variant for significance
+    Duration: <N days> minimum
+    Primary metric: <task-specific — accuracy, user satisfaction, etc.>
+    Guardrail metrics: <safety rate, latency, cost — must not regress>
+
+  Results format:
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Metric        │ Control │ Challenger │ Delta  │ p-value     │
+  ├──────────────────────────────────────────────────────────────┤
+  │  <primary>     │ <val>   │ <val>      │ <+/->  │ <p>         │
+  │  <guardrail 1> │ <val>   │ <val>      │ <+/->  │ <p>         │
+  │  <guardrail 2> │ <val>   │ <val>      │ <+/->  │ <p>         │
+  │  Latency avg   │ <ms>    │ <ms>       │ <+/->  │ <p>         │
+  │  Tokens avg    │ <N>     │ <N>        │ <+/->  │ —           │
+  │  Cost/call     │ <$>     │ <$>        │ <+/->  │ —           │
+  └──────────────────────────────────────────────────────────────┘
+
+  Decision: <PROMOTE challenger | KEEP control | EXTEND test | KILL challenger>
+
+TOKEN EFFICIENCY OPTIMIZATION:
+  Objective: Reduce token usage without accuracy loss
+
+  Analysis:
+  ┌──────────────────────────────────────────────────────────────┐
+  │  Component            │ Tokens │ % of Total │ Can Reduce?    │
+  ├──────────────────────────────────────────────────────────────┤
+  │  System instructions  │ <N>    │ <pct>      │ <YES/NO>       │
+  │  Few-shot examples    │ <N>    │ <pct>      │ <YES/NO>       │
+  │  Context / RAG chunks │ <N>    │ <pct>      │ <YES/NO>       │
+  │  User input           │ <N>    │ <pct>      │ <NO — dynamic> │
+  │  Output tokens        │ <N>    │ <pct>      │ <YES/NO>       │
+  │  TOTAL                │ <N>    │ 100%       │                │
+  └──────────────────────────────────────────────────────────────┘
+
+  Reduction strategies:
+    1. Compress system instructions (remove redundant sentences, merge similar rules)
+    2. Reduce few-shot examples (test with N-1 examples, keep accuracy threshold)
+    3. Shorten examples (trim to essential input/output, remove verbose explanations)
+    4. Use shorter model responses (add "Be concise" instruction, set max_tokens)
+    5. Dynamic few-shot selection (pick most relevant examples per query, not all)
+    6. Move to smaller model for simple sub-tasks (cascade: fast model -> slow model)
+    7. Cache repeated system prompts (if API supports system prompt caching)
+
+  Token reduction iteration:
+    current_tokens = measure_avg_tokens(golden_set)
+    target_tokens = current_tokens * 0.7  # 30% reduction target
+
+    WHILE avg_tokens > target_tokens:
+      1. Identify largest token consumer from table above
+      2. Apply ONE reduction strategy
+      3. Re-run golden set: measure accuracy AND token count
+      4. IF accuracy dropped > 1%: REVERT change
+      5. IF accuracy maintained: ACCEPT, log savings
+      6. IF accuracy improved (sometimes shorter prompts work better): ACCEPT
+
+    REPORT: "Token optimization: {original_tokens} -> {final_tokens} ({reduction_pct}% reduction), accuracy: {original_acc} -> {final_acc}"
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run prompt engineering tasks sequentially: prompt design, then test suite, then evaluation pipeline, then security hardening.

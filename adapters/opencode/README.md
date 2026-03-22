@@ -172,6 +172,93 @@ The skills, agents, and commands directories are referenced from the Godmode sou
 
 ---
 
+## Troubleshooting
+
+### "Skill not found" or plugin not loading
+
+1. Confirm the plugin manifest exists:
+   ```bash
+   test -f .opencode/plugins/godmode/plugin.json && echo "OK" || echo "MISSING"
+   ```
+2. Verify `AGENTS.md` is in the project root:
+   ```bash
+   test -f AGENTS.md && echo "OK" || echo "MISSING"
+   ```
+3. Check that skill files are accessible:
+   ```bash
+   ls skills/godmode/SKILL.md
+   ```
+4. If using symlinks, confirm they resolve:
+   ```bash
+   file skills/godmode/SKILL.md   # should show "ASCII text", not "broken symbolic link"
+   ```
+
+### Slash commands not recognized
+
+OpenCode registers slash commands via `plugin.json`. If `/godmode:optimize` is not recognized:
+1. Restart the OpenCode session (plugins load at session start).
+2. Verify `plugin.json` lists the skill:
+   ```bash
+   grep "optimize" .opencode/plugins/godmode/plugin.json
+   ```
+3. If the file is missing or incomplete, re-run the installer:
+   ```bash
+   bash adapters/opencode/install.sh .
+   ```
+
+### Sequential mode producing different results
+
+It should not. If you observe different outcomes between OpenCode and Claude Code, check:
+1. Both are using the same `.godmode/config.yaml` (same test_cmd, lint_cmd, build_cmd).
+2. Both are running against the same git commit.
+3. No environment differences (Node version, Python version, etc.).
+
+### Session hook not firing
+
+OpenCode supports `session_start` hooks declared in `plugin.json`. If the hook does not fire:
+1. Check that `plugin.json` contains a `session_start` entry.
+2. Restart the OpenCode session (hooks only run on session initialization).
+3. Manually run the hook script if needed:
+   ```bash
+   bash .godmode/hooks/session-start.sh
+   ```
+
+## Verification
+
+Run the verification script after installation:
+
+```bash
+bash adapters/opencode/verify.sh
+```
+
+The script checks:
+- `AGENTS.md` exists in the project root
+- `skills/` directory is accessible and contains SKILL.md files
+- `agents/` directory is accessible and contains agent definitions
+- `.opencode/plugins/godmode/plugin.json` exists and is valid JSON
+- `.godmode/config.yaml` exists with valid test/lint/build commands
+
+**Manual verification** (if the script is unavailable):
+
+```bash
+# 1. Config file exists
+cat .godmode/config.yaml
+
+# 2. Skills are readable
+head -5 skills/godmode/SKILL.md
+
+# 3. Agents are readable
+head -5 agents/planner.md
+
+# 4. Plugin manifest is valid JSON
+python3 -c "import json; json.load(open('.opencode/plugins/godmode/plugin.json'))" && echo "OK"
+
+# 5. Test a skill invocation in OpenCode
+# /godmode:verify claim="setup works" cmd="echo ok"
+```
+
+---
+
 ## License
 
 MIT — see [LICENSE](../../LICENSE).

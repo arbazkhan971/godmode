@@ -543,6 +543,220 @@ IF repository is too large to analyze fully:
 - **Do NOT assume REST.** The project might use GraphQL, gRPC, WebSockets, or CLI patterns. Detect, don't assume.
 
 
+## Onboarding Audit Loop
+
+Systematic protocol for measuring and improving the onboarding experience with quantitative metrics:
+
+```
+ONBOARDING AUDIT LOOP:
+current_iteration = 0
+max_iterations = 5
+audit_phases = [time_to_first_commit, setup_script_validation, knowledge_gap_detection, ramp_up_curve, onboarding_doc_completeness]
+
+WHILE current_iteration < max_iterations:
+  phase = audit_phases[current_iteration]
+  current_iteration += 1
+
+  IF phase == "time_to_first_commit":
+    1. MEASURE time-to-first-commit (TTFC) by simulating a clean onboarding:
+       START_TIME = now()
+
+       a. Clone the repository (fresh, no caches):
+          git clone {repo_url} /tmp/godmode-onboard-test
+          CHECKPOINT: clone_time = elapsed()
+
+       b. Install dependencies:
+          Run detected install command (npm ci, pip install, cargo build, etc.)
+          CHECKPOINT: install_time = elapsed()
+
+       c. Run the application:
+          Run detected start/dev command
+          Wait for "ready" signal (listening on port, "compiled successfully", etc.)
+          CHECKPOINT: run_time = elapsed()
+
+       d. Run tests:
+          Run detected test command
+          CHECKPOINT: test_time = elapsed()
+
+       e. Make a trivial change and commit:
+          Edit a comment in a source file
+          Run lint + test to verify nothing broke
+          git commit
+          CHECKPOINT: first_commit_time = elapsed()
+
+       TOTAL_TTFC = first_commit_time
+
+    2. SCORE TTFC:
+       Excellent: < 15 minutes
+       Good:      15-30 minutes
+       Fair:      30-60 minutes
+       Poor:      1-2 hours
+       Failing:   > 2 hours
+
+    3. IDENTIFY bottlenecks:
+       ┌────────────────────┬───────────┬───────────────────────┐
+       │  Step              │  Duration │  Bottleneck?           │
+       ├────────────────────┼───────────┼───────────────────────┤
+       │  Clone             │  <N>s     │  Large repo? LFS?      │
+       │  Install deps      │  <N>s     │  Many deps? No cache?  │
+       │  First run         │  <N>s     │  Build step? DB setup? │
+       │  Test suite        │  <N>s     │  Slow tests? Seeds?    │
+       │  First commit      │  <N>s     │  Pre-commit hooks?     │
+       ├────────────────────┼───────────┼───────────────────────┤
+       │  TOTAL TTFC        │  <N>s     │  Grade: <A-F>          │
+       └────────────────────┴───────────┴───────────────────────┘
+
+    4. RECOMMEND optimizations for each bottleneck:
+       - Clone slow: enable shallow clone instructions, consider sparse checkout
+       - Install slow: add lockfile caching, suggest faster package manager
+       - First run slow: add docker-compose for dependencies, prebuilt containers
+       - Tests slow: suggest --bail for initial run, test splitting
+       - Pre-commit slow: optimize hook pipeline, add lint-staged
+
+  IF phase == "setup_script_validation":
+    1. DETECT setup scripts:
+       - scripts/setup.sh, scripts/bootstrap.sh, Makefile (setup target)
+       - package.json scripts: "setup", "dev:setup", "bootstrap"
+       - docker-compose.yml, devcontainer.json
+       - README.md "Getting Started" section commands
+
+    2. VALIDATE each setup path (on clean environment simulation):
+       FOR each setup_method in detected_methods:
+         a. Parse all commands from the setup method
+         b. FOR each command:
+            - CHECK: command exists on PATH (which {cmd})
+            - CHECK: required env vars are documented (.env.example exists)
+            - CHECK: required services are documented (DB, Redis, etc.)
+            - CHECK: correct OS/arch assumptions (no macOS-only on Linux, etc.)
+            - CHECK: correct permissions (no unnecessary sudo)
+            - CHECK: idempotent (safe to run twice without side effects)
+         c. RUN the full setup sequence
+         d. VERIFY: application starts after setup
+         e. VERIFY: tests pass after setup
+
+    3. SCORE setup quality:
+       [ ] Setup script exists: +2 (vs manual steps only)
+       [ ] Single command setup: +2 (./scripts/setup.sh or make setup)
+       [ ] .env.example provided: +1
+       [ ] Required services documented: +1
+       [ ] Docker-compose for dependencies: +1
+       [ ] Works on macOS: +1
+       [ ] Works on Linux: +1
+       [ ] Idempotent (re-runnable): +1
+       Total: <N>/10
+
+    4. REPORT:
+       SETUP SCRIPT VALIDATION:
+       ┌─────────────────────────────────────────────────────┐
+       │  Setup methods found:       <N>                      │
+       │  Single-command setup:      YES / NO                 │
+       │  .env.example present:      YES / NO                 │
+       │  Services documented:       YES / NO                 │
+       │  Docker support:            YES / NO                 │
+       │  Cross-platform:            YES / NO / PARTIAL       │
+       │  Idempotent:                YES / NO                 │
+       │  Setup score:               <N>/10 (<grade>)         │
+       │  Blocking issues:           <list>                   │
+       └─────────────────────────────────────────────────────┘
+
+  IF phase == "knowledge_gap_detection":
+    1. IDENTIFY implicit knowledge not captured in documentation:
+       - Undocumented environment variables: grep -r 'process.env\|os.environ\|os.Getenv' --include='*.{ts,py,go}' | extract var names | compare against .env.example
+       - Undocumented CLI commands: grep -r 'scripts' package.json | list all script names | check if documented
+       - Undocumented conventions: naming patterns, file placement rules, import conventions
+       - Undocumented architecture decisions: check for docs/adr/ or ARCHITECTURE.md
+       - Undocumented deployment process: check for documented deploy steps
+
+    2. SCORE knowledge capture:
+       env_vars_documented = documented_vars / total_vars * 100
+       scripts_documented = documented_scripts / total_scripts * 100
+       conventions_documented = YES / NO
+       architecture_documented = YES / NO
+       deploy_documented = YES / NO
+
+    3. GENERATE knowledge gap report:
+       KNOWLEDGE GAP ANALYSIS:
+       ┌──────────────────────────┬────────┬────────────────────┐
+       │  Knowledge Area          │ Status │ Gap                 │
+       ├──────────────────────────┼────────┼────────────────────┤
+       │  Environment variables   │ <N>%   │ <N> undocumented    │
+       │  npm/make scripts        │ <N>%   │ <N> undocumented    │
+       │  Naming conventions      │ YES/NO │ <details>           │
+       │  Architecture decisions  │ YES/NO │ <details>           │
+       │  Deployment process      │ YES/NO │ <details>           │
+       │  Testing strategy        │ YES/NO │ <details>           │
+       │  Error handling patterns │ YES/NO │ <details>           │
+       └──────────────────────────┴────────┴────────────────────┘
+
+  IF phase == "ramp_up_curve":
+    1. ESTIMATE developer ramp-up time by complexity tier:
+       Tier 1 — Bug fixes (simple, isolated changes):
+         Estimated time to productive fix: <N> hours after setup
+         Prerequisites: understand file structure + test runner
+
+       Tier 2 — Small features (new endpoint, new component):
+         Estimated time: <N> days after setup
+         Prerequisites: understand architecture + data flow + testing patterns
+
+       Tier 3 — Cross-cutting features (new domain, new integration):
+         Estimated time: <N> weeks after setup
+         Prerequisites: understand domain model + service boundaries + deployment
+
+    2. IDENTIFY ramp-up accelerators and blockers:
+       Accelerators:
+       - [ ] Code tour exists (guided walkthrough of key files)
+       - [ ] Architecture docs exist (ADRs, diagrams)
+       - [ ] Good test examples (tests serve as executable documentation)
+       - [ ] Consistent patterns (predictable code structure)
+       - [ ] Low complexity (few circular dependencies, clear layers)
+
+       Blockers:
+       - [ ] No documentation (tribal knowledge only)
+       - [ ] Inconsistent patterns (different styles in different modules)
+       - [ ] High complexity (deep call chains, circular deps)
+       - [ ] Flaky tests (new developers can't trust the test suite)
+       - [ ] Manual setup steps (error-prone, undocumented)
+
+  IF phase == "onboarding_doc_completeness":
+    1. CHECK for required onboarding documents:
+       REQUIRED:
+       [ ] README.md with project overview and setup steps
+       [ ] CONTRIBUTING.md with development workflow
+       [ ] .env.example with all required environment variables
+       [ ] Architecture overview (ADR, diagram, or ARCHITECTURE.md)
+
+       RECOMMENDED:
+       [ ] Code tour (docs/onboarding/code-tour.md or VS Code code tour)
+       [ ] Troubleshooting guide (common issues and fixes)
+       [ ] Glossary of domain terms
+       [ ] Team contacts and escalation paths
+       [ ] Development environment alternatives (Docker, devcontainer, cloud IDE)
+
+    2. SCORE completeness:
+       required_present = count(required items present) / 4
+       recommended_present = count(recommended items present) / 5
+       overall = (required_present * 0.7) + (recommended_present * 0.3)
+
+    3. REPORT with prioritized action items
+
+  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — Grade: {grade}"
+
+FINAL ONBOARDING AUDIT:
+┌──────────────────────────────────────────────────────────┐
+│  ONBOARDING HEALTH REPORT                                 │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Phase               │ Grade  │ Key Metric                 │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Time to first commit│  <A-F> │  <N> minutes               │
+│  Setup scripts       │  <A-F> │  <N>/10 quality score      │
+│  Knowledge gaps      │  <A-F> │  <N> undocumented items    │
+│  Ramp-up curve       │  <A-F> │  Tier 1: <N> hours         │
+│  Doc completeness    │  <A-F> │  <N>% complete             │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Overall             │  <A-F> │  <priority action>         │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run onboarding tasks sequentially: frontend docs, then backend docs, then infra docs, then shared docs.

@@ -1322,6 +1322,160 @@ IF governance model is mismatched:
 - **Do NOT merge without review.** Even maintainers should get code reviewed. Four eyes catch what two miss.
 
 
+## Open Source Audit
+
+Comprehensive audit of license compliance, contribution guidelines, and release process maturity:
+
+```
+OPEN SOURCE AUDIT:
+Repository: <org/repo>
+Audit date: <date>
+Stars: <N>  |  Contributors: <N>  |  Open issues: <N>  |  Open PRs: <N>
+
+LICENSE COMPLIANCE AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  LICENSE file present at root       │ PASS|FAIL│ <license type>  │
+│  SPDX identifier is valid           │ PASS|FAIL│ <SPDX ID>       │
+│  License is OSI-approved            │ PASS|FAIL│ <OSI status>    │
+│  All source files have license      │ PASS|FAIL│ <header check>  │
+│    header (if required by license)  │          │                 │
+│  Third-party dependencies scanned   │ PASS|FAIL│ <scan tool>     │
+│  No copyleft infection from deps    │ PASS|FAIL│ <dep license list│
+│    (if project is permissive)       │          │                 │
+│  License compatibility verified     │ PASS|FAIL│ <compatibility> │
+│    (all dep licenses compatible)    │          │                 │
+│  Copyright year is current          │ PASS|FAIL│ <year check>    │
+│  NOTICE file present (if Apache 2.0)│ PASS|FAIL│ <file check>    │
+│  Contributor License Agreement      │ PASS|FAIL│ <CLA tool/none> │
+│    (CLA or DCO) configured          │          │                 │
+│  No proprietary code in repo        │ PASS|FAIL│ <scan results>  │
+│  No secrets/credentials committed   │ PASS|FAIL│ <secret scan>   │
+└──────────────────────────────────────────────────────────────────┘
+
+  License scan protocol:
+    1. RUN license scanner on all dependencies:
+       - Node.js: `license-checker`, `license-report`
+       - Python: `pip-licenses`, `liccheck`
+       - Go: `go-licenses`
+       - Rust: `cargo-license`
+    2. CATEGORIZE each dependency license: permissive | weak-copyleft | copyleft | unknown
+    3. FLAG incompatible licenses (e.g., GPL dependency in MIT project)
+    4. FLAG unknown licenses (no SPDX identifier, custom license text)
+    5. GENERATE Software Bill of Materials (SBOM) in SPDX or CycloneDX format
+
+CONTRIBUTION GUIDELINES AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Quality (1-5)   │
+├──────────────────────────────────────────────────────────────────┤
+│  CONTRIBUTING.md exists             │ PASS|FAIL│ <score>         │
+│  Development setup instructions     │ PASS|FAIL│ <tested?>       │
+│    work (tested from scratch)       │          │                 │
+│  Code style guide documented        │ PASS|FAIL│ <linter config> │
+│  Commit message convention defined  │ PASS|FAIL│ <convention>    │
+│  PR process documented              │ PASS|FAIL│ <review flow>   │
+│  Issue templates configured         │ PASS|FAIL│ <bug + feature> │
+│  PR template configured             │ PASS|FAIL│ <template>      │
+│  Good first issues labeled          │ PASS|FAIL│ <count>         │
+│  Help wanted issues labeled         │ PASS|FAIL│ <count>         │
+│  CODE_OF_CONDUCT.md exists          │ PASS|FAIL│ <version>       │
+│  SECURITY.md exists                 │ PASS|FAIL│ <contact>       │
+│  Response time expectations set     │ PASS|FAIL│ <SLA>           │
+│  Stale issue automation configured  │ PASS|FAIL│ <workflow>      │
+│  Welcome bot for new contributors   │ PASS|FAIL│ <workflow>      │
+│  Branch protection rules set        │ PASS|FAIL│ <rules>         │
+│  CI required before merge           │ PASS|FAIL│ <CI config>     │
+│  CODEOWNERS file configured         │ PASS|FAIL│ <file>          │
+└──────────────────────────────────────────────────────────────────┘
+
+  Contributor experience test:
+    1. CLONE the repo from scratch as a new contributor
+    2. FOLLOW the CONTRIBUTING.md setup instructions exactly
+    3. RUN the tests — do they pass on a fresh clone?
+    4. MAKE a small change, submit a PR — is the process clear?
+    5. TIME the full setup: < 15 min is good, > 30 min needs improvement
+    6. IDENTIFY any undocumented steps or tribal knowledge
+
+RELEASE PROCESS AUDIT:
+┌──────────────────────────────────────────────────────────────────┐
+│  Check                              │ Status   │ Evidence        │
+├──────────────────────────────────────────────────────────────────┤
+│  Semantic versioning followed       │ PASS|FAIL│ <version history│
+│  CHANGELOG.md maintained            │ PASS|FAIL│ <changelog>     │
+│  Release notes published            │ PASS|FAIL│ <GH releases>   │
+│  Release process is automated       │ PASS|FAIL│ <CI workflow>   │
+│    (not manual npm publish)         │          │                 │
+│  Version bumps are automated        │ PASS|FAIL│ <release-please │
+│    (conventional commits or tool)   │          │  | semantic-rel> │
+│  Published packages match source    │ PASS|FAIL│ <provenance>    │
+│  Release signing enabled            │ PASS|FAIL│ <GPG/sigstore>  │
+│  Breaking changes clearly marked    │ PASS|FAIL│ <major version> │
+│  Migration guides for major versions│ PASS|FAIL│ <guides>        │
+│  Pre-release / beta channel exists  │ PASS|FAIL│ <channel>       │
+│  Release cadence documented         │ PASS|FAIL│ <schedule>      │
+│  Deprecation policy defined         │ PASS|FAIL│ <policy>        │
+│  Security advisory process works    │ PASS|FAIL│ <GH advisories> │
+│  Dependabot / Renovate configured   │ PASS|FAIL│ <config>        │
+│  SBOM generated with each release   │ PASS|FAIL│ <SPDX/CycloneDX│
+└──────────────────────────────────────────────────────────────────┘
+
+  Release quality checks:
+    1. VERIFY last 5 releases all have release notes
+    2. VERIFY changelogs mention all breaking changes
+    3. VERIFY CI runs full test suite before publish
+    4. VERIFY published artifact matches the tagged commit
+    5. CHECK: are there unreleased commits on main that should have been released?
+
+COMMUNITY HEALTH METRICS:
+┌──────────────────────────────────────────────────────────────────┐
+│  Metric                    │ Value   │ Benchmark │ Status         │
+├──────────────────────────────────────────────────────────────────┤
+│  Issue response time (med) │ <hours> │ < 48 hrs  │ GOOD|SLOW      │
+│  PR review time (median)   │ <hours> │ < 72 hrs  │ GOOD|SLOW      │
+│  PR merge time (median)    │ <days>  │ < 7 days  │ GOOD|SLOW      │
+│  Stale issue count         │ <N>     │ < 20%     │ GOOD|HIGH      │
+│  Stale PR count            │ <N>     │ < 10%     │ GOOD|HIGH      │
+│  Bus factor (core contrib) │ <N>     │ >= 3      │ HEALTHY|RISKY  │
+│  New contributors (90d)    │ <N>     │ > 0       │ GROWING|STALE  │
+│  Issue close rate (30d)    │ <pct>%  │ > 50%     │ GOOD|BACKLOG   │
+└──────────────────────────────────────────────────────────────────┘
+
+AUDIT VERDICT: <HEALTHY | NEEDS WORK — <N> items to fix>
+Priority fixes:
+  1. <most critical gap>
+  2. <second priority gap>
+  3. <third priority gap>
+```
+
+### Open Source Audit Loop
+
+```
+OPEN SOURCE AUDIT ITERATION:
+audit_areas = [license_compliance, contribution_guidelines, release_process, community_health]
+current_area = 0
+
+WHILE current_area < len(audit_areas):
+  area = audit_areas[current_area]
+
+  1. RUN all checks for the area
+  2. CLASSIFY failures: CRITICAL (legal risk, broken process) | HIGH (contributor friction) | MEDIUM (nice to have)
+  3. IF any CRITICAL in license_compliance:
+     HALT "License compliance issue. Fix before any other work."
+  4. DOCUMENT findings with evidence
+
+  current_area += 1
+
+FINAL:
+  total_checks = sum(all checks)
+  pass_count = sum(all PASS)
+  health_score = pass_count / total_checks * 100
+
+  IF health_score < 50%: "Repository is not ready for public open source. Address critical items."
+  IF health_score >= 50% AND < 80%: "Repository has gaps. Improve contributor experience before promoting adoption."
+  IF health_score >= 80%: "Repository is well-maintained. Schedule next audit in 90 days."
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run open source tasks sequentially: community files, then templates, then automation.

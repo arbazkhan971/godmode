@@ -210,6 +210,228 @@ REASON: 3 lint errors found: unused-vars (src/auth.ts:12), no-console (src/logge
 | Evidence | /tmp/godmode-verify-1710941600.txt        |
 ```
 
+## Multi-Layer Verification Protocol
+
+Systematic protocol for verifying claims across multiple layers of confidence, from unit-level to production-level:
+
+```
+MULTI-LAYER VERIFICATION PROTOCOL:
+current_layer = 0
+max_layers = 5
+verification_layers = [unit, integration, e2e, smoke, evidence_collection]
+evidence_chain = []
+
+WHILE current_layer < max_layers:
+  layer = verification_layers[current_layer]
+  current_layer += 1
+
+  IF layer == "unit":
+    PURPOSE: Verify individual components work correctly in isolation.
+
+    1. IDENTIFY unit test scope:
+       - Parse the claim to determine which module/function is being verified
+       - Find corresponding unit test files
+       - IF no unit tests exist for the claimed functionality: FAIL — "No unit tests cover this claim"
+
+    2. RUN unit tests:
+       test_cmd_unit = "{test_cmd} --grep '{relevant_pattern}'" or "{test_cmd} {specific_test_file}"
+       result = run(test_cmd_unit)
+
+    3. COLLECT evidence:
+       evidence_chain.append({
+         layer: "unit",
+         command: test_cmd_unit,
+         exit_code: result.exit_code,
+         output_file: "/tmp/godmode-verify-unit-{timestamp}.txt",
+         passing: result.tests_passed,
+         failing: result.tests_failed,
+         duration: result.duration_ms,
+         verdict: "PASS" if exit_code == 0 else "FAIL"
+       })
+
+    4. IF FAIL: stop here — no point testing higher layers if units fail
+       REPORT: "[verify:unit] FAIL — {N} unit tests failed. Fix before proceeding."
+       STOP
+
+  IF layer == "integration":
+    PURPOSE: Verify components work correctly when composed together.
+
+    1. IDENTIFY integration scope:
+       - Which services/modules interact for this claim?
+       - Are there integration tests that cover this interaction?
+       - Do integration tests require external services (DB, cache, API)?
+
+    2. ENSURE dependencies are available:
+       IF database required: check connection (pg_isready, mysql ping, etc.)
+       IF redis required: check connection (redis-cli ping)
+       IF external API required: check health endpoint or mock
+
+    3. RUN integration tests:
+       test_cmd_integration = "{test_cmd} --grep 'integration'" or "{test_cmd} tests/integration/"
+       result = run(test_cmd_integration)
+
+    4. COLLECT evidence:
+       evidence_chain.append({
+         layer: "integration",
+         command: test_cmd_integration,
+         exit_code: result.exit_code,
+         output_file: "/tmp/godmode-verify-integration-{timestamp}.txt",
+         verdict: "PASS" if exit_code == 0 else "FAIL"
+       })
+
+    5. IF FAIL:
+       DIAGNOSE: was it a test failure or a dependency issue?
+       IF dependency issue: "Integration test failed due to unavailable {service}. Not a code issue."
+       IF test failure: "Integration test failed. The claim is NOT verified at integration layer."
+
+  IF layer == "e2e":
+    PURPOSE: Verify the full user flow works end-to-end.
+
+    1. IDENTIFY e2e scope:
+       - What user-visible behavior does the claim describe?
+       - Are there e2e/acceptance tests for this behavior?
+       - Does the application need to be running for these tests?
+
+    2. IF application must be running:
+       Start application in test mode: {dev_cmd} or {start_cmd}
+       Wait for ready signal (port listening, health check)
+
+    3. RUN e2e tests:
+       test_cmd_e2e = "{e2e_cmd}" or "npx playwright test" or "npx cypress run"
+       result = run(test_cmd_e2e)
+
+    4. COLLECT evidence:
+       evidence_chain.append({
+         layer: "e2e",
+         command: test_cmd_e2e,
+         exit_code: result.exit_code,
+         output_file: "/tmp/godmode-verify-e2e-{timestamp}.txt",
+         screenshots: [list of screenshot paths if UI test],
+         verdict: "PASS" if exit_code == 0 else "FAIL"
+       })
+
+    5. IF no e2e tests exist:
+       evidence_chain.append({
+         layer: "e2e",
+         verdict: "SKIPPED",
+         reason: "No e2e tests cover this claim"
+       })
+
+  IF layer == "smoke":
+    PURPOSE: Quick, lightweight check that the system is operational.
+
+    1. DEFINE smoke checks based on claim type:
+       IF claim involves API: curl -sf {endpoint} → expect 200
+       IF claim involves CLI: {command} --help → expect exit 0
+       IF claim involves build: ls {output_dir} → expect files exist
+       IF claim involves performance: time {command} → expect < threshold
+
+    2. RUN smoke checks (quick, < 30 seconds total):
+       FOR each smoke_check:
+         result = run(smoke_check.command)
+         smoke_check.passed = evaluate(result, smoke_check.expected)
+
+    3. COLLECT evidence:
+       evidence_chain.append({
+         layer: "smoke",
+         checks: [{ command, expected, actual, passed } for each],
+         verdict: "PASS" if all passed else "FAIL"
+       })
+
+  IF layer == "evidence_collection":
+    PURPOSE: Compile all evidence into a single, auditable chain of proof.
+
+    1. AGGREGATE all layer results:
+       EVIDENCE CHAIN:
+       ┌───────────────┬────────┬──────────┬───────────────────────────┐
+       │  Layer        │ Verdict│ Duration │ Evidence File              │
+       ├───────────────┼────────┼──────────┼───────────────────────────┤
+       │  Unit         │ PASS   │ 2.1s     │ /tmp/gm-verify-unit-*.txt │
+       │  Integration  │ PASS   │ 8.4s     │ /tmp/gm-verify-int-*.txt  │
+       │  E2E          │ SKIP   │ —        │ No e2e tests              │
+       │  Smoke        │ PASS   │ 0.3s     │ /tmp/gm-verify-smoke-*.txt│
+       └───────────────┴────────┴──────────┴───────────────────────────┘
+
+    2. DETERMINE overall verdict:
+       IF all executed layers PASS: VERIFIED (high confidence)
+       IF unit + integration PASS but e2e SKIP: VERIFIED (medium confidence, note e2e gap)
+       IF unit PASS but integration FAIL: PARTIALLY VERIFIED (unit-only, integration issue)
+       IF any layer FAIL: NOT VERIFIED (specify which layer failed)
+
+    3. CALCULATE confidence score:
+       layers_passed = count(PASS verdicts)
+       layers_executed = count(executed layers, excluding SKIP)
+       confidence = layers_passed / layers_executed * 100
+
+       >= 100%: HIGH confidence (all layers pass)
+       >= 75%:  MEDIUM confidence (most layers pass)
+       >= 50%:  LOW confidence (mixed results)
+       < 50%:   NOT VERIFIED (majority fail)
+
+    4. PERSIST evidence:
+       - Save all evidence files with timestamps
+       - Append to .godmode/verify-log.tsv with all layer results
+       - Create evidence summary: .godmode/verify-evidence-{timestamp}.md
+
+    5. FINAL REPORT:
+       MULTI-LAYER VERIFICATION REPORT:
+       ┌──────────────────────────────────────────────────────┐
+       │  Claim: "{claim}"                                     │
+       │                                                       │
+       │  Unit tests:        PASS (47/47, 2.1s)               │
+       │  Integration tests: PASS (12/12, 8.4s)               │
+       │  E2E tests:         SKIPPED (none available)          │
+       │  Smoke tests:       PASS (3/3, 0.3s)                 │
+       │                                                       │
+       │  Confidence:        HIGH (3/3 executed layers pass)   │
+       │  Overall verdict:   VERIFIED                          │
+       │  Evidence:          4 files preserved                 │
+       │                                                       │
+       │  Note: Consider adding e2e tests for full coverage.   │
+       └──────────────────────────────────────────────────────┘
+
+  REPORT: "Layer {current_layer}/{max_layers}: {layer} — {PASS | FAIL | SKIP}"
+```
+
+### Evidence Collection Standards
+
+```
+EVIDENCE STANDARDS (for auditable verification):
+
+1. EVERY verification must produce a file:
+   - Full command output (stdout + stderr)
+   - Timestamp of execution
+   - Exit code
+   - Duration in milliseconds
+   - File path for retrieval
+
+2. EVERY evidence file must be immutable:
+   - Write once, never modify
+   - Timestamped filename prevents collisions
+   - Stored in /tmp/godmode-verify-* or .godmode/verify-evidence/
+
+3. EVERY verification must be reproducible:
+   - Log the exact command (not paraphrased)
+   - Log the working directory
+   - Log relevant environment variables (without values for secrets)
+   - Another developer should be able to re-run and get the same result
+
+4. EVIDENCE CHAIN format (append to .godmode/verify-log.tsv):
+   timestamp	claim	layer	command	expected	actual	verdict	evidence_file	duration_ms	confidence
+
+5. STALE EVIDENCE policy:
+   - Evidence older than 24 hours is considered stale
+   - Evidence from before the last code change is VOID
+   - Re-verification is always preferred over citing old evidence
+   - NEVER say "verified yesterday" — re-run the command
+
+6. FLAKY DETECTION:
+   - If 3 runs produce different results: verdict = FLAKY (not PASS or FAIL)
+   - Flaky tests undermine the entire verification chain
+   - Report flaky tests separately: .godmode/flaky-tests.tsv
+   - Flaky tests must be fixed or quarantined before claiming verification
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 This skill does not dispatch parallel agents, so no sequential translation is needed.
 All commands run in the current session. Output capture uses `2>&1 | tee {file}` which works on all POSIX shells.

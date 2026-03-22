@@ -76,6 +76,18 @@ Each agent has explicit tool access constraints. Violations are bugs — agents 
 - **Worktree** access means the agent can use `EnterWorktree`/`ExitWorktree` for isolated execution on platforms that support it.
 - **Git `log` only** means the agent can read git history (`git log`, `git show`, `git diff`) but must not create commits, branches, or tags.
 
+## Context Refresh
+
+At task start, every agent must:
+
+```
+git status          # Verify clean worktree
+git log -1 --oneline # Confirm latest commit
+If dirty → stash or commit before proceeding
+```
+
+This ensures no agent inherits stale or conflicting state from a prior dispatch. Agents that skip this check and operate on a dirty worktree risk silent merge failures.
+
 ## Agent Communication Protocol
 
 Agents do not communicate with each other directly. All coordination flows through the orchestrator.
@@ -118,6 +130,16 @@ Every agent must end its report with exactly one of these status codes:
 | `BLOCKED` | Agent hit an unresolvable issue after max retries | Orchestrator logs the blocker, skips or re-queues the task |
 | `PARTIAL` | Some subtasks completed, others failed or were skipped | Orchestrator keeps completed work, re-queues failures |
 
+### Context Escalation (NEEDS_CONTEXT Flow)
+
+When an agent reports `NEEDS_CONTEXT`:
+
+1. Orchestrator pauses the agent's current round.
+2. Gathers missing context (file scope, codebase context, dependency output).
+3. Re-dispatches the agent with updated input.
+
+Max re-dispatches per agent per task: **2**. On the 3rd `NEEDS_CONTEXT` report, the agent is marked `BLOCKED` and the task is surfaced for replanning.
+
 ### Agent Input/Output Contract
 
 **Input** — every agent receives a structured dispatch message from the orchestrator:
@@ -143,6 +165,22 @@ Agent outputs feed into subsequent agent inputs:
 4. **reviewer output** (APPROVE / REQUEST_CHANGES / REJECT) triggers orchestrator decisions: approved work proceeds, rejected work is re-queued or discarded
 5. **All agent outputs** feed into **optimizer input** (optimizer sees the merged result and runs improvement iterations)
 6. **optimizer output** (final optimized state) becomes **security input** (security audits the final code)
+
+## Timeouts
+
+Each agent has a **10-minute timeout** per dispatch.
+
+- Exceeded: orchestrator sends SIGTERM. Agent commits incomplete work (if any) before exiting.
+- Timed-out task is re-queued for the next round.
+- Max re-queues per task: **2**. After 2 timeouts: task marked `BLOCKED`.
+
+## Deadlock Prevention
+
+If Agent A waits for Agent B and Agent B waits for Agent A, that is a **deadlock**.
+
+- **Prevention:** planner ensures acyclic task dependencies. Max sequential dependency depth: **2** (A depends on B depends on C is allowed; A depends on B depends on A is not).
+- **Detection:** orchestrator checks for cycles in `plan.yaml` before dispatch. Any cycle is a plan error — dispatch is blocked until the planner resolves it.
+- **Recovery:** if a deadlock is detected at runtime, kill both agents, discard their partial work, and re-plan with explicit ordering.
 
 ## Multi-Agent Coordination Rules
 
@@ -176,6 +214,12 @@ When multiple agents complete work in the same round:
 | Agent's changes break existing tests | Revert the agent's commit, re-queue with failure context |
 | Agent exceeds its file scope | Discard all out-of-scope changes, keep in-scope changes if they pass tests independently |
 | Agent reports BLOCKED | Log the blocker, remove the task from the current cycle, surface to orchestrator for replanning |
+
+### Conflict Resolution Examples
+
+**Example 1 — Same-file collision:** Agents A and B both modified `auth.ts` in the same round. Agent A was dispatched first. Resolution: merge A's changes, discard B's changes, re-queue B with a narrower scope that excludes `auth.ts` or depends on A's output.
+
+**Example 2 — Behavioral dependency break:** Agent A changed a function signature in `utils.ts` that Agent B's code depends on. B's tests pass but A's merge breaks B. Resolution: revert A's changes, keep B's changes, re-queue A with a dependency note indicating it must preserve B's contract.
 
 ## Platform-Specific Agent Behavior
 

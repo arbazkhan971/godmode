@@ -216,6 +216,244 @@ User: "Plan adding a health check endpoint"
 Plan: spec describes 1 route + 1 test (2 files total). Skip plan — /godmode:build can handle ≤2 files directly.
 ```
 
+## Planning Rigor Protocol
+
+Extended protocol for task dependency graphing, effort estimation, and risk assessment:
+
+```
+PLANNING RIGOR PROTOCOL:
+current_iteration = 0
+max_iterations = 5
+rigor_phases = [dependency_graph, effort_estimation, risk_assessment, critical_path, plan_validation]
+
+WHILE current_iteration < max_iterations:
+  phase = rigor_phases[current_iteration]
+  current_iteration += 1
+
+  IF phase == "dependency_graph":
+    PURPOSE: Build and validate a complete task dependency graph with no cycles or missing edges.
+
+    1. FOR each task in plan:
+       IDENTIFY dependencies by analyzing:
+       a. File dependencies:
+          - Task B modifies files that import from files modified by Task A → B depends on A
+          - Task B extends types/interfaces defined by Task A → B depends on A
+          - Task B writes tests for code created by Task A → B depends on A
+       b. Schema dependencies:
+          - Task B adds API routes that use models from Task A → B depends on A
+          - Task B writes migration that references table from Task A → B depends on A
+       c. Build dependencies:
+          - Task B requires output artifacts from Task A → B depends on A
+          - Task B uses generated code from Task A → B depends on A
+
+    2. VALIDATE graph integrity:
+       a. Cycle detection (topological sort):
+          - IF cycle found: report exact cycle path (A → B → C → A)
+          - BREAK cycle by merging smallest task into dependent or removing edge
+       b. Missing edges:
+          - FOR each task pair (A, B) where A.files and B.files share imports:
+            IF no dependency edge exists: WARN — "Possible missing dependency: {A} → {B}"
+       c. Redundant edges:
+          - IF A → B and A → C and B → C: the A → C edge is redundant (transitive)
+          - Remove redundant edges to simplify the graph
+
+    3. COMPUTE execution rounds (topological layers):
+       round_1 = tasks with no dependencies (roots)
+       round_2 = tasks whose dependencies are all in round_1
+       round_N = tasks whose dependencies are all in rounds < N
+       max_parallelism = max(len(round) for round in rounds)
+
+    4. VISUALIZE:
+       DEPENDENCY GRAPH:
+       Round 1 (parallel, max {N}):
+         ├── task-01: {title}
+         ├── task-02: {title}
+         └── task-03: {title}
+       Round 2 (parallel, max {N}):
+         ├── task-04: {title}  ← depends on task-01
+         └── task-05: {title}  ← depends on task-02, task-03
+       Round 3 (sequential):
+         └── task-06: {title}  ← depends on task-04, task-05
+       Round 4 (parallel, max {N}):
+         ├── task-07: {title}  ← depends on task-06
+         └── task-08: {title}  ← depends on task-06
+
+       Total: {N} tasks, {M} rounds, max parallelism: {K}
+       Critical path length: {P} tasks
+
+  IF phase == "effort_estimation":
+    PURPOSE: Estimate effort for each task using code complexity signals.
+
+    1. FOR each task, estimate effort based on:
+       a. File count: number of files to create/modify
+          1 file: XS (< 30 min)
+          2-3 files: S (30-60 min)
+          4-5 files: M (1-2 hours)
+          >5 files: L (2-4 hours) — consider splitting
+
+       b. Lines of code (estimated):
+          < 50 lines: XS
+          50-150 lines: S
+          150-300 lines: M
+          300-500 lines: L
+          >500 lines: XL — must split
+
+       c. Complexity signals:
+          - New file creation: +0.5 (scaffolding overhead)
+          - Database migration: +1.0 (risk + validation time)
+          - External API integration: +1.0 (unknown behavior)
+          - Auth/security changes: +1.0 (extra review needed)
+          - UI components: +0.5 (visual verification needed)
+          - Test writing: +0.5 per test file
+
+       d. Uncertainty multiplier:
+          Well-understood domain: 1.0x
+          Somewhat familiar: 1.3x
+          New/unknown: 1.5x
+          External dependency: 2.0x
+
+    2. PRODUCE effort estimate per task:
+       EFFORT ESTIMATES:
+       ┌──────────┬─────────────────────────┬───────┬──────────┬─────────────┐
+       │  Task    │  Title                  │  Size │  Effort  │  Confidence │
+       ├──────────┼─────────────────────────┼───────┼──────────┼─────────────┤
+       │  task-01 │  Add user schema        │  S    │  45 min  │  HIGH       │
+       │  task-02 │  Add migration          │  S    │  60 min  │  HIGH       │
+       │  task-03 │  Add API routes         │  M    │  90 min  │  MEDIUM     │
+       │  task-04 │  Add external API call  │  M    │  180 min │  LOW        │
+       │  task-05 │  Add tests              │  M    │  120 min │  MEDIUM     │
+       ├──────────┼─────────────────────────┼───────┼──────────┼─────────────┤
+       │  TOTAL   │                         │       │  ~8.3 hrs│             │
+       └──────────┴─────────────────────────┴───────┴──────────┴─────────────┘
+
+    3. COMPUTE total effort:
+       sequential_effort = sum(all task efforts)
+       parallel_effort = sum(critical path task efforts)
+       speedup = sequential_effort / parallel_effort
+
+  IF phase == "risk_assessment":
+    PURPOSE: Identify and mitigate risks before they become blockers during execution.
+
+    1. ASSESS risk for each task:
+       RISK DIMENSIONS:
+       a. Technical risk:
+          - Using unfamiliar library/API? → HIGH
+          - Complex algorithm or data structure? → MEDIUM
+          - Standard CRUD operation? → LOW
+
+       b. Integration risk:
+          - Touching shared interfaces/contracts? → HIGH
+          - Modifying database schema? → HIGH
+          - Isolated module change? → LOW
+
+       c. Dependency risk:
+          - External API with unclear documentation? → HIGH
+          - External API with SLA/uptime concerns? → MEDIUM
+          - No external dependencies? → LOW
+
+       d. Scope risk:
+          - Requirements ambiguous or incomplete? → HIGH
+          - Clear requirements but complex implementation? → MEDIUM
+          - Well-defined, straightforward? → LOW
+
+    2. FOR each HIGH risk task:
+       DEFINE mitigation strategy:
+       - Spike/prototype first (time-boxed exploration)
+       - Fallback approach if primary approach fails
+       - Expert consultation needed (who to ask)
+       - Additional testing requirements
+       - Rollback plan if integration fails
+
+    3. PRODUCE risk matrix:
+       RISK ASSESSMENT:
+       ┌──────────┬──────────────┬──────────────┬────────────┬──────────────┐
+       │  Task    │  Technical   │  Integration │  Dependency│  Scope       │
+       ├──────────┼──────────────┼──────────────┼────────────┼──────────────┤
+       │  task-01 │  LOW         │  LOW         │  LOW       │  LOW         │
+       │  task-03 │  MEDIUM      │  HIGH        │  LOW       │  LOW         │
+       │  task-04 │  HIGH        │  MEDIUM      │  HIGH      │  MEDIUM      │
+       ├──────────┼──────────────┼──────────────┼────────────┼──────────────┤
+       │  Overall │  MEDIUM      │  HIGH        │  MEDIUM    │  LOW         │
+       └──────────┴──────────────┴──────────────┴────────────┴──────────────┘
+
+       HIGH RISK TASKS WITH MITIGATIONS:
+       task-04: "Add external API call"
+         Risk: External API has unclear rate limits and inconsistent response schema
+         Mitigation: Build adapter with circuit breaker; add response validation layer
+         Fallback: Use mock API for development; defer real integration to Phase 2
+         Spike: 1 hour to verify API behavior before committing to implementation
+
+  IF phase == "critical_path":
+    PURPOSE: Identify the longest chain of dependent tasks that determines minimum delivery time.
+
+    1. COMPUTE critical path:
+       FOR each path from root to leaf in the dependency graph:
+         path_duration = sum(task.effort for task in path)
+       critical_path = path with maximum duration
+       critical_path_duration = max path_duration
+
+    2. IDENTIFY slack (non-critical tasks):
+       FOR each task NOT on the critical path:
+         slack = latest_start - earliest_start
+         IF slack > 2 hours: task can be deferred without affecting delivery
+
+    3. REPORT:
+       CRITICAL PATH:
+       task-01 (45m) → task-03 (90m) → task-05 (120m) → task-06 (60m)
+       Critical path duration: 5.25 hours
+       Total plan duration (parallel): 5.25 hours
+       Total plan duration (sequential): 8.3 hours
+       Parallelism speedup: 1.6x
+
+       Non-critical tasks (can be reordered):
+       - task-02 (60m) — slack: 2.5 hours
+       - task-04 (180m) — slack: 0 hours (also on critical path)
+
+  IF phase == "plan_validation":
+    PURPOSE: Final validation of the complete plan before execution.
+
+    1. COMPLETENESS checks:
+       [ ] Every spec requirement maps to at least one task
+       [ ] Every task has a done_when criterion (shell command, not prose)
+       [ ] Every task has files[] with real paths (or new files in existing dirs)
+       [ ] Every task has effort estimate
+       [ ] Every task has risk assessment
+
+    2. FEASIBILITY checks:
+       [ ] Total effort is reasonable (< 40 hours for one developer)
+       [ ] No single task > 4 hours (split if so)
+       [ ] Critical path < 2x any individual task (no serial bottleneck)
+       [ ] HIGH risk tasks have mitigations documented
+       [ ] External dependencies have fallback plans
+
+    3. QUALITY checks:
+       [ ] Test tasks exist for all implementation tasks
+       [ ] Documentation tasks exist for public API changes
+       [ ] Migration tasks have rollback plans
+
+    4. IF validation fails:
+       Identify specific failures
+       Recommend fixes (split tasks, add missing tasks, add mitigations)
+       Re-validate after fixes
+
+  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS REVISION}"
+
+FINAL PLAN RIGOR ASSESSMENT:
+┌──────────────────────────────────────────────────────────┐
+│  PLAN RIGOR SUMMARY                                       │
+├──────────────────────┬────────┬───────────────────────────┤
+│  Phase               │ Status │ Key Metric                 │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Dependency graph    │ VALID  │ {N} tasks, {M} rounds      │
+│  Effort estimation   │ DONE   │ ~{N} hours total           │
+│  Risk assessment     │ DONE   │ {N} HIGH risks mitigated   │
+│  Critical path       │ FOUND  │ {N} hours min delivery     │
+│  Plan validation     │ PASS   │ All checks pass            │
+├──────────────────────┼────────┼───────────────────────────┤
+│  Overall             │ READY  │ Proceed to /godmode:build  │
+└──────────────────────┴────────┴───────────────────────────┘
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - Plan generation itself requires no parallel agents — runs identically on all platforms.

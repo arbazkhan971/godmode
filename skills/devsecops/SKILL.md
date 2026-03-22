@@ -853,6 +853,77 @@ Full scan (thorough): Weekly scheduled run
 - ALL security gate overrides MUST have documented justification, an expiry date (max 30 days), and a reviewing team
 - ALL releases MUST include an SBOM in SPDX or CycloneDX format
 
+## Pipeline Security Audit Loop
+
+Structured audit of each security control in the pipeline:
+
+```
+controls = [SAST, DAST, SCA, container_scan, secret_scan, IaC_scan,
+            SBOM_generation, artifact_signing, security_gates, license_compliance, signed_commits]
+current_control = 0
+max_iterations = len(controls) + 5   # buffer for discovered controls
+
+WHILE current_control < len(controls) AND iteration < max_iterations:
+    control = controls[current_control]
+    iteration += 1
+
+    PHASE 1 — ASSESS:
+      Check if control exists in pipeline config
+      IF exists: validate configuration (correct severity thresholds, pinned versions, no :latest)
+      IF missing: flag as GAP
+
+    PHASE 2 — INTEGRATE:
+      IF GAP: generate workflow config for the control
+      IF misconfigured: fix configuration (tune rules, set thresholds, pin versions)
+      Run a test scan to validate the integration works
+
+    PHASE 3 — VALIDATE:
+      Confirm the control produces expected output (SARIF, JUnit, findings list)
+      Confirm the security gate blocks on CRITICAL/HIGH (not silent pass-through)
+      Confirm false positive rate is acceptable (< 10% of findings)
+
+    PHASE 4 — RECORD:
+      Log: control | status (ACTIVE|CONFIGURED|MISSING) | tool | findings_count | FP_rate
+      current_control += 1
+
+    IF validation reveals missing dependency (e.g., DAST needs running app, container scan needs Dockerfile):
+        Add prerequisite to controls list
+
+    REPORT: "Control {current_control}/{len(controls)}: {control} — {status}"
+
+STOP CONDITIONS:
+  - All controls assessed and configured
+  - OR max_iterations reached (hard cap)
+  - Target maturity level achieved (all required controls for that level are ACTIVE)
+```
+
+## SAST/DAST Integration Checks
+
+```
+SAST INTEGRATION VALIDATION:
+  FOR each SAST tool (Semgrep, CodeQL, SonarQube):
+    CHECK 1: Runs on every PR (not just main branch)
+    CHECK 2: Severity thresholds set (CRITICAL/HIGH block, MEDIUM warn)
+    CHECK 3: Baseline mode enabled (only new findings on PRs, full scan on schedule)
+    CHECK 4: SARIF output uploaded to code scanning dashboard
+    CHECK 5: Custom rules directory exists for project-specific patterns
+    CHECK 6: Scanner version pinned (not :latest)
+    RESULT: PASS (6/6) | PARTIAL (4-5/6) | FAIL (<4/6)
+
+DAST INTEGRATION VALIDATION:
+  FOR each DAST tool (ZAP, Burp):
+    CHECK 1: Baseline scan runs on every PR (fast, passive only)
+    CHECK 2: Full scan runs on schedule (weekly minimum) or pre-deploy
+    CHECK 3: Authentication context configured (tests authenticated endpoints)
+    CHECK 4: Rules file defines FAIL/WARN thresholds per finding type
+    CHECK 5: Report uploaded as artifact for review
+    CHECK 6: Application starts and is reachable before scan begins (health check)
+    RESULT: PASS (6/6) | PARTIAL (4-5/6) | FAIL (<4/6)
+
+LOG to .godmode/devsecops-integration-checks.tsv:
+  timestamp	tool_type	tool_name	check_1	check_2	check_3	check_4	check_5	check_6	result
+```
+
 ## Iterative Security Scan Loop Protocol
 
 When hardening a pipeline or auditing security posture:
@@ -860,7 +931,9 @@ When hardening a pipeline or auditing security posture:
 ```
 current_iteration = 0
 scan_queue = [SAST, SCA, secret_scan, container_scan, IaC_scan, DAST]
-WHILE scan_queue is not empty:
+max_iterations = len(scan_queue) + 4   # buffer for discovered scan types
+
+WHILE scan_queue is not empty AND current_iteration < max_iterations:
     current_iteration += 1
     scan_type = scan_queue.pop(next)
     configure and run scan_type
@@ -872,6 +945,30 @@ WHILE scan_queue is not empty:
     IF new scan type dependencies discovered (e.g., IaC scan reveals missing container scan):
         add to scan_queue
     report: "Iteration {current_iteration}: {scan_type} — {N} findings, {M} fixed, {remaining} scans queued"
+
+STOP CONDITIONS:
+  - scan_queue is empty (all scan types processed)
+  - OR max_iterations reached
+  - OR all CRITICAL/HIGH findings triaged and have remediation plan
+```
+
+## Keep/Discard Discipline
+
+```
+FOR each security scanner finding:
+  KEEP if:
+    - True positive confirmed by manual review or verified by second scanner
+    - Affects production code path (not dead code, not test-only)
+    - Severity warrants action per pipeline policy (CRITICAL/HIGH always kept)
+  DISCARD if:
+    - False positive confirmed (manual review + documented justification)
+    - Already covered by existing exception with valid expiry date
+    - In allowlisted path/pattern with documented reason
+  EXCEPTION process for MEDIUM/LOW findings:
+    - File exception with: CVE/rule ID, justification, expiry (max 30 days), reviewer
+    - Track in .godmode/devsecops-exceptions.tsv:
+      timestamp	rule_id	justification	expiry_date	reviewer	status
+  EVERY discard/exception recorded — no silent suppression
 ```
 
 ## Multi-Agent Dispatch

@@ -533,6 +533,224 @@ IF codebase uses a framework with built-in patterns (NestJS, Spring, etc.):
 - **Do NOT treat patterns as sacred.** Partial implementations are fine. You don't need the full GoF specification to benefit from the core idea of a pattern.
 
 
+## Design Pattern Audit
+
+Systematically detect existing patterns, flag anti-patterns, and generate targeted refactor suggestions across the codebase:
+
+```
+DESIGN PATTERN AUDIT LOOP:
+
+current_iteration = 0
+max_iterations = 12
+audit_queue = [pattern_detection, anti_pattern_flagging, pattern_misuse, missing_patterns, refactor_suggestions]
+audit_findings = []
+
+WHILE audit_queue is not empty AND current_iteration < max_iterations:
+    current_iteration += 1
+    audit_aspect = audit_queue.pop(0)
+
+    1. SCAN codebase for signals related to {audit_aspect}
+    2. CLASSIFY each finding: correct usage | misuse | missing opportunity | anti-pattern
+    3. SCORE severity: LOW (style) | MEDIUM (maintainability) | HIGH (correctness risk)
+    4. GENERATE specific refactor suggestion with before/after code
+    5. IF new concerns surface → audit_queue.append(related_aspect)
+    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {findings_count} findings"
+
+FINAL: Pattern audit report with prioritized refactor suggestions
+```
+
+### Pattern Detection
+
+Automatically detect which design patterns are already in use and whether they are correctly implemented:
+
+```
+PATTERN DETECTION SCAN:
+┌──────────────────────────────────────────────────────────────┐
+│  Pattern          │ Detection Signal              │ Found    │
+├───────────────────┼───────────────────────────────┼──────────┤
+│  Singleton        │ static instance, getInstance()│ <files>  │
+│  Factory          │ create*, Factory class/func   │ <files>  │
+│  Builder          │ .setX().setY().build()        │ <files>  │
+│  Strategy         │ interface + multiple impls    │ <files>  │
+│                   │ injected at construction      │          │
+│  Observer         │ on(), emit(), subscribe(),    │ <files>  │
+│                   │ EventEmitter, addEventListener│          │
+│  Repository       │ class.*Repository, findBy*,   │ <files>  │
+│                   │ save(), delete()              │          │
+│  Decorator        │ wraps another instance of     │ <files>  │
+│                   │ same interface, delegates calls│         │
+│  Command          │ execute(), undo(), command    │ <files>  │
+│                   │ objects with action payload   │          │
+│  Mediator         │ central coordinator, handles  │ <files>  │
+│                   │ cross-component communication │          │
+│  Chain of Resp.   │ middleware chains, next(),    │ <files>  │
+│                   │ pipe(), handler arrays        │          │
+│  Adapter          │ wraps foreign interface to    │ <files>  │
+│                   │ match expected interface      │          │
+│  Facade           │ simplified interface to       │ <files>  │
+│                   │ complex subsystem             │          │
+│  State            │ state objects with behavior,  │ <files>  │
+│                   │ context delegates to state    │          │
+│  Proxy            │ same interface as target,     │ <files>  │
+│                   │ controls access (cache, lazy) │          │
+│  Circuit Breaker  │ failure counting, open/closed │ <files>  │
+│                   │ /half-open states             │          │
+│  Saga             │ compensation chains, saga     │ <files>  │
+│                   │ orchestrator/choreography     │          │
+│  Outbox           │ outbox table, event relay,    │ <files>  │
+│                   │ transactional event publish   │          │
+└───────────────────┴───────────────────────────────┴──────────┘
+
+PATTERN HEALTH ASSESSMENT:
+For each detected pattern:
+  Pattern: <name>
+  Location: <files>
+  Implementation quality: CORRECT | PARTIAL | MISUSED
+  Issues (if any):
+    - <specific issue, e.g., "Singleton holds mutable state accessed from multiple threads">
+    - <specific issue, e.g., "Repository leaks ORM entities through interface">
+  Recommendation: KEEP | REFINE | REPLACE
+```
+
+### Anti-Pattern Flagging
+
+Comprehensive anti-pattern scan with severity, impact, and remediation:
+
+```
+ANTI-PATTERN AUDIT:
+┌──────────────────────────────────────────────────────────────┐
+│  Anti-Pattern       │ Severity │ Files │ Impact              │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  God Object         │ HIGH     │ <N>   │ Unmodifiable core   │
+│  (class > 500 LOC,  │          │       │ module, high merge  │
+│  > 20 methods,      │          │       │ conflict rate       │
+│  multiple domains)  │          │       │                     │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Shotgun Surgery    │ HIGH     │ <N>   │ Single change       │
+│  (one change =      │          │       │ requires modifying  │
+│  many file edits)   │          │       │ N+ files            │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Feature Envy       │ MEDIUM   │ <N>   │ Method uses more    │
+│  (method accesses   │          │       │ data from another   │
+│  other class data)  │          │       │ class than its own  │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Primitive Obsession│ MEDIUM   │ <N>   │ No domain type      │
+│  (string for email, │          │       │ validation, invalid │
+│  int for money)     │          │       │ values propagate    │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Anemic Domain      │ MEDIUM   │ <N>   │ All logic in service│
+│  (data-only models, │          │       │ layer, domain model │
+│  no behavior)       │          │       │ adds no value       │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Circular Dependency│ HIGH     │ <N>   │ Cannot deploy or    │
+│  (A imports B,      │          │       │ test independently  │
+│  B imports A)       │          │       │                     │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Leaky Abstraction  │ MEDIUM   │ <N>   │ Implementation      │
+│  (DB columns in API │          │       │ detail changes      │
+│  response)          │          │       │ break consumers     │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Distributed        │ CRITICAL │ <N>   │ Must deploy all     │
+│  Monolith           │          │       │ services together,  │
+│  (coupled services) │          │       │ negates micro gains │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Golden Hammer      │ LOW      │ <N>   │ One pattern used    │
+│  (same pattern for  │          │       │ everywhere even     │
+│  everything)        │          │       │ when inappropriate  │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Speculative        │ LOW      │ <N>   │ Over-engineered     │
+│  Generality         │          │       │ abstractions for    │
+│  (unused flex pts)  │          │       │ theoretical futures │
+├─────────────────────┼──────────┼───────┼─────────────────────┤
+│  Copy-Paste         │ MEDIUM   │ <N>   │ Duplicated logic    │
+│  Programming        │          │       │ drifts apart,       │
+│  (cloned blocks)    │          │       │ bugs fixed in one   │
+│                     │          │       │ but not the other   │
+└─────────────────────┴──────────┴───────┴─────────────────────┘
+
+DETECTION COMMANDS:
+  # God Objects: files with high LOC and many exports
+  find src/ -name "*.ts" | xargs wc -l | sort -rn | head -20
+
+  # Circular Dependencies
+  npx madge --circular src/
+  # Or: dependency-cruiser --output-type err src/
+
+  # Duplicated Code
+  npx jscpd src/ --min-lines 10 --min-tokens 50
+
+  # Feature Envy (heuristic: grep for excessive other-class field access)
+  # Manual review guided by coupling metrics
+
+  # Primitive Obsession: grep for untyped signatures
+  grep -rn "email: string\|price: number\|id: string" --include="*.ts" src/
+```
+
+### Refactor Suggestions
+
+For each flagged anti-pattern, generate a targeted refactor plan:
+
+```
+REFACTOR SUGGESTION FORMAT:
+┌──────────────────────────────────────────────────────────────┐
+│  Anti-Pattern: <name>                                         │
+│  Location: <file:line-range>                                  │
+│  Severity: <CRITICAL|HIGH|MEDIUM|LOW>                         │
+│  Effort: <S|M|L|XL>                                          │
+├──────────────────────────────────────────────────────────────┤
+│  Problem:                                                     │
+│  <1-2 sentences: what is wrong and why it matters>            │
+│                                                               │
+│  Recommended Pattern: <design pattern that resolves this>     │
+│                                                               │
+│  Before (current):                                            │
+│  ```<language>                                                │
+│  // Problematic code snippet                                  │
+│  ```                                                          │
+│                                                               │
+│  After (refactored):                                          │
+│  ```<language>                                                │
+│  // Improved code snippet using recommended pattern           │
+│  ```                                                          │
+│                                                               │
+│  Steps:                                                       │
+│  1. <specific first action>                                   │
+│  2. <specific second action>                                  │
+│  3. <run tests after each step>                               │
+│                                                               │
+│  Risk: <what could go wrong>                                  │
+│  Prerequisite: <tests needed, dependencies to resolve first>  │
+│  Related: <other findings this fix may resolve>               │
+└──────────────────────────────────────────────────────────────┘
+
+PRIORITIZATION MATRIX:
+┌──────────────────────────────────────────────────────────────┐
+│  Finding           │ Severity │ Effort │ Priority Score      │
+│                    │ (1-4)    │ (1-4)  │ (severity/effort)   │
+├────────────────────┼──────────┼────────┼─────────────────────┤
+│  <finding 1>       │ <N>      │ <N>    │ <ratio>             │
+│  <finding 2>       │ <N>      │ <N>    │ <ratio>             │
+│  <finding 3>       │ <N>      │ <N>    │ <ratio>             │
+├────────────────────┼──────────┼────────┼─────────────────────┤
+│  RECOMMENDED ORDER: highest priority score first              │
+│  (maximum impact per unit of effort)                          │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Pattern Audit Report
+
+```
+PATTERN AUDIT SUMMARY:
+  Codebase: {project_name}
+  Patterns detected: {N} ({list with locations})
+  Patterns correctly implemented: {N}
+  Pattern misuses: {N} ({list with issues})
+  Anti-patterns found: {N} (CRITICAL: {N}, HIGH: {N}, MEDIUM: {N}, LOW: {N})
+  Refactor suggestions: {N} prioritized by severity/effort ratio
+  Estimated effort: {total hours/days}
+  Recommended first action: {highest priority refactor}
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run pattern refactoring tasks sequentially: god objects, then coupling, then primitive obsession.

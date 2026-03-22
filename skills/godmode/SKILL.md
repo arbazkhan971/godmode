@@ -43,14 +43,17 @@ No match → ask user for test/lint/build commands. Cache those.
 
 No match → phase detection (Step 3).
 
-## Step 3: Detect Phase
+## Step 3: Detect Phase (State Machine)
 ```
-no .godmode/spec.md, no plan  → THINK
-.godmode/spec.md exists, no .godmode/plan.yaml → PLAN
-.godmode/plan.yaml exists, incomplete tasks  → BUILD
-code exists, tests failing → FIX
-code exists, tests passing, no review done → REVIEW. Reviewed → OPTIMIZE or SHIP
+no .godmode/spec.md, no plan       → THINK
+spec exists, no .godmode/plan.yaml → PLAN
+plan exists, tasks incomplete      → BUILD
+code exists, tests failing         → FIX
+tests passing, unreviewed          → REVIEW
+reviewed, metrics unoptimized      → OPTIMIZE
+all green                          → SHIP
 ```
+Transitions are forward-only unless stuck recovery triggers a rollback (see Rules §6).
 
 ## Step 4: Execute
 Read `skills/{skill}/SKILL.md`. Follow it literally. Pass: `stack`, `test_cmd`, `lint_cmd`, `build_cmd` as variables.
@@ -64,13 +67,24 @@ After skill completes, print: `Godmode: {skill} complete. Next: {next_skill_or_d
 2. Iterative skills (build/test/fix/debug/optimize/secure) use `WHILE` loops. Initialize `current_iteration = 0`. Increment at loop top.
 3. `Iterations: N` = run exactly N times then stop+summarize. No number = loop until interrupted. Never ask to continue.
 4. Commit BEFORE verify. Revert on failure: `git reset --hard HEAD~1`. Never leave broken commits in history.
-5. Log: `.godmode/<skill>-results.tsv` (append, never overwrite). Session: `.godmode/session-log.tsv`: timestamp, skill, iters, kept, discarded, outcome.
-6. Stuck (>5 consecutive discards): re-read all in-scope files, try opposite approach, try radical rewrite. Never repeat failed approach.
-7. Multi-agent: ≤5 agents/round, `isolation: "worktree"`. Each agent sees only task.files. Merge sequentially. Test after each. Conflict → discard, re-queue.
-8. Chain: `think → plan → [predict] → build → test → fix → review → optimize → secure → ship`. [predict] optional but recommended.
+5. Log: `.godmode/<skill>-results.tsv` (append, never overwrite). Session: `.godmode/session-log.tsv`: timestamp, skill, iters, kept, discarded, stop_reason, outcome.
+   `stop_reason` values:
+   - `target_reached` — spec/goal fully achieved
+   - `budget_exhausted` — max iterations hit
+   - `diminishing_returns` — last 3 iters each < 1% improvement
+   - `stuck` — >5 consecutive discards
+   - `error_cascade` — >3 failed attempts on same task
+   - `user_interrupt` — manual stop
+6. KEEP/DISCARD: All iterative phases follow the meta-protocol in root SKILL.md. Decisions are atomic — commit before verify, revert if verify fails.
+7. Stuck recovery (>5 consecutive discards):
+   1. Try opposite approach within same phase. Re-read all in-scope files. Never repeat failed approach.
+   2. If still stuck: escalate to previous phase (e.g., BUILD stuck → re-PLAN).
+   3. If still stuck after re-plan: log `stuck_reason` in session-log.tsv, move to next task.
+8. Multi-agent: ≤5 agents/round, `isolation: "worktree"`. Each agent sees only task.files. Merge sequentially. Test after each. Conflict → discard, re-queue.
+9. Chain: `think → plan → [predict] → build → test → fix → review → optimize → secure → ship`. [predict] optional but recommended.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
-- **Rule 7 (multi-agent):** Execute tasks sequentially in the current session instead of dispatching parallel agents. One task at a time, commit after each.
+- **Rule 8 (multi-agent):** Execute tasks sequentially in the current session instead of dispatching parallel agents. One task at a time, commit after each.
 - **Worktree isolation:** Use branch-based isolation: `git checkout -b godmode-{task}`, work, merge back. See `adapters/shared/sequential-dispatch.md`.
 - **All other rules apply unchanged.** The loop, verification, rollback, and logging work identically.
