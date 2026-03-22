@@ -21,19 +21,16 @@ Evaluate the current state of the three observability pillars:
 
 ```
 OBSERVABILITY ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│  Pillar          │ Status    │ Coverage │ Tools           │
-│  ─────────────────────────────────────────────────────── │
-│  Metrics         │ PARTIAL   │ 40%      │ Prometheus      │
-│  Logging         │ BASIC     │ 60%      │ stdout only     │
-│  Tracing         │ NONE      │ 0%       │ —               │
-│  Alerting        │ MINIMAL   │ 20%      │ PagerDuty       │
-│  Dashboards      │ NONE      │ 0%       │ —               │
-│  SLOs            │ NONE      │ 0%       │ —               │
-├──────────────────────────────────────────────────────────┤
-│  Overall Score: 2/10 — INSUFFICIENT                       │
-│  Priority: Set up structured logging + core metrics       │
-└──────────────────────────────────────────────────────────┘
+| Pillar | Status | Coverage | Tools |
+|---|---|---|---|
+| Metrics | PARTIAL | 40% | Prometheus |
+| Logging | BASIC | 60% | stdout only |
+| Tracing | NONE | 0% | — |
+| Alerting | MINIMAL | 20% | PagerDuty |
+| Dashboards | NONE | 0% | — |
+| SLOs | NONE | 0% | — |
+  Overall Score: 2/10 — INSUFFICIENT
+  Priority: Set up structured logging + core metrics
 ```
 
 ### Step 2: Metrics Design
@@ -42,16 +39,14 @@ Design application and infrastructure metrics using the RED/USE methodology:
 #### RED Method (Request-driven services)
 ```
 REQUEST METRICS:
-┌──────────────────────────────────────────────────────────┐
-│  Metric                    │ Type      │ Labels           │
-│  ─────────────────────────────────────────────────────── │
-│  http_requests_total       │ Counter   │ method, path,    │
-│                            │           │ status_code      │
-│  http_request_duration_sec │ Histogram │ method, path     │
-│  http_requests_in_flight   │ Gauge     │ —                │
-│  http_request_size_bytes   │ Histogram │ method, path     │
-│  http_response_size_bytes  │ Histogram │ method, path     │
-└──────────────────────────────────────────────────────────┘
+| Metric | Type | Labels |
+|---|---|---|
+| http_requests_total | Counter | method, path, |
+|  |  | status_code |
+| http_request_duration_sec | Histogram | method, path |
+| http_requests_in_flight | Gauge | — |
+| http_request_size_bytes | Histogram | method, path |
+| http_response_size_bytes | Histogram | method, path |
 
 Rate:    rate(http_requests_total[5m])
 Errors:  rate(http_requests_total{status_code=~"5.."}[5m])
@@ -61,33 +56,28 @@ Duration: histogram_quantile(0.95, rate(http_request_duration_sec_bucket[5m]))
 #### USE Method (Infrastructure resources)
 ```
 RESOURCE METRICS:
-┌──────────────────────────────────────────────────────────┐
-│  Resource    │ Utilization         │ Saturation          │
-│              │                     │ Errors              │
-│  ─────────────────────────────────────────────────────── │
-│  CPU         │ process_cpu_seconds │ cpu_throttled_total  │
-│  Memory      │ process_resident_mb │ oom_kills_total      │
-│  Disk        │ disk_usage_bytes    │ disk_io_wait_sec     │
-│  Network     │ network_bytes_total │ network_errors_total │
-│  Connections │ db_connections_open │ db_conn_wait_total   │
-│  Queue       │ queue_depth         │ queue_age_seconds    │
-└──────────────────────────────────────────────────────────┘
+| Resource | Utilization | Saturation |
+|  |  | Errors |
+| CPU | process_cpu_seconds | cpu_throttled_total |
+| Memory | process_resident_mb | oom_kills_total |
+| Disk | disk_usage_bytes | disk_io_wait_sec |
+| Network | network_bytes_total | network_errors_total |
+| Connections | db_connections_open | db_conn_wait_total |
+| Queue | queue_depth | queue_age_seconds |
 ```
 
 #### Business Metrics
 ```
 BUSINESS METRICS:
-┌──────────────────────────────────────────────────────────┐
-│  Metric                       │ Type    │ Purpose         │
-│  ─────────────────────────────────────────────────────── │
-│  user_signups_total           │ Counter │ Growth tracking  │
-│  orders_completed_total       │ Counter │ Revenue proxy    │
-│  payment_failures_total       │ Counter │ Revenue risk     │
-│  active_sessions_current      │ Gauge   │ Load indicator   │
-│  feature_flag_evaluations     │ Counter │ Feature adoption │
-│  background_job_duration_sec  │ Hist    │ Job performance  │
-│  cache_hit_ratio              │ Gauge   │ Cache efficiency │
-└──────────────────────────────────────────────────────────┘
+| Metric | Type | Purpose |
+|---|---|---|
+| user_signups_total | Counter | Growth tracking |
+| orders_completed_total | Counter | Revenue proxy |
+| payment_failures_total | Counter | Revenue risk |
+| active_sessions_current | Gauge | Load indicator |
+| feature_flag_evaluations | Counter | Feature adoption |
+| background_job_duration_sec | Hist | Job performance |
+| cache_hit_ratio | Gauge | Cache efficiency |
 ```
 
 #### Instrumentation Examples
@@ -131,16 +121,14 @@ Design a consistent, queryable logging approach:
 #### Log Levels and Usage
 ```
 LOG LEVEL GUIDE:
-┌──────────────────────────────────────────────────────────┐
-│  Level │ When to use                    │ Alert?          │
-│  ─────────────────────────────────────────────────────── │
-│  FATAL │ Process cannot continue        │ Page on-call    │
-│  ERROR │ Operation failed, needs fix    │ Alert to channel│
-│  WARN  │ Unexpected but handled         │ Track trend     │
-│  INFO  │ Significant business events    │ No              │
-│  DEBUG │ Diagnostic detail              │ No (dev only)   │
-│  TRACE │ Fine-grained flow tracking     │ No (dev only)   │
-└──────────────────────────────────────────────────────────┘
+| Level | When to use | Alert? |
+|---|---|---|
+| FATAL | Process cannot continue | Page on-call |
+| ERROR | Operation failed, needs fix | Alert to channel |
+| WARN | Unexpected but handled | Track trend |
+| INFO | Significant business events | No |
+| DEBUG | Diagnostic detail | No (dev only) |
+| TRACE | Fine-grained flow tracking | No (dev only) |
 
 Rules:
 - Production: INFO and above only (DEBUG/TRACE disabled)
@@ -224,19 +212,17 @@ W3C Trace Context Headers:
 #### Trace Backend Options
 ```
 TRACING BACKENDS:
-┌──────────────────────────────────────────────────────────┐
-│  Backend   │ Best for            │ Storage     │ Cost     │
-│  ─────────────────────────────────────────────────────── │
-│  Jaeger    │ Self-hosted, K8s    │ Elastic/    │ Infra    │
-│            │                     │ Cassandra   │ only     │
-│  Zipkin    │ Simple setups       │ In-memory/  │ Free     │
-│            │                     │ MySQL       │          │
-│  Tempo     │ Grafana ecosystem   │ Object      │ Low      │
-│            │                     │ storage     │          │
-│  X-Ray     │ AWS-native          │ Managed     │ Per-trace│
-│  Datadog   │ Full-stack APM      │ Managed     │ Per-host │
-│  Honeycomb │ High-cardinality    │ Managed     │ Per-event│
-└──────────────────────────────────────────────────────────┘
+| Backend | Best for | Storage | Cost |
+|---|---|---|---|
+| Jaeger | Self-hosted, K8s | Elastic/ | Infra |
+|  |  | Cassandra | only |
+| Zipkin | Simple setups | In-memory/ | Free |
+|  |  | MySQL |  |
+| Tempo | Grafana ecosystem | Object | Low |
+|  |  | storage |  |
+| X-Ray | AWS-native | Managed | Per-trace |
+| Datadog | Full-stack APM | Managed | Per-host |
+| Honeycomb | High-cardinality | Managed | Per-event |
 ```
 
 ### Step 5: SLO/SLI Definition
@@ -244,19 +230,18 @@ Define Service Level Objectives and Indicators:
 
 ```
 SLO FRAMEWORK:
-┌──────────────────────────────────────────────────────────┐
-│  Service: <service-name>                                  │
-├──────────────────────────────────────────────────────────┤
-│  SLI                  │ Target    │ Window  │ Burn Rate  │
-│  ─────────────────────────────────────────────────────── │
-│  Availability         │ 99.9%     │ 30 days │ Budget:    │
-│  (successful requests │           │         │ 43.2 min   │
-│   / total requests)   │           │         │ downtime   │
+  Service: <service-name>
+| SLI | Target | Window | Burn Rate |
+|---|---|---|---|
+| Availability | 99.9% | 30 days | Budget: |
+| (successful requests |  |  | 43.2 min |
+| / total requests) |  |  | downtime |
 │                       │           │         │            │
-│  Latency (P95)        │ < 200ms   │ 30 days │ Budget:    │
-│  (95th percentile     │           │         │ 0.1% of    │
-│   request duration)   │           │         │ requests   │
-│                       │           │         │ can exceed │
+| Latency (P95) | < 200ms | 30 days | Budget: |
+|---|---|---|---|
+| (95th percentile |  |  | 0.1% of |
+| request duration) |  |  | requests |
+|  |  |  | can exceed |
 │                       │           │         │            │
 ```
 
@@ -277,20 +262,19 @@ Create actionable, low-noise alerts:
 #### Alert Design Principles
 ```
 ALERT RULES:
-┌──────────────────────────────────────────────────────────┐
-│  Alert Name            │ Condition          │ Severity    │
-│  ─────────────────────────────────────────────────────── │
-│  HighErrorRate         │ 5xx > 1% for 5m    │ Critical    │
-│  HighLatencyP95        │ P95 > 500ms for 5m │ Warning     │
-│  HighLatencyP99        │ P99 > 2s for 5m    │ Critical    │
-│  PodCrashLooping       │ restarts > 3 in 5m │ Critical    │
-│  DiskSpaceLow          │ usage > 85%        │ Warning     │
-│  DiskSpaceCritical     │ usage > 95%        │ Critical    │
-│  MemoryHigh            │ usage > 90% for 5m │ Warning     │
-│  CertExpiringSoon      │ < 7 days to expiry │ Warning     │
-│  CertExpiring          │ < 1 day to expiry  │ Critical    │
-│  DatabaseConnExhausted │ free conns < 5     │ Critical    │
-│  QueueBacklog          │ depth > 1000       │ Warning     │
+| Alert Name | Condition | Severity |
+|---|---|---|
+| HighErrorRate | 5xx > 1% for 5m | Critical |
+| HighLatencyP95 | P95 > 500ms for 5m | Warning |
+| HighLatencyP99 | P99 > 2s for 5m | Critical |
+| PodCrashLooping | restarts > 3 in 5m | Critical |
+| DiskSpaceLow | usage > 85% | Warning |
+| DiskSpaceCritical | usage > 95% | Critical |
+| MemoryHigh | usage > 90% for 5m | Warning |
+| CertExpiringSoon | < 7 days to expiry | Warning |
+| CertExpiring | < 1 day to expiry | Critical |
+| DatabaseConnExhausted | free conns < 5 | Critical |
+| QueueBacklog | depth > 1000 | Warning |
 ```
 
 #### Prometheus Alert Rules
@@ -309,20 +293,16 @@ Create dashboards following the Four Golden Signals:
 
 ```
 DASHBOARD LAYOUT — Service Overview:
-┌──────────────────────────────────────────────────────────┐
-│  ROW 1: Golden Signals (top-level health)                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌────────┐ ┌─────────┐ │
-│  │ Request Rate│ │ Error Rate  │ │Latency │ │Saturation│ │
-│  │  1.2k rps   │ │   0.03%     │ │ 45ms   │ │  62%     │ │
-│  │  ▁▂▃▅▆█▇▅  │ │  ▁▁▁▁▂▁▁▁  │ │▂▃▂▃▂▃▂│ │ ▃▄▅▅▄▃▄ │ │
-│  └─────────────┘ └─────────────┘ └────────┘ └─────────┘ │
-│                                                           │
-│  ROW 2: SLO Status                                        │
-│  ┌────────────────────────────────────────────────────┐   │
-│  │ Availability SLO: 99.9% │ Current: 99.95% │ OK    │   │
-│  │ Error Budget: 85% remaining │ 12.7 min consumed   │   │
-│  │ Latency SLO: P95 < 200ms │ Current: 145ms │ OK    │   │
-│  └────────────────────────────────────────────────────┘   │
+  ROW 1: Golden Signals (top-level health)
+  ┌─────────────┐ ┌─────────────┐ ┌────────┐ ┌─────────┐
+|  | Request Rate |  | Error Rate |  | Latency |  | Saturation |  |
+|  | 1.2k rps |  | 0.03% |  | 45ms |  | 62% |  |
+|  | ▁▂▃▅▆█▇▅ |  | ▁▁▁▁▂▁▁▁ |  | ▂▃▂▃▂▃▂ |  | ▃▄▅▅▄▃▄ |  |
+  └─────────────┘ └─────────────┘ └────────┘ └─────────┘
+  ROW 2: SLO Status
+|  | Availability SLO: 99.9% | Current: 99.95% | OK |  |
+|  | Error Budget: 85% remaining | 12.7 min consumed |  |
+|  | Latency SLO: P95 < 200ms | Current: 145ms | OK |  |
 ```
 
 ### Step 8: Commit and Report

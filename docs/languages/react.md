@@ -327,16 +327,16 @@ Godmode produces a spec at `docs/specs/project-dashboard.md` containing:
   ```
   RootLayout (server)
   ├── DashboardLayout (server)
-  │   ├── Sidebar (server)
-  │   ├── Header (client — user menu, notifications)
-  │   └── Main
-  │       ├── BoardPage (server — data fetch)
+  ├── Sidebar (server)
+  ├── Header (client — user menu, notifications)
+  └── Main
+  ├── BoardPage (server — data fetch)
   │       │   ├── KanbanBoard (client — drag-and-drop)
   │       │   │   ├── Column (client)
   │       │   │   └── TaskCard (client)
   │       │   └── TaskModal (client)
-  │       ├── TeamPage (server)
-  │       └── AnalyticsPage (server + client charts)
+  ├── TeamPage (server)
+  └── AnalyticsPage (server + client charts)
   ```
 - State architecture: Server state via TanStack Query, UI state via Zustand, real-time via WebSocket provider
 - Data fetching: RSC for initial load, `useQuery` for client-side refetch, optimistic updates for drag-and-drop

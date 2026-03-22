@@ -44,54 +44,39 @@ Choose the right branching model for the team:
 #### GitFlow (Complex Release Cycles)
 ```
 GITFLOW MODEL:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ main ────●─────────────●──────────────●──── (releases) │
+  main ────●─────────────●──────────────●──── (releases)
 │ │ │ │ │
-│ hotfix │ ●──●─────┘ │ │
-│ │ │ │
-│ release │ ●──●──●────────────┘ │
-│ │ │ │
-│ develop ─┴────●────┴───●────●────●────●──── (integration) │
-│ │ │ │
-│ feature ●──●──●───────┘ │
-│ │
-└─────────────────────────────────────────────────────────────┘
+| hotfix | ●──●─────┘ |  |
+| release | ●──●──●────────────┘ |
+  develop ─┴────●────┴───●────●────●────●──── (integration)
+  feature ●──●──●───────┘
 
 ```
 
 #### Trunk-Based Development (Continuous Delivery)
 ```
 TRUNK-BASED MODEL:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ main ──●──●──●──●──●──●──●──●──●──●──●──── (always │
-│ │ │ │ │ deployable) │
-│ short ●──●──┘ ●──●──┘ ●──●──┘ │
-│ lived │
-│ branches (< 2 days) │
-│ │
-│ releases: │
-│ main ──────────●─────────────●──────────── (tagged) │
-│ v1.2.0 v1.3.0 │
-│ │
-└─────────────────────────────────────────────────────────────┘
+  main ──●──●──●──●──●──●──●──●──●──●──●──── (always
+|  |  |  |  | deployable) |
+  short ●──●──┘ ●──●──┘ ●──●──┘
+  lived
+  branches (< 2 days)
+  releases:
+  main ──────────●─────────────●──────────── (tagged)
+  v1.2.0 v1.3.0
 
 ```
 
 #### GitHub Flow (Simple and Effective)
 ```
 GITHUB FLOW MODEL:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ main ──●────●────●────●────●────●──── (always deployable) │
+  main ──●────●────●────●────●────●──── (always deployable)
 │ │ │ │ │ │ │ │
-│ PR ●─●──┘ │ │ │ │ │
-│ branch ●──●──●──┘ │ │ │
-│ ●──●──●──●──┘ │ │
-│ ●──●──┘ │
-│ │
-└─────────────────────────────────────────────────────────────┘
+| PR ●─●──┘ |  |  |  |  |
+|---|---|---|---|---|
+| branch ●──●──●──┘ |  |  |
+| ●──●──●──●──┘ |  |
+  ●──●──┘
 
 Rules:
  1. Main is always deployable
@@ -101,20 +86,14 @@ Rules:
 #### Ship/Show/Ask (Trust-Based)
 ```
 SHIP/SHOW/ASK MODEL:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ SHIP — Merge directly to main. No PR. No review. │
-│ Use for: typos, config, CI fixes, docs, trivial │
-│ │
-│ SHOW — Merge to main, THEN open a PR for visibility. │
-│ Use for: small refactors, non-critical features, │
-│ changes within your domain expertise │
-│ │
-│ ASK — Open a PR and wait for review BEFORE merging. │
-│ Use for: architecture changes, security changes, │
-│ cross-team code, unfamiliar areas │
-│ │
-└─────────────────────────────────────────────────────────────┘
+  SHIP — Merge directly to main. No PR. No review.
+  Use for: typos, config, CI fixes, docs, trivial
+  SHOW — Merge to main, THEN open a PR for visibility.
+  Use for: small refactors, non-critical features,
+  changes within your domain expertise
+  ASK — Open a PR and wait for review BEFORE merging.
+  Use for: architecture changes, security changes,
+  cross-team code, unfamiliar areas
 ```
 
 ### Step 3: Merge vs Rebase Strategy
@@ -122,18 +101,16 @@ Choose the right integration strategy:
 
 ```
 MERGE VS REBASE DECISION:
-┌─────────────────────────────────────────────────────────────┐
-│ Criteria │ Merge Commit │ Squash │ Rebase │
-├───────────────────────┼──────────────┼────────────┼─────────┤
-│ History readability │ Noisy │ Clean │ Clean │
-│ Preserves context │ Full │ Summarized │ Full │
-│ Bisect effectiveness │ Good │ Limited │ Best │
-│ Conflict resolution │ Once │ Once │ Per-com │
-│ Reversibility │ Easy revert │ Easy revert│ Hard │
-│ Force push required │ No │ No │ Yes │
-│ CI re-runs │ No │ No │ Yes │
-│ Safe for shared branch│ Yes │ Yes │ NO │
-└───────────────────────┴──────────────┴────────────┴─────────┘
+| Criteria | Merge Commit | Squash | Rebase |
+|---|---|---|---|
+| History readability | Noisy | Clean | Clean |
+| Preserves context | Full | Summarized | Full |
+| Bisect effectiveness | Good | Limited | Best |
+| Conflict resolution | Once | Once | Per-com |
+| Reversibility | Easy revert | Easy revert | Hard |
+| Force push required | No | No | Yes |
+| CI re-runs | No | No | Yes |
+| Safe for shared branch | Yes | Yes | NO |
 
 RECOMMENDED STRATEGY BY CONTEXT:
 ```
@@ -143,17 +120,15 @@ Restructure commit history before merging:
 
 ```
 INTERACTIVE REBASE OPERATIONS:
-┌──────────┬─────────────────────────────────────────────────────┐
-│ Command │ Use Case │
-├──────────┼─────────────────────────────────────────────────────┤
-│ pick │ Keep commit as-is │
-│ reword │ Change commit message (keep changes) │
-│ edit │ Stop at commit to amend (split, modify) │
-│ squash │ Combine with previous commit (keep both messages) │
-│ fixup │ Combine with previous commit (discard this message) │
-│ drop │ Remove commit entirely │
-│ reorder │ Move commit lines to change order │
-└──────────┴─────────────────────────────────────────────────────┘
+| Command | Use Case |
+|---|---|
+| pick | Keep commit as-is |
+| reword | Change commit message (keep changes) |
+| edit | Stop at commit to amend (split, modify) |
+| squash | Combine with previous commit (keep both messages) |
+| fixup | Combine with previous commit (discard this message) |
+| drop | Remove commit entirely |
+| reorder | Move commit lines to change order |
 
 COMMON REBASE RECIPES:
 
@@ -164,16 +139,11 @@ Binary search through history to find the commit that introduced a bug:
 
 ```
 GIT BISECT WORKFLOW:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ ●──●──●──●──●──●──●──●──●──●──●──●──●──● (100 commits) │
-│ ▲ ▲ │
-│ GOOD BAD │
-│ (v1.2.0) (HEAD) │
-│ │
-│ Bisect finds the bad commit in log2(100) = 7 steps │
-│ │
-└─────────────────────────────────────────────────────────────┘
+  ●──●──●──●──●──●──●──●──●──●──●──●──●──● (100 commits)
+  ▲ ▲
+  GOOD BAD
+  (v1.2.0) (HEAD)
+  Bisect finds the bad commit in log2(100) = 7 steps
 
 MANUAL BISECT:
  git bisect start
@@ -185,16 +155,14 @@ Selective commit application and work-in-progress management:
 
 ```
 CHERRY-PICK PATTERNS:
-┌─────────────────────────────────────────────────────────────┐
-│ Pattern │ Command │
-├──────────────────────────┼──────────────────────────────────┤
-│ Single commit │ git cherry-pick <SHA> │
-│ Range of commits │ git cherry-pick A..B │
-│ Multiple specific │ git cherry-pick A B C │
-│ Without committing │ git cherry-pick -n <SHA> │
-│ Resolve conflicts │ git cherry-pick --continue │
-│ Abort cherry-pick │ git cherry-pick --abort │
-└──────────────────────────┴──────────────────────────────────┘
+| Pattern | Command |
+|---|---|
+| Single commit | git cherry-pick <SHA> |
+| Range of commits | git cherry-pick A..B |
+| Multiple specific | git cherry-pick A B C |
+| Without committing | git cherry-pick -n <SHA> |
+| Resolve conflicts | git cherry-pick --continue |
+| Abort cherry-pick | git cherry-pick --abort |
 
 When to cherry-pick:
  ✓ Hotfix from develop to main (or vice versa)
@@ -206,20 +174,15 @@ Work on multiple branches simultaneously without switching:
 
 ```
 GIT WORKTREE PATTERNS:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ /project/ (main worktree — main branch) │
-│ /project-hotfix/ (linked worktree — hotfix/*) │
-│ /project-feature/ (linked worktree — feature/*) │
-│ /project-review/ (linked worktree — PR review) │
-│ │
-└─────────────────────────────────────────────────────────────┘
+  /project/ (main worktree — main branch)
+  /project-hotfix/ (linked worktree — hotfix/*)
+  /project-feature/ (linked worktree — feature/*)
+  /project-review/ (linked worktree — PR review)
 
 WORKTREE COMMANDS:
-┌──────────────────────────────┬──────────────────────────────┐
-│ Operation │ Command │
-├──────────────────────────────┼──────────────────────────────┤
-│ Add worktree (existing br.) │ git worktree add../proj-fix │
+| Operation | Command |
+|---|---|
+| Add worktree (existing br.) | git worktree add../proj-fix |
 ```
 
 ### Step 8: Commit Message Conventions
@@ -227,40 +190,28 @@ Standardize commit messages for automation and readability:
 
 ```
 CONVENTIONAL COMMITS FORMAT:
-┌─────────────────────────────────────────────────────────────┐
-│ │
-│ <type>[optional scope]: <description> │
-│ │
-│ [optional body] │
-│ │
-│ [optional footer(s)] │
-│ │
-└─────────────────────────────────────────────────────────────┘
+  <type>[optional scope]: <description>
+  [optional body]
+  [optional footer(s)]
 
 TYPES:
-┌──────────┬──────────────────────────────────┬───────────────┐
-│ Type │ Description │ SemVer Impact │
-├──────────┼──────────────────────────────────┼───────────────┤
+| Type | Description | SemVer Impact |
 ```
 
 ### Step 9: Git Workflow Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│ GIT WORKFLOW RECOMMENDATION │
-├────────────────────────────────────────────────────────────┤
-│ Team size: <N> │
-│ Release cadence: <cadence> │
-│ │
-│ Branching model: <GitFlow | Trunk-Based | GitHub Flow | │
-│ Ship/Show/Ask> │
-│ Merge strategy: <merge commits | squash | rebase> │
-│ Commit convention: <Conventional Commits | custom> │
-│ │
-│ Branch naming: │
-│ feature/<ticket>-<slug> │
-│ fix/<ticket>-<slug> │
-│ hotfix/<slug> │
+  GIT WORKFLOW RECOMMENDATION
+  Team size: <N>
+  Release cadence: <cadence>
+  Branching model: <GitFlow | Trunk-Based | GitHub Flow |
+  Ship/Show/Ask>
+  Merge strategy: <merge commits | squash | rebase>
+  Commit convention: <Conventional Commits | custom>
+  Branch naming:
+  feature/<ticket>-<slug>
+  fix/<ticket>-<slug>
+  hotfix/<slug>
 ```
 
 ### Step 10: Commit and Transition
@@ -340,17 +291,16 @@ After each git skill invocation, emit a structured report:
 
 ```
 GIT OPERATION REPORT:
-┌──────────────────────────────────────────────────────┐
-│ Operation │ <branch | merge | rebase | bisect | worktree> │
-│ Branch │ <branch name> │
-│ Commits │ <N> created / <N> cleaned up │
-│ Conflicts resolved │ <N> │
-│ Stale branches │ <N> cleaned / <N> remaining │
-│ Worktrees │ <N> active │
-│ Stashes │ <N> current (target: < 3) │
-│ Tests after │ PASSING / FAILING │
-│ Verdict │ CLEAN | NEEDS ATTENTION │
-└──────────────────────────────────────────────────────┘
+| Operation | <branch | merge | rebase | bisect | worktree> |
+|---|---|---|---|---|---|
+| Branch | <branch name> |
+| Commits | <N> created / <N> cleaned up |
+| Conflicts resolved | <N> |
+| Stale branches | <N> cleaned / <N> remaining |
+| Worktrees | <N> active |
+| Stashes | <N> current (target: < 3) |
+| Tests after | PASSING / FAILING |
+| Verdict | CLEAN | NEEDS ATTENTION |
 ```
 
 ## TSV Logging

@@ -37,17 +37,13 @@ Establish the shared vocabulary between developers and domain experts:
 
 ```
 UBIQUITOUS LANGUAGE — <Domain Name>:
-┌──────────────────┬──────────────────────────────────────────────────────┐
-│ Term             │ Definition                                          │
-├──────────────────┼──────────────────────────────────────────────────────┤
-│ <Term 1>         │ <Precise definition as understood by domain experts │
-│                  │  AND developers. No ambiguity.>                     │
-├──────────────────┼──────────────────────────────────────────────────────┤
-│ <Term 2>         │ <Definition. Note: "Order" in the Sales context     │
-│                  │  means something different than in Fulfillment.>    │
-├──────────────────┼──────────────────────────────────────────────────────┤
-│ <Term 3>         │ <Definition. Include what it is NOT if ambiguous.>  │
-└──────────────────┴──────────────────────────────────────────────────────┘
+| Term | Definition |
+|---|---|
+| <Term 1> | <Precise definition as understood by domain experts |
+|  | AND developers. No ambiguity.> |
+| <Term 2> | <Definition. Note: "Order" in the Sales context |
+|  | means something different than in Fulfillment.> |
+| <Term 3> | <Definition. Include what it is NOT if ambiguous.> |
 
 LANGUAGE RULES:
 - These terms are used in code (class names, method names, variable names)
@@ -95,56 +91,48 @@ OrderShipped → OrderDelivered → RefundIssued (return)
 Identify what triggers each event:
 ```
 COMMANDS AND TRIGGERS:
-┌────────────────────┬──────────────────┬────────────────────┐
-│ Command            │ Actor            │ Produces Event     │
-├────────────────────┼──────────────────┼────────────────────┤
-│ PlaceOrder         │ Customer         │ OrderPlaced        │
-│ ProcessPayment     │ Payment Gateway  │ PaymentReceived    │
-│ ReserveInventory   │ System (auto)    │ InventoryReserved  │
-│ ShipOrder          │ Warehouse Staff  │ OrderShipped       │
-│ CancelOrder        │ Customer/System  │ OrderCancelled     │
-│ IssueRefund        │ Support Agent    │ RefundIssued       │
-└────────────────────┴──────────────────┴────────────────────┘
+| Command | Actor | Produces Event |
+|---|---|---|
+| PlaceOrder | Customer | OrderPlaced |
+| ProcessPayment | Payment Gateway | PaymentReceived |
+| ReserveInventory | System (auto) | InventoryReserved |
+| ShipOrder | Warehouse Staff | OrderShipped |
+| CancelOrder | Customer/System | OrderCancelled |
+| IssueRefund | Support Agent | RefundIssued |
 ```
 
 #### Phase 4: Aggregates
 Group events around the entities that own them:
 ```
 AGGREGATES:
-┌─────────────────────────────────────────────────┐
-│  <<Aggregate>> Order                            │
-│  Commands: PlaceOrder, CancelOrder              │
-│  Events: OrderPlaced, OrderCancelled,           │
-│          OrderShipped, OrderDelivered            │
-│  Invariants:                                    │
-│  - Order total stays > 0                         │
-│  - Cannot cancel a delivered order              │
-│  - Cannot ship without payment                  │
-└─────────────────────────────────────────────────┘
+  <<Aggregate>> Order
+  Commands: PlaceOrder, CancelOrder
+  Events: OrderPlaced, OrderCancelled,
+  OrderShipped, OrderDelivered
+  Invariants:
+  - Order total stays > 0
+  - Cannot cancel a delivered order
+  - Cannot ship without payment
 
-┌─────────────────────────────────────────────────┐
-│  <<Aggregate>> Inventory                        │
-│  Commands: ReserveInventory, ReleaseInventory   │
+  <<Aggregate>> Inventory
+  Commands: ReserveInventory, ReleaseInventory
 ```
 
 #### Phase 5: Bounded Context Discovery
 Draw boundaries around aggregates that share a ubiquitous language:
 ```
 BOUNDED CONTEXTS:
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  ┌─────────────────────────┐  ┌──────────────────────────────┐  │
-│  │  ORDERING CONTEXT       │  │  FULFILLMENT CONTEXT         │  │
+  ┌─────────────────────────┐  ┌──────────────────────────────┐
+|  | ORDERING CONTEXT |  | FULFILLMENT CONTEXT |  |
 │  │                         │  │                              │  │
-│  │  Aggregates:            │  │  Aggregates:                 │  │
-│  │  - Order                │  │  - Shipment                  │  │
-│  │  - Cart                 │  │  - Inventory                 │  │
+|  | Aggregates: |  | Aggregates: |  |
+|  | - Order |  | - Shipment |  |
+|  | - Cart |  | - Inventory |  |
 │  │                         │  │                              │  │
-│  │  "Order" = items a      │  │  "Order" = items to pick     │  │
-│  │  customer wants to buy  │  │  and ship from warehouse     │  │
-│  └─────────────────────────┘  └──────────────────────────────┘  │
-│                                                                 │
-│  ┌─────────────────────────┐  ┌──────────────────────────────┐  │
+|  | "Order" = items a |  | "Order" = items to pick |  |
+|  | customer wants to buy |  | and ship from warehouse |  |
+  └─────────────────────────┘  └──────────────────────────────┘
+  ┌─────────────────────────┐  ┌──────────────────────────────┐
 ```
 
 ### Step 4: Context Mapping
@@ -152,20 +140,16 @@ Define relationships between bounded contexts:
 
 ```
 CONTEXT MAP:
-┌─────────────────────────────────────────────────────────────────────────┐
-│                                                                         │
-│   Ordering ──── Partnership ────► Fulfillment                          │
+  Ordering ──── Partnership ────► Fulfillment
 │      │                                │                                │
-│   Customer/                      Customer/                             │
-│   Supplier                       Supplier                              │
+  Customer/                      Customer/
+  Supplier                       Supplier
 │      │                                │                                │
-│      ▼                                ▼                                │
-│   Billing ──── Conformist ────► Payment Gateway (External)             │
-│                                                                         │
-│   Identity ──── Open Host Service ────► All Contexts                   │
-│                  (Published Language)                                    │
-│                                                                         │
-│   Reporting ──── ACL ────► Legacy ERP System                           │
+  ▼                                ▼
+  Billing ──── Conformist ────► Payment Gateway (External)
+  Identity ──── Open Host Service ────► All Contexts
+  (Published Language)
+  Reporting ──── ACL ────► Legacy ERP System
 ```
 
 ### Step 5: Tactical Design — Aggregate Internals
@@ -213,20 +197,15 @@ Document all domain events for cross-context communication:
 
 ```
 DOMAIN EVENT CATALOG:
-┌──────────────────────┬─────────────┬────────────────────────────────────┐
-│ Event                │ Source      │ Payload                            │
-│                      │ Context     │                                    │
-├──────────────────────┼─────────────┼────────────────────────────────────┤
-│ OrderPlaced          │ Ordering    │ orderId, customerId, items[],      │
-│                      │             │ totalAmount, placedAt              │
-├──────────────────────┼─────────────┼────────────────────────────────────┤
-│ PaymentReceived      │ Billing     │ paymentId, orderId, amount,        │
-│                      │             │ method, paidAt                     │
-├──────────────────────┼─────────────┼────────────────────────────────────┤
-│ InventoryReserved    │ Fulfillment │ reservationId, orderId, items[],   │
-│                      │             │ warehouseId, reservedAt            │
-├──────────────────────┼─────────────┼────────────────────────────────────┤
-│ OrderShipped         │ Fulfillment │ shipmentId, orderId, trackingNo,   │
+| Event | Source | Payload |
+|  | Context |  |
+| OrderPlaced | Ordering | orderId, customerId, items[], |
+|  |  | totalAmount, placedAt |
+| PaymentReceived | Billing | paymentId, orderId, amount, |
+|  |  | method, paidAt |
+| InventoryReserved | Fulfillment | reservationId, orderId, items[], |
+|  |  | warehouseId, reservedAt |
+| OrderShipped | Fulfillment | shipmentId, orderId, trackingNo, |
 ```
 
 ### Step 7: Implementation Scaffold

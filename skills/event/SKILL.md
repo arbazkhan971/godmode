@@ -42,9 +42,7 @@ Store state as a sequence of immutable events rather than current-state snapshot
 ```
 EVENT STORE SCHEMA:
 
-+---------------------------------------------------------+
 | Table: events |
-+---------------------------------------------------------+
 | event_id UUID PRIMARY KEY |
 | aggregate_type VARCHAR(100) NOT NULL |
 | aggregate_id UUID NOT NULL |
@@ -53,7 +51,6 @@ EVENT STORE SCHEMA:
 | data JSONB NOT NULL |
 | metadata JSONB NOT NULL |
 | created_at TIMESTAMP NOT NULL |
-+---------------------------------------------------------+
 | UNIQUE (aggregate_id, event_version) |
 ```
 
@@ -93,18 +90,15 @@ WRITE SIDE (Commands):
 | UpdateAddress | |
 +-------------------+ | publish
  v
- +-------------------+
  | Event Bus |
  | (Kafka/RabbitMQ) |
- +-------------------+
 ```
 
 #### Projection Design
 ```
 PROJECTIONS:
-+--------------------------------------------------------------+
 | Projection | Source Events | Read Model |
-+--------------------------------------------------------------+
+|---|---|---|
 | OrderSummary | OrderCreated, | orders_summary |
 | | OrderConfirmed, | (denormalized) |
 | | OrderDelivered | |
@@ -127,16 +121,14 @@ KAFKA TOPOLOGY:
 
 Cluster: <N> brokers, <replication factor>
 Topics:
-+--------------------------------------------------------------+
 | Topic | Partitions | Retention | Key |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | order.events | 12 | 30 days | order_id |
 | payment.events | 6 | 30 days | payment_id |
 | inventory.events | 6 | 7 days | product_id |
 | notification.commands | 3 | 1 day | user_id |
 | dead-letter | 3 | 90 days | original_ |
 | | | | topic |
-+--------------------------------------------------------------+
 
 ```
 
@@ -145,9 +137,8 @@ Topics:
 RABBITMQ TOPOLOGY:
 
 Exchanges:
-+--------------------------------------------------------------+
 | Exchange | Type | Durable | Routing |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | order.events | topic | yes | order.created |
 | | | | order.confirmed |
 | | | | order.shipped |
@@ -155,7 +146,6 @@ Exchanges:
 | | | | payment.failed |
 | notifications.direct | direct | yes | email, sms, push |
 | dead-letter.exchange | fanout | yes | (all DLQ traffic) |
-+--------------------------------------------------------------+
 
 ```
 
@@ -164,26 +154,22 @@ Exchanges:
 AWS EVENT ARCHITECTURE:
 
 SNS Topics (Fan-out):
-+--------------------------------------------------------------+
 | Topic | Subscriptions | Filter |
-+--------------------------------------------------------------+
+|---|---|---|
 | order-events | payment-queue | type=order |
 | | inventory-queue | type=order |
 | | analytics-firehose | (all) |
 | payment-events | notification-queue | type=pay |
 | | order-update-queue | type=pay |
-+--------------------------------------------------------------+
 
 SQS Queues:
-+--------------------------------------------------------------+
 ```
 
 #### Broker Comparison
 ```
 MESSAGE BROKER SELECTION:
-+--------------------------------------------------------------+
 | Feature | Kafka | RabbitMQ | SQS/SNS | NATS |
-+--------------------------------------------------------------+
+|---|---|---|---|---|
 | Throughput | Very High | High | High | V.High|
 | Latency | ~5ms | ~1ms | ~50ms | ~0.1ms|
 | Ordering | Per-part. | Per-queue | FIFO opt | Per-sub|
@@ -193,7 +179,6 @@ MESSAGE BROKER SELECTION:
 | Ops complexity | High | Medium | None | Low |
 | Best for | Streaming | Routing | AWS | Speed |
 | | High vol. | Complex | Managed | Simple|
-+--------------------------------------------------------------+
 * With JetStream enabled
 ```
 
@@ -224,16 +209,14 @@ EVENT ENVELOPE:
 SCHEMA VERSIONING STRATEGY:
 
 COMPATIBILITY MODES:
-+--------------------------------------------------------------+
 | Mode | Rule | Use When |
-+--------------------------------------------------------------+
+|---|---|---|
 | Backward compatible | New schema reads old | Adding fields |
 | | data | |
 | Forward compatible | Old schema reads new | Deprecating |
 | | data | fields |
 | Full compatible | Both directions | Default |
 | Breaking | Neither direction | Major version |
-+--------------------------------------------------------------+
 
 SAFE CHANGES (backward + forward compatible):
 ```
@@ -264,16 +247,14 @@ Design failure handling for event processing:
 RETRY AND DLQ STRATEGY:
 
 RETRY POLICY:
-+--------------------------------------------------------------+
 | Attempt | Delay | Action |
-+--------------------------------------------------------------+
+|---|---|---|
 | 1 | Immediate | Process message |
 | 2 | 1 second | Retry (transient failure) |
 | 3 | 5 seconds | Retry (backoff) |
 | 4 | 30 seconds | Retry (extended backoff) |
 | 5 | 5 minutes | Final retry |
 | Failed | -- | Move to Dead Letter Queue |
-+--------------------------------------------------------------+
 
 DEAD LETTER QUEUE DESIGN:
 ```
@@ -283,9 +264,8 @@ Ensure safe message reprocessing when duplicates occur:
 
 ```
 IDEMPOTENCY PATTERNS:
-+--------------------------------------------------------------+
 | Pattern | How it works | Best for |
-+--------------------------------------------------------------+
+|---|---|---|
 | Idempotency key | Store processed keys | Commands |
 | | in a set/table | |
 | Natural idempotency | Operation is | Upserts, sets |
@@ -294,7 +274,6 @@ IDEMPOTENCY PATTERNS:
 | | write | |
 | Deduplication table | Event ID lookup | Event consumers|
 | | before processing | |
-+--------------------------------------------------------------+
 
 DEDUPLICATION TABLE:
 ```
@@ -304,9 +283,8 @@ Validate the event-driven architecture against best practices:
 
 ```
 EVENT ARCHITECTURE VALIDATION:
-+--------------------------------------------------------------+
 | Check | Status |
-+--------------------------------------------------------------+
+|---|---|
 | Event envelope follows standard format | PASS | FAIL |
 | All events have correlation IDs | PASS | FAIL |
 | Schema versioning strategy defined | PASS | FAIL |
@@ -420,11 +398,9 @@ EVENT ARCHITECTURE COMPLETE:
  Projections: <N> read models (CQRS)
 
 DOMAIN EVENT SUMMARY:
-+--------------------------------------------------------------+
 | Domain | Events | Topics | Consumers | DLQ | Schema |
-+--------------------------------------------------------------+
+|---|---|---|---|---|---|
 | <domain> | N | N | N | yes | avro |
-+--------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -442,9 +418,8 @@ Append after every completed event design pass. One row per session. If the file
 
 ```
 EVENT ARCHITECTURE SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 | Criterion | Required |
-+--------------------------------------------------------------+
+|---|---|
 | All events have schema definitions | YES |
 | Schema registry with compatibility checks | YES |
 | Event envelope has required fields | YES |
@@ -455,7 +430,6 @@ EVENT ARCHITECTURE SUCCESS CRITERIA:
 | Consumer lag monitoring configured | YES |
 | No sensitive data in events without encrypt| YES |
 | Domain-specific topics (no mega-topic) | YES |
-+--------------------------------------------------------------+
 
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```

@@ -31,17 +31,15 @@ grep -rn "<pattern>" --include="*.ts" --include="*.js"
 
 ```
 REFACTORING ASSESSMENT:
-┌──────────────────────────────────────────────────────┐
-│  Target: <file or module>                             │
-├──────────────────┬───────────────────────────────────┤
-│  Lines of code   │  <N>                              │
-│  Complexity      │  <cyclomatic complexity if avail> │
-│  Test coverage   │  <N%>                             │
-│  Dependents      │  <N files import this>            │
-│  Dependencies    │  <N modules this imports>         │
-│  Last modified   │  <date and by whom>               │
-│  Risk level      │  <LOW | MEDIUM | HIGH | CRITICAL> │
-└──────────────────┴───────────────────────────────────┘
+  Target: <file or module>
+| Lines of code | <N> |
+|---|---|
+| Complexity | <cyclomatic complexity if avail> |
+| Test coverage | <N%> |
+| Dependents | <N files import this> |
+| Dependencies | <N modules this imports> |
+| Last modified | <date and by whom> |
+| Risk level | <LOW | MEDIUM | HIGH | CRITICAL> |
 ```
 
 Risk assessment:
@@ -88,25 +86,19 @@ grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
 
 ```
 IMPACT ANALYSIS:
-┌──────────────────────────────────────────────────────────────┐
-│  Refactoring: Extract UserService from UserController        │
-├──────────────────────────────────────────────────────────────┤
-│  DIRECTLY AFFECTED:                                           │
-│  ✎ src/controllers/user.controller.ts  — extract methods     │
-│  + src/services/user.service.ts         — new file            │
-│  ✎ src/controllers/user.controller.spec.ts — update imports  │
-│  + src/services/user.service.spec.ts    — new test file       │
-│                                                               │
-│  INDIRECTLY AFFECTED:                                         │
-│  ✎ src/routes/user.routes.ts  — may need new injection       │
-│  ✎ src/middleware/auth.ts     — uses UserController method   │
-│                                                               │
-│  NOT AFFECTED:                                                │
-│  - src/controllers/product.controller.ts (no shared code)    │
-│  - src/models/ (no interface changes)                        │
-│                                                               │
-│  TOTAL: 4 files modified, 2 files created, 2 files unchanged │
-└──────────────────────────────────────────────────────────────┘
+  Refactoring: Extract UserService from UserController
+  DIRECTLY AFFECTED:
+  ✎ src/controllers/user.controller.ts  — extract methods
+  + src/services/user.service.ts         — new file
+  ✎ src/controllers/user.controller.spec.ts — update imports
+  + src/services/user.service.spec.ts    — new test file
+  INDIRECTLY AFFECTED:
+  ✎ src/routes/user.routes.ts  — may need new injection
+  ✎ src/middleware/auth.ts     — uses UserController method
+  NOT AFFECTED:
+  - src/controllers/product.controller.ts (no shared code)
+  - src/models/ (no interface changes)
+  TOTAL: 4 files modified, 2 files created, 2 files unchanged
 ```
 
 ### Step 4: Ensure Safety Net
@@ -124,16 +116,13 @@ npx jest --testPathPattern="<target>" 2>&1
 
 ```
 SAFETY NET:
-┌──────────────────────────────────────────────────────┐
-│  Pre-Refactoring Test Status                          │
-├──────────────────┬───────────────────────────────────┤
-│  Total tests     │  147 passing, 0 failing           │
-│  Target coverage │  78% (src/controllers/user.*)     │
-│  Gaps identified │  No test for error path line 89   │
-├──────────────────┴───────────────────────────────────┤
-│  RECOMMENDATION: Write 1 characterization test for   │
-│  the error path before proceeding                    │
-└──────────────────────────────────────────────────────┘
+  Pre-Refactoring Test Status
+| Total tests | 147 passing, 0 failing |
+|---|---|
+| Target coverage | 78% (src/controllers/user.*) |
+| Gaps identified | No test for error path line 89 |
+  RECOMMENDATION: Write 1 characterization test for
+  the error path before proceeding
 ```
 
 If coverage is below 60% for the target code:
@@ -211,21 +200,19 @@ npm test
 
 ```
 POST-REFACTORING REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Refactoring Complete                                 │
-├──────────────────┬───────────────────────────────────┤
-│  Pattern used    │  Extract Service                  │
-│  Commits         │  5 (all atomic, all green)        │
-│  Tests before    │  147 passing                      │
-│  Tests after     │  152 passing (+5 new)             │
-│  Coverage before │  78%                              │
-│  Coverage after  │  82%                              │
-│  Files modified  │  4                                │
-│  Files created   │  2                                │
-│  Files deleted   │  0                                │
-│  Dead code       │  None detected                    │
-│  Behavior change │  None (refactor only)             │
-└──────────────────┴───────────────────────────────────┘
+  Refactoring Complete
+| Pattern used | Extract Service |
+|---|---|
+| Commits | 5 (all atomic, all green) |
+| Tests before | 147 passing |
+| Tests after | 152 passing (+5 new) |
+| Coverage before | 78% |
+| Coverage after | 82% |
+| Files modified | 4 |
+| Files created | 2 |
+| Files deleted | 0 |
+| Dead code | None detected |
+| Behavior change | None (refactor only) |
 ```
 
 ## Key Behaviors
@@ -302,21 +289,20 @@ After each refactoring skill invocation, emit a structured report:
 
 ```
 REFACTORING REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Pattern used        │  <Extract | Inline | Move | Rename | Simplify> │
-│  Target              │  <file or module>              │
-│  Commits             │  <N> (all atomic, all green)   │
-│  Tests before        │  <N> passing                   │
-│  Tests after         │  <N> passing (+<N> new)        │
-│  Coverage before     │  <N>%                          │
-│  Coverage after      │  <N>%                          │
-│  Files modified      │  <N>                           │
-│  Files created       │  <N>                           │
-│  Files deleted       │  <N>                           │
-│  Dead code           │  <N> unused exports detected   │
-│  Behavior change     │  NONE (refactor only)          │
-│  Verdict             │  PASS | REVERTED               │
-└──────────────────────────────────────────────────────┘
+| Pattern used | <Extract | Inline | Move | Rename | Simplify> |
+|---|---|---|---|---|---|
+| Target | <file or module> |
+| Commits | <N> (all atomic, all green) |
+| Tests before | <N> passing |
+| Tests after | <N> passing (+<N> new) |
+| Coverage before | <N>% |
+| Coverage after | <N>% |
+| Files modified | <N> |
+| Files created | <N> |
+| Files deleted | <N> |
+| Dead code | <N> unused exports detected |
+| Behavior change | NONE (refactor only) |
+| Verdict | PASS | REVERTED |
 ```
 
 ## TSV Logging
@@ -413,59 +399,46 @@ WHILE complexity_targets is not empty AND current_iteration < max_iterations:
 
 ```
 COMPLEXITY MEASUREMENT:
-┌──────────────────────────────────────────────────────────────┐
-│  Metric               │ Threshold   │ Tool                   │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Cyclomatic complexity│ ≤ 10 per    │ eslint complexity rule │
-│  (decision paths      │ function    │ radon (Python)         │
-│  through a function)  │             │ gocyclo (Go)           │
-│                       │             │ checkstyle (Java)      │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Cognitive complexity │ ≤ 15 per    │ SonarQube/SonarLint    │
-│  (how hard it is for  │ function    │ eslint sonarjs plugin  │
-│  a human to understand│             │ cognitive_complexity   │
-│  the control flow)    │             │ (Python)               │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Lines of code (LOC)  │ ≤ 50 per   │ wc -l (raw)            │
+| Metric | Threshold | Tool |
+|---|---|---|
+| Cyclomatic complexity | ≤ 10 per | eslint complexity rule |
+| (decision paths | function | radon (Python) |
+| through a function) |  | gocyclo (Go) |
+|  |  | checkstyle (Java) |
+| Cognitive complexity | ≤ 15 per | SonarQube/SonarLint |
+| (how hard it is for | function | eslint sonarjs plugin |
+| a human to understand |  | cognitive_complexity |
+| the control flow) |  | (Python) |
+| Lines of code (LOC) | ≤ 50 per | wc -l (raw) |
 ```
 
 ### Keep/Discard Decision Matrix
 
 ```
 KEEP/DISCARD CRITERIA:
-┌──────────────────────────────────────────────────────────────┐
-│  Condition                              │ Decision           │
-├─────────────────────────────────────────┼────────────────────┤
-│  Tests fail after transformation        │ DISCARD (always)   │
-├─────────────────────────────────────────┼────────────────────┤
-│  Cyclomatic AND cognitive both reduced  │ KEEP               │
-├─────────────────────────────────────────┼────────────────────┤
-│  Cyclomatic reduced, cognitive neutral  │ KEEP               │
-├─────────────────────────────────────────┼────────────────────┤
-│  Cognitive reduced, cyclomatic neutral  │ KEEP               │
-├─────────────────────────────────────────┼────────────────────┤
-│  Both metrics unchanged or increased    │ DISCARD            │
-├─────────────────────────────────────────┼────────────────────┤
-│  LOC increased > 30% without complexity │ DISCARD            │
+| Condition | Decision |
+|---|---|
+| Tests fail after transformation | DISCARD (always) |
+| Cyclomatic AND cognitive both reduced | KEEP |
+| Cyclomatic reduced, cognitive neutral | KEEP |
+| Cognitive reduced, cyclomatic neutral | KEEP |
+| Both metrics unchanged or increased | DISCARD |
+| LOC increased > 30% without complexity | DISCARD |
 ```
 
 ### Complexity Reduction Report
 
 ```
 COMPLEXITY REDUCTION REPORT:
-┌──────────────────────────────────────────────────────────────┐
-│  Target              │ Transformation     │ Before │ After   │
-│                      │                    │ CC/Cog │ CC/Cog  │
-├──────────────────────┼────────────────────┼────────┼─────────┤
-│  <file:function>     │ <transformation>   │ <N>/<N>│ <N>/<N> │
-│  Decision: KEEP|DISCARD — <reason>                           │
-├──────────────────────┼────────────────────┼────────┼─────────┤
-│  <file:function>     │ <transformation>   │ <N>/<N>│ <N>/<N> │
-│  Decision: KEEP|DISCARD — <reason>                           │
-├──────────────────────┴────────────────────┴────────┴─────────┤
-│  SUMMARY                                                      │
-│  Transformations attempted: <N>                               │
-│  Transformations kept: <N>                                    │
-│  Transformations discarded: <N>                               │
+| Target | Transformation | Before | After |
+|  |  | CC/Cog | CC/Cog |
+| <file:function> | <transformation> | <N>/<N> | <N>/<N> |
+  Decision: KEEP|DISCARD — <reason>
+| <file:function> | <transformation> | <N>/<N> | <N>/<N> |
+  Decision: KEEP|DISCARD — <reason>
+  SUMMARY
+  Transformations attempted: <N>
+  Transformations kept: <N>
+  Transformations discarded: <N>
 ```
 

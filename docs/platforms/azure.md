@@ -132,20 +132,16 @@ cost_budget: 600                 # monthly USD threshold
 ### Example Cost Report
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Azure Cost Optimization Report                          │
-├─────────────────────────────────────────────────────────┤
-│ Current monthly spend:           $10,800                │
-│ Projected savings:               $3,240 (30.0%)        │
-│                                                         │
-│ Top recommendations:                                    │
-│  1. Purchase 3-year reservations for AKS   → −$920/mo  │
-│  2. Enable Azure Hybrid Benefit (12 VMs)   → −$680/mo  │
-│  3. Switch Cosmos DB to autoscale           → −$480/mo  │
-│  4. Right-size App Service to P1v3          → −$420/mo  │
-│  5. Move dev/test to B-series VMs           → −$380/mo  │
-│  6. Enable Blob lifecycle management        → −$360/mo  │
-└─────────────────────────────────────────────────────────┘
+  Azure Cost Optimization Report
+  Current monthly spend:           $10,800
+  Projected savings:               $3,240 (30.0%)
+  Top recommendations:
+  1. Purchase 3-year reservations for AKS   → −$920/mo
+  2. Enable Azure Hybrid Benefit (12 VMs)   → −$680/mo
+  3. Switch Cosmos DB to autoscale           → −$480/mo
+  4. Right-size App Service to P1v3          → −$420/mo
+  5. Move dev/test to B-series VMs           → −$380/mo
+  6. Enable Blob lifecycle management        → −$360/mo
 ```
 
 ---
@@ -288,17 +284,12 @@ cost_budget: 600                 # monthly USD threshold
 ### Pipeline Stages
 
 ```
-┌────────┐   ┌──────┐   ┌──────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│  Push  │──▶│Build │──▶│ Test │──▶│   ACR    │──▶│  Deploy  │──▶│  Verify  │
-│        │   │Docker│   │Unit+ │   │  Push    │   │ Staging  │   │  Smoke   │
-│        │   │Image │   │ Intg │   │          │   │          │   │  Tests   │
-└────────┘   └──────┘   └──────┘   └──────────┘   └──────────┘   └──────────┘
-                                                         │
+| Push | ──▶ | Build | ──▶ | Test | ──▶ | ACR | ──▶ | Deploy | ──▶ | Verify |
+|  |  | Docker |  | Unit+ |  | Push |  | Staging |  | Smoke |
+|  |  | Image |  | Intg |  |  |  |  |  | Tests |
                                                          ▼
-                                                   ┌──────────┐
-                                                   │  Deploy  │
-                                                   │Production│
-                                                   └──────────┘
+  Deploy
+  Production
 ```
 
 ### Federated Identity (No Stored Secrets)

@@ -86,81 +86,81 @@ godmode/
 ├── SKILL.md                          # Orchestrator skill (the /godmode command)
 ├── settings.json                     # Plugin-level defaults (iterations, model, etc.)
 ├── hooks/
-│   ├── session-start.md              # Hook: runs on session start
-│   └── lifecycle.md                  # Hook: phase transition events
+  ├── session-start.md              # Hook: runs on session start
+  └── lifecycle.md                  # Hook: phase transition events
 ├── skills/
-│   ├── think/
+  ├── think/
 │   │   ├── SKILL.md                  # /godmode:think (brainstorm)
 │   │   ├── references/
 │   │   │   ├── brainstorm-protocol.md
 │   │   │   └── visual-companion.md
 │   │   └── templates/
 │   │       └── spec-template.md
-│   ├── predict/
+  ├── predict/
 │   │   ├── SKILL.md                  # /godmode:predict
 │   │   └── references/
 │   │       └── persona-definitions.md
-│   ├── scenario/
+  ├── scenario/
 │   │   ├── SKILL.md                  # /godmode:scenario
 │   │   └── references/
 │   │       └── 12-dimensions.md
-│   ├── plan/
+  ├── plan/
 │   │   ├── SKILL.md                  # /godmode:plan
 │   │   └── references/
 │   │       └── task-decomposition.md
-│   ├── build/
+  ├── build/
 │   │   ├── SKILL.md                  # /godmode:build
 │   │   └── references/
 │   │       ├── parallel-dispatch.md
 │   │       └── review-protocol.md
-│   ├── test/
+  ├── test/
 │   │   ├── SKILL.md                  # /godmode:test
 │   │   └── references/
 │   │       └── tdd-cycle.md
-│   ├── review/
+  ├── review/
 │   │   ├── SKILL.md                  # /godmode:review
 │   │   └── references/
 │   │       └── severity-levels.md
-│   ├── optimize/
+  ├── optimize/
 │   │   ├── SKILL.md                  # /godmode:optimize
 │   │   └── references/
 │   │       ├── loop-protocol.md
 │   │       ├── metrics-database.md
 │   │       └── guard-system.md
-│   ├── debug/
+  ├── debug/
 │   │   ├── SKILL.md                  # /godmode:debug
 │   │   └── references/
 │   │       └── investigation-techniques.md
-│   ├── fix/
+  ├── fix/
 │   │   ├── SKILL.md                  # /godmode:fix
 │   │   └── references/
 │   │       └── fix-protocol.md
-│   ├── secure/
+  ├── secure/
 │   │   ├── SKILL.md                  # /godmode:secure
 │   │   └── references/
 │   │       ├── stride-owasp.md
 │   │       └── red-team-personas.md
-│   ├── ship/
+  ├── ship/
 │   │   ├── SKILL.md                  # /godmode:ship
 │   │   └── references/
 │   │       └── shipping-workflow.md
-│   ├── finish/
+  ├── finish/
 │   │   ├── SKILL.md                  # /godmode:finish
 │   │   └── references/
 │   │       └── completion-options.md
-│   ├── setup/
+  ├── setup/
 │   │   ├── SKILL.md                  # /godmode:setup
 │   │   └── references/
 │   │       └── wizard-steps.md
-│   └── verify/
-│       ├── SKILL.md                  # /godmode:verify
-│       └── references/
-│           └── evidence-protocol.md
+  └── verify/
+  ├── SKILL.md                  # /godmode:verify
+  └── references/
+  └── evidence-protocol.md
 ├── shared/
-│   ├── git-memory.md                 # Git-as-memory conventions (shared across skills)
-│   ├── results-format.md            # TSV logging format
-│   ├── handoff-protocol.md          # Phase transition protocol
-│   └── crash-recovery.md            # Error handling & recovery
+  ├── git-memory.md                 # Git-as-memory conventions (shared across skills)
+  ├── results-format.md            # TSV logging format
+  ├── handoff-protocol.md          # Phase transition protocol
+  └── crash-recovery.md            # Error handling & recovery
 └── .claude-plugin/
     ├── manifest.json                 # Plugin manifest for Claude Code marketplace
     └── marketplace.json              # Marketplace metadata (icon, description, tags)
@@ -526,17 +526,13 @@ Personas rotate based on `--domain`:
 **Step 3: Consensus Matrix**
 
 ```
-┌─────────────┬─────────┬────────────┬──────────────────────────────┐
-│ Persona     │ Verdict │ Confidence │ Key Insight                  │
-├─────────────┼─────────┼────────────┼──────────────────────────────┤
-│ Architect   │ APPROVE │ 4/5        │ Clean separation of concerns │
-│ Skeptic     │ CONCERN │ 3/5        │ Redis SPOF needs failover    │
-│ User        │ APPROVE │ 5/5        │ Simple API, good defaults    │
-│ Operator    │ CONCERN │ 4/5        │ Need metrics dashboard       │
-│ Newcomer    │ APPROVE │ 4/5        │ Good docs, clear examples    │
-├─────────────┼─────────┼────────────┼──────────────────────────────┤
-│ CONSENSUS   │ PROCEED │ 4.0 avg    │ Proceed with 2 mitigations   │
-└─────────────┴─────────┴────────────┴──────────────────────────────┘
+| Persona | Verdict | Confidence | Key Insight |
+| Architect | APPROVE | 4/5 | Clean separation of concerns |
+| Skeptic | CONCERN | 3/5 | Redis SPOF needs failover |
+| User | APPROVE | 5/5 | Simple API, good defaults |
+| Operator | CONCERN | 4/5 | Need metrics dashboard |
+| Newcomer | APPROVE | 4/5 | Good docs, clear examples |
+| CONSENSUS | PROCEED | 4.0 avg | Proceed with 2 mitigations |
 ```
 
 **Step 4: Synthesis**
@@ -566,17 +562,13 @@ Personas rotate based on `--domain`:
 User: /godmode:predict --decision "Use Redis for rate limiting vs in-memory"
 
 Agent:
-┌─────────────┬─────────┬────────────┬─────────────────────────────────┐
-│ Persona     │ Verdict │ Confidence │ Key Insight                     │
-├─────────────┼─────────┼────────────┼─────────────────────────────────┤
-│ Architect   │ APPROVE │ 5/5        │ Redis enables horizontal scale  │
-│ Skeptic     │ CONCERN │ 4/5        │ Redis connection pool can leak  │
-│ User        │ APPROVE │ 4/5        │ Transparent to API consumers    │
-│ Operator    │ CONCERN │ 3/5        │ Another service to monitor      │
-│ Newcomer    │ APPROVE │ 3/5        │ Redis is well-documented        │
-├─────────────┼─────────┼────────────┼─────────────────────────────────┤
-│ CONSENSUS   │ PROCEED │ 3.8 avg    │ Proceed with 2 mitigations      │
-└─────────────┴─────────┴────────────┴─────────────────────────────────┘
+| Persona | Verdict | Confidence | Key Insight |
+| Architect | APPROVE | 5/5 | Redis enables horizontal scale |
+| Skeptic | CONCERN | 4/5 | Redis connection pool can leak |
+| User | APPROVE | 4/5 | Transparent to API consumers |
+| Operator | CONCERN | 3/5 | Another service to monitor |
+| Newcomer | APPROVE | 3/5 | Redis is well-documented |
+| CONSENSUS | PROCEED | 3.8 avg | Proceed with 2 mitigations |
 
 Mitigations:
 1. Add connection pool health check and auto-reconnect
@@ -642,14 +634,11 @@ Mitigations:
 
 ```
 Dimension: CONCURRENCY
-┌───┬────────────────────────────┬──────────┬──────────┐
-│ # │ Scenario                   │ Risk     │ Handled? │
-├───┼────────────────────────────┼──────────┼──────────┤
-│ 1 │ Two users claim same item  │ HIGH     │ NO       │
-│ 2 │ Rate limit counter race    │ MEDIUM   │ PARTIAL  │
-│ 3 │ Cache invalidation during  │ LOW      │ YES      │
-│   │ concurrent writes          │          │          │
-└───┴────────────────────────────┴──────────┴──────────┘
+| # | Scenario | Risk | Handled? |
+| 1 | Two users claim same item | HIGH | NO |
+| 2 | Rate limit counter race | MEDIUM | PARTIAL |
+| 3 | Cache invalidation during | LOW | YES |
+|  | concurrent writes |  |  |
 ```
 
 **Step 4: Risk Summary**
@@ -1198,13 +1187,13 @@ Each iteration follows this exact sequence:
 
 ```
 ┌─→ Phase 1: READ HISTORY
-│   Phase 2: ANALYZE
-│   Phase 3: PLAN CHANGE
-│   Phase 4: IMPLEMENT
-│   Phase 5: VERIFY (mechanical)
-│   Phase 6: GUARD CHECK
-│   Phase 7: KEEP or REVERT
-│   Phase 8: LOG RESULTS
+  Phase 2: ANALYZE
+  Phase 3: PLAN CHANGE
+  Phase 4: IMPLEMENT
+  Phase 5: VERIFY (mechanical)
+  Phase 6: GUARD CHECK
+  Phase 7: KEEP or REVERT
+  Phase 8: LOG RESULTS
 └────────────────────────┘ (repeat until target met or max iterations)
 ```
 
@@ -2608,7 +2597,6 @@ After each iteration, print a compact progress summary:
   Kept:       3 / 4
   Trend:      ↓↓↓ (improving rapidly)
   ETA:        Target reached! ✓
-────────────────────────────────────────────────────────────────
 ```
 
 ### Trend Indicators
@@ -2693,7 +2681,6 @@ When a cycle completes, results are archived:
 
 ```
 Main Agent (Coordinator)
-  │
   ├── Creates worktrees for each parallel task
   ├── Dispatches sub-agents with task context
   ├── Monitors progress and handles failures
@@ -2815,7 +2802,6 @@ godmode/visual/companion.html   # Single file, everything inline
 
 ```
 CLI (Agent)  ←→  WebSocket  ←→  Browser (Visual Companion)
-     │                                │
      └── Sends events ──────────────→ Displays in real-time
      └── Receives user actions ←──── Canvas interactions
 ```
@@ -2867,23 +2853,12 @@ Messages are JSON objects with a `type` field:
 - Spatial layout helps organize thinking
 
 ```
-┌─────────────────────────────────────────────────┐
-│  BRAINSTORM: Rate Limiter                       │
-│                                                 │
-│  ┌──────────┐     ┌──────────────┐              │
-│  │ Q: What   │────→│ A: Existing  │              │
-│  │ setup?    │     │ Express API  │              │
-│  └──────────┘     └──────────────┘              │
-│       │                                          │
-│  ┌──────────┐     ┌──────────────┐              │
-│  │ Q: Scale? │────→│ A: 10K RPM   │              │
-│  └──────────┘     └──────────────┘              │
-│                                                 │
-│  ┌─────────────┐ ┌─────────────┐ ┌────────────┐│
-│  │ Token Bucket │ │ Sliding Win │ │ API Gateway ││
-│  │ ✓ Selected  │ │             │ │             ││
-│  └─────────────┘ └─────────────┘ └────────────┘│
-└─────────────────────────────────────────────────┘
+  BRAINSTORM: Rate Limiter
+|  | Q: What | ────→ | A: Existing |  |
+|  | setup? |  | Express API |  |
+|  | Q: Scale? | ────→ | A: 10K RPM |  |
+|  | Token Bucket |  | Sliding Win |  | API Gateway |  |
+|  | ✓ Selected |  |  |  |  |  |
 ```
 
 **Mode 2: Progress Dashboard**
@@ -2893,20 +2868,16 @@ Messages are JSON objects with a `type` field:
 - Current phase indicator
 
 ```
-┌─────────────────────────────────────────────────┐
-│  OPTIMIZE: p95 Response Time                    │
-│                                                 │
-│  340ms ┤█                                       │
-│  285ms ┤ █                                      │
-│  241ms ┤  █                                     │
-│  198ms ┤   █ ← current                         │
-│  200ms ┤─ ─ ─ ─ target ─ ─ ─                   │
-│        └────────────────────                    │
-│         1   2   3   4                           │
-│                                                 │
-│  Guards: [✓ tests] [✓ coverage] [✓ lint]        │
-│  Progress: ████████░░ 4/25 iterations           │
-└─────────────────────────────────────────────────┘
+  OPTIMIZE: p95 Response Time
+  340ms ┤█
+  285ms ┤ █
+  241ms ┤  █
+  198ms ┤   █ ← current
+  200ms ┤─ ─ ─ ─ target ─ ─ ─
+  └────────────────────
+  1   2   3   4
+  Guards: [✓ tests] [✓ coverage] [✓ lint]
+  Progress: ████████░░ 4/25 iterations
 ```
 
 **Mode 3: Plan View**
@@ -3100,26 +3071,19 @@ Usage:
 
 ```
 ┌─────────┐     spec.md      ┌──────────┐     plan.md      ┌─────────┐
-│  think   │ ──────────────→  │   plan   │ ──────────────→  │  build  │
-└─────────┘                   └──────────┘                   └─────────┘
-     │                              ↑                             │
-     │  prediction.md          scenario.md                        │
+| think | ──────────────→ | plan | ──────────────→ | build |
+  ↑
+  prediction.md          scenario.md
      ↓                              │                             │
-┌─────────┐                   ┌──────────┐                   ┌─────────┐
-│ predict  │                   │ scenario │                   │ review  │
-└─────────┘                   └──────────┘                   └─────────┘
-                                                                  │
+| predict |  | scenario |  | review |
                                                             state.json
                                                                   ↓
 ┌─────────┐   results.tsv    ┌──────────┐    findings.md    ┌─────────┐
-│ optimize │ ←──────────────  │   fix    │ ←──────────────  │ secure  │
-└─────────┘                   └──────────┘                   └─────────┘
-     │
-     │  results.tsv + state.json
+| optimize | ←────────────── | fix | ←────────────── | secure |
+  results.tsv + state.json
      ↓
 ┌─────────┐   ship-record    ┌──────────┐
-│  ship   │ ──────────────→  │  finish  │
-└─────────┘                   └──────────┘
+| ship | ──────────────→ | finish |
 ```
 
 ### Shared State Fields
@@ -3196,24 +3160,24 @@ For non-Claude Code platforms, adapter files are provided:
 ```
 godmode/
 ├── adapters/
-│   ├── shared/
+  ├── shared/
 │   │   └── sequential-dispatch.md  # How to run parallel agents sequentially
-│   ├── gemini/
+  ├── gemini/
 │   │   ├── README.md               # Setup instructions for Gemini CLI
 │   │   ├── gemini-config.md        # Tool mapping + execution guide
 │   │   └── install.sh              # Copies config to project
-│   ├── opencode/
+  ├── opencode/
 │   │   ├── README.md               # Setup instructions for OpenCode
 │   │   ├── plugin.json             # OpenCode plugin manifest
 │   │   └── install.sh              # Installs plugin for OpenCode
-│   ├── cursor/
+  ├── cursor/
 │   │   ├── README.md               # Setup instructions for Cursor
 │   │   ├── .cursorrules
 │   │   └── install.sh
-│   └── codex/
-│       ├── README.md               # Setup instructions for Codex
-│       ├── codex-config.md
-│       └── install.sh
+  └── codex/
+  ├── README.md               # Setup instructions for Codex
+  ├── codex-config.md
+  └── install.sh
 ```
 
 Additionally, 4 core skills (godmode, build, optimize, review) include `## Platform Fallback` sections that explain how to degrade gracefully on platforms without `Agent()` or `EnterWorktree` tools. See `adapters/shared/sequential-dispatch.md` for the full protocol.
@@ -4531,7 +4495,6 @@ Task Budget Tracker:
   Task 002: Config schema       [██████] 1/1 iterations (complete ✓)
   Task 003: Rate limiter        [██░░░░] 2/5 iterations (3 remaining)
   Task 004: Logging             [░░░░░░] 0/2 iterations (not started)
-  ─────────────────────────────────────────────────
   Total:                        5/11 iterations used (6 remaining)
 ```
 
@@ -5295,7 +5258,6 @@ The marketplace validates:
 
 ```
 SESSION START
-─────────────
 Godmode: You're in a Node.js Express project. No existing state.
 
 User: /godmode
@@ -5773,110 +5735,78 @@ Godmode is a 16-skill Claude Code plugin organized into 4 phases. Every skill is
 ### Architecture Diagram (ASCII)
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        GODMODE ORCHESTRATOR                         │
-│                          /godmode command                            │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
-│  │ Auto-Detect   │ │ Smart Route  │ │ State Manager│ │ Hook System│ │
-│  │ Project state │ │ Phase→Skill  │ │ .godmode/    │ │ Pre/Post   │ │
-│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
-└──────────────────────────────┬───────────────────────────────────────┘
-                               │
+  GODMODE ORCHESTRATOR
+  /godmode command
+|  | Auto-Detect |  | Smart Route |  | State Manager |  | Hook System |  |
+|  | Project state |  | Phase→Skill |  | .godmode/ |  | Pre/Post |  |
           ┌────────────────────┼────────────────────┐
           ▼                    ▼                    ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│   THINK PHASE   │ │   BUILD PHASE   │ │ OPTIMIZE PHASE  │
+| THINK PHASE |  | BUILD PHASE |  | OPTIMIZE PHASE |
 │                 │ │                 │ │                 │
-│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ ┌─────────────┐ │
-│ │   think     │ │ │ │    plan     │ │ │ │  optimize   │ │
-│ │ (brainstorm)│ │ │ │ (decompose) │ │ │ │ (8-phase    │ │
-│ └─────────────┘ │ │ └─────────────┘ │ │ │  loop)      │ │
-│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ └─────────────┘ │
-│ │  predict    │ │ │ │   build     │ │ │ ┌─────────────┐ │
-│ │ (5 personas)│ │ │ │ (TDD+review)│ │ │ │   debug     │ │
-│ └─────────────┘ │ │ └─────────────┘ │ │ │ (7 methods) │ │
-│ ┌─────────────┐ │ │ ┌─────────────┐ │ │ └─────────────┘ │
-│ │  scenario   │ │ │ │    test     │ │ │ ┌─────────────┐ │
-│ │ (12 dims)   │ │ │ │ (RED-GREEN) │ │ │ │    fix      │ │
-│ └─────────────┘ │ │ └─────────────┘ │ │ │ (1 per iter)│ │
-│                 │ │ ┌─────────────┐ │ │ └─────────────┘ │
-│                 │ │ │   review    │ │ │ ┌─────────────┐ │
-│                 │ │ │ (severity)  │ │ │ │   secure    │ │
-│                 │ │ └─────────────┘ │ │ │ (STRIDE+    │ │
-│                 │ │                 │ │ │  OWASP)     │ │
-│                 │ │                 │ │ └─────────────┘ │
-└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
-         │                   │                    │
+| ┌─────────────┐ |  | ┌─────────────┐ |  | ┌─────────────┐ |
+|  | think |  |  |  | plan |  |  |  | optimize |  |
+|  | (brainstorm) |  |  |  | (decompose) |  |  |  | (8-phase |  |
+| └─────────────┘ |  | └─────────────┘ |  |  | loop) |  |
+| ┌─────────────┐ |  | ┌─────────────┐ |  | └─────────────┘ |
+|  | predict |  |  |  | build |  |  | ┌─────────────┐ |
+|  | (5 personas) |  |  |  | (TDD+review) |  |  |  | debug |  |
+| └─────────────┘ |  | └─────────────┘ |  |  | (7 methods) |  |
+| ┌─────────────┐ |  | ┌─────────────┐ |  | └─────────────┘ |
+|  | scenario |  |  |  | test |  |  | ┌─────────────┐ |
+|  | (12 dims) |  |  |  | (RED-GREEN) |  |  |  | fix |  |
+| └─────────────┘ |  | └─────────────┘ |  |  | (1 per iter) |  |
+|  |  | ┌─────────────┐ |  | └─────────────┘ |
+|  |  |  | review |  |  | ┌─────────────┐ |
+|  |  |  | (severity) |  |  |  | secure |  |
+|  |  | └─────────────┘ |  |  | (STRIDE+ |  |
+|  |  |  |  |  | OWASP) |  |
+|  |  |  |  | └─────────────┘ |
          │    Handoff        │    Handoff         │    Handoff
          │    Protocol       │    Protocol        │    Protocol
          ▼                   ▼                    ▼
-                    ┌─────────────────┐
-                    │   SHIP PHASE    │
-                    │                 │
-                    │ ┌─────────────┐ │
-                    │ │    ship     │ │
-                    │ │ (8 phases)  │ │
-                    │ └─────────────┘ │
-                    │ ┌─────────────┐ │
-                    │ │   finish    │ │
-                    │ │ (4 options) │ │
-                    │ └─────────────┘ │
-                    └────────┬────────┘
-                             │
+  SHIP PHASE
+|  | ship |  |
+|  | (8 phases) |  |
+|  | finish |  |
+|  | (4 options) |  |
                              ▼
-                    ┌─────────────────┐
-                    │  META SKILLS    │
-                    │ (always active) │
-                    │                 │
-                    │ • setup         │
-                    │ • verify        │
-                    │ • hooks         │
-                    └─────────────────┘
+  META SKILLS
+  (always active)
+  • setup
+  • verify
+  • hooks
 
-┌──────────────────────────────────────────────────────────────────────┐
-│                     CROSS-CUTTING SYSTEMS                           │
-│                                                                      │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
-│  │ Git-as-Memory│ │  Mechanical  │ │ Guard System │ │  Results   │ │
-│  │              │ │ Verification │ │              │ │  Logging   │ │
-│  │ • Commits as │ │              │ │ • Hard guards│ │            │ │
-│  │   memory     │ │ • Metrics    │ │ • Soft guards│ │ • TSV log  │ │
-│  │ • History    │ │ • Validation │ │ • Max retry  │ │ • Progress │ │
-│  │   learning   │ │ • Tolerance  │ │ • Auto-revert│ │ • Reports  │ │
-│  │ • Reverts as │ │ • Database   │ │              │ │ • Archive  │ │
-│  │   lessons    │ │              │ │              │ │            │ │
-│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
-│                                                                      │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────────────┐ │
-│  │   Parallel   │ │   Visual     │ │    Crash     │ │ Iteration  │ │
-│  │   Dispatch   │ │  Companion   │ │   Recovery   │ │  Budgets   │ │
+  CROSS-CUTTING SYSTEMS
+|  | Git-as-Memory |  | Mechanical |  | Guard System |  | Results |  |
+|  |  |  | Verification |  |  |  | Logging |  |
+|  | • Commits as |  |  |  | • Hard guards |  |  |  |
+|  | memory |  | • Metrics |  | • Soft guards |  | • TSV log |  |
+|  | • History |  | • Validation |  | • Max retry |  | • Progress |  |
+|  | learning |  | • Tolerance |  | • Auto-revert |  | • Reports |  |
+|  | • Reverts as |  | • Database |  |  |  | • Archive |  |
+|  | lessons |  |  |  |  |  |  |  |
+|  | Parallel |  | Visual |  | Crash |  | Iteration |  |
+|  | Dispatch |  | Companion |  | Recovery |  | Budgets |  |
 │  │              │ │              │ │              │ │            │ │
-│  │ • Worktrees  │ │ • Canvas     │ │ • Resume     │ │ • Auto-est │ │
-│  │ • Model match│ │ • Dashboard  │ │ • Checkpoint │ │ • Track    │ │
-│  │ • Merge      │ │ • WebSocket  │ │ • Dirty state│ │ • Overrun  │ │
-│  └──────────────┘ └──────────────┘ └──────────────┘ └────────────┘ │
-└──────────────────────────────────────────────────────────────────────┘
+|  | • Worktrees |  | • Canvas |  | • Resume |  | • Auto-est |  |
+|  | • Model match |  | • Dashboard |  | • Checkpoint |  | • Track |  |
+|  | • Merge |  | • WebSocket |  | • Dirty state |  | • Overrun |  |
 ```
 
 ### Data Flow Summary
 
 ```
 User Input
-    │
     ▼
 Orchestrator (auto-detect phase, route to skill)
-    │
     ▼
 Skill Execution (follows SKILL.md workflow)
-    │
     ├── Reads: state.json, git history, references
     ├── Produces: artifacts (specs, plans, reports, code)
     ├── Verifies: mechanical metrics, guards
     └── Commits: everything to git
-    │
     ▼
 Handoff (artifacts + state → next skill)
-    │
     ▼
 Next Phase
 ```
@@ -6780,7 +6710,6 @@ Skills for accelerating the daily development cycle: generating new code from pa
 ```
 THINK → PLAN → SCAFFOLD → BUILD → REFACTOR → REVIEW → SHIP
                   ↑                    ↑          ↑
-                  │                    │          │
                Generate             Transform   Pair
                boilerplate          structure   program
 ```
@@ -8031,7 +7960,6 @@ The security specialization skills form a comprehensive security workflow:
 
 ```
 /godmode:secure  ->  /godmode:pentest  ->  /godmode:fix  ->  /godmode:pentest --retest
-     |                                          |
   STRIDE + OWASP              Verify fixes with re-testing
   audit identifies             after remediation
   areas to test

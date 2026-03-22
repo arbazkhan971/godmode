@@ -22,29 +22,17 @@ Comprehensive guide to microservices architecture patterns covering decompositio
 Business capabilities represent what a business does to generate value. Each capability maps to a service.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    E-Commerce Platform                    │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  Product     │  │  Order       │  │  Customer    │  │
-│  │  Management  │  │  Management  │  │  Management  │  │
-│  │              │  │              │  │              │  │
-│  │  - catalog   │  │  - placement │  │  - profile   │  │
-│  │  - pricing   │  │  - tracking  │  │  - address   │  │
-│  │  - inventory │  │  - returns   │  │  - loyalty   │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  Payment     │  │  Shipping    │  │  Marketing   │  │
-│  │  Processing  │  │  & Delivery  │  │  & Promo     │  │
-│  │              │  │              │  │              │  │
-│  │  - charge    │  │  - routing   │  │  - campaigns │  │
-│  │  - refund    │  │  - tracking  │  │  - coupons   │  │
-│  │  - ledger    │  │  - labels    │  │  - analytics │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+  E-Commerce Platform
+|  | Product |  | Order |  | Customer |  |
+|  | Management |  | Management |  | Management |  |
+|  | - catalog |  | - placement |  | - profile |  |
+|  | - pricing |  | - tracking |  | - address |  |
+|  | - inventory |  | - returns |  | - loyalty |  |
+|  | Payment |  | Shipping |  | Marketing |  |
+|  | Processing |  | & Delivery |  | & Promo |  |
+|  | - charge |  | - routing |  | - campaigns |  |
+|  | - refund |  | - tracking |  | - coupons |  |
+|  | - ledger |  | - labels |  | - analytics |  |
 ```
 
 **When to use**: Stable business domains with clear boundaries.
@@ -58,46 +46,29 @@ Business capabilities represent what a business does to generate value. Each cap
 Domain-Driven Design identifies bounded contexts through domain analysis.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Domain Model Map                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  CORE DOMAINS (competitive advantage):                       │
-│  ┌──────────────────┐  ┌──────────────────┐                 │
-│  │  Pricing Engine   │  │  Recommendation  │                 │
-│  │  (complex rules,  │  │  Engine          │                 │
-│  │   dynamic pricing)│  │  (ML-driven)     │                 │
-│  └──────────────────┘  └──────────────────┘                 │
-│                                                              │
-│  SUPPORTING DOMAINS (necessary but not differentiating):     │
-│  ┌──────────────────┐  ┌──────────────────┐                 │
-│  │  Inventory        │  │  Shipping        │                 │
-│  │  Management       │  │  Calculation     │                 │
-│  └──────────────────┘  └──────────────────┘                 │
-│                                                              │
-│  GENERIC DOMAINS (commodity — buy or use OSS):               │
-│  ┌──────────────────┐  ┌──────────────────┐                 │
-│  │  Authentication   │  │  Email /         │                 │
-│  │  (Auth0/Keycloak) │  │  Notification    │                 │
-│  └──────────────────┘  └──────────────────┘                 │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+  Domain Model Map
+  CORE DOMAINS (competitive advantage):
+|  | Pricing Engine |  | Recommendation |  |
+|  | (complex rules, |  | Engine |  |
+|  | dynamic pricing) |  | (ML-driven) |  |
+  SUPPORTING DOMAINS (necessary but not differentiating):
+|  | Inventory |  | Shipping |  |
+|  | Management |  | Calculation |  |
+  GENERIC DOMAINS (commodity — buy or use OSS):
+|  | Authentication |  | Email / |  |
+|  | (Auth0/Keycloak) |  | Notification |  |
 ```
 
 **Context Mapping Relationships**:
 
 ```
-┌───────────────┐                    ┌───────────────┐
-│  Order        │   Partnership      │  Inventory    │
-│  Context      │◀══════════════════▶│  Context      │
+| Order | Partnership | Inventory |
+| Context | ◀══════════════════▶ | Context |
 └───────┬───────┘                    └───────────────┘
-        │
-        │ Customer/Supplier
-        │
+  Customer/Supplier
 ┌───────▼───────┐     Anti-corruption    ┌───────────────┐
-│  Payment      │     Layer (ACL)        │  External     │
-│  Context      │◀──────────────────────▶│  PSP API      │
-└───────────────┘                        └───────────────┘
+| Payment | Layer (ACL) | External |
+| Context | ◀──────────────────────▶ | PSP API |
 ```
 
 | Relationship | Description | Use When |
@@ -128,47 +99,31 @@ Each step = potential service boundary
 
 ```
 Phase 1: Monolith handles everything
-┌──────────────────────────────────────────┐
-│                MONOLITH                    │
-│  ┌────────┐ ┌────────┐ ┌────────┐       │
-│  │  Auth  │ │ Orders │ │Shipping│       │
-│  └────────┘ └────────┘ └────────┘       │
-└──────────────────────────────────────────┘
-
+  MONOLITH
+|  | Auth |  | Orders |  | Shipping |  |
 Phase 2: New features as services; proxy routes
-┌─────────────────┐
-│   API Gateway    │─────────────────────┐
-│   (Facade)       │                     │
+| API Gateway | ─────────────────────┐ |
+| (Facade) |  |
 └────────┬────────┘                     │
-         │                              │
 ┌────────▼──────────────────┐   ┌───────▼──────┐
-│        MONOLITH           │   │  New Service  │
-│  ┌────────┐ ┌────────┐   │   │  (Shipping)   │
-│  │  Auth  │ │ Orders │   │   │               │
-│  └────────┘ └────────┘   │   └──────────────┘
-└───────────────────────────┘
+| MONOLITH |  | New Service |
+| ┌────────┐ ┌────────┐ |  | (Shipping) |
+|  | Auth |  | Orders |  |  |  |
+| └────────┘ └────────┘ | └──────────────┘ |
 
 Phase 3: Gradually extract more services
-┌─────────────────┐
-│   API Gateway    │─────────────┬────────────┐
+| API Gateway | ─────────────┬────────────┐ |
 └────────┬────────┘             │            │
-         │                      │            │
 ┌────────▼────────┐  ┌─────────▼──┐  ┌──────▼──────┐
-│   MONOLITH      │  │  Order     │  │  Shipping   │
-│  ┌────────┐     │  │  Service   │  │  Service    │
-│  │  Auth  │     │  └────────────┘  └─────────────┘
-│  └────────┘     │
-└─────────────────┘
-
+| MONOLITH |  | Order |  | Shipping |
+| ┌────────┐ |  | Service |  | Service |
+|  | Auth |  | └────────────┘  └─────────────┘ |
 Phase 4: Monolith fully replaced
-┌─────────────────┐
-│   API Gateway    │──┬──────────┬────────────┐
+| API Gateway | ──┬──────────┬────────────┐ |
 └─────────────────┘  │          │            │
-                      │          │            │
               ┌───────▼──┐ ┌────▼───────┐ ┌──▼──────────┐
-              │  Auth    │ │  Order     │ │  Shipping   │
-              │  Service │ │  Service   │ │  Service    │
-              └──────────┘ └────────────┘ └─────────────┘
+| Auth |  | Order |  | Shipping |
+| Service |  | Service |  | Service |
 ```
 
 ### Service Granularity Checklist
@@ -204,8 +159,8 @@ Right-Sized:
 
 ```
 ┌──────────┐   HTTP/gRPC    ┌──────────┐   HTTP/gRPC    ┌──────────┐
-│ Service A │──────────────▶│ Service B │──────────────▶│ Service C │
-│           │◀──────────────│           │◀──────────────│           │
+| Service A | ──────────────▶ | Service B | ──────────────▶ | Service C |
+|  | ◀────────────── |  | ◀────────────── |  |
 └──────────┘   response     └──────────┘   response     └──────────┘
 
 Timeline:
@@ -231,18 +186,12 @@ Total latency = latency(A→B) + latency(B→C) + processing
 #### API Composition Pattern
 
 ```
-┌──────────┐                    ┌─────────────────┐
-│  Client   │───── GET ────────▶│  API Composer    │
-│           │◀── combined ──────│  (Aggregator)    │
+| Client | ───── GET ────────▶ | API Composer |
+|  | ◀── combined ────── | (Aggregator) |
 └──────────┘     response      └────────┬─────────┘
-                                        │
-                         ┌──────────────┼──────────────┐
-                         │              │              │
                   ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼─────┐
-                  │  User Svc   │ │ Order Svc │ │ Review Svc│
-                  │ {name,email}│ │ {orders}  │ │ {reviews} │
-                  └─────────────┘ └───────────┘ └───────────┘
-
+| User Svc |  | Order Svc |  | Review Svc |
+| {name,email} |  | {orders} |  | {reviews} |
 Combined Response:
 {
   "user": { "name": "Alice", "email": "..." },
@@ -257,10 +206,8 @@ Combined Response:
 
 ```
 ┌──────────┐    message     ┌──────────┐    message     ┌──────────┐
-│ Service A │──────────────▶│  Queue   │──────────────▶│ Service B │
-│ (sender)  │               │ (broker) │               │ (receiver)│
-└──────────┘               └──────────┘               └──────────┘
-
+| Service A | ──────────────▶ | Queue | ──────────────▶ | Service B |
+| (sender) |  | (broker) |  | (receiver) |
 Properties:
   - One producer, one consumer per message
   - Guaranteed delivery (with acks)
@@ -271,15 +218,13 @@ Properties:
 #### Event-Based (Publish-Subscribe)
 
 ```
-┌──────────┐                                  ┌──────────┐
-│ Service A │                                  │ Service B │
-│ (publish) │─── event ──▶┌──────────┐───────▶│(subscribe)│
+| Service A |  | Service B |
+| (publish) | ─── event ──▶┌──────────┐───────▶ | (subscribe) |
 └──────────┘              │  Topic   │        └──────────┘
-                          │ (broker) │
-                          │          │        ┌──────────┐
-                          │          │───────▶│ Service C │
+  (broker)
+|  | ┌──────────┐ |
+|  | ───────▶ | Service C |
                           └──────────┘        │(subscribe)│
-                                              └──────────┘
 Properties:
   - One producer, many consumers
   - Loose coupling (publisher unaware of subscribers)
@@ -295,12 +240,10 @@ Properties:
 Each service reacts to events independently:
 
 ┌──────────┐  OrderCreated  ┌──────────┐  PaymentDone  ┌──────────┐
-│  Order   │───────────────▶│ Payment  │───────────────▶│ Shipping │
-│  Service │                │ Service  │                │ Service  │
-└──────────┘                └──────────┘                └──────────┘
+| Order | ───────────────▶ | Payment | ───────────────▶ | Shipping |
+| Service |  | Service |  | Service |
      ▲                                                       │
-     │                    ShippingDone                        │
-     └───────────────────────────────────────────────────────┘
+  ShippingDone
 
 Pros:                           Cons:
 + No single point of failure    - Hard to track overall flow
@@ -314,20 +257,12 @@ Pros:                           Cons:
 ```
 Central orchestrator coordinates the workflow:
 
-                    ┌──────────────────┐
-                    │   Orchestrator    │
-                    │  (Order Saga)     │
-                    └────────┬─────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
+  Orchestrator
+  (Order Saga)
        1.create       2.charge       3.ship
-              │              │              │
        ┌──────▼──────┐ ┌────▼───────┐ ┌───▼────────┐
-       │  Order      │ │  Payment   │ │  Shipping  │
-       │  Service    │ │  Service   │ │  Service   │
-       └─────────────┘ └────────────┘ └────────────┘
-
+| Order |  | Payment |  | Shipping |
+| Service |  | Service |  | Service |
 Pros:                           Cons:
 + Clear workflow visibility     - Single point of failure
 + Centralized error handling    - Orchestrator can become complex
@@ -338,52 +273,40 @@ Pros:                           Cons:
 ### Communication Pattern Selection Guide
 
 ```
-┌─────────────────────┬──────────────────┬──────────────────────┐
-│ Requirement         │ Pattern          │ Example              │
-├─────────────────────┼──────────────────┼──────────────────────┤
-│ Need response now   │ Sync (REST/gRPC) │ User login           │
-│ Fire and forget     │ Async (queue)    │ Send email           │
-│ Multiple consumers  │ Pub/Sub (topic)  │ Order placed event   │
-│ Complex workflow    │ Orchestration    │ Order fulfillment    │
-│ Loose coupling      │ Choreography     │ Notification routing │
-│ High throughput     │ Streaming        │ Click stream         │
-│ Real-time updates   │ WebSocket/SSE    │ Live dashboard       │
-│ Batch processing    │ Async + queue    │ Report generation    │
-└─────────────────────┴──────────────────┴──────────────────────┘
+| Requirement | Pattern | Example |
+| Need response now | Sync (REST/gRPC) | User login |
+| Fire and forget | Async (queue) | Send email |
+| Multiple consumers | Pub/Sub (topic) | Order placed event |
+| Complex workflow | Orchestration | Order fulfillment |
+| Loose coupling | Choreography | Notification routing |
+| High throughput | Streaming | Click stream |
+| Real-time updates | WebSocket/SSE | Live dashboard |
+| Batch processing | Async + queue | Report generation |
 ```
 
 ### Service Mesh
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                      Service Mesh                         │
-│                                                          │
-│  ┌─────────────────┐          ┌─────────────────┐       │
-│  │ Service A       │          │ Service B       │       │
-│  │ ┌─────────────┐ │   mTLS   │ ┌─────────────┐ │       │
-│  │ │ Application │ │          │ │ Application │ │       │
-│  │ └──────┬──────┘ │          │ └──────▲──────┘ │       │
-│  │ ┌──────▼──────┐ │          │ ┌──────┴──────┐ │       │
-│  │ │ Sidecar     │─┼──────────┼─│ Sidecar     │ │       │
-│  │ │ Proxy       │ │          │ │ Proxy       │ │       │
-│  │ │ (Envoy)     │ │          │ │ (Envoy)     │ │       │
-│  │ └─────────────┘ │          │ └─────────────┘ │       │
-│  └─────────────────┘          └─────────────────┘       │
-│                                                          │
-│  ┌──────────────────────────────────────────────┐       │
-│  │             Control Plane (Istio)             │       │
-│  │  ┌────────┐  ┌────────┐  ┌────────────────┐  │       │
-│  │  │ Pilot  │  │ Citadel│  │ Galley/Mixer   │  │       │
-│  │  │(routing│  │ (certs)│  │ (config/policy)│  │       │
-│  │  └────────┘  └────────┘  └────────────────┘  │       │
-│  └──────────────────────────────────────────────┘       │
-│                                                          │
-│  Features:                                               │
-│  - Mutual TLS (mTLS) between services                   │
-│  - Traffic management (canary, A/B, fault injection)    │
-│  - Observability (metrics, traces, logs)                │
-│  - Retry, timeout, circuit breaking                     │
-└──────────────────────────────────────────────────────────┘
+  Service Mesh
+|  | Service A |  | Service B |  |
+|  | ┌─────────────┐ | mTLS | ┌─────────────┐ |  |
+|  |  | Application |  |  |  | Application |  |  |
+|  | └──────┬──────┘ |  | └──────▲──────┘ |  |
+|  | ┌──────▼──────┐ |  | ┌──────┴──────┐ |  |
+|  |  | Sidecar | ─┼──────────┼─ | Sidecar |  |  |
+|  |  | Proxy |  |  |  | Proxy |  |  |
+|  |  | (Envoy) |  |  |  | (Envoy) |  |  |
+|  | └─────────────┘ |  | └─────────────┘ |  |
+|  | Control Plane (Istio) |  |
+|  | ┌────────┐  ┌────────┐  ┌────────────────┐ |  |
+|  |  | Pilot |  | Citadel |  | Galley/Mixer |  |  |
+|  |  | (routing |  | (certs) |  | (config/policy) |  |  |
+|  | └────────┘  └────────┘  └────────────────┘ |  |
+  Features:
+  - Mutual TLS (mTLS) between services
+  - Traffic management (canary, A/B, fault injection)
+  - Observability (metrics, traces, logs)
+  - Retry, timeout, circuit breaking
 ```
 
 ---
@@ -393,25 +316,16 @@ Pros:                           Cons:
 ### Database Per Service
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  User        │  │  Order       │  │  Product     │  │
-│  │  Service     │  │  Service     │  │  Service     │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │
-│         │                  │                  │          │
-│  ┌──────▼───────┐  ┌──────▼───────┐  ┌──────▼───────┐  │
-│  │  User DB     │  │  Order DB    │  │  Product DB  │  │
-│  │  (Postgres)  │  │  (MySQL)     │  │  (MongoDB)   │  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-│                                                          │
-│  Rules:                                                  │
-│  - Each service owns its data exclusively               │
-│  - No direct database access between services           │
-│  - Data shared only through APIs or events              │
-│  - Polyglot persistence (right DB for the job)          │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+|  | User |  | Order |  | Product |  |
+|  | Service |  | Service |  | Service |  |
+  ┌──────▼───────┐  ┌──────▼───────┐  ┌──────▼───────┐
+|  | User DB |  | Order DB |  | Product DB |  |
+|  | (Postgres) |  | (MySQL) |  | (MongoDB) |  |
+  Rules:
+  - Each service owns its data exclusively
+  - No direct database access between services
+  - Data shared only through APIs or events
+  - Polyglot persistence (right DB for the job)
 ```
 
 **Benefits**: Independent scaling, technology freedom, fault isolation.
@@ -424,90 +338,67 @@ Pros:                           Cons:
 
 ```
 ┌─────────┐  OrderCreated  ┌─────────┐  PaymentOK  ┌─────────┐
-│  Order  │───────────────▶│ Payment │────────────▶│Inventory│
-│ Service │                │ Service │              │ Service │
-└────┬────┘                └────┬────┘              └────┬────┘
-     │                          │                        │
-     │    InventoryReserved     │                        │
-     │◀─────────────────────────┼────────────────────────┘
-     │                          │
-     │     OrderConfirmed       │
+| Order | ───────────────▶ | Payment | ────────────▶ | Inventory |
+| Service |  | Service |  | Service |
+| InventoryReserved |  |
+  ◀─────────────────────────┼────────────────────────┘
+  OrderConfirmed
      └─────────────────────────▶│
 
 COMPENSATION (on failure):
-     │                          │
-     │    InventoryFailed       │
-     │◀─────────────────────────┼────────────────────────┘
-     │                          │
-     │    RefundPayment         │
+  InventoryFailed
+  ◀─────────────────────────┼────────────────────────┘
+  RefundPayment
      └─────────────────────────▶│
-     │                          │
-     │    CancelOrder           │
+  CancelOrder
      └─────────────────────────▶│
 ```
 
 #### Orchestration-Based Saga
 
 ```
-┌──────────────────────────────────────────────┐
-│           Order Saga Orchestrator              │
-│                                                │
-│  State Machine:                                │
-│  ┌─────────┐   ┌──────────┐   ┌───────────┐  │
-│  │ PENDING │──▶│ PAYMENT  │──▶│ INVENTORY │  │
-│  │         │   │ PENDING  │   │ PENDING   │  │
-│  └─────────┘   └─────┬────┘   └─────┬─────┘  │
-│                       │              │         │
-│                  fail │         fail │         │
-│                       ▼              ▼         │
-│                ┌──────────┐  ┌───────────┐    │
-│                │ PAYMENT  │  │ INVENTORY │    │
-│                │ FAILED   │  │ FAILED    │    │
-│                │ (cancel) │  │ (refund + │    │
-│                └──────────┘  │  cancel)  │    │
-│                              └───────────┘    │
-│                                                │
-│  Success path:                                 │
-│  PENDING → PAYMENT_OK → INVENTORY_OK →        │
-│  SHIPPING_OK → CONFIRMED                      │
-│                                                │
-│  Each step: command → service → reply → next  │
-└──────────────────────────────────────────────┘
+  Order Saga Orchestrator
+  State Machine:
+|  | PENDING | ──▶ | PAYMENT | ──▶ | INVENTORY |  |
+|  |  |  | PENDING |  | PENDING |  |
+  └─────────┘   └─────┬────┘   └─────┬─────┘
+| fail | fail |  |
+  ▼              ▼
+|  | PAYMENT |  | INVENTORY |  |
+|  | FAILED |  | FAILED |  |
+|  | (cancel) |  | (refund + |  |
+| └──────────┘ | cancel) |  |
+  Success path:
+  PENDING → PAYMENT_OK → INVENTORY_OK →
+  SHIPPING_OK → CONFIRMED
+  Each step: command → service → reply → next
 ```
 
 ### CQRS (Command Query Responsibility Segregation)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        CQRS Architecture                      │
-│                                                               │
-│  WRITE SIDE                          READ SIDE                │
-│  ──────────                          ─────────                │
-│  ┌──────────┐                        ┌──────────┐            │
-│  │ Commands │                        │ Queries  │            │
-│  │ (create, │                        │ (list,   │            │
-│  │  update, │                        │  search, │            │
-│  │  delete) │                        │  report) │            │
-│  └────┬─────┘                        └────┬─────┘            │
-│       │                                   │                   │
-│  ┌────▼─────────┐                  ┌──────▼──────────┐       │
-│  │ Command      │                  │ Query           │       │
-│  │ Handler      │                  │ Handler         │       │
-│  │ (validation, │                  │ (direct read)   │       │
-│  │  business    │                  └──────┬──────────┘       │
-│  │  logic)      │                         │                   │
-│  └────┬─────────┘                  ┌──────▼──────────┐       │
-│       │                            │ Read Model      │       │
-│  ┌────▼─────────┐                  │ (denormalized,  │       │
-│  │ Write Model  │   ──events──▶    │  materialized   │       │
-│  │ (normalized, │   projection     │  views)         │       │
-│  │  source of   │                  │                  │       │
-│  │  truth)      │                  │ - Elasticsearch │       │
-│  │              │                  │ - Redis         │       │
-│  │ - PostgreSQL │                  │ - DynamoDB      │       │
-│  └──────────────┘                  └─────────────────┘       │
-│                                                               │
-└──────────────────────────────────────────────────────────────┘
+  CQRS Architecture
+  WRITE SIDE                          READ SIDE
+  ──────────                          ─────────
+|  | Commands |  | Queries |  |
+|  | (create, |  | (list, |  |
+|  | update, |  | search, |  |
+|  | delete) |  | report) |  |
+  ┌────▼─────────┐                  ┌──────▼──────────┐
+|  | Command |  | Query |  |
+|  | Handler |  | Handler |  |
+|  | (validation, |  | (direct read) |  |
+|  | business | └──────┬──────────┘ |
+|  | logic) |  |  |
+  └────┬─────────┘                  ┌──────▼──────────┐
+|  |  | Read Model |  |
+| ┌────▼─────────┐ | (denormalized, |  |
+|  | Write Model | ──events──▶ | materialized |  |
+|  | (normalized, | projection | views) |  |
+|  | source of |  |  |  |
+|  | truth) |  | - Elasticsearch |  |
+|  |  |  | - Redis |  |
+|  | - PostgreSQL |  | - DynamoDB |  |
 ```
 
 **When to use CQRS**:
@@ -533,41 +424,26 @@ COMPENSATION (on failure):
 
 ```
 ANTI-PATTERN: Shared Database
-──────────────────────────────
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Service A │  │ Service B │  │ Service C │
-└─────┬─────┘  └─────┬─────┘  └─────┬─────┘
-      │              │              │
-      └──────────────┼──────────────┘
-                     │
+| Service A |  | Service B |  | Service C |
               ┌──────▼──────┐
-              │  Shared DB  │   ← coupling, schema lock-in,
-              │             │     no independent deploy
-              └─────────────┘
+| Shared DB | ← coupling, schema lock-in, |
+|  | no independent deploy |
 
 ALTERNATIVE: API Data Access
-──────────────────────────────
 ┌──────────┐  API call  ┌──────────┐
-│ Service A │───────────▶│ Service B │
-│           │◀───────────│ (data    │
+| Service A | ───────────▶ | Service B |
+|  | ◀─────────── | (data |
 └───────────┘  response  │  owner)  │
-                         └─────┬────┘
-                               │
                          ┌─────▼────┐
-                         │  B's DB  │
-                         └──────────┘
+  B's DB
 
 ALTERNATIVE: Event-Driven Data Replication
-──────────────────────────────
 ┌──────────┐  event    ┌──────────┐
-│ Service B │─────────▶│ Service A │
-│ (source)  │  stream  │ (replica) │
-└─────┬─────┘          └─────┬─────┘
-      │                      │
+| Service B | ─────────▶ | Service A |
+| (source) | stream | (replica) |
 ┌─────▼─────┐          ┌─────▼─────┐
-│  B's DB   │          │ A's local │
-│ (source)  │          │ read copy │
-└───────────┘          └───────────┘
+| B's DB |  | A's local |
+| (source) |  | read copy |
 ```
 
 ### Data Consistency Patterns
@@ -575,53 +451,35 @@ ALTERNATIVE: Event-Driven Data Replication
 #### Transactional Outbox
 
 ```
-┌──────────────────────────────────────────────┐
-│              Service A                        │
-│                                               │
-│  BEGIN TRANSACTION                            │
-│  ┌─────────────────────────────────────────┐ │
-│  │  1. INSERT INTO orders (...)            │ │
-│  │  2. INSERT INTO outbox (                │ │
-│  │       event_type, payload, status)      │ │
-│  └─────────────────────────────────────────┘ │
-│  COMMIT                                       │
-│                                               │
-│  ┌──────────────────┐                        │
-│  │ Outbox Poller    │──── publish ──────────▶│ Message
-│  │ (or CDC via      │     events              │ Broker
-│  │  Debezium)       │                        │
-│  └──────────────────┘                        │
-│                                               │
-│  Outbox Table:                                │
-│  ┌────┬──────────┬─────────┬────────┬──────┐ │
-│  │ id │ evt_type │ payload │ status │ ts   │ │
-│  ├────┼──────────┼─────────┼────────┼──────┤ │
-│  │ 1  │ OrderNew │ {json}  │ SENT   │ ...  │ │
-│  │ 2  │ OrderNew │ {json}  │ PEND   │ ...  │ │
-│  └────┴──────────┴─────────┴────────┴──────┘ │
-└──────────────────────────────────────────────┘
+  Service A
+  BEGIN TRANSACTION
+|  | 1. INSERT INTO orders (...) |  |
+|  | 2. INSERT INTO outbox ( |  |
+|  | event_type, payload, status) |  |
+  COMMIT
+|  | Outbox Poller | ──── publish ──────────▶ | Message |
+|  | (or CDC via | events | Broker |
+|  | Debezium) |  |
+  Outbox Table:
+|  | id | evt_type | payload | status | ts |  |
+|  | 1 | OrderNew | {json} | SENT | ... |  |
+|  | 2 | OrderNew | {json} | PEND | ... |  |
 ```
 
 #### Change Data Capture (CDC)
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Service     │     │  Database    │     │  CDC Tool    │
-│  (writes)    │────▶│  (WAL/       │────▶│  (Debezium)  │
+| Service |  | Database |  | CDC Tool |
+| (writes) | ────▶ | (WAL/ | ────▶ | (Debezium) |
 └──────────────┘     │   binlog)    │     └──────┬───────┘
                      └──────────────┘            │
                                           ┌──────▼───────┐
-                                          │  Kafka       │
-                                          │  (change     │
-                                          │   events)    │
-                                          └──────┬───────┘
-                                                 │
-                                    ┌────────────┼────────────┐
-                                    │            │            │
+  Kafka
+  (change
+  events)
                              ┌──────▼──┐  ┌──────▼──┐  ┌─────▼───┐
-                             │ Search  │  │ Cache   │  │ Analyt. │
-                             │ Index   │  │ Update  │  │ Pipeline│
-                             └─────────┘  └─────────┘  └─────────┘
+| Search |  | Cache |  | Analyt. |
+| Index |  | Update |  | Pipeline |
 ```
 
 ---
@@ -631,32 +489,22 @@ ALTERNATIVE: Event-Driven Data Replication
 ### The Three Pillars
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                   Observability Stack                          │
-│                                                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐       │
-│  │    LOGS      │  │   METRICS    │  │   TRACES     │       │
-│  │              │  │              │  │              │       │
-│  │  What        │  │  How much /  │  │  Where /     │       │
-│  │  happened    │  │  How fast    │  │  How long    │       │
-│  │              │  │              │  │              │       │
-│  │  Structured  │  │  Counters    │  │  Distributed │       │
-│  │  events      │  │  Gauges      │  │  request     │       │
-│  │              │  │  Histograms  │  │  flow        │       │
-│  │              │  │              │  │              │       │
-│  │  ELK/Loki   │  │  Prometheus  │  │  Jaeger/     │       │
-│  │              │  │  /Datadog    │  │  Zipkin      │       │
-│  └──────────────┘  └──────────────┘  └──────────────┘       │
-│                                                               │
-│  Correlation ID ties all three together across services       │
-└──────────────────────────────────────────────────────────────┘
+  Observability Stack
+|  | LOGS |  | METRICS |  | TRACES |  |
+|  | What |  | How much / |  | Where / |  |
+|  | happened |  | How fast |  | How long |  |
+|  | Structured |  | Counters |  | Distributed |  |
+|  | events |  | Gauges |  | request |  |
+|  |  |  | Histograms |  | flow |  |
+|  | ELK/Loki |  | Prometheus |  | Jaeger/ |  |
+|  |  |  | /Datadog |  | Zipkin |  |
+  Correlation ID ties all three together across services
 ```
 
 ### Health Check API Pattern
 
 ```
 GET /health
-──────────────────────────────────
 
 Response (healthy):
 {
@@ -690,14 +538,11 @@ Response (degraded):
 }
 
 Health Check Types:
-┌─────────────────┬────────────────────────────────────┐
-│ Type            │ Purpose                            │
-├─────────────────┼────────────────────────────────────┤
-│ Liveness        │ Is the process running? (restart)  │
-│ Readiness       │ Can it handle traffic? (route)     │
-│ Startup         │ Has it finished initializing?      │
-│ Deep/Dependency │ Are all dependencies healthy?      │
-└─────────────────┴────────────────────────────────────┘
+| Type | Purpose |
+| Liveness | Is the process running? (restart) |
+| Readiness | Can it handle traffic? (route) |
+| Startup | Has it finished initializing? |
+| Deep/Dependency | Are all dependencies healthy? |
 ```
 
 ### Distributed Tracing
@@ -706,23 +551,15 @@ Health Check Types:
 Request Flow with Trace Context:
 
 Client ──▶ API Gateway ──▶ Order Service ──▶ Payment Service
-                                │
                                 └──▶ Inventory Service
 
 Trace: trace_id=abc123
-┌──────────────────────────────────────────────────────────┐
-│                                                          │
-│ Span A: API Gateway [========]          50ms             │
-│   │                                                      │
-│   └─ Span B: Order Service   [==============] 120ms     │
-│        │                                                 │
-│        ├─ Span C: Payment Svc     [========]   80ms     │
-│        │                                                 │
-│        └─ Span D: Inventory Svc   [====]       40ms     │
-│                                                          │
-│ Total request time: 170ms                                │
-│ Critical path: A → B → C                                │
-└──────────────────────────────────────────────────────────┘
+  Span A: API Gateway [========]          50ms
+  └─ Span B: Order Service   [==============] 120ms
+  ├─ Span C: Payment Svc     [========]   80ms
+  └─ Span D: Inventory Svc   [====]       40ms
+  Total request time: 170ms
+  Critical path: A → B → C
 
 Span Context Propagation:
   Headers:
@@ -735,36 +572,24 @@ Span Context Propagation:
 ### Log Aggregation
 
 ```
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Service A │  │ Service B │  │ Service C │
-│ (stdout)  │  │ (stdout)  │  │ (stdout)  │
-└─────┬─────┘  └─────┬─────┘  └─────┬─────┘
-      │              │              │
+| Service A |  | Service B |  | Service C |
+| (stdout) |  | (stdout) |  | (stdout) |
 ┌─────▼─────┐  ┌─────▼─────┐  ┌─────▼─────┐
-│ Log Agent │  │ Log Agent │  │ Log Agent │
-│ (Filebeat/│  │ (Filebeat/│  │ (Filebeat/│
-│  Fluentd) │  │  Fluentd) │  │  Fluentd) │
-└─────┬─────┘  └─────┬─────┘  └─────┬─────┘
-      │              │              │
-      └──────────────┼──────────────┘
-                     │
+| Log Agent |  | Log Agent |  | Log Agent |
+| (Filebeat/ |  | (Filebeat/ |  | (Filebeat/ |
+| Fluentd) |  | Fluentd) |  | Fluentd) |
             ┌────────▼────────┐
-            │  Log Pipeline   │
-            │  (Logstash /    │
-            │   Kafka)        │
-            └────────┬────────┘
-                     │
+  Log Pipeline
+  (Logstash /
+  Kafka)
             ┌────────▼────────┐
-            │  Log Storage    │
-            │  (Elasticsearch │
-            │   / Loki)       │
-            └────────┬────────┘
-                     │
+  Log Storage
+  (Elasticsearch
+  / Loki)
             ┌────────▼────────┐
-            │  Visualization  │
-            │  (Kibana /      │
-            │   Grafana)      │
-            └─────────────────┘
+  Visualization
+  (Kibana /
+  Grafana)
 ```
 
 ### Structured Log Format
@@ -798,47 +623,35 @@ Span Context Propagation:
 
 ```
 RED Method (Request-driven services):
-──────────────────────────────────────
   Rate:     requests per second
   Errors:   failed requests per second
   Duration: distribution of request latencies (p50, p95, p99)
 
 USE Method (Resource-oriented):
-──────────────────────────────────────
   Utilization:  % of resource capacity used
   Saturation:   queue depth / backlog
   Errors:       resource error count
 
 Four Golden Signals (Google SRE):
-──────────────────────────────────────
   Latency:    time to serve a request
   Traffic:    demand on the system
   Errors:     rate of failed requests
   Saturation: how "full" the system is
 
 Dashboard Layout:
-┌───────────────────────────────────────────────────────┐
-│  Service: order-service                                │
-│                                                        │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐     │
-│  │ Request Rate│ │  Error Rate │ │  P99 Latency│     │
-│  │   523/sec   │ │   0.3%      │ │   245ms     │     │
-│  │  ▁▂▃▅▇▅▃▂▁ │ │  ▁▁▁▂▁▁▁▁▁ │ │  ▁▂▂▃▂▂▁▂▁ │     │
-│  └─────────────┘ └─────────────┘ └─────────────┘     │
-│                                                        │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐     │
-│  │  CPU Usage  │ │ Memory      │ │ Connections │     │
-│  │    67%      │ │   2.1 GB    │ │   145/200   │     │
-│  │  ▃▃▅▅▇▇▅▅▃ │ │  ▅▅▅▅▅▆▆▆▆ │ │  ▃▃▃▃▅▅▆▅▃ │     │
-│  └─────────────┘ └─────────────┘ └─────────────┘     │
-└───────────────────────────────────────────────────────┘
+  Service: order-service
+|  | Request Rate |  | Error Rate |  | P99 Latency |  |
+|  | 523/sec |  | 0.3% |  | 245ms |  |
+|  | ▁▂▃▅▇▅▃▂▁ |  | ▁▁▁▂▁▁▁▁▁ |  | ▁▂▂▃▂▂▁▂▁ |  |
+|  | CPU Usage |  | Memory |  | Connections |  |
+|  | 67% |  | 2.1 GB |  | 145/200 |  |
+|  | ▃▃▅▅▇▇▅▅▃ |  | ▅▅▅▅▅▆▆▆▆ |  | ▃▃▃▃▅▅▆▅▃ |  |
 ```
 
 ### Alerting Strategy
 
 ```
 Alert Severity Levels:
-──────────────────────
 
   P1 (Page immediately):
     - Service down (0 healthy instances)
@@ -877,22 +690,13 @@ Alert Routing:
 ### Blue-Green Deployment
 
 ```
-                    ┌─────────────┐
-                    │ Load Balancer│
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
+  Load Balancer
        ┌──────▼──────┐         ┌──────▼──────┐
-       │   BLUE       │         │   GREEN     │
-       │   (v1.0)     │         │   (v1.1)    │
-       │   ACTIVE ●   │         │   STANDBY ○ │
-       │              │         │              │
-       │ ┌──┐┌──┐┌──┐ │         │ ┌──┐┌──┐┌──┐ │
-       │ │  ││  ││  │ │         │ │  ││  ││  │ │
-       │ └──┘└──┘└──┘ │         │ └──┘└──┘└──┘ │
-       └──────────────┘         └──────────────┘
-
+| BLUE |  | GREEN |
+| (v1.0) |  | (v1.1) |
+| ACTIVE ● |  | STANDBY ○ |
+| ┌──┐┌──┐┌──┐ |  | ┌──┐┌──┐┌──┐ |
+| └──┘└──┘└──┘ |  | └──┘└──┘└──┘ |
 Switch: route 100% traffic from Blue to Green
 Rollback: route back to Blue (instant)
 ```
@@ -900,22 +704,14 @@ Rollback: route back to Blue (instant)
 ### Canary Deployment
 
 ```
-                    ┌─────────────┐
-                    │ Load Balancer│
-                    │ (weighted)   │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │ 95%        │        5%  │
+  Load Balancer
+  (weighted)
+| 95% | 5% |
        ┌──────▼──────┐         ┌──────▼──────┐
-       │   STABLE     │         │   CANARY    │
-       │   (v1.0)     │         │   (v1.1)    │
-       │              │         │              │
-       │ ┌──┐┌──┐┌──┐ │         │ ┌──┐         │
-       │ │  ││  ││  │ │         │ │  │         │
-       │ └──┘└──┘└──┘ │         │ └──┘         │
-       └──────────────┘         └──────────────┘
-
+| STABLE |  | CANARY |
+| (v1.0) |  | (v1.1) |
+| ┌──┐┌──┐┌──┐ |  | ┌──┐ |
+| └──┘└──┘└──┘ |  | └──┘ |
 Progression: 5% → 25% → 50% → 100%
 Metrics gate: error rate < 0.1%, p99 < 200ms
 Auto-rollback: if metrics breach threshold
@@ -929,44 +725,33 @@ Auto-rollback: if metrics breach threshold
 
 ```
 ┌──────────┐   JWT     ┌──────────────┐
-│  Client   │─────────▶│  API Gateway  │
+| Client | ─────────▶ | API Gateway |
 └──────────┘           │  (validate   │
-                       │   JWT)       │
-                       └──────┬───────┘
-                              │ claims: {sub, roles, scopes}
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
+  JWT)
+  claims: {sub, roles, scopes}
        ┌──────▼──────┐ ┌─────▼─────┐ ┌───────▼─────┐
-       │ Service A   │ │ Service B │ │ Service C   │
-       │ (check      │ │ (check   │ │ (check      │
-       │  scope:     │ │  scope:  │ │  scope:     │
-       │  read:users)│ │  write:  │ │  admin)     │
+| Service A |  | Service B |  | Service C |
+| (check |  | (check |  | (check |
+| scope: |  | scope: |  | scope: |
+| read:users) |  | write: |  | admin) |
        └─────────────┘ │  orders) │ └─────────────┘
-                       └──────────┘
 ```
 
 ### Secrets Management
 
 ```
-┌──────────────────────────────────────────────────┐
-│              Secrets Management                    │
-│                                                    │
-│  ┌──────────────┐    ┌───────────────────────┐   │
-│  │ Service      │───▶│  Vault / AWS Secrets  │   │
-│  │ (on start)   │◀───│  Manager              │   │
-│  │              │    │                        │   │
-│  │ Env vars:    │    │  Secrets:              │   │
-│  │ DB_URL=vault │    │  db/password = ****    │   │
-│  │ API_KEY=vault│    │  api/key = ****        │   │
-│  └──────────────┘    │                        │   │
-│                      │  Features:             │   │
-│                      │  - Auto-rotation       │   │
-│                      │  - Audit log           │   │
-│                      │  - Lease-based access  │   │
-│                      │  - Dynamic secrets     │   │
-│                      └───────────────────────┘   │
-└──────────────────────────────────────────────────┘
+  Secrets Management
+|  | Service | ───▶ | Vault / AWS Secrets |  |
+|  | (on start) | ◀─── | Manager |  |
+|  | Env vars: |  | Secrets: |  |
+|  | DB_URL=vault |  | db/password = **** |  |
+|  | API_KEY=vault |  | api/key = **** |  |
+| └──────────────┘ |  |  |
+|  | Features: |  |
+|  | - Auto-rotation |  |
+|  | - Audit log |  |
+|  | - Lease-based access |  |
+|  | - Dynamic secrets |  |
 ```
 
 ---
@@ -975,29 +760,24 @@ Auto-rollback: if metrics breach threshold
 
 ```
 Start: "I need to build a microservices system"
-│
 ├─ How to split the monolith?
-│  ├─ Clear business domains? → Decompose by Business Capability
-│  ├─ Complex domain model?   → Decompose by Subdomain (DDD)
-│  └─ Legacy system?          → Strangler Fig Pattern
-│
+  ├─ Clear business domains? → Decompose by Business Capability
+  ├─ Complex domain model?   → Decompose by Subdomain (DDD)
+  └─ Legacy system?          → Strangler Fig Pattern
 ├─ How should services communicate?
-│  ├─ Need immediate response?     → Sync (REST/gRPC)
-│  ├─ Can tolerate delay?          → Async (message queue)
-│  ├─ Multiple consumers needed?   → Pub/Sub (event topic)
-│  └─ Complex multi-step workflow? → Saga (orchestration)
-│
+  ├─ Need immediate response?     → Sync (REST/gRPC)
+  ├─ Can tolerate delay?          → Async (message queue)
+  ├─ Multiple consumers needed?   → Pub/Sub (event topic)
+  └─ Complex multi-step workflow? → Saga (orchestration)
 ├─ How to manage data?
-│  ├─ Service independence critical? → Database per service
-│  ├─ Cross-service transactions?    → Saga pattern
-│  ├─ Read/Write asymmetry?          → CQRS
-│  └─ Reliable event publishing?     → Transactional outbox
-│
+  ├─ Service independence critical? → Database per service
+  ├─ Cross-service transactions?    → Saga pattern
+  ├─ Read/Write asymmetry?          → CQRS
+  └─ Reliable event publishing?     → Transactional outbox
 ├─ How to observe the system?
-│  ├─ What happened?     → Structured logging + aggregation
-│  ├─ How is it doing?   → Metrics (RED/USE)
-│  └─ Where is it slow?  → Distributed tracing
-│
+  ├─ What happened?     → Structured logging + aggregation
+  ├─ How is it doing?   → Metrics (RED/USE)
+  └─ Where is it slow?  → Distributed tracing
 └─ How to deploy safely?
    ├─ Instant rollback needed?    → Blue-Green
    ├─ Gradual rollout preferred?  → Canary

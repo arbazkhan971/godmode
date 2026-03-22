@@ -85,7 +85,6 @@ EXAMPLES:
 #### Data Structure Decision Matrix
 ```
 DATA STRUCTURE SELECTION:
-+--------------------------------------------------------------+
 |  Use Case                    | Structure     | Key Pattern     |
 ```
 
@@ -170,7 +169,6 @@ MEMORY OPTIMIZATION STRATEGIES:
 
 ```
 EVICTION POLICIES:
-+--------------------------------------------------------------+
 |  Policy              | Behavior                | Use When       |
 ```
 
@@ -229,16 +227,13 @@ LEADERBOARD:
 
 ```
 PERSISTENCE OPTIONS:
-+--------------------------------------------------------------+
 |  Option  | How                      | Trade-off               |
 ```
 
 ### Step 10: Report and Transition
 
 ```
-+------------------------------------------------------------+
 |  REDIS ARCHITECTURE -- <description>                        |
-+------------------------------------------------------------+
 ```
 
 Commit: `"redis: <description> -- <key outcome>"`
@@ -296,14 +291,14 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 
 ```
 ┌─ REDIS RESULT ─────────────────────────────────────┐
-│ Operation : cache-aside setup for user sessions     │
-│ Data Structure : STRING with EX (TTL)               │
-│ Key Pattern : app:session:{session_id}              │
-│ TTL : 1800s (30 min)                                │
-│ Eviction Policy : allkeys-lru                       │
-│ Memory Est. : ~50MB for 100K sessions               │
-│ Persistence : AOF (appendfsync everysec)            │
-│ Verdict : READY                                     │
+  Operation : cache-aside setup for user sessions
+  Data Structure : STRING with EX (TTL)
+  Key Pattern : app:session:{session_id}
+  TTL : 1800s (30 min)
+  Eviction Policy : allkeys-lru
+  Memory Est. : ~50MB for 100K sessions
+  Persistence : AOF (appendfsync everysec)
+  Verdict : READY
 
 ## TSV Logging
 

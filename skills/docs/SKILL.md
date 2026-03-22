@@ -44,18 +44,15 @@ find . -name "openapi*" -o -name "swagger*" | head -20
 Present inventory:
 ```
 DOCUMENTATION INVENTORY:
-┌──────────────────────────────────────────────────────┐
-│  Documentation Status                                 │
-├────────────────────┬─────────┬────────────────────────┤
-│  Category          │  Count  │  Coverage              │
-├────────────────────┼─────────┼────────────────────────┤
-│  README files      │  3      │  root, api, shared     │
-│  API docs          │  1      │  OpenAPI 3.0 (partial) │
-│  Code docs         │  47/120 │  39% of public exports │
-│  Runbooks          │  0      │  None                  │
-│  Architecture docs │  2      │  ADRs only             │
-│  Guides            │  1      │  Getting started       │
-└────────────────────┴─────────┴────────────────────────┘
+  Documentation Status
+| Category | Count | Coverage |
+|---|---|---|
+| README files | 3 | root, api, shared |
+| API docs | 1 | OpenAPI 3.0 (partial) |
+| Code docs | 47/120 | 39% of public exports |
+| Runbooks | 0 | None |
+| Architecture docs | 2 | ADRs only |
+| Guides | 1 | Getting started |
 ```
 
 ### Step 3: Generate API Documentation
@@ -178,17 +175,14 @@ Check all existing documentation for issues:
 
 ```
 QUALITY AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│  Documentation Health Report                                  │
-├──────┬───────────────────────────────┬──────────┬─────────────┤
-│  #   │  Issue                        │  Severity│  File       │
-├──────┼───────────────────────────────┼──────────┼─────────────┤
-│  1   │  Stale: references removed API│  HIGH    │  api.md:42  │
-│  2   │  Missing: no docs for /users  │  HIGH    │  (none)     │
-│  3   │  Broken link: ./setup.md      │  MEDIUM  │  README:15  │
-│  4   │  Outdated example: uses v1 API│  MEDIUM  │  guide.md:8 │
-│  5   │  Typo: "recieve" (x3)        │  LOW     │  various    │
-└──────┴───────────────────────────────┴──────────┴─────────────┘
+  Documentation Health Report
+| # | Issue | Severity | File |
+|---|---|---|---|
+| 1 | Stale: references removed API | HIGH | api.md:42 |
+| 2 | Missing: no docs for /users | HIGH | (none) |
+| 3 | Broken link: ./setup.md | MEDIUM | README:15 |
+| 4 | Outdated example: uses v1 API | MEDIUM | guide.md:8 |
+| 5 | Typo: "recieve" (x3) | LOW | various |
 ```
 
 Staleness detection strategies:
@@ -289,16 +283,15 @@ After each docs skill invocation, emit a structured report:
 
 ```
 DOCUMENTATION REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Doc type            │  <API | code | runbook | README>│
-│  Files documented    │  <N>                            │
-│  Functions/endpoints │  <N> documented / <N> total     │
-│  Coverage            │  <N>% of public API documented  │
-│  Stale docs found    │  <N> (modified code, unchanged docs) │
-│  Links validated     │  <N> valid / <N> broken         │
-│  Examples included   │  <N> code examples              │
-│  Verdict             │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+| Doc type | <API | code | runbook | README> |
+|---|---|---|---|---|
+| Files documented | <N> |
+| Functions/endpoints | <N> documented / <N> total |
+| Coverage | <N>% of public API documented |
+| Stale docs found | <N> (modified code, unchanged docs) |
+| Links validated | <N> valid / <N> broken |
+| Examples included | <N> code examples |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging

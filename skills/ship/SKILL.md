@@ -289,16 +289,13 @@ WHILE current_iteration < max_iterations:
 
     REPORT:
     PRE-FLIGHT CHECKLIST:
-    ┌──────────────────────┬────────┬───────────────────────┐
-    │  Gate                │ Status │ Details                │
-    ├──────────────────────┼────────┼───────────────────────┤
-    │  Code quality        │ PASS   │ 4/4 checks passed     │
-    │  Security            │ PASS   │ 5/5 checks passed     │
-    │  Completeness        │ WARN   │ 3/5 — docs missing    │
-    │  Readiness           │ PASS   │ 4/4 checks passed     │
-    ├──────────────────────┼────────┼───────────────────────┤
-    │  Overall             │ READY  │ 1 warning, 0 blockers │
-    └──────────────────────┴────────┴───────────────────────┘
+| Gate | Status | Details |
+|---|---|---|
+| Code quality | PASS | 4/4 checks passed |
+| Security | PASS | 5/5 checks passed |
+| Completeness | WARN | 3/5 — docs missing |
+| Readiness | PASS | 4/4 checks passed |
+| Overall | READY | 1 warning, 0 blockers |
 
   IF phase == "rollback_plan":
     1. DETERMINE rollback strategy based on ship type:
@@ -334,15 +331,13 @@ WHILE current_iteration < max_iterations:
 
     2. DOCUMENT rollback plan:
        ROLLBACK PLAN:
-       ┌──────────────────────────────────────────────────────┐
-       │  Ship type:       {pr | release | deploy}            │
-       │  Rollback command: {exact command}                    │
-       │  Time to rollback: < {N} minutes                     │
-       │  Data impact:     {none | possible | certain}         │
-       │  Verification:    {verification command}              │
-       │  Escalation:      {who to contact if rollback fails}  │
-       │  Backup taken:    {YES / NO / N/A}                    │
-       └──────────────────────────────────────────────────────┘
+  Ship type:       {pr | release | deploy}
+  Rollback command: {exact command}
+  Time to rollback: < {N} minutes
+  Data impact:     {none | possible | certain}
+  Verification:    {verification command}
+  Escalation:      {who to contact if rollback fails}
+  Backup taken:    {YES / NO / N/A}
 
     3. IF rollback is impossible (destructive migration, external API notify):
        WARN: "This ship has NO rollback path. Require explicit user confirmation."
@@ -396,15 +391,13 @@ WHILE current_iteration < max_iterations:
 
     4. REPORT:
        POST-SHIP MONITORING:
-       ┌──────────────────────────────────────────────────────┐
-       │  Monitoring window:  <N> minutes                      │
-       │  Health checks:      <N>/<N> passed                   │
-       │  Error rate:         {normal | elevated | critical}   │
-       │  Latency:            {normal | elevated | critical}   │
-       │  New error patterns: {none | <N> detected}            │
-       │  Rollback triggered: {NO | YES — reason}              │
-       │  Status:             {STABLE | DEGRADED | ROLLED BACK}│
-       └──────────────────────────────────────────────────────┘
+  Monitoring window:  <N> minutes
+  Health checks:      <N>/<N> passed
+  Error rate:         {normal | elevated | critical}
+  Latency:            {normal | elevated | critical}
+  New error patterns: {none | <N> detected}
+  Rollback triggered: {NO | YES — reason}
+  Status:             {STABLE | DEGRADED | ROLLED BACK}
 
   IF phase == "incident_readiness":
     1. VERIFY incident response infrastructure:
@@ -424,19 +417,15 @@ WHILE current_iteration < max_iterations:
   REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | FAIL | WARNING}"
 
 FINAL SHIPPING READINESS:
-┌──────────────────────────────────────────────────────────┐
-│  SHIP READINESS SUMMARY                                   │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Status │ Details                    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Pre-flight checks   │ PASS   │ 16/17 checks (1 warning)  │
-│  Rollback plan       │ READY  │ Command documented         │
-│  Ship execution      │ DONE   │ Shipped at {timestamp}     │
-│  Post-ship monitor   │ STABLE │ 15 min, all green          │
-│  Incident readiness  │ PASS   │ Runbook + on-call ready    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │ SHIPPED│ Stable in production       │
-└──────────────────────┴────────┴───────────────────────────┘
+  SHIP READINESS SUMMARY
+| Phase | Status | Details |
+|---|---|---|
+| Pre-flight checks | PASS | 16/17 checks (1 warning) |
+| Rollback plan | READY | Command documented |
+| Ship execution | DONE | Shipped at {timestamp} |
+| Post-ship monitor | STABLE | 15 min, all green |
+| Incident readiness | PASS | Runbook + on-call ready |
+| Overall | SHIPPED | Stable in production |
 ```
 
 ## Keep/Discard Discipline

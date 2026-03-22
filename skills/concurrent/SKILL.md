@@ -39,13 +39,11 @@ Identify shared mutable state and classify access patterns:
 
 ```
 SHARED STATE INVENTORY:
-+--------------------------------------------------------------+
 | State | Access Pattern | Protection | Risk |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | <variable/resource> | Read-Write | <mutex/none> | HIGH |
 | <variable/resource> | Read-Only | None needed | LOW |
 | <variable/resource> | Write-Only | <channel> | MED |
-+--------------------------------------------------------------+
 
 CRITICAL SECTIONS:
 1. <description of code region> -- <what shared state it touches>
@@ -65,9 +63,8 @@ Systematically check for race conditions:
 
 ```
 RACE CONDITION ANALYSIS:
-+--------------------------------------------------------------+
 | Pattern | Found | Location | Fix |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | Check-then-act | Y/N | <file:line> | |
 | Read-modify-write | Y/N | <file:line> | |
 | Compound actions | Y/N | <file:line> | |
@@ -76,7 +73,6 @@ RACE CONDITION ANALYSIS:
 | Double-checked locking | Y/N | <file:line> | |
 | Publication escape | Y/N | <file:line> | |
 | Time-of-check-time-of-use | Y/N | <file:line> | |
-+--------------------------------------------------------------+
 
 DETECTION TOOLS:
 ```
@@ -204,9 +200,8 @@ Design or select lock-free alternatives when locks are a bottleneck:
 
 ```
 LOCK-FREE DATA STRUCTURES:
-+--------------------------------------------------------------+
 | Structure | Use Case | Implementation |
-+--------------------------------------------------------------+
+|---|---|---|
 | Atomic counter | Counters, flags | AtomicI64, atomic|
 | CAS loop | Compare-and-swap ops | compare_exchange |
 | Lock-free queue | Producer-consumer | crossbeam, ConcurrentLinkedQueue |
@@ -214,7 +209,6 @@ LOCK-FREE DATA STRUCTURES:
 | Lock-free hash map | Concurrent KV | dashmap (Rust), ConcurrentHashMap (Java) |
 | Read-copy-update | Read-heavy workloads | RCU, arc-swap |
 | Immutable data | Shared state | Persistent data structures |
-+--------------------------------------------------------------+
 
 WHEN TO USE LOCK-FREE:
 - High contention on a specific data structure
@@ -231,14 +225,11 @@ ACTOR MODEL PRINCIPLES:
 4. Actors can create child actors, send messages, change behavior
 
 ACTOR SYSTEM DESIGN:
-+--------------------------------------------------------------+
 | Actor | Messages Received | State | Children|
-+--------------------------------------------------------------+
+|---|---|---|---|
 | <ActorName> | <message types> | <fields> | <list> |
-+--------------------------------------------------------------+
 
 SUPERVISION STRATEGY:
-+--------------------------------------------------------------+
 ```
 
 #### Erlang/OTP Patterns
@@ -290,9 +281,8 @@ DEADLOCK CONDITIONS (all four must hold):
 4. Circular wait -- A waits for B, B waits for A
 
 PREVENTION STRATEGIES:
-+--------------------------------------------------------------+
 | Strategy | Breaks Condition | How |
-+--------------------------------------------------------------+
+|---|---|---|
 | Lock ordering | Circular wait | Always acquire in |
 | | | consistent global order|
 | Lock timeout | Hold and wait | Give up after timeout |
@@ -305,9 +295,8 @@ Verify correctness of concurrent code:
 
 ```
 CONCURRENT TESTING APPROACH:
-+--------------------------------------------------------------+
 | Technique | What It Catches | Tools |
-+--------------------------------------------------------------+
+|---|---|---|
 | Race detector | Data races | go -race, TSan |
 | Stress testing | Intermittent bugs | Run N times |
 | Loom (Rust) | All interleavings | loom crate |
@@ -316,7 +305,6 @@ CONCURRENT TESTING APPROACH:
 | testing | concurrent operations | |
 | Chaos injection | Timing dependencies | tokio-test, manual|
 | Deterministic sim | Full replay | Hermit, FoundationDB |
-+--------------------------------------------------------------+
 
 TESTING CHECKLIST:
 ```
@@ -326,9 +314,8 @@ Choose the right concurrency model for the workload:
 
 ```
 CONCURRENCY MODEL DECISION:
-+--------------------------------------------------------------+
 | Workload | Recommended Model | Language/Runtime |
-+--------------------------------------------------------------+
+|---|---|---|
 | High I/O, many | Event loop / async | Node.js, Python |
 | connections | | asyncio |
 | CPU-bound parallel | Thread pool / rayon | Rust, Go, Java |
@@ -338,7 +325,6 @@ CONCURRENCY MODEL DECISION:
 | Real-time, low-lat | Lock-free + busy wait | C/C++, Rust |
 | Simple shared state| Mutex/RwLock | Any language |
 | Pipeline processing| Channels / CSP | Go, Rust, Elixir |
-+--------------------------------------------------------------+
 
 SELECTED MODEL: <model> -- <justification>
 ```
@@ -348,9 +334,8 @@ Validate the concurrency design:
 
 ```
 CONCURRENCY VALIDATION:
-+--------------------------------------------------------------+
 | Check | Status |
-+--------------------------------------------------------------+
+|---|---|
 | All shared mutable state identified | PASS | FAIL |
 | Protection strategy for each shared state| PASS | FAIL |
 | Race condition analysis complete | PASS | FAIL |
@@ -359,7 +344,6 @@ CONCURRENCY VALIDATION:
 | Concurrent tests written | PASS | FAIL |
 | Race detector passes cleanly | PASS | FAIL |
 | Performance under concurrency measured | PASS | FAIL |
-+--------------------------------------------------------------+
 
 VERDICT: <SAFE | NEEDS WORK>
 ```

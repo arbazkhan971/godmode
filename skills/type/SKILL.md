@@ -33,20 +33,18 @@ grep -A20 '"compilerOptions"' tsconfig.json | grep -E "strict|noImplicit|noUnche
 
 ```
 TYPE SAFETY AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│  Project: <name>                                              │
-│  Language: TypeScript <version>                               │
-├──────────────────┬───────────────────────────────────────────┤
-│  Strict mode      │ <ON/OFF/PARTIAL>                          │
-│  `any` count      │ <N> explicit + <N> `as any` casts         │
-│  @ts-ignore       │ <N> suppressed type errors                │
-│  Untyped params   │ <N> function parameters without types     │
-│  Runtime validation│ <YES/NO> at API boundaries               │
-│  Schema library   │ <Zod/Yup/Joi/none>                        │
-│  Type coverage    │ <N%> of expressions have known types       │
-├──────────────────┴───────────────────────────────────────────┤
-│  Type Safety Score: <N>/100                                   │
-│  Grade: <A | B | C | D | F>                                   │
+  Project: <name>
+  Language: TypeScript <version>
+| Strict mode | <ON/OFF/PARTIAL> |
+|---|---|
+| `any` count | <N> explicit + <N> `as any` casts |
+| @ts-ignore | <N> suppressed type errors |
+| Untyped params | <N> function parameters without types |
+| Runtime validation | <YES/NO> at API boundaries |
+| Schema library | <Zod/Yup/Joi/none> |
+| Type coverage | <N%> of expressions have known types |
+  Type Safety Score: <N>/100
+  Grade: <A | B | C | D | F>
 ```
 
 ### Step 2: TypeScript Strict Mode Configuration
@@ -77,19 +75,16 @@ For projects migrating from loose TypeScript or JavaScript:
 ```
 GRADUAL STRICTNESS ADOPTION:
 Phase 1: Foundation (Week 1-2)
-  ┌──────────────────────────────────────────────────────────┐
-  │  Enable these first (low disruption, high value):         │
-  │  "noImplicitAny": true           — force type annotations │
-  │  "strictNullChecks": true        — catch null/undefined   │
-  │  "noImplicitReturns": true       — complete return types  │
-  │  "useUnknownInCatchVariables": true — safe error handling │
-  └──────────────────────────────────────────────────────────┘
+  Enable these first (low disruption, high value):
+  "noImplicitAny": true           — force type annotations
+  "strictNullChecks": true        — catch null/undefined
+  "noImplicitReturns": true       — complete return types
+  "useUnknownInCatchVariables": true — safe error handling
 
 Phase 2: Functions (Week 3-4)
-  ┌──────────────────────────────────────────────────────────┐
-  │  "strictFunctionTypes": true      — contravariant params  │
-  │  "strictBindCallApply": true      — correct bind/call     │
-  │  "noFallthroughCasesInSwitch": true                       │
+  "strictFunctionTypes": true      — contravariant params
+  "strictBindCallApply": true      — correct bind/call
+  "noFallthroughCasesInSwitch": true
 ```
 
 #### Eliminating `any`
@@ -110,20 +105,17 @@ Choose and configure runtime validation:
 
 ```
 SCHEMA VALIDATION COMPARISON:
-┌──────────────┬───────────────────────────────────────────────────────┐
-│  Library      │ Characteristics                                       │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Zod          │ TypeScript-first, infers types from schemas           │
-│               │ Bundle: ~13KB min+gzip                                │
-│               │ Best for: TypeScript projects, API validation          │
-│               │ Strengths: Type inference, transforms, refinements    │
-│               │ Ecosystem: tRPC, React Hook Form, Astro               │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Yup          │ Mature, widely adopted, React ecosystem               │
-│               │ Bundle: ~15KB min+gzip                                │
-│               │ Best for: Formik/React forms, existing Yup codebases  │
-│               │ Strengths: Conditional validation, localization       │
-├──────────────┼───────────────────────────────────────────────────────┤
+| Library | Characteristics |
+|---|---|
+| Zod | TypeScript-first, infers types from schemas |
+|  | Bundle: ~13KB min+gzip |
+|  | Best for: TypeScript projects, API validation |
+|  | Strengths: Type inference, transforms, refinements |
+|  | Ecosystem: tRPC, React Hook Form, Astro |
+| Yup | Mature, widely adopted, React ecosystem |
+|  | Bundle: ~15KB min+gzip |
+|  | Best for: Formik/React forms, existing Yup codebases |
+|  | Strengths: Conditional validation, localization |
 ```
 
 #### Validation at API Boundaries
@@ -171,31 +163,25 @@ Define where and how to validate at runtime:
 
 ```
 RUNTIME VALIDATION BOUNDARIES:
-┌──────────────────────────────────────────────────────────────┐
-│                                                               │
-│  EXTERNAL WORLD (untrusted)                                   │
-│    │                                                          │
-│    ▼                                                          │
-│  ┌──────────────────────┐                                     │
-│  │  API Request Handler  │ ← VALIDATE HERE (Zod middleware)    │
-│  └──────────┬───────────┘                                     │
-│             │ (validated, typed data)                          │
-│             ▼                                                  │
-│  ┌──────────────────────┐                                     │
-│  │  Service Layer        │ ← Trust types, no re-validation     │
-│  └──────────┬───────────┘                                     │
-│             │                                                  │
-│             ▼                                                  │
-│  ┌──────────────────────┐                                     │
+  EXTERNAL WORLD (untrusted)
+  ▼
+|  | API Request Handler | ← VALIDATE HERE (Zod middleware) |
+  └──────────┬───────────┘
+|  | (validated, typed data) |
+  ▼
+|  | Service Layer | ← Trust types, no re-validation |
+  └──────────┬───────────┘
+  ▼
 ### Step 7: Schema-First Development Workflow
 Design the data model before writing business logic:
 
 ```
 SCHEMA-FIRST WORKFLOW:
 ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-│ 1. Define │────▶│ 2. Infer │────▶│ 3. Build │────▶│ 4. Test  │
-│  Schemas  │     │  Types   │     │  Logic   │     │  Against │
-│ (Zod)     │     │ (z.infer)│     │ (typed)  │     │  Schema  │
+| 1. Define | ────▶ | 2. Infer | ────▶ | 3. Build | ────▶ | 4. Test |
+|---|---|---|---|---|---|---|
+| Schemas |  | Types |  | Logic |  | Against |
+| (Zod) |  | (z.infer) |  | (typed) |  | Schema |
 └──────────┘     └──────────┘     └──────────┘     └──────────┘
 
 Step 1: Write Zod schemas for all domain entities

@@ -43,31 +43,27 @@ If personal data of EU residents is processed:
 #### Lawful Basis
 ```
 GDPR — LAWFUL BASIS ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│ Data Processing Activity │ Lawful Basis    │ Status     │
-├──────────────────────────────────────────────────────────┤
-│ User registration        │ Consent         │ COMPLIANT  │
-│ Order processing         │ Contract        │ COMPLIANT  │
-│ Marketing emails         │ Consent         │ MISSING    │
-│ Analytics tracking       │ Legitimate int. │ REVIEW     │
-│ Fraud detection          │ Legitimate int. │ COMPLIANT  │
-└──────────────────────────────────────────────────────────┘
+| Data Processing Activity | Lawful Basis | Status |
+|---|---|---|
+| User registration | Consent | COMPLIANT |
+| Order processing | Contract | COMPLIANT |
+| Marketing emails | Consent | MISSING |
+| Analytics tracking | Legitimate int. | REVIEW |
+| Fraud detection | Legitimate int. | COMPLIANT |
 ```
 
 #### Data Subject Rights
 ```
 GDPR — DATA SUBJECT RIGHTS:
-┌──────────────────────────────────────────────────────────┐
-│ Right                    │ Implemented │ Location       │
-├──────────────────────────────────────────────────────────┤
-│ Right to access          │ YES/NO      │ <endpoint/UI>  │
-│ Right to rectification   │ YES/NO      │ <endpoint/UI>  │
-│ Right to erasure         │ YES/NO      │ <endpoint/UI>  │
-│ Right to portability     │ YES/NO      │ <endpoint/UI>  │
-│ Right to restrict proc.  │ YES/NO      │ <endpoint/UI>  │
-│ Right to object          │ YES/NO      │ <endpoint/UI>  │
-│ Automated decision-making│ YES/NO/N/A  │ <endpoint/UI>  │
-└──────────────────────────────────────────────────────────┘
+| Right | Implemented | Location |
+|---|---|---|
+| Right to access | YES/NO | <endpoint/UI> |
+| Right to rectification | YES/NO | <endpoint/UI> |
+| Right to erasure | YES/NO | <endpoint/UI> |
+| Right to portability | YES/NO | <endpoint/UI> |
+| Right to restrict proc. | YES/NO | <endpoint/UI> |
+| Right to object | YES/NO | <endpoint/UI> |
+| Automated decision-making | YES/NO/N/A | <endpoint/UI> |
 ```
 
 #### Consent Management
@@ -87,20 +83,19 @@ If protected health information (PHI) is processed:
 
 ```
 HIPAA — SAFEGUARDS ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│ Safeguard                        │ Status    │ Evidence │
-├──────────────────────────────────────────────────────────┤
-│ ADMINISTRATIVE SAFEGUARDS                                │
-│ Risk analysis conducted          │ YES/NO    │ <ref>    │
-│ Workforce access controls        │ YES/NO    │ <ref>    │
-│ Security awareness training      │ YES/NO    │ <ref>    │
-│ Incident response procedures     │ YES/NO    │ <ref>    │
-│ Business associate agreements    │ YES/NO    │ <ref>    │
-├──────────────────────────────────────────────────────────┤
-│ PHYSICAL SAFEGUARDS                                      │
-│ Facility access controls         │ YES/NO    │ <ref>    │
-│ Workstation security             │ YES/NO    │ <ref>    │
-│ Device and media controls        │ YES/NO    │ <ref>    │
+| Safeguard | Status | Evidence |
+  ADMINISTRATIVE SAFEGUARDS
+| Risk analysis conducted | YES/NO | <ref> |
+|---|---|---|
+| Workforce access controls | YES/NO | <ref> |
+| Security awareness training | YES/NO | <ref> |
+| Incident response procedures | YES/NO | <ref> |
+| Business associate agreements | YES/NO | <ref> |
+  PHYSICAL SAFEGUARDS
+| Facility access controls | YES/NO | <ref> |
+|---|---|---|
+| Workstation security | YES/NO | <ref> |
+| Device and media controls | YES/NO | <ref> |
 ```
 
 ### Step 4: SOC2 Compliance Check
@@ -108,15 +103,13 @@ If operating as a service organization:
 
 ```
 SOC2 — TRUST SERVICES CRITERIA:
-┌──────────────────────────────────────────────────────────┐
-│ Category           │ Controls │ Implemented │ Gaps      │
-├──────────────────────────────────────────────────────────┤
-│ Security           │ 12       │ <N>         │ <N>       │
-│ Availability       │ 8        │ <N>         │ <N>       │
-│ Processing Integr. │ 6        │ <N>         │ <N>       │
-│ Confidentiality    │ 7        │ <N>         │ <N>       │
-│ Privacy            │ 10       │ <N>         │ <N>       │
-└──────────────────────────────────────────────────────────┘
+| Category | Controls | Implemented | Gaps |
+|---|---|---|---|
+| Security | 12 | <N> | <N> |
+| Availability | 8 | <N> | <N> |
+| Processing Integr. | 6 | <N> | <N> |
+| Confidentiality | 7 | <N> | <N> |
+| Privacy | 10 | <N> | <N> |
 
 Key SOC2 Controls:
 - [ ] Change management process documented and followed
@@ -134,20 +127,19 @@ If payment card data is processed:
 
 ```
 PCI-DSS — REQUIREMENTS CHECK:
-┌──────────────────────────────────────────────────────────┐
-│ Requirement                            │ Status         │
-├──────────────────────────────────────────────────────────┤
-│ 1. Network security controls           │ PASS/FAIL      │
-│ 2. Secure configuration                │ PASS/FAIL      │
-│ 3. Protect stored account data         │ PASS/FAIL      │
-│ 4. Encrypt transmission over networks  │ PASS/FAIL      │
-│ 5. Protect from malicious software     │ PASS/FAIL      │
-│ 6. Secure systems and software         │ PASS/FAIL      │
-│ 7. Restrict access by business need    │ PASS/FAIL      │
-│ 8. Identify users and auth access      │ PASS/FAIL      │
-│ 9. Restrict physical access            │ PASS/FAIL/N/A  │
-│ 10. Log and monitor all access         │ PASS/FAIL      │
-│ 11. Test security regularly            │ PASS/FAIL      │
+| Requirement | Status |
+|---|---|
+| 1. Network security controls | PASS/FAIL |
+| 2. Secure configuration | PASS/FAIL |
+| 3. Protect stored account data | PASS/FAIL |
+| 4. Encrypt transmission over networks | PASS/FAIL |
+| 5. Protect from malicious software | PASS/FAIL |
+| 6. Secure systems and software | PASS/FAIL |
+| 7. Restrict access by business need | PASS/FAIL |
+| 8. Identify users and auth access | PASS/FAIL |
+| 9. Restrict physical access | PASS/FAIL/N/A |
+| 10. Log and monitor all access | PASS/FAIL |
+| 11. Test security regularly | PASS/FAIL |
 ```
 
 ### Step 6: Audit Trail Design & Validation
@@ -155,19 +147,17 @@ Verify that all security-relevant and compliance-relevant events are logged:
 
 ```
 AUDIT TRAIL ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│ Event Category        │ Logged │ Fields                  │
-├──────────────────────────────────────────────────────────┤
-│ Authentication        │ YES/NO │ who, when, IP, result   │
-│ Authorization changes │ YES/NO │ who, what, when, by-whom│
-│ Data access (read)    │ YES/NO │ who, what, when         │
-│ Data modification     │ YES/NO │ who, what, old, new     │
-│ Data deletion         │ YES/NO │ who, what, when, reason │
-│ Data export           │ YES/NO │ who, what, format, dest │
-│ Configuration changes │ YES/NO │ who, what, old, new     │
-│ System errors         │ YES/NO │ what, when, severity    │
-│ Admin operations      │ YES/NO │ who, what, when         │
-└──────────────────────────────────────────────────────────┘
+| Event Category | Logged | Fields |
+|---|---|---|
+| Authentication | YES/NO | who, when, IP, result |
+| Authorization changes | YES/NO | who, what, when, by-whom |
+| Data access (read) | YES/NO | who, what, when |
+| Data modification | YES/NO | who, what, old, new |
+| Data deletion | YES/NO | who, what, when, reason |
+| Data export | YES/NO | who, what, format, dest |
+| Configuration changes | YES/NO | who, what, old, new |
+| System errors | YES/NO | what, when, severity |
+| Admin operations | YES/NO | who, what, when |
 
 ```
 
@@ -176,17 +166,15 @@ Verify data lifecycle management:
 
 ```
 DATA RETENTION POLICY:
-┌──────────────────────────────────────────────────────────┐
-│ Data Category     │ Retention │ Auto-delete │ Method     │
-├──────────────────────────────────────────────────────────┤
-│ User accounts     │ Active+2y │ YES/NO      │ <method>   │
-│ Transaction logs  │ 7 years   │ YES/NO      │ <method>   │
-│ Session data      │ 30 days   │ YES/NO      │ <method>   │
-│ Audit logs        │ 3 years   │ YES/NO      │ <method>   │
-│ Analytics data    │ 1 year    │ YES/NO      │ <method>   │
-│ Backup data       │ 90 days   │ YES/NO      │ <method>   │
-│ Temporary files   │ 24 hours  │ YES/NO      │ <method>   │
-└──────────────────────────────────────────────────────────┘
+| Data Category | Retention | Auto-delete | Method |
+|---|---|---|---|
+| User accounts | Active+2y | YES/NO | <method> |
+| Transaction logs | 7 years | YES/NO | <method> |
+| Session data | 30 days | YES/NO | <method> |
+| Audit logs | 3 years | YES/NO | <method> |
+| Analytics data | 1 year | YES/NO | <method> |
+| Backup data | 90 days | YES/NO | <method> |
+| Temporary files | 24 hours | YES/NO | <method> |
 
 Deletion workflow:
 - [ ] Deletion request → verification → execution → confirmation
@@ -201,19 +189,17 @@ Audit open-source and third-party license obligations:
 
 ```
 LICENSE COMPLIANCE:
-┌──────────────────────────────────────────────────────────┐
-│ License Type   │ Count │ Commercial OK │ Action         │
-├──────────────────────────────────────────────────────────┤
-│ MIT            │ <N>   │ YES           │ NONE           │
-│ Apache 2.0     │ <N>   │ YES           │ NOTICE file    │
-│ BSD            │ <N>   │ YES           │ NONE           │
-│ ISC            │ <N>   │ YES           │ NONE           │
-│ LGPL           │ <N>   │ CONDITIONAL   │ REVIEW         │
-│ GPL            │ <N>   │ RISK          │ REPLACE/REVIEW │
-│ AGPL           │ <N>   │ HIGH RISK     │ REPLACE        │
-│ Unlicensed     │ <N>   │ UNKNOWN       │ INVESTIGATE    │
-│ Custom/Prop.   │ <N>   │ VARIES        │ REVIEW TERMS   │
-└──────────────────────────────────────────────────────────┘
+| License Type | Count | Commercial OK | Action |
+|---|---|---|---|
+| MIT | <N> | YES | NONE |
+| Apache 2.0 | <N> | YES | NOTICE file |
+| BSD | <N> | YES | NONE |
+| ISC | <N> | YES | NONE |
+| LGPL | <N> | CONDITIONAL | REVIEW |
+| GPL | <N> | RISK | REPLACE/REVIEW |
+| AGPL | <N> | HIGH RISK | REPLACE |
+| Unlicensed | <N> | UNKNOWN | INVESTIGATE |
+| Custom/Prop. | <N> | VARIES | REVIEW TERMS |
 
 Actions required:
 - GPL/AGPL dependencies: Replace with permissively-licensed alternatives or verify usage does not trigger copyleft obligations
@@ -224,21 +210,17 @@ Actions required:
 ### Step 9: Compliance Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  COMPLIANCE AUDIT REPORT                                   │
-├────────────────────────────────────────────────────────────┤
-│  Regulations assessed:                                     │
-│    GDPR:     <COMPLIANT | PARTIAL | NON-COMPLIANT>         │
-│    HIPAA:    <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>   │
-│    SOC2:     <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>   │
-│    PCI-DSS:  <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>  │
-│                                                            │
-│  Findings:                                                 │
-│    CRITICAL: <N> (must fix before launch)                  │
-│    HIGH:     <N> (must fix within 30 days)                 │
-│    MEDIUM:   <N> (should fix within 90 days)               │
-│    LOW:      <N> (best practice, not required)             │
-│                                                            │
+  COMPLIANCE AUDIT REPORT
+  Regulations assessed:
+  GDPR:     <COMPLIANT | PARTIAL | NON-COMPLIANT>
+  HIPAA:    <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  SOC2:     <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  PCI-DSS:  <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  Findings:
+  CRITICAL: <N> (must fix before launch)
+  HIGH:     <N> (must fix within 30 days)
+  MEDIUM:   <N> (should fix within 90 days)
+  LOW:      <N> (best practice, not required)
 ```
 
 ### Step 10: Commit and Transition
@@ -328,19 +310,16 @@ AUTO-DETECT:
 Every comply invocation must produce a structured report:
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  COMPLIANCE RESULT                                          │
-├────────────────────────────────────────────────────────────┤
-│  Regulations assessed: <list>                               │
-│  GDPR: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>         │
-│  HIPAA: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>        │
-│  SOC2: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>         │
-│  PCI-DSS: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>      │
-│  Findings: <N>C <N>H <N>M <N>L                             │
-│  Audit trail: <COMPLETE | PARTIAL | MISSING>                │
-│  License risk: <CLEAR | REVIEW NEEDED | RISK>               │
-│  Verdict: <COMPLIANT | CONDITIONAL | NON-COMPLIANT>         │
-└────────────────────────────────────────────────────────────┘
+  COMPLIANCE RESULT
+  Regulations assessed: <list>
+  GDPR: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  HIPAA: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  SOC2: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  PCI-DSS: <COMPLIANT | PARTIAL | NON-COMPLIANT | N/A>
+  Findings: <N>C <N>H <N>M <N>L
+  Audit trail: <COMPLETE | PARTIAL | MISSING>
+  License risk: <CLEAR | REVIEW NEEDED | RISK>
+  Verdict: <COMPLIANT | CONDITIONAL | NON-COMPLIANT>
 ```
 
 ## TSV Logging

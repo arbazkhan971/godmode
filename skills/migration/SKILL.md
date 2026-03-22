@@ -23,7 +23,6 @@ Identify the current state, target state, and constraints:
 
 ```
 MIGRATION ASSESSMENT:
-+---------------------------------------------------------+
 |  Source State:                                            |
 |    Language/Framework: <current tech stack>               |
 |    Architecture:       <monolith | modular monolith |    |
@@ -32,7 +31,6 @@ MIGRATION ASSESSMENT:
 |    Code size:          <files, LOC, modules>             |
 |    Test coverage:      <percentage, if known>            |
 |    Team size:          <number of developers>            |
-+---------------------------------------------------------+
 |  Target State:                                           |
 |    Language/Framework: <target tech stack>                |
 |    Architecture:       <target architecture>              |
@@ -42,15 +40,10 @@ MIGRATION ASSESSMENT:
 Classification of migration types:
 ```
 MIGRATION TYPE CLASSIFICATION:
-+---------------------------------------------------------+
 |  Type                    | Examples                      |
-|  --------------------------------------------------------|
 |  Language migration      | JS -> TS, Python 2 -> 3,     |
 |                          | Java -> Kotlin                |
-|  --------------------------------------------------------|
 |  Framework migration     | Express -> Fastify,           |
-|  --------------------------------------------------------|
-|  --------------------------------------------------------|
 ```
 
 ### Step 2: Migration Strategy Selection
@@ -59,13 +52,11 @@ Choose the appropriate migration strategy based on type and constraints:
 #### Strategy: Big Bang
 ```
 BIG BANG MIGRATION:
-+---------------------------------------------------------+
 |  How:     Rewrite everything at once, switch over        |
 |  When:    Small codebase, low traffic, acceptable        |
 |           downtime, clean break needed                    |
 |  Risk:    HIGH — all-or-nothing, no gradual rollback     |
 |  Timeline: Short but concentrated                        |
-+---------------------------------------------------------+
 |  Steps:                                                  |
 |  1. Build new system in parallel                         |
 |  2. Freeze feature development on old system             |
@@ -78,7 +69,6 @@ BIG BANG MIGRATION:
 #### Strategy: Strangler Fig
 ```
 STRANGLER FIG PATTERN:
-+---------------------------------------------------------+
 |  How:     Incrementally replace old system piece by      |
 |           piece, routing traffic through a facade        |
 |  When:    Large codebase, zero-downtime, must continue   |
@@ -86,8 +76,6 @@ STRANGLER FIG PATTERN:
 |  Risk:    LOW — each piece is independently deployable   |
 |           and reversible                                 |
 |  Timeline: Long but sustainable                          |
-+---------------------------------------------------------+
-|                                                          |
 |  Phase 1: Facade                                        |
 |  +---------+     +---------+                             |
 |  | Client  | --> | Facade  | --> | Old System |          |
@@ -96,14 +84,12 @@ STRANGLER FIG PATTERN:
 #### Strategy: Parallel Run
 ```
 PARALLEL RUN:
-+---------------------------------------------------------+
 |  How:     Run old and new systems simultaneously,        |
 |           compare outputs, switch when confident         |
 |  When:    Data integrity critical, need to verify        |
 |           correctness before switching                   |
 |  Risk:    MEDIUM — double infrastructure cost, but       |
 |           high confidence in correctness                 |
-+---------------------------------------------------------+
 |  Steps:                                                  |
 |  1. Build new system alongside old                       |
 |  2. Send traffic to BOTH systems (shadow traffic or      |
@@ -113,19 +99,16 @@ PARALLEL RUN:
 |  5. Switch primary to new system                         |
 |  6. Keep old system as fallback for N days               |
 |  7. Decommission old system                              |
-+---------------------------------------------------------+
 ```
 
 #### Strategy: Branch by Abstraction
 ```
 BRANCH BY ABSTRACTION:
-+---------------------------------------------------------+
 |  How:     Introduce abstraction layer, swap              |
 |           implementation behind it                       |
 |  When:    Internal component replacement, same API       |
 |           contract, feature-flag controlled               |
 |  Risk:    LOW — abstraction isolates change              |
-+---------------------------------------------------------+
 |  Steps:                                                  |
 |  1. Create abstraction layer (interface/adapter)         |
 |  2. Route existing code through abstraction              |
@@ -133,7 +116,6 @@ BRANCH BY ABSTRACTION:
 |  4. Feature flag between old and new implementation      |
 |  5. Gradually roll out new implementation                |
 |  6. Remove old implementation and abstraction layer      |
-+---------------------------------------------------------+
 ```
 
 ### Step 3: Language/Framework Migration Planning
@@ -143,37 +125,31 @@ For JS -> TS, Python 2 -> 3, React class -> hooks, etc.:
 #### TypeScript Migration (JS -> TS)
 ```
 JS -> TS MIGRATION PLAN:
-+---------------------------------------------------------+
 |  Phase 1: Setup (Day 1)                                  |
 |  - Install typescript, @types/* packages                 |
 |  - Create tsconfig.json with allowJs: true               |
 |  - Configure strict: false initially                     |
 |  - Add ts-check to build pipeline                        |
-+---------------------------------------------------------+
 |  Phase 2: Incremental conversion (Ongoing)               |
 |  - Rename .js -> .ts one file at a time                  |
 |  - Start with leaf modules (no dependents)               |
 |  - Add types to function signatures                      |
 |  - Use 'any' as escape hatch, track with lint rule       |
 |  - Convert test files alongside source files             |
-|                                                          |
 ```
 
 #### REST -> GraphQL Migration
 ```
 REST -> GRAPHQL MIGRATION PLAN:
-+---------------------------------------------------------+
 |  Phase 1: GraphQL alongside REST                         |
 |  - Add GraphQL server (Apollo, Mercurius, etc.)          |
 |  - Create schema types matching existing REST responses  |
 |  - Resolvers call existing service layer                 |
 |  - Both REST and GraphQL serve the same data             |
-+---------------------------------------------------------+
 |  Phase 2: Client migration                               |
 |  - Migrate one client feature at a time to GraphQL      |
 |  - REST endpoints remain available                       |
 |  - Track which endpoints are still called via REST       |
-+---------------------------------------------------------+
 |  Phase 3: REST deprecation                               |
 |  - Add deprecation headers to REST endpoints             |
 ```
@@ -181,14 +157,12 @@ REST -> GRAPHQL MIGRATION PLAN:
 #### Monolith -> Microservices Migration
 ```
 MONOLITH -> MICROSERVICES PLAN:
-+---------------------------------------------------------+
 |  Phase 0: Prepare the monolith                           |
 |  - Identify bounded contexts (DDD analysis)              |
 |  - Draw dependency graph between modules                 |
 |  - Introduce module boundaries (interfaces, not direct   |
 |    function calls)                                       |
 |  - Add integration tests at module boundaries            |
-+---------------------------------------------------------+
 |  Phase 1: Extract first service (pick the easiest)       |
 |  - Choose a module with minimal dependencies             |
 |  - Create service with its own repo, CI/CD, database     |
@@ -203,18 +177,15 @@ For migrating data between systems without downtime:
 
 ```
 ZERO-DOWNTIME DATA MIGRATION:
-+---------------------------------------------------------+
 |  Phase 1: Dual-write                                     |
 |  - Application writes to BOTH old and new data stores   |
 |  - Old store remains source of truth for reads           |
 |  - Verify writes land correctly in new store             |
-+---------------------------------------------------------+
 |  Phase 2: Backfill                                       |
 |  - Migrate historical data from old to new store         |
 |  - Run in batches with rate limiting                     |
 |  - Track progress: migrated / total records              |
 |  - Verify data integrity after each batch                |
-|                                                          |
 |  Backfill script pattern:                                |
 |  ```                                                     |
 ```
@@ -225,7 +196,6 @@ For validating correctness before full cutover:
 
 ```
 PARALLEL RUN SETUP:
-+---------------------------------------------------------+
 |  Traffic routing:                                        |
 |  +---------+     +-----------+     +------------+        |
 |  | Client  | --> | Router /  | --> | Old System |        |
@@ -256,39 +226,33 @@ Every migration must have a documented rollback plan:
 
 ```
 ROLLBACK PLAN:
-+---------------------------------------------------------+
 |  Trigger conditions (when to roll back):                 |
 |  - Error rate exceeds <threshold> for > 5 minutes        |
 |  - Latency p99 exceeds <threshold> for > 5 minutes       |
 |  - Data inconsistency detected                           |
 |  - Critical bug in new system with no quick fix          |
-+---------------------------------------------------------+
 |  Rollback steps:                                         |
 |  1. Switch traffic back to old system (DNS/routing)      |
 |  2. Stop dual-writes to new system                       |
 |  3. Reconcile any data written only to new system        |
 |  4. Notify stakeholders of rollback                      |
 |  5. Post-mortem: why did the migration fail?             |
-+---------------------------------------------------------+
 ```
 
 ### Step 7: Migration Tracking and Reporting
 
 ```
 MIGRATION PROGRESS:
-+---------------------------------------------------------+
 |  Migration:    <source> -> <target>                      |
 |  Strategy:     <big bang | strangler fig | parallel run  |
 |                 | branch by abstraction>                 |
 |  Status:       <planning | in-progress | verifying |    |
 |                 complete | rolled-back>                  |
-+---------------------------------------------------------+
 |  Progress:                                               |
 |    Components migrated:  <N> / <total> (<percentage>)    |
 |    Data migrated:        <N> / <total> records           |
 |    Tests passing:        <N> / <total>                   |
 |    Parallel run match:   <percentage>                    |
-+---------------------------------------------------------+
 |  Timeline:                                               |
 ```
 

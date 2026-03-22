@@ -72,24 +72,24 @@ asyncio_mode = "auto"
 project/
 ├── pyproject.toml
 ├── src/
-│   └── myapp/
-│       ├── __init__.py
-│       ├── models.py
-│       ├── services.py
-│       └── utils.py
+  └── myapp/
+  ├── __init__.py
+  ├── models.py
+  ├── services.py
+  └── utils.py
 ├── tests/
-│   ├── conftest.py            # Root conftest: shared fixtures, plugins
-│   ├── unit/
+  ├── conftest.py            # Root conftest: shared fixtures, plugins
+  ├── unit/
 │   │   ├── conftest.py        # Unit-specific fixtures
 │   │   ├── test_models.py
 │   │   └── test_utils.py
-│   ├── integration/
+  ├── integration/
 │   │   ├── conftest.py        # Integration fixtures (DB, API clients)
 │   │   ├── test_services.py
 │   │   └── test_api.py
-│   └── e2e/
-│       ├── conftest.py        # E2E fixtures (browser, full stack)
-│       └── test_workflows.py
+  └── e2e/
+  ├── conftest.py        # E2E fixtures (browser, full stack)
+  └── test_workflows.py
 ```
 
 ### CLI Usage
@@ -1353,7 +1353,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 ```
 Command                          Description
-─────────────────────────────────────────────────────────────
 pytest                           Run all tests
 pytest -x                        Stop on first failure
 pytest -k "pattern"              Filter by name pattern

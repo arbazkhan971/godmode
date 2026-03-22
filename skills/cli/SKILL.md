@@ -220,21 +220,17 @@ Homebrew (macOS/Linux):
 ### Step 8: CLI Development Report
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  CLI PROJECT — <tool name>                                      │
-├────────────────────────────────────────────────────────────────┤
-│  Language: <TypeScript | Rust | Go | Python>                     │
-│  Parser: <Commander | Clap | Cobra | Click>                     │
-│  Complexity: <simple | subcommands | TUI>                        │
-│                                                                  │
-│  Commands:                                                       │
-│    <command>: <IMPLEMENTED | TESTED | DOCUMENTED>               │
-│    <command>: <IMPLEMENTED | TESTED | DOCUMENTED>               │
-│                                                                  │
-│  Features:                                                       │
-│    Shell completions: <bash | zsh | fish | powershell | all>     │
-│    Config file: <TOML | YAML | JSON | none>                     │
-│    Interactive prompts: <YES | NO>                               │
+  CLI PROJECT — <tool name>
+  Language: <TypeScript | Rust | Go | Python>
+  Parser: <Commander | Clap | Cobra | Click>
+  Complexity: <simple | subcommands | TUI>
+  Commands:
+  <command>: <IMPLEMENTED | TESTED | DOCUMENTED>
+  <command>: <IMPLEMENTED | TESTED | DOCUMENTED>
+  Features:
+  Shell completions: <bash | zsh | fish | powershell | all>
+  Config file: <TOML | YAML | JSON | none>
+  Interactive prompts: <YES | NO>
 ```
 
 ### Step 9: Commit and Transition

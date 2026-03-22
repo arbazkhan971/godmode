@@ -91,8 +91,7 @@ Analyze every foreground/background color combination:
 
 ```
 COLOR CONTRAST ANALYSIS:
-┌──────────────────────────────────────────────┐
-│ Element          │ FG      │ BG      │ Ratio │ Result │
+| Element | FG | BG | Ratio | Result |
 ```
 
 Tools for color contrast:
@@ -114,8 +113,7 @@ Flow: <user flow being tested>
 Test these common keyboard patterns:
 ```
 KEYBOARD PATTERNS:
-┌─────────────────────┬────────────────────────────────────────┐
-│ Component           │ Expected Keyboard Behavior             │
+| Component | Expected Keyboard Behavior |
 ```
 
 ### Step 6: Screen Reader Testing
@@ -182,27 +180,17 @@ WCAG: <criterion satisfied>
 ### Step 9: Accessibility Report
 
 ```
-+------------------------------------------------------------+
 |  ACCESSIBILITY AUDIT — <target>                             |
-+------------------------------------------------------------+
 |  WCAG Level: <AA/AAA>                                       |
-|                                                             |
 |  Automated Scores:                                          |
 |  Axe: <N> violations                                        |
 |  Pa11y: <N> errors                                          |
-|                                                             |
-|                                                             |
-|                                                             |
-|                                                             |
-+------------------------------------------------------------+
 |  MUST FIX before shipping:                                  |
 |  1. <CRITICAL/HIGH finding>                                 |
 |  2. <CRITICAL/HIGH finding>                                 |
-|                                                             |
 |  SHOULD FIX:                                                |
 |  3. <MEDIUM finding>                                        |
 |  4. <MEDIUM finding>                                        |
-+------------------------------------------------------------+
 ```
 
 Verdicts:
@@ -251,19 +239,18 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 
 ```
 A11Y AUDIT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Pages audited      │  <N>                            │
-│  Components audited │  <N>                            │
-│  Total violations   │  <N>                            │
-│  Critical           │  <N> (keyboard traps, no alt)   │
-│  High               │  <N> (contrast, missing labels) │
-│  Medium             │  <N> (aria improvements)        │
-│  Low                │  <N> (best practice suggestions) │
-│  Auto-fixed         │  <N>                            │
-│  Manual review      │  <N>                            │
-│  WCAG level         │  A | AA | AAA                   │
-│  Verdict            │  PASS | NEEDS REMEDIATION       │
-└──────────────────────────────────────────────────────┘
+| Pages audited | <N> |
+|---|---|
+| Components audited | <N> |
+| Total violations | <N> |
+| Critical | <N> (keyboard traps, no alt) |
+| High | <N> (contrast, missing labels) |
+| Medium | <N> (aria improvements) |
+| Low | <N> (best practice suggestions) |
+| Auto-fixed | <N> |
+| Manual review | <N> |
+| WCAG level | A | AA | AAA |
+| Verdict | PASS | NEEDS REMEDIATION |
 ```
 
 ## TSV Logging
@@ -323,23 +310,21 @@ Phase 1 — WCAG Checklist Compliance Loop
     3. BUILD WCAG compliance matrix:
 
   WCAG 2.1 AA COMPLIANCE MATRIX:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Criterion  │  Title                       │  Auto │  Manual │  Status  │
-  ├─────────────┼──────────────────────────────┼───────┼─────────┼──────────┤
-  │  1.1.1      │  Non-text Content            │  PASS │  —      │  PASS    │
-  │  1.3.1      │  Info and Relationships      │  PASS │  CHECK  │  PENDING │
-  │  1.4.3      │  Contrast (Minimum)          │  FAIL │  —      │  FAIL    │
-  │  1.4.11     │  Non-text Contrast           │  —    │  CHECK  │  PENDING │
-  │  2.1.1      │  Keyboard                    │  —    │  PASS   │  PASS    │
-  │  2.1.2      │  No Keyboard Trap            │  —    │  FAIL   │  CRITICAL│
-  │  2.4.3      │  Focus Order                 │  —    │  CHECK  │  PENDING │
-  │  2.4.7      │  Focus Visible               │  —    │  PASS   │  PASS    │
-  │  2.5.5      │  Target Size                 │  —    │  CHECK  │  PENDING │
-  │  3.3.1      │  Error Identification        │  PASS │  —      │  PASS    │
-  │  3.3.2      │  Labels or Instructions      │  FAIL │  —      │  FAIL    │
-  │  4.1.2      │  Name, Role, Value           │  FAIL │  CHECK  │  FAIL    │
-  │  ...        │  (all 50 AA criteria)        │  ...  │  ...    │  ...     │
-  └─────────────┴──────────────────────────────┴───────┴─────────┴──────────┘
+| Criterion | Title | Auto | Manual | Status |
+|---|---|---|---|---|
+| 1.1.1 | Non-text Content | PASS | — | PASS |
+| 1.3.1 | Info and Relationships | PASS | CHECK | PENDING |
+| 1.4.3 | Contrast (Minimum) | FAIL | — | FAIL |
+| 1.4.11 | Non-text Contrast | — | CHECK | PENDING |
+| 2.1.1 | Keyboard | — | PASS | PASS |
+| 2.1.2 | No Keyboard Trap | — | FAIL | CRITICAL |
+| 2.4.3 | Focus Order | — | CHECK | PENDING |
+| 2.4.7 | Focus Visible | — | PASS | PASS |
+| 2.5.5 | Target Size | — | CHECK | PENDING |
+| 3.3.1 | Error Identification | PASS | — | PASS |
+| 3.3.2 | Labels or Instructions | FAIL | — | FAIL |
+| 4.1.2 | Name, Role, Value | FAIL | CHECK | FAIL |
+| ... | (all 50 AA criteria) | ... | ... | ... |
 
     4. FIX findings in priority order: CRITICAL first, then HIGH
     5. RE-RUN automated scans after each batch of fixes
@@ -359,17 +344,15 @@ Phase 2 — Screen Reader Testing Protocol
   Test with real assistive technology, not just ARIA validation.
 
   SCREEN READER TEST MATRIX:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Combination              │  Priority  │  Coverage                       │
-  ├───────────────────────────┼────────────┼─────────────────────────────────┤
-  │  VoiceOver + Safari/macOS │  PRIMARY   │  Most common screen reader/     │
-  │                           │            │  browser combo on macOS         │
-  │  NVDA + Firefox/Windows   │  PRIMARY   │  Most common free SR on Windows │
-  │  NVDA + Chrome/Windows    │  SECONDARY │  Second most common on Windows  │
-  │  JAWS + Chrome/Windows    │  SECONDARY │  Enterprise standard            │
-  │  TalkBack + Chrome/Android│  MOBILE    │  Android accessibility          │
-  │  VoiceOver + Safari/iOS   │  MOBILE    │  iOS accessibility              │
-  └───────────────────────────┴────────────┴─────────────────────────────────┘
+| Combination | Priority | Coverage |
+|---|---|---|
+| VoiceOver + Safari/macOS | PRIMARY | Most common screen reader/ |
+|  |  | browser combo on macOS |
+| NVDA + Firefox/Windows | PRIMARY | Most common free SR on Windows |
+| NVDA + Chrome/Windows | SECONDARY | Second most common on Windows |
+| JAWS + Chrome/Windows | SECONDARY | Enterprise standard |
+| TalkBack + Chrome/Android | MOBILE | Android accessibility |
+| VoiceOver + Safari/iOS | MOBILE | iOS accessibility |
 
   FOR EACH priority combination:
     FOR EACH critical user flow (login, signup, primary task, checkout):
@@ -400,14 +383,12 @@ Phase 2 — Screen Reader Testing Protocol
          flow | step | expected | actual | sr_combination | status
 
   SCREEN READER TEST RESULTS:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Flow          │  VO+Safari │  NVDA+FF  │  NVDA+Chrome │  TalkBack    │
-  ├────────────────┼────────────┼───────────┼──────────────┼──────────────┤
-  │  Login         │  PASS      │  PASS     │  PASS        │  PASS        │
-  │  Signup        │  PASS      │  FAIL*    │  PASS        │  PENDING     │
-  │  Dashboard     │  PASS      │  PASS     │  PASS        │  PASS        │
-  │  Checkout      │  FAIL**    │  PASS     │  PASS        │  PENDING     │
-  └────────────────┴────────────┴───────────┴──────────────┴──────────────┘
+| Flow | VO+Safari | NVDA+FF | NVDA+Chrome | TalkBack |
+|---|---|---|---|---|
+| Login | PASS | PASS | PASS | PASS |
+| Signup | PASS | FAIL* | PASS | PENDING |
+| Dashboard | PASS | PASS | PASS | PASS |
+| Checkout | FAIL** | PASS | PASS | PENDING |
   * Error messages not announced in NVDA+Firefox — missing aria-live region
   ** Modal focus not trapped in VoiceOver — missing focus trap implementation
 
@@ -431,28 +412,24 @@ Phase 3 — Automated Regression Gate
      - If count decreases → log the improvement
 
   ACCESSIBILITY METRICS OVER TIME:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Release    │  Axe Critical │  Axe Serious │  Lighthouse │  SR Flows   │
-  ├─────────────┼───────────────┼──────────────┼─────────────┼─────────────┤
-  │  v1.0.0     │  5            │  12          │  72         │  not tested │
-  │  v1.1.0     │  0            │  4           │  88         │  4/6 pass   │
-  │  v1.2.0     │  0            │  0           │  96         │  6/6 pass   │
-  └─────────────┴───────────────┴──────────────┴─────────────┴─────────────┘
+| Release | Axe Critical | Axe Serious | Lighthouse | SR Flows |
+|---|---|---|---|---|
+| v1.0.0 | 5 | 12 | 72 | not tested |
+| v1.1.0 | 0 | 4 | 88 | 4/6 pass |
+| v1.2.0 | 0 | 0 | 96 | 6/6 pass |
 
 FINAL ACCESSIBILITY AUDIT REPORT:
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Metric                            │  Before   │  After    │  Target    │
-├────────────────────────────────────┼───────────┼───────────┼────────────┤
-│  WCAG 2.1 AA criteria met         │  <N>/50   │  <N>/50   │  50/50     │
-│  Axe critical violations           │  <N>      │  0        │  0         │
-│  Axe serious violations            │  <N>      │  0        │  0         │
-│  Lighthouse accessibility          │  <N>      │  <N>      │  >= 95     │
-│  Color contrast failures           │  <N>      │  0        │  0         │
-│  Keyboard traps                    │  <N>      │  0        │  0         │
-│  Screen reader flows passing       │  <N>/<M>  │  <N>/<M>  │  100%      │
-│  CI gate enabled                   │  NO       │  YES      │  YES       │
-│  Touch targets >= 44px             │  <N>%     │  <N>%     │  100%      │
-└────────────────────────────────────┴───────────┴───────────┴────────────┘
+| Metric | Before | After | Target |
+|---|---|---|---|
+| WCAG 2.1 AA criteria met | <N>/50 | <N>/50 | 50/50 |
+| Axe critical violations | <N> | 0 | 0 |
+| Axe serious violations | <N> | 0 | 0 |
+| Lighthouse accessibility | <N> | <N> | >= 95 |
+| Color contrast failures | <N> | 0 | 0 |
+| Keyboard traps | <N> | 0 | 0 |
+| Screen reader flows passing | <N>/<M> | <N>/<M> | 100% |
+| CI gate enabled | NO | YES | YES |
+| Touch targets >= 44px | <N>% | <N>% | 100% |
 ```
 
 

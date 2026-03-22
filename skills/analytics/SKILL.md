@@ -46,20 +46,16 @@ Choose the right analytics stack:
 
 ```
 PLATFORM SELECTION:
-┌──────────────────┬──────────────────────────┬──────────────────────────────┐
-│  Platform        │  Best For                │  Privacy Model               │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Segment         │  Data routing hub,       │  Third-party, consent needed │
-│                  │  multi-destination CDP   │  GDPR tools available        │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Amplitude       │  Product analytics,      │  Third-party, consent needed │
-│                  │  behavioral cohorts,     │  SOC 2, GDPR compliant       │
-│                  │  journey mapping         │                              │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Mixpanel        │  Event analytics,        │  Third-party, consent needed │
-│                  │  funnel analysis,        │  EU data residency available │
-│                  │  retention tracking      │                              │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
+| Platform | Best For | Privacy Model |
+|---|---|---|
+| Segment | Data routing hub, | Third-party, consent needed |
+|  | multi-destination CDP | GDPR tools available |
+| Amplitude | Product analytics, | Third-party, consent needed |
+|  | behavioral cohorts, | SOC 2, GDPR compliant |
+|  | journey mapping |  |
+| Mixpanel | Event analytics, | Third-party, consent needed |
+|  | funnel analysis, | EU data residency available |
+|  | retention tracking |  |
 ```
 
 ### Step 3: Event Taxonomy Design
@@ -73,14 +69,11 @@ Format: <object>_<action> (snake_case) or <Object> <Action> (Title Case)
 Selected: <format>
 
 EVENT CATALOG:
-┌─────────────────────────────────┬──────────┬──────────────────────────────┐
-│  Event Name                     │  Trigger │  Properties                  │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  LIFECYCLE EVENTS                                                         │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  User Signed Up                 │  Server  │  method, referral_source,    │
-│                                 │          │  plan                        │
-│  User Logged In                 │  Server  │  method, mfa_used            │
+| Event Name | Trigger | Properties |
+  LIFECYCLE EVENTS
+| User Signed Up | Server | method, referral_source, |
+|  |  | plan |
+| User Logged In | Server | method, mfa_used |
 ```
 
 ### Step 4: Event Property Standards
@@ -160,16 +153,15 @@ Funnel name: <name — e.g., "Onboarding Funnel">
 Goal: <what conversion means — e.g., "User completes onboarding">
 
 FUNNEL STEPS:
-┌──────┬────────────────────────┬───────────────────┬──────────────┐
-│ Step │ Name                   │ Event             │ Expected %   │
-├──────┼────────────────────────┼───────────────────┼──────────────┤
-│  1   │ Visit landing page     │ Page Viewed       │ 100%         │
-│  2   │ Click sign up          │ CTA Clicked       │ 30-40%       │
-│  3   │ Complete registration  │ User Signed Up    │ 60-70%       │
-│  4   │ Start onboarding flow  │ Onboarding Started│ 80-90%       │
-│  5   │ Complete onboarding    │ Onboarding Done   │ 50-60%       │
-│  6   │ First core action      │ Feature Used      │ 40-50%       │
-│  7   │ Activation (aha moment)│ Activation Done   │ 30-40%       │
+| Step | Name | Event | Expected % |
+|---|---|---|---|
+| 1 | Visit landing page | Page Viewed | 100% |
+| 2 | Click sign up | CTA Clicked | 30-40% |
+| 3 | Complete registration | User Signed Up | 60-70% |
+| 4 | Start onboarding flow | Onboarding Started | 80-90% |
+| 5 | Complete onboarding | Onboarding Done | 50-60% |
+| 6 | First core action | Feature Used | 40-50% |
+| 7 | Activation (aha moment) | Activation Done | 30-40% |
 ```
 
 ### Step 7: A/B Test Instrumentation
@@ -188,9 +180,7 @@ Significance level: alpha = 0.05
 Power: 1 - beta = 0.80
 
 VARIANTS:
-┌───────────┬──────────────────────────────────┬──────────────┐
-│  Variant  │  Description                     │  Traffic %   │
-├───────────┼──────────────────────────────────┼──────────────┤
+| Variant | Description | Traffic % |
 ```
 
 #### Experiment Implementation
@@ -226,20 +216,16 @@ Implement privacy-compliant analytics:
 
 ```
 PRIVACY IMPLEMENTATION:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Requirement                    │  Implementation                    │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Consent management             │  Cookie banner with granular       │
-│                                 │  opt-in/opt-out per category       │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  No tracking before consent     │  Analytics SDK loads only after    │
-│                                 │  user grants consent               │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Data minimization              │  Track only necessary events,      │
-│                                 │  no PII in properties              │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  User data deletion             │  API endpoint to delete all data   │
-│                                 │  for a user_id (GDPR Art. 17)     │
+| Requirement | Implementation |
+|---|---|
+| Consent management | Cookie banner with granular |
+|  | opt-in/opt-out per category |
+| No tracking before consent | Analytics SDK loads only after |
+|  | user grants consent |
+| Data minimization | Track only necessary events, |
+|  | no PII in properties |
+| User data deletion | API endpoint to delete all data |
+|  | for a user_id (GDPR Art. 17) |
 ```
 
 ### Step 10: Validation & Delivery
@@ -247,20 +233,19 @@ Validate the analytics implementation:
 
 ```
 ANALYTICS VALIDATION:
-┌──────────────────────────────────────────────────────┬──────────────┐
-│  Check                                               │  Status      │
-├──────────────────────────────────────────────────────┼──────────────┤
-│  All events in taxonomy are instrumented             │  PASS | FAIL │
-│  Event names follow naming convention                │  PASS | FAIL │
-│  Properties match documented schema                  │  PASS | FAIL │
-│  No PII in any event properties                      │  PASS | FAIL │
-│  Consent gate works (no tracking before consent)     │  PASS | FAIL │
-│  Funnels capture all steps correctly                 │  PASS | FAIL │
-│  A/B test assignment is deterministic and sticky     │  PASS | FAIL │
-│  Data appears in analytics dashboard                 │  PASS | FAIL │
-│  DNT/opt-out disables all tracking                   │  PASS | FAIL │
-│  User deletion API works (GDPR compliance)           │  PASS | FAIL │
-│  Events fire on correct triggers (not duplicated)    │  PASS | FAIL │
+| Check | Status |
+|---|---|
+| All events in taxonomy are instrumented | PASS | FAIL |
+| Event names follow naming convention | PASS | FAIL |
+| Properties match documented schema | PASS | FAIL |
+| No PII in any event properties | PASS | FAIL |
+| Consent gate works (no tracking before consent) | PASS | FAIL |
+| Funnels capture all steps correctly | PASS | FAIL |
+| A/B test assignment is deterministic and sticky | PASS | FAIL |
+| Data appears in analytics dashboard | PASS | FAIL |
+| DNT/opt-out disables all tracking | PASS | FAIL |
+| User deletion API works (GDPR compliance) | PASS | FAIL |
+| Events fire on correct triggers (not duplicated) | PASS | FAIL |
 ```
 
 ```

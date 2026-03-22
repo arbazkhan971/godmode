@@ -116,20 +116,16 @@ cost_budget: 400                 # monthly USD threshold
 ### Example Cost Report
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ GCP Cost Optimization Report                            │
-├─────────────────────────────────────────────────────────┤
-│ Current monthly spend:           $8,200                 │
-│ Projected savings:               $2,460 (30.0%)        │
-│                                                         │
-│ Top recommendations:                                    │
-│  1. Purchase 3-year CUDs for GKE nodes    → −$780/mo   │
-│  2. Switch BigQuery to flat-rate slots    → −$520/mo   │
-│  3. Right-size Cloud SQL db-n1-std-8      → −$340/mo   │
-│  4. Enable Cloud CDN (reduce egress)      → −$310/mo   │
-│  5. Move cold GCS data to Coldline        → −$280/mo   │
-│  6. Use spot VMs for batch GKE workloads  → −$230/mo   │
-└─────────────────────────────────────────────────────────┘
+  GCP Cost Optimization Report
+  Current monthly spend:           $8,200
+  Projected savings:               $2,460 (30.0%)
+  Top recommendations:
+  1. Purchase 3-year CUDs for GKE nodes    → −$780/mo
+  2. Switch BigQuery to flat-rate slots    → −$520/mo
+  3. Right-size Cloud SQL db-n1-std-8      → −$340/mo
+  4. Enable Cloud CDN (reduce egress)      → −$310/mo
+  5. Move cold GCS data to Coldline        → −$280/mo
+  6. Use spot VMs for batch GKE workloads  → −$230/mo
 ```
 
 ---
@@ -269,18 +265,13 @@ cost_budget: 400                 # monthly USD threshold
 ### Pipeline Stages
 
 ```
-┌────────┐   ┌──────────┐   ┌──────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│  Push  │──▶│  Cloud   │──▶│ Test │──▶│ Artifact │──▶│  Cloud   │──▶│  Verify  │
-│        │   │  Build   │   │Unit+ │   │ Registry │   │  Deploy  │   │  Canary  │
-│        │   │  Trigger │   │ Intg │   │  Push    │   │ Staging  │   │  Check   │
-└────────┘   └──────────┘   └──────┘   └──────────┘   └──────────┘   └──────────┘
-                                                              │
+| Push | ──▶ | Cloud | ──▶ | Test | ──▶ | Artifact | ──▶ | Cloud | ──▶ | Verify |
+|  |  | Build |  | Unit+ |  | Registry |  | Deploy |  | Canary |
+|  |  | Trigger |  | Intg |  | Push |  | Staging |  | Check |
                                                               ▼
-                                                        ┌──────────┐
-                                                        │  Cloud   │
-                                                        │  Deploy  │
-                                                        │Production│
-                                                        └──────────┘
+  Cloud
+  Deploy
+  Production
 ```
 
 ---

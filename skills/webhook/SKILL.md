@@ -51,7 +51,6 @@ SSRF prevention: resolve DNS before connecting, block private IPs (127.0.0.0/8, 
 ### Step 4: Outbound Delivery System
 ```
 Event Source -> Webhook Dispatcher -> Delivery Worker -> Consumer Endpoint
-                    |                      |
                 Delivery Log          Retry Queue (exp backoff)
                                           |
                                      Dead Letter Queue

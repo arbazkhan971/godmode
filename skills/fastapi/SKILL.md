@@ -74,20 +74,18 @@ from pydantic import BaseModel, Field, EmailStr, field_validator, model_validato
 
 ```
 PYDANTIC PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Usage                           │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Separate Create/Update/Response     │  Different fields per operation  │
-│  field_validator                     │  Single-field custom validation  │
-│  model_validator                     │  Cross-field validation          │
-│  Field(..., gt=0, max_length=100)    │  Declarative constraints         │
-│  ConfigDict(from_attributes=True)    │  ORM model -> Pydantic schema    │
-│  Generic PaginatedResponse[T]        │  Reusable pagination wrapper     │
-│  Summary schemas                     │  Lightweight nested objects      │
-│  Computed fields                     │  Derived values in response      │
-│  Discriminated unions                │  Polymorphic request bodies      │
-│  Strict types                        │  StrictInt, StrictStr for safety │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | Usage |
+|---|---|
+| Separate Create/Update/Response | Different fields per operation |
+| field_validator | Single-field custom validation |
+| model_validator | Cross-field validation |
+| Field(..., gt=0, max_length=100) | Declarative constraints |
+| ConfigDict(from_attributes=True) | ORM model -> Pydantic schema |
+| Generic PaginatedResponse[T] | Reusable pagination wrapper |
+| Summary schemas | Lightweight nested objects |
+| Computed fields | Derived values in response |
+| Discriminated unions | Polymorphic request bodies |
+| Strict types | StrictInt, StrictStr for safety |
 ```
 
 Rules:
@@ -112,18 +110,16 @@ from jose import JWTError, jwt
 
 ```
 DEPENDENCY INJECTION PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Usage                           │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Annotated[T, Depends(fn)]           │  Type-safe DI (Python 3.9+)     │
-│  yield dependencies                  │  Resource lifecycle (DB, files)  │
-│  Nested dependencies                 │  Service -> Repository -> DB     │
-│  Parameterized dependencies          │  require_role("admin")           │
-│  Class-based dependencies            │  Service classes with __init__   │
-│  Cached dependencies                 │  use_cache=True on Depends       │
-│  Request-scoped                      │  Default — one per request       │
-│  App-scoped (lifespan)               │  DB pool, HTTP clients           │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | Usage |
+|---|---|
+| Annotated[T, Depends(fn)] | Type-safe DI (Python 3.9+) |
+| yield dependencies | Resource lifecycle (DB, files) |
+| Nested dependencies | Service -> Repository -> DB |
+| Parameterized dependencies | require_role("admin") |
+| Class-based dependencies | Service classes with __init__ |
+| Cached dependencies | use_cache=True on Depends |
+| Request-scoped | Default — one per request |
+| App-scoped (lifespan) | DB pool, HTTP clients |
 ```
 
 Rules:
@@ -148,20 +144,18 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 ```
 ASYNC DATABASE PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Usage                           │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  asyncpg driver                      │  PostgreSQL async driver         │
-│  expire_on_commit=False              │  Access attributes after commit  │
-│  selectin loading                    │  Async-safe eager loading        │
-│  Repository pattern                  │  Encapsulate query logic         │
-│  Alembic async migrations            │  Schema version control          │
-│  select() + execute()                │  SQLAlchemy 2.0 query style      │
-│  session.flush()                     │  Get ID before commit            │
-│  Mapped[] annotations                │  Type-safe column definitions    │
-│  TimestampMixin                      │  Reusable audit fields           │
-│  Composite indexes                   │  Multi-column query optimization │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | Usage |
+|---|---|
+| asyncpg driver | PostgreSQL async driver |
+| expire_on_commit=False | Access attributes after commit |
+| selectin loading | Async-safe eager loading |
+| Repository pattern | Encapsulate query logic |
+| Alembic async migrations | Schema version control |
+| select() + execute() | SQLAlchemy 2.0 query style |
+| session.flush() | Get ID before commit |
+| Mapped[] annotations | Type-safe column definitions |
+| TimestampMixin | Reusable audit fields |
+| Composite indexes | Multi-column query optimization |
 ```
 
 Rules:
@@ -187,15 +181,13 @@ async def create_order(
 
 ```
 ASYNC TASK STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Approach                            │  When to Use                     │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  BackgroundTasks                     │  Simple fire-and-forget (email)  │
-│  Celery                              │  Complex workflows, scheduling   │
-│  ARQ                                 │  Async-native, lightweight       │
-│  Dramatiq                            │  Actor-based, reliable           │
-│  asyncio.create_task()               │  In-process async work           │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Approach | When to Use |
+|---|---|
+| BackgroundTasks | Simple fire-and-forget (email) |
+| Celery | Complex workflows, scheduling |
+| ARQ | Async-native, lightweight |
+| Dramatiq | Actor-based, reliable |
+| asyncio.create_task() | In-process async work |
 
 WEBSOCKET PATTERNS:
 - ConnectionManager: Track active connections per channel
@@ -227,18 +219,16 @@ from app.main import create_app
 
 ```
 TESTING STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Layer                               │  Approach                        │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Endpoints (HTTP)                    │  pytest + HTTPX AsyncClient      │
-│  Services (business logic)           │  pytest + async fixtures         │
-│  Schemas (validation)                │  pytest + Pydantic validation    │
-│  Repositories (data access)          │  pytest + test DB session        │
-│  Dependencies (DI)                   │  dependency_overrides            │
-│  WebSockets                          │  HTTPX WebSocket client          │
-│  Background tasks                    │  Mock or capture tasks           │
-│  Auth (JWT/OAuth2)                   │  Auth header fixtures            │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Layer | Approach |
+|---|---|
+| Endpoints (HTTP) | pytest + HTTPX AsyncClient |
+| Services (business logic) | pytest + async fixtures |
+| Schemas (validation) | pytest + Pydantic validation |
+| Repositories (data access) | pytest + test DB session |
+| Dependencies (DI) | dependency_overrides |
+| WebSockets | HTTPX WebSocket client |
+| Background tasks | Mock or capture tasks |
+| Auth (JWT/OAuth2) | Auth header fixtures |
 
 TEST TOOLING:
 ```
@@ -256,20 +246,19 @@ Verify the FastAPI application:
 
 ```
 FASTAPI VALIDATION:
-┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│  Check                               │  Status  │  Notes               │
-├──────────────────────────────────────┼──────────┼──────────────────────┤
-│  Async endpoints throughout          │  PASS    │  No sync blocking    │
-│  Pydantic schemas for all I/O        │  PASS    │  Create/Update/Resp  │
-│  Dependency injection (no globals)   │  PASS    │  Depends() everywhere│
-│  Async DB driver (asyncpg)           │  PASS    │  No sync psycopg2    │
-│  N+1 prevention (selectin loading)   │  PASS    │  Relationships loaded│
-│  Auth on all protected endpoints     │  PASS    │  JWT + role checks   │
-│  Input validation with constraints   │  PASS    │  Field validators    │
-│  Error handling centralized          │  PASS    │  Exception handlers  │
-│  Alembic migrations present          │  PASS    │  Version-controlled  │
-│  Tests pass with HTTPX               │  PASS    │  Async test suite    │
-│  Config via pydantic-settings        │  PASS    │  Typed env vars      │
+| Check | Status | Notes |
+|---|---|---|
+| Async endpoints throughout | PASS | No sync blocking |
+| Pydantic schemas for all I/O | PASS | Create/Update/Resp |
+| Dependency injection (no globals) | PASS | Depends() everywhere |
+| Async DB driver (asyncpg) | PASS | No sync psycopg2 |
+| N+1 prevention (selectin loading) | PASS | Relationships loaded |
+| Auth on all protected endpoints | PASS | JWT + role checks |
+| Input validation with constraints | PASS | Field validators |
+| Error handling centralized | PASS | Exception handlers |
+| Alembic migrations present | PASS | Version-controlled |
+| Tests pass with HTTPX | PASS | Async test suite |
+| Config via pydantic-settings | PASS | Typed env vars |
 ```
 
 ```

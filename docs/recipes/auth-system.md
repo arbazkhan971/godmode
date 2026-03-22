@@ -447,49 +447,42 @@ AuthCore v1.0.0 is LIVE.
 
 ```
 Client                    Server                     Redis
-  │                         │                          │
   ├─ POST /auth/login ─────→│                          │
-  │  {email, password}      │                          │
-  │                         ├─ verify password ────────│
-  │                         ├─ check lockout ──────────│
-  │                         │                          │
-  │◄─ 200 {mfaRequired} ───┤  (if MFA enabled)        │
-  │                         │                          │
+| {email, password} |  |
+  ├─ verify password ────────
+  ├─ check lockout ──────────
+  ◄─ 200 {mfaRequired} ───┤  (if MFA enabled)
   ├─ POST /auth/mfa/verify─→│                          │
-  │  {code}                 │                          │
-  │                         ├─ verify TOTP code        │
-  │                         ├─ create session ─────────→│
-  │                         ├─ generate JWT            │
-  │                         ├─ generate refresh token  │
-  │                         │                          │
-  │◄─ 200 {accessToken} ───┤                          │
-  │   Set-Cookie: refresh   │                          │
+| {code} |  |
+  ├─ verify TOTP code
+  ├─ create session ─────────→
+  ├─ generate JWT
+  ├─ generate refresh token
+  ◄─ 200 {accessToken} ───┤
+| Set-Cookie: refresh |  |
 ```
 
 ### OAuth2 with PKCE
 
 ```
 Client              Server              Google/GitHub
-  │                   │                      │
   ├─ GET /auth/oauth/google ──→│             │
-  │                   ├─ generate state      │
-  │                   ├─ generate PKCE       │
-  │                   │  (code_verifier +    │
-  │                   │   code_challenge)    │
-  │◄─ 302 Redirect ──┤                      │
-  │                   │                      │
+  ├─ generate state
+  ├─ generate PKCE
+|  | (code_verifier + |
+|  | code_challenge) |
+  ◄─ 302 Redirect ──┤
   ├─ (user consents) ─────────────────────→  │
-  │◄─ 302 Redirect with code ─────────────  │
-  │                   │                      │
+  ◄─ 302 Redirect with code ─────────────
   ├─ GET /auth/oauth/callback?code=... ──→│  │
-  │                   ├─ verify state        │
-  │                   ├─ exchange code ──────────────→│
-  │                   │  (with code_verifier)         │
-  │                   │◄─ {access_token, id_token} ──│
-  │                   ├─ verify id_token     │
-  │                   ├─ find or create user │
-  │                   ├─ create session      │
-  │◄─ 200 {accessToken} ──┤                 │
+  ├─ verify state
+  ├─ exchange code ──────────────→
+|  | (with code_verifier) |
+|  | ◄─ {access_token, id_token} ── |
+  ├─ verify id_token
+  ├─ find or create user
+  ├─ create session
+  ◄─ 200 {accessToken} ──┤
 ```
 
 ---

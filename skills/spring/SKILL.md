@@ -35,20 +35,19 @@ Select starters based on requirements:
 
 ```
 STARTER SELECTION:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Starter                             │  Purpose                         │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  spring-boot-starter-web             │  REST API with embedded Tomcat   │
-│  spring-boot-starter-webflux         │  Reactive/non-blocking API       │
-│  spring-boot-starter-data-jpa        │  JPA + Hibernate ORM             │
-│  spring-boot-starter-data-mongodb    │  MongoDB document store          │
-│  spring-boot-starter-data-redis      │  Redis caching/sessions          │
-│  spring-boot-starter-security        │  Authentication & authorization  │
-│  spring-boot-starter-oauth2-resource-server │  JWT/OAuth2 API protection │
-│  spring-boot-starter-oauth2-client   │  OAuth2 login flows              │
-│  spring-boot-starter-actuator        │  Health, metrics, info endpoints │
-│  spring-boot-starter-validation      │  Bean validation (Jakarta)       │
-│  spring-boot-starter-cache           │  Caching abstraction             │
+| Starter | Purpose |
+|---|---|
+| spring-boot-starter-web | REST API with embedded Tomcat |
+| spring-boot-starter-webflux | Reactive/non-blocking API |
+| spring-boot-starter-data-jpa | JPA + Hibernate ORM |
+| spring-boot-starter-data-mongodb | MongoDB document store |
+| spring-boot-starter-data-redis | Redis caching/sessions |
+| spring-boot-starter-security | Authentication & authorization |
+| spring-boot-starter-oauth2-resource-server | JWT/OAuth2 API protection |
+| spring-boot-starter-oauth2-client | OAuth2 login flows |
+| spring-boot-starter-actuator | Health, metrics, info endpoints |
+| spring-boot-starter-validation | Bean validation (Jakarta) |
+| spring-boot-starter-cache | Caching abstraction |
 ```
 
 Rules:
@@ -72,18 +71,16 @@ spring:
 
 ```
 AUTO-CONFIGURATION AUDIT:
-┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│  Setting                             │  Status  │  Notes               │
-├──────────────────────────────────────┼──────────┼──────────────────────┤
-│  open-in-view: false                 │  SET     │  Prevents lazy-load  │
-│  ddl-auto: validate                  │  SET     │  Flyway/Liquibase    │
-│  graceful shutdown                   │  SET     │  Drain connections   │
-│  connection pool tuned               │  SET     │  HikariCP defaults   │
-│  actuator endpoints restricted       │  SET     │  Only health/metrics │
-│  health probes enabled               │  SET     │  K8s liveness/ready  │
-│  external config via env vars        │  SET     │  12-factor app       │
-│  OSIV disabled                       │  SET     │  No lazy surprises   │
-└──────────────────────────────────────┴──────────┴──────────────────────┘
+| Setting | Status | Notes |
+|---|---|---|
+| open-in-view: false | SET | Prevents lazy-load |
+| ddl-auto: validate | SET | Flyway/Liquibase |
+| graceful shutdown | SET | Drain connections |
+| connection pool tuned | SET | HikariCP defaults |
+| actuator endpoints restricted | SET | Only health/metrics |
+| health probes enabled | SET | K8s liveness/ready |
+| external config via env vars | SET | 12-factor app |
+| OSIV disabled | SET | No lazy surprises |
 ```
 
 Rules:
@@ -108,19 +105,17 @@ public class SecurityConfig {
 
 ```
 SECURITY CONFIGURATION:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Layer                               │  Configuration                   │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Authentication                      │  JWT / OAuth2 / Basic / Form     │
-│  Authorization                       │  URL-based + Method-level        │
-│  CSRF                                │  Disabled (stateless API)        │
-│  CORS                                │  Configured per environment      │
-│  Session                             │  STATELESS for APIs              │
-│  Password encoding                   │  BCrypt (strength 12)            │
-│  Rate limiting                       │  Bucket4j or Spring Cloud Gateway│
-│  Security headers                    │  X-Frame, X-Content-Type, HSTS  │
-│  Audit logging                       │  Spring Security events          │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Layer | Configuration |
+|---|---|
+| Authentication | JWT / OAuth2 / Basic / Form |
+| Authorization | URL-based + Method-level |
+| CSRF | Disabled (stateless API) |
+| CORS | Configured per environment |
+| Session | STATELESS for APIs |
+| Password encoding | BCrypt (strength 12) |
+| Rate limiting | Bucket4j or Spring Cloud Gateway |
+| Security headers | X-Frame, X-Content-Type, HSTS |
+| Audit logging | Spring Security events |
 ```
 
 Rules:
@@ -145,20 +140,18 @@ Design the data layer:
 
 ```
 DATA LAYER PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Usage                           │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Derived queries                     │  Simple lookups by fields        │
-│  JPQL with JOIN FETCH                │  Avoid N+1 on associations       │
-│  Native queries                      │  Complex reporting/analytics     │
-│  Specifications                      │  Dynamic filtering (search APIs) │
-│  Projections/DTOs                    │  Lightweight reads, API responses│
-│  @Modifying bulk updates             │  Mass status changes             │
-│  @Version optimistic locking         │  Concurrent modification safety  │
-│  BaseEntity (audit fields)           │  created_at, updated_at, version │
-│  Flyway/Liquibase migrations         │  Schema version control          │
-│  QueryDSL (optional)                 │  Type-safe dynamic queries       │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | Usage |
+|---|---|
+| Derived queries | Simple lookups by fields |
+| JPQL with JOIN FETCH | Avoid N+1 on associations |
+| Native queries | Complex reporting/analytics |
+| Specifications | Dynamic filtering (search APIs) |
+| Projections/DTOs | Lightweight reads, API responses |
+| @Modifying bulk updates | Mass status changes |
+| @Version optimistic locking | Concurrent modification safety |
+| BaseEntity (audit fields) | created_at, updated_at, version |
+| Flyway/Liquibase migrations | Schema version control |
+| QueryDSL (optional) | Type-safe dynamic queries |
 ```
 
 Rules:
@@ -174,20 +167,18 @@ Configure observability:
 
 ```
 ACTUATOR CONFIGURATION:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Endpoint                            │  Purpose                         │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  /actuator/health                    │  Liveness probe (K8s)            │
-│  /actuator/health/readiness          │  Readiness probe (K8s)           │
-│  /actuator/health/liveness           │  Liveness probe (K8s)            │
-│  /actuator/info                      │  Build info, git commit          │
-│  /actuator/metrics                   │  Micrometer metrics              │
-│  /actuator/prometheus                │  Prometheus scrape endpoint      │
-│  /actuator/loggers                   │  Runtime log level changes       │
-│  /actuator/env                       │  DISABLED in prod                │
-│  /actuator/beans                     │  DISABLED in prod                │
-│  /actuator/heapdump                  │  DISABLED in prod                │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Endpoint | Purpose |
+|---|---|
+| /actuator/health | Liveness probe (K8s) |
+| /actuator/health/readiness | Readiness probe (K8s) |
+| /actuator/health/liveness | Liveness probe (K8s) |
+| /actuator/info | Build info, git commit |
+| /actuator/metrics | Micrometer metrics |
+| /actuator/prometheus | Prometheus scrape endpoint |
+| /actuator/loggers | Runtime log level changes |
+| /actuator/env | DISABLED in prod |
+| /actuator/beans | DISABLED in prod |
+| /actuator/heapdump | DISABLED in prod |
 ```
 
 ```java
@@ -205,20 +196,18 @@ Design microservice architecture when needed:
 
 ```
 MICROSERVICES ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────────┐
-│                        API Gateway                               │
-│                  (Spring Cloud Gateway)                           │
-│  - Route matching, load balancing, rate limiting                 │
-│  - JWT validation at edge, circuit breaker                       │
+  API Gateway
+  (Spring Cloud Gateway)
+  - Route matching, load balancing, rate limiting
+  - JWT validation at edge, circuit breaker
 └──────────────────┬──────────────────────────────────┬────────────┘
-                   │                                  │
          ┌─────────▼─────────┐              ┌────────▼──────────┐
-         │  Service A         │              │  Service B         │
-         │  (Spring Boot)     │◄────────────►│  (Spring Boot)     │
-         │  - REST/gRPC       │   OpenFeign  │  - REST/gRPC       │
-         │  - Own database    │   or gRPC    │  - Own database    │
+| Service A |  | Service B |
+|---|---|---|
+| (Spring Boot) | ◄────────────► | (Spring Boot) |
+| - REST/gRPC | OpenFeign | - REST/gRPC |
+| - Own database | or gRPC | - Own database |
          └─────────┬─────────┘              └────────┬──────────┘
-                   │                                  │
 ```
 
 ### Step 7: Testing Strategy
@@ -236,17 +225,15 @@ class OrderServiceTest {
 
 ```
 TESTING STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Layer                               │  Approach                        │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Unit (service logic)                │  JUnit 5 + Mockito              │
-│  Controller (HTTP layer)             │  @WebMvcTest + MockMvc           │
-│  Repository (data layer)             │  @DataJpaTest + H2/TestContainers│
-│  Integration (full stack)            │  @SpringBootTest + TestContainers│
-│  Security (auth/authz)              │  SecurityMockMvcConfigurers       │
-│  Contract (API consumers)            │  Spring Cloud Contract           │
-│  Architecture (structure)            │  ArchUnit                        │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Layer | Approach |
+|---|---|
+| Unit (service logic) | JUnit 5 + Mockito |
+| Controller (HTTP layer) | @WebMvcTest + MockMvc |
+| Repository (data layer) | @DataJpaTest + H2/TestContainers |
+| Integration (full stack) | @SpringBootTest + TestContainers |
+| Security (auth/authz) | SecurityMockMvcConfigurers |
+| Contract (API consumers) | Spring Cloud Contract |
+| Architecture (structure) | ArchUnit |
 
 TEST SLICES:
 - @WebMvcTest — Controller only, no full context
@@ -268,20 +255,19 @@ Verify the Spring Boot application:
 
 ```
 SPRING BOOT VALIDATION:
-┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│  Check                               │  Status  │  Notes               │
-├──────────────────────────────────────┼──────────┼──────────────────────┤
-│  OSIV disabled                       │  PASS    │  open-in-view: false │
-│  ddl-auto: validate                  │  PASS    │  Flyway manages DDL  │
-│  Graceful shutdown configured        │  PASS    │  Drains connections  │
-│  Connection pool tuned               │  PASS    │  HikariCP configured │
-│  Security deny-by-default            │  PASS    │  .anyRequest().deny()│
-│  Lazy fetch on all associations      │  PASS    │  No eager loading    │
-│  N+1 queries eliminated              │  PASS    │  JOIN FETCH used     │
-│  Actuator endpoints restricted       │  PASS    │  Prod-safe endpoints │
-│  Health probes for K8s               │  PASS    │  Liveness + readiness│
-│  Config externalized (env vars)      │  PASS    │  12-factor compliant │
-│  Tests pass with TestContainers      │  PASS    │  Real DB in tests    │
+| Check | Status | Notes |
+|---|---|---|
+| OSIV disabled | PASS | open-in-view: false |
+| ddl-auto: validate | PASS | Flyway manages DDL |
+| Graceful shutdown configured | PASS | Drains connections |
+| Connection pool tuned | PASS | HikariCP configured |
+| Security deny-by-default | PASS | .anyRequest().deny() |
+| Lazy fetch on all associations | PASS | No eager loading |
+| N+1 queries eliminated | PASS | JOIN FETCH used |
+| Actuator endpoints restricted | PASS | Prod-safe endpoints |
+| Health probes for K8s | PASS | Liveness + readiness |
+| Config externalized (env vars) | PASS | 12-factor compliant |
+| Tests pass with TestContainers | PASS | Real DB in tests |
 ```
 
 ```

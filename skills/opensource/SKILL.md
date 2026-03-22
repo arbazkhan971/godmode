@@ -23,8 +23,7 @@ Audit the repository for standard open source files and practices:
 
 ```
 REPOSITORY HEALTH CHECK:
-┌──────────────────────────────────────────────────────────┐
-│  File                    │ Status   │ Quality            │
+| File | Status | Quality |
 ```
 
 ### Step 2: Repository Scaffolding
@@ -258,9 +257,7 @@ Based on the selected model, create the governance document:
 ### Step 9: Audit Report & Recommendations
 
 ```
-+------------------------------------------------------------+
 |  OPEN SOURCE READINESS — <project>                          |
-+------------------------------------------------------------+
 ```
 
 ### Step 10: Commit and Transition
@@ -307,8 +304,7 @@ After each opensource skill invocation, emit a structured report:
 
 ```
 OPEN SOURCE READINESS REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Health score        │  <N>/13 files present          │
+| Health score | <N>/13 files present |
 ```
 
 ## TSV Logging

@@ -22,8 +22,7 @@ Examine commits, PRs, and tags since the last release:
 
 ```
 CHANGE ANALYSIS:
-┌──────────────────────────────────────────────────────────┐
-│  Last release: <tag> (<date>)                            │
+  Last release: <tag> (<date>)
 ```
 
 Commands to gather data:
@@ -46,8 +45,7 @@ If not already configured, set up Conventional Commits for automatic changelog g
 Types:
 ```
 CONVENTIONAL COMMIT TYPES:
-┌──────────┬───────────────────────────────┬──────────────┐
-│ Type     │ Description                   │ Changelog?   │
+| Type | Description | Changelog? |
 ```
 
 #### Commitlint Setup
@@ -300,8 +298,7 @@ After each changelog skill invocation, emit a structured report:
 
 ```
 CHANGELOG REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Last release        │  <tag> (<date>)                │
+| Last release | <tag> (<date>) |
 ```
 
 ## TSV Logging

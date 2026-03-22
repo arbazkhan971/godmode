@@ -25,22 +25,19 @@ Evaluate the communication needs, constraints, and appropriate protocol:
 
 ```
 REAL-TIME REQUIREMENTS ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│  Dimension          │ Value                               │
+| Dimension | Value |
 ```
 
 #### Protocol Selection Matrix
 ```
 PROTOCOL SELECTION:
-┌──────────────────┬──────────────┬───────────┬───────────┬────────────┬──────────┐
-│ Protocol         │ Best for     │ Direction │ Browser   │ Complexity │ Scaling  │
+| Protocol | Best for | Direction | Browser | Complexity | Scaling |
 ```
 
 #### Technology Selection
 ```
 TECHNOLOGY SELECTION:
-┌──────────────────┬────────────┬───────────┬──────────┬───────────┬──────────┐
-│ Technology       │ Best for   │ Protocol  │ Scale    │ Ops cost  │ Features │
+| Technology | Best for | Protocol | Scale | Ops cost | Features |
 ```
 
 ### Step 2: Connection Architecture
@@ -49,8 +46,6 @@ Design the WebSocket or SSE connection lifecycle:
 
 ```
 CONNECTION ARCHITECTURE:
-┌──────────────────────────────────────────────────────────────────────┐
-│                                                                      │
 ```
 
 #### Socket.io Server Implementation
@@ -73,8 +68,7 @@ Design the channel structure and message routing:
 
 ```
 CHANNEL ARCHITECTURE:
-┌──────────────────────────────────────────────────────────┐
-│  Channel Pattern      │ Example              │ Use case   │
+| Channel Pattern | Example | Use case |
 ```
 
 ### Step 4: Presence System
@@ -83,8 +77,7 @@ Design online/offline status and presence tracking:
 
 ```
 PRESENCE SYSTEM:
-┌──────────────────────────────────────────────────────────┐
-│  Component          │ Implementation                      │
+| Component | Implementation |
 ```
 
 #### Presence Implementation
@@ -100,8 +93,7 @@ Design real-time ephemeral state broadcasting:
 
 ```
 TYPING INDICATOR DESIGN:
-┌──────────────────────────────────────────────────────────┐
-│  Behavior            │ Implementation                     │
+| Behavior | Implementation |
 ```
 
 #### Client-Side Typing Indicator
@@ -117,8 +109,7 @@ Design collaborative editing with conflict resolution:
 
 ```
 COLLABORATION STRATEGY SELECTION:
-┌──────────────────────────────────────────────────────────┐
-│  Strategy              │ Best for         │ Complexity    │
+| Strategy | Best for | Complexity |
 ```
 
 #### CRDT Implementation with Yjs
@@ -131,8 +122,6 @@ import { WebsocketProvider } from 'y-websocket';
 #### Collaboration Architecture
 ```
 COLLABORATION ARCHITECTURE:
-┌──────────────────────────────────────────────────────────────────────┐
-│                                                                      │
 ```
 
 ### Step 7: Scaling Real-time Systems
@@ -141,8 +130,6 @@ Design for horizontal scaling across multiple server instances:
 
 ```
 SCALING ARCHITECTURE:
-┌──────────────────────────────────────────────────────────────────────┐
-│                                                                      │
 ```
 
 #### Nginx WebSocket Configuration
@@ -155,8 +142,7 @@ upstream websocket_backend {
 #### Connection Scaling Metrics
 ```
 SCALING TARGETS:
-┌──────────────────────────────────────────────────────────┐
-│  Metric                    │ Per Instance│ Cluster Total │
+| Metric | Per Instance | Cluster Total |
 ```
 
 ### Step 8: Client-Side Connection Management
@@ -165,8 +151,7 @@ Design resilient client-side connection handling:
 
 ```
 CLIENT CONNECTION MANAGEMENT:
-┌──────────────────────────────────────────────────────────┐
-│  Scenario              │ Behavior                         │
+| Scenario | Behavior |
 ```
 
 #### Reconnection Logic
@@ -248,7 +233,6 @@ Append after every completed realtime design pass. One row per session. If the f
 
 ```
 REALTIME SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 |  Criterion                                  | Required         |
 ```
 

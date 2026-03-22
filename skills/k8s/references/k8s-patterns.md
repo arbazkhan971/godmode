@@ -272,18 +272,15 @@ Step 4: [v2] [v2] [v2] [v2]    ← Ready
 ### Deployment Pattern Comparison
 
 ```
-┌─────────────────────┬───────────┬───────────┬───────────┬───────────┬───────────┐
-│  Criterion          │ Rolling   │ Blue-Green│ Canary    │ A/B Test  │ Recreate  │
-├─────────────────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
-│  Zero downtime      │ Yes       │ Yes       │ Yes       │ Yes       │ No        │
-│  Instant rollback   │ Slow      │ Yes       │ Yes       │ Yes       │ No        │
-│  Resource overhead  │ Low       │ 2x        │ Low       │ Low       │ None      │
-│  Traffic control    │ None      │ All/none  │ Percentage│ Attribute │ None      │
-│  Complexity         │ Low       │ Medium    │ High      │ High      │ Low       │
-│  Infra required     │ K8s only  │ K8s only  │ Mesh/Ingr.│ Mesh/Ingr.│ K8s only  │
-│  Version coexist    │ Brief     │ Yes       │ Yes       │ Yes       │ No        │
-│  Metric validation  │ Manual    │ Manual    │ Automated │ Automated │ None      │
-└─────────────────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
+| Criterion | Rolling | Blue-Green | Canary | A/B Test | Recreate |
+| Zero downtime | Yes | Yes | Yes | Yes | No |
+| Instant rollback | Slow | Yes | Yes | Yes | No |
+| Resource overhead | Low | 2x | Low | Low | None |
+| Traffic control | None | All/none | Percentage | Attribute | None |
+| Complexity | Low | Medium | High | High | Low |
+| Infra required | K8s only | K8s only | Mesh/Ingr. | Mesh/Ingr. | K8s only |
+| Version coexist | Brief | Yes | Yes | Yes | No |
+| Metric validation | Manual | Manual | Automated | Automated | None |
 ```
 
 ---
@@ -329,18 +326,15 @@ spec:
 **Common sidecar use cases:**
 
 ```
-┌────────────────────────┬────────────────────────────────────────────────┐
-│  Use Case              │  Sidecar                                       │
-├────────────────────────┼────────────────────────────────────────────────┤
-│  Log collection        │  Fluentd, Fluent Bit, Filebeat                 │
-│  Service mesh proxy    │  Envoy (Istio), Linkerd-proxy                  │
-│  TLS termination       │  Envoy, Nginx                                  │
-│  Secret management     │  Vault agent (auto-renews secrets)             │
-│  Config reloading      │  Custom sidecar watches ConfigMap changes      │
-│  Monitoring            │  Prometheus exporter (when app cannot expose)  │
-│  Database proxy        │  Cloud SQL Proxy, PgBouncer                    │
-│  Auth proxy            │  OAuth2-proxy, Keycloak gatekeeper             │
-└────────────────────────┴────────────────────────────────────────────────┘
+| Use Case | Sidecar |
+| Log collection | Fluentd, Fluent Bit, Filebeat |
+| Service mesh proxy | Envoy (Istio), Linkerd-proxy |
+| TLS termination | Envoy, Nginx |
+| Secret management | Vault agent (auto-renews secrets) |
+| Config reloading | Custom sidecar watches ConfigMap changes |
+| Monitoring | Prometheus exporter (when app cannot expose) |
+| Database proxy | Cloud SQL Proxy, PgBouncer |
+| Auth proxy | OAuth2-proxy, Keycloak gatekeeper |
 ```
 
 ### Ambassador Pattern
@@ -447,40 +441,31 @@ containers:
 
 ```
 RESOURCE SIZING:
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Rule of Thumb                                                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│  Requests = observed average usage + 20% headroom                       │
-│  CPU Limits = 2-4x requests (or no limit for CPU, let it burst)         │
-│  Memory Limits = observed peak + 25% headroom (memory is incompressible)│
-│                                                                          │
-│  IMPORTANT:                                                              │
-│  - CPU is compressible: exceeding limit = throttled, not killed          │
-│  - Memory is NOT compressible: exceeding limit = OOM killed              │
-│  - Setting requests too low → pods get evicted under pressure            │
-│  - Setting requests too high → wasted cluster resources                  │
-│  - No limits → noisy neighbor problems                                   │
-└─────────────────────────────────────────────────────────────────────────┘
+  Rule of Thumb
+  Requests = observed average usage + 20% headroom
+  CPU Limits = 2-4x requests (or no limit for CPU, let it burst)
+  Memory Limits = observed peak + 25% headroom (memory is incompressible)
+  IMPORTANT:
+  - CPU is compressible: exceeding limit = throttled, not killed
+  - Memory is NOT compressible: exceeding limit = OOM killed
+  - Setting requests too low → pods get evicted under pressure
+  - Setting requests too high → wasted cluster resources
+  - No limits → noisy neighbor problems
 ```
 
 ### Quality of Service (QoS) Classes
 
 ```
-┌────────────────┬──────────────────────────────────────────────────────────┐
-│  QoS Class     │  Configuration                                           │
-├────────────────┼──────────────────────────────────────────────────────────┤
-│  Guaranteed    │  requests == limits for all containers in pod             │
-│                │  First to be scheduled, last to be evicted                │
-│                │  Use for: databases, stateful services, critical apps     │
-├────────────────┼──────────────────────────────────────────────────────────┤
-│  Burstable     │  requests < limits (or only requests set)                 │
-│                │  Gets guaranteed minimum, can burst beyond                │
-│                │  Use for: web servers, API services, workers              │
-├────────────────┼──────────────────────────────────────────────────────────┤
-│  BestEffort    │  No requests or limits set                                │
-│                │  First to be evicted under pressure                       │
-│                │  Use for: dev workloads, batch jobs, non-critical tasks   │
-└────────────────┴──────────────────────────────────────────────────────────┘
+| QoS Class | Configuration |
+| Guaranteed | requests == limits for all containers in pod |
+|  | First to be scheduled, last to be evicted |
+|  | Use for: databases, stateful services, critical apps |
+| Burstable | requests < limits (or only requests set) |
+|  | Gets guaranteed minimum, can burst beyond |
+|  | Use for: web servers, API services, workers |
+| BestEffort | No requests or limits set |
+|  | First to be evicted under pressure |
+|  | Use for: dev workloads, batch jobs, non-critical tasks |
 ```
 
 ### Horizontal Pod Autoscaler (HPA)
@@ -668,16 +653,13 @@ containers:
 **Probe design:**
 
 ```
-┌────────────────┬────────────────────────────────────────────────────────────┐
-│  Probe         │  What to check                                             │
-├────────────────┼────────────────────────────────────────────────────────────┤
-│  Startup       │  App initialization complete (DB migrations, cache warm)    │
-│  Liveness      │  App is not deadlocked. Keep it SIMPLE. Do NOT check       │
-│                │  external dependencies — a DB outage should not restart     │
-│                │  all your pods.                                             │
-│  Readiness     │  App CAN serve requests. Check critical dependencies       │
-│                │  (DB connection, required config loaded).                   │
-└────────────────┴────────────────────────────────────────────────────────────┘
+| Probe | What to check |
+| Startup | App initialization complete (DB migrations, cache warm) |
+| Liveness | App is not deadlocked. Keep it SIMPLE. Do NOT check |
+|  | external dependencies — a DB outage should not restart |
+|  | all your pods. |
+| Readiness | App CAN serve requests. Check critical dependencies |
+|  | (DB connection, required config loaded). |
 
 ANTI-PATTERN: Liveness probe that checks database connectivity.
   If DB goes down → all pods restart → thundering herd on DB recovery.
@@ -699,18 +681,18 @@ my-chart/
 ├── values-staging.yaml
 ├── values-prod.yaml
 ├── templates/
-│   ├── _helpers.tpl        # Template helper functions
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   ├── ingress.yaml
-│   ├── hpa.yaml
-│   ├── pdb.yaml
-│   ├── configmap.yaml
-│   ├── secret.yaml
-│   ├── serviceaccount.yaml
-│   ├── networkpolicy.yaml
-│   └── tests/
-│       └── test-connection.yaml
+  ├── _helpers.tpl        # Template helper functions
+  ├── deployment.yaml
+  ├── service.yaml
+  ├── ingress.yaml
+  ├── hpa.yaml
+  ├── pdb.yaml
+  ├── configmap.yaml
+  ├── secret.yaml
+  ├── serviceaccount.yaml
+  ├── networkpolicy.yaml
+  └── tests/
+  └── test-connection.yaml
 ├── charts/                 # Dependency charts
 └── .helmignore
 ```
@@ -809,40 +791,35 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 ```
 HELM CHART QUALITY:
 ├── Versioning
-│   ├── Chart.yaml version follows SemVer (chart version)
-│   ├── appVersion tracks the application version
-│   └── Bump chart version on ANY template change
-│
+  ├── Chart.yaml version follows SemVer (chart version)
+  ├── appVersion tracks the application version
+  └── Bump chart version on ANY template change
 ├── Values design
-│   ├── Sensible defaults in values.yaml (works out of the box)
-│   ├── Environment overrides via values-{env}.yaml
-│   ├── No secrets in values files (use External Secrets, Sealed Secrets)
-│   ├── All images use specific tags, never "latest"
-│   └── Resource requests/limits set for all containers
-│
+  ├── Sensible defaults in values.yaml (works out of the box)
+  ├── Environment overrides via values-{env}.yaml
+  ├── No secrets in values files (use External Secrets, Sealed Secrets)
+  ├── All images use specific tags, never "latest"
+  └── Resource requests/limits set for all containers
 ├── Templates
-│   ├── Use _helpers.tpl for reusable template functions
-│   ├── Standard Kubernetes labels on all resources
-│   ├── Consistent selector labels (never change after deploy)
-│   ├── Use {{ .Release.Namespace }} instead of hardcoded namespaces
-│   ├── Quote all string values: {{ .Values.foo | quote }}
-│   ├── Use toYaml for complex nested values: {{ toYaml .Values.env | nindent 12 }}
-│   └── Conditional resources: {{- if .Values.ingress.enabled }}
-│
+  ├── Use _helpers.tpl for reusable template functions
+  ├── Standard Kubernetes labels on all resources
+  ├── Consistent selector labels (never change after deploy)
+  ├── Use {{ .Release.Namespace }} instead of hardcoded namespaces
+  ├── Quote all string values: {{ .Values.foo | quote }}
+  ├── Use toYaml for complex nested values: {{ toYaml .Values.env | nindent 12 }}
+  └── Conditional resources: {{- if .Values.ingress.enabled }}
 ├── Security
-│   ├── ServiceAccount per release (not default)
-│   ├── SecurityContext: runAsNonRoot, readOnlyRootFilesystem
-│   ├── NetworkPolicy to restrict traffic
-│   ├── No privileged containers
-│   └── Pod security standards enforced
-│
+  ├── ServiceAccount per release (not default)
+  ├── SecurityContext: runAsNonRoot, readOnlyRootFilesystem
+  ├── NetworkPolicy to restrict traffic
+  ├── No privileged containers
+  └── Pod security standards enforced
 ├── Testing
-│   ├── helm lint passes
-│   ├── helm template renders correctly
-│   ├── helm test runs (test-connection.yaml)
-│   ├── Test with different values (dev, staging, prod)
-│   └── Validate against Kubernetes schema (kubeconform)
-│
+  ├── helm lint passes
+  ├── helm template renders correctly
+  ├── helm test runs (test-connection.yaml)
+  ├── Test with different values (dev, staging, prod)
+  └── Validate against Kubernetes schema (kubeconform)
 └── Documentation
     ├── Chart.yaml has description and maintainers
     ├── values.yaml has comments for all fields
@@ -921,23 +898,16 @@ spec:
 ### Service Types Summary
 
 ```
-┌──────────────┬─────────────────────────────────────────────────────────────┐
-│  Type        │  Use Case                                                    │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│  ClusterIP   │  Internal service communication (default). Not exposed      │
-│              │  outside the cluster.                                        │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│  NodePort    │  Development, debugging. Exposes on each node's IP at       │
-│              │  a static port (30000-32767).                                │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│  LoadBalancer│  Cloud environments. Provisions a cloud load balancer.       │
-│              │  One LB per service (can get expensive).                     │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│  ExternalName│  CNAME alias to external service. No proxying.              │
-├──────────────┼─────────────────────────────────────────────────────────────┤
-│  Headless    │  ClusterIP: None. Returns pod IPs directly. Used for        │
-│              │  StatefulSets and service discovery.                         │
-└──────────────┴─────────────────────────────────────────────────────────────┘
+| Type | Use Case |
+| ClusterIP | Internal service communication (default). Not exposed |
+|  | outside the cluster. |
+| NodePort | Development, debugging. Exposes on each node's IP at |
+|  | a static port (30000-32767). |
+| LoadBalancer | Cloud environments. Provisions a cloud load balancer. |
+|  | One LB per service (can get expensive). |
+| ExternalName | CNAME alias to external service. No proxying. |
+| Headless | ClusterIP: None. Returns pod IPs directly. Used for |
+|  | StatefulSets and service discovery. |
 ```
 
 ---

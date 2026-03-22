@@ -77,24 +77,24 @@ export default defineConfig({
 cypress/
 ├── downloads/                  # Downloaded files
 ├── e2e/                        # E2E test specs
-│   ├── auth/
+  ├── auth/
 │   │   ├── login.cy.ts
 │   │   └── register.cy.ts
-│   ├── dashboard/
+  ├── dashboard/
 │   │   └── dashboard.cy.ts
-│   └── settings/
-│       └── profile.cy.ts
+  └── settings/
+  └── profile.cy.ts
 ├── fixtures/                   # Static test data
-│   ├── users.json
-│   ├── products.json
-│   └── api-responses/
-│       ├── login-success.json
-│       └── login-error.json
+  ├── users.json
+  ├── products.json
+  └── api-responses/
+  ├── login-success.json
+  └── login-error.json
 ├── support/
-│   ├── commands.ts             # Custom commands
-│   ├── e2e.ts                  # E2E support file
-│   ├── component.ts            # Component support file
-│   └── component-index.html    # Component test HTML
+  ├── commands.ts             # Custom commands
+  ├── e2e.ts                  # E2E support file
+  ├── component.ts            # Component support file
+  └── component-index.html    # Component test HTML
 ├── screenshots/                # Auto-generated screenshots
 └── videos/                     # Auto-generated videos
 ```
@@ -1269,7 +1269,6 @@ cypress run --env environment=staging
 
 ```
 Command                          Description
-─────────────────────────────────────────────────────────────
 cy.visit(url)                    Navigate to URL
 cy.get(selector)                 Get element(s) by selector
 cy.contains(text)                Find element by text content

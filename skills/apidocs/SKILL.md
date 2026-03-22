@@ -51,7 +51,6 @@ For code-first, configure the framework's doc generation:
 ```
 CODE-FIRST SETUP BY FRAMEWORK:
 
-┌──────────────────────┬───────────────────────────────────────────────────┐
 ```
 
 #### Express + swagger-jsdoc
@@ -142,8 +141,7 @@ Enforce DRY specs by extracting shared schemas:
 
 ```
 SCHEMA REUSE CHECKLIST:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Pattern                        │  Extract to                       │
+| Pattern | Extract to |
 ```
 
 Rules:
@@ -216,8 +214,7 @@ Handle API versioning within OpenAPI specs:
 
 ```
 SPEC VERSIONING STRATEGIES:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Strategy           │  How to Represent in OpenAPI                   │
+| Strategy | How to Represent in OpenAPI |
 ```
 
 ### Step 8: CI Validation & Linting
@@ -273,8 +270,7 @@ npm install -g oasdiff
 
 ```
 CHANGELOG OUTPUT EXAMPLE:
-┌──────────────────────────────────────────────────────────────────────┐
-│  API Changelog: v1.0.0 → v2.0.0                                    │
+  API Changelog: v1.0.0 → v2.0.0
 ```
 
 ```yaml
@@ -288,8 +284,7 @@ Validate the documentation setup against completeness standards:
 
 ```
 APIDOCS VALIDATION:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                                    │  Status          │
+| Check | Status |
 ```
 
 ### Step 12: Deliverables

@@ -91,9 +91,7 @@ PATTERN: Normal load, sudden spike, return to normal
 
       Users
   500 │      ┌──┐
-      │      │  │
   400 │      │  │
-      │      │  │
   100 │──────┘  └──────────
       │
    50 │
@@ -115,7 +113,6 @@ PATTERN: Moderate load sustained for hours
 
       Users
   100 │   ┌────────────────────────────────────────────┐
-      │   │                                            │
    50 │   │                                            │
       │  /│                                            │\
     0 │─/ │                                            │ \─
@@ -174,15 +171,14 @@ Environment: <dev | staging | prod-like>
 System specs: <CPU, memory, disk, network>
 Database: <type, size, connection pool>
 
-┌─────────────────────┬──────────┬──────────┬──────────┬──────────┐
-│ Metric              │ P50      │ P95      │ P99      │ Max      │
-├─────────────────────┼──────────┼──────────┼──────────┼──────────┤
-│ Response time (ms)  │ <val>    │ <val>    │ <val>    │ <val>    │
-│ Throughput (rps)    │ <val>    │ —        │ —        │ <val>    │
-│ Error rate (%)      │ <val>    │ —        │ —        │ <val>    │
-│ CPU usage (%)       │ <val>    │ <val>    │ <val>    │ <val>    │
-│ Memory usage (MB)   │ <val>    │ <val>    │ <val>    │ <val>    │
-│ DB connections      │ <val>    │ <val>    │ <val>    │ <val>    │
+| Metric | P50 | P95 | P99 | Max |
+|---|---|---|---|---|
+| Response time (ms) | <val> | <val> | <val> | <val> |
+| Throughput (rps) | <val> | — | — | <val> |
+| Error rate (%) | <val> | — | — | <val> |
+| CPU usage (%) | <val> | <val> | <val> | <val> |
+| Memory usage (MB) | <val> | <val> | <val> | <val> |
+| DB connections | <val> | <val> | <val> | <val> |
 ```
 
 ### Step 5: Bottleneck Analysis
@@ -190,20 +186,17 @@ Identify where performance breaks down:
 
 ```
 BOTTLENECK ANALYSIS:
-┌──────────────────────────────────────────────────────────────┐
-│  Technique          │ Finding                                │
-├──────────────────────────────────────────────────────────────┤
-│  Response time      │ P99 spikes at <N> concurrent users     │
-│  distribution       │ Bimodal distribution suggests caching  │
-│                     │ miss vs hit pattern                    │
-├──────────────────────────────────────────────────────────────┤
-│  Resource           │ CPU saturates at <N>% under load       │
-│  saturation         │ Memory grows linearly (possible leak)  │
-│                     │ DB connections max out at <N>           │
-├──────────────────────────────────────────────────────────────┤
-│  Error analysis     │ Errors start at <N> RPS                │
-│                     │ Error type: <timeout | 5xx | conn      │
-│                     │ refused | OOM>                         │
+| Technique | Finding |
+|---|---|
+| Response time | P99 spikes at <N> concurrent users |
+| distribution | Bimodal distribution suggests caching |
+|  | miss vs hit pattern |
+| Resource | CPU saturates at <N>% under load |
+| saturation | Memory grows linearly (possible leak) |
+|  | DB connections max out at <N> |
+| Error analysis | Errors start at <N> RPS |
+|  | Error type: <timeout | 5xx | conn |
+|  | refused | OOM> |
 ```
 
 ### Step 6: Statistical Significance
@@ -215,17 +208,15 @@ Comparison: <baseline vs optimized | version A vs version B>
 Test runs: <N> (minimum 5 per variant for reliable results)
 Confidence level: 95% (p < 0.05)
 
-┌─────────────────────┬──────────┬──────────┬──────────┬────────┐
-│ Metric              │ Before   │ After    │ Change   │ Sig?   │
-├─────────────────────┼──────────┼──────────┼──────────┼────────┤
-│ P50 response (ms)   │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-│ P95 response (ms)   │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-│ P99 response (ms)   │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-│ Throughput (rps)     │ <val>±<σ>│ <val>±<σ>│ <+X%>    │ YES/NO │
-│ Error rate (%)       │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-│ CPU usage (%)        │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-│ Memory usage (MB)    │ <val>±<σ>│ <val>±<σ>│ <-X%>    │ YES/NO │
-└─────────────────────┴──────────┴──────────┴──────────┴────────┘
+| Metric | Before | After | Change | Sig? |
+|---|---|---|---|---|
+| P50 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+| P95 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+| P99 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+| Throughput (rps) | <val>±<σ> | <val>±<σ> | <+X%> | YES/NO |
+| Error rate (%) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+| CPU usage (%) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+| Memory usage (MB) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
 
 Statistical method: Welch's t-test (unequal variance assumed)
 Effect size: Cohen's d = <value> (<small | medium | large>)
@@ -247,21 +238,17 @@ RULES FOR VALID COMPARISON:
 ### Step 7: Generate Performance Report
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  LOAD TEST REPORT — <target>                                 │
-├──────────────────────────────────────────────────────────────┤
-│  Test type: <load | stress | spike | soak>                   │
-│  Duration: <X> minutes                                       │
-│  Max users: <N>                                              │
-│  Total requests: <N>                                         │
-│                                                              │
-│  PERFORMANCE:                                                │
-│  P50: <X>ms  P95: <X>ms  P99: <X>ms                         │
-│  Throughput: <N> rps (peak: <N> rps)                         │
-│  Error rate: <X>%                                            │
-│                                                              │
-│  CAPACITY:                                                   │
-│  Max stable load: <N> concurrent users / <N> rps             │
+  LOAD TEST REPORT — <target>
+  Test type: <load | stress | spike | soak>
+  Duration: <X> minutes
+  Max users: <N>
+  Total requests: <N>
+  PERFORMANCE:
+  P50: <X>ms  P95: <X>ms  P99: <X>ms
+  Throughput: <N> rps (peak: <N> rps)
+  Error rate: <X>%
+  CAPACITY:
+  Max stable load: <N> concurrent users / <N> rps
 ```
 
 ### Step 8: Commit and Transition

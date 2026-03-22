@@ -103,12 +103,11 @@ Side effects (choreographed):
 EVENT FLOW:
 
   ┌─────────────┐     OrderPlaced      ┌──────────────┐
-  │   Order      │ ──────────────────→  │  Inventory    │
-  │   Service    │                      │  Service      │
-  │  (commands)  │ ←────────────────── │  (reserves)   │
+| Order | ──────────────────→ | Inventory |
+| Service |  | Service |
+| (commands) | ←────────────────── | (reserves) |
   └──────┬───────┘   InventoryReserved  └──────────────┘
-         │
-         │ PaymentRequested     ┌──────────────┐
+  PaymentRequested     ┌──────────────┐
          └────────────────────→ │  Payment      │
          ←──────────────────── │  Service      │
            PaymentCharged       └──────────────┘
@@ -497,10 +496,9 @@ Key properties:
 ```
 Write side:                              Read side:
   PlaceOrder command                      GET /orders?status=confirmed
-       │                                       │
        ▼                                       ▼
   Order Aggregate                         Read Model (PostgreSQL)
-       │                                       ▲
+  ▲
        ▼                                       │
   OrderPlaced event ──→ Kafka ──→ Projector ───┘
                                   (builds materialized view)
@@ -519,7 +517,6 @@ Happy path:  PlaceOrder → ReserveInventory → ChargePayment → ConfirmOrder
 Failure at payment:
              PlaceOrder → ReserveInventory → ChargePayment → [FAIL]
                    ✓              ✓                ✗
-                                  │
              Compensate: ←── ReleaseInventory ←── (no refund needed)
              CancelOrder
 ```

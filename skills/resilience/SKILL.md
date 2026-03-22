@@ -23,8 +23,7 @@ Evaluate the current resilience posture of the system:
 
 ```
 RESILIENCE ASSESSMENT:
-┌──────────────────────────────────────────────────────────────┐
-│  Pattern            │ Status    │ Coverage │ Implementation   │
+| Pattern | Status | Coverage | Implementation |
 ```
 
 ### Step 2: Circuit Breaker Pattern
@@ -71,8 +70,7 @@ Design retry policies with exponential backoff and jitter:
 #### Retry Strategy Decision Matrix
 ```
 RETRY DECISION MATRIX:
-┌──────────────────────────────────────────────────────────────┐
-│  Error Type           │ Retry? │ Strategy    │ Max Attempts  │
+| Error Type | Retry? | Strategy | Max Attempts |
 ```
 
 #### Exponential Backoff with Jitter
@@ -119,8 +117,7 @@ Protect services from being overwhelmed by too many requests:
 #### Rate Limiting Strategies
 ```
 RATE LIMITING STRATEGIES:
-┌──────────────────────────────────────────────────────────────┐
-│  Algorithm       │ Behavior           │ Best For              │
+| Algorithm | Behavior | Best For |
 ```
 
 #### Token Bucket Implementation — Node.js
@@ -136,8 +133,7 @@ Design fallback behavior when dependencies are unavailable:
 #### Degradation Strategy Matrix
 ```
 GRACEFUL DEGRADATION MATRIX:
-┌──────────────────────────────────────────────────────────────┐
-│  Dependency        │ Degradation Strategy │ User Experience   │
+| Dependency | Degradation Strategy | User Experience |
 ```
 
 #### Implementation — Feature Degradation
@@ -153,8 +149,7 @@ Design comprehensive health checks for container orchestration:
 #### Health Check Types
 ```
 HEALTH CHECK TYPES:
-┌──────────────────────────────────────────────────────────────┐
-│  Type        │ Purpose                │ Failure Action        │
+| Type | Purpose | Failure Action |
 ```
 
 #### Implementation — Express.js
@@ -177,8 +172,7 @@ Design a comprehensive timeout strategy:
 #### Timeout Hierarchy
 ```
 TIMEOUT HIERARCHY:
-┌──────────────────────────────────────────────────────────────┐
-│  Layer                 │ Timeout  │ Rationale                │
+| Layer | Timeout | Rationale |
 ```
 
 #### Implementation — Timeout Budget
@@ -192,8 +186,7 @@ class TimeoutBudget {
 
 ```
 RESILIENCE VERIFICATION CHECKLIST:
-┌──────────────────────────────────────────────────────────────┐
-│  Category          │ Test                            │ Pass? │
+| Category | Test | Pass? |
 ```
 
 ## Output
@@ -227,8 +220,7 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 
 ```
 RESILIENCE ANTI-PATTERNS:
-┌──────────────────────────────────────────────────────────────┐
-│  Anti-Pattern              │ Why It's Dangerous              │
+| Anti-Pattern | Why It's Dangerous |
 ```
 
 ## Output Format

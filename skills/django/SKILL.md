@@ -167,20 +167,19 @@ Validate the Python web project:
 
 ```
 PYTHON WEB PROJECT AUDIT:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Check                                         │  Status             │
-├────────────────────────────────────────────────┼─────────────────────┤
-│  Business logic in services (not views)        │  PASS | FAIL        │
-│  Serializers validate all input                │  PASS | FAIL        │
-│  No N+1 queries (select/prefetch_related)      │  PASS | FAIL        │
-│  Database indexes on filtered/ordered fields   │  PASS | FAIL        │
-│  Custom user model (AbstractUser)              │  PASS | FAIL        │
-│  Settings split by environment                 │  PASS | FAIL        │
-│  Secrets from environment variables            │  PASS | FAIL        │
-│  Admin performance (list_select_related)       │  PASS | FAIL        │
-│  Pagination on all list endpoints              │  PASS | FAIL        │
-│  Authentication and permissions configured     │  PASS | FAIL        │
-│  Tests use factories (Factory Boy)             │  PASS | FAIL        │
+| Check | Status |
+|---|---|
+| Business logic in services (not views) | PASS | FAIL |
+| Serializers validate all input | PASS | FAIL |
+| No N+1 queries (select/prefetch_related) | PASS | FAIL |
+| Database indexes on filtered/ordered fields | PASS | FAIL |
+| Custom user model (AbstractUser) | PASS | FAIL |
+| Settings split by environment | PASS | FAIL |
+| Secrets from environment variables | PASS | FAIL |
+| Admin performance (list_select_related) | PASS | FAIL |
+| Pagination on all list endpoints | PASS | FAIL |
+| Authentication and permissions configured | PASS | FAIL |
+| Tests use factories (Factory Boy) | PASS | FAIL |
 ```
 
 ### Step 9: Deliverables

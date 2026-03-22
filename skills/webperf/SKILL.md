@@ -53,18 +53,16 @@ Deep dive into Lighthouse diagnostics:
 
 ```
 LIGHTHOUSE DIAGNOSTICS:
-┌──────────────────────────────────────────────────────────────────┐
-│ Opportunity              │ Savings  │ Priority │ Effort          │
-├──────────────────────────────────────────────────────────────────┤
-│ Reduce unused JavaScript │ 450 KiB  │ HIGH     │ Code splitting  │
-│ Serve images in WebP     │ 320 KiB  │ HIGH     │ Build pipeline  │
-│ Eliminate render-block   │ 1.2s     │ HIGH     │ Critical CSS    │
-│ Preload LCP image        │ 0.8s     │ HIGH     │ One-line fix    │
-│ Reduce unused CSS        │ 180 KiB  │ MEDIUM   │ PurgeCSS/tree   │
-│ Text compression (gzip)  │ 120 KiB  │ MEDIUM   │ Server config   │
-│ Efficient cache policy   │ N/A      │ MEDIUM   │ Cache headers   │
-│ Avoid enormous payloads  │ N/A      │ LOW      │ Incremental     │
-└──────────────────────────────────────────────────────────────────┘
+| Opportunity | Savings | Priority | Effort |
+|---|---|---|---|
+| Reduce unused JavaScript | 450 KiB | HIGH | Code splitting |
+| Serve images in WebP | 320 KiB | HIGH | Build pipeline |
+| Eliminate render-block | 1.2s | HIGH | Critical CSS |
+| Preload LCP image | 0.8s | HIGH | One-line fix |
+| Reduce unused CSS | 180 KiB | MEDIUM | PurgeCSS/tree |
+| Text compression (gzip) | 120 KiB | MEDIUM | Server config |
+| Efficient cache policy | N/A | MEDIUM | Cache headers |
+| Avoid enormous payloads | N/A | LOW | Incremental |
 
 Diagnostics:
 ```
@@ -74,15 +72,13 @@ Reduce JavaScript payload through splitting and tree shaking:
 
 ```
 BUNDLE ANALYSIS:
-┌──────────────────────────────────────────────────────────────────┐
-│ Chunk              │ Size (gz) │ Loaded │ Route              │
-├──────────────────────────────────────────────────────────────────┤
-│ vendor.js          │ 245 KiB   │ Always │ All pages          │
-│ main.js            │ 89 KiB    │ Always │ All pages          │
-│ chart-library.js   │ 180 KiB   │ Always │ Only /dashboard    │
-│ date-picker.js     │ 45 KiB    │ Always │ Only /settings     │
-│ markdown-editor.js │ 120 KiB   │ Always │ Only /editor       │
-└──────────────────────────────────────────────────────────────────┘
+| Chunk | Size (gz) | Loaded | Route |
+|---|---|---|---|
+| vendor.js | 245 KiB | Always | All pages |
+| main.js | 89 KiB | Always | All pages |
+| chart-library.js | 180 KiB | Always | Only /dashboard |
+| date-picker.js | 45 KiB | Always | Only /settings |
+| markdown-editor.js | 120 KiB | Always | Only /editor |
 
 Issues:
 - chart-library.js loaded on all pages but only used on /dashboard
@@ -127,15 +123,13 @@ Optimize images for modern web delivery:
 
 ```
 IMAGE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Image            │ Format │ Size    │ Dimensions │ Issues         │
-├──────────────────────────────────────────────────────────────────┤
-│ hero.jpg         │ JPEG   │ 1.2 MB  │ 4000x2000  │ No srcset, oversized │
-│ logo.png         │ PNG    │ 45 KB   │ 400x100    │ Could be SVG   │
-│ team-photo.jpg   │ JPEG   │ 800 KB  │ 3000x2000  │ No lazy load   │
-│ icon-set.png     │ PNG    │ 120 KB  │ 500x500    │ Convert to SVG │
-│ product-1.jpg    │ JPEG   │ 650 KB  │ 2400x1600  │ No WebP        │
-└──────────────────────────────────────────────────────────────────┘
+| Image | Format | Size | Dimensions | Issues |
+|---|---|---|---|---|
+| hero.jpg | JPEG | 1.2 MB | 4000x2000 | No srcset, oversized |
+| logo.png | PNG | 45 KB | 400x100 | Could be SVG |
+| team-photo.jpg | JPEG | 800 KB | 3000x2000 | No lazy load |
+| icon-set.png | PNG | 120 KB | 500x500 | Convert to SVG |
+| product-1.jpg | JPEG | 650 KB | 2400x1600 | No WebP |
 
 Total image weight: <N> MB
 Potential savings: <N> MB (<N>% reduction)
@@ -216,17 +210,15 @@ Optimize web font loading for fast, shift-free text rendering:
 
 ```
 FONT AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Font            │ Weight  │ Format │ Size   │ font-display │ Used │
-├──────────────────────────────────────────────────────────────────┤
-│ Inter           │ 400     │ woff2  │ 24 KB  │ swap         │ Yes  │
-│ Inter           │ 500     │ woff2  │ 25 KB  │ swap         │ Yes  │
-│ Inter           │ 600     │ woff2  │ 25 KB  │ swap         │ Yes  │
-│ Inter           │ 700     │ woff2  │ 26 KB  │ swap         │ Yes  │
-│ Inter           │ 300     │ woff2  │ 24 KB  │ swap         │ No   │
-│ Inter           │ 800     │ woff2  │ 26 KB  │ swap         │ No   │
-│ FancyDisplay    │ 400     │ ttf    │ 180 KB │ (none)       │ Yes  │
-└──────────────────────────────────────────────────────────────────┘
+| Font | Weight | Format | Size | font-display | Used |
+|---|---|---|---|---|---|
+| Inter | 400 | woff2 | 24 KB | swap | Yes |
+| Inter | 500 | woff2 | 25 KB | swap | Yes |
+| Inter | 600 | woff2 | 25 KB | swap | Yes |
+| Inter | 700 | woff2 | 26 KB | swap | Yes |
+| Inter | 300 | woff2 | 24 KB | swap | No |
+| Inter | 800 | woff2 | 26 KB | swap | No |
+| FancyDisplay | 400 | ttf | 180 KB | (none) | Yes |
 
 Issues:
 - Inter 300 and 800 loaded but never used in CSS — remove
@@ -265,18 +257,16 @@ Configure service workers for optimal caching:
 
 ```
 CACHING STRATEGY MATRIX:
-┌──────────────────────────────────────────────────────────────────┐
-│ Resource Type      │ Strategy              │ Max Age  │ Rationale │
-├──────────────────────────────────────────────────────────────────┤
-│ HTML pages         │ Network First         │ 0        │ Fresh content │
-│ CSS/JS (hashed)    │ Cache First           │ 1 year   │ Immutable  │
-│ CSS/JS (unhashed)  │ Stale While Revalidate│ 1 hour   │ Fast + fresh │
-│ Images             │ Cache First           │ 30 days  │ Rarely change │
-│ Fonts              │ Cache First           │ 1 year   │ Never change │
-│ API (dynamic)      │ Network First         │ 0        │ Real-time  │
-│ API (semi-static)  │ Stale While Revalidate│ 5 min    │ Fast + fresh │
-│ Third-party        │ Stale While Revalidate│ 1 day    │ Not controlled │
-└──────────────────────────────────────────────────────────────────┘
+| Resource Type | Strategy | Max Age | Rationale |
+|---|---|---|---|
+| HTML pages | Network First | 0 | Fresh content |
+| CSS/JS (hashed) | Cache First | 1 year | Immutable |
+| CSS/JS (unhashed) | Stale While Revalidate | 1 hour | Fast + fresh |
+| Images | Cache First | 30 days | Rarely change |
+| Fonts | Cache First | 1 year | Never change |
+| API (dynamic) | Network First | 0 | Real-time |
+| API (semi-static) | Stale While Revalidate | 5 min | Fast + fresh |
+| Third-party | Stale While Revalidate | 1 day | Not controlled |
 ```
 
 #### Workbox Configuration
@@ -303,17 +293,15 @@ Configure CDN and HTTP cache headers for optimal delivery:
 
 ```
 CDN & CACHING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Resource           │ Cache-Control           │ CDN │ Edge Cache   │
-├──────────────────────────────────────────────────────────────────┤
-│ HTML               │ no-cache                │ Yes │ 0 (origin)   │
-│ JS (hashed)        │ public, max-age=31536000│ Yes │ 1 year       │
-│ CSS (hashed)       │ public, max-age=31536000│ Yes │ 1 year       │
-│ Images             │ public, max-age=2592000 │ Yes │ 30 days      │
-│ Fonts              │ public, max-age=31536000│ Yes │ 1 year       │
-│ API responses      │ private, no-store       │ No  │ 0            │
-│ Static data API    │ public, s-maxage=300    │ Yes │ 5 min (edge) │
-└──────────────────────────────────────────────────────────────────┘
+| Resource | Cache-Control | CDN | Edge Cache |
+|---|---|---|---|
+| HTML | no-cache | Yes | 0 (origin) |
+| JS (hashed) | public, max-age=31536000 | Yes | 1 year |
+| CSS (hashed) | public, max-age=31536000 | Yes | 1 year |
+| Images | public, max-age=2592000 | Yes | 30 days |
+| Fonts | public, max-age=31536000 | Yes | 1 year |
+| API responses | private, no-store | No | 0 |
+| Static data API | public, s-maxage=300 | Yes | 5 min (edge) |
 ```
 
 ```
@@ -338,17 +326,13 @@ Cache-Control: public, max-age=2592000
 ### Step 9: Performance Optimization Report
 
 ```
-+------------------------------------------------------------+
 |  WEB PERFORMANCE AUDIT — <target>                           |
-+------------------------------------------------------------+
 |  Lighthouse Scores:                                         |
 |  Performance: <before> → <after> (+<delta>)                 |
 |  Best Practices: <N>/100                                    |
-|                                                             |
 |  Core Web Vitals:                                           |
 |  LCP: <before> → <after> (target: < 2.5s)                  |
 |  INP: <before> → <after> (target: < 200ms)                 |
-|                                                             |
 ```
 
 Verdicts:

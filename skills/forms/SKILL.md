@@ -45,20 +45,18 @@ Choose and implement the right form state management approach:
 #### Decision Matrix
 ```
 FORM STATE MANAGEMENT DECISION:
-┌──────────────────────────────────────────────────────────────────────────┐
-│ Criterion           │ React Hook Form │ Formik    │ Native       │ Server │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Re-renders          │ Minimal         │ Frequent  │ Minimal      │ Zero   │
-│ Bundle size         │ ~9KB            │ ~15KB     │ 0KB          │ 0KB    │
-│ TypeScript          │ Excellent       │ Good      │ Manual       │ Good   │
-│ Validation          │ Resolver-based  │ Built-in  │ Manual       │ Server │
-│ Performance         │ Excellent       │ Good      │ Depends      │ N/A    │
-│ Complex forms       │ Excellent       │ Good      │ Verbose      │ Limited│
-│ File uploads        │ Good            │ Good      │ Manual       │ Good   │
-│ Multi-step          │ Excellent       │ Good      │ Complex      │ Complex│
-│ Server integration  │ Good            │ Good      │ Good         │ Native │
-│ Learning curve      │ Medium          │ Low       │ Low          │ Low    │
-└──────────────────────────────────────────────────────────────────────────┘
+| Criterion | React Hook Form | Formik | Native | Server |
+|---|---|---|---|---|
+| Re-renders | Minimal | Frequent | Minimal | Zero |
+| Bundle size | ~9KB | ~15KB | 0KB | 0KB |
+| TypeScript | Excellent | Good | Manual | Good |
+| Validation | Resolver-based | Built-in | Manual | Server |
+| Performance | Excellent | Good | Depends | N/A |
+| Complex forms | Excellent | Good | Verbose | Limited |
+| File uploads | Good | Good | Manual | Good |
+| Multi-step | Excellent | Good | Complex | Complex |
+| Server integration | Good | Good | Good | Native |
+| Learning curve | Medium | Low | Low | Low |
 ```
 
 #### React Hook Form + Zod Setup
@@ -89,8 +87,9 @@ Implement wizard-style forms with step navigation, validation per step, and stat
 ```
 WIZARD ARCHITECTURE:
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
-│ Step 1   │───>│ Step 2   │───>│ Step 3   │───>│ Review   │
-│ Personal │    │ Address  │    │ Payment  │    │ Confirm  │
+| Step 1 | ───> | Step 2 | ───> | Step 3 | ───> | Review |
+|---|---|---|---|---|---|---|
+| Personal |  | Address |  | Payment |  | Confirm |
 └─────────┘    └─────────┘    └─────────┘    └─────────┘
      │              │              │              │
   Schema 1       Schema 2      Schema 3      Full schema
@@ -287,20 +286,17 @@ export function useAutosave<T extends Record<string, any>>({
 
 ```
 FORM ARCHITECTURE REPORT:
-┌──────────────────────────────────────────────────────────────┐
-│ Form: <name/purpose>                                         │
-│ Fields: <N> total (<N> required)                              │
-│ Steps: <N> (or single page)                                   │
-│                                                               │
-│ State Management:                                             │
-│   Library: <React Hook Form / Formik / native>                │
-│   Validation: <Zod / Yup / custom>                            │
-│   Mode: <onBlur / onChange / onSubmit>                         │
-│                                                               │
-│ Validation Coverage:                                          │
-│   Client-side: <N>/<N> fields validated                       │
-│   Server-side: YES / NO                                       │
-│   Async validation: <N> fields                                │
+  Form: <name/purpose>
+  Fields: <N> total (<N> required)
+  Steps: <N> (or single page)
+  State Management:
+  Library: <React Hook Form / Formik / native>
+  Validation: <Zod / Yup / custom>
+  Mode: <onBlur / onChange / onSubmit>
+  Validation Coverage:
+  Client-side: <N>/<N> fields validated
+  Server-side: YES / NO
+  Async validation: <N> fields
 ```
 
 ### Step 9: Commit and Transition
@@ -372,19 +368,18 @@ After each forms skill invocation, emit a structured report:
 
 ```
 FORMS BUILD REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Forms created      │  <N>                            │
-│  Forms updated      │  <N>                            │
-│  Fields total       │  <N>                            │
-│  Validation schemas │  <N> (Zod/Yup)                  │
-│  Client validation  │  YES / NO                       │
-│  Server validation  │  YES / NO (shared schema)       │
-│  A11y (labels+aria) │  PASS / <N> violations          │
-│  Error messages     │  <N> fields with inline errors  │
-│  Multi-step         │  <N> steps / N/A                │
-│  Tests              │  <N> passing, <N> failing       │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+| Forms created | <N> |
+|---|---|
+| Forms updated | <N> |
+| Fields total | <N> |
+| Validation schemas | <N> (Zod/Yup) |
+| Client validation | YES / NO |
+| Server validation | YES / NO (shared schema) |
+| A11y (labels+aria) | PASS / <N> violations |
+| Error messages | <N> fields with inline errors |
+| Multi-step | <N> steps / N/A |
+| Tests | <N> passing, <N> failing |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging

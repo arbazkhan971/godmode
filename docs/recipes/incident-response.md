@@ -369,12 +369,12 @@ Saved: docs/postmortems/2026-03-19-checkout-failure-postmortem.md
 ```
 Is the system losing money/data RIGHT NOW?
 ├── YES → Rollback immediately, then investigate
-│         /godmode:incident --rollback
-│         /godmode:debug --incident
+  /godmode:incident --rollback
+  /godmode:debug --incident
 └── NO  → Investigate first
           ├── Can you reproduce it?
-          │   ├── YES → /godmode:debug
-          │   └── NO  → /godmode:observe --trace <request-id>
+  ├── YES → /godmode:debug
+  └── NO  → /godmode:observe --trace <request-id>
           └── /godmode:fix --from-debug
 ```
 

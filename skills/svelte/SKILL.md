@@ -79,17 +79,15 @@ Guide the appropriate reactivity approach:
 Decision guide:
 ```
 REACTIVITY MODEL DECISION:
-┌────────────────────────────────────────────────────────────────────────┐
-│ Factor │ Runes (Svelte 5) │ Legacy (Svelte 4) │
-├─────────────────────────┼─────────────────────────┼────────────────────┤
-│ Explicitness │ Explicit ($state) │ Implicit (let) │
-│ Computed values │ $derived (clear) │ $: (ambiguous) │
-│ Side effects │ $effect (dedicated) │ $: (overloaded) │
-│ Props │ $props() (typed) │ export let (basic)│
-│ Fine-grained │ Yes (signal-based) │ Component-level │
-│.svelte.ts files │ Reactive outside comps │ Components only │
-│ Migration │ Incremental (per file) │ N/A │
-└─────────────────────────┴─────────────────────────┴────────────────────┘
+| Factor | Runes (Svelte 5) | Legacy (Svelte 4) |
+|---|---|---|
+| Explicitness | Explicit ($state) | Implicit (let) |
+| Computed values | $derived (clear) | $: (ambiguous) |
+| Side effects | $effect (dedicated) | $: (overloaded) |
+| Props | $props() (typed) | export let (basic) |
+| Fine-grained | Yes (signal-based) | Component-level |
+| .svelte.ts files | Reactive outside comps | Components only |
+| Migration | Incremental (per file) | N/A |
 
 RECOMMENDATION: Svelte 5 runes for new projects. Migrate existing Svelte 4
 projects incrementally — runes and legacy syntax can coexist.
@@ -183,16 +181,14 @@ Configure rendering strategies per route:
 
 ```
 RENDERING STRATEGY:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Route │ Strategy │ Reason │
-├────────────────────────┼───────────────┼─────────────────────────────┤
-│ / │ Prerender │ Static content, fast load │
-│ /about, /pricing │ Prerender │ Marketing pages, SEO │
-│ /blog/[slug] │ SSR + cache │ Dynamic, SEO-critical │
-│ /dashboard/** │ CSR (ssr:false)│ Auth-gated, no SEO need │
-│ /api/** │ Server-only │ API endpoints │
-│ /products/[id] │ SSR │ Dynamic, SEO-critical │
-└────────────────────────┴───────────────┴─────────────────────────────┘
+| Route | Strategy | Reason |
+|---|---|---|
+| / | Prerender | Static content, fast load |
+| /about, /pricing | Prerender | Marketing pages, SEO |
+| /blog/[slug] | SSR + cache | Dynamic, SEO-critical |
+| /dashboard/** | CSR (ssr:false) | Auth-gated, no SEO need |
+| /api/** | Server-only | API endpoints |
+| /products/[id] | SSR | Dynamic, SEO-critical |
 ```
 
 #### Per-Route Configuration
@@ -211,17 +207,15 @@ Configure the deployment adapter:
 
 ```
 ADAPTER SELECTION:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Platform │ Adapter │ Notes │
-├──────────────────┼───────────────────────────┼───────────────────────┤
-│ Vercel │ @sveltejs/adapter-vercel │ Edge/Serverless │
-│ Cloudflare │ @sveltejs/adapter-cloudflare │ Workers/Pages │
-│ Netlify │ @sveltejs/adapter-netlify│ Functions + CDN │
-│ Node.js │ @sveltejs/adapter-node │ Express/Fastify host │
-│ Static (SPA) │ @sveltejs/adapter-static │ GitHub Pages, S3 │
-│ Auto-detect │ @sveltejs/adapter-auto │ Detects platform │
-│ Bun │ svelte-adapter-bun │ Bun runtime │
-└──────────────────┴───────────────────────────┴───────────────────────┘
+| Platform | Adapter | Notes |
+|---|---|---|
+| Vercel | @sveltejs/adapter-vercel | Edge/Serverless |
+| Cloudflare | @sveltejs/adapter-cloudflare | Workers/Pages |
+| Netlify | @sveltejs/adapter-netlify | Functions + CDN |
+| Node.js | @sveltejs/adapter-node | Express/Fastify host |
+| Static (SPA) | @sveltejs/adapter-static | GitHub Pages, S3 |
+| Auto-detect | @sveltejs/adapter-auto | Detects platform |
+| Bun | svelte-adapter-bun | Bun runtime |
 ```
 
 ### Step 7: Component Patterns
@@ -272,20 +266,19 @@ Validate the Svelte application against best practices:
 
 ```
 SVELTE APPLICATION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Check │ Status │
-├───────────────────────────────────────────┼──────────────────────┤
-│ Svelte 5 runes used (if applicable) │ PASS | FAIL | N/A │
-│ TypeScript enabled and strict │ PASS | FAIL │
-│ Server load functions for data fetching │ PASS | FAIL │
-│ Form actions for mutations │ PASS | FAIL │
-│ Progressive enhancement (use:enhance) │ PASS | FAIL │
-│ Rendering strategy per route │ PASS | FAIL │
-│ Adapter configured for target platform │ PASS | FAIL │
-│ Error pages defined (+error.svelte) │ PASS | FAIL │
-│ Hooks for auth/logging │ PASS | FAIL │
-│ Stores/state well-organized │ PASS | FAIL │
-│ No $effect for derived state (use $derived)│ PASS | FAIL │
+| Check | Status |
+|---|---|
+| Svelte 5 runes used (if applicable) | PASS | FAIL | N/A |
+| TypeScript enabled and strict | PASS | FAIL |
+| Server load functions for data fetching | PASS | FAIL |
+| Form actions for mutations | PASS | FAIL |
+| Progressive enhancement (use:enhance) | PASS | FAIL |
+| Rendering strategy per route | PASS | FAIL |
+| Adapter configured for target platform | PASS | FAIL |
+| Error pages defined (+error.svelte) | PASS | FAIL |
+| Hooks for auth/logging | PASS | FAIL |
+| Stores/state well-organized | PASS | FAIL |
+| No $effect for derived state (use $derived) | PASS | FAIL |
 ```
 
 ### Step 10: Deliverables & Handoff

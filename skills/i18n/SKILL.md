@@ -278,29 +278,23 @@ I18N TEST PLAN:
 ### Step 10: Findings Report
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  I18N AUDIT — <project>                                        │
-├────────────────────────────────────────────────────────────────┤
-│  Strings extracted: <N> / <total>                              │
-│  Locales configured: <list>                                    │
-│  Pluralization rules: <N> strings with plural forms            │
-│  RTL support: <READY | PARTIAL | NOT STARTED>                  │
-│  Character set: <PASS | ISSUES FOUND>                          │
-│                                                                │
-│  Remaining work:                                               │
-│  - Hardcoded strings: <N> remaining                            │
-│  - Missing locale formats: <list>                              │
-│  - RTL fixes needed: <N>                                       │
-│  - Character set issues: <N>                                   │
-│                                                                │
-│  Translation coverage:                                         │
-│  en-US: 100% (base)                                            │
-│  <locale>: <N>% (<M> missing)                                  │
-│  <locale>: <N>% (<M> missing)                                  │
-├────────────────────────────────────────────────────────────────┤
-│  Next: /godmode:test — Run i18n test suite                     │
-│        /godmode:build — Implement remaining extractions        │
-└────────────────────────────────────────────────────────────────┘
+  I18N AUDIT — <project>
+  Strings extracted: <N> / <total>
+  Locales configured: <list>
+  Pluralization rules: <N> strings with plural forms
+  RTL support: <READY | PARTIAL | NOT STARTED>
+  Character set: <PASS | ISSUES FOUND>
+  Remaining work:
+  - Hardcoded strings: <N> remaining
+  - Missing locale formats: <list>
+  - RTL fixes needed: <N>
+  - Character set issues: <N>
+  Translation coverage:
+  en-US: 100% (base)
+  <locale>: <N>% (<M> missing)
+  <locale>: <N>% (<M> missing)
+  Next: /godmode:test — Run i18n test suite
+  /godmode:build — Implement remaining extractions
 ```
 
 ### Step 11: Commit and Transition

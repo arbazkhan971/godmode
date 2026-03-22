@@ -88,20 +88,17 @@ Rules:
 Best for: Large apps with complex business logic, multiple data sources.
 ```
 CLEAN ARCHITECTURE LAYERS:
-┌──────────────────────────────────────────┐
-│  Presentation Layer                       │
-│  (Views, ViewModels, Presenters)          │
-│  Depends on: Domain                       │
-├──────────────────────────────────────────┤
-│  Domain Layer                             │
-│  (Use Cases, Entities, Repository         │
-│   Interfaces)                             │
-│  Depends on: nothing (innermost layer)    │
-├──────────────────────────────────────────┤
-│  Data Layer                               │
-│  (Repository Implementations, API         │
-│   Clients, Database, Mappers)             │
-│  Depends on: Domain                       │
+  Presentation Layer
+  (Views, ViewModels, Presenters)
+  Depends on: Domain
+  Domain Layer
+  (Use Cases, Entities, Repository
+  Interfaces)
+  Depends on: nothing (innermost layer)
+  Data Layer
+  (Repository Implementations, API
+  Clients, Database, Mappers)
+  Depends on: Domain
 ```
 
 ### Step 3: Project Setup
@@ -349,21 +346,17 @@ COMMON MOBILE FEATURES CHECKLIST:
 ### Step 8: Mobile Development Report
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  MOBILE PROJECT — <app name>                                   │
-├────────────────────────────────────────────────────────────────┤
-│  Platform: <iOS | Android | Cross-platform>                    │
-│  Framework: <Swift/Kotlin/React Native/Flutter>                │
-│  Architecture: <MVVM | MVI | Clean Architecture>              │
-│                                                                │
-│  Build status:                                                 │
-│    iOS: <CONFIGURED | BUILDS | RUNS | TESTED | SIGNED>        │
-│    Android: <CONFIGURED | BUILDS | RUNS | TESTED | SIGNED>    │
-│                                                                │
-│  Performance:                                                  │
-│    Startup: <Nms> (target: <1000ms)                            │
-│    Memory peak: <N>MB (budget: <N>MB)                          │
-│    App size: <N>MB (budget: <N>MB)                             │
+  MOBILE PROJECT — <app name>
+  Platform: <iOS | Android | Cross-platform>
+  Framework: <Swift/Kotlin/React Native/Flutter>
+  Architecture: <MVVM | MVI | Clean Architecture>
+  Build status:
+  iOS: <CONFIGURED | BUILDS | RUNS | TESTED | SIGNED>
+  Android: <CONFIGURED | BUILDS | RUNS | TESTED | SIGNED>
+  Performance:
+  Startup: <Nms> (target: <1000ms)
+  Memory peak: <N>MB (budget: <N>MB)
+  App size: <N>MB (budget: <N>MB)
 ```
 
 ### Step 9: Commit and Transition
@@ -428,19 +421,18 @@ After each mobile skill invocation, emit a structured report:
 
 ```
 MOBILE BUILD REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Platform           │  <iOS | Android | Both>         │
-│  Framework          │  <React Native | Flutter | etc> │
-│  Screens built      │  <N>                            │
-│  Components         │  <N> created / <N> updated      │
-│  Tests              │  <N> passing, <N> failing       │
-│  App size           │  <N> MB (release build)         │
-│  Cold start time    │  <N> ms                         │
-│  Memory usage       │  <N> MB peak                    │
-│  A11y violations    │  <N>                            │
-│  Platform guidelines│  iOS HIG: PASS/FAIL  Material: PASS/FAIL │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+| Platform | <iOS | Android | Both> |
+|---|---|---|---|
+| Framework | <React Native | Flutter | etc> |
+| Screens built | <N> |
+| Components | <N> created / <N> updated |
+| Tests | <N> passing, <N> failing |
+| App size | <N> MB (release build) |
+| Cold start time | <N> ms |
+| Memory usage | <N> MB peak |
+| A11y violations | <N> |
+| Platform guidelines | iOS HIG: PASS/FAIL  Material: PASS/FAIL |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging

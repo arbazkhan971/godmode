@@ -74,9 +74,7 @@ PATTERN: Hexagonal Architecture
 Present a structured comparison:
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────┐
-│  ARCHITECTURE COMPARISON — <system name>                                       │
-├──────────────────┬──────────┬──────────┬──────────┬──────────┬────────────────┤
+  ARCHITECTURE COMPARISON — <system name>
 ```
 
 ### Step 4: C4 Architecture Diagrams
@@ -86,24 +84,21 @@ Produce diagrams at all four C4 levels for the chosen architecture:
 Who uses the system and what external systems does it interact with?
 ```
 C4 CONTEXT DIAGRAM:
-┌─────────────────────────────────────────────────┐
-│                   Users / Actors                │
+  Users / Actors
 ```
 
 #### Level 2: Container Diagram
 What are the major deployable units?
 ```
 C4 CONTAINER DIAGRAM:
-┌──────────────────────────────────────────────────────┐
-│  <<System>> <System Name>                            │
+  <<System>> <System Name>
 ```
 
 #### Level 3: Component Diagram
 What are the major components within each container?
 ```
 C4 COMPONENT DIAGRAM — <Container Name>:
-┌──────────────────────────────────────────────────────┐
-│  <<Container>> API Service                           │
+  <<Container>> API Service
 ```
 
 #### Level 4: Code Diagram
@@ -119,8 +114,6 @@ Map bounded contexts and their relationships:
 
 ```
 BOUNDED CONTEXT MAP:
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
 ```
 
 ### Step 6: Quality Attribute Analysis
@@ -128,8 +121,7 @@ For the recommended architecture, analyze non-functional requirements:
 
 ```
 QUALITY ATTRIBUTES:
-┌─────────────────────┬────────────────────────────────────────────┐
-│ Attribute           │ How the architecture addresses it          │
+| Attribute | How the architecture addresses it |
 ```
 
 ### Step 7: Architecture Decision Record
@@ -213,32 +205,28 @@ current_iteration = 0
 
 ```
 COUPLING ANALYSIS:
-┌──────────────────────────────────────────────────────────────┐
-│  Metric                  │ Threshold   │ Measured │ Status    │
+| Metric | Threshold | Measured | Status |
 ```
 
 ### Dependency Analysis
 
 ```
 DEPENDENCY ANALYSIS:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Details     │
+| Check | Status | Details |
 ```
 
 ### SOLID Violation Detection
 
 ```
 SOLID VIOLATION SCAN:
-┌──────────────────────────────────────────────────────────────┐
-│  Principle                │ Detection Signal          │ Count │
+| Principle | Detection Signal | Count |
 ```
 
 ### Architecture Health Scorecard
 
 ```
 ARCHITECTURE HEALTH SCORECARD:
-┌──────────────────────────────────────────────────────────────┐
-│  Dimension                │ Score (1-10) │ Weight │ Weighted  │
+| Dimension | Score (1-10) | Weight | Weighted |
 ```
 
 

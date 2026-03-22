@@ -100,7 +100,6 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 #### Extension Selection Guide
 ```
 EXTENSION SELECTION:
-+--------------------------------------------------------------+
 |  Need                        | Extension        | Notes       |
 ```
 
@@ -132,7 +131,6 @@ Use when: Replicating specific tables, cross-version upgrades, data integration
 
 ```
 PARTITIONING DECISION:
-+--------------------------------------------------------------+
 |  Strategy   | Use When                    | Partition Key      |
 ```
 
@@ -148,7 +146,6 @@ SELECT schemaname, relname,
 
 ```
 VACUUM TYPES:
-+--------------------------------------------------------------+
 |  Command              | What It Does          | When to Use    |
 ```
 
@@ -162,7 +159,6 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
 ```
 DIAGNOSTIC CHECKLIST:
-+--------------------------------------------------------------+
 |  Metric                    | Target         | Query            |
 ```
 
@@ -195,9 +191,7 @@ MEMORY:
 ### Step 9: Report and Transition
 
 ```
-+------------------------------------------------------------+
 |  POSTGRESQL MASTERY -- <description>                        |
-+------------------------------------------------------------+
 ```
 
 Commit: `"postgres: <description> -- <key outcome>"`
@@ -252,9 +246,7 @@ STOP when ANY of these are true:
 Every postgres invocation must produce a structured report:
 
 ```
-+------------------------------------------------------------+
 |  POSTGRES RESULT                                            |
-+------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -289,8 +281,7 @@ max_iterations = 20
 
 ```
 INDEX TUNING DECISION TABLE:
-┌──────────────────────────────────────┬────────────────────────┬─────────────────────────────┐
-│ EXPLAIN ANALYZE Signal               │ Index Type             │ Action                      │
+| EXPLAIN ANALYZE Signal | Index Type | Action |
 ```
 
 

@@ -41,20 +41,17 @@ Design functions for edge runtime constraints:
 
 ```
 EDGE FUNCTION ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  ┌──────┐   ┌───────────────┐   ┌──────────────┐           │
-│  │Client│──>│  Edge Location │──>│  Origin       │           │
-│  │      │<──│  (CDN PoP)     │<──│  (if needed)  │           │
-│  └──────┘   │               │   └──────────────┘           │
-│             │  ┌───────────┐│                               │
-│             │  │Edge Func  ││  Runs in ~300 locations       │
-│             │  │(V8 isolate)││  Sub-ms cold start           │
-│             │  └───────────┘│  Limited CPU time              │
-│             │  ┌───────────┐│                               │
-│             │  │ KV / Cache ││  Distributed state            │
-│             │  └───────────┘│                               │
-│             └───────────────┘                               │
+  ┌──────┐   ┌───────────────┐   ┌──────────────┐
+|  | Client | ──> | Edge Location | ──> | Origin |  |
+|  |  | <── | (CDN PoP) | <── | (if needed) |  |
+| └──────┘ |  | └──────────────┘ |
+|  | ┌───────────┐ |  |
+|  |  | Edge Func |  | Runs in ~300 locations |
+|  |  | (V8 isolate) |  | Sub-ms cold start |
+|  | └───────────┘ | Limited CPU time |
+|  | ┌───────────┐ |  |
+|  |  | KV / Cache |  | Distributed state |
+|  | └───────────┘ |  |
 ```
 
 Edge function patterns:
@@ -73,20 +70,16 @@ Design serverless applications on traditional FaaS platforms:
 
 ```
 SERVERLESS ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  ┌──────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐    │
-│  │Client│──>│API Gateway│──>│  Lambda   │──>│ Database  │    │
-│  │      │<──│(route,auth│<──│ Function  │<──│ / Service │    │
-│  └──────┘   │ throttle) │   └──────────┘   └──────────┘    │
-│             └──────────┘                                    │
-│                                                              │
-│  EVENT-DRIVEN:                                               │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐               │
-│  │  Event    │──>│  Lambda   │──>│  Output   │               │
-│  │  Source   │   │ Function  │   │  Target   │               │
-│  │(S3, SQS, │   └──────────┘   │(DB, S3,   │               │
-│  │ DynamoDB, │                  │ SNS, SQS) │               │
+  ┌──────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+|  | Client | ──> | API Gateway | ──> | Lambda | ──> | Database |  |
+|  |  | <── | (route,auth | <── | Function | <── | / Service |  |
+| └──────┘ | throttle) | └──────────┘   └──────────┘ |
+  EVENT-DRIVEN:
+  ┌──────────┐   ┌──────────┐   ┌──────────┐
+|  | Event | ──> | Lambda | ──> | Output |  |
+|  | Source |  | Function |  | Target |  |
+|  | (S3, SQS, | └──────────┘ | (DB, S3, |  |
+|  | DynamoDB, |  | SNS, SQS) |  |
 ```
 
 ### Step 4: Cold Start Optimization
@@ -94,20 +87,16 @@ Minimize function startup latency:
 
 ```
 COLD START ANALYSIS:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  WHAT IS A COLD START?                                       │
-│  When a function instance does not exist, the platform must: │
-│  1. Allocate resources (container or isolate)                │
-│  2. Download and extract code                                │
-│  3. Initialize runtime (Node.js, Python, Java, etc.)         │
-│  4. Run module initialization (imports, DB connections)       │
-│  5. Execute handler                                          │
-│                                                              │
-│  Steps 1-4 are the "cold start." Step 5 is normal execution.│
-│                                                              │
-│  COLD START DURATIONS:                                       │
-│  ┌──────────────┬──────────┬───────────────────────┐        │
+  WHAT IS A COLD START?
+  When a function instance does not exist, the platform must:
+  1. Allocate resources (container or isolate)
+  2. Download and extract code
+  3. Initialize runtime (Node.js, Python, Java, etc.)
+  4. Run module initialization (imports, DB connections)
+  5. Execute handler
+  Steps 1-4 are the "cold start." Step 5 is normal execution.
+  COLD START DURATIONS:
+  ┌──────────────┬──────────┬───────────────────────┐
 ```
 
 ### Step 5: Edge Caching Strategies
@@ -115,18 +104,13 @@ Design caching for edge and serverless:
 
 ```
 EDGE CACHING ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  ┌──────┐   ┌──────────────────────────────┐   ┌──────────┐│
-│  │Client│──>│        Edge Location          │──>│  Origin  ││
-│  │      │   │  ┌───────┐    ┌───────────┐  │   │  Server  ││
-│  │      │<──│  │ CDN   │    │Edge Func   │  │<──│          ││
-│  └──────┘   │  │ Cache │<──>│(compute +  │  │   └──────────┘│
-│             │  └───────┘    │ cache API) │  │              │
-│             │               └───────────┘  │              │
-│             └──────────────────────────────┘              │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+  ┌──────┐   ┌──────────────────────────────┐   ┌──────────┐
+|  | Client | ──> | Edge Location | ──> | Origin |  |
+|  |  |  | ┌───────┐    ┌───────────┐ |  | Server |  |
+|  |  | <── |  | CDN |  | Edge Func |  | <── |  |  |
+| └──────┘ |  | Cache | <──> | (compute + |  | └──────────┘ |
+|  | └───────┘ | cache API) |  |  |
+|  | └───────────┘ |  |
 
 CACHING STRATEGIES:
 ```
@@ -136,20 +120,19 @@ Manage state in a globally distributed environment:
 
 ```
 EDGE STATE SOLUTIONS:
-┌──────────────┬──────────────┬──────────────┬───────────────┐
-│  Solution    │  Consistency │  Latency     │  Use Case     │
-├──────────────┼──────────────┼──────────────┼───────────────┤
-│  KV Store    │  Eventually  │  <10ms read  │  Config, flags│
-│  (CF KV,     │  consistent  │  ~500ms write│  sessions,    │
-│  Vercel KV)  │              │              │  feature gates│
-│  Durable     │  Strongly    │  Varies (co- │  Counters,    │
-│  Objects     │  consistent  │  located)    │  rate limiting│
-│  (CF DO)     │              │              │  coordination │
-│  D1/Turso    │  Strongly    │  <10ms read  │  Relational   │
-│  (edge SQL)  │  consistent  │  (replicas)  │  data at edge │
-│  R2/S3       │  Eventually  │  Varies      │  Large objects│
-│  (edge blob) │  consistent  │              │  media, files │
-│  DynamoDB    │  Tunable     │  <10ms (DAX) │  High-scale   │
+| Solution | Consistency | Latency | Use Case |
+|---|---|---|---|
+| KV Store | Eventually | <10ms read | Config, flags |
+| (CF KV, | consistent | ~500ms write | sessions, |
+| Vercel KV) |  |  | feature gates |
+| Durable | Strongly | Varies (co- | Counters, |
+| Objects | consistent | located) | rate limiting |
+| (CF DO) |  |  | coordination |
+| D1/Turso | Strongly | <10ms read | Relational |
+| (edge SQL) | consistent | (replicas) | data at edge |
+| R2/S3 | Eventually | Varies | Large objects |
+| (edge blob) | consistent |  | media, files |
+| DynamoDB | Tunable | <10ms (DAX) | High-scale |
 ```
 
 ### Step 7: Serverless Infrastructure as Code
@@ -199,20 +182,19 @@ Comprehensive testing strategy:
 
 ```
 EDGE/SERVERLESS TESTING:
-┌─────────────────────────────────────────────────────────────┐
-│  Layer              │  What to Test            │  Tool       │
-├─────────────────────┼──────────────────────────┼─────────────┤
-│  Unit               │  Handler logic with      │  Vitest /   │
-│                     │  mocked env/context      │  Jest       │
-│  Integration        │  Full request/response   │  Miniflare /│
-│                     │  with local runtime      │  SAM local  │
-│  Edge simulation    │  Edge-specific APIs (KV, │  Miniflare /│
-│                     │  Durable Objects, cache) │  wrangler   │
-│  E2E                │  Deployed function with  │  Playwright │
-│                     │  real infrastructure     │             │
-│  Performance        │  Cold start, latency,    │  k6 / wrk   │
-│                     │  throughput              │             │
-│  Chaos              │  Origin failure, KV      │  Custom     │
+| Layer | What to Test | Tool |
+|---|---|---|
+| Unit | Handler logic with | Vitest / |
+|  | mocked env/context | Jest |
+| Integration | Full request/response | Miniflare / |
+|  | with local runtime | SAM local |
+| Edge simulation | Edge-specific APIs (KV, | Miniflare / |
+|  | Durable Objects, cache) | wrangler |
+| E2E | Deployed function with | Playwright |
+|  | real infrastructure |  |
+| Performance | Cold start, latency, | k6 / wrk |
+|  | throughput |  |
+| Chaos | Origin failure, KV | Custom |
 ```
 
 ### Step 10: Artifacts & Completion
@@ -324,11 +306,9 @@ EDGE/SERVERLESS DEPLOYMENT COMPLETE:
   Timeout: <N>ms (limit: <M>ms)
 
 FUNCTION SUMMARY:
-+--------------------------------------------------------------+
 |  Function          | Route      | Cold Start | Bundle | State |
-+--------------------------------------------------------------+
+|---|---|---|---|---|
 |  <function>        | /api/...   | <N>ms      | <K>KB  | KV    |
-+--------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -344,9 +324,8 @@ Example: 2025-01-15T10:30:00Z\tmy-api\tcloudflare-workers\t6\t450\t120\t85\tglob
 
 ```
 EDGE/SERVERLESS SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 |  Criterion                                  | Required         |
-+--------------------------------------------------------------+
+|---|---|
 |  Bundle size within platform limits         | YES              |
 |  Cold start < 200ms (or platform target)    | YES              |
 |  No Node.js-only APIs in edge runtime       | YES (edge)       |
@@ -357,7 +336,6 @@ EDGE/SERVERLESS SUCCESS CRITERIA:
 |  Observability (logs, traces, metrics)      | YES              |
 |  No long-running connections in serverless  | YES              |
 |  Graceful degradation on dependency failure | YES              |
-+--------------------------------------------------------------+
 
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```
@@ -410,14 +388,12 @@ Pass 4 — Cost & Efficiency:
   4. Choose cheapest platform per workload type
 
 OPTIMIZATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  Cold start p99 (ms)        │  <N>      │  <N>      │  -<N>%    │
-│  Bundle size (KB)           │  <N>      │  <N>      │  -<N>%    │
-│  CDN cache hit rate (%)     │  <N>%     │  <N>%     │  +<N>%    │
-│  Cost per 1M requests ($)   │  $<N>     │  $<N>     │  -<N>%    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
+| Metric | Before | After | Δ |
+|---|---|---|---|
+| Cold start p99 (ms) | <N> | <N> | -<N>% |
+| Bundle size (KB) | <N> | <N> | -<N>% |
+| CDN cache hit rate (%) | <N>% | <N>% | +<N>% |
+| Cost per 1M requests ($) | $<N> | $<N> | -<N>% |
 VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
 

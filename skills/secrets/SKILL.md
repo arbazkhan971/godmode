@@ -22,24 +22,21 @@ Discover and catalog all secrets in the project:
 
 ```
 SECRET INVENTORY:
-┌──────────────────────────────────────────────────────────┐
-│  Secret                │ Source        │ Status           │
-│  ─────────────────────────────────────────────────────── │
-│  DATABASE_URL          │ .env          │ PRESENT          │
-│  JWT_SECRET            │ .env          │ PRESENT          │
-│  AWS_ACCESS_KEY_ID     │ .env          │ PRESENT          │
-│  AWS_SECRET_ACCESS_KEY │ .env          │ PRESENT          │
-│  STRIPE_SECRET_KEY     │ hardcoded     │ LEAKED           │
-│  SMTP_PASSWORD         │ config.yaml   │ EXPOSED          │
-│  API_KEY_INTERNAL      │ env var       │ RUNTIME ONLY     │
-│  TLS_CERT              │ vault         │ MANAGED          │
-│  TLS_KEY               │ vault         │ MANAGED          │
-├──────────────────────────────────────────────────────────┤
-│  Total secrets: 9                                         │
-│  Properly managed: 3 (vault/runtime)                      │
-│  In .env files: 4 (acceptable for local dev)              │
-│  LEAKED/EXPOSED: 2 (MUST FIX IMMEDIATELY)                 │
-└──────────────────────────────────────────────────────────┘
+| Secret | Source | Status |
+|---|---|---|
+| DATABASE_URL | .env | PRESENT |
+| JWT_SECRET | .env | PRESENT |
+| AWS_ACCESS_KEY_ID | .env | PRESENT |
+| AWS_SECRET_ACCESS_KEY | .env | PRESENT |
+| STRIPE_SECRET_KEY | hardcoded | LEAKED |
+| SMTP_PASSWORD | config.yaml | EXPOSED |
+| API_KEY_INTERNAL | env var | RUNTIME ONLY |
+| TLS_CERT | vault | MANAGED |
+| TLS_KEY | vault | MANAGED |
+  Total secrets: 9
+  Properly managed: 3 (vault/runtime)
+  In .env files: 4 (acceptable for local dev)
+  LEAKED/EXPOSED: 2 (MUST FIX IMMEDIATELY)
 ```
 
 ### Step 2: Secret Leak Detection
@@ -57,20 +54,17 @@ gitleaks detect --source . --log-opts="--all" --verbose
 
 ```
 LEAK DETECTION RESULTS:
-┌──────────────────────────────────────────────────────────┐
-│  Scanner           │ Findings │ Verified │ False Positive │
-│  ─────────────────────────────────────────────────────── │
-│  gitleaks          │ 3        │ 2        │ 1              │
-│  truffleHog        │ 1        │ 1        │ 0              │
-│  pattern scan      │ 5        │ 2        │ 3              │
-├──────────────────────────────────────────────────────────┤
-│  VERIFIED LEAKS:                                          │
-│                                                           │
-│  LEAK 1: Stripe API Key                                   │
-│  File: src/services/payment.ts:12                         │
-│  Evidence: const STRIPE_KEY = "sk_live_abc123..."         │
-│  Severity: CRITICAL                                       │
-│  Action: Revoke key immediately, rotate, use env var      │
+| Scanner | Findings | Verified | False Positive |
+|---|---|---|---|
+| gitleaks | 3 | 2 | 1 |
+| truffleHog | 1 | 1 | 0 |
+| pattern scan | 5 | 2 | 3 |
+  VERIFIED LEAKS:
+  LEAK 1: Stripe API Key
+  File: src/services/payment.ts:12
+  Evidence: const STRIPE_KEY = "sk_live_abc123..."
+  Severity: CRITICAL
+  Action: Revoke key immediately, rotate, use env var
 ```
 
 For each verified leak:
@@ -158,16 +152,14 @@ diff <(grep -oP '^[A-Z_]+=?' .env.example | sort) \
 
 ```
 ENV VALIDATION:
-┌──────────────────────────────────────────────────────────┐
-│  Variable              │ .env.example │ .env   │ Status  │
-│  ─────────────────────────────────────────────────────── │
-│  DATABASE_URL          │ present      │ present│ OK      │
-│  JWT_SECRET            │ present      │ present│ OK      │
-│  REDIS_URL             │ present      │ present│ OK      │
-│  STRIPE_KEY            │ present      │ present│ OK      │
-│  SENTRY_DSN            │ present      │ MISSING│ WARNING │
-│  NEW_FEATURE_FLAG      │ MISSING      │ present│ STALE   │
-└──────────────────────────────────────────────────────────┘
+| Variable | .env.example | .env | Status |
+|---|---|---|---|
+| DATABASE_URL | present | present | OK |
+| JWT_SECRET | present | present | OK |
+| REDIS_URL | present | present | OK |
+| STRIPE_KEY | present | present | OK |
+| SENTRY_DSN | present | MISSING | WARNING |
+| NEW_FEATURE_FLAG | MISSING | present | STALE |
 Missing in .env: SENTRY_DSN (add to your local .env)
 Extra in .env: NEW_FEATURE_FLAG (add to .env.example)
 ```
@@ -177,21 +169,18 @@ Define and enforce credential rotation policies:
 
 ```
 ROTATION POLICY:
-┌──────────────────────────────────────────────────────────┐
-│  Secret Type           │ Rotation   │ Last Rotated │ Due │
-│  ─────────────────────────────────────────────────────── │
-│  Database passwords    │ 30 days    │ 2025-01-01   │ NOW │
-│  API keys              │ 90 days    │ 2024-12-15   │ OK  │
-│  JWT signing key       │ 90 days    │ 2024-11-01   │ DUE │
-│  TLS certificates      │ 365 days   │ 2024-06-01   │ OK  │
-│  OAuth client secrets  │ 180 days   │ 2024-08-01   │ OK  │
-│  Service account keys  │ 90 days    │ 2024-12-20   │ OK  │
-│  Encryption keys       │ 365 days   │ 2024-03-01   │ DUE │
-├──────────────────────────────────────────────────────────┤
-│  OVERDUE: 2 secrets need immediate rotation               │
-│  Database passwords — 15 days overdue                     │
-│  JWT signing key — 6 days overdue                         │
-└──────────────────────────────────────────────────────────┘
+| Secret Type | Rotation | Last Rotated | Due |
+|---|---|---|---|
+| Database passwords | 30 days | 2025-01-01 | NOW |
+| API keys | 90 days | 2024-12-15 | OK |
+| JWT signing key | 90 days | 2024-11-01 | DUE |
+| TLS certificates | 365 days | 2024-06-01 | OK |
+| OAuth client secrets | 180 days | 2024-08-01 | OK |
+| Service account keys | 90 days | 2024-12-20 | OK |
+| Encryption keys | 365 days | 2024-03-01 | DUE |
+  OVERDUE: 2 secrets need immediate rotation
+  Database passwords — 15 days overdue
+  JWT signing key — 6 days overdue
 ```
 
 #### Rotation Procedure
@@ -213,21 +202,18 @@ Track who accesses which secrets and when:
 
 ```
 ACCESS AUDIT:
-┌──────────────────────────────────────────────────────────┐
-│  Secret                │ Accessor          │ Last Access  │
-│  ─────────────────────────────────────────────────────── │
-│  prod/database         │ api-service       │ 2 min ago    │
-│  prod/database         │ migration-job     │ 3 days ago   │
-│  prod/database         │ dev-john (HUMAN)  │ 7 days ago   │
-│  prod/stripe-key       │ payment-service   │ 5 min ago    │
-│  prod/stripe-key       │ dev-sarah (HUMAN) │ 30 days ago  │
-│  prod/jwt-secret       │ api-service       │ 1 min ago    │
-│  prod/jwt-secret       │ auth-service      │ 1 min ago    │
-├──────────────────────────────────────────────────────────┤
-│  ANOMALIES:                                               │
-│  - dev-john accessed prod/database directly (investigate) │
-│  - prod/stripe-key accessed 3x more than usual today      │
-└──────────────────────────────────────────────────────────┘
+| Secret | Accessor | Last Access |
+|---|---|---|
+| prod/database | api-service | 2 min ago |
+| prod/database | migration-job | 3 days ago |
+| prod/database | dev-john (HUMAN) | 7 days ago |
+| prod/stripe-key | payment-service | 5 min ago |
+| prod/stripe-key | dev-sarah (HUMAN) | 30 days ago |
+| prod/jwt-secret | api-service | 1 min ago |
+| prod/jwt-secret | auth-service | 1 min ago |
+  ANOMALIES:
+  - dev-john accessed prod/database directly (investigate)
+  - prod/stripe-key accessed 3x more than usual today
 ```
 
 #### Access Policy Best Practices
@@ -258,16 +244,14 @@ repos:
 
 ```
 PREVENTION LAYER:
-┌──────────────────────────────────────────────────────────┐
-│  Layer              │ Tool            │ Status            │
-│  ─────────────────────────────────────────────────────── │
-│  Pre-commit hook    │ gitleaks        │ ACTIVE            │
-│  CI pipeline scan   │ gitleaks action │ ACTIVE            │
-│  IDE plugin         │ GitGuardian     │ RECOMMENDED       │
-│  GitHub push prot.  │ Secret scanning │ ACTIVE            │
-│  Baseline file      │ detect-secrets  │ ACTIVE            │
-│  PR review check    │ Custom action   │ ACTIVE            │
-└──────────────────────────────────────────────────────────┘
+| Layer | Tool | Status |
+|---|---|---|
+| Pre-commit hook | gitleaks | ACTIVE |
+| CI pipeline scan | gitleaks action | ACTIVE |
+| IDE plugin | GitGuardian | RECOMMENDED |
+| GitHub push prot. | Secret scanning | ACTIVE |
+| Baseline file | detect-secrets | ACTIVE |
+| PR review check | Custom action | ACTIVE |
 ```
 
 ### Step 8: Commit and Report
@@ -407,17 +391,14 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 Every secrets invocation must produce a structured report:
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  SECRETS AUDIT RESULT                                       │
-├────────────────────────────────────────────────────────────┤
-│  Secrets inventoried: <N>                                   │
-│  Properly managed (vault/runtime): <N>                      │
-│  In .env files (local dev): <N>                             │
-│  LEAKED/EXPOSED: <N>                                        │
-│  Rotation overdue: <N>                                      │
-│  Pre-commit hook: <ACTIVE | MISSING>                        │
-│  Verdict: <SECURE | NEEDS ROTATION | LEAKS FOUND>           │
-└────────────────────────────────────────────────────────────┘
+  SECRETS AUDIT RESULT
+  Secrets inventoried: <N>
+  Properly managed (vault/runtime): <N>
+  In .env files (local dev): <N>
+  LEAKED/EXPOSED: <N>
+  Rotation overdue: <N>
+  Pre-commit hook: <ACTIVE | MISSING>
+  Verdict: <SECURE | NEEDS ROTATION | LEAKS FOUND>
 ```
 
 ## TSV Logging

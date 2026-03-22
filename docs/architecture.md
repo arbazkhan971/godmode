@@ -3,47 +3,32 @@
 ## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          GODMODE PLUGIN                                 │
-│                                                                         │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                       ORCHESTRATOR                                │  │
-│  │                      /godmode command                             │  │
+  GODMODE PLUGIN
+|  | ORCHESTRATOR |  |
+|  | /godmode command |  |
 │  │                                                                   │  │
-│  │  Reads: git state, test state, file state, user intent            │  │
-│  │  Decides: Which phase and skill to activate                       │  │
-│  └───────────────┬───────────────┬───────────────┬───────────────────┘  │
+|  | Reads: git state, test state, file state, user intent |  |
+|  | Decides: Which phase and skill to activate |  |
+  └───────────────┬───────────────┬───────────────┬───────────────────┘
 │                  │               │               │                      │
-│    ┌─────────────▼───┐ ┌────────▼────────┐ ┌───▼──────────────┐       │
-│    │   THINK PHASE   │ │  BUILD PHASE    │ │ OPTIMIZE PHASE   │       │
+  ┌─────────────▼───┐ ┌────────▼────────┐ ┌───▼──────────────┐
+|  | THINK PHASE |  | BUILD PHASE |  | OPTIMIZE PHASE |  |
 │    │                 │ │                 │ │                  │       │
-│    │  think          │ │  plan           │ │  optimize        │       │
-│    │  predict        │ │  build          │ │  debug           │       │
-│    │  scenario       │ │  test           │ │  fix             │       │
-│    │                 │ │  review         │ │  secure          │       │
-│    └─────────────────┘ └─────────────────┘ └──────────────────┘       │
-│                                                                         │
-│    ┌─────────────────┐ ┌─────────────────────────────────────┐         │
-│    │  SHIP PHASE     │ │  META SKILLS (always available)     │         │
+|  | think |  | plan |  | optimize |  |
+|  | predict |  | build |  | debug |  |
+|  | scenario |  | test |  | fix |  |
+|  |  |  | review |  | secure |  |
+|  | SHIP PHASE |  | META SKILLS (always available) |  |
 │    │                 │ │                                     │         │
-│    │  ship           │ │  setup — configuration              │         │
-│    │  finish         │ │  verify — evidence gate             │         │
-│    └─────────────────┘ └─────────────────────────────────────┘         │
-│                                                                         │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                        AGENTS                                     │  │
-│  │  code-reviewer — dispatched by build/review skills                │  │
-│  │  spec-reviewer — dispatched by think skill                        │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-│  ┌───────────────────────────────────────────────────────────────────┐  │
-│  │                     INFRASTRUCTURE                                │  │
-│  │  hooks/session-start — auto-detect and initialize                 │  │
-│  │  .godmode/config.yaml — project configuration                     │  │
-│  │  .godmode/*.tsv — results logs (optimize, fix, ship)              │  │
-│  └───────────────────────────────────────────────────────────────────┘  │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+|  | ship |  | setup — configuration |  |
+|  | finish |  | verify — evidence gate |  |
+|  | AGENTS |  |
+|  | code-reviewer — dispatched by build/review skills |  |
+|  | spec-reviewer — dispatched by think skill |  |
+|  | INFRASTRUCTURE |  |
+|  | hooks/session-start — auto-detect and initialize |  |
+|  | .godmode/config.yaml — project configuration |  |
+|  | .godmode/*.tsv — results logs (optimize, fix, ship) |  |
 ```
 
 ## Skill Hierarchy
@@ -51,22 +36,22 @@
 ```
 /godmode (orchestrator)
 ├── THINK
-│   ├── /godmode:think    → produces spec
-│   ├── /godmode:predict  → evaluates spec
-│   └── /godmode:scenario → explores edge cases
+  ├── /godmode:think    → produces spec
+  ├── /godmode:predict  → evaluates spec
+  └── /godmode:scenario → explores edge cases
 ├── BUILD
-│   ├── /godmode:plan     → consumes spec, produces plan
-│   ├── /godmode:build    → consumes plan, produces code
-│   ├── /godmode:test     → writes/improves tests
-│   └── /godmode:review   → reviews code against spec
+  ├── /godmode:plan     → consumes spec, produces plan
+  ├── /godmode:build    → consumes plan, produces code
+  ├── /godmode:test     → writes/improves tests
+  └── /godmode:review   → reviews code against spec
 ├── OPTIMIZE
-│   ├── /godmode:optimize → autonomous improvement loop
-│   ├── /godmode:debug    → investigates bugs
-│   ├── /godmode:fix      → remediates errors
-│   └── /godmode:secure   → security audit
+  ├── /godmode:optimize → autonomous improvement loop
+  ├── /godmode:debug    → investigates bugs
+  ├── /godmode:fix      → remediates errors
+  └── /godmode:secure   → security audit
 ├── SHIP
-│   ├── /godmode:ship     → deploy/PR workflow
-│   └── /godmode:finish   → branch cleanup
+  ├── /godmode:ship     → deploy/PR workflow
+  └── /godmode:finish   → branch cleanup
 └── META
     ├── /godmode:setup    → configuration
     └── /godmode:verify   → evidence gate
@@ -78,36 +63,27 @@
 
 ```
 User Request
-    │
     ▼
-┌─────────┐     ┌──────────┐     ┌──────────┐
-│  think   │────▶│   plan   │────▶│  build   │
+| think | ────▶ | plan | ────▶ | build |
 │          │     │          │     │          │
-│ Output:  │     │ Output:  │     │ Output:  │
-│ spec.md  │     │ plan.md  │     │ code +   │
-│          │     │ branch   │     │ tests +  │
-│          │     │          │     │ commits  │
-└─────────┘     └──────────┘     └──────────┘
-                                       │
+| Output: |  | Output: |  | Output: |
+| spec.md |  | plan.md |  | code + |
+|  |  | branch |  | tests + |
+|  |  |  |  | commits |
                     ┌──────────────────┤
-                    │                  │
                     ▼                  ▼
-              ┌──────────┐     ┌──────────┐
-              │ optimize │     │  review  │
+| optimize |  | review |
               │          │     │          │
-              │ Output:  │     │ Output:  │
-              │ results  │     │ report   │
-              │ .tsv     │     │ scores   │
+| Output: |  | Output: |
+| results |  | report |
+| .tsv |  | scores |
               └────┬─────┘     └──────────┘
-                   │
                    ▼
-              ┌──────────┐     ┌──────────┐
-              │  secure  │────▶│   ship   │
+| secure | ────▶ | ship |
               │          │     │          │
-              │ Output:  │     │ Output:  │
-              │ audit.md │     │ PR/deploy│
-              │          │     │ log.tsv  │
-              └──────────┘     └──────────┘
+| Output: |  | Output: |
+| audit.md |  | PR/deploy |
+|  |  | log.tsv |
 ```
 
 ### File System Layout
@@ -115,21 +91,19 @@ User Request
 ```
 project/
 ├── .godmode/                    # Godmode working directory
-│   ├── config.yaml              # Project configuration
-│   ├── optimize-results.tsv     # Optimization experiment log
-│   ├── fix-log.tsv              # Error remediation log
-│   └── ship-log.tsv             # Deployment history
-│
+  ├── config.yaml              # Project configuration
+  ├── optimize-results.tsv     # Optimization experiment log
+  ├── fix-log.tsv              # Error remediation log
+  └── ship-log.tsv             # Deployment history
 ├── docs/
-│   ├── specs/                   # Specifications (from think)
+  ├── specs/                   # Specifications (from think)
 │   │   └── <feature>.md
-│   ├── plans/                   # Implementation plans (from plan)
+  ├── plans/                   # Implementation plans (from plan)
 │   │   └── <feature>-plan.md
-│   ├── scenarios/               # Scenario matrices (from scenario)
+  ├── scenarios/               # Scenario matrices (from scenario)
 │   │   └── <feature>-scenarios.md
-│   └── security/                # Security audits (from secure)
-│       └── <feature>-audit.md
-│
+  └── security/                # Security audits (from secure)
+  └── <feature>-audit.md
 ├── src/                         # Source code (from build)
 └── tests/                       # Test files (from build/test)
 ```
@@ -150,16 +124,13 @@ Skills dispatch agents with context:
 
 ```
 build ──dispatches──▶ code-reviewer agent
-  │                       │
   │ Sends:               │ Returns:
   │ - spec               │ - scores (1-10 per dimension)
   │ - plan               │ - MUST FIX items
   │ - diff               │ - SHOULD FIX items
-  │                       │
   └───receives────────────┘
 
 think ──dispatches──▶ spec-reviewer agent
-  │                       │
   │ Sends:               │ Returns:
   │ - spec               │ - completeness score
   │ - codebase context   │ - issues found
@@ -181,70 +152,50 @@ ship      ──"CI green?"──▶  verify  ──runs gh pr checks──▶  
 The optimize skill runs a state machine:
 
 ```
-         ┌─────────────┐
-         │   SETUP     │
-         │  (one-time) │
-         └──────┬──────┘
-                │
+  SETUP
+  (one-time)
                 ▼
-         ┌─────────────┐
     ┌───▶│  ANALYZE    │
-    │    │  Form       │
-    │    │  hypothesis │
-    │    └──────┬──────┘
-    │           │
-    │           ▼
+|  | Form |
+|  | hypothesis |
+  ▼
     │    ┌─────────────┐
-    │    │   MODIFY    │
-    │    │  One change │
-    │    │  Commit     │
-    │    └──────┬──────┘
-    │           │
-    │           ▼
+|  | MODIFY |
+|  | One change |
+|  | Commit |
+  ▼
     │    ┌─────────────┐     ┌──────────┐
     │    │  GUARD      │─NO─▶│  REVERT  │──┐
-    │    │  RAILS      │     │  log     │  │
-    │    └──────┬──────┘     └──────────┘  │
-    │           │ YES                      │
-    │           ▼                          │
-    │    ┌─────────────┐                   │
-    │    │  MEASURE    │                   │
-    │    │  3 runs,    │                   │
-    │    │  median     │                   │
-    │    └──────┬──────┘                   │
-    │           │                          │
-    │           ▼                          │
-    │    ┌─────────────┐                   │
-    │    │  COMPARE    │                   │
-    │    │  vs baseline│                   │
-    │    └──────┬──────┘                   │
-    │           │                          │
-    │     IMPROVED?                        │
-    │     ╱        ╲                       │
-    │   YES         NO                     │
+|  | RAILS |  | log |  |
+  └──────┬──────┘     └──────────┘
+|  | YES |
+  ▼
+|  | MEASURE |  |
+|  | 3 runs, |  |
+|  | median |  |
+  ▼
+|  | COMPARE |  |
+|  | vs baseline |  |
+  IMPROVED?
+  ╱        ╲
+  YES         NO
     │    │           │                     │
-    │    ▼           ▼                     │
-    │ ┌──────┐  ┌──────────┐              │
-    │ │ KEEP │  │  REVERT  │              │
-    │ │ log  │  │  log     │              │
-    │ └──┬───┘  └────┬─────┘              │
+  ▼           ▼
+|  | KEEP |  | REVERT |  |
+|  | log |  | log |  |
     │    │           │                     │
-    │    └─────┬─────┘◀────────────────────┘
-    │          │
-    │          ▼
+  └─────┬─────┘◀────────────────────┘
+  ▼
     │    ┌─────────────┐
-    │    │  CONTINUE?  │
-    │    │  target met?│
-    │    │  max iter?  │
-    │    │  3 reverts? │
-    │    └──────┬──────┘
+|  | CONTINUE? |
+|  | target met? |
+|  | max iter? |
+|  | 3 reverts? |
     │      YES  │  NO
-    │       │   │
     │       │   ▼
     │       │ ┌──────────┐
     └───────┘ │   STOP   │
-              │  report  │
-              └──────────┘
+  report
 ```
 
 ## Configuration Architecture

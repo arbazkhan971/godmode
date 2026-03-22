@@ -184,17 +184,14 @@ Configure health checks, resource limits, and disruption budgets:
 #### Resource Sizing Guidelines
 ```
 RESOURCE SIZING:
-┌──────────────────────────────────────────────────────────┐
-│  Service: <service-name>                                  │
-├──────────────────────────────────────────────────────────┤
-│  Metric         │ Current  │ P95      │ Recommended       │
-│  ─────────────────────────────────────────────────────── │
-│  CPU usage      │ 120m     │ 280m     │ req: 200m lim: 500m │
-│  Memory usage   │ 256Mi    │ 384Mi    │ req: 300Mi lim: 512Mi │
-│  Pod count      │ 3        │ 3        │ min: 2 max: 10    │
-│  Startup time   │ 8s       │ 12s      │ startupProbe: 30s │
-│  Request rate   │ 150 rps  │ 420 rps  │ HPA target: 300 rps │
-└──────────────────────────────────────────────────────────┘
+  Service: <service-name>
+| Metric | Current | P95 | Recommended |
+|---|---|---|---|
+| CPU usage | 120m | 280m | req: 200m lim: 500m |
+| Memory usage | 256Mi | 384Mi | req: 300Mi lim: 512Mi |
+| Pod count | 3 | 3 | min: 2 max: 10 |
+| Startup time | 8s | 12s | startupProbe: 30s |
+| Request rate | 150 rps | 420 rps | HPA target: 300 rps |
 
 Rules:
 - Requests = P95 usage + 20% buffer
@@ -230,25 +227,23 @@ Diagnose common Kubernetes issues:
 
 ```
 TROUBLESHOOTING CHECKLIST:
-┌──────────────────────────────────────────────────────────┐
-│  Symptom                    │ Check                       │
-│  ─────────────────────────────────────────────────────── │
-│  CrashLoopBackOff           │ kubectl logs <pod>          │
-│                             │ Check startup/liveness probe│
-│                             │ Check resource limits       │
-│  OOMKilled                  │ Increase memory limit       │
-│                             │ Check for memory leaks      │
-│  ImagePullBackOff           │ Check image name/tag        │
-│                             │ Check registry credentials  │
-│  Pending                    │ Check resource availability │
-│                             │ Check node affinity/taints  │
-│  Evicted                    │ Check disk pressure         │
-│                             │ Check resource quotas       │
-│  Connection refused         │ Check service selector      │
-│                             │ Check port configuration    │
-│  Ingress 502/503            │ Check readiness probe       │
-│                             │ Check backend service       │
-└──────────────────────────────────────────────────────────┘
+| Symptom | Check |
+|---|---|
+| CrashLoopBackOff | kubectl logs <pod> |
+|  | Check startup/liveness probe |
+|  | Check resource limits |
+| OOMKilled | Increase memory limit |
+|  | Check for memory leaks |
+| ImagePullBackOff | Check image name/tag |
+|  | Check registry credentials |
+| Pending | Check resource availability |
+|  | Check node affinity/taints |
+| Evicted | Check disk pressure |
+|  | Check resource quotas |
+| Connection refused | Check service selector |
+|  | Check port configuration |
+| Ingress 502/503 | Check readiness probe |
+|  | Check backend service |
 ```
 
 ```bash
@@ -274,22 +269,18 @@ helm upgrade --install <release> <chart> \
 
 ```
 DEPLOYMENT RESULT:
-┌──────────────────────────────────────────────────────────┐
-│  Deployment: <service-name>                               │
-│  Namespace: <namespace>                                   │
-│  Strategy: Rolling Update                                 │
-├──────────────────────────────────────────────────────────┤
-│  Pods: 3/3 Ready                                          │
-│  Replicas: 3 desired, 3 available, 0 unavailable          │
-│  Image: <registry>/<image>:<new-tag>                      │
-│  Rollout: Complete (took 45s)                             │
-├──────────────────────────────────────────────────────────┤
-│  Health Checks:                                           │
-│  [x] All pods passing liveness probe                      │
-│  [x] All pods passing readiness probe                     │
-│  [x] Service endpoint returning 200                       │
-│  [x] No error logs in last 60 seconds                     │
-└──────────────────────────────────────────────────────────┘
+  Deployment: <service-name>
+  Namespace: <namespace>
+  Strategy: Rolling Update
+  Pods: 3/3 Ready
+  Replicas: 3 desired, 3 available, 0 unavailable
+  Image: <registry>/<image>:<new-tag>
+  Rollout: Complete (took 45s)
+  Health Checks:
+  [x] All pods passing liveness probe
+  [x] All pods passing readiness probe
+  [x] Service endpoint returning 200
+  [x] No error logs in last 60 seconds
 ```
 
 ### Step 8: Commit and Report

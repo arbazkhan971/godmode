@@ -42,20 +42,17 @@ Choose the right platform for the team's needs:
 
 ```
 PLATFORM SELECTION:
-┌──────────────────┬──────────────────────────────┬──────────────────────────────┐
-│ Platform │ Best For │ Key Capabilities │
-├──────────────────┼──────────────────────────────┼──────────────────────────────┤
-│ Statsig │ High-velocity teams, │ Warehouse-native, auto │
-│ │ product-led growth, │ sample size, pulse checks, │
-│ │ warehouse-native analytics │ Bayesian + frequentist, │
-│ │ │ free tier generous │
-├──────────────────┼──────────────────────────────┼──────────────────────────────┤
-│ Optimizely │ Enterprise, marketing & │ Visual editor, audiences, │
-│ │ product experimentation, │ Stats Engine (sequential), │
-│ │ content experiments │ multi-armed bandits, │
-│ │ │ full-stack + web SDKs │
-├──────────────────┼──────────────────────────────┼──────────────────────────────┤
-│ GrowthBook │ Open-source, data-warehouse │ Self-hosted option, │
+| Platform | Best For | Key Capabilities |
+|---|---|---|
+| Statsig | High-velocity teams, | Warehouse-native, auto |
+|  | product-led growth, | sample size, pulse checks, |
+|  | warehouse-native analytics | Bayesian + frequentist, |
+|  |  | free tier generous |
+| Optimizely | Enterprise, marketing & | Visual editor, audiences, |
+|  | product experimentation, | Stats Engine (sequential), |
+|  | content experiments | multi-armed bandits, |
+|  |  | full-stack + web SDKs |
+| GrowthBook | Open-source, data-warehouse | Self-hosted option, |
 ```
 
 ### Step 3: Experiment Design
@@ -70,13 +67,12 @@ Hypothesis: If we <change>, then <metric> will <improve/decrease> by <magnitude>
  because <reasoning based on data, user research, or prior experiments>.
 
 METRICS:
-┌──────────────────┬──────────────────────────────┬──────────────┬──────────────┐
-│ Type │ Metric │ Baseline │ Target │
-├──────────────────┼──────────────────────────────┼──────────────┼──────────────┤
-│ Primary (OEC) │ <Overall Evaluation │ <current │ <target │
-│ │ Criterion — the single │ value> │ value or │
-│ │ metric that decides ship │ │ MDE> │
-│ │ or no-ship> │ │ │
+| Type | Metric | Baseline | Target |
+|---|---|---|---|
+| Primary (OEC) | <Overall Evaluation | <current | <target |
+|  | Criterion — the single | value> | value or |
+|  | metric that decides ship |  | MDE> |
+|  | or no-ship> |  |  |
 ```
 
 ### Step 4: Sample Size & Power Analysis
@@ -167,11 +163,10 @@ WHEN TO USE BANDITS INSTEAD OF A/B TESTS:
  ✗ NOT for permanent product changes (use A/B test for ship/no-ship decisions)
 
 ALGORITHMS:
-┌──────────────────────┬───────────────────────────────────────────────────────┐
-│ Algorithm │ Description & When to Use │
-├──────────────────────┼───────────────────────────────────────────────────────┤
-│ Epsilon-Greedy │ Explore randomly epsilon% of time. Simple. Good │
-│ │ baseline. Set epsilon = 0.1 (10% explore). │
+| Algorithm | Description & When to Use |
+|---|---|
+| Epsilon-Greedy | Explore randomly epsilon% of time. Simple. Good |
+|  | baseline. Set epsilon = 0.1 (10% explore). |
 ```
 
 ### Step 8: Feature Flag Integration
@@ -191,8 +186,7 @@ LIFECYCLE:
  8. Clean up: flag removed from codebase, code for losing variant deleted
 
 FLAG-EXPERIMENT MAPPING:
-┌─────────────────────────┬──────────────────────────────────────────────┐
-│ Flag Key │ Experiment │
+| Flag Key | Experiment |
 ```
 
 ### Step 9: Results Analysis & Decision Making
@@ -211,9 +205,7 @@ SAMPLE RATIO MISMATCH CHECK:
  SRM detected: <NO — proceed | YES — investigate before trusting results>
 
 PRIMARY METRIC (OEC):
-┌───────────┬──────────────┬──────────────┬──────────────┬──────────────┐
-│ Variant │ Users │ Metric Value│ vs Control │ p-value │
-├───────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+| Variant | Users | Metric Value | vs Control | p-value |
 ```
 
 ### Step 10: Experiment Lifecycle Management
@@ -223,14 +215,12 @@ Track experiments from ideation to conclusion:
 EXPERIMENT LIFECYCLE:
 
 EXPERIMENT BACKLOG:
-┌─────┬──────────────────────┬──────────┬──────────┬───────────────────┐
-│ # │ Experiment │ Status │ Surface │ Expected Impact │
-├─────┼──────────────────────┼──────────┼──────────┼───────────────────┤
-│ 1 │ <name> │ LIVE │ <page> │ +<X%> <metric> │
-│ 2 │ <name> │ QUEUED │ <page> │ +<X%> <metric> │
-│ 3 │ <name> │ DESIGN │ <page> │ +<X%> <metric> │
-│ 4 │ <name> │ DONE │ <page> │ Shipped +<X%> │
-└─────┴──────────────────────┴──────────┴──────────┴───────────────────┘
+| # | Experiment | Status | Surface | Expected Impact |
+|---|---|---|---|---|
+| 1 | <name> | LIVE | <page> | +<X%> <metric> |
+| 2 | <name> | QUEUED | <page> | +<X%> <metric> |
+| 3 | <name> | DESIGN | <page> | +<X%> <metric> |
+| 4 | <name> | DONE | <page> | Shipped +<X%> |
 
 LIFECYCLE STATES:
  IDEA → DESIGN → REVIEW → QUEUED → RAMPING → LIVE → ANALYZING → DECIDED → CLEANUP
@@ -242,20 +232,19 @@ Validate the experiment setup before launching:
 
 ```
 EXPERIMENT VALIDATION:
-┌──────────────────────────────────────────────────────┬──────────────┐
-│ Check │ Status │
-├──────────────────────────────────────────────────────┼──────────────┤
-│ Hypothesis is specific and falsifiable │ PASS | FAIL │
-│ Primary metric (OEC) is defined │ PASS | FAIL │
-│ Guardrail metrics are defined │ PASS | FAIL │
-│ Sample size calculated and achievable │ PASS | FAIL │
-│ Power >= 0.80 for target MDE │ PASS | FAIL │
-│ Assignment is deterministic and sticky │ PASS | FAIL │
-│ Exposure logging fires on variant render │ PASS | FAIL │
-│ Exposure is deduplicated (one per user per session) │ PASS | FAIL │
-│ Control experience is unchanged │ PASS | FAIL │
-│ Treatment renders correctly on all devices │ PASS | FAIL │
-│ Mutual exclusion configured for conflicting tests │ PASS | FAIL │
+| Check | Status |
+|---|---|
+| Hypothesis is specific and falsifiable | PASS | FAIL |
+| Primary metric (OEC) is defined | PASS | FAIL |
+| Guardrail metrics are defined | PASS | FAIL |
+| Sample size calculated and achievable | PASS | FAIL |
+| Power >= 0.80 for target MDE | PASS | FAIL |
+| Assignment is deterministic and sticky | PASS | FAIL |
+| Exposure logging fires on variant render | PASS | FAIL |
+| Exposure is deduplicated (one per user per session) | PASS | FAIL |
+| Control experience is unchanged | PASS | FAIL |
+| Treatment renders correctly on all devices | PASS | FAIL |
+| Mutual exclusion configured for conflicting tests | PASS | FAIL |
 ```
 
 ```

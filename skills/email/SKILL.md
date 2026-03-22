@@ -31,15 +31,13 @@ Compliance: CAN-SPAM, GDPR, CASL, one-click unsubscribe
 
 ```
 EMAIL SERVICE COMPARISON:
-┌──────────┬───────────┬──────────┬──────────┬────────┐
-│ Feature  │ SendGrid  │ SES      │ Postmark │ Resend │
-├──────────┼───────────┼──────────┼──────────┼────────┤
-│ Best for │ Full-feat │ Volume   │ Transact │ Dev-DX │
-│ Free tier│ 100/day   │ 62K/mo*  │ 100/mo   │ 3K/mo  │
-│ Deliver. │ Good      │ Good     │ Excellent│ Good   │
-│ Templates│ Yes       │ SES v2   │ Yes      │ React  │
-│ Marketing│ Yes       │ No       │ No       │ No     │
-└──────────┴───────────┴──────────┴──────────┴────────┘
+| Feature | SendGrid | SES | Postmark | Resend |
+|---|---|---|---|---|
+| Best for | Full-feat | Volume | Transact | Dev-DX |
+| Free tier | 100/day | 62K/mo* | 100/mo | 3K/mo |
+| Deliver. | Good | Good | Excellent | Good |
+| Templates | Yes | SES v2 | Yes | React |
+| Marketing | Yes | No | No | No |
 
 RECOMMENDATION:
 - Startups/developer-focused: Resend (best DX, React Email)

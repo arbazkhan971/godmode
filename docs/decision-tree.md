@@ -9,7 +9,6 @@
 ```
                         What are you trying to do?
                                   |
-            +-----------+---------+---------+-----------+
             |           |         |         |           |
         CREATE      IMPROVE    FIX/DEBUG   SHIP      LEARN
         something   something  something   something  something
@@ -48,34 +47,22 @@ I want to CREATE something new
     |               |           "Decompose into 2-5 min tasks"
     |               |
     |               +-- YES --> What are you building?
-    |                       |
     |                       +-- Code (general) --> /godmode:build
-    |                       |
     |                       +-- An API --> /godmode:api
     |                       |       then --> /godmode:contract (if microservices)
-    |                       |
     |                       +-- Boilerplate / scaffolding --> /godmode:scaffold
-    |                       |
     |                       +-- UI components --> /godmode:ui
-    |                       |
     |                       +-- Mobile app --> /godmode:mobile
-    |                       |
     |                       +-- Infrastructure --> /godmode:infra
     |                       |       then --> /godmode:k8s (if Kubernetes)
-    |                       |
     |                       +-- Database migrations --> /godmode:migrate
-    |                       |
     |                       +-- Data pipeline --> /godmode:pipeline
-    |                       |
     |                       +-- ML model --> /godmode:ml
-    |                       |
     |                       +-- Documentation --> /godmode:docs
-    |                       |
     |                       +-- Tests --> /godmode:test
     |                       |       +-- E2E browser tests --> /godmode:e2e
     |                       |       +-- Load tests --> /godmode:loadtest
     |                       |       +-- Visual tests --> /godmode:visual
-    |                       |
     |                       +-- Not sure --> /godmode
     |                               "Let the orchestrator decide"
 ```

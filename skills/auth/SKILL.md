@@ -177,69 +177,56 @@ PASSWORDLESS DESIGN:
 Strategy: Magic Links
 ```
 TOKEN LIFECYCLE:
-┌──────────────────────────────────────────────────────────────┐
-│                     TOKEN LIFECYCLE                           │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ISSUANCE                                                    │
-│  ├─ User authenticates (password + MFA)                      │
-│  ├─ Generate access token (short-lived: 15min)               │
-│  ├─ Generate refresh token (long-lived: 7-30 days)           │
-│  ├─ Store refresh token hash in database                     │
-│  └─ Return tokens to client                                  │
-│                                                              │
-│  USAGE                                                       │
-│  ├─ Client sends access token on every request               │
-│  ├─ Server validates signature, expiry, audience, issuer     │
-│  ├─ Server extracts claims (userId, roles, permissions)      │
-│  └─ Request proceeds or is rejected (401/403)                │
-│                                                              │
-│  REFRESH                                                     │
-│  ├─ Access token expires -> client sends refresh token       │
-│  ├─ Server validates refresh token hash against database     │
-│  ├─ Server issues NEW access token + NEW refresh token       │
-│  ├─ Server invalidates OLD refresh token (rotation)          │
-│  └─ If old refresh token is reused -> revoke entire family   │
-│                                                              │
-│  REVOCATION                                                  │
-│  ├─ User logout: Delete refresh token from database          │
-│  ├─ Password change: Revoke ALL refresh tokens for user      │
-│  ├─ Security event: Revoke ALL tokens for user               │
-│  ├─ Admin action: Revoke specific session or all sessions    │
-│  └─ Access token: Add to blacklist (Redis, TTL = remaining)  │
-│                                                              │
-│  CLEANUP                                                     │
-│  ├─ Expired refresh tokens: Cron job deletes daily           │
-│  ├─ Blacklist entries: Auto-expire via Redis TTL             │
-│  └─ Audit log: Retain token events for compliance period     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+  TOKEN LIFECYCLE
+  ISSUANCE
+  ├─ User authenticates (password + MFA)
+  ├─ Generate access token (short-lived: 15min)
+  ├─ Generate refresh token (long-lived: 7-30 days)
+  ├─ Store refresh token hash in database
+  └─ Return tokens to client
+  USAGE
+  ├─ Client sends access token on every request
+  ├─ Server validates signature, expiry, audience, issuer
+  ├─ Server extracts claims (userId, roles, permissions)
+  └─ Request proceeds or is rejected (401/403)
+  REFRESH
+  ├─ Access token expires -> client sends refresh token
+  ├─ Server validates refresh token hash against database
+  ├─ Server issues NEW access token + NEW refresh token
+  ├─ Server invalidates OLD refresh token (rotation)
+  └─ If old refresh token is reused -> revoke entire family
+  REVOCATION
+  ├─ User logout: Delete refresh token from database
+  ├─ Password change: Revoke ALL refresh tokens for user
+  ├─ Security event: Revoke ALL tokens for user
+  ├─ Admin action: Revoke specific session or all sessions
+  └─ Access token: Add to blacklist (Redis, TTL = remaining)
+  CLEANUP
+  ├─ Expired refresh tokens: Cron job deletes daily
+  ├─ Blacklist entries: Auto-expire via Redis TTL
+  └─ Audit log: Retain token events for compliance period
 
 Token storage by client type:
-┌────────────────┬──────────────────┬──────────────────────────┐
-│ Client Type    │ Access Token     │ Refresh Token            │
-├────────────────┼──────────────────┼──────────────────────────┤
-│ SPA            │ In-memory only   │ HttpOnly cookie (Secure) │
-│ SSR (Next.js)  │ Server memory    │ HttpOnly cookie (Secure) │
-│ Mobile app     │ Secure keychain  │ Secure keychain          │
-│ Server/CLI     │ Environment var  │ Encrypted file / vault   │
-│ Microservice   │ In-memory cache  │ N/A (client credentials) │
-└────────────────┴──────────────────┴──────────────────────────┘
+| Client Type | Access Token | Refresh Token |
+|---|---|---|
+| SPA | In-memory only | HttpOnly cookie (Secure) |
+| SSR (Next.js) | Server memory | HttpOnly cookie (Secure) |
+| Mobile app | Secure keychain | Secure keychain |
+| Server/CLI | Environment var | Encrypted file / vault |
+| Microservice | In-memory cache | N/A (client credentials) |
 ```
 
 ### Step 7: Social Login Integration
 Design social authentication if required:
 ```
 SOCIAL LOGIN DESIGN:
-┌──────────────────────────────────────────────────────────────┐
-│ Provider       │ Protocol │ Scopes              │ User Data  │
-├──────────────────────────────────────────────────────────────┤
-│ Google         │ OIDC     │ openid email profile │ email, name│
-│ GitHub         │ OAuth2   │ user:email           │ email, name│
-│ Apple          │ OIDC     │ openid email name    │ email, name│
-│ Microsoft      │ OIDC     │ openid email profile │ email, name│
-│ Facebook       │ OAuth2   │ email public_profile │ email, name│
-└──────────────────────────────────────────────────────────────┘
+| Provider | Protocol | Scopes | User Data |
+|---|---|---|---|
+| Google | OIDC | openid email profile | email, name |
+| GitHub | OAuth2 | user:email | email, name |
+| Apple | OIDC | openid email name | email, name |
+| Microsoft | OIDC | openid email profile | email, name |
+| Facebook | OAuth2 | email public_profile | email, name |
 
 Account linking strategy:
   Primary key: Email address (verified by provider)
@@ -252,8 +239,7 @@ Generate the authentication implementation:
 
 ```
 IMPLEMENTATION ARTIFACTS:
-┌──────────────────────────────────────────────────────────────┐
-│ File                              │ Purpose                  │
+| File | Purpose |
 ```
 
 ### Step 9: Security Hardening Checklist
@@ -261,16 +247,13 @@ Final security review of the authentication system:
 
 ```
 AUTH SECURITY HARDENING:
-┌──────────────────────────────────────────────────────────────┐
-│ Category              │ Control                    │ Status  │
+| Category | Control | Status |
 ```
 
 ### Step 10: Auth Architecture Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  AUTH ARCHITECTURE REPORT                                   │
-├────────────────────────────────────────────────────────────┤
+  AUTH ARCHITECTURE REPORT
 ```
 
 ### Step 11: Commit and Transition
@@ -314,15 +297,12 @@ FOR each auth audit finding:
 ## Output Format
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  AUTH RESULT                                                │
-├────────────────────────────────────────────────────────────┤
-│  Strategy: <JWT | Session | OAuth2/OIDC | SAML | Hybrid>   │
-│  MFA: <TOTP | WebAuthn | SMS | None>                       │
-│  Endpoints: <N designed/implemented>                        │
-│  Security controls: <N passed> / <N total>                  │
-│  Verdict: <PRODUCTION READY | NEEDS HARDENING | INCOMPLETE> │
-└────────────────────────────────────────────────────────────┘
+  AUTH RESULT
+  Strategy: <JWT | Session | OAuth2/OIDC | SAML | Hybrid>
+  MFA: <TOTP | WebAuthn | SMS | None>
+  Endpoints: <N designed/implemented>
+  Security controls: <N passed> / <N total>
+  Verdict: <PRODUCTION READY | NEEDS HARDENING | INCOMPLETE>
 ```
 
 ## TSV Logging

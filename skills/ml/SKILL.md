@@ -38,14 +38,12 @@ Estimated training time: <duration>
 #### Experiment Registry
 ```
 EXPERIMENT REGISTRY:
-┌──────────────────┬────────────┬───────────┬──────────┬──────────┬──────────┐
-│ ID               │ Name       │ Status    │ Metric   │ Score    │ vs Base  │
-├──────────────────┼────────────┼───────────┼──────────┼──────────┼──────────┤
-│ EXP-2025-03-15-1 │ baseline   │ COMPLETE  │ F1       │ 0.847    │ —        │
-│ EXP-2025-03-15-2 │ larger-lr  │ COMPLETE  │ F1       │ 0.862    │ +1.8%    │
-│ EXP-2025-03-15-3 │ dropout-05 │ RUNNING   │ F1       │ (pending)│ —        │
-│ EXP-2025-03-16-1 │ aug-data   │ QUEUED    │ F1       │ —        │ —        │
-└──────────────────┴────────────┴───────────┴──────────┴──────────┴──────────┘
+| ID | Name | Status | Metric | Score | vs Base |
+|---|---|---|---|---|---|
+| EXP-2025-03-15-1 | baseline | COMPLETE | F1 | 0.847 | — |
+| EXP-2025-03-15-2 | larger-lr | COMPLETE | F1 | 0.862 | +1.8% |
+| EXP-2025-03-15-3 | dropout-05 | RUNNING | F1 | (pending) | — |
+| EXP-2025-03-16-1 | aug-data | QUEUED | F1 | — | — |
 ```
 
 ### Step 2: Hyperparameter Management
@@ -115,17 +113,14 @@ BIAS DETECTION:
 Protected attributes analyzed: <list — e.g., gender, race, age, geography>
 
 Per-attribute analysis:
-┌────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
-│ Attribute      │ Group    │ Samples  │ Accuracy │ FPR      │ FNR      │
-├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│ Gender         │ Male     │ <N>      │ <val>    │ <val>    │ <val>    │
-│                │ Female   │ <N>      │ <val>    │ <val>    │ <val>    │
-│                │ Non-bin. │ <N>      │ <val>    │ <val>    │ <val>    │
-├────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│ Age group      │ 18-30    │ <N>      │ <val>    │ <val>    │ <val>    │
-│                │ 31-50    │ <N>      │ <val>    │ <val>    │ <val>    │
-│                │ 51+      │ <N>      │ <val>    │ <val>    │ <val>    │
-└────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+| Attribute | Group | Samples | Accuracy | FPR | FNR |
+|---|---|---|---|---|---|
+| Gender | Male | <N> | <val> | <val> | <val> |
+|  | Female | <N> | <val> | <val> | <val> |
+|  | Non-bin. | <N> | <val> | <val> | <val> |
+| Age group | 18-30 | <N> | <val> | <val> | <val> |
+|  | 31-50 | <N> | <val> | <val> | <val> |
+|  | 51+ | <N> | <val> | <val> | <val> |
 ```
 
 ### Step 5: Model Training and Tracking
@@ -168,8 +163,7 @@ Classification metrics:
   AUC-PR:    <value>
 
 Per-class metrics:
-┌────────────┬───────────┬────────┬──────┬──────────┐
-│ Class      │ Precision │ Recall │ F1   │ Support  │
+| Class | Precision | Recall | F1 | Support |
 ```
 
 ### Step 7: Experiment Comparison
@@ -178,14 +172,12 @@ Compare experiments to select the best model:
 
 ```
 EXPERIMENT COMPARISON:
-┌──────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
-│ Experiment       │ F1       │ AUC-ROC  │ Latency  │ Size     │ Params   │
-├──────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│ EXP-001 (base)   │ 0.847    │ 0.912    │ 45ms     │ 120MB    │ 12M      │
-│ EXP-002 (lr=3e4) │ 0.862    │ 0.928    │ 45ms     │ 120MB    │ 12M      │
-│ EXP-003 (large)  │ 0.879    │ 0.941    │ 120ms    │ 450MB    │ 48M      │
-│ EXP-004 (dist)   │ 0.871    │ 0.935    │ 38ms     │ 85MB     │ 8M       │
-└──────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+| Experiment | F1 | AUC-ROC | Latency | Size | Params |
+|---|---|---|---|---|---|
+| EXP-001 (base) | 0.847 | 0.912 | 45ms | 120MB | 12M |
+| EXP-002 (lr=3e4) | 0.862 | 0.928 | 45ms | 120MB | 12M |
+| EXP-003 (large) | 0.879 | 0.941 | 120ms | 450MB | 48M |
+| EXP-004 (dist) | 0.871 | 0.935 | 38ms | 85MB | 8M |
 
 Winner: EXP-004 (distilled)
 Rationale: Best accuracy/latency tradeoff. 2.8% F1 improvement over baseline
@@ -291,18 +283,17 @@ After each ML skill invocation, emit a structured report:
 
 ```
 ML EXPERIMENT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Task type          │  <classification | regression | etc> │
-│  Dataset            │  <name> (<N> train / <N> val / <N> test) │
-│  Baseline           │  <model> — <metric>: <value>    │
-│  Best model         │  <model> — <metric>: <value>    │
-│  Improvement        │  +<N>% over baseline             │
-│  Experiments run    │  <N>                             │
-│  Compute used       │  <N> GPU-hours                   │
-│  Bias check         │  PASS / <N> fairness violations  │
-│  Data leakage check │  PASS / FAIL                     │
-│  Verdict            │  SHIP | ITERATE | INSUFFICIENT DATA │
-└──────────────────────────────────────────────────────┘
+| Task type | <classification | regression | etc> |
+|---|---|---|---|
+| Dataset | <name> (<N> train / <N> val / <N> test) |
+| Baseline | <model> — <metric>: <value> |
+| Best model | <model> — <metric>: <value> |
+| Improvement | +<N>% over baseline |
+| Experiments run | <N> |
+| Compute used | <N> GPU-hours |
+| Bias check | PASS / <N> fairness violations |
+| Data leakage check | PASS / FAIL |
+| Verdict | SHIP | ITERATE | INSUFFICIENT DATA |
 ```
 
 ## TSV Logging
@@ -384,15 +375,14 @@ Audit date: <date>
 Auditor: <team or individual>
 
 DATA VALIDATION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Schema enforcement on input data   │ PASS|FAIL│ <schema tool>   │
-│  Missing value thresholds defined   │ PASS|FAIL│ <max % allowed> │
-│  Feature distribution monitoring    │ PASS|FAIL│ <drift tool>    │
-│  Label quality verification         │ PASS|FAIL│ <QA process>    │
-│  Data versioning (DVC, LakeFS, etc) │ PASS|FAIL│ <tool + version>│
-│  Train/val/test split reproducible  │ PASS|FAIL│ <seed + method> │
+| Check | Status | Evidence |
+|---|---|---|
+| Schema enforcement on input data | PASS|FAIL | <schema tool> |
+| Missing value thresholds defined | PASS|FAIL | <max % allowed> |
+| Feature distribution monitoring | PASS|FAIL | <drift tool> |
+| Label quality verification | PASS|FAIL | <QA process> |
+| Data versioning (DVC, LakeFS, etc) | PASS|FAIL | <tool + version> |
+| Train/val/test split reproducible | PASS|FAIL | <seed + method> |
 ```
 
 ### ML Pipeline Audit Loop

@@ -480,16 +480,12 @@ Godmode creates DataLoaders for every relation automatically during `/godmode:bu
 ### Subscription Architecture
 
 ```
-                    ┌──────────────┐
   Client A ──ws──→  │              │
   Client B ──ws──→  │  GraphQL     │ ←── publish ── Mutation Resolver
   Client C ──ws──→  │  Server      │
-                    └──────┬───────┘
-                           │
                     ┌──────┴───────┐
-                    │  Redis PubSub │
-                    │  (fan-out)    │
-                    └──────────────┘
+  Redis PubSub
+  (fan-out)
 ```
 
 Each server instance subscribes to Redis channels. When a mutation fires, it publishes to Redis, which fans out to all server instances. Each instance delivers to its connected WebSocket clients.

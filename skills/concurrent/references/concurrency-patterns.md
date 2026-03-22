@@ -187,34 +187,26 @@ func processWithTimeout(work <-chan Job, done <-chan struct{}) {
 ### Go Concurrency Pitfalls
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PITFALL                        │  SYMPTOM              │  FIX              │
-├─────────────────────────────────┼───────────────────────┼───────────────────┤
-│  Goroutine leak                 │  Memory grows forever │  Always have a    │
-│  (goroutine blocked on channel  │                       │  cancellation     │
-│   that nobody reads/writes)     │                       │  path (ctx.Done)  │
-│                                 │                       │                   │
-│  Race condition                 │  Inconsistent data,   │  Use channels or  │
-│  (shared variable without sync) │  crashes under load   │  sync.Mutex.      │
-│                                 │                       │  Run: go test     │
-│                                 │                       │  -race            │
-│                                 │                       │                   │
-│  Deadlock                       │  Program hangs        │  Avoid nested     │
-│  (two goroutines waiting for    │  "fatal error: all    │  locks. Use       │
-│   each other)                   │   goroutines asleep"  │  consistent lock  │
-│                                 │                       │  ordering.        │
-│                                 │                       │                   │
-│  Closing a closed channel       │  Panic                │  Only close from  │
-│                                 │                       │  sender side.     │
-│                                 │                       │  Use sync.Once.   │
-│                                 │                       │                   │
-│  Loop variable capture          │  All goroutines see   │  Capture: i := i  │
-│  in goroutine                   │  same (last) value    │  or pass as param │
-│                                 │                       │                   │
-│  Unbuffered channel as          │  Deadlock when        │  Use buffered     │
-│  unread signal                  │  nobody is receiving  │  channel or       │
-│                                 │                       │  select+default   │
-└─────────────────────────────────┴───────────────────────┴───────────────────┘
+| PITFALL | SYMPTOM | FIX |
+| Goroutine leak | Memory grows forever | Always have a |
+| (goroutine blocked on channel |  | cancellation |
+| that nobody reads/writes) |  | path (ctx.Done) |
+| Race condition | Inconsistent data, | Use channels or |
+| (shared variable without sync) | crashes under load | sync.Mutex. |
+|  |  | Run: go test |
+|  |  | -race |
+| Deadlock | Program hangs | Avoid nested |
+| (two goroutines waiting for | "fatal error: all | locks. Use |
+| each other) | goroutines asleep" | consistent lock |
+|  |  | ordering. |
+| Closing a closed channel | Panic | Only close from |
+|  |  | sender side. |
+|  |  | Use sync.Once. |
+| Loop variable capture | All goroutines see | Capture: i := i |
+| in goroutine | same (last) value | or pass as param |
+| Unbuffered channel as | Deadlock when | Use buffered |
+| unread signal | nobody is receiving | channel or |
+|  |  | select+default |
 ```
 
 ---
@@ -344,32 +336,25 @@ async fn main() {
 ### Rust Concurrency Pitfalls
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PITFALL                        │  SYMPTOM              │  FIX              │
-├─────────────────────────────────┼───────────────────────┼───────────────────┤
-│  Deadlock (Mutex)               │  Program hangs        │  Consistent lock  │
-│  (compile-time safety does NOT  │                       │  ordering. Use    │
-│   prevent deadlocks)            │                       │  try_lock() with  │
-│                                 │                       │  timeout.         │
-│                                 │                       │                   │
-│  Mutex poisoning                │  PoisonError on       │  Handle with      │
-│  (thread panicked while holding │  lock()               │  .lock()          │
-│   lock)                         │                       │  .unwrap_or_else  │
-│                                 │                       │  (|e| e.into_inner│
-│                                 │                       │  ())              │
-│                                 │                       │                   │
-│  Blocking in async context      │  Executor thread      │  Use              │
-│  (calling blocking I/O in async │  starved, other tasks │  spawn_blocking() │
-│   task)                         │  delayed              │  for blocking ops │
-│                                 │                       │                   │
-│  Send / Sync bounds             │  Compile error: type  │  Wrap with Arc,   │
-│  (type not safe to send across  │  cannot be sent       │  Mutex, or use    │
-│   threads)                      │  between threads      │  Send-safe types  │
-│                                 │                       │                   │
-│  Async cancellation safety      │  Resource leak when   │  Implement Drop,  │
-│  (task dropped mid-await)       │  task is cancelled    │  use cancel-safe  │
-│                                 │                       │  patterns         │
-└─────────────────────────────────┴───────────────────────┴───────────────────┘
+| PITFALL | SYMPTOM | FIX |
+| Deadlock (Mutex) | Program hangs | Consistent lock |
+| (compile-time safety does NOT |  | ordering. Use |
+| prevent deadlocks) |  | try_lock() with |
+|  |  | timeout. |
+| Mutex poisoning | PoisonError on | Handle with |
+| (thread panicked while holding | lock() | .lock() |
+| lock) |  | .unwrap_or_else |
+|  |  | (|e| e.into_inner |
+|  |  | ()) |
+| Blocking in async context | Executor thread | Use |
+| (calling blocking I/O in async | starved, other tasks | spawn_blocking() |
+| task) | delayed | for blocking ops |
+| Send / Sync bounds | Compile error: type | Wrap with Arc, |
+| (type not safe to send across | cannot be sent | Mutex, or use |
+| threads) | between threads | Send-safe types |
+| Async cancellation safety | Resource leak when | Implement Drop, |
+| (task dropped mid-await) | task is cancelled | use cancel-safe |
+|  |  | patterns |
 ```
 
 ---
@@ -381,33 +366,23 @@ JavaScript is single-threaded with an event loop. Concurrency is cooperative (no
 ### Event Loop Model
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│                    JavaScript Event Loop                        │
-│                                                                │
-│  ┌──────────────┐                                              │
-│  │  Call Stack   │ ← Synchronous code executes here            │
-│  │  (single      │                                              │
-│  │   thread)     │                                              │
-│  └──────┬───────┘                                              │
-│         │                                                      │
-│         ▼                                                      │
-│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐       │
-│  │ Microtask    │ → │ Macrotask    │ → │ Render       │       │
-│  │ Queue        │   │ Queue        │   │ (browsers)   │       │
-│  │              │   │              │   │              │       │
-│  │ - Promises   │   │ - setTimeout │   │ - Layout     │       │
-│  │ - queueMicro │   │ - setInterval│   │ - Paint      │       │
-│  │ - MutationObs│   │ - I/O        │   │ - Composite  │       │
-│  └──────────────┘   │ - MessagePort│   └──────────────┘       │
-│                     └──────────────┘                           │
-│                                                                │
-│  EXECUTION ORDER per tick:                                     │
-│  1. Run all synchronous code on call stack                     │
-│  2. Drain ALL microtasks (including newly added ones)          │
-│  3. Run ONE macrotask                                          │
-│  4. Render (if browser)                                        │
-│  5. Repeat                                                     │
-└───────────────────────────────────────────────────────────────┘
+  JavaScript Event Loop
+|  | Call Stack | ← Synchronous code executes here |
+|  | (single |  |
+|  | thread) |  |
+  ▼
+|  | Microtask | → | Macrotask | → | Render |  |
+|  | Queue |  | Queue |  | (browsers) |  |
+|  | - Promises |  | - setTimeout |  | - Layout |  |
+|  | - queueMicro |  | - setInterval |  | - Paint |  |
+|  | - MutationObs |  | - I/O |  | - Composite |  |
+| └──────────────┘ | - MessagePort | └──────────────┘ |
+  EXECUTION ORDER per tick:
+  1. Run all synchronous code on call stack
+  2. Drain ALL microtasks (including newly added ones)
+  3. Run ONE macrotask
+  4. Render (if browser)
+  5. Repeat
 ```
 
 ### Promise.all for Parallel Execution
@@ -530,35 +505,27 @@ if (isMainThread) {
 ### JavaScript Concurrency Pitfalls
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PITFALL                        │  SYMPTOM              │  FIX              │
-├─────────────────────────────────┼───────────────────────┼───────────────────┤
-│  Unhandled promise rejection    │  Silent failures,     │  Always .catch()  │
-│                                 │  process exit (Node)  │  or try/catch in  │
-│                                 │                       │  async functions   │
-│                                 │                       │                   │
-│  Sequential await in loop       │  10 requests take     │  Use Promise.all  │
-│  for (const url of urls) {      │  10x time instead     │  for parallel     │
-│    await fetch(url);            │  of 1x                │  execution         │
-│  }                              │                       │                   │
-│                                 │                       │                   │
-│  Blocking the event loop        │  UI freezes (browser) │  Offload to Web   │
-│  (CPU-heavy sync code)          │  Requests stall (Node)│  Worker or Worker │
-│                                 │                       │  Thread            │
-│                                 │                       │                   │
-│  Race condition in shared       │  Inconsistent state   │  Use atomic       │
-│  state (multiple async ops      │  after concurrent     │  operations, or   │
-│  modify same object)            │  modifications        │  serialize access  │
-│                                 │                       │                   │
-│  Memory leak in event           │  Memory grows         │  Always           │
-│  listeners                      │  unbounded            │  removeEventListen│
-│                                 │                       │  er, use AbortCtrl│
-│                                 │                       │                   │
-│  Microtask starvation           │  Macrotasks never     │  Avoid infinite   │
-│  (recursive promise chains)     │  execute              │  microtask loops  │
-│                                 │                       │  Yield with       │
-│                                 │                       │  setTimeout(0)    │
-└─────────────────────────────────┴───────────────────────┴───────────────────┘
+| PITFALL | SYMPTOM | FIX |
+| Unhandled promise rejection | Silent failures, | Always .catch() |
+|  | process exit (Node) | or try/catch in |
+|  |  | async functions |
+| Sequential await in loop | 10 requests take | Use Promise.all |
+| for (const url of urls) { | 10x time instead | for parallel |
+| await fetch(url); | of 1x | execution |
+| } |  |  |
+| Blocking the event loop | UI freezes (browser) | Offload to Web |
+| (CPU-heavy sync code) | Requests stall (Node) | Worker or Worker |
+|  |  | Thread |
+| Race condition in shared | Inconsistent state | Use atomic |
+| state (multiple async ops | after concurrent | operations, or |
+| modify same object) | modifications | serialize access |
+| Memory leak in event | Memory grows | Always |
+| listeners | unbounded | removeEventListen |
+|  |  | er, use AbortCtrl |
+| Microtask starvation | Macrotasks never | Avoid infinite |
+| (recursive promise chains) | execute | microtask loops |
+|  |  | Yield with |
+|  |  | setTimeout(0) |
 ```
 
 ---
@@ -570,28 +537,18 @@ Python has multiple concurrency models: threading (I/O-bound), multiprocessing (
 ### The GIL (Global Interpreter Lock)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PYTHON GIL:                                                                │
-│                                                                             │
-│  The CPython GIL allows only ONE thread to execute Python bytecode          │
-│  at a time. This means:                                                     │
-│                                                                             │
-│  ┌──────────────────┬──────────────────┬────────────────────────────────┐   │
-│  │  Workload         │  Use              │  Why                           │   │
-│  ├──────────────────┼──────────────────┼────────────────────────────────┤   │
-│  │  CPU-bound        │  multiprocessing  │  Threads cannot parallelize    │   │
-│  │  (math, parsing)  │  or ProcessPool   │  CPU work due to GIL           │   │
-│  │                   │                   │                                │   │
-│  │  I/O-bound        │  asyncio or       │  GIL is released during I/O   │   │
-│  │  (HTTP, DB, file) │  threading        │  waits, enabling concurrency   │   │
-│  │                   │                   │                                │   │
-│  │  Mixed            │  asyncio +        │  Async for I/O, process pool   │   │
-│  │                   │  ProcessPool      │  for CPU-heavy parts           │   │
-│  └──────────────────┴──────────────────┴────────────────────────────────┘   │
-│                                                                             │
-│  NOTE: Python 3.13+ introduces an experimental free-threaded mode           │
-│  (--disable-gil) that removes the GIL. Watch for production readiness.      │
-└─────────────────────────────────────────────────────────────────────────────┘
+  PYTHON GIL:
+  The CPython GIL allows only ONE thread to execute Python bytecode
+  at a time. This means:
+|  | Workload | Use | Why |  |
+|  | CPU-bound | multiprocessing | Threads cannot parallelize |  |
+|  | (math, parsing) | or ProcessPool | CPU work due to GIL |  |
+|  | I/O-bound | asyncio or | GIL is released during I/O |  |
+|  | (HTTP, DB, file) | threading | waits, enabling concurrency |  |
+|  | Mixed | asyncio + | Async for I/O, process pool |  |
+|  |  | ProcessPool | for CPU-heavy parts |  |
+  NOTE: Python 3.13+ introduces an experimental free-threaded mode
+  (--disable-gil) that removes the GIL. Watch for production readiness.
 ```
 
 ### asyncio Patterns
@@ -700,36 +657,28 @@ async def async_cpu_work(inputs: list[int]) -> list[int]:
 ### Python Concurrency Pitfalls
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PITFALL                        │  SYMPTOM              │  FIX              │
-├─────────────────────────────────┼───────────────────────┼───────────────────┤
-│  Using threads for CPU work     │  No speedup, GIL      │  Use              │
-│                                 │  contention overhead  │  multiprocessing  │
-│                                 │                       │  or ProcessPool   │
-│                                 │                       │                   │
-│  Forgetting await               │  Coroutine never      │  Enable           │
-│  result = async_func()          │  executes, silent     │  RuntimeWarning   │
-│  (missing await)                │  bug                  │  for unawaited    │
-│                                 │                       │  coroutines       │
-│                                 │                       │                   │
-│  Blocking call in async         │  Event loop blocked,  │  Use              │
-│  (calling requests.get() in     │  all tasks stall      │  aiohttp instead  │
-│   async function)               │                       │  of requests. Or  │
-│                                 │                       │  run_in_executor  │
-│                                 │                       │                   │
-│  Shared mutable state           │  Race conditions      │  Use asyncio.Lock │
-│  across async tasks             │  with non-atomic ops  │  or redesign to   │
-│                                 │                       │  avoid sharing    │
-│                                 │                       │                   │
-│  fire-and-forget tasks          │  Exceptions silently  │  Store task refs, │
-│  asyncio.create_task(coro)      │  swallowed, task GC'd │  add done callback│
-│  (no reference kept)            │                       │  or use TaskGroup │
-│                                 │                       │                   │
-│  Pickle limitations in          │  Cannot pass lambdas  │  Use top-level    │
-│  multiprocessing                │  or closures across   │  functions only.  │
-│                                 │  process boundaries   │  Serialize data   │
-│                                 │                       │  explicitly.      │
-└─────────────────────────────────┴───────────────────────┴───────────────────┘
+| PITFALL | SYMPTOM | FIX |
+| Using threads for CPU work | No speedup, GIL | Use |
+|  | contention overhead | multiprocessing |
+|  |  | or ProcessPool |
+| Forgetting await | Coroutine never | Enable |
+| result = async_func() | executes, silent | RuntimeWarning |
+| (missing await) | bug | for unawaited |
+|  |  | coroutines |
+| Blocking call in async | Event loop blocked, | Use |
+| (calling requests.get() in | all tasks stall | aiohttp instead |
+| async function) |  | of requests. Or |
+|  |  | run_in_executor |
+| Shared mutable state | Race conditions | Use asyncio.Lock |
+| across async tasks | with non-atomic ops | or redesign to |
+|  |  | avoid sharing |
+| fire-and-forget tasks | Exceptions silently | Store task refs, |
+| asyncio.create_task(coro) | swallowed, task GC'd | add done callback |
+| (no reference kept) |  | or use TaskGroup |
+| Pickle limitations in | Cannot pass lambdas | Use top-level |
+| multiprocessing | or closures across | functions only. |
+|  | process boundaries | Serialize data |
+|  |  | explicitly. |
 ```
 
 ---
@@ -740,29 +689,21 @@ async def async_cpu_work(inputs: list[int]) -> list[int]:
 
 ```
 TESTING CONCURRENCY:
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Strategy              │  What It Tests           │  Tools              │
-├────────────────────────┼──────────────────────────┼─────────────────────┤
-│  Race detector         │  Data races              │  go test -race      │
-│                        │                          │  ThreadSanitizer    │
-│                        │                          │                     │
-│  Stress testing        │  Behavior under high     │  Run tests 1000x   │
-│                        │  concurrency             │  with many threads  │
-│                        │                          │                     │
-│  Deterministic testing │  Specific interleavings  │  Control scheduling │
-│                        │                          │  with barriers,     │
-│                        │                          │  latches            │
-│                        │                          │                     │
-│  Property-based        │  Invariants hold under   │  Hypothesis (Python)│
-│                        │  random interleavings    │  proptest (Rust)    │
-│                        │                          │  rapid (Go)         │
-│                        │                          │                     │
-│  Model checking        │  All possible states     │  TLA+ (design),     │
-│                        │  explored formally       │  Loom (Rust)        │
-│                        │                          │                     │
-│  Chaos / fault inject  │  Resilience to failures  │  Toxiproxy,        │
-│                        │  during concurrent ops   │  Chaos Monkey       │
-└────────────────────────┴──────────────────────────┴─────────────────────┘
+| Strategy | What It Tests | Tools |
+| Race detector | Data races | go test -race |
+|  |  | ThreadSanitizer |
+| Stress testing | Behavior under high | Run tests 1000x |
+|  | concurrency | with many threads |
+| Deterministic testing | Specific interleavings | Control scheduling |
+|  |  | with barriers, |
+|  |  | latches |
+| Property-based | Invariants hold under | Hypothesis (Python) |
+|  | random interleavings | proptest (Rust) |
+|  |  | rapid (Go) |
+| Model checking | All possible states | TLA+ (design), |
+|  | explored formally | Loom (Rust) |
+| Chaos / fault inject | Resilience to failures | Toxiproxy, |
+|  | during concurrent ops | Chaos Monkey |
 ```
 
 ### Go: Testing with Race Detector
@@ -902,30 +843,22 @@ describe('ConcurrencyLimiter', () => {
 ## Cross-Language Comparison
 
 ```
-┌─────────────────────┬───────────────┬───────────────┬───────────────┬───────────────┐
-│  Feature            │  Go            │  Rust          │  JavaScript   │  Python        │
-├─────────────────────┼───────────────┼───────────────┼───────────────┼───────────────┤
-│  Concurrency model  │  Goroutines   │  Ownership +  │  Event loop   │  GIL + asyncio│
-│                     │  + channels   │  async/await  │  (single      │  or multi-    │
-│                     │  (CSP)        │               │   thread)     │  processing   │
-│                     │               │               │               │               │
-│  True parallelism   │  Yes (runtime │  Yes (threads │  Web Workers/ │  Only via     │
-│                     │  schedules on │  or async     │  Worker       │  multiprocess │
-│                     │  OS threads)  │  tasks)       │  Threads      │  (GIL blocks) │
-│                     │               │               │               │               │
-│  Data race safety   │  Runtime      │  Compile-time │  N/A (single  │  N/A (GIL) +  │
-│                     │  (race        │  (ownership   │  threaded)    │  asyncio.Lock │
-│                     │  detector)    │  prevents)    │               │  for async    │
-│                     │               │               │               │               │
-│  Cancellation       │  context.Ctx  │  Drop / abort │  AbortCtrl    │  Task.cancel()│
-│                     │               │               │               │  / TaskGroup  │
-│                     │               │               │               │               │
-│  Error handling     │  errgroup     │  Result<T,E>  │  Promise.all  │  TaskGroup or │
-│                     │               │  + join       │  Settled      │  gather(       │
-│                     │               │               │               │  return_exc)  │
-│                     │               │               │               │               │
-│  Typical use case   │  Network      │  Systems,     │  Web servers, │  Data science,│
-│                     │  services,    │  performance- │  UI, I/O-     │  web servers, │
-│                     │  CLI tools    │  critical     │  heavy apps   │  scripting    │
-└─────────────────────┴───────────────┴───────────────┴───────────────┴───────────────┘
+| Feature | Go | Rust | JavaScript | Python |
+| Concurrency model | Goroutines | Ownership + | Event loop | GIL + asyncio |
+|  | + channels | async/await | (single | or multi- |
+|  | (CSP) |  | thread) | processing |
+| True parallelism | Yes (runtime | Yes (threads | Web Workers/ | Only via |
+|  | schedules on | or async | Worker | multiprocess |
+|  | OS threads) | tasks) | Threads | (GIL blocks) |
+| Data race safety | Runtime | Compile-time | N/A (single | N/A (GIL) + |
+|  | (race | (ownership | threaded) | asyncio.Lock |
+|  | detector) | prevents) |  | for async |
+| Cancellation | context.Ctx | Drop / abort | AbortCtrl | Task.cancel() |
+|  |  |  |  | / TaskGroup |
+| Error handling | errgroup | Result<T,E> | Promise.all | TaskGroup or |
+|  |  | + join | Settled | gather( |
+|  |  |  |  | return_exc) |
+| Typical use case | Network | Systems, | Web servers, | Data science, |
+|  | services, | performance- | UI, I/O- | web servers, |
+|  | CLI tools | critical | heavy apps | scripting |
 ```

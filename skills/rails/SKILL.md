@@ -36,22 +36,20 @@ Deployment: Docker | Kamal | Heroku | AWS/GCP
 
 ```
 RAILS SETUP DECISIONS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Decision │ Choice & Justification │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ Full-stack vs API-only │ Full-stack: Hotwire for interactivity │
-│ │ API-only: --api flag, JSON responses │
-│ Database │ PostgreSQL for production ALWAYS │
-│ Background processor │ Solid Queue (Rails 8 default) │
-│ │ Sidekiq (Redis-backed, battle-tested) │
-│ Real-time │ Turbo Streams for live updates │
-│ Authentication │ Rails 8: built-in auth generator│
-│ │ Rails 7: Devise or custom │
-│ JavaScript │ Import Maps (simple, no build) │
-│ │ esbuild (if heavy JS needed) │
-│ CSS │ Tailwind (Rails default) │
-│ Testing │ RSpec + FactoryBot + Capybara │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Decision | Choice & Justification |
+|---|---|
+| Full-stack vs API-only | Full-stack: Hotwire for interactivity |
+|  | API-only: --api flag, JSON responses |
+| Database | PostgreSQL for production ALWAYS |
+| Background processor | Solid Queue (Rails 8 default) |
+|  | Sidekiq (Redis-backed, battle-tested) |
+| Real-time | Turbo Streams for live updates |
+| Authentication | Rails 8: built-in auth generator |
+|  | Rails 7: Devise or custom |
+| JavaScript | Import Maps (simple, no build) |
+|  | esbuild (if heavy JS needed) |
+| CSS | Tailwind (Rails default) |
+| Testing | RSpec + FactoryBot + Capybara |
 ```
 
 Rules:
@@ -65,20 +63,19 @@ Follow the Rails Way rigorously:
 
 ```
 RAILS CONVENTIONS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Convention │ Rule │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ Model naming │ Singular, CamelCase (Order) │
-│ Table naming │ Plural, snake_case (orders) │
-│ Controller naming │ Plural, CamelCase (OrdersController) │
-│ File naming │ snake_case (order.rb) │
-│ Foreign keys │ <model>_id (customer_id) │
-│ Join tables │ Alphabetical (labels_orders) │
-│ Primary keys │ id (auto-increment or UUID) │
-│ Timestamps │ created_at, updated_at (auto) │
-│ Boolean columns │ Adjective (active, published) │
-│ Routes │ RESTful resources │
-│ Partials │ _prefix (e.g., _form.html.erb) │
+| Convention | Rule |
+|---|---|
+| Model naming | Singular, CamelCase (Order) |
+| Table naming | Plural, snake_case (orders) |
+| Controller naming | Plural, CamelCase (OrdersController) |
+| File naming | snake_case (order.rb) |
+| Foreign keys | <model>_id (customer_id) |
+| Join tables | Alphabetical (labels_orders) |
+| Primary keys | id (auto-increment or UUID) |
+| Timestamps | created_at, updated_at (auto) |
+| Boolean columns | Adjective (active, published) |
+| Routes | RESTful resources |
+| Partials | _prefix (e.g., _form.html.erb) |
 ```
 
 Rules:
@@ -103,23 +100,21 @@ class Order < ApplicationRecord
 
 ```
 ACTIVERECORD PERFORMANCE PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Pattern │ When to Use │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ includes(:assoc) │ Default N+1 prevention │
-│ preload(:assoc) │ Separate queries (large joins) │
-│ eager_load(:assoc) │ Need WHERE on association │
-│ select(:col1, :col2) │ Reduce data transfer │
-│ pluck(:column) │ Extract array of values │
-│ find_each(batch_size: 1000) │ Process large datasets │
-│ in_batches(of: 1000) │ Batch updates/deletes │
-│.count /.sum /.average │ Database-level aggregation │
-│ counter_cache: true │ Avoid COUNT queries │
-│ strict_loading! │ Detect N+1 in development │
-│ explain │ Analyze query execution plan │
-│ add_index │ Every FK + frequent WHERE cols │
-│ database views │ Complex reporting queries │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | When to Use |
+|---|---|
+| includes(:assoc) | Default N+1 prevention |
+| preload(:assoc) | Separate queries (large joins) |
+| eager_load(:assoc) | Need WHERE on association |
+| select(:col1, :col2) | Reduce data transfer |
+| pluck(:column) | Extract array of values |
+| find_each(batch_size: 1000) | Process large datasets |
+| in_batches(of: 1000) | Batch updates/deletes |
+| .count /.sum /.average | Database-level aggregation |
+| counter_cache: true | Avoid COUNT queries |
+| strict_loading! | Detect N+1 in development |
+| explain | Analyze query execution plan |
+| add_index | Every FK + frequent WHERE cols |
+| database views | Complex reporting queries |
 ```
 
 Rules:
@@ -135,12 +130,10 @@ Build modern, interactive Rails UIs without heavy JavaScript:
 
 ```
 HOTWIRE ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────────┐
-│ Turbo Drive — SPA-like navigation without JavaScript │
-│ Turbo Frames — Update specific page sections independently │
-│ Turbo Streams — Real-time updates via WebSocket or HTTP │
-│ Stimulus — Sprinkle JavaScript behavior on HTML │
-└─────────────────────────────────────────────────────────────────┘
+  Turbo Drive — SPA-like navigation without JavaScript
+  Turbo Frames — Update specific page sections independently
+  Turbo Streams — Real-time updates via WebSocket or HTTP
+  Stimulus — Sprinkle JavaScript behavior on HTML
 ```
 
 ```erb
@@ -163,18 +156,16 @@ def update
 
 ```
 HOTWIRE DECISION GUIDE:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Need │ Use │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ SPA-like page transitions │ Turbo Drive (automatic) │
-│ Update one section on click │ Turbo Frames │
-│ Real-time updates to all viewers │ Turbo Streams (broadcast) │
-│ Update page after form submit │ Turbo Streams (HTTP response) │
-│ Toggle visibility, dropdowns │ Stimulus controller │
-│ Form validation, character count │ Stimulus controller │
-│ Complex interactive widget │ Stimulus + Turbo Frames │
-│ Full SPA (React/Vue needed) │ Rails API-only + separate SPA │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Need | Use |
+|---|---|
+| SPA-like page transitions | Turbo Drive (automatic) |
+| Update one section on click | Turbo Frames |
+| Real-time updates to all viewers | Turbo Streams (broadcast) |
+| Update page after form submit | Turbo Streams (HTTP response) |
+| Toggle visibility, dropdowns | Stimulus controller |
+| Form validation, character count | Stimulus controller |
+| Complex interactive widget | Stimulus + Turbo Frames |
+| Full SPA (React/Vue needed) | Rails API-only + separate SPA |
 ```
 
 Rules:
@@ -199,16 +190,14 @@ class OrderConfirmationJob < ApplicationJob
 
 ```
 BACKGROUND JOB STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Processor │ When to Use │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ Solid Queue (Rails 8) │ Default for Rails 8 — DB-backed │
-│ │ No Redis dependency, simple │
-│ Sidekiq │ High throughput, Redis-backed │
-│ │ Battle-tested, rich ecosystem │
-│ Good Job │ PostgreSQL-backed, multithreaded│
-│ │ Good for Heroku, no Redis │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Processor | When to Use |
+|---|---|
+| Solid Queue (Rails 8) | Default for Rails 8 — DB-backed |
+|  | No Redis dependency, simple |
+| Sidekiq | High throughput, Redis-backed |
+|  | Battle-tested, rich ecosystem |
+| Good Job | PostgreSQL-backed, multithreaded |
+|  | Good for Heroku, no Redis |
 
 JOB DESIGN RULES:
 - Jobs MUST stay idempotent — safe to retry
@@ -230,18 +219,16 @@ RSpec.configure do |config|
 
 ```
 TESTING STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│ Layer │ Approach │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│ Models │ RSpec + FactoryBot + Shoulda │
-│ Controllers/Requests │ RSpec request specs │
-│ System/Integration │ Capybara + Selenium │
-│ Services │ RSpec unit specs │
-│ Jobs │ ActiveJob::TestHelper │
-│ Mailers │ ActionMailer::TestHelper │
-│ API │ Request specs + JSON assertions │
-│ Turbo Streams │ assert_turbo_stream in requests │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Layer | Approach |
+|---|---|
+| Models | RSpec + FactoryBot + Shoulda |
+| Controllers/Requests | RSpec request specs |
+| System/Integration | Capybara + Selenium |
+| Services | RSpec unit specs |
+| Jobs | ActiveJob::TestHelper |
+| Mailers | ActionMailer::TestHelper |
+| API | Request specs + JSON assertions |
+| Turbo Streams | assert_turbo_stream in requests |
 
 TEST HELPERS:
 ```
@@ -259,20 +246,19 @@ Verify the Rails application:
 
 ```
 RAILS VALIDATION:
-┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│ Check │ Status │ Notes │
-├──────────────────────────────────────┼──────────┼──────────────────────┤
-│ Follows Rails conventions │ PASS │ Naming, structure │
-│ N+1 queries eliminated │ PASS │ includes/preload │
-│ strict_loading in dev │ PASS │ Catches lazy loads │
-│ Database indexes on FKs │ PASS │ All foreign keys │
-│ Background jobs idempotent │ PASS │ Safe to retry │
-│ Hotwire used appropriately │ PASS │ Frames + Streams │
-│ Tests pass (RSpec green) │ PASS │ Models + requests │
-│ FactoryBot factories valid │ PASS │ No orphan factories │
-│ Credentials managed properly │ PASS │ Rails credentials │
-│ Database migrations reversible │ PASS │ All have down() │
-│ Strong parameters enforced │ PASS │ No mass assignment │
+| Check | Status | Notes |
+|---|---|---|
+| Follows Rails conventions | PASS | Naming, structure |
+| N+1 queries eliminated | PASS | includes/preload |
+| strict_loading in dev | PASS | Catches lazy loads |
+| Database indexes on FKs | PASS | All foreign keys |
+| Background jobs idempotent | PASS | Safe to retry |
+| Hotwire used appropriately | PASS | Frames + Streams |
+| Tests pass (RSpec green) | PASS | Models + requests |
+| FactoryBot factories valid | PASS | No orphan factories |
+| Credentials managed properly | PASS | Rails credentials |
+| Database migrations reversible | PASS | All have down() |
+| Strong parameters enforced | PASS | No mass assignment |
 ```
 
 ```

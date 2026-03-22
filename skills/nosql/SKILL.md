@@ -35,13 +35,11 @@ Access patterns:   <list of read/write patterns with frequency>
 
 ```
 DATABASE SELECTION MATRIX:
-+--------------------------------------------------------------+
 |  If your data looks like...    | Use            | Not          |
 ```
 
 ```
 NOSQL vs SQL:
-+--------------------------------------------------------------+
 |  Choose SQL (PostgreSQL) when:  | Choose NoSQL when:          |
 ```
 
@@ -187,16 +185,13 @@ INFLUXDB CONCEPTS:
 
 ```
 TIMESCALEDB vs INFLUXDB:
-+--------------------------------------------------------------+
 |  Feature              | TimescaleDB        | InfluxDB          |
 ```
 
 ### Step 8: Report and Transition
 
 ```
-+------------------------------------------------------------+
 |  NOSQL DESIGN -- <description>                              |
-+------------------------------------------------------------+
 ```
 
 Commit: `"nosql: <description> -- <database>, <key design decisions>"`
@@ -236,8 +231,8 @@ After every NoSQL operation (database selection, schema design, query optimizati
 
 ```
 ┌─ NOSQL RESULT ──────────────────────────────────────┐
-│ Database : DynamoDB                                  │
-│ Operation : single-table design for e-commerce       │
+  Database : DynamoDB
+  Operation : single-table design for e-commerce
 ```
 timestamp	database	operation	entity_count	access_patterns_covered	access_patterns_total	partition_strategy	hot_partition_risk	verdict
 2026-03-20T14:30:00Z	DynamoDB	single-table-design	4	12	12	composite-PK	LOW	READY

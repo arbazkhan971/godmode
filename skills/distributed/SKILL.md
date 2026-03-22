@@ -43,7 +43,6 @@ Analyze the fundamental trade-offs for the system:
 
 ```
 CAP THEOREM ANALYSIS:
-+---------------------------------------------------------------+
 | CONSISTENCY |
 | /\ |
 | / \ |
@@ -71,15 +70,13 @@ Choose and configure the right consensus protocol:
 #### Raft Consensus
 ```
 RAFT OVERVIEW:
-+--------------------------------------------------------------+
 | Component | Role |
-+--------------------------------------------------------------+
+|---|---|
 | Leader | Handles all client requests, replicates |
 | | log entries to followers |
 | Follower | Replicates leader's log, votes in |
 | | elections, redirects clients to leader |
 | Candidate | Requests votes to become leader |
-+--------------------------------------------------------------+
 
 RAFT STATE MACHINE:
  Follower --[election timeout]--> Candidate
@@ -90,13 +87,11 @@ RAFT STATE MACHINE:
 #### Paxos Consensus
 ```
 PAXOS OVERVIEW:
-+--------------------------------------------------------------+
 | Role | Responsibility |
-+--------------------------------------------------------------+
+|---|---|
 | Proposer | Proposes values (client requests) |
 | Acceptor | Votes on proposals, stores accepted values|
 | Learner | Learns the chosen value |
-+--------------------------------------------------------------+
 
 PAXOS PHASES:
  Phase 1a (Prepare): Proposer sends prepare(n) to acceptors
@@ -109,16 +104,14 @@ PAXOS PHASES:
 #### Consensus Decision Matrix
 ```
 CONSENSUS DECISION:
-+--------------------------------------------------------------+
 | Factor | Raft | Paxos | None|
-+--------------------------------------------------------------+
+|---|---|---|---|
 | Understandability | High | Low | N/A |
 | Leader requirement | Yes (single) | Optional | N/A |
 | Latency | 1 RTT (leader) | 2 RTT (basic) | 0 |
 | Fault tolerance | (N-1)/2 | (N-1)/2 | 0 |
 | Implementation ease | Medium | Hard | Easy|
 | Best for | Most systems | Multi-leader | AP |
-+--------------------------------------------------------------+
 
 SELECTED: <Raft | Paxos | None (AP system)> -- <justification>
 ```
@@ -167,9 +160,8 @@ ZOOKEEPER LOCK PATTERN:
 #### Distributed Lock Decision
 ```
 DISTRIBUTED LOCK SELECTION:
-+--------------------------------------------------------------+
 | Factor | Redlock | ZooKeeper | etcd |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | Correctness | Debated | Strong | Strong |
 | Latency | Low (~5ms) | Medium (~20ms)| Medium |
 | Fault tolerance | Majority | Majority | Raft |
@@ -177,7 +169,6 @@ DISTRIBUTED LOCK SELECTION:
 | Fencing tokens | Manual | Built-in | Rev |
 | Operational cost | Redis cluster | ZK ensemble | etcd |
 | Best for | Efficiency lock| Correctness | K8s env|
-+--------------------------------------------------------------+
 
 IMPORTANT DISTINCTION:
 - Efficiency lock: Prevents duplicate work, tolerates occasional failure
@@ -188,15 +179,13 @@ Design data distribution across nodes:
 
 ```
 PARTITIONING STRATEGIES:
-+--------------------------------------------------------------+
 | Strategy | How It Works | Best For |
-+--------------------------------------------------------------+
+|---|---|---|
 | Hash partitioning | hash(key) % N | Even distribution |
 | Range partitioning | Key ranges per shard | Range queries |
 | Consistent hashing | Hash ring with vnodes | Dynamic scaling |
 | Geographic | By region/location | Data locality |
 | Directory-based | Lookup table | Flexible routing |
-+--------------------------------------------------------------+
 
 CONSISTENT HASHING:
  Hash Ring:
@@ -209,9 +198,8 @@ Design systems that converge to consistency over time:
 
 ```
 EVENTUAL CONSISTENCY PATTERNS:
-+--------------------------------------------------------------+
 | Pattern | Mechanism | Use Case |
-+--------------------------------------------------------------+
+|---|---|---|
 | Read repair | Fix stale reads on | Key-value stores|
 | | detection | |
 | Anti-entropy | Background Merkle | Replica sync |
@@ -224,15 +212,13 @@ EVENTUAL CONSISTENCY PATTERNS:
 | Last-writer-wins | Timestamp resolution | Simple cases |
 | Application-level | Domain-specific | Business rules |
 | resolution | merge logic | |
-+--------------------------------------------------------------+
 ```
 
 #### CRDTs (Conflict-free Replicated Data Types)
 ```
 CRDT TYPES:
-+--------------------------------------------------------------+
 | CRDT | Operations | Merge Rule | Use |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | G-Counter | Increment | Max per node | Views |
 | PN-Counter | Inc/Dec | Max per node | Votes |
 | G-Set | Add | Union | Tags |
@@ -240,7 +226,6 @@ CRDT TYPES:
 | LWW-Register | Set | Latest wins | Profile|
 | MV-Register | Set | Keep all | Collab|
 | RGA | Insert/Delete | Interleave | Text |
-+--------------------------------------------------------------+
 
 CRDT GUARANTEE:
 - All replicas converge to the same state without coordination
@@ -249,15 +234,13 @@ CRDT GUARANTEE:
 #### Conflict Resolution Strategies
 ```
 CONFLICT RESOLUTION DECISION:
-+--------------------------------------------------------------+
 | Strategy | Complexity | Data Loss Risk | Best For |
-+--------------------------------------------------------------+
+|---|---|---|---|
 | Last-writer-wins | Low | High | Idempotent|
 | Vector clocks | Medium | None (manual) | Custom |
 | CRDTs | High | None (auto) | Counters |
 | Application merge | High | None (custom) | Business |
 | Operational trans. | Very High | None | Documents |
-+--------------------------------------------------------------+
 
 SELECTED: <strategy> -- <justification>
 ```
@@ -267,9 +250,8 @@ Design leader election for coordination:
 
 ```
 LEADER ELECTION PATTERNS:
-+--------------------------------------------------------------+
 | Pattern | Mechanism | Implementation |
-+--------------------------------------------------------------+
+|---|---|---|
 | Bully algorithm | Highest ID wins | Custom |
 | Raft election | Random timeout + | etcd, Consul |
 | | majority vote | |
@@ -278,7 +260,6 @@ LEADER ELECTION PATTERNS:
 | Database advisory | SELECT FOR UPDATE | PostgreSQL |
 | locks | or advisory lock | |
 | Cloud-native | Managed service | K8s Lease, DynamoDB|
-+--------------------------------------------------------------+
 
 LEADER ELECTION REQUIREMENTS:
 ```
@@ -288,16 +269,14 @@ Design behavior during and after network partitions:
 
 ```
 PARTITION HANDLING STRATEGY:
-+--------------------------------------------------------------+
 | Phase | Action |
-+--------------------------------------------------------------+
+|---|---|
 | Detection | Failure detector (heartbeat timeout, |
 | | phi accrual, or gossip-based) |
 | During partition | <CP: reject writes on minority side> |
 | | OR <AP: accept writes, resolve later> |
 | Healing | Anti-entropy, read repair, reconciliation|
 | Post-partition | Conflict resolution, data merge |
-+--------------------------------------------------------------+
 
 FAILURE DETECTION:
 - Heartbeat timeout: Simple, configurable, prone to false positives
@@ -309,7 +288,6 @@ Generate the system architecture:
 
 ```
 DISTRIBUTED TOPOLOGY:
-+---------------------------------------------------------------+
 | Region: us-east-1 Region: eu-west-1 |
 | +---------------------------+ +---------------------------+|
 | | [Leader Node 1] | | [Follower Node 3] ||
@@ -319,7 +297,6 @@ DISTRIBUTED TOPOLOGY:
 | | | |
 | +---------- WAN Link -----------+ |
 | (async replication) |
-+---------------------------------------------------------------+
 
 DATA FLOW:
  Writes -> Leader (us-east-1) -> Sync replicate to Node 2, 5
@@ -335,9 +312,8 @@ Validate the distributed system design:
 
 ```
 DISTRIBUTED SYSTEM VALIDATION:
-+--------------------------------------------------------------+
 | Check | Status |
-+--------------------------------------------------------------+
+|---|---|
 | CAP trade-offs explicitly documented | PASS | FAIL |
 | Consistency level defined per operation | PASS | FAIL |
 | Consensus protocol selected and justified | PASS | FAIL |
@@ -350,7 +326,6 @@ DISTRIBUTED SYSTEM VALIDATION:
 | Split-brain prevention in place | PASS | FAIL |
 | Network partition test plan exists | PASS | FAIL |
 | Data reconciliation after partition | PASS | FAIL |
-+--------------------------------------------------------------+
 
 VERDICT: <SOUND | NEEDS REVISION>
 ```

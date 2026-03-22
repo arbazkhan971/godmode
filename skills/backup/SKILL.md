@@ -21,8 +21,7 @@ Identify all data that needs protection:
 
 ```
 DATA ASSET INVENTORY:
-┌──────────────────────────────────────────────────────────────────┐
-│ Asset               │ Type       │ Size    │ Growth   │ Critical │
+| Asset | Type | Size | Growth | Critical |
 ```
 
 ### Step 2: Define RPO/RTO Targets
@@ -30,8 +29,7 @@ Set recovery objectives for each data tier:
 
 ```
 RECOVERY OBJECTIVES:
-┌──────────────────────────────────────────────────────────────────┐
-│ Data Tier      │ RPO            │ RTO            │ Justification │
+| Data Tier | RPO | RTO | Justification |
 ```
 
 ### Step 3: Backup Strategy Design
@@ -63,8 +61,7 @@ Automated checks that backups are actually working:
 
 ```
 BACKUP VERIFICATION SCHEDULE:
-┌──────────────────────────────────────────────────────────────────┐
-│ Check                    │ Frequency  │ Method              │ Alert│
+| Check | Frequency | Method | Alert |
 ```
 ```
 
@@ -72,22 +69,20 @@ BACKUP VERIFICATION SCHEDULE:
 Ensure backed-up data is consistent and usable:
 ```
 DATA INTEGRITY CHECKS:
-┌──────────────────────────────────────────────────────────────────┐
-│ Check                     │ Method                │ Frequency    │
-├──────────────────────────────────────────────────────────────────┤
-│ Row count consistency     │ Compare source vs     │ After each   │
-│                           │ restored backup       │ restore test │
-│ Checksum verification     │ SHA-256 of backup     │ Every backup │
-│                           │ file                  │              │
-│ Foreign key integrity     │ Run FK constraint      │ Weekly       │
-│                           │ check on restored DB  │ restore      │
-│ Application smoke test    │ Run app against       │ Monthly      │
-│                           │ restored DB           │ restore      │
-│ Point-in-time accuracy    │ Restore to specific   │ Quarterly    │
-│                           │ time, verify records  │              │
-│ Cross-region consistency  │ Compare checksums     │ Weekly       │
-│                           │ across regions        │              │
-└──────────────────────────────────────────────────────────────────┘
+| Check | Method | Frequency |
+|---|---|---|
+| Row count consistency | Compare source vs | After each |
+|  | restored backup | restore test |
+| Checksum verification | SHA-256 of backup | Every backup |
+|  | file |  |
+| Foreign key integrity | Run FK constraint | Weekly |
+|  | check on restored DB | restore |
+| Application smoke test | Run app against | Monthly |
+|  | restored DB | restore |
+| Point-in-time accuracy | Restore to specific | Quarterly |
+|  | time, verify records |  |
+| Cross-region consistency | Compare checksums | Weekly |
+|  | across regions |  |
 
 Integrity verification queries:
 ```sql
@@ -204,64 +199,51 @@ RETURN TO PRIMARY (when original region recovers):
 ### Step 7: Disaster Recovery Runbook
 Generate a comprehensive runbook document:
 ```
-┌────────────────────────────────────────────────────────────┐
-│  DISASTER RECOVERY RUNBOOK                                 │
-├────────────────────────────────────────────────────────────┤
-│  Last tested: <date>                                       │
-│  Next test scheduled: <date>                               │
-│  Owner: <team/person>                                      │
-│  On-call escalation: <contact chain>                       │
-│                                                            │
-│  Recovery objectives:                                      │
-│    Tier 1 RPO: < 1 min   │  RTO: < 15 min                 │
-│    Tier 2 RPO: < 1 hour  │  RTO: < 1 hour                 │
-│    Tier 3 RPO: < 24 hour │  RTO: < 4 hours                │
-│                                                            │
-│  Scenarios covered:                                        │
-│    1. Primary database failure      → Page 3               │
-│    2. Data corruption               → Page 5               │
-│    3. Complete region failure        → Page 8               │
-│    4. Ransomware / security breach   → Page 11              │
-│    5. Accidental data deletion       → Page 13              │
-│    6. Cloud provider outage          → Page 15              │
-│                                                            │
-│  Backup status:                                            │
-│    Database: <HEALTHY | DEGRADED | FAILED>                 │
-│    File storage: <HEALTHY | DEGRADED | FAILED>             │
-│    Configuration: <HEALTHY | DEGRADED | FAILED>            │
-│    Secrets: <HEALTHY | DEGRADED | FAILED>                  │
-│                                                            │
-│  Last successful restore test: <date> (<result>)           │
-│  Last DR failover test: <date> (<result>)                  │
-└────────────────────────────────────────────────────────────┘
+  DISASTER RECOVERY RUNBOOK
+  Last tested: <date>
+  Next test scheduled: <date>
+  Owner: <team/person>
+  On-call escalation: <contact chain>
+  Recovery objectives:
+| Tier 1 RPO: < 1 min | RTO: < 15 min |
+|---|---|
+| Tier 2 RPO: < 1 hour | RTO: < 1 hour |
+| Tier 3 RPO: < 24 hour | RTO: < 4 hours |
+  Scenarios covered:
+  1. Primary database failure      → Page 3
+  2. Data corruption               → Page 5
+  3. Complete region failure        → Page 8
+  4. Ransomware / security breach   → Page 11
+  5. Accidental data deletion       → Page 13
+  6. Cloud provider outage          → Page 15
+  Backup status:
+  Database: <HEALTHY | DEGRADED | FAILED>
+  File storage: <HEALTHY | DEGRADED | FAILED>
+  Configuration: <HEALTHY | DEGRADED | FAILED>
+  Secrets: <HEALTHY | DEGRADED | FAILED>
+  Last successful restore test: <date> (<result>)
+  Last DR failover test: <date> (<result>)
 ```
 
 ### Step 8: Backup & DR Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  BACKUP & DISASTER RECOVERY REPORT                         │
-├────────────────────────────────────────────────────────────┤
-│  Data assets inventoried: <N>                              │
-│  Backup strategies defined: <N>                            │
-│  Recovery procedures documented: <N> scenarios             │
-│                                                            │
-│  Coverage:                                                 │
-│    Tier 1 (critical):    <PROTECTED | GAPS | UNPROTECTED>  │
-│    Tier 2 (important):   <PROTECTED | GAPS | UNPROTECTED>  │
-│    Tier 3 (operational): <PROTECTED | GAPS | UNPROTECTED>  │
-│                                                            │
-│  Verification:                                             │
-│    Automated checks: <CONFIGURED | PARTIAL | MISSING>      │
-│    Last restore test: <date | NEVER>                       │
-│    Last DR test: <date | NEVER>                            │
-│                                                            │
-│  Gaps identified: <N>                                      │
-│    1. <gap description and remediation>                    │
-│    2. <gap description and remediation>                    │
-│                                                            │
-│  Verdict: <PROTECTED | PARTIAL | AT RISK>                  │
-└────────────────────────────────────────────────────────────┘
+  BACKUP & DISASTER RECOVERY REPORT
+  Data assets inventoried: <N>
+  Backup strategies defined: <N>
+  Recovery procedures documented: <N> scenarios
+  Coverage:
+  Tier 1 (critical):    <PROTECTED | GAPS | UNPROTECTED>
+  Tier 2 (important):   <PROTECTED | GAPS | UNPROTECTED>
+  Tier 3 (operational): <PROTECTED | GAPS | UNPROTECTED>
+  Verification:
+  Automated checks: <CONFIGURED | PARTIAL | MISSING>
+  Last restore test: <date | NEVER>
+  Last DR test: <date | NEVER>
+  Gaps identified: <N>
+  1. <gap description and remediation>
+  2. <gap description and remediation>
+  Verdict: <PROTECTED | PARTIAL | AT RISK>
 ```
 
 ### Step 9: Commit and Transition

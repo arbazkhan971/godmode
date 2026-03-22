@@ -32,19 +32,16 @@ ls -la .eslintrc* .prettierrc* biome.json .editorconfig .stylelintrc* \
 
 ```
 LINT ASSESSMENT:
-┌──────────────────────────────────────────────────────────────┐
-│  Project: <name>                                              │
-│  Language(s): <detected>                                      │
-├──────────────────┬───────────────────────────────────────────┤
-│  Linter           │ <current tool or NONE>                    │
-│  Formatter        │ <current tool or NONE>                    │
-│  Pre-commit hooks │ <YES/NO>                                  │
-│  Editor config    │ <YES/NO>                                  │
-│  Current violations│ <N errors, N warnings>                   │
-│  CI integration   │ <YES/NO>                                  │
-├──────────────────┴───────────────────────────────────────────┤
-│  Status: <CONFIGURED | PARTIAL | NONE>                        │
-└──────────────────────────────────────────────────────────────┘
+  Project: <name>
+  Language(s): <detected>
+| Linter | <current tool or NONE> |
+|---|---|
+| Formatter | <current tool or NONE> |
+| Pre-commit hooks | <YES/NO> |
+| Editor config | <YES/NO> |
+| Current violations | <N errors, N warnings> |
+| CI integration | <YES/NO> |
+  Status: <CONFIGURED | PARTIAL | NONE>
 ```
 
 ### Step 2: Tool Selection
@@ -52,20 +49,19 @@ Choose the right linting and formatting stack:
 
 ```
 TOOL SELECTION BY LANGUAGE:
-┌──────────────┬──────────────────┬──────────────────┬─────────────────┐
-│  Language     │ Linter            │ Formatter         │ Type Checker     │
-├──────────────┼──────────────────┼──────────────────┼─────────────────┤
-│  TypeScript   │ ESLint            │ Prettier          │ tsc              │
-│  TypeScript   │ Biome (all-in-one)│ Biome             │ tsc              │
-│  JavaScript   │ ESLint            │ Prettier          │ —                │
-│  Python       │ Ruff (all-in-one) │ Ruff / Black      │ mypy / pyright   │
-│  Go           │ golangci-lint     │ gofmt / goimports │ go vet           │
-│  Rust         │ clippy            │ rustfmt           │ rustc            │
-│  Ruby         │ RuboCop           │ RuboCop           │ Sorbet           │
-│  Java/Kotlin  │ checkstyle/ktlint │ google-java-format│ —                │
-│  CSS/SCSS     │ Stylelint         │ Prettier          │ —                │
-│  HTML         │ HTMLHint          │ Prettier          │ —                │
-│  Markdown     │ markdownlint      │ Prettier          │ —                │
+| Language | Linter | Formatter | Type Checker |
+|---|---|---|---|
+| TypeScript | ESLint | Prettier | tsc |
+| TypeScript | Biome (all-in-one) | Biome | tsc |
+| JavaScript | ESLint | Prettier | — |
+| Python | Ruff (all-in-one) | Ruff / Black | mypy / pyright |
+| Go | golangci-lint | gofmt / goimports | go vet |
+| Rust | clippy | rustfmt | rustc |
+| Ruby | RuboCop | RuboCop | Sorbet |
+| Java/Kotlin | checkstyle/ktlint | google-java-format | — |
+| CSS/SCSS | Stylelint | Prettier | — |
+| HTML | HTMLHint | Prettier | — |
+| Markdown | markdownlint | Prettier | — |
 ```
 
 ### Step 3: Configuration
@@ -141,23 +137,18 @@ module.exports = {
 # ... (condensed)
 ```
 AUTO-FIX STRATEGY:
-┌─────────────────────────────────────────────────────────────┐
-│  Level 1: Format on Save (editor integration)                │
-│  - Runs formatter (Prettier/Biome/gofmt) on every save      │
-│  - Zero developer effort, instant feedback                   │
-│                                                              │
-│  Level 2: Lint Fix on Save (editor integration)              │
-│  - Auto-fixes safe lint rules on save                        │
-│  - import ordering, unused imports, const/let, etc.          │
-│                                                              │
-│  Level 3: Pre-commit Auto-fix (git hook)                     │
-│  - Catches anything missed by editor                         │
-│  - Runs on staged files only (fast)                          │
-│                                                              │
-│  Level 4: CI Enforcement (pipeline)                          │
-│  - Final gate: fails PR if any violations remain             │
-│  - No auto-fix — just enforcement                            │
-└─────────────────────────────────────────────────────────────┘
+  Level 1: Format on Save (editor integration)
+  - Runs formatter (Prettier/Biome/gofmt) on every save
+  - Zero developer effort, instant feedback
+  Level 2: Lint Fix on Save (editor integration)
+  - Auto-fixes safe lint rules on save
+  - import ordering, unused imports, const/let, etc.
+  Level 3: Pre-commit Auto-fix (git hook)
+  - Catches anything missed by editor
+  - Runs on staged files only (fast)
+  Level 4: CI Enforcement (pipeline)
+  - Final gate: fails PR if any violations remain
+  - No auto-fix — just enforcement
 ```
 
 #### Editor Integration (VS Code)
@@ -178,22 +169,18 @@ ruff check --fix .
 
 ```
 BATCH FIX REPORT:
-┌──────────────────────────────────────────────────────────────┐
-│  Before: <N> errors, <N> warnings                             │
-│  Auto-fixed: <N> issues                                       │
-│  Remaining (manual): <N> issues                               │
-│                                                               │
-│  Auto-fixed breakdown:                                        │
-│    Import ordering:     <N>                                   │
-│    Unused imports:      <N>                                   │
-│    Formatting:          <N>                                   │
-│    const/let upgrades:  <N>                                   │
-│    Trailing whitespace: <N>                                   │
-│                                                               │
-│  Manual review needed:                                        │
-│    <file>:<line> — <rule>: <description>                      │
-│    <file>:<line> — <rule>: <description>                      │
-└──────────────────────────────────────────────────────────────┘
+  Before: <N> errors, <N> warnings
+  Auto-fixed: <N> issues
+  Remaining (manual): <N> issues
+  Auto-fixed breakdown:
+  Import ordering:     <N>
+  Unused imports:      <N>
+  Formatting:          <N>
+  const/let upgrades:  <N>
+  Trailing whitespace: <N>
+  Manual review needed:
+  <file>:<line> — <rule>: <description>
+  <file>:<line> — <rule>: <description>
 ```
 
 ### Step 6: Pre-Commit Hooks Setup
@@ -253,20 +240,19 @@ Define and enforce team coding standards:
 #### Style Guide Document
 ```
 CODING STANDARDS:
-┌──────────────────────────────────────────────────────────────┐
-│  Area                │ Standard                     │ Enforced │
-├──────────────────────┼──────────────────────────────┼──────────┤
-│  Indentation         │ 2 spaces (no tabs)           │ Prettier │
-│  Line length         │ 100 characters max           │ Prettier │
-│  Quotes              │ Single quotes (JS/TS)        │ Prettier │
-│  Semicolons          │ Always                       │ Prettier │
-│  Trailing commas     │ All (functions included)     │ Prettier │
-│  Import order        │ builtin > external > internal│ ESLint   │
-│  Naming: variables   │ camelCase                    │ ESLint   │
-│  Naming: functions   │ camelCase                    │ ESLint   │
-│  Naming: classes     │ PascalCase                   │ ESLint   │
-│  Naming: constants   │ UPPER_SNAKE_CASE             │ ESLint   │
-│  Naming: files       │ kebab-case.ts                │ ESLint   │
+| Area | Standard | Enforced |
+|---|---|---|
+| Indentation | 2 spaces (no tabs) | Prettier |
+| Line length | 100 characters max | Prettier |
+| Quotes | Single quotes (JS/TS) | Prettier |
+| Semicolons | Always | Prettier |
+| Trailing commas | All (functions included) | Prettier |
+| Import order | builtin > external > internal | ESLint |
+| Naming: variables | camelCase | ESLint |
+| Naming: functions | camelCase | ESLint |
+| Naming: classes | PascalCase | ESLint |
+| Naming: constants | UPPER_SNAKE_CASE | ESLint |
+| Naming: files | kebab-case.ts | ESLint |
 ```
 
 #### .editorconfig (Universal)

@@ -42,19 +42,16 @@ Choose the right framework based on project needs:
 ```
 FRAMEWORK SELECTION GUIDE:
 
-┌────────────────────────────────────────────────────────────────────────────┐
-│ Framework │ Best For                    │ Perf      │ Ecosystem  │ Opinion │
-├───────────┼─────────────────────────────┼───────────┼────────────┼─────────┤
-│ Express   │ Rapid prototyping, APIs     │ Moderate  │ Massive    │ Low     │
-│           │ with many npm integrations  │ ~15K RPS  │ 80K+ pkgs  │         │
-├───────────┼─────────────────────────────┼───────────┼────────────┼─────────┤
-│ Fastify   │ High-performance APIs       │ High      │ Growing    │ Medium  │
-│           │ JSON-heavy workloads        │ ~50K RPS  │ 300+ plugs │         │
-│           │ Schema-based validation     │           │            │         │
-├───────────┼─────────────────────────────┼───────────┼────────────┼─────────┤
-│ Hono      │ Edge/serverless, ultra-light│ Very High │ Growing    │ Low     │
-│           │ Multi-runtime (Node, Bun,   │ ~80K RPS  │ 100+ mid   │         │
-│           │ Deno, Cloudflare Workers)   │           │            │         │
+| Framework | Best For | Perf | Ecosystem | Opinion |
+|---|---|---|---|---|
+| Express | Rapid prototyping, APIs | Moderate | Massive | Low |
+|  | with many npm integrations | ~15K RPS | 80K+ pkgs |  |
+| Fastify | High-performance APIs | High | Growing | Medium |
+|  | JSON-heavy workloads | ~50K RPS | 300+ plugs |  |
+|  | Schema-based validation |  |  |  |
+| Hono | Edge/serverless, ultra-light | Very High | Growing | Low |
+|  | Multi-runtime (Node, Bun, | ~80K RPS | 100+ mid |  |
+|  | Deno, Cloudflare Workers) |  |  |  |
 ```
 
 ### Step 3: Application Architecture
@@ -167,20 +164,19 @@ Prepare the Node.js application for production:
 
 ```
 PRODUCTION CHECKLIST:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Check                                         │  Status             │
-├────────────────────────────────────────────────┼─────────────────────┤
-│  Graceful shutdown (SIGTERM handler)           │  PASS | FAIL        │
-│  Health check endpoint (/health, /ready)       │  PASS | FAIL        │
-│  Structured logging (pino, not console.log)    │  PASS | FAIL        │
-│  Request ID propagation                        │  PASS | FAIL        │
-│  Global error handler catches all errors       │  PASS | FAIL        │
-│  Unhandled rejection/exception handlers        │  PASS | FAIL        │
-│  Rate limiting configured                      │  PASS | FAIL        │
-│  CORS configured properly                      │  PASS | FAIL        │
-│  Helmet/security headers                       │  PASS | FAIL        │
-│  Request body size limits                      │  PASS | FAIL        │
-│  Connection pooling (database, HTTP clients)   │  PASS | FAIL        │
+| Check | Status |
+|---|---|
+| Graceful shutdown (SIGTERM handler) | PASS | FAIL |
+| Health check endpoint (/health, /ready) | PASS | FAIL |
+| Structured logging (pino, not console.log) | PASS | FAIL |
+| Request ID propagation | PASS | FAIL |
+| Global error handler catches all errors | PASS | FAIL |
+| Unhandled rejection/exception handlers | PASS | FAIL |
+| Rate limiting configured | PASS | FAIL |
+| CORS configured properly | PASS | FAIL |
+| Helmet/security headers | PASS | FAIL |
+| Request body size limits | PASS | FAIL |
+| Connection pooling (database, HTTP clients) | PASS | FAIL |
 ```
 
 ### Step 9: Deliverables

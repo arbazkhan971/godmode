@@ -81,36 +81,30 @@ Godmode: Designing AI system architecture...
 
 ARCHITECTURE: DocuBot
 
-┌──────────────────────────────────────────────────────┐
-│                    Chat Interface                      │
-│                  (Web widget / API)                    │
-└────────────────────────┬─────────────────────────────┘
-                         │
+  Chat Interface
+  (Web widget / API)
 ┌────────────────────────▼─────────────────────────────┐
-│                   Agent Orchestrator                   │
-│              (conversation management,                 │
-│               intent classification,                   │
-│               escalation logic)                        │
+  Agent Orchestrator
+  (conversation management,
+  intent classification,
+  escalation logic)
 └───────┬──────────────────────────────┬───────────────┘
-        │                              │
 ┌───────▼──────────┐          ┌───────▼──────────┐
-│   RAG Pipeline   │          │  Tool Executor   │
+| RAG Pipeline |  | Tool Executor |
 │                  │          │                  │
-│ 1. Query rewrite │          │ - Create ticket  │
-│ 2. Hybrid search │          │ - Check status   │
-│ 3. Rerank        │          │ - Search issues  │
-│ 4. Context build │          │                  │
+| 1. Query rewrite |  | - Create ticket |
+| 2. Hybrid search |  | - Check status |
+| 3. Rerank |  | - Search issues |
+| 4. Context build |  |  |
 └───────┬──────────┘          └──────────────────┘
-        │
 ┌───────▼──────────┐    ┌─────────────────────┐
-│  Vector Database │    │    Document Index    │
-│   (Pinecone /    │◄───│   Pipeline (nightly) │
-│    pgvector)     │    │                     │
+| Vector Database |  | Document Index |
+| (Pinecone / | ◄─── | Pipeline (nightly) |
+| pgvector) |  |  |
 └──────────────────┘    │ 1. Fetch from Git   │
-                        │ 2. Chunk documents  │
-                        │ 3. Generate embeds  │
-                        │ 4. Upsert to vector │
-                        └─────────────────────┘
+  2. Chunk documents
+  3. Generate embeds
+  4. Upsert to vector
 
 TECHNOLOGY CHOICES:
   LLM: Claude 3.5 Sonnet (accuracy + speed balance)
@@ -320,7 +314,6 @@ Evaluation metrics:
 BASELINE EVALUATION (first run):
 
   Metric                          Score     Target    Status
-  ─────────────────────────────────────────────────────────
   Answer accuracy                 78.5%     > 90%     ✗
   Citation accuracy               71.0%     > 85%     ✗
   Hallucination rate              8.2%      < 5%      ✗
@@ -353,7 +346,6 @@ Godmode: Starting AI optimization loop...
 Baseline: 78.5% accuracy
 
 ITER  CHANGE                                    ACCURACY  CHANGE   VERDICT
-───────────────────────────────────────────────────────────────────────────
  1    Increase retrieval from top-5 to top-8    78.5%→83.0%  +4.5%  KEEP
  2    Add query rewriting for follow-ups        83.0%→85.5%  +2.5%  KEEP
  3    Add Cohere reranking after hybrid search  85.5%→88.0%  +2.5%  KEEP
@@ -373,7 +365,6 @@ TARGET ACHIEVED at iteration 10
 FULL METRICS (post-optimization):
 
   Metric                          Before    After     Target    Status
-  ─────────────────────────────────────────────────────────────────────
   Answer accuracy                 78.5%     94.0%     > 90%     ✓
   Citation accuracy               71.0%     91.5%     > 85%     ✓
   Hallucination rate              8.2%      3.1%      < 5%      ✓

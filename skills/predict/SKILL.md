@@ -123,13 +123,11 @@ Each stage prints structured output:
   ```
 - **Synthesis (meta-expert):**
   ```
-  ┌─────────────────────┬─────────┬────────────┬───────┐
-  │ Persona             │ Verdict │ Confidence │ Risks │
-  ├─────────────────────┼─────────┼────────────┼───────┤
-  │ Technical Architect │ YES     │ 8          │ 2     │
-  │ Security Researcher │ YES     │ 8          │ 1     │
-  │ Release Lead        │ REVISE  │ 6          │ 3     │
-  └─────────────────────┴─────────┴────────────┴───────┘
+| Persona | Verdict | Confidence | Risks |
+|---|---|---|---|
+| Technical Architect | YES | 8 | 2 |
+| Security Researcher | YES | 8 | 1 |
+| Release Lead | REVISE | 6 | 3 |
   Incomplete findings: 1 (excluded from gate)
   ```
 - **Gate:** `Gate: {PROCEED|REVISE|RETHINK} → next: {/godmode:plan|/godmode:think}`

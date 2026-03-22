@@ -54,24 +54,21 @@ Key questions to answer before schema design:
 
 ```
 ENTITY CATALOG:
-+-------------------+--------------------------------------------+------------------+
 | Entity            | Key Attributes                             | Expected Volume  |
-+-------------------+--------------------------------------------+------------------+
+|---|---|---|
 | User              | id, email, name, role, created_at          | 100K             |
 | Organization      | id, name, plan, billing_email              | 10K              |
 | Project           | id, name, description, org_id              | 500K             |
 | Task              | id, title, status, assignee_id, project_id | 5M               |
 | Comment           | id, body, author_id, task_id, created_at   | 20M              |
-+-------------------+--------------------------------------------+------------------+
 ```
 
 #### 2b: Define Relationships
 
 ```
 RELATIONSHIP MAP:
-+-------------------+----------------+-------------------+-------------------+
 | From              | Relationship   | To                | Cardinality       |
-+-------------------+----------------+-------------------+-------------------+
+|---|---|---|---|
 | Organization      | has many       | User              | 1:N               |
 | Organization      | has many       | Project           | 1:N               |
 | User              | belongs to     | Organization      | N:1               |
@@ -80,22 +77,22 @@ RELATIONSHIP MAP:
 | Task              | assigned to    | User              | N:1               |
 | User              | has many       | Comment           | 1:N               |
 | Task              | has many       | Tag (through)     | M:N               |
-+-------------------+----------------+-------------------+-------------------+
 ```
 
 #### 2c: ER Diagram (Text)
 
 ```
 ┌──────────────┐     1:N     ┌──────────────┐     1:N     ┌──────────────┐
-│ Organization │────────────>│   Project     │────────────>│    Task      │
+| Organization | ────────────> | Project | ────────────> | Task |
 │              │             │              │             │              │
-│ id (PK)      │             │ id (PK)      │             │ id (PK)      │
-│ name         │             │ name         │             │ title        │
-│ plan         │             │ description  │             │ status       │
-│ billing_email│             │ org_id (FK)  │             │ priority     │
-│ created_at   │             │ created_at   │             │ assignee_id  │
+| id (PK) |  | id (PK) |  | id (PK) |
+|---|---|---|---|---|
+| name |  | name |  | title |
+| plan |  | description |  | status |
+| billing_email |  | org_id (FK) |  | priority |
+| created_at |  | created_at |  | assignee_id |
 └──────────────┘             └──────────────┘             │ project_id   │
-       │                                                   │ created_at   │
+|  | created_at |
        │ 1:N                                               └──────────────┘
        ▼                                                          │
 ┌──────────────┐                                           1:N    │
@@ -109,21 +106,16 @@ RELATIONSHIP MAP:
 
 ```
 NORMALIZATION GUIDE:
-+--------+----------------------------+----------------------------------------+
 | Form   | Rule                       | What It Eliminates                     |
-+--------+----------------------------+----------------------------------------+
+|---|---|---|
 | 1NF    | Atomic values, no          | Repeating groups, multi-valued         |
 |        | repeating groups            | columns (tags as CSV string)           |
-+--------+----------------------------+----------------------------------------+
 | 2NF    | 1NF + no partial           | Columns dependent on part of a         |
 |        | dependencies               | composite key                          |
-+--------+----------------------------+----------------------------------------+
 | 3NF    | 2NF + no transitive        | Columns dependent on non-key           |
 |        | dependencies               | columns (city -> zip -> state)         |
-+--------+----------------------------+----------------------------------------+
 | BCNF   | Every determinant is a     | Anomalies in tables with overlapping   |
 |        | candidate key              | candidate keys                         |
-+--------+----------------------------+----------------------------------------+
 ```
 
 **Practical rule:** Start at 3NF. Denormalize only when you can prove (with query profiling) that joins are a bottleneck.
@@ -132,18 +124,14 @@ NORMALIZATION GUIDE:
 
 ```
 DENORMALIZATION DECISION:
-+----------------------------+-------------------------------------------+
 | Denormalize WHEN           | Example                                   |
-+----------------------------+-------------------------------------------+
+|---|---|
 | Read frequency >> write    | Product listing with category name        |
 | frequency for the data     | (read 1000x/sec, category changes 1x/day)|
-+----------------------------+-------------------------------------------+
 | Join is consistently the   | Dashboard query joining 5 tables;         |
 | bottleneck in EXPLAIN      | materialized view or cached columns       |
-+----------------------------+-------------------------------------------+
 | Data is historical/        | Order snapshot with product name/price    |
 | point-in-time              | at time of purchase (must not change)     |
-+----------------------------+-------------------------------------------+
 | Aggregation is expensive   | Counter cache: comment_count on Task      |
 | and frequently needed      | instead of COUNT(*) on every page load    |
 ```
@@ -172,12 +160,10 @@ DOCUMENT MODEL DESIGN PRINCIPLES:
 4. Avoid unbounded arrays (a document cannot grow forever)
 
 EMBED vs REFERENCE DECISION:
-+---------------------------+---------------------------+
 | EMBED when                | REFERENCE when            |
-+---------------------------+---------------------------+
+|---|---|
 | Data is always read       | Data is shared across     |
 | together (1:few)          | many documents            |
-+---------------------------+---------------------------+
 | Child rarely changes      | Child changes frequently  |
 | independently             | and independently         |
 ```
@@ -196,7 +182,6 @@ EMBED vs REFERENCE DECISION:
 
 ```
 KEY-VALUE DESIGN PATTERNS:
-+----------------------+-----------------------------+------------------------------+
 
 ### Step 5: Schema Evolution and Migrations
 
@@ -204,16 +189,14 @@ KEY-VALUE DESIGN PATTERNS:
 
 ```
 SAFE SCHEMA CHANGES (no downtime, no coordination):
-+----------------------------+----------------------------------------------+
 | Change                     | Why It's Safe                                |
-+----------------------------+----------------------------------------------+
+|---|---|
 | Add nullable column        | Existing rows get NULL, old code ignores it  |
 | Add column with default    | Existing rows get default, old code ignores  |
 | Add new table              | No existing code references it               |
 | Add new index              | CONCURRENTLY avoids locks (PostgreSQL)       |
 | Widen a column type        | INT -> BIGINT, VARCHAR(50) -> VARCHAR(255)   |
 | Add CHECK constraint       | If all existing data satisfies it             |
-+----------------------------+----------------------------------------------+
 ```
 
 #### 5b: Breaking Changes (Expand-Contract Pattern)
@@ -244,21 +227,16 @@ Timeline: Days to weeks between phases (never same deployment)
 
 ```
 SCHEMA VERSIONING STRATEGIES:
-+-------------------+-------------------------------------------+---------------------+
 | Strategy          | How It Works                              | Best For            |
-+-------------------+-------------------------------------------+---------------------+
+|---|---|---|
 | Sequential        | 001_create_users.sql, 002_add_email.sql   | Relational DBs      |
 | migrations        | Applied in order, tracked in table         | (most common)       |
-+-------------------+-------------------------------------------+---------------------+
 | Schema registry   | Central registry stores schema versions   | Event streaming     |
 | (Avro/Protobuf)   | Checks forward/backward compatibility     | (Kafka, Pulsar)     |
-+-------------------+-------------------------------------------+---------------------+
 | Document          | Each document carries a "version" field   | Document stores     |
 | versioning        | Application handles multiple versions     | (MongoDB)           |
-+-------------------+-------------------------------------------+---------------------+
 | API versioning    | /v1/users, /v2/users with different       | APIs with external  |
 |                   | schemas behind the same DB                | consumers           |
-+-------------------+-------------------------------------------+---------------------+
 ```
 
 ### Step 6: Data Validation Schemas
@@ -289,19 +267,15 @@ export const userSchema = z.object({
 # ... (condensed)
 ```
 MULTI-TENANCY STRATEGIES:
-+-------------------+-------------------+-------------------+-------------------+
 | Strategy          | Isolation          | Complexity        | Best For          |
-+-------------------+-------------------+-------------------+-------------------+
+|---|---|---|---|
 | Shared schema     | Row-level (WHERE   | Low               | SaaS with many    |
 | (tenant_id col)   | tenant_id = ?)    |                   | small tenants     |
-+-------------------+-------------------+-------------------+-------------------+
 | Schema per tenant | Schema-level       | Medium            | Medium tenants    |
 | (PostgreSQL       | (SET search_path) |                   | needing some      |
 |  schemas)         |                   |                   | isolation         |
-+-------------------+-------------------+-------------------+-------------------+
 | Database per      | Full database      | High              | Enterprise with   |
 | tenant            | isolation          |                   | compliance needs  |
-+-------------------+-------------------+-------------------+-------------------+
 
 SHARED SCHEMA WITH ROW-LEVEL SECURITY:
 -- PostgreSQL RLS example
@@ -309,26 +283,20 @@ ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 ### Step 8: Report and Transition
 
 ```
-+--------------------------------------------------------------+
 |  SCHEMA DESIGN -- <description>                               |
-+--------------------------------------------------------------+
 |  Database:          <engine>                                  |
 |  Model type:        <relational | document | graph | mixed>   |
 |  Normalization:     <1NF | 2NF | 3NF | BCNF | denormalized> |
-+--------------------------------------------------------------+
 |  Entities:          <N entities defined>                      |
 |  Relationships:     <N relationships defined>                 |
 |  Indexes:           <N indexes recommended>                   |
 |  Constraints:       <N constraints added>                     |
-+--------------------------------------------------------------+
 |  Schema artifacts:                                            |
 |  - <SQL migration or schema file>                             |
 |  - <Validation schema (Zod/JSON Schema/Protobuf)>            |
 |  - <ER diagram>                                               |
-+--------------------------------------------------------------+
 |  Evolution strategy: <expand-contract | versioned | additive> |
 |  Multi-tenancy:      <shared | schema-per | db-per | none>   |
-+--------------------------------------------------------------+
 ```
 
 Commit: `"schema: design <description> data model"`

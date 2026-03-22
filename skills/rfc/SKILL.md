@@ -179,19 +179,15 @@ Track stakeholder reviews:
 
 ```
 REVIEW TRACKER:
-┌──────────────────────────────────────────────────────────────┐
-│  RFC-012: Migrate from REST to GraphQL                        │
-│  Status: In Review    Deadline: 2024-04-15                    │
-├──────────────────┬────────────┬────────────────────────────────┤
-│  Reviewer        │  Status    │  Comments                      │
-├──────────────────┼────────────┼────────────────────────────────┤
-│  @alice          │  Approved  │  "LGTM with minor suggestion" │
-│  @bob            │  Concerns  │  "Performance risk in Phase 2" │
-│  @carol          │  Pending   │  (no response yet)             │
-├──────────────────┴────────────┴────────────────────────────────┤
-│  Comments: 7 total, 2 blocking, 5 resolved                    │
-│  Decision: PENDING — waiting on @carol + @bob's concern       │
-└──────────────────────────────────────────────────────────────┘
+  RFC-012: Migrate from REST to GraphQL
+  Status: In Review    Deadline: 2024-04-15
+| Reviewer | Status | Comments |
+|---|---|---|
+| @alice | Approved | "LGTM with minor suggestion" |
+| @bob | Concerns | "Performance risk in Phase 2" |
+| @carol | Pending | (no response yet) |
+  Comments: 7 total, 2 blocking, 5 resolved
+  Decision: PENDING — waiting on @carol + @bob's concern
 ```
 
 When reviewers raise concerns:
@@ -283,13 +279,11 @@ User: /godmode:rfc --status
 RFC: Scanning proposal records...
 
 ACTIVE RFCs:
-┌──────┬────────────────────────────────┬────────────┬────────────┐
-│  #   │  Title                         │  Status    │  Deadline  │
-├──────┼────────────────────────────────┼────────────┼────────────┤
-│  001 │  Adopt TypeScript Strict Mode  │  Accepted  │  —         │
-│  002 │  Monorepo Migration            │  In Review │  Apr 20    │
-│  003 │  Express to Fastify            │  Draft     │  —         │
-└──────┴────────────────────────────────┴────────────┴────────────┘
+| # | Title | Status | Deadline |
+|---|---|---|---|
+| 001 | Adopt TypeScript Strict Mode | Accepted | — |
+| 002 | Monorepo Migration | In Review | Apr 20 |
+| 003 | Express to Fastify | Draft | — |
 ```
 
 ## Flags & Options

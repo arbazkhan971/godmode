@@ -102,23 +102,23 @@ payment lifecycle (created → processing → completed/failed)
 Directory structure:
   payment-service/
   ├── src/
-  │   ├── controllers/    — gRPC + REST endpoint handlers
-  │   ├── sagas/          — Multi-step payment orchestration
+  ├── controllers/    — gRPC + REST endpoint handlers
+  ├── sagas/          — Multi-step payment orchestration
   │   │   ├── payment-saga.ts        — THE core flow (start here)
   │   │   ├── refund-saga.ts         — Refund processing
   │   │   └── payout-saga.ts         — Merchant payouts
-  │   ├── services/       — Business logic
+  ├── services/       — Business logic
   │   │   ├── payment.service.ts     — Payment CRUD + state machine
   │   │   ├── stripe.service.ts      — Stripe API integration
   │   │   └── webhook.service.ts     — Stripe webhook handling
-  │   ├── models/         — Database entities (Prisma)
-  │   ├── events/         — Kafka event producers
-  │   ├── consumers/      — Kafka event consumers
-  │   └── utils/          — Helpers, error types
+  ├── models/         — Database entities (Prisma)
+  ├── events/         — Kafka event producers
+  ├── consumers/      — Kafka event consumers
+  └── utils/          — Helpers, error types
   ├── tests/
-  │   ├── unit/           — 89 unit tests
-  │   ├── integration/    — 34 integration tests
-  │   └── e2e/            — 12 end-to-end tests
+  ├── unit/           — 89 unit tests
+  ├── integration/    — 34 integration tests
+  └── e2e/            — 12 end-to-end tests
   └── proto/              — gRPC service definitions
 
 PAYMENT FLOW (the most important thing to understand):

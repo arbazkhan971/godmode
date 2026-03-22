@@ -53,18 +53,14 @@ All application state falls into one of these categories. Correct classification
 
 ```
 STATE CLASSIFICATION:
-+-------------------+------------------+----------------------------------+----------------------------+
 | Category          | Lifetime         | Examples                         | Recommended Tool           |
-+-------------------+------------------+----------------------------------+----------------------------+
+|---|---|---|---|
 | Server state      | Cache lifetime   | API data, user profiles,         | React Query, SWR,          |
 |                   |                  | product listings, search results | Apollo Client, RTK Query   |
-+-------------------+------------------+----------------------------------+----------------------------+
 | Client state      | Session/tab      | UI toggles, sidebar open/close,  | Zustand, Jotai, Signals,   |
 | (UI)              |                  | active tab, modal visibility     | useState, Pinia            |
-+-------------------+------------------+----------------------------------+----------------------------+
 | Client state      | Session/tab      | Shopping cart, form wizard,       | Zustand, Redux, MobX,      |
 | (Domain)          |                  | multi-step workflow, selections  | Pinia                      |
-+-------------------+------------------+----------------------------------+----------------------------+
 | Form state        | Component mount  | Input values, validation errors, | React Hook Form, Formik,   |
 |                   |                  | dirty/touched tracking           | Vuelidate, native          |
 ```
@@ -77,9 +73,8 @@ STATE CLASSIFICATION:
 
 ```
 FRONTEND STATE DECISION MATRIX:
-+---------------+----------+--------+----------+--------+---------+----------+
 | Criteria      | Redux TK | Zustand| Jotai    | MobX   | Pinia   | Signals  |
-+---------------+----------+--------+----------+--------+---------+----------+
+|---|---|---|---|---|---|---|
 | Bundle size   | ~11KB    | ~1KB   | ~2KB     | ~16KB  | ~2KB    | ~1KB     |
 | Boilerplate   | Medium   | Low    | Low      | Low    | Low     | Low      |
 | DevTools      | Excellent| Good   | Good     | Good   | Excellent| Minimal |
@@ -88,7 +83,6 @@ FRONTEND STATE DECISION MATRIX:
 | Learning curve| Steep    | Gentle | Gentle   | Medium | Gentle  | Gentle   |
 | Best for      | Large    | Medium | Atomic   | Complex| Vue     | Fine-    |
 |               | teams    | apps   | state    | domain | apps    | grained  |
-+---------------+----------+--------+----------+--------+---------+----------+
 
 RECOMMENDATION:
 ```
@@ -97,12 +91,10 @@ RECOMMENDATION:
 
 ```
 SERVER STATE DECISION MATRIX:
-+------------------+-------------+--------+--------------+----------+
 | Criteria         | React Query | SWR    | Apollo Client| RTK Query|
-+------------------+-------------+--------+--------------+----------+
+|---|---|---|---|---|
 | Protocol         | Any (REST,  | Any    | GraphQL      | Any      |
 |                  | GraphQL)    |        | (primary)    |          |
-+------------------+-------------+--------+--------------+----------+
 | Cache control    | Fine-grained| Basic  | Normalized   | Tag-based|
 | Devtools         | Excellent   | None   | Excellent    | Good     |
 | Optimistic UI    | Built-in    | Manual | Built-in     | Built-in |
@@ -238,24 +230,18 @@ Do NOT use a state machine when:
 
 ```
 PERSISTENCE STRATEGY:
-+-------------------+-------------------+---------------+-------------------+
 | Storage           | Capacity          | Speed         | Use Case          |
-+-------------------+-------------------+---------------+-------------------+
+|---|---|---|---|
 | localStorage      | ~5-10 MB          | Synchronous   | Theme, prefs,     |
 |                   |                   |               | small state       |
-+-------------------+-------------------+---------------+-------------------+
 | sessionStorage    | ~5-10 MB          | Synchronous   | Tab-specific,     |
 |                   |                   |               | form drafts       |
-+-------------------+-------------------+---------------+-------------------+
 | IndexedDB         | ~50MB-unlimited   | Async         | Large datasets,   |
 |                   |                   |               | offline data      |
-+-------------------+-------------------+---------------+-------------------+
 | cookies           | ~4 KB             | Synchronous   | Auth tokens,      |
 |                   |                   |               | SSR-accessible    |
-+-------------------+-------------------+---------------+-------------------+
 | URL params        | ~2 KB practical   | Synchronous   | Shareable state   |
 |                   |                   |               | (filters, pages)  |
-+-------------------+-------------------+---------------+-------------------+
 ```
 
 #### 7b: SSR Hydration Pattern
@@ -285,14 +271,11 @@ REALTIME CACHE SYNC PATTERN (WebSocket + React Query):
 ### Step 8: Report and Transition
 
 ```
-+--------------------------------------------------------------+
 |  STATE MANAGEMENT DESIGN -- <description>                     |
-+--------------------------------------------------------------+
 |  Framework:         <framework>                               |
 |  Client state:      <library selected>                        |
 |  Server state:      <library selected>                        |
 |  State machines:    <library selected, if applicable>         |
-+--------------------------------------------------------------+
 |  State categories identified:                                 |
 |  - Server state:   <N> query keys                             |
 |  - Client (UI):    <N> stores/atoms                           |
@@ -342,18 +325,17 @@ After each state management skill invocation, emit a structured report:
 
 ```
 STATE ARCHITECTURE REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Framework          │  <React | Vue | Svelte | etc>   │
-│  Server state tool  │  <React Query | SWR | Apollo>   │
-│  Client state tool  │  <Zustand | Jotai | Pinia>      │
-│  Stores created     │  <N>                            │
-│  Selectors          │  <N>                            │
-│  Derived state      │  <N> computed values            │
-│  Persistence        │  <localStorage | sessionStorage | none> │
-│  Tests              │  <N> passing, <N> failing       │
-│  Re-render issues   │  <N> found / <N> fixed          │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+| Framework | <React | Vue | Svelte | etc> |
+|---|---|---|---|---|
+| Server state tool | <React Query | SWR | Apollo> |
+| Client state tool | <Zustand | Jotai | Pinia> |
+| Stores created | <N> |
+| Selectors | <N> |
+| Derived state | <N> computed values |
+| Persistence | <localStorage | sessionStorage | none> |
+| Tests | <N> passing, <N> failing |
+| Re-render issues | <N> found / <N> fixed |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging

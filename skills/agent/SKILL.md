@@ -47,18 +47,15 @@ Select the agent architecture pattern:
 AGENT ARCHITECTURE SELECTION:
 
 Patterns:
-┌────────────────────────┬──────────────────────────────────────────────────────┐
-│ Pattern                │ Best for                                             │
-├────────────────────────┼──────────────────────────────────────────────────────┤
-│ ReAct                  │ General-purpose tool use, step-by-step reasoning     │
-│ (Reason + Act)         │ with tool calls. Simple, effective, well-understood. │
-│                        │                                                      │
-│ Plan-and-Execute       │ Complex tasks needing upfront planning. Planner      │
-│                        │ creates step list, executor follows it. Good for     │
-│                        │ multi-step tasks with clear decomposition.           │
-│                        │                                                      │
-│ Reflexion              │ Tasks requiring self-correction. Agent attempts,     │
-│                        │ evaluates own output, and retries with feedback.     │
+| Pattern | Best for |
+|---|---|
+| ReAct | General-purpose tool use, step-by-step reasoning |
+| (Reason + Act) | with tool calls. Simple, effective, well-understood. |
+| Plan-and-Execute | Complex tasks needing upfront planning. Planner |
+|  | creates step list, executor follows it. Good for |
+|  | multi-step tasks with clear decomposition. |
+| Reflexion | Tasks requiring self-correction. Agent attempts, |
+|  | evaluates own output, and retries with feedback. |
 ```
 
 ### Step 3: Agent Loop Design
@@ -71,15 +68,13 @@ Pattern: <selected pattern>
 Model: <LLM for agent reasoning — e.g., Claude 3.5 Sonnet, GPT-4>
 
 ReAct loop:
-┌─────────────────────────────────────────────────────────────────────┐
-│  while not done and steps < max_steps:                              │
-│    1. THINK: Reason about current state and what to do next         │
-│    2. ACT: Select and call a tool with parameters                   │
-│    3. OBSERVE: Process tool result                                  │
-│    4. EVALUATE: Is the task complete? Should I continue?            │
-│                                                                     │
-│  Termination conditions:                                            │
-│    - Task completed successfully -> return result                   │
+  while not done and steps < max_steps:
+  1. THINK: Reason about current state and what to do next
+  2. ACT: Select and call a tool with parameters
+  3. OBSERVE: Process tool result
+  4. EVALUATE: Is the task complete? Should I continue?
+  Termination conditions:
+  - Task completed successfully -> return result
 ```
 
 ### Step 4: Tool Design & Integration
@@ -87,15 +82,13 @@ Design the tools the agent can use:
 
 ```
 TOOL INVENTORY:
-┌───────────────────┬──────────────┬──────────────┬──────────────────────────┐
-│ Tool              │ Type         │ Risk Level   │ Description              │
-├───────────────────┼──────────────┼──────────────┼──────────────────────────┤
-│ <tool_name>       │ Read-only    │ LOW          │ <what it does>           │
-│ <tool_name>       │ Write        │ MEDIUM       │ <what it does>           │
-│ <tool_name>       │ External API │ MEDIUM       │ <what it does>           │
-│ <tool_name>       │ Code exec    │ HIGH         │ <what it does>           │
-│ <tool_name>       │ Destructive  │ CRITICAL     │ <what it does>           │
-└───────────────────┴──────────────┴──────────────┴──────────────────────────┘
+| Tool | Type | Risk Level | Description |
+|---|---|---|---|
+| <tool_name> | Read-only | LOW | <what it does> |
+| <tool_name> | Write | MEDIUM | <what it does> |
+| <tool_name> | External API | MEDIUM | <what it does> |
+| <tool_name> | Code exec | HIGH | <what it does> |
+| <tool_name> | Destructive | CRITICAL | <what it does> |
 
 TOOL DESIGN PRINCIPLES:
 1. Single responsibility: each tool does one thing well
@@ -110,18 +103,16 @@ Design how the agent remembers and learns:
 MEMORY SYSTEM DESIGN:
 
 Memory types:
-┌─────────────────────┬──────────────────────────────────────────────────────┐
-│ Type                │ Implementation                                       │
-├─────────────────────┼──────────────────────────────────────────────────────┤
-│ Working memory      │ Current conversation context window. Limited by      │
-│ (short-term)        │ model context length. Contains current task state,   │
-│                     │ recent tool results, and immediate reasoning.        │
-│                     │                                                      │
-│ Conversation memory │ Full conversation history, summarized as needed.     │
-│ (session)           │ Stored in session store (Redis, database).           │
-│                     │ Summarize older turns to fit context window.         │
-│                     │                                                      │
-│ Episodic memory     │ Past task executions and outcomes. "Last time I      │
+| Type | Implementation |
+|---|---|
+| Working memory | Current conversation context window. Limited by |
+| (short-term) | model context length. Contains current task state, |
+|  | recent tool results, and immediate reasoning. |
+| Conversation memory | Full conversation history, summarized as needed. |
+|---|---|
+| (session) | Stored in session store (Redis, database). |
+|  | Summarize older turns to fit context window. |
+| Episodic memory | Past task executions and outcomes. "Last time I |
 ```
 
 ### Step 6: Guardrails & Safety
@@ -131,18 +122,15 @@ Design safety boundaries for the agent:
 AGENT GUARDRAILS:
 
 Layer 1 — Input guardrails:
-  ┌───────────────────────────────────────────────────────────────────┐
-  │ Check                      │ Action                              │
-  ├────────────────────────────┼─────────────────────────────────────┤
-  │ Prompt injection detection │ Reject input, log attempt           │
-  │ PII in input               │ Redact before processing            │
-  │ Off-topic request          │ Redirect to appropriate channel     │
-  │ Malicious intent detection │ Refuse and log                      │
-  │ Input length limit         │ Truncate with warning               │
-  └────────────────────────────┴─────────────────────────────────────┘
+| Check | Action |
+|---|---|
+| Prompt injection detection | Reject input, log attempt |
+| PII in input | Redact before processing |
+| Off-topic request | Redirect to designated channel |
+| Malicious intent detection | Refuse and log |
+| Input length limit | Truncate with warning |
 
 Layer 2 — Execution guardrails:
-  ┌───────────────────────────────────────────────────────────────────┐
 ```
 
 ### Step 7: Agent Evaluation & Testing
@@ -152,18 +140,17 @@ Design a test suite for the agent:
 AGENT TEST SUITE:
 
 Test categories:
-┌─────────────────────────┬───────┬────────────────────────────────────────────┐
-│ Category                │ Tests │ Description                                │
-├─────────────────────────┼───────┼────────────────────────────────────────────┤
-│ Task completion         │ <N>   │ Agent successfully completes defined tasks │
-│ Tool selection          │ <N>   │ Agent picks correct tool for each step     │
-│ Multi-step reasoning    │ <N>   │ Agent chains tools correctly for complex   │
-│                         │       │ tasks                                      │
-│ Error recovery          │ <N>   │ Agent handles tool failures gracefully     │
-│ Safety compliance       │ <N>   │ Agent refuses unsafe actions               │
-│ Guardrail adherence     │ <N>   │ Agent stays within defined limits          │
-│ Edge cases              │ <N>   │ Ambiguous inputs, missing data, conflicts  │
-│ Adversarial             │ <N>   │ Injection attacks, manipulation attempts   │
+| Category | Tests | Description |
+|---|---|---|
+| Task completion | <N> | Agent successfully completes defined tasks |
+| Tool selection | <N> | Agent picks correct tool for each step |
+| Multi-step reasoning | <N> | Agent chains tools correctly for complex |
+|  |  | tasks |
+| Error recovery | <N> | Agent handles tool failures gracefully |
+| Safety compliance | <N> | Agent refuses unsafe actions |
+| Guardrail adherence | <N> | Agent stays within defined limits |
+| Edge cases | <N> | Ambiguous inputs, missing data, conflicts |
+| Adversarial | <N> | Injection attacks, manipulation attempts |
 ```
 
 ### Step 8: Agent Artifacts & Commit

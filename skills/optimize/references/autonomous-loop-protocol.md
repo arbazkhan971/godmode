@@ -58,42 +58,34 @@ Each iteration follows this exact sequence:
 ```
 ITERATION N:
 ├── 1. ANALYZE
-│   ├── Read code in scope
-│   ├── Review previous iteration results
-│   └── Form hypothesis (observation → theory → proposed change → expected impact)
-│
+  ├── Read code in scope
+  ├── Review previous iteration results
+  └── Form hypothesis (observation → theory → proposed change → expected impact)
 ├── 2. COMMIT CHECKPOINT
-│   └── git stash (if uncommitted changes from previous work)
-│
+  └── git stash (if uncommitted changes from previous work)
 ├── 3. MODIFY
-│   ├── Make ONE logical change
-│   ├── Stay within scope
-│   └── Don't break public interfaces
-│
+  ├── Make ONE logical change
+  ├── Stay within scope
+  └── Don't break public interfaces
 ├── 4. GUARD RAILS
-│   ├── Run test command → must pass
-│   ├── Run lint command → must pass
-│   └── If any guard rail fails → REVERT immediately
-│
+  ├── Run test command → must pass
+  ├── Run lint command → must pass
+  └── If any guard rail fails → REVERT immediately
 ├── 5. MEASURE
-│   ├── Run verify command (run 1)
-│   ├── Run verify command (run 2)
-│   ├── Run verify command (run 3)
-│   └── Calculate median
-│
+  ├── Run verify command (run 1)
+  ├── Run verify command (run 2)
+  ├── Run verify command (run 3)
+  └── Calculate median
 ├── 6. COMPARE
-│   ├── Calculate delta from PREVIOUS iteration (not just baseline)
-│   ├── Calculate cumulative delta from BASELINE
-│   └── Determine verdict: IMPROVED / NO CHANGE / REGRESSED
-│
+  ├── Calculate delta from PREVIOUS iteration (not just baseline)
+  ├── Calculate cumulative delta from BASELINE
+  └── Determine verdict: IMPROVED / NO CHANGE / REGRESSED
 ├── 7. DECIDE
-│   ├── If IMPROVED: git commit with results
-│   ├── If NO CHANGE: git revert HEAD (change didn't help)
-│   └── If REGRESSED: git revert HEAD (change made things worse)
-│
+  ├── If IMPROVED: git commit with results
+  ├── If NO CHANGE: git revert HEAD (change didn't help)
+  └── If REGRESSED: git revert HEAD (change made things worse)
 ├── 8. LOG
-│   └── Append row to .godmode/optimize-results.tsv
-│
+  └── Append row to .godmode/optimize-results.tsv
 └── 9. CONTINUE?
     ├── Target reached? → STOP (success)
     ├── Max iterations? → STOP (limit reached)

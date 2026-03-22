@@ -317,23 +317,18 @@ POST-APPLY VERIFICATION:
 ### Step 7: Report and Transition
 
 ```
-+------------------------------------------------------------+
 |  MIGRATION -- <table>.<change>                              |
-+------------------------------------------------------------+
 |  Tool:          <detected tool>                             |
 |  Database:      <database engine>                           |
 |  Change:        <description>                               |
 |  Risk:          <SAFE | CAUTION | DANGEROUS | BREAKING>     |
 |  Files created: <list of migration files>                   |
-+------------------------------------------------------------+
 |  Validation:                                                |
 |  Schema valid:     YES/NO                                   |
 |  Rollback tested:  YES/NO                                   |
 |  Data preserved:   YES/NO                                   |
 |  Lock estimate:    <duration>                               |
-+------------------------------------------------------------+
 |  Status: <APPLIED | READY TO APPLY | NEEDS REVIEW>         |
-+------------------------------------------------------------+
 ```
 
 Commit: `"migrate: <table>.<change> -- <risk level>"`

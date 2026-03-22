@@ -361,44 +361,35 @@ Verdict: <B is X% faster (statistically significant) |
 ### Step 6: Profiling Report
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│  PERFORMANCE PROFILE — <target>                                │
-├────────────────────────────────────────────────────────────────┤
-│  CPU Profiling:                                                │
-│    Top hotspots:                                               │
-│    1. <function> — <N>% CPU                                    │
-│    2. <function> — <N>% CPU                                    │
-│    3. <function> — <N>% CPU                                    │
-│    Flame graph: <path to generated flame graph>                │
-│                                                                │
-│  Memory:                                                       │
-│    Leaks found: <N>                                            │
-│    Growth rate: <N>MB/hour (target: stable)                    │
-│    Peak RSS: <N>MB                                             │
-│    Top allocators:                                              │
-│    1. <site> — <N>MB allocated                                 │
-│    2. <site> — <N>MB allocated                                 │
-│                                                                │
-│  Concurrency:                                                  │
-│    Race conditions: <N>                                        │
-│    Deadlock risks: <N>                                         │
-│    Lock contention hotspots: <N>                               │
-│                                                                │
-│  Benchmarks:                                                   │
-│    <benchmark 1>: <value> (target: <target>)                   │
-│    <benchmark 2>: <value> (target: <target>)                   │
-│                                                                │
-│  Findings: <total>                                             │
-│    CRITICAL: <N>  HIGH: <N>  MEDIUM: <N>  LOW: <N>            │
-├────────────────────────────────────────────────────────────────┤
-│  Priority fixes:                                               │
-│  1. <highest impact finding>                                   │
-│  2. <second highest impact finding>                            │
-│  3. <third highest impact finding>                             │
-│                                                                │
-│  Next: /godmode:optimize — Autonomous optimization loop        │
-│        /godmode:fix — Fix critical findings                    │
-└────────────────────────────────────────────────────────────────┘
+  PERFORMANCE PROFILE — <target>
+  CPU Profiling:
+  Top hotspots:
+  1. <function> — <N>% CPU
+  2. <function> — <N>% CPU
+  3. <function> — <N>% CPU
+  Flame graph: <path to generated flame graph>
+  Memory:
+  Leaks found: <N>
+  Growth rate: <N>MB/hour (target: stable)
+  Peak RSS: <N>MB
+  Top allocators:
+  1. <site> — <N>MB allocated
+  2. <site> — <N>MB allocated
+  Concurrency:
+  Race conditions: <N>
+  Deadlock risks: <N>
+  Lock contention hotspots: <N>
+  Benchmarks:
+  <benchmark 1>: <value> (target: <target>)
+  <benchmark 2>: <value> (target: <target>)
+  Findings: <total>
+  CRITICAL: <N>  HIGH: <N>  MEDIUM: <N>  LOW: <N>
+  Priority fixes:
+  1. <highest impact finding>
+  2. <second highest impact finding>
+  3. <third highest impact finding>
+  Next: /godmode:optimize — Autonomous optimization loop
+  /godmode:fix — Fix critical findings
 ```
 
 ### Step 7: Commit and Transition

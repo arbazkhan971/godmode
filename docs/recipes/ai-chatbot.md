@@ -558,23 +558,19 @@ DocBot v1.0.0 is LIVE.
 
 ```
 User question
-     │
      ▼
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Embed      │────→│  Vector      │────→│  Re-rank     │
-│  question   │     │  search      │     │  (top 3)     │
+| Embed | ────→ | Vector | ────→ | Re-rank |
+| question |  | search |  | (top 3) |
 └─────────────┘     │  + keyword   │     └──────┬───────┘
-                    │  search      │            │
+| search |  |
                     └──────────────┘            │
                                                ▼
-┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Stream     │←────│  LLM         │←────│  Assemble    │
-│  response   │     │  (generate)  │     │  prompt      │
-│  to user    │     │              │     │  (system +   │
+| Stream | ←──── | LLM | ←──── | Assemble |
+| response |  | (generate) |  | prompt |
+| to user |  |  |  | (system + |
 └─────────────┘     └──────────────┘     │  context +   │
-                                         │  history +   │
-                                         │  question)   │
-                                         └──────────────┘
+  history +
+  question)
 ```
 
 ---

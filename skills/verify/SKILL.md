@@ -168,6 +168,7 @@ Example row:
 [verify:judge]  Expected: exit 0 | Actual: exit 0 | Verdict: PASS
 
 | Claim    | All tests pass                            |
+|---|---|
 | Command  | npm test 2>&1                             |
 | Expected | exit_code == 0                            |
 | Actual   | exit 0, "47 passing, 0 failing"           |
@@ -184,6 +185,7 @@ Example row:
 [verify:judge]  Expected: < 0.200 | Actual: 0.156 (median of 3) | Verdict: PASS
 
 | Claim    | Response time is under 200ms              |
+|---|---|
 | Command  | curl -o /dev/null -s -w '%{time_total}'.. |
 | Expected | < 0.200s                                  |
 | Actual   | 0.156s (median of 3 runs)                 |
@@ -203,6 +205,7 @@ Example row:
 REASON: 3 lint errors found: unused-vars (src/auth.ts:12), no-console (src/logger.ts:5), prefer-const (src/config.ts:22)
 
 | Claim    | No lint errors                            |
+|---|---|
 | Command  | npm run lint 2>&1                         |
 | Expected | exit_code == 0                            |
 | Actual   | exit 1, 3 errors                          |
@@ -261,7 +264,7 @@ WHILE current_layer < max_layers:
        - Are there integration tests that cover this interaction?
        - Do integration tests require external services (DB, cache, API)?
 
-    2. ENSURE dependencies are available:
+    2. VERIFY dependencies are available:
        IF database required: check connection (pg_isready, mysql ping, etc.)
        IF redis required: check connection (redis-cli ping)
        IF external API required: check health endpoint or mock
@@ -343,14 +346,12 @@ WHILE current_layer < max_layers:
 
     1. AGGREGATE all layer results:
        EVIDENCE CHAIN:
-       ┌───────────────┬────────┬──────────┬───────────────────────────┐
-       │  Layer        │ Verdict│ Duration │ Evidence File              │
-       ├───────────────┼────────┼──────────┼───────────────────────────┤
-       │  Unit         │ PASS   │ 2.1s     │ /tmp/gm-verify-unit-*.txt │
-       │  Integration  │ PASS   │ 8.4s     │ /tmp/gm-verify-int-*.txt  │
-       │  E2E          │ SKIP   │ —        │ No e2e tests              │
-       │  Smoke        │ PASS   │ 0.3s     │ /tmp/gm-verify-smoke-*.txt│
-       └───────────────┴────────┴──────────┴───────────────────────────┘
+| Layer | Verdict | Duration | Evidence File |
+|---|---|---|---|
+| Unit | PASS | 2.1s | /tmp/gm-verify-unit-*.txt |
+| Integration | PASS | 8.4s | /tmp/gm-verify-int-*.txt |
+| E2E | SKIP | — | No e2e tests |
+| Smoke | PASS | 0.3s | /tmp/gm-verify-smoke-*.txt |
 
     2. DETERMINE overall verdict:
        IF all executed layers PASS: VERIFIED (high confidence)
@@ -375,20 +376,15 @@ WHILE current_layer < max_layers:
 
     5. FINAL REPORT:
        MULTI-LAYER VERIFICATION REPORT:
-       ┌──────────────────────────────────────────────────────┐
-       │  Claim: "{claim}"                                     │
-       │                                                       │
-       │  Unit tests:        PASS (47/47, 2.1s)               │
-       │  Integration tests: PASS (12/12, 8.4s)               │
-       │  E2E tests:         SKIPPED (none available)          │
-       │  Smoke tests:       PASS (3/3, 0.3s)                 │
-       │                                                       │
-       │  Confidence:        HIGH (3/3 executed layers pass)   │
-       │  Overall verdict:   VERIFIED                          │
-       │  Evidence:          4 files preserved                 │
-       │                                                       │
-       │  Note: Add e2e tests for full coverage.                │
-       └──────────────────────────────────────────────────────┘
+  Claim: "{claim}"
+  Unit tests:        PASS (47/47, 2.1s)
+  Integration tests: PASS (12/12, 8.4s)
+  E2E tests:         SKIPPED (none available)
+  Smoke tests:       PASS (3/3, 0.3s)
+  Confidence:        HIGH (3/3 executed layers pass)
+  Overall verdict:   VERIFIED
+  Evidence:          4 files preserved
+  Note: Add e2e tests for full coverage.
 
   REPORT: "Layer {current_layer}/{max_layers}: {layer} — {PASS | FAIL | SKIP}"
 ```
@@ -435,7 +431,7 @@ EVIDENCE STANDARDS (for auditable verification):
 ## Keep/Discard Discipline
 ```
 After EACH verification run:
-  KEEP if: command executed successfully AND verdict is clearly PASS or FAIL
+  KEEP if: command executed successfully AND verdict is unambiguously PASS or FAIL
   DISCARD if: command failed to run OR output is ambiguous OR evidence file missing
   On discard: retry command once. If still ambiguous, verdict = FAIL with reason.
   Never keep a verification without a concrete verdict backed by evidence.

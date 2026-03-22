@@ -22,21 +22,18 @@ Identify current networking topology and requirements:
 
 ```
 NETWORK INVENTORY:
-┌──────────────────────────────────────────────────────────┐
-│  Component           │ Provider     │ Status              │
-│  ─────────────────────────────────────────────────────── │
-│  DNS                 │ <provider>   │ <configured/missing>│
-│  SSL/TLS             │ <issuer>     │ <valid/expired/none>│
-│  CDN                 │ <provider>   │ <active/none>       │
-│  Load Balancer       │ <type>       │ <healthy/degraded>  │
-│  VPC/Network         │ <provider>   │ <configured/none>   │
-│  Firewall/SGs        │ <type>       │ <N rules>           │
-│  WAF                 │ <provider>   │ <active/none>       │
-├──────────────────────────────────────────────────────────┤
-│  Domains: <list of domains>                               │
-│  Certificates: <N valid, M expiring, P expired>           │
-│  Endpoints: <N public, M internal>                        │
-└──────────────────────────────────────────────────────────┘
+| Component | Provider | Status |
+|---|---|---|
+| DNS | <provider> | <configured/missing> |
+| SSL/TLS | <issuer> | <valid/expired/none> |
+| CDN | <provider> | <active/none> |
+| Load Balancer | <type> | <healthy/degraded> |
+| VPC/Network | <provider> | <configured/none> |
+| Firewall/SGs | <type> | <N rules> |
+| WAF | <provider> | <active/none> |
+  Domains: <list of domains>
+  Certificates: <N valid, M expiring, P expired>
+  Endpoints: <N public, M internal>
 ```
 
 ```bash
@@ -57,39 +54,35 @@ Set up and validate DNS records:
 #### DNS Record Design
 ```
 DNS RECORD PLAN:
-┌──────────────────────────────────────────────────────────┐
-│  Record    │ Type   │ Value              │ TTL   │ Proxy │
-│  ─────────────────────────────────────────────────────── │
-│  @          │ A      │ <LB IP>            │ 300   │ Yes   │
-│  www        │ CNAME  │ @                  │ 300   │ Yes   │
-│  api        │ A      │ <API LB IP>        │ 60    │ Yes   │
-│  staging    │ CNAME  │ <staging LB>       │ 300   │ No    │
-│  mail       │ MX     │ <mail server>      │ 3600  │ N/A   │
-│  @          │ TXT    │ v=spf1 ...         │ 3600  │ N/A   │
-│  _dmarc     │ TXT    │ v=DMARC1; ...      │ 3600  │ N/A   │
-│  <selector> │ TXT    │ v=DKIM1; ...       │ 3600  │ N/A   │
-└──────────────────────────────────────────────────────────┘
+| Record | Type | Value | TTL | Proxy |
+|---|---|---|---|---|
+| @ | A | <LB IP> | 300 | Yes |
+| www | CNAME | @ | 300 | Yes |
+| api | A | <API LB IP> | 60 | Yes |
+| staging | CNAME | <staging LB> | 300 | No |
+| mail | MX | <mail server> | 3600 | N/A |
+| @ | TXT | v=spf1 ... | 3600 | N/A |
+| _dmarc | TXT | v=DMARC1; ... | 3600 | N/A |
+| <selector> | TXT | v=DKIM1; ... | 3600 | N/A |
 ```
 
 #### DNS Troubleshooting Checklist
 ```
 DNS TROUBLESHOOTING:
-┌──────────────────────────────────────────────────────────┐
-│  Symptom                      │ Check                     │
-│  ─────────────────────────────────────────────────────── │
-│  Domain not resolving          │ NS records pointing to    │
-│                                │ correct nameservers?      │
-│  SERVFAIL                      │ DNSSEC validation?        │
-│                                │ Zone file syntax errors?  │
-│  Wrong IP returned             │ A/AAAA records correct?   │
-│                                │ CDN proxy interfering?    │
-│  Slow resolution               │ TTL too low? NS latency?  │
-│  Email not delivered           │ MX, SPF, DKIM, DMARC?    │
-│  Subdomain not working         │ CNAME vs A record?        │
-│                                │ Wildcard record present?  │
-│  Propagation delay             │ TTL of old record?        │
-│                                │ Check multiple resolvers  │
-└──────────────────────────────────────────────────────────┘
+| Symptom | Check |
+|---|---|
+| Domain not resolving | NS records pointing to |
+|  | correct nameservers? |
+| SERVFAIL | DNSSEC validation? |
+|  | Zone file syntax errors? |
+| Wrong IP returned | A/AAAA records correct? |
+|  | CDN proxy interfering? |
+| Slow resolution | TTL too low? NS latency? |
+| Email not delivered | MX, SPF, DKIM, DMARC? |
+| Subdomain not working | CNAME vs A record? |
+|  | Wildcard record present? |
+| Propagation delay | TTL of old record? |
+|  | Check multiple resolvers |
 ```
 
 ```bash
@@ -130,18 +123,15 @@ spec:
 #### Certificate Monitoring
 ```
 CERTIFICATE STATUS:
-┌──────────────────────────────────────────────────────────┐
-│  Domain           │ Issuer       │ Expires    │ Status    │
-│  ─────────────────────────────────────────────────────── │
-│  example.com      │ Let's Encrypt│ 2026-06-15 │ VALID     │
-│  *.example.com    │ Let's Encrypt│ 2026-06-15 │ VALID     │
-│  api.example.com  │ Let's Encrypt│ 2026-04-01 │ RENEWING  │
-│  old.example.com  │ DigiCert     │ 2026-03-20 │ EXPIRING  │
-├──────────────────────────────────────────────────────────┤
-│  Auto-renewal: ENABLED                                    │
-│  Next renewal check: <date>                               │
-│  Alert threshold: 14 days before expiry                   │
-└──────────────────────────────────────────────────────────┘
+| Domain | Issuer | Expires | Status |
+|---|---|---|---|
+| example.com | Let's Encrypt | 2026-06-15 | VALID |
+| *.example.com | Let's Encrypt | 2026-06-15 | VALID |
+| api.example.com | Let's Encrypt | 2026-04-01 | RENEWING |
+| old.example.com | DigiCert | 2026-03-20 | EXPIRING |
+  Auto-renewal: ENABLED
+  Next renewal check: <date>
+  Alert threshold: 14 days before expiry
 
 TLS CONFIGURATION:
   Min version: TLS 1.2
@@ -157,56 +147,48 @@ Set up and optimize content delivery:
 #### CloudFront Configuration
 ```
 CLOUDFRONT DISTRIBUTION:
-┌──────────────────────────────────────────────────────────┐
-│  Distribution ID: <id>                                    │
-│  Domain: <d123.cloudfront.net>                            │
-│  Aliases: <domain>, www.<domain>                          │
-│  Origin: <ALB DNS or S3 bucket>                           │
-├──────────────────────────────────────────────────────────┤
-│  Cache Behaviors:                                         │
-│  Path Pattern    │ Origin    │ TTL      │ Compress │ CORS │
-│  ─────────────────────────────────────────────────────── │
-│  /api/*          │ ALB       │ 0 (none) │ Yes      │ Yes  │
-│  /static/*       │ S3        │ 86400    │ Yes      │ No   │
-│  /images/*       │ S3        │ 604800   │ Yes      │ No   │
-│  Default (*)     │ ALB       │ 0        │ Yes      │ Yes  │
-├──────────────────────────────────────────────────────────┤
+  Distribution ID: <id>
+  Domain: <d123.cloudfront.net>
+  Aliases: <domain>, www.<domain>
+  Origin: <ALB DNS or S3 bucket>
+  Cache Behaviors:
+| Path Pattern | Origin | TTL | Compress | CORS |
+|---|---|---|---|---|
+| /api/* | ALB | 0 (none) | Yes | Yes |
+| /static/* | S3 | 86400 | Yes | No |
+| /images/* | S3 | 604800 | Yes | No |
+| Default (*) | ALB | 0 | Yes | Yes |
 ```
 
 #### Cloudflare Configuration
 ```
 CLOUDFLARE ZONE:
-┌──────────────────────────────────────────────────────────┐
-│  Zone: <domain>                                           │
-│  Plan: <Free | Pro | Business | Enterprise>               │
-│  SSL Mode: Full (Strict)                                  │
-│  Min TLS: 1.2                                             │
-├──────────────────────────────────────────────────────────┤
-│  Performance:                                             │
-│  Cache Level: Standard                                    │
-│  Browser Cache TTL: Respect Existing Headers              │
-│  Always Online: Enabled                                   │
-│  Brotli: Enabled                                          │
-│  Early Hints: Enabled                                     │
-│  Rocket Loader: Disabled (conflicts with SPA frameworks)  │
-├──────────────────────────────────────────────────────────┤
+  Zone: <domain>
+  Plan: <Free | Pro | Business | Enterprise>
+  SSL Mode: Full (Strict)
+  Min TLS: 1.2
+  Performance:
+  Cache Level: Standard
+  Browser Cache TTL: Respect Existing Headers
+  Always Online: Enabled
+  Brotli: Enabled
+  Early Hints: Enabled
+  Rocket Loader: Disabled (conflicts with SPA frameworks)
 ```
 
 #### CDN Cache Optimization
 ```
 CACHE STRATEGY:
-┌──────────────────────────────────────────────────────────┐
-│  Asset Type     │ Cache-Control Header          │ CDN TTL │
-│  ─────────────────────────────────────────────────────── │
-│  HTML pages     │ no-cache, must-revalidate     │ 0       │
-│  JS/CSS (hashed)│ public, max-age=31536000,     │ 1 year  │
-│                 │ immutable                     │         │
-│  Images         │ public, max-age=604800        │ 7 days  │
-│  Fonts          │ public, max-age=31536000      │ 1 year  │
-│  API responses  │ private, no-store             │ 0       │
-│  Public API     │ public, max-age=60, s-maxage= │ 5 min   │
-│                 │ 300, stale-while-revalidate=60│         │
-└──────────────────────────────────────────────────────────┘
+| Asset Type | Cache-Control Header | CDN TTL |
+|---|---|---|
+| HTML pages | no-cache, must-revalidate | 0 |
+| JS/CSS (hashed) | public, max-age=31536000, | 1 year |
+|  | immutable |  |
+| Images | public, max-age=604800 | 7 days |
+| Fonts | public, max-age=31536000 | 1 year |
+| API responses | private, no-store | 0 |
+| Public API | public, max-age=60, s-maxage= | 5 min |
+|  | 300, stale-while-revalidate=60 |  |
 
 Cache Invalidation:
   Strategy: Deploy-time purge of changed paths
@@ -221,20 +203,17 @@ Configure and optimize load balancing:
 #### AWS ALB Configuration
 ```
 APPLICATION LOAD BALANCER:
-┌──────────────────────────────────────────────────────────┐
-│  Name: <service-name>-alb                                 │
-│  Scheme: internet-facing | internal                       │
-│  VPC: <vpc-id>                                            │
-│  Subnets: <public subnets across 2+ AZs>                 │
-├──────────────────────────────────────────────────────────┤
-│  Listeners:                                               │
-│  Port 80  -> Redirect to 443 (301)                        │
-│  Port 443 -> Forward to target group (TLS termination)    │
-├──────────────────────────────────────────────────────────┤
-│  Target Groups:                                           │
-│  Name              │ Port │ Health Check  │ Targets       │
-│  ─────────────────────────────────────────────────────── │
-│  api-targets       │ 3000 │ /healthz (5s) │ 3 instances   │
+  Name: <service-name>-alb
+  Scheme: internet-facing | internal
+  VPC: <vpc-id>
+  Subnets: <public subnets across 2+ AZs>
+  Listeners:
+  Port 80  -> Redirect to 443 (301)
+  Port 443 -> Forward to target group (TLS termination)
+  Target Groups:
+| Name | Port | Health Check | Targets |
+|---|---|---|---|
+| api-targets | 3000 | /healthz (5s) | 3 instances |
 ```
 
 #### Nginx Load Balancer
@@ -259,20 +238,18 @@ server {
 #### HAProxy Configuration
 ```
 HAProxy CONFIGURATION:
-┌──────────────────────────────────────────────────────────┐
-│  Frontend: http-in (port 80 -> redirect 443)              │
-│  Frontend: https-in (port 443, SSL termination)           │
-│  Backend: api-servers (3 servers, leastconn)              │
-│  Backend: web-servers (2 servers, roundrobin)             │
-├──────────────────────────────────────────────────────────┤
-│  Health Checks:                                           │
-│  Interval: 5s  │  Rise: 2  │  Fall: 3  │  Timeout: 2s   │
-│  Method: HTTP GET /healthz  │  Expected: 200              │
-├──────────────────────────────────────────────────────────┤
-│  Connection Limits:                                       │
-│  Max connections per server: 1000                         │
-│  Queue timeout: 5s                                        │
-│  Connection timeout: 5s                                   │
+  Frontend: http-in (port 80 -> redirect 443)
+  Frontend: https-in (port 443, SSL termination)
+  Backend: api-servers (3 servers, leastconn)
+  Backend: web-servers (2 servers, roundrobin)
+  Health Checks:
+| Interval: 5s | Rise: 2 | Fall: 3 | Timeout: 2s |
+|---|---|---|---|
+| Method: HTTP GET /healthz | Expected: 200 |
+  Connection Limits:
+  Max connections per server: 1000
+  Queue timeout: 5s
+  Connection timeout: 5s
 ```
 
 ### Step 6: Network Security
@@ -281,55 +258,43 @@ Design VPC, security groups, and firewall rules:
 #### VPC Architecture
 ```
 VPC DESIGN:
-┌──────────────────────────────────────────────────────────────┐
-│  VPC: 10.0.0.0/16                                             │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  PUBLIC SUBNETS (internet-facing)                        │ │
-│  │  10.0.1.0/24 (AZ-a)  │  10.0.2.0/24 (AZ-b)            │ │
-│  │  ALB, NAT Gateway     │  ALB, NAT Gateway               │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  PRIVATE SUBNETS (application tier)                      │ │
-│  │  10.0.10.0/24 (AZ-a) │  10.0.11.0/24 (AZ-b)           │ │
-│  │  ECS/EKS tasks        │  ECS/EKS tasks                  │ │
-│  └─────────────────────────────────────────────────────────┘ │
+  VPC: 10.0.0.0/16
+|  | PUBLIC SUBNETS (internet-facing) |  |
+|  | 10.0.1.0/24 (AZ-a) | 10.0.2.0/24 (AZ-b) |  |
+|  | ALB, NAT Gateway | ALB, NAT Gateway |  |
+|  | PRIVATE SUBNETS (application tier) |  |
+|  | 10.0.10.0/24 (AZ-a) | 10.0.11.0/24 (AZ-b) |  |
+|  | ECS/EKS tasks | ECS/EKS tasks |  |
 ```
 
 #### Security Groups
 ```
 SECURITY GROUP DESIGN:
-┌──────────────────────────────────────────────────────────┐
-│  SG: alb-sg                                               │
-│  Inbound:  443 from 0.0.0.0/0 (HTTPS)                    │
-│            80 from 0.0.0.0/0 (HTTP -> redirect)           │
-│  Outbound: All to app-sg                                  │
-├──────────────────────────────────────────────────────────┤
-│  SG: app-sg                                               │
-│  Inbound:  <app-port> from alb-sg only                    │
-│  Outbound: 5432 to db-sg (PostgreSQL)                     │
-│            6379 to cache-sg (Redis)                        │
-│            443 to 0.0.0.0/0 (external APIs via NAT)       │
-├──────────────────────────────────────────────────────────┤
-│  SG: db-sg                                                │
-│  Inbound:  5432 from app-sg only                          │
+  SG: alb-sg
+  Inbound:  443 from 0.0.0.0/0 (HTTPS)
+  80 from 0.0.0.0/0 (HTTP -> redirect)
+  Outbound: All to app-sg
+  SG: app-sg
+  Inbound:  <app-port> from alb-sg only
+  Outbound: 5432 to db-sg (PostgreSQL)
+  6379 to cache-sg (Redis)
+  443 to 0.0.0.0/0 (external APIs via NAT)
+  SG: db-sg
+  Inbound:  5432 from app-sg only
 ```
 
 #### Network ACLs and Firewall
 ```
 NETWORK SECURITY RULES:
-┌──────────────────────────────────────────────────────────┐
-│  Layer         │ Tool                │ Purpose             │
-│  ─────────────────────────────────────────────────────── │
-│  Edge          │ CloudFront/CF WAF   │ DDoS, bot protect   │
-│  DNS           │ Route53/CF          │ DNS filtering       │
-│  Perimeter     │ NACL                │ Subnet-level deny   │
-│  Instance      │ Security Groups     │ Port-level allow    │
-│  Application   │ Nginx/HAProxy       │ Rate limiting       │
-│  Container     │ NetworkPolicy (K8s) │ Pod-to-pod rules    │
-│  Application   │ App middleware      │ Auth, CORS, CSP     │
-└──────────────────────────────────────────────────────────┘
+| Layer | Tool | Purpose |
+|---|---|---|
+| Edge | CloudFront/CF WAF | DDoS, bot protect |
+| DNS | Route53/CF | DNS filtering |
+| Perimeter | NACL | Subnet-level deny |
+| Instance | Security Groups | Port-level allow |
+| Application | Nginx/HAProxy | Rate limiting |
+| Container | NetworkPolicy (K8s) | Pod-to-pod rules |
+| Application | App middleware | Auth, CORS, CSP |
 
 Defense in Depth Checklist:
   [x] WAF rules block SQL injection, XSS, known bad bots

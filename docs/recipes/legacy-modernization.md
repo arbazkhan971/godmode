@@ -213,28 +213,21 @@ Godmode: Designing migration architecture...
 
 STRANGLER FIG ARCHITECTURE:
 
-                    ┌─────────────┐
      requests ────→ │   Reverse   │
-                    │   Proxy     │
-                    │  (nginx)    │
-                    └──────┬──────┘
-                           │
+  Proxy
+  (nginx)
                     ┌──────┴──────┐
-                    │   Router    │
-                    │  (by path)  │
+  Router
+  (by path)
                     └──┬───────┬──┘
-                       │       │
               ┌────────┴──┐ ┌──┴────────┐
-              │  Legacy   │ │   New     │
-              │  PHP App  │ │  Node.js  │
-              │           │ │  Services │
-              └─────┬─────┘ └─────┬─────┘
-                    │             │
+| Legacy |  | New |
+| PHP App |  | Node.js |
+|  |  | Services |
               ┌─────┴─────────────┴─────┐
-              │     Shared MySQL DB     │
-              │  (both systems read/    │
-              │   write same tables)    │
-              └─────────────────────────┘
+  Shared MySQL DB
+  (both systems read/
+  write same tables)
 
 Migration order (by business value and risk):
   1. User auth (high risk, foundational)

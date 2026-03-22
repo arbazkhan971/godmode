@@ -60,18 +60,16 @@ Guide the decision between Composition API and Options API:
 
 ```
 API STYLE DECISION:
-┌──────────────────────────────────────────────────────────────────────────┐
-│ Factor │ Composition API │ Options API │
-├─────────────────────────┼────────────────────────┼───────────────────────┤
-│ Vue version │ Vue 3 (native) │ Vue 2 & 3 │
-│ TypeScript support │ Excellent (inferred) │ Requires decorators │
-│ Logic reuse │ Composables (natural) │ Mixins (fragile) │
-│ Code organization │ By feature/concern │ By option type │
-│ Learning curve │ Steeper initially │ Gentler for beginners │
-│ Bundle size │ Tree-shakeable │ Full runtime needed │
-│ Complex components │ Scales well │ Gets unwieldy │
-│ Small components │ Works fine │ Simpler syntax │
-└─────────────────────────┴────────────────────────┴───────────────────────┘
+| Factor | Composition API | Options API |
+|---|---|---|
+| Vue version | Vue 3 (native) | Vue 2 & 3 |
+| TypeScript support | Excellent (inferred) | Requires decorators |
+| Logic reuse | Composables (natural) | Mixins (fragile) |
+| Code organization | By feature/concern | By option type |
+| Learning curve | Steeper initially | Gentler for beginners |
+| Bundle size | Tree-shakeable | Full runtime needed |
+| Complex components | Scales well | Gets unwieldy |
+| Small components | Works fine | Simpler syntax |
 
 RECOMMENDATION: <Composition API | Options API>
 JUSTIFICATION: <reason based on project context>
@@ -129,15 +127,13 @@ Design and implement Pinia stores:
 
 ```
 PINIA STORE ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────────────┐
-│ Store │ Purpose │ Persistence │
-├─────────────────────┼───────────────────────┼───────────────────────┤
-│ useAuthStore │ Authentication state │ localStorage (token) │
-│ useUserStore │ User profile data │ Session only │
-│ useCartStore │ Shopping cart │ localStorage │
-│ useNotifyStore │ Toast notifications │ Session only │
-│ useSettingsStore │ User preferences │ localStorage │
-└─────────────────────┴───────────────────────┴───────────────────────┘
+| Store | Purpose | Persistence |
+|---|---|---|
+| useAuthStore | Authentication state | localStorage (token) |
+| useUserStore | User profile data | Session only |
+| useCartStore | Shopping cart | localStorage |
+| useNotifyStore | Toast notifications | Session only |
+| useSettingsStore | User preferences | localStorage |
 ```
 
 #### Setup Store Pattern (Recommended)
@@ -164,16 +160,14 @@ Design routing architecture:
 
 ```
 ROUTE ARCHITECTURE:
-┌──────────────────────────────────────────────────────────────────────┐
-│ Path │ Component │ Guard │ Meta │
-├──────────────────────────┼──────────────────┼────────────────┼──────┤
-│ / │ Home.vue │ none │ │
-│ /login │ Login.vue │ guest-only │ │
-│ /dashboard │ Dashboard.vue │ auth-required │ │
-│ /users/:id │ UserProfile.vue │ auth-required │ │
-│ /admin/* │ AdminLayout.vue │ admin-only │ lazy │
-│ /:pathMatch(.*)* │ NotFound.vue │ none │ │
-└──────────────────────────┴──────────────────┴────────────────┴──────┘
+| Path | Component | Guard | Meta |
+|---|---|---|---|
+| / | Home.vue | none |  |
+| /login | Login.vue | guest-only |  |
+| /dashboard | Dashboard.vue | auth-required |  |
+| /users/:id | UserProfile.vue | auth-required |  |
+| /admin/* | AdminLayout.vue | admin-only | lazy |
+| /:pathMatch(.*)* | NotFound.vue | none |  |
 ```
 
 #### Router Setup
@@ -200,15 +194,13 @@ For projects using Nuxt 3:
 
 ```
 NUXT RENDERING STRATEGY:
-┌───────────────────────────────────────────────────────────────────────┐
-│ Route Pattern │ Strategy │ Reason │
-├────────────────────────┼──────────────┼───────────────────────────────┤
-│ / │ SSG │ Static marketing page │
-│ /blog/:slug │ ISR (60s) │ Content changes infrequently │
-│ /dashboard │ SPA │ Auth-gated, dynamic data │
-│ /api/* │ Server-only │ API routes │
-│ /products/:id │ SSR │ SEO-critical, dynamic data │
-└────────────────────────┴──────────────┴───────────────────────────────┘
+| Route Pattern | Strategy | Reason |
+|---|---|---|
+| / | SSG | Static marketing page |
+| /blog/:slug | ISR (60s) | Content changes infrequently |
+| /dashboard | SPA | Auth-gated, dynamic data |
+| /api/* | Server-only | API routes |
+| /products/:id | SSR | SEO-critical, dynamic data |
 ```
 
 #### Nuxt Configuration
@@ -299,20 +291,19 @@ Validate the Vue application against best practices:
 
 ```
 VUE APPLICATION AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│ Check │ Status │
-├─────────────────────────────────────────┼────────────────────┤
-│ API style consistency (Comp/Options) │ PASS | FAIL │
-│ <script setup> used where possible │ PASS | FAIL │
-│ TypeScript strict mode enabled │ PASS | FAIL │
-│ Composables follow use* convention │ PASS | FAIL │
-│ Pinia stores use setup syntax │ PASS | FAIL │
-│ Route components lazy-loaded │ PASS | FAIL │
-│ Navigation guards centralized │ PASS | FAIL │
-│ Props typed with defineProps<T> │ PASS | FAIL │
-│ Emits typed with defineEmits<T> │ PASS | FAIL │
-│ No direct DOM manipulation │ PASS | FAIL │
-│ No v-html with user input │ PASS | FAIL │
+| Check | Status |
+|---|---|
+| API style consistency (Comp/Options) | PASS | FAIL |
+| <script setup> used where possible | PASS | FAIL |
+| TypeScript strict mode enabled | PASS | FAIL |
+| Composables follow use* convention | PASS | FAIL |
+| Pinia stores use setup syntax | PASS | FAIL |
+| Route components lazy-loaded | PASS | FAIL |
+| Navigation guards centralized | PASS | FAIL |
+| Props typed with defineProps<T> | PASS | FAIL |
+| Emits typed with defineEmits<T> | PASS | FAIL |
+| No direct DOM manipulation | PASS | FAIL |
+| No v-html with user input | PASS | FAIL |
 ```
 
 ### Step 10: Deliverables & Handoff

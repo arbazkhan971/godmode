@@ -45,20 +45,19 @@ Choose the right package manager for the project:
 
 ```
 PACKAGE MANAGER COMPARISON:
-┌───────────────┬──────────┬──────────┬──────────┬──────────┐
-│ Feature       │ npm      │ yarn     │ pnpm     │ bun      │
-├───────────────┼──────────┼──────────┼──────────┼──────────┤
-│ Speed         │ Moderate │ Fast     │ Fastest  │ Fastest  │
-│ Disk usage    │ High     │ High     │ Low      │ Low      │
-│ node_modules  │ Flat     │ Flat/PnP │ Symlinked│ Flat     │
-│ Strictness    │ Loose    │ Loose    │ Strict   │ Loose    │
-│ Monorepo      │ Basic    │ Good     │ Best     │ Basic    │
-│ Lock file     │ JSON     │ YAML     │ YAML     │ Binary   │
-│ Ecosystem     │ Default  │ Mature   │ Growing  │ Growing  │
-│ Plug'n'Play   │ No       │ Yes      │ No       │ No       │
-│ Content-addr. │ No       │ No       │ Yes      │ No       │
-│ Maturity      │ Oldest   │ Mature   │ Mature   │ Newest   │
-│ Built-in      │ Node.js  │ Corepack │ Corepack │ Bun      │
+| Feature | npm | yarn | pnpm | bun |
+|---|---|---|---|---|
+| Speed | Moderate | Fast | Fastest | Fastest |
+| Disk usage | High | High | Low | Low |
+| node_modules | Flat | Flat/PnP | Symlinked | Flat |
+| Strictness | Loose | Loose | Strict | Loose |
+| Monorepo | Basic | Good | Best | Basic |
+| Lock file | JSON | YAML | YAML | Binary |
+| Ecosystem | Default | Mature | Growing | Growing |
+| Plug'n'Play | No | Yes | No | No |
+| Content-addr. | No | No | Yes | No |
+| Maturity | Oldest | Mature | Mature | Newest |
+| Built-in | Node.js | Corepack | Corepack | Bun |
 ```
 
 ### Step 3: Lock File Management
@@ -66,20 +65,16 @@ Handle lock files correctly:
 
 ```
 LOCK FILE RULES:
-┌─────────────────────────────────────────────────────────────┐
-│ Rule                                                         │
-├─────────────────────────────────────────────────────────────┤
-│ 1. ALWAYS commit lock files to version control               │
-│ 2. NEVER manually edit lock files                            │
-│ 3. Use `ci` commands in CI (npm ci, pnpm install --frozen)   │
-│ 4. One package manager per project (never mix lock files)    │
-│ 5. Review lock file changes in PRs (they can hide threats)   │
-│ 6. Regenerate if corrupted: delete lock + node_modules       │
-└─────────────────────────────────────────────────────────────┘
+  Rule
+  1. ALWAYS commit lock files to version control
+  2. NEVER manually edit lock files
+  3. Use `ci` commands in CI (npm ci, pnpm install --frozen)
+  4. One package manager per project (never mix lock files)
+  5. Review lock file changes in PRs (they can hide threats)
+  6. Regenerate if corrupted: delete lock + node_modules
 
 INSTALL COMMANDS:
-┌───────────────────┬──────────────────────────────────────────┐
-│ Intent            │ Command                                  │
+| Intent | Command |
 ```
 
 ### Step 4: Workspace and Monorepo Configuration
@@ -87,20 +82,17 @@ Set up multi-package repositories:
 
 ```
 MONOREPO TOOLS COMPARISON:
-┌──────────────┬───────────┬───────────┬───────────┬───────────┐
-│ Feature      │ npm       │ pnpm      │ Turborepo │ Nx        │
-│              │ workspaces│ workspaces│           │           │
-├──────────────┼───────────┼───────────┼───────────┼───────────┤
-│ Task running │ Basic     │ Basic     │ Advanced  │ Advanced  │
-│ Caching      │ No        │ No        │ Local+Rem │ Local+Rem │
-│ Dependency   │ Hoisted   │ Strict    │ (uses npm │ (uses npm │
-│ management   │           │           │ /pnpm)    │ /pnpm)    │
-│ Task graph   │ No        │ No        │ Yes       │ Yes       │
-│ Affected cmd │ No        │ --filter  │ Yes       │ Yes       │
-│ Generators   │ No        │ No        │ No        │ Yes       │
-│ Learning     │ Low       │ Low       │ Medium    │ High      │
-│ Overhead     │ None      │ None      │ Small     │ Medium    │
-└──────────────┴───────────┴───────────┴───────────┴───────────┘
+| Feature | npm | pnpm | Turborepo | Nx |
+|  | workspaces | workspaces |  |  |
+| Task running | Basic | Basic | Advanced | Advanced |
+| Caching | No | No | Local+Rem | Local+Rem |
+| Dependency | Hoisted | Strict | (uses npm | (uses npm |
+| management |  |  | /pnpm) | /pnpm) |
+| Task graph | No | No | Yes | Yes |
+| Affected cmd | No | --filter | Yes | Yes |
+| Generators | No | No | No | Yes |
+| Learning | Low | Low | Medium | High |
+| Overhead | None | None | Small | Medium |
 ```
 
 ### Step 5: Publishing Packages
@@ -108,20 +100,19 @@ Publish libraries to npm or private registries:
 
 ```
 PUBLISHING CHECKLIST:
-┌─────────────────────────────────────────────────────────────┐
-│ Step                              │ Status                   │
-├───────────────────────────────────┼──────────────────────────┤
-│ 1. package.json fields complete   │ name, version, desc,     │
-│                                   │ main, types, exports,    │
-│                                   │ files, license, repo     │
-│ 2. TypeScript declarations        │ .d.ts files generated    │
-│ 3. Dual ESM/CJS exports           │ exports field configured │
-│ 4. README with usage examples     │ README.md exists         │
-│ 5. CHANGELOG updated              │ CHANGELOG.md updated     │
-│ 6. Tests passing                  │ All green                │
-│ 7. .npmignore or "files" field    │ Only needed files ship   │
-│ 8. Version bumped                 │ Follows semver           │
-│ 9. Git tag created                │ v<version>               │
+| Step | Status |
+|---|---|
+| 1. package.json fields complete | name, version, desc, |
+|  | main, types, exports, |
+|  | files, license, repo |
+| 2. TypeScript declarations | .d.ts files generated |
+| 3. Dual ESM/CJS exports | exports field configured |
+| 4. README with usage examples | README.md exists |
+| 5. CHANGELOG updated | CHANGELOG.md updated |
+| 6. Tests passing | All green |
+| 7. .npmignore or "files" field | Only needed files ship |
+| 8. Version bumped | Follows semver |
+| 9. Git tag created | v<version> |
 ```
 
 ### Step 6: Security Auditing
@@ -129,18 +120,16 @@ Scan and fix dependency vulnerabilities:
 
 ```
 SECURITY AUDIT WORKFLOW:
-┌─────────────────────────────────────────────────────────────┐
-│ Step                          │ Command                      │
-├───────────────────────────────┼──────────────────────────────┤
-│ 1. Run audit                  │ npm audit                    │
-│                               │ pnpm audit                   │
-│                               │ yarn audit                   │
-│ 2. See detailed report        │ npm audit --json             │
-│ 3. Auto-fix (compatible)      │ npm audit fix                │
-│ 4. Force-fix (breaking)       │ npm audit fix --force        │
-│ 5. Check specific package     │ npm audit --package <pkg>    │
-│ 6. Check for outdated         │ npm outdated                 │
-└───────────────────────────────┴──────────────────────────────┘
+| Step | Command |
+|---|---|
+| 1. Run audit | npm audit |
+|  | pnpm audit |
+|  | yarn audit |
+| 2. See detailed report | npm audit --json |
+| 3. Auto-fix (compatible) | npm audit fix |
+| 4. Force-fix (breaking) | npm audit fix --force |
+| 5. Check specific package | npm audit --package <pkg> |
+| 6. Check for outdated | npm outdated |
 
 AUDIT SEVERITY LEVELS:
 ```
@@ -150,18 +139,16 @@ Resolve dependency conflicts and version mismatches:
 
 ```
 VERSION RESOLUTION:
-┌─────────────────────────────────────────────────────────────┐
-│ Problem                  │ Solution                          │
-├──────────────────────────┼───────────────────────────────────┤
-│ Conflicting peer deps    │ --legacy-peer-deps or update      │
-│                          │ parent package                    │
-│ Duplicate packages       │ npm dedupe / pnpm dedupe          │
-│ Wrong version installed  │ Check overrides/resolutions       │
-│ Phantom dependencies     │ Switch to pnpm (strict mode)      │
-│ Version not found        │ Clear cache: npm cache clean      │
-│ Build fails after update │ Delete node_modules + lock file,  │
-│                          │ reinstall from scratch             │
-└──────────────────────────┴───────────────────────────────────┘
+| Problem | Solution |
+|---|---|
+| Conflicting peer deps | --legacy-peer-deps or update |
+|  | parent package |
+| Duplicate packages | npm dedupe / pnpm dedupe |
+| Wrong version installed | Check overrides/resolutions |
+| Phantom dependencies | Switch to pnpm (strict mode) |
+| Version not found | Clear cache: npm cache clean |
+| Build fails after update | Delete node_modules + lock file, |
+|  | reinstall from scratch |
 
 PEER DEPENDENCY CONFLICTS:
 ```
@@ -169,21 +156,17 @@ PEER DEPENDENCY CONFLICTS:
 ### Step 8: Package Management Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  PACKAGE MANAGEMENT REPORT                                 │
-├────────────────────────────────────────────────────────────┤
-│  Package manager: <npm | pnpm | yarn | bun>               │
-│  Version: <version>                                        │
-│  Lock file: <committed | missing>                          │
-│                                                            │
-│  Dependencies:                                             │
-│    Production: <N>                                         │
-│    Development: <N>                                        │
-│    Total (transitive): <N>                                 │
-│                                                            │
-│  Health:                                                   │
-│    Outdated: <N packages>                                  │
-│    Vulnerabilities: <N> (C:<N> H:<N> M:<N> L:<N>)         │
+  PACKAGE MANAGEMENT REPORT
+  Package manager: <npm | pnpm | yarn | bun>
+  Version: <version>
+  Lock file: <committed | missing>
+  Dependencies:
+  Production: <N>
+  Development: <N>
+  Total (transitive): <N>
+  Health:
+  Outdated: <N packages>
+  Vulnerabilities: <N> (C:<N> H:<N> M:<N> L:<N>)
 ```
 
 ### Step 9: Commit and Transition
@@ -266,19 +249,18 @@ After each npm skill invocation, emit a structured report:
 
 ```
 PACKAGE MANAGEMENT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Package manager     │  <npm | pnpm | yarn | bun>     │
-│  Lock file           │  COMMITTED / MISSING           │
-│  Dependencies        │  <N> prod / <N> dev            │
-│  Total (transitive)  │  <N>                           │
-│  Vulnerabilities     │  C:<N> H:<N> M:<N> L:<N>       │
-│  Outdated            │  <N> packages                  │
-│  Unused              │  <N> packages                  │
-│  Duplicates          │  <N> packages                  │
-│  Workspace           │  <N> packages / N/A            │
-│  Actions taken       │  <list>                        │
-│  Verdict             │  HEALTHY | NEEDS ATTENTION     │
-└──────────────────────────────────────────────────────┘
+| Package manager | <npm | pnpm | yarn | bun> |
+|---|---|---|---|---|
+| Lock file | COMMITTED / MISSING |
+| Dependencies | <N> prod / <N> dev |
+| Total (transitive) | <N> |
+| Vulnerabilities | C:<N> H:<N> M:<N> L:<N> |
+| Outdated | <N> packages |
+| Unused | <N> packages |
+| Duplicates | <N> packages |
+| Workspace | <N> packages / N/A |
+| Actions taken | <list> |
+| Verdict | HEALTHY | NEEDS ATTENTION |
 ```
 
 ## TSV Logging

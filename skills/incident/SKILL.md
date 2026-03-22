@@ -69,18 +69,16 @@ Build a precise, timestamped record of events as they unfold:
 
 ```
 INCIDENT TIMELINE — INC-<ID>:
-┌──────────────────┬────────────────────────────────────────────┐
-│ Timestamp (UTC)  │ Event                                      │
-├──────────────────┼────────────────────────────────────────────┤
-│ HH:MM:SS         │ First alert triggered: <alert name>        │
-│ HH:MM:SS         │ On-call acknowledged                       │
-│ HH:MM:SS         │ Investigation started                      │
-│ HH:MM:SS         │ Root cause identified: <brief description> │
-│ HH:MM:SS         │ Mitigation applied: <action taken>         │
-│ HH:MM:SS         │ Service restored                           │
-│ HH:MM:SS         │ Monitoring confirms stable                 │
-│ HH:MM:SS         │ Incident resolved                          │
-└──────────────────┴────────────────────────────────────────────┘
+| Timestamp (UTC) | Event |
+|---|---|
+| HH:MM:SS | First alert triggered: <alert name> |
+| HH:MM:SS | On-call acknowledged |
+| HH:MM:SS | Investigation started |
+| HH:MM:SS | Root cause identified: <brief description> |
+| HH:MM:SS | Mitigation applied: <action taken> |
+| HH:MM:SS | Service restored |
+| HH:MM:SS | Monitoring confirms stable |
+| HH:MM:SS | Incident resolved |
 ```
 
 #### Evidence Gathering
@@ -199,14 +197,12 @@ Every post-mortem must produce concrete, assigned, and deadline-bound action ite
 
 ```
 ACTION ITEMS:
-┌────┬──────────────┬──────────┬──────────┬───────────┬──────────┐
-│ #  │ Action       │ Type     │ Priority │ Owner     │ Due Date │
-├────┼──────────────┼──────────┼──────────┼───────────┼──────────┤
-│ 1  │ <action>     │ PREVENT  │ P0       │ <team>    │ <date>   │
-│ 2  │ <action>     │ DETECT   │ P0       │ <team>    │ <date>   │
-│ 3  │ <action>     │ MITIGATE │ P1       │ <team>    │ <date>   │
-│ 4  │ <action>     │ PROCESS  │ P2       │ <team>    │ <date>   │
-└────┴──────────────┴──────────┴──────────┴───────────┴──────────┘
+| # | Action | Type | Priority | Owner | Due Date |
+|---|---|---|---|---|---|
+| 1 | <action> | PREVENT | P0 | <team> | <date> |
+| 2 | <action> | DETECT | P0 | <team> | <date> |
+| 3 | <action> | MITIGATE | P1 | <team> | <date> |
+| 4 | <action> | PROCESS | P2 | <team> | <date> |
 ```
 
 #### Action Item Types

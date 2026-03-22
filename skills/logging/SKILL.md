@@ -23,21 +23,18 @@ Evaluate the current state of logging:
 
 ```
 LOGGING ASSESSMENT:
-┌──────────────────────────────────────────────────────────────┐
-│  Aspect              │ Status    │ Current State              │
-│  ─────────────────────────────────────────────────────────── │
-│  Format              │ POOR      │ Unstructured console.log   │
-│  Log Levels          │ PARTIAL   │ info/error only            │
-│  Context             │ NONE      │ No request IDs or user IDs │
-│  Correlation         │ NONE      │ No trace/correlation IDs   │
-│  Aggregation         │ NONE      │ stdout only, no pipeline   │
-│  PII Handling        │ NONE      │ Sensitive data in logs     │
-│  Retention Policy    │ NONE      │ No rotation or archival    │
-│  Performance         │ UNKNOWN   │ Synchronous logging        │
-├──────────────────────────────────────────────────────────────┤
-│  Overall Score: 1/10 — INSUFFICIENT                          │
-│  Priority: Structured format + correlation IDs               │
-└──────────────────────────────────────────────────────────────┘
+| Aspect | Status | Current State |
+|---|---|---|
+| Format | POOR | Unstructured console.log |
+| Log Levels | PARTIAL | info/error only |
+| Context | NONE | No request IDs or user IDs |
+| Correlation | NONE | No trace/correlation IDs |
+| Aggregation | NONE | stdout only, no pipeline |
+| PII Handling | NONE | Sensitive data in logs |
+| Retention Policy | NONE | No rotation or archival |
+| Performance | UNKNOWN | Synchronous logging |
+  Overall Score: 1/10 — INSUFFICIENT
+  Priority: Structured format + correlation IDs
 ```
 
 ### Step 2: Log Level Strategy
@@ -45,20 +42,17 @@ Define when to use each log level:
 
 ```
 LOG LEVEL STRATEGY:
-┌──────────────────────────────────────────────────────────────┐
-│  Level  │ When to Use                    │ Examples           │
-│  ─────────────────────────────────────────────────────────── │
-│  FATAL  │ Process cannot continue.       │ Startup failure    │
-│         │ Requires immediate human       │ Out of memory      │
-│         │ intervention. Process exits.   │ Uncaught exception │
-│         │                                │ Critical config    │
-│         │                                │ missing            │
-│  ─────────────────────────────────────────────────────────── │
-│  ERROR  │ Operation failed. The specific │ Payment API 500    │
-│         │ request/task cannot be         │ Database query fail│
-│         │ completed, but the process     │ File write failed  │
-│         │ continues serving others.      │ Auth token invalid │
-│  ─────────────────────────────────────────────────────────── │
+| Level | When to Use | Examples |
+|---|---|---|
+| FATAL | Process cannot continue. | Startup failure |
+|  | Requires immediate human | Out of memory |
+|  | intervention. Process exits. | Uncaught exception |
+|  |  | Critical config |
+|  |  | missing |
+| ERROR | Operation failed. The specific | Payment API 500 |
+|  | request/task cannot be | Database query fail |
+|  | completed, but the process | File write failed |
+|  | continues serving others. | Auth token invalid |
 ```
 
 ### Step 3: Structured Logging Implementation
@@ -132,9 +126,10 @@ IDs:
 Flow:
   Client → API Gateway → Service A → Service B → Database
     │          │             │            │           │
-    │    Generate:           │            │           │
-    │    requestId=req_001   │            │           │
-    │    traceId=trace_xyz   │            │           │
+| Generate: |  |  |
+|---|---|---|
+| requestId=req_001 |  |  |
+| traceId=trace_xyz |  |  |
     │          │             │            │           │
 ```
 
@@ -165,20 +160,19 @@ const sdk = new NodeSDK({
 #### PII Redaction Strategy
 ```
 PII REDACTION POLICY:
-┌──────────────────────────────────────────────────────────────┐
-│  Data Type             │ Action    │ Technique               │
-│  ─────────────────────────────────────────────────────────── │
-│  Email address         │ MASK      │ j***@example.com        │
-│  Phone number          │ MASK      │ +1-***-***-5678         │
-│  Credit card number    │ REDACT    │ [REDACTED]              │
-│  CVV                   │ NEVER LOG │ —                       │
-│  Password / secret     │ NEVER LOG │ —                       │
-│  SSN / National ID     │ REDACT    │ [REDACTED]              │
-│  IP address            │ ANONYMIZE │ 192.168.1.0/24          │
-│  Full name             │ MASK      │ J*** D***               │
-│  Date of birth         │ MASK      │ ****-**-15              │
-│  Home address          │ REDACT    │ [REDACTED]              │
-│  Auth token / JWT      │ TRUNCATE  │ eyJhb....[TRUNCATED]    │
+| Data Type | Action | Technique |
+|---|---|---|
+| Email address | MASK | j***@example.com |
+| Phone number | MASK | +1-***-***-5678 |
+| Credit card number | REDACT | [REDACTED] |
+| CVV | NEVER LOG | — |
+| Password / secret | NEVER LOG | — |
+| SSN / National ID | REDACT | [REDACTED] |
+| IP address | ANONYMIZE | 192.168.1.0/24 |
+| Full name | MASK | J*** D*** |
+| Date of birth | MASK | ****-**-15 |
+| Home address | REDACT | [REDACTED] |
+| Auth token / JWT | TRUNCATE | eyJhb....[TRUNCATED] |
 ```
 
 #### Implementation — Redaction Utilities
@@ -201,16 +195,15 @@ ELK STACK PIPELINE:
 Application → stdout (JSON) → Filebeat → Logstash → Elasticsearch → Kibana
                                   │
                             ┌─────┴──────┐
-                            │  Filebeat   │
-                            │  - Tails    │
-                            │    log files│
-                            │  - Adds     │
-                            │    metadata │
-                            │  - Buffers  │
-                            │    & ships  │
+  Filebeat
+  - Tails
+  log files
+  - Adds
+  metadata
+  - Buffers
+  & ships
                             └─────┬──────┘
                                   ↓
-                            ┌─────────────┐
 ```
 
 #### Grafana Loki (Lightweight Alternative)
@@ -220,16 +213,15 @@ LOKI PIPELINE:
 Application → stdout (JSON) → Promtail → Loki → Grafana
                                   │
                             ┌─────┴──────┐
-                            │  Promtail  │
-                            │  - Discovers│
-                            │    targets │
-                            │  - Extracts│
-                            │    labels  │
-                            │  - Ships   │
+  Promtail
+  - Discovers
+  targets
+  - Extracts
+  labels
+  - Ships
                             └─────┬──────┘
                                   ↓
-                            ┌─────────────┐
-                            │    Loki     │
+  Loki
 ```
 
 #### AWS CloudWatch Logs
@@ -255,60 +247,51 @@ CloudWatch Insights query examples:
 
 ```
 LOG RETENTION POLICY:
-┌──────────────────────────────────────────────────────────────┐
-│  Environment │ Log Level │ Retention │ Storage Tier          │
-│  ─────────────────────────────────────────────────────────── │
-│  Production  │ ERROR     │ 365 days  │ Hot (30d) → Warm (90d)│
-│              │           │           │ → Cold (365d)         │
-│  Production  │ WARN      │ 90 days   │ Hot (30d) → Warm (90d)│
-│  Production  │ INFO      │ 30 days   │ Hot (30d)             │
-│  Production  │ DEBUG     │ 7 days    │ Hot (7d) — only when  │
-│              │           │           │ explicitly enabled    │
-│  ─────────────────────────────────────────────────────────── │
-│  Staging     │ All       │ 14 days   │ Hot (14d)             │
-│  Development │ All       │ 3 days    │ Hot (3d)              │
-│  ─────────────────────────────────────────────────────────── │
-│  Compliance  │ Audit logs│ 7 years   │ Hot (90d) → Archive   │
+| Environment | Log Level | Retention | Storage Tier |
+|---|---|---|---|
+| Production | ERROR | 365 days | Hot (30d) → Warm (90d) |
+|  |  |  | → Cold (365d) |
+| Production | WARN | 90 days | Hot (30d) → Warm (90d) |
+| Production | INFO | 30 days | Hot (30d) |
+| Production | DEBUG | 7 days | Hot (7d) — only when |
+|  |  |  | explicitly enabled |
+| Staging | All | 14 days | Hot (14d) |
+| Development | All | 3 days | Hot (3d) |
+| Compliance | Audit logs | 7 years | Hot (90d) → Archive |
 ```
 
 ### Step 8: Logging Performance
 
 ```
 LOGGING PERFORMANCE GUIDELINES:
-┌──────────────────────────────────────────────────────────────┐
-│  Concern               │ Solution                           │
-│  ─────────────────────────────────────────────────────────── │
-│  Synchronous I/O       │ Use async loggers (pino, slog)     │
-│  blocks event loop     │ Buffer and flush periodically      │
-│  ─────────────────────────────────────────────────────────── │
-│  High-volume logging   │ Sample DEBUG logs (1 in 100)       │
-│  causes CPU pressure   │ Don't stringify objects you won't  │
-│                        │ log (check level first)            │
-│  ─────────────────────────────────────────────────────────── │
-│  Large log messages    │ Set max message size (10KB)        │
-│                        │ Truncate request/response bodies   │
-│  ─────────────────────────────────────────────────────────── │
-│  Disk fill from logs   │ Rotation + retention policy        │
+| Concern | Solution |
+|---|---|
+| Synchronous I/O | Use async loggers (pino, slog) |
+| blocks event loop | Buffer and flush periodically |
+| High-volume logging | Sample DEBUG logs (1 in 100) |
+| causes CPU pressure | Don't stringify objects you won't |
+|  | log (check level first) |
+| Large log messages | Set max message size (10KB) |
+|  | Truncate request/response bodies |
+| Disk fill from logs | Rotation + retention policy |
 ```
 
 ### Step 9: Logging Checklist
 
 ```
 LOGGING VERIFICATION CHECKLIST:
-┌──────────────────────────────────────────────────────────────┐
-│  Category            │ Check                          │ Pass?│
-│  ─────────────────────────────────────────────────────────── │
-│  Format              │                                │      │
-│    [ ] All logs are structured JSON in production    │      │
-│    [ ] ISO 8601 timestamps with timezone             │      │
-│    [ ] Consistent field names across all services    │      │
-│    [ ] Base fields: service, environment, version    │      │
-│  ─────────────────────────────────────────────────────────── │
-│  Levels              │                                │      │
-│    [ ] Log level strategy documented and followed    │      │
-│    [ ] No ERROR logs for expected conditions (404)   │      │
-│    [ ] DEBUG disabled in production by default       │      │
-│    [ ] Log level configurable at runtime             │      │
+| Category | Check | Pass? |
+|---|---|---|
+| Format |  |  |
+| [ ] All logs are structured JSON in production |  |
+| [ ] ISO 8601 timestamps with timezone |  |
+| [ ] Consistent field names across all services |  |
+| [ ] Base fields: service, environment, version |  |
+| Levels |  |  |
+| [ ] Log level strategy documented and followed |  |
+| [ ] No ERROR logs for expected conditions (404) |  |
+| [ ] DEBUG disabled in production by default |  |
+| [ ] Log level configurable at runtime |  |
 ```
 
 ## Output

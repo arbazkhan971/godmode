@@ -46,20 +46,16 @@ For systems with well-defined, stable role structures:
 
 ```
 RBAC DESIGN:
-┌──────────────────────────────────────────────────────────────┐
-│                    ROLE HIERARCHY                             │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  super_admin                                                 │
-│  ├── org_admin                                               │
-│  │   ├── team_admin                                          │
-│  │   │   ├── member                                          │
-│  │   │   │   └── viewer                                      │
-│  │   │   └── contributor                                     │
-│  │   │       └── viewer                                      │
-│  │   └── billing_admin                                       │
-│  └── support_admin                                           │
-│                                                              │
+  ROLE HIERARCHY
+  super_admin
+  ├── org_admin
+|  | ├── team_admin |
+|  |  | ├── member |
+|  |  |  | └── viewer |
+|  |  | └── contributor |
+|  |  | └── viewer |
+|  | └── billing_admin |
+  └── support_admin
 ```
 
 #### Model: ABAC (Attribute-Based Access Control)
@@ -109,20 +105,15 @@ Define the complete role hierarchy with inheritance rules:
 
 ```
 ROLE HIERARCHY DESIGN:
-┌──────────────────────────────────────────────────────────────┐
-│                    HIERARCHY RULES                            │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. STRICT HIERARCHY (tree structure)                        │
-│     Each role has exactly one parent.                        │
-│     Permissions flow DOWN (parent inherits child perms).     │
-│     Use when: Simple organizational structure.               │
-│                                                              │
-│  2. LATTICE HIERARCHY (DAG structure)                        │
-│     Roles can have multiple parents.                         │
-│     Permissions are the UNION of all ancestor permissions.   │
-│     Use when: Cross-functional roles needed.                 │
-│                                                              │
+  HIERARCHY RULES
+  1. STRICT HIERARCHY (tree structure)
+  Each role has exactly one parent.
+  Permissions flow DOWN (parent inherits child perms).
+  Use when: Simple organizational structure.
+  2. LATTICE HIERARCHY (DAG structure)
+  Roles can have multiple parents.
+  Permissions are the UNION of all ancestor permissions.
+  Use when: Cross-functional roles needed.
 ```
 RESOURCE-BASED ACCESS CONTROL:
 
@@ -151,40 +142,30 @@ Design how permissions flow through the hierarchy:
 
 ```
 PERMISSION INHERITANCE:
-┌──────────────────────────────────────────────────────────────┐
-│                  INHERITANCE RULES                            │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ORGANIZATIONAL INHERITANCE:                                 │
-│  Organization -> Team -> Project -> Resource                 │
-│  Org admin has admin on ALL teams, projects, resources       │
-│  Team admin has admin on team's projects and resources       │
-│  Project admin has admin on project's resources              │
-│                                                              │
-│  FOLDER/CONTAINER INHERITANCE:                               │
-│  Folder permissions cascade to all documents within          │
-│  Subfolder permissions can RESTRICT but not EXPAND parent    │
-│  Breaking inheritance: Mark resource as "custom permissions" │
+  INHERITANCE RULES
+  ORGANIZATIONAL INHERITANCE:
+  Organization -> Team -> Project -> Resource
+  Org admin has admin on ALL teams, projects, resources
+  Team admin has admin on team's projects and resources
+  Project admin has admin on project's resources
+  FOLDER/CONTAINER INHERITANCE:
+  Folder permissions cascade to all documents within
+  Subfolder permissions can RESTRICT but not EXPAND parent
+  Breaking inheritance: Mark resource as "custom permissions"
 ```
 POLICY ENGINE:
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│  REQUEST                POLICY ENGINE             DECISION   │
-│  ┌──────────┐          ┌──────────────┐          ┌────────┐ │
-│  │ Subject  │          │              │          │ ALLOW  │ │
-│  │ Resource │ -------> │ Evaluate     │ -------> │  or    │ │
-│  │ Action   │          │ Policies     │          │ DENY   │ │
-│  │ Context  │          │              │          │  +     │ │
-│  └──────────┘          └──────────────┘          │ Reason │ │
-│                              |                   └────────┘ │
-│                              v                              │
-│                     ┌──────────────┐                        │
-│                     │ Audit Log    │                        │
-│                     │ (every       │                        │
-│                     │  decision)   │                        │
-│                     └──────────────┘                        │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+  REQUEST                POLICY ENGINE             DECISION
+  ┌──────────┐          ┌──────────────┐          ┌────────┐
+|  | Subject |  |  |  | ALLOW |  |
+|  | Resource | -------> | Evaluate | -------> | or |  |
+|  | Action |  | Policies |  | DENY |  |
+|  | Context |  |  |  | + |  |
+| └──────────┘          └──────────────┘ | Reason |  |
+  |                   └────────┘
+  v
+|  | Audit Log |  |
+|  | (every |  |
+|  | decision) |  |
 
 Evaluation algorithm:
   function evaluate(subject, resource, action, context):
@@ -219,35 +200,30 @@ Audit log schema:
       session_id: "<session-id>"
 ```
 IMPLEMENTATION ARTIFACTS:
-┌──────────────────────────────────────────────────────────────┐
-│ File                              │ Purpose                  │
-├──────────────────────────────────────────────────────────────┤
-│ src/auth/models/role              │ Role definitions + hierarchy│
-│ src/auth/models/permission        │ Permission definitions    │
-│ src/auth/models/resource-grant    │ Resource-level grants     │
-│ src/auth/middleware/authorize      │ Permission check middleware│
-│ src/auth/services/policy-engine   │ Policy evaluation engine  │
-│ src/auth/services/role-resolver   │ Role hierarchy resolution │
-│ src/auth/services/audit-logger    │ Access decision audit log │
-│ src/auth/controllers/roles        │ CRUD for roles            │
+| File | Purpose |
+|---|---|
+| src/auth/models/role | Role definitions + hierarchy |
+| src/auth/models/permission | Permission definitions |
+| src/auth/models/resource-grant | Resource-level grants |
+| src/auth/middleware/authorize | Permission check middleware |
+| src/auth/services/policy-engine | Policy evaluation engine |
+| src/auth/services/role-resolver | Role hierarchy resolution |
+| src/auth/services/audit-logger | Access decision audit log |
+| src/auth/controllers/roles | CRUD for roles |
 ### Step 9: Access Control Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  ACCESS CONTROL REPORT                                      │
-├────────────────────────────────────────────────────────────┤
-│  Model: <RBAC | ABAC | ReBAC | Hybrid>                     │
-│  Roles defined: <N>                                         │
-│  Permissions defined: <N>                                   │
-│  Resources protected: <N>                                   │
-│  Policies configured: <N>                                   │
-│                                                             │
-│  Hierarchy:                                                 │
-│    Type: <strict | lattice | scoped>                        │
-│    Depth: <N levels>                                        │
-│    Inheritance: <enabled/disabled>                           │
-│                                                             │
-│  Delegation:                                                │
+  ACCESS CONTROL REPORT
+  Model: <RBAC | ABAC | ReBAC | Hybrid>
+  Roles defined: <N>
+  Permissions defined: <N>
+  Resources protected: <N>
+  Policies configured: <N>
+  Hierarchy:
+  Type: <strict | lattice | scoped>
+  Depth: <N levels>
+  Inheritance: <enabled/disabled>
+  Delegation:
 ```
 resources = list_all_protected_resources()
 roles = list_all_defined_roles()
@@ -369,16 +345,13 @@ HARD RULES — NEVER VIOLATE:
 | Flag | Description |
 |------|-------------|
 ```
-┌────────────────────────────────────────────────────────────┐
-│  RBAC RESULT                                                │
-├────────────────────────────────────────────────────────────┤
-│  Model: <RBAC | ABAC | ReBAC | Hybrid>                     │
-│  Roles: <N defined>                                         │
-│  Permissions: <N defined>                                   │
-│  Resources protected: <N>                                   │
-│  Audit logging: <YES | PARTIAL | NO>                        │
-│  Verdict: <PRODUCTION READY | NEEDS WORK | INCOMPLETE>      │
-└────────────────────────────────────────────────────────────┘
+  RBAC RESULT
+  Model: <RBAC | ABAC | ReBAC | Hybrid>
+  Roles: <N defined>
+  Permissions: <N defined>
+  Resources protected: <N>
+  Audit logging: <YES | PARTIAL | NO>
+  Verdict: <PRODUCTION READY | NEEDS WORK | INCOMPLETE>
 ```
 
 ## TSV Logging

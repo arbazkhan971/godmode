@@ -100,17 +100,15 @@ Optimize model for production inference:
 
 ```
 INFERENCE OPTIMIZATION:
-┌─────────────────────┬──────────┬──────────┬──────────┬──────────┐
-│ Optimization        │ Latency  │ Throughput│ Size     │ Accuracy │
-├─────────────────────┼──────────┼──────────┼──────────┼──────────┤
-│ Baseline (FP32)     │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ FP16 quantization   │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ INT8 quantization   │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ ONNX conversion     │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ TensorRT            │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ Pruning (50%)       │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-│ Distillation        │ <ms>     │ <req/s>  │ <MB>     │ <metric> │
-└─────────────────────┴──────────┴──────────┴──────────┴──────────┘
+| Optimization | Latency | Throughput | Size | Accuracy |
+|---|---|---|---|---|
+| Baseline (FP32) | <ms> | <req/s> | <MB> | <metric> |
+| FP16 quantization | <ms> | <req/s> | <MB> | <metric> |
+| INT8 quantization | <ms> | <req/s> | <MB> | <metric> |
+| ONNX conversion | <ms> | <req/s> | <MB> | <metric> |
+| TensorRT | <ms> | <req/s> | <MB> | <metric> |
+| Pruning (50%) | <ms> | <req/s> | <MB> | <metric> |
+| Distillation | <ms> | <req/s> | <MB> | <metric> |
 
 Selected: <optimization> — <rationale>
 Accuracy drop: <acceptable | too high — threshold>
@@ -141,14 +139,12 @@ Manage model versions with structured lifecycle:
 
 ```
 MODEL VERSION REGISTRY:
-┌─────────┬────────────┬──────────┬──────────┬──────────┬──────────┐
-│ Version │ Experiment │ Metric   │ Status   │ Traffic  │ Deployed │
-├─────────┼────────────┼──────────┼──────────┼──────────┼──────────┤
-│ v3.1    │ EXP-042    │ F1=0.891 │ CHAMPION │ 90%      │ 2025-03  │
-│ v3.2    │ EXP-047    │ F1=0.903 │ CANARY   │ 10%      │ 2025-03  │
-│ v3.0    │ EXP-038    │ F1=0.879 │ ARCHIVED │ 0%       │ 2025-02  │
-│ v2.9    │ EXP-031    │ F1=0.862 │ ARCHIVED │ 0%       │ 2025-01  │
-└─────────┴────────────┴──────────┴──────────┴──────────┴──────────┘
+| Version | Experiment | Metric | Status | Traffic | Deployed |
+|---|---|---|---|---|---|
+| v3.1 | EXP-042 | F1=0.891 | CHAMPION | 90% | 2025-03 |
+| v3.2 | EXP-047 | F1=0.903 | CANARY | 10% | 2025-03 |
+| v3.0 | EXP-038 | F1=0.879 | ARCHIVED | 0% | 2025-02 |
+| v2.9 | EXP-031 | F1=0.862 | ARCHIVED | 0% | 2025-01 |
 
 Version lifecycle:
   STAGED    → Model uploaded, not yet serving
@@ -191,15 +187,13 @@ Duration: <elapsed> / <planned>
 Samples: champion=<N>, challenger=<N>
 
 Metrics:
-┌────────────────┬───────────┬────────────┬──────────┬──────────┐
-│ Metric         │ Champion  │ Challenger │ Delta    │ p-value  │
-├────────────────┼───────────┼────────────┼──────────┼──────────┤
-│ <primary>      │ <value>   │ <value>    │ <change> │ <p>      │
-│ <guardrail 1>  │ <value>   │ <value>    │ <change> │ <p>      │
-│ <guardrail 2>  │ <value>   │ <value>    │ <change> │ <p>      │
-│ Latency p99    │ <value>   │ <value>    │ <change> │ <p>      │
-│ Error rate     │ <value>   │ <value>    │ <change> │ <p>      │
-└────────────────┴───────────┴────────────┴──────────┴──────────┘
+| Metric | Champion | Challenger | Delta | p-value |
+|---|---|---|---|---|
+| <primary> | <value> | <value> | <change> | <p> |
+| <guardrail 1> | <value> | <value> | <change> | <p> |
+| <guardrail 2> | <value> | <value> | <change> | <p> |
+| Latency p99 | <value> | <value> | <change> | <p> |
+| Error rate | <value> | <value> | <change> | <p> |
 
 Decision: <PROMOTE challenger | KEEP champion | EXTEND test>
 Rationale: <explanation based on metrics and significance>
@@ -215,14 +209,12 @@ Monitoring window: <time range>
 Reference: <training data distribution or baseline period>
 
 Data drift (input features):
-┌────────────────┬────────────┬──────────┬──────────┬──────────┐
-│ Feature        │ Test       │ Statistic│ p-value  │ Status   │
-├────────────────┼────────────┼──────────┼──────────┼──────────┤
-│ <feature 1>    │ KS test    │ <val>    │ <p>      │ <status> │
-│ <feature 2>    │ chi-sq     │ <val>    │ <p>      │ <status> │
-│ <feature 3>    │ PSI        │ <val>    │ —        │ <status> │
-│ <feature 4>    │ KS test    │ <val>    │ <p>      │ <status> │
-└────────────────┴────────────┴──────────┴──────────┴──────────┘
+| Feature | Test | Statistic | p-value | Status |
+|---|---|---|---|---|
+| <feature 1> | KS test | <val> | <p> | <status> |
+| <feature 2> | chi-sq | <val> | <p> | <status> |
+| <feature 3> | PSI | <val> | — | <status> |
+| <feature 4> | KS test | <val> | <p> | <status> |
 
 Concept drift (model performance):
 ```
@@ -284,20 +276,17 @@ Next scheduled retrain: <timestamp>
 
 ```
 MODEL MONITORING DASHBOARD:
-┌────────────────────────────────────────────────────────────┐
-│  MODEL: <name> v<version>                                  │
-│  Status: SERVING                                           │
-├────────────────────────────────────────────────────────────┤
-│  Traffic:                                                  │
-│  Requests/sec:   <current>  (avg: <avg>, peak: <peak>)    │
-│  Latency p50:    <ms>                                      │
-│  Latency p95:    <ms>                                      │
-│  Latency p99:    <ms>                                      │
-│  Error rate:     <percentage>                              │
-│                                                            │
-│  Model Performance:                                        │
-│  Primary metric (7d rolling): <value> (baseline: <value>) │
-│  Drift status:               <NONE | LOW | MODERATE | HIGH>│
+  MODEL: <name> v<version>
+  Status: SERVING
+  Traffic:
+  Requests/sec:   <current>  (avg: <avg>, peak: <peak>)
+  Latency p50:    <ms>
+  Latency p95:    <ms>
+  Latency p99:    <ms>
+  Error rate:     <percentage>
+  Model Performance:
+  Primary metric (7d rolling): <value> (baseline: <value>)
+  Drift status:               <NONE | LOW | MODERATE | HIGH>
 ```
 
 ### Step 9: Commit and Transition
@@ -394,18 +383,17 @@ After each MLOps skill invocation, emit a structured report:
 
 ```
 MLOPS DEPLOYMENT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Model               │  <name> v<version>             │
-│  Serving framework   │  <TorchServe | TFServing | Triton | custom> │
-│  Deployment method   │  <canary | blue-green | shadow> │
-│  Latency (p50/p99)   │  <N>ms / <N>ms                 │
-│  Throughput           │  <N> req/s                     │
-│  Model size           │  <N> MB                        │
-│  Drift monitoring     │  CONFIGURED / NOT CONFIGURED   │
-│  Fallback strategy    │  <description>                 │
-│  A/B test             │  RUNNING / NOT APPLICABLE      │
-│  Verdict              │  DEPLOYED | NEEDS WORK         │
-└──────────────────────────────────────────────────────┘
+| Model | <name> v<version> |
+|---|---|
+| Serving framework | <TorchServe | TFServing | Triton | custom> |
+| Deployment method | <canary | blue-green | shadow> |
+| Latency (p50/p99) | <N>ms / <N>ms |
+| Throughput | <N> req/s |
+| Model size | <N> MB |
+| Drift monitoring | CONFIGURED / NOT CONFIGURED |
+| Fallback strategy | <description> |
+| A/B test | RUNNING / NOT APPLICABLE |
+| Verdict | DEPLOYED | NEEDS WORK |
 ```
 
 ## TSV Logging
@@ -441,15 +429,14 @@ Audit date: <date>
 Models in production: <count>
 
 MODEL SERVING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Model serialized for serving       │ PASS|FAIL│ <ONNX|TorchScript│
-│  Input validation on all endpoints  │ PASS|FAIL│ <schema tool>   │
-│  Output validation and sanitization │ PASS|FAIL│ <post-process>  │
-│  Health check endpoint operational  │ PASS|FAIL│ <endpoint URL>  │
-│  Graceful degradation / fallback    │ PASS|FAIL│ <fallback model>│
-│  Autoscaling configured and tested  │ PASS|FAIL│ <min/max/metric>│
+| Check | Status | Evidence |
+|---|---|---|
+| Model serialized for serving | PASS|FAIL | <ONNX|TorchScript |
+| Input validation on all endpoints | PASS|FAIL | <schema tool> |
+| Output validation and sanitization | PASS|FAIL | <post-process> |
+| Health check endpoint operational | PASS|FAIL | <endpoint URL> |
+| Graceful degradation / fallback | PASS|FAIL | <fallback model> |
+| Autoscaling configured and tested | PASS|FAIL | <min/max/metric> |
 ```
 After EACH deployment phase (shadow, canary, ramp):
   1. MEASURE: Compare error rate and latency against champion baseline.

@@ -47,15 +47,13 @@ Evaluate how components are structured and composed:
 #### Component Hierarchy Analysis
 ```
 COMPONENT HIERARCHY:
-┌─────────────────────────────────────────────────────────────────┐
-│ Level          │ Components    │ Examples                       │
-├─────────────────────────────────────────────────────────────────┤
-│ Atoms          │ <N>           │ Button, Input, Label, Icon     │
-│ Molecules      │ <N>           │ FormField, SearchBar, Card     │
-│ Organisms      │ <N>           │ Header, Sidebar, DataTable     │
-│ Templates      │ <N>           │ DashboardLayout, AuthLayout    │
-│ Pages          │ <N>           │ HomePage, SettingsPage         │
-└─────────────────────────────────────────────────────────────────┘
+| Level | Components | Examples |
+|---|---|---|
+| Atoms | <N> | Button, Input, Label, Icon |
+| Molecules | <N> | FormField, SearchBar, Card |
+| Organisms | <N> | Header, Sidebar, DataTable |
+| Templates | <N> | DashboardLayout, AuthLayout |
+| Pages | <N> | HomePage, SettingsPage |
 
 Composition patterns detected:
 - [ ] Compound components (Menu + Menu.Item)
@@ -91,20 +89,18 @@ Evaluate and recommend the right CSS strategy:
 #### CSS Approach Comparison
 ```
 CSS ARCHITECTURE DECISION MATRIX:
-┌─────────────────────────────────────────────────────────────────────────┐
-│ Criterion         │ CSS Modules │ Tailwind  │ CSS-in-JS │ SCSS       │
-├─────────────────────────────────────────────────────────────────────────┤
-│ Scoping           │ Automatic   │ Utility   │ Automatic │ Manual     │
-│ Bundle size       │ Small       │ Small*    │ Variable  │ Small      │
-│ Runtime cost      │ None        │ None      │ Yes       │ None       │
-│ Type safety       │ With plugin │ With plugin│ Native   │ No         │
-│ DX/Speed          │ Good        │ Fast      │ Good      │ Good       │
-│ Theming           │ CSS vars    │ Config    │ Native    │ Variables  │
-│ SSR friendly      │ Yes         │ Yes       │ Depends   │ Yes        │
-│ Learning curve    │ Low         │ Medium    │ Medium    │ Low        │
-│ Design tokens     │ CSS vars    │ Config    │ Theme obj │ Variables  │
-│ Team scalability  │ Good        │ Good      │ Moderate  │ Moderate   │
-└─────────────────────────────────────────────────────────────────────────┘
+| Criterion | CSS Modules | Tailwind | CSS-in-JS | SCSS |
+|---|---|---|---|---|
+| Scoping | Automatic | Utility | Automatic | Manual |
+| Bundle size | Small | Small* | Variable | Small |
+| Runtime cost | None | None | Yes | None |
+| Type safety | With plugin | With plugin | Native | No |
+| DX/Speed | Good | Fast | Good | Good |
+| Theming | CSS vars | Config | Native | Variables |
+| SSR friendly | Yes | Yes | Depends | Yes |
+| Learning curve | Low | Medium | Medium | Low |
+| Design tokens | CSS vars | Config | Theme obj | Variables |
+| Team scalability | Good | Good | Moderate | Moderate |
 * Tailwind with purge/JIT
 ```
 
@@ -124,18 +120,16 @@ Audit adherence to the design system:
 #### Design Token Inventory
 ```
 DESIGN TOKEN AUDIT:
-┌─────────────────────────────────────────────────────────────────┐
-│ Token Category   │ Defined │ Used │ Hardcoded │ Violations     │
-├─────────────────────────────────────────────────────────────────┤
-│ Colors           │ 24      │ 22   │ 7         │ 7 hardcoded    │
-│ Typography       │ 8       │ 6    │ 3         │ 2 missing, 3 hc│
-│ Spacing          │ 12      │ 10   │ 5         │ 5 hardcoded    │
-│ Border radius    │ 4       │ 4    │ 1         │ 1 hardcoded    │
-│ Shadows          │ 3       │ 2    │ 2         │ 1 missing, 2 hc│
-│ Z-index          │ 5       │ 3    │ 4         │ 4 hardcoded    │
-│ Breakpoints      │ 5       │ 5    │ 0         │ 0              │
-│ Transitions      │ 3       │ 1    │ 2         │ 2 missing, 2 hc│
-└─────────────────────────────────────────────────────────────────┘
+| Token Category | Defined | Used | Hardcoded | Violations |
+|---|---|---|---|---|
+| Colors | 24 | 22 | 7 | 7 hardcoded |
+| Typography | 8 | 6 | 3 | 2 missing, 3 hc |
+| Spacing | 12 | 10 | 5 | 5 hardcoded |
+| Border radius | 4 | 4 | 1 | 1 hardcoded |
+| Shadows | 3 | 2 | 2 | 1 missing, 2 hc |
+| Z-index | 5 | 3 | 4 | 4 hardcoded |
+| Breakpoints | 5 | 5 | 0 | 0 |
+| Transitions | 3 | 1 | 2 | 2 missing, 2 hc |
 
 hc = hardcoded (using raw values instead of tokens)
 
@@ -223,15 +217,13 @@ const meta: Meta<typeof Button> = {
 #### Story Quality Checklist
 ```
 STORYBOOK AUDIT:
-┌─────────────────────────────────────────────────────────────────────┐
-│ Component         │ Stories │ Docs  │ Controls │ A11y addon │ Status│
-├─────────────────────────────────────────────────────────────────────┤
-│ Button            │ 5       │ Yes   │ Yes      │ Passing    │ GOOD  │
-│ Input             │ 3       │ Yes   │ Yes      │ 1 warning  │ OK    │
-│ DataTable         │ 1       │ No    │ No       │ Not tested │ POOR  │
-│ Modal             │ 0       │ No    │ No       │ Not tested │ NONE  │
-│ Card              │ 2       │ Yes   │ Partial  │ Passing    │ OK    │
-└─────────────────────────────────────────────────────────────────────┘
+| Component | Stories | Docs | Controls | A11y addon | Status |
+|---|---|---|---|---|---|
+| Button | 5 | Yes | Yes | Passing | GOOD |
+| Input | 3 | Yes | Yes | 1 warning | OK |
+| DataTable | 1 | No | No | Not tested | POOR |
+| Modal | 0 | No | No | Not tested | NONE |
+| Card | 2 | Yes | Partial | Passing | OK |
 
 Coverage:
   Components with stories: <N>/<total> (<X>%)
@@ -300,33 +292,27 @@ API CONVENTIONS:
 #### Violations Report
 ```
 PATTERN VIOLATIONS:
-┌──────────────────────────────────────────────────────────────────┐
-│ Violation                  │ Count │ Files                      │
-├──────────────────────────────────────────────────────────────────┤
-│ Hardcoded colors           │ 7     │ Card.css, Modal.css, ...   │
-│ Missing TypeScript types   │ 3     │ Tooltip.tsx, Badge.tsx, ...│
-│ No ref forwarding          │ 5     │ Input.tsx, Select.tsx, ... │
-│ Inconsistent prop naming   │ 2     │ Tabs (kind vs variant)     │
-│ Missing Storybook stories  │ 4     │ Modal, Toast, Drawer, ...  │
-│ No display name            │ 6     │ Various forwardRef comps   │
-│ Missing loading states     │ 3     │ DataTable, Form, Image     │
-└──────────────────────────────────────────────────────────────────┘
+| Violation | Count | Files |
+|---|---|---|
+| Hardcoded colors | 7 | Card.css, Modal.css, ... |
+| Missing TypeScript types | 3 | Tooltip.tsx, Badge.tsx, ... |
+| No ref forwarding | 5 | Input.tsx, Select.tsx, ... |
+| Inconsistent prop naming | 2 | Tabs (kind vs variant) |
+| Missing Storybook stories | 4 | Modal, Toast, Drawer, ... |
+| No display name | 6 | Various forwardRef comps |
+| Missing loading states | 3 | DataTable, Form, Image |
 ```
 
 ### Step 9: Recommendations Report
 
 ```
-+------------------------------------------------------------+
 |  UI ARCHITECTURE REPORT — <project>                         |
-+------------------------------------------------------------+
 |  Framework: <framework>                                     |
 |  Styling: <approach>                                        |
 |  Components: <N> total                                      |
-|                                                             |
 |  Component Quality:                                         |
 |  Well-structured:  <N> components                           |
 |  Needs improvement: <N> components                          |
-|                                                             |
 ```
 
 ### Step 10: Commit and Transition
@@ -387,16 +373,15 @@ After each UI skill invocation, emit a summary table:
 
 ```
 UI BUILD REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Components built  │  <N>                             │
-│  Components updated│  <N>                             │
-│  Storybook stories │  <N> created / <N> updated       │
-│  Tests             │  <N> passing, <N> failing        │
-│  Tokens used       │  <N> design tokens referenced    │
-│  A11y checks       │  <N> passing, <N> violations     │
-│  Bundle impact     │  +<N> KB (gzipped)               │
-│  Verdict           │  PASS | NEEDS REVISION           │
-└──────────────────────────────────────────────────────┘
+| Components built | <N> |
+|---|---|
+| Components updated | <N> |
+| Storybook stories | <N> created / <N> updated |
+| Tests | <N> passing, <N> failing |
+| Tokens used | <N> design tokens referenced |
+| A11y checks | <N> passing, <N> violations |
+| Bundle impact | +<N> KB (gzipped) |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging
@@ -451,15 +436,14 @@ Phase 1 — Consistency Scoring
   Score every component against a unified quality rubric (0-100 per component).
 
   COMPONENT QUALITY RUBRIC (per component, max 100 points):
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Criterion                              │  Points  │  How to Verify  │
-  ├─────────────────────────────────────────┼──────────┼─────────────────┤
-  │  TypeScript props with descriptions     │  10      │  Check .types.ts│
-  │  Default values for optional props      │  5       │  Check defaults │
-  │  Ref forwarding (if wraps native elem)  │  5       │  Check forwardRef│
-  │  className/style override accepted      │  5       │  Check props    │
-  │  Consistent prop naming (variant/size)  │  10      │  Compare to std │
-  │  All design tokens used (no hardcoded)  │  15      │  Grep for raw   │
+| Criterion | Points | How to Verify |
+|---|---|---|
+| TypeScript props with descriptions | 10 | Check .types.ts |
+| Default values for optional props | 5 | Check defaults |
+| Ref forwarding (if wraps native elem) | 5 | Check forwardRef |
+| className/style override accepted | 5 | Check props |
+| Consistent prop naming (variant/size) | 10 | Compare to std |
+| All design tokens used (no hardcoded) | 15 | Grep for raw |
 ```
 After EACH component fix or token replacement:
   1. MEASURE: Run visual regression test — does the component look the same?

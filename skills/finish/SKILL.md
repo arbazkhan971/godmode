@@ -359,15 +359,13 @@ WHILE current_iteration < max_iterations:
 
     4. GENERATE PR readiness summary:
        PR READINESS:
-       ┌──────────────────────────────────────┬──────────┐
-       │  Check                               │  Status  │
-       ├──────────────────────────────────────┼──────────┤
-       │  Branch naming convention            │  OK/FAIL │
-       │  Clean commit history                │  OK/FAIL │
-       │  Commit message convention           │  OK/FAIL │
-       │  Rebased on latest main              │  OK/FAIL │
-       │  Diff size within limits             │  OK/WARN │
-       └──────────────────────────────────────┴──────────┘
+| Check | Status |
+|---|---|
+| Branch naming convention | OK/FAIL |
+| Clean commit history | OK/FAIL |
+| Commit message convention | OK/FAIL |
+| Rebased on latest main | OK/FAIL |
+| Diff size within limits | OK/WARN |
 
   IF dimension == "integration_check":
     1. CHECK for integration issues:
@@ -394,21 +392,17 @@ WHILE current_iteration < max_iterations:
   REPORT: "Dimension {current_iteration}/{max_iterations}: {dimension} — {PASS | FAIL | WARN}"
 
 FINAL COMPLETION VERIFICATION:
-┌──────────────────────────────────────────────────────────┐
-│  COMPLETION VERIFICATION SUMMARY                          │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Dimension           │ Status │ Details                    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Test suite          │ PASS   │ 112/112 pass, +8 new       │
-│  Coverage threshold  │ PASS   │ 84% (+2% vs main)          │
-│  Docs updated        │ WARN   │ API docs need update       │
-│  Lint clean          │ PASS   │ 0 errors, 0 warnings       │
-│  PR readiness        │ PASS   │ Clean commits, rebased     │
-│  Integration check   │ PASS   │ No conflicts, migration OK │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │ READY  │ 1 warning (docs)           │
-│  Recommendation      │        │ Update API docs, then ship │
-└──────────────────────┴────────┴───────────────────────────┘
+  COMPLETION VERIFICATION SUMMARY
+| Dimension | Status | Details |
+|---|---|---|
+| Test suite | PASS | 112/112 pass, +8 new |
+| Coverage threshold | PASS | 84% (+2% vs main) |
+| Docs updated | WARN | API docs need update |
+| Lint clean | PASS | 0 errors, 0 warnings |
+| PR readiness | PASS | Clean commits, rebased |
+| Integration check | PASS | No conflicts, migration OK |
+| Overall | READY | 1 warning (docs) |
+| Recommendation |  | Update API docs, then ship |
 
 DECISION:
   IF all PASS: → proceed to /godmode:ship or /godmode:finish (PR/merge)

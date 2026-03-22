@@ -33,8 +33,7 @@ When the problem is about object creation — too many constructors, complex ini
 
 ```
 CREATIONAL PATTERNS:
-┌──────────────────┬────────────────────────────────────────────────────────┐
-│ Pattern          │ Use When                                             │
+| Pattern | Use When |
 ```
 
 #### Category B: Structural Patterns
@@ -42,8 +41,7 @@ When the problem is about composing objects — how to assemble classes and obje
 
 ```
 STRUCTURAL PATTERNS:
-┌──────────────────┬────────────────────────────────────────────────────────┐
-│ Pattern          │ Use When                                             │
+| Pattern | Use When |
 ```
 
 #### Category C: Behavioral Patterns
@@ -51,8 +49,7 @@ When the problem is about object communication — how objects interact and dist
 
 ```
 BEHAVIORAL PATTERNS:
-┌──────────────────┬────────────────────────────────────────────────────────┐
-│ Pattern          │ Use When                                             │
+| Pattern | Use When |
 ```
 
 #### Category D: Modern / Distributed System Patterns
@@ -60,8 +57,7 @@ When the problem involves distributed systems, resilience, or data consistency a
 
 ```
 MODERN PATTERNS:
-┌──────────────────┬────────────────────────────────────────────────────────┐
-│ Pattern          │ Use When                                             │
+| Pattern | Use When |
 ```
 
 ### Step 3: Pattern Recommendation
@@ -69,8 +65,7 @@ For each candidate pattern, provide a structured recommendation:
 
 ```
 PATTERN RECOMMENDATION:
-┌────────────────────────────────────────────────────────────────────┐
-│  Pattern: <Name>                                                   │
+  Pattern: <Name>
 ```
 
 ### Step 4: Language-Specific Implementation
@@ -94,8 +89,7 @@ Scan the codebase for common anti-patterns:
 
 ```
 ANTI-PATTERN SCAN:
-┌──────────────────────┬──────────────────────────────────────────────────┐
-│ Anti-Pattern         │ Detection Signals                               │
+| Anti-Pattern | Detection Signals |
 ```
 
 For each detected anti-pattern:
@@ -246,41 +240,39 @@ FINAL: Pattern audit report with prioritized refactor suggestions
 
 ```
 PATTERN DETECTION SCAN:
-┌──────────────────────────────────────────────────────────────┐
-│  Pattern          │ Detection Signal              │ Found    │
-├───────────────────┼───────────────────────────────┼──────────┤
-│  Singleton        │ static instance, getInstance()│ <files>  │
-│  Factory          │ create*, Factory class/func   │ <files>  │
-│  Builder          │ .setX().setY().build()        │ <files>  │
-│  Strategy         │ interface + multiple impls    │ <files>  │
-│                   │ injected at construction      │          │
-│  Observer         │ on(), emit(), subscribe(),    │ <files>  │
-│                   │ EventEmitter, addEventListener│          │
-│  Repository       │ class.*Repository, findBy*,   │ <files>  │
-│                   │ save(), delete()              │          │
-│  Decorator        │ wraps another instance of     │ <files>  │
-│                   │ same interface, delegates calls│         │
-│  Command          │ execute(), undo(), command    │ <files>  │
-│                   │ objects with action payload   │          │
-│  Mediator         │ central coordinator, handles  │ <files>  │
-│                   │ cross-component communication │          │
-│  Chain of Resp.   │ middleware chains, next(),    │ <files>  │
-│                   │ pipe(), handler arrays        │          │
-│  Adapter          │ wraps foreign interface to    │ <files>  │
-│                   │ match expected interface      │          │
-│  Facade           │ simplified interface to       │ <files>  │
-│                   │ complex subsystem             │          │
-│  State            │ state objects with behavior,  │ <files>  │
-│                   │ context delegates to state    │          │
-│  Proxy            │ same interface as target,     │ <files>  │
-│                   │ controls access (cache, lazy) │          │
-│  Circuit Breaker  │ failure counting, open/closed │ <files>  │
-│                   │ /half-open states             │          │
-│  Saga             │ compensation chains, saga     │ <files>  │
-│                   │ orchestrator/choreography     │          │
-│  Outbox           │ outbox table, event relay,    │ <files>  │
-│                   │ transactional event publish   │          │
-└───────────────────┴───────────────────────────────┴──────────┘
+| Pattern | Detection Signal | Found |
+|---|---|---|
+| Singleton | static instance, getInstance() | <files> |
+| Factory | create*, Factory class/func | <files> |
+| Builder | .setX().setY().build() | <files> |
+| Strategy | interface + multiple impls | <files> |
+|  | injected at construction |  |
+| Observer | on(), emit(), subscribe(), | <files> |
+|  | EventEmitter, addEventListener |  |
+| Repository | class.*Repository, findBy*, | <files> |
+|  | save(), delete() |  |
+| Decorator | wraps another instance of | <files> |
+|  | same interface, delegates calls |  |
+| Command | execute(), undo(), command | <files> |
+|  | objects with action payload |  |
+| Mediator | central coordinator, handles | <files> |
+|  | cross-component communication |  |
+| Chain of Resp. | middleware chains, next(), | <files> |
+|  | pipe(), handler arrays |  |
+| Adapter | wraps foreign interface to | <files> |
+|  | match expected interface |  |
+| Facade | simplified interface to | <files> |
+|  | complex subsystem |  |
+| State | state objects with behavior, | <files> |
+|  | context delegates to state |  |
+| Proxy | same interface as target, | <files> |
+|  | controls access (cache, lazy) |  |
+| Circuit Breaker | failure counting, open/closed | <files> |
+|  | /half-open states |  |
+| Saga | compensation chains, saga | <files> |
+|  | orchestrator/choreography |  |
+| Outbox | outbox table, event relay, | <files> |
+|  | transactional event publish |  |
 
 PATTERN HEALTH ASSESSMENT:
 For each detected pattern:
@@ -297,55 +289,43 @@ For each detected pattern:
 
 ```
 ANTI-PATTERN AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│  Anti-Pattern       │ Severity │ Files │ Impact              │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  God Object         │ HIGH     │ <N>   │ Unmodifiable core   │
-│  (class > 500 LOC,  │          │       │ module, high merge  │
-│  > 20 methods,      │          │       │ conflict rate       │
-│  multiple domains)  │          │       │                     │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Shotgun Surgery    │ HIGH     │ <N>   │ Single change       │
-│  (one change =      │          │       │ requires modifying  │
-│  many file edits)   │          │       │ N+ files            │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Feature Envy       │ MEDIUM   │ <N>   │ Method uses more    │
-│  (method accesses   │          │       │ data from another   │
-│  other class data)  │          │       │ class than its own  │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Primitive Obsession│ MEDIUM   │ <N>   │ No domain type      │
-│  (string for email, │          │       │ validation, invalid │
-│  int for money)     │          │       │ values propagate    │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Anemic Domain      │ MEDIUM   │ <N>   │ All logic in service│
-│  (data-only models, │          │       │ layer, domain model │
-│  no behavior)       │          │       │ adds no value       │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Circular Dependency│ HIGH     │ <N>   │ Cannot deploy or    │
-│  (A imports B,      │          │       │ test independently  │
-│  B imports A)       │          │       │                     │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Leaky Abstraction  │ MEDIUM   │ <N>   │ Implementation      │
-│  (DB columns in API │          │       │ detail changes      │
-│  response)          │          │       │ break consumers     │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Distributed        │ CRITICAL │ <N>   │ Must deploy all     │
-│  Monolith           │          │       │ services together,  │
-│  (coupled services) │          │       │ negates micro gains │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Golden Hammer      │ LOW      │ <N>   │ One pattern used    │
-│  (same pattern for  │          │       │ everywhere even     │
-│  everything)        │          │       │ when inappropriate  │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Speculative        │ LOW      │ <N>   │ Over-engineered     │
-│  Generality         │          │       │ abstractions for    │
-│  (unused flex pts)  │          │       │ theoretical futures │
-├─────────────────────┼──────────┼───────┼─────────────────────┤
-│  Copy-Paste         │ MEDIUM   │ <N>   │ Duplicated logic    │
-│  Programming        │          │       │ drifts apart,       │
-│  (cloned blocks)    │          │       │ bugs fixed in one   │
-│                     │          │       │ but not the other   │
-└─────────────────────┴──────────┴───────┴─────────────────────┘
+| Anti-Pattern | Severity | Files | Impact |
+|---|---|---|---|
+| God Object | HIGH | <N> | Unmodifiable core |
+| (class > 500 LOC, |  |  | module, high merge |
+| > 20 methods, |  |  | conflict rate |
+| multiple domains) |  |  |  |
+| Shotgun Surgery | HIGH | <N> | Single change |
+| (one change = |  |  | requires modifying |
+| many file edits) |  |  | N+ files |
+| Feature Envy | MEDIUM | <N> | Method uses more |
+| (method accesses |  |  | data from another |
+| other class data) |  |  | class than its own |
+| Primitive Obsession | MEDIUM | <N> | No domain type |
+| (string for email, |  |  | validation, invalid |
+| int for money) |  |  | values propagate |
+| Anemic Domain | MEDIUM | <N> | All logic in service |
+| (data-only models, |  |  | layer, domain model |
+| no behavior) |  |  | adds no value |
+| Circular Dependency | HIGH | <N> | Cannot deploy or |
+| (A imports B, |  |  | test independently |
+| B imports A) |  |  |  |
+| Leaky Abstraction | MEDIUM | <N> | Implementation |
+| (DB columns in API |  |  | detail changes |
+| response) |  |  | break consumers |
+| Distributed | CRITICAL | <N> | Must deploy all |
+| Monolith |  |  | services together, |
+| (coupled services) |  |  | negates micro gains |
+| Golden Hammer | LOW | <N> | One pattern used |
+| (same pattern for |  |  | everywhere even |
+| everything) |  |  | when inappropriate |
+| Speculative | LOW | <N> | Over-engineered |
+| Generality |  |  | abstractions for |
+| (unused flex pts) |  |  | theoretical futures |
+| Copy-Paste | MEDIUM | <N> | Duplicated logic |
+| Programming |  |  | drifts apart, |
+| (cloned blocks) |  |  | bugs fixed in one |
+|  |  |  | but not the other |
 
 DETECTION COMMANDS:
   # God Objects: files with high LOC and many exports
@@ -369,49 +349,37 @@ DETECTION COMMANDS:
 
 ```
 REFACTOR SUGGESTION FORMAT:
-┌──────────────────────────────────────────────────────────────┐
-│  Anti-Pattern: <name>                                         │
-│  Location: <file:line-range>                                  │
-│  Severity: <CRITICAL|HIGH|MEDIUM|LOW>                         │
-│  Effort: <S|M|L|XL>                                          │
-├──────────────────────────────────────────────────────────────┤
-│  Problem:                                                     │
-│  <1-2 sentences: what is wrong and why it matters>            │
-│                                                               │
-│  Recommended Pattern: <design pattern that resolves this>     │
-│                                                               │
-│  Before (current):                                            │
-│  ```<language>                                                │
-│  // Problematic code snippet                                  │
-│  ```                                                          │
-│                                                               │
-│  After (refactored):                                          │
-│  ```<language>                                                │
-│  // Improved code snippet using recommended pattern           │
-│  ```                                                          │
-│                                                               │
-│  Steps:                                                       │
-│  1. <specific first action>                                   │
-│  2. <specific second action>                                  │
-│  3. <run tests after each step>                               │
-│                                                               │
-│  Risk: <what could go wrong>                                  │
-│  Prerequisite: <tests needed, dependencies to resolve first>  │
-│  Related: <other findings this fix may resolve>               │
-└──────────────────────────────────────────────────────────────┘
+  Anti-Pattern: <name>
+  Location: <file:line-range>
+  Severity: <CRITICAL|HIGH|MEDIUM|LOW>
+  Effort: <S|M|L|XL>
+  Problem:
+  <1-2 sentences: what is wrong and why it matters>
+  Recommended Pattern: <design pattern that resolves this>
+  Before (current):
+  ```<language>
+  // Problematic code snippet
+  ```
+  After (refactored):
+  ```<language>
+  // Improved code snippet using recommended pattern
+  ```
+  Steps:
+  1. <specific first action>
+  2. <specific second action>
+  3. <run tests after each step>
+  Risk: <what could go wrong>
+  Prerequisite: <tests needed, dependencies to resolve first>
+  Related: <other findings this fix may resolve>
 
 PRIORITIZATION MATRIX:
-┌──────────────────────────────────────────────────────────────┐
-│  Finding           │ Severity │ Effort │ Priority Score      │
-│                    │ (1-4)    │ (1-4)  │ (severity/effort)   │
-├────────────────────┼──────────┼────────┼─────────────────────┤
-│  <finding 1>       │ <N>      │ <N>    │ <ratio>             │
-│  <finding 2>       │ <N>      │ <N>    │ <ratio>             │
-│  <finding 3>       │ <N>      │ <N>    │ <ratio>             │
-├────────────────────┼──────────┼────────┼─────────────────────┤
-│  RECOMMENDED ORDER: highest priority score first              │
-│  (maximum impact per unit of effort)                          │
-└──────────────────────────────────────────────────────────────┘
+| Finding | Severity | Effort | Priority Score |
+|  | (1-4) | (1-4) | (severity/effort) |
+| <finding 1> | <N> | <N> | <ratio> |
+| <finding 2> | <N> | <N> | <ratio> |
+| <finding 3> | <N> | <N> | <ratio> |
+  RECOMMENDED ORDER: highest priority score first
+  (maximum impact per unit of effort)
 ```
 
 ### Pattern Audit Report

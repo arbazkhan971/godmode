@@ -153,20 +153,16 @@ Diagnose and fix flaky E2E tests:
 #### Common Flakiness Causes
 ```
 FLAKINESS DIAGNOSIS:
-┌─────────────────────────┬──────────────────────────────────────────────┐
-│ Symptom                 │ Root Cause → Fix                             │
-├─────────────────────────┼──────────────────────────────────────────────┤
-│ Element not found       │ Race condition → Use auto-waiting locators   │
-│                         │ (Playwright: getByRole, Cypress: .should)    │
-├─────────────────────────┼──────────────────────────────────────────────┤
-│ Timeout on navigation   │ Slow page load → Increase timeout, check    │
-│                         │ network conditions, use waitForLoadState     │
-├─────────────────────────┼──────────────────────────────────────────────┤
-│ Stale element reference │ DOM re-render → Re-query element after       │
-│                         │ action, avoid storing element references     │
-├─────────────────────────┼──────────────────────────────────────────────┤
-│ Test order dependency   │ Shared state → Isolate test data, use       │
-│                         │ beforeEach for fresh state                   │
+| Symptom | Root Cause → Fix |
+|---|---|
+| Element not found | Race condition → Use auto-waiting locators |
+|  | (Playwright: getByRole, Cypress: .should) |
+| Timeout on navigation | Slow page load → Increase timeout, check |
+|  | network conditions, use waitForLoadState |
+| Stale element reference | DOM re-render → Re-query element after |
+|  | action, avoid storing element references |
+| Test order dependency | Shared state → Isolate test data, use |
+|  | beforeEach for fresh state |
 ```
 
 #### Flakiness Prevention Checklist
@@ -189,16 +185,14 @@ Configure and run tests across browser matrix:
 
 ```
 BROWSER MATRIX:
-┌────────────────┬──────────┬──────────────┬──────────────────────┐
-│ Browser        │ Engine   │ Test Status  │ Known Issues         │
-├────────────────┼──────────┼──────────────┼──────────────────────┤
-│ Chrome         │ Chromium │ <PASS/FAIL>  │ <issues or none>     │
-│ Firefox        │ Gecko    │ <PASS/FAIL>  │ <issues or none>     │
-│ Safari         │ WebKit   │ <PASS/FAIL>  │ <issues or none>     │
-│ Edge           │ Chromium │ <PASS/FAIL>  │ <issues or none>     │
-│ Mobile Chrome  │ Chromium │ <PASS/FAIL>  │ <issues or none>     │
-│ Mobile Safari  │ WebKit   │ <PASS/FAIL>  │ <issues or none>     │
-└────────────────┴──────────┴──────────────┴──────────────────────┘
+| Browser | Engine | Test Status | Known Issues |
+|---|---|---|---|
+| Chrome | Chromium | <PASS/FAIL> | <issues or none> |
+| Firefox | Gecko | <PASS/FAIL> | <issues or none> |
+| Safari | WebKit | <PASS/FAIL> | <issues or none> |
+| Edge | Chromium | <PASS/FAIL> | <issues or none> |
+| Mobile Chrome | Chromium | <PASS/FAIL> | <issues or none> |
+| Mobile Safari | WebKit | <PASS/FAIL> | <issues or none> |
 
 CROSS-BROWSER ISSUES FOUND:
 1. <issue> — Affects <browser> — Fix: <recommendation>
@@ -208,21 +202,17 @@ CROSS-BROWSER ISSUES FOUND:
 ### Step 8: Generate E2E Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  E2E TEST REPORT — <project>                               │
-├────────────────────────────────────────────────────────────┤
-│  Framework: <Playwright | Cypress | Selenium>              │
-│  Total tests: <N>                                          │
-│  Passing: <N>  Failing: <N>  Skipped: <N>                  │
-│  Duration: <X>s (parallel: <N> workers)                    │
-│                                                            │
-│  COVERAGE BY FEATURE:                                      │
-│  Auth flows: <N> tests — <PASS/FAIL>                       │
-│  Checkout: <N> tests — <PASS/FAIL>                         │
-│  Dashboard: <N> tests — <PASS/FAIL>                        │
-│  Settings: <N> tests — <PASS/FAIL>                         │
-│                                                            │
-│  CROSS-BROWSER:                                            │
+  E2E TEST REPORT — <project>
+  Framework: <Playwright | Cypress | Selenium>
+  Total tests: <N>
+  Passing: <N>  Failing: <N>  Skipped: <N>
+  Duration: <X>s (parallel: <N> workers)
+  COVERAGE BY FEATURE:
+  Auth flows: <N> tests — <PASS/FAIL>
+  Checkout: <N> tests — <PASS/FAIL>
+  Dashboard: <N> tests — <PASS/FAIL>
+  Settings: <N> tests — <PASS/FAIL>
+  CROSS-BROWSER:
 ```
 
 ### Step 9: Commit and Transition

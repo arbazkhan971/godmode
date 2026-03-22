@@ -1328,7 +1328,6 @@ func AssertEqualJSON(t *testing.T, expected, actual string) {
 
 ```
 Command                                Description
-────────────────────────────────────────────────────────────────
 go test                                Run tests in current package
 go test ./...                          Run all tests recursively
 go test -v                             Verbose output

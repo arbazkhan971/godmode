@@ -254,7 +254,7 @@ When in doubt, use this tree. Each branch tells you what NOT to pick.
 ```
 "I have code but it's broken"
 ├─ errors are clear (stack trace, lint) → /godmode:fix
-│  (NOT debug — debug is for unclear failures)
+  (NOT debug — debug is for unclear failures)
 └─ cause is unknown → /godmode:debug
    (NOT fix — fix assumes you know what's broken)
 

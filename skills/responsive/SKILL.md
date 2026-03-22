@@ -39,14 +39,12 @@ Choose and implement the right layout strategy:
 #### Strategy Comparison
 ```
 LAYOUT STRATEGY COMPARISON:
-┌──────────────────────────────────────────────────────────────────────────┐
-│ Strategy      │ Description              │ Best For                      │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Fluid         │ Percentage/relative units │ Simple layouts, text-heavy    │
-│               │ Scales continuously       │ Content sites, blogs          │
+| Strategy | Description | Best For |
+|---|---|---|
+| Fluid | Percentage/relative units | Simple layouts, text-heavy |
+|  | Scales continuously | Content sites, blogs |
 │               │                          │                               │
     # ... (condensed)
-└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### Mobile-First Breakpoint System
@@ -317,24 +315,20 @@ Handle tables that don't fit on small screens:
 
 ```
 RESPONSIVE DESIGN AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│ Breakpoints                                                   │
-│   Strategy: <mobile-first / desktop-first / intrinsic>        │
-│   Defined: <list breakpoints>                                 │
-│   Consistent: YES / NO                                        │
-│                                                               │
-│ Layout Techniques                                             │
-│   CSS Grid: <N> usages                                        │
-│   Flexbox: <N> usages                                         │
-│   Container queries: <N> usages                               │
-│   Float (legacy): <N> usages — MIGRATE                        │
-│   Absolute positioning for layout: <N> — MIGRATE              │
-│                                                               │
-│ Viewport Testing                                              │
-│   320px (small mobile):  PASS / FAIL (<N> issues)             │
-│   375px (iPhone):        PASS / FAIL (<N> issues)             │
+  Breakpoints
+  Strategy: <mobile-first / desktop-first / intrinsic>
+  Defined: <list breakpoints>
+  Consistent: YES / NO
+  Layout Techniques
+  CSS Grid: <N> usages
+  Flexbox: <N> usages
+  Container queries: <N> usages
+  Float (legacy): <N> usages — MIGRATE
+  Absolute positioning for layout: <N> — MIGRATE
+  Viewport Testing
+  320px (small mobile):  PASS / FAIL (<N> issues)
+  375px (iPhone):        PASS / FAIL (<N> issues)
     # ... (condensed)
-└──────────────────────────────────────────────────────────────┘
 ```
 
 Scoring:
@@ -415,14 +409,14 @@ After each responsive skill invocation, emit a structured report:
 
 ```
 RESPONSIVE AUDIT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Pages audited      │  <N>                            │
-│  Breakpoints tested │  320, 375, 768, 1024, 1280, 1536│
-│  Layout issues      │  <N> found / <N> fixed          │
-│  Image optimization │  <N> images with srcset/sizes   │
-│  Touch targets      │  <N> below 44px / <N> fixed     │
-│  CLS score          │  <N> (target < 0.1)             │
-│  Typography         │  fluid (clamp): YES / NO        │
+| Pages audited | <N> |
+|---|---|
+| Breakpoints tested | 320, 375, 768, 1024, 1280, 1536 |
+| Layout issues | <N> found / <N> fixed |
+| Image optimization | <N> images with srcset/sizes |
+| Touch targets | <N> below 44px / <N> fixed |
+| CLS score | <N> (target < 0.1) |
+| Typography | fluid (clamp): YES / NO |
 
 ## TSV Logging
 

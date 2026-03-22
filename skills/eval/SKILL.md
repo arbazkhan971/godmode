@@ -49,18 +49,17 @@ Create or curate the evaluation dataset:
 EVALUATION DATASET DESIGN:
 
 Dataset sources:
-┌───────────────────────┬──────────┬────────────────────────────────────────────┐
-│ Source                │ Examples │ Description                                │
-├───────────────────────┼──────────┼────────────────────────────────────────────┤
-│ Hand-curated golden   │ <N>      │ Expert-written input/output pairs          │
-│ set                   │          │ (highest quality, expensive to create)     │
-│ Production logs       │ <N>      │ Real user queries with human ratings       │
-│ (sampled)             │          │ (realistic, may contain PII)              │
-│ Synthetic generation  │ <N>      │ LLM-generated test cases                  │
-│                       │          │ (scalable, may miss real patterns)        │
-│ Adversarial set       │ <N>      │ Deliberately tricky or edge-case inputs   │
-│                       │          │ (tests robustness)                        │
-│ Domain benchmark      │ <N>      │ Standard benchmark for the domain         │
+| Source | Examples | Description |
+|---|---|---|
+| Hand-curated golden | <N> | Expert-written input/output pairs |
+| set |  | (highest quality, expensive to create) |
+| Production logs | <N> | Real user queries with human ratings |
+| (sampled) |  | (realistic, may contain PII) |
+| Synthetic generation | <N> | LLM-generated test cases |
+|  |  | (scalable, may miss real patterns) |
+| Adversarial set | <N> | Deliberately tricky or edge-case inputs |
+|  |  | (tests robustness) |
+| Domain benchmark | <N> | Standard benchmark for the domain |
 ```
 
 ### Step 3: Evaluation Framework Selection
@@ -70,18 +69,16 @@ Choose or build the evaluation framework:
 EVALUATION FRAMEWORK:
 
 Framework options:
-┌─────────────────────┬──────────────────────────────────────────────────────────┐
-│ Framework           │ Best for                                                 │
-├─────────────────────┼──────────────────────────────────────────────────────────┤
-│ RAGAS               │ RAG evaluation: faithfulness, relevance, context metrics │
-│ DeepEval            │ General LLM evaluation: 14+ metrics, CI integration     │
-│ Promptfoo           │ Prompt testing: comparison, assertions, CI/CD           │
-│ LangSmith           │ LangChain apps: tracing, evaluation, datasets           │
-│ Braintrust          │ Production evals: scoring, experiments, logging         │
-│ Arize Phoenix       │ Observability + evaluation: traces, spans, evals        │
-│ Humanloop           │ Prompt management + evaluation: versioning, A/B tests   │
-│ Custom framework    │ Domain-specific needs not covered by existing tools     │
-└─────────────────────┴──────────────────────────────────────────────────────────┘
+| Framework | Best for |
+|---|---|
+| RAGAS | RAG evaluation: faithfulness, relevance, context metrics |
+| DeepEval | General LLM evaluation: 14+ metrics, CI integration |
+| Promptfoo | Prompt testing: comparison, assertions, CI/CD |
+| LangSmith | LangChain apps: tracing, evaluation, datasets |
+| Braintrust | Production evals: scoring, experiments, logging |
+| Arize Phoenix | Observability + evaluation: traces, spans, evals |
+| Humanloop | Prompt management + evaluation: versioning, A/B tests |
+| Custom framework | Domain-specific needs not covered by existing tools |
 ```
 
 ### Step 4: Automated Evaluation — LLM-as-Judge
@@ -95,14 +92,13 @@ Judge model: <strong model — e.g., Claude 3.5 Sonnet, GPT-4>
   Never judge a model with itself.
 
 Scoring rubrics:
-┌──────────────────┬───────┬──────────────────────────────────────────────────┐
-│ Dimension        │ Scale │ Rubric                                           │
-├──────────────────┼───────┼──────────────────────────────────────────────────┤
-│ Correctness      │ 1-5   │ 1: Completely wrong                              │
-│                  │       │ 2: Partially correct, major errors                │
-│                  │       │ 3: Mostly correct, minor errors                   │
-│                  │       │ 4: Correct with minor omissions                   │
-│                  │       │ 5: Fully correct and complete                     │
+| Dimension | Scale | Rubric |
+|---|---|---|
+| Correctness | 1-5 | 1: Completely wrong |
+|  |  | 2: Partially correct, major errors |
+|  |  | 3: Mostly correct, minor errors |
+|  |  | 4: Correct with minor omissions |
+|  |  | 5: Fully correct and complete |
 ```
 
 ### Step 5: Human Evaluation Protocol
@@ -132,35 +128,29 @@ Version: <semver>
 Purpose: <what this benchmark measures>
 
 Structure:
-┌─────────────────────────────────────────────────────────────────────┐
-│ BENCHMARK: <name> v<version>                                        │
-│                                                                     │
-│ Categories:                                                         │
-│ ┌──────────────────┬──────────┬──────────┬──────────────────────┐  │
-│ │ Category         │ Examples │ Weight   │ Description          │  │
-│ ├──────────────────┼──────────┼──────────┼──────────────────────┤  │
-│ │ <category 1>     │ <N>      │ <pct>    │ <what it tests>      │  │
-│ │ <category 2>     │ <N>      │ <pct>    │ <what it tests>      │  │
-│ │ <category 3>     │ <N>      │ <pct>    │ <what it tests>      │  │
-│ │ <adversarial>    │ <N>      │ <pct>    │ Robustness/safety    │  │
-│ │ <regression>     │ <N>      │ <pct>    │ Previously-fixed bugs│  │
-│ └──────────────────┴──────────┴──────────┴──────────────────────┘  │
-│                                                                     │
-│ Total examples: <N>                                                 │
-│                                                                     │
-│ Scoring:                                                            │
-│   Primary metric: <metric name> (weighted average across categories)│
-│   Threshold: <minimum score to pass>                                │
-│   Breakdown: per-category scores reported                           │
-│                                                                     │
-│ Baseline scores:                                                    │
-│ ┌──────────────────┬──────────┬──────────┬──────────┬──────────┐  │
-│ │ System           │ Overall  │ Cat 1    │ Cat 2    │ Cat 3    │  │
-│ ├──────────────────┼──────────┼──────────┼──────────┼──────────┤  │
-│ │ Baseline v1.0    │ <score>  │ <score>  │ <score>  │ <score>  │  │
-│ │ Current v<N>     │ <score>  │ <score>  │ <score>  │ <score>  │  │
-│ └──────────────────┴──────────┴──────────┴──────────┴──────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+  BENCHMARK: <name> v<version>
+  Categories:
+  ┌──────────────────┬──────────┬──────────┬──────────────────────┐
+|  | Category | Examples | Weight | Description |  |
+  ├──────────────────┼──────────┼──────────┼──────────────────────┤
+|  | <category 1> | <N> | <pct> | <what it tests> |  |
+|  | <category 2> | <N> | <pct> | <what it tests> |  |
+|  | <category 3> | <N> | <pct> | <what it tests> |  |
+|  | <adversarial> | <N> | <pct> | Robustness/safety |  |
+|  | <regression> | <N> | <pct> | Previously-fixed bugs |  |
+  └──────────────────┴──────────┴──────────┴──────────────────────┘
+  Total examples: <N>
+  Scoring:
+  Primary metric: <metric name> (weighted average across categories)
+  Threshold: <minimum score to pass>
+  Breakdown: per-category scores reported
+  Baseline scores:
+  ┌──────────────────┬──────────┬──────────┬──────────┬──────────┐
+|  | System | Overall | Cat 1 | Cat 2 | Cat 3 |  |
+  ├──────────────────┼──────────┼──────────┼──────────┼──────────┤
+|  | Baseline v1.0 | <score> | <score> | <score> | <score> |  |
+|  | Current v<N> | <score> | <score> | <score> | <score> |  |
+  └──────────────────┴──────────┴──────────┴──────────┴──────────┘
 
 Benchmark maintenance:
   - Add new examples quarterly (at least <N> per quarter)
@@ -185,8 +175,9 @@ Regression pipeline:
   Trigger: <on every prompt change | model update | deployment | nightly>
 
   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-  │  Load    │ -> │  Run     │ -> │  Compare │ -> │  Alert   │
-  │ Reg. Set │    │  System  │    │  vs Gold │    │  on Fail │
+| Load | -> | Run | -> | Compare | -> | Alert |
+|---|---|---|---|---|---|---|
+| Reg. Set |  | System |  | vs Gold |  | on Fail |
   └──────────┘    └──────────┘    └──────────┘    └──────────┘
 
 Comparison strategies:
@@ -199,25 +190,20 @@ Comparison strategies:
 SELECTED: <Strategy per test category>
 
 Regression dashboard:
-┌──────────────────────────────────────────────────────────────────────┐
-│ REGRESSION STATUS: <date>                                            │
-│                                                                      │
-│ Total tests: <N>                                                     │
-│ Passing: <N> (<pct>%)                                                │
-│ Failing: <N> (<pct>%)                                                │
-│ New failures: <N> (introduced since last run)                        │
-│ Fixed: <N> (previously failing, now passing)                         │
-│                                                                      │
-│ Failing tests:                                                       │
-│ ┌──────────┬─────────────────────────────┬────────────┬────────────┐ │
-│ │ ID       │ Description                 │ Since      │ Severity   │ │
-│ ├──────────┼─────────────────────────────┼────────────┼────────────┤ │
-│ │ REG-042  │ Misclassifies refund query  │ 2025-03-10 │ HIGH       │ │
-│ │ REG-087  │ Wrong date format in output  │ 2025-03-15 │ MEDIUM     │ │
-│ └──────────┴─────────────────────────────┴────────────┴────────────┘ │
-│                                                                      │
-│ VERDICT: <PASS — all tests pass | BLOCK — regressions detected>     │
-└──────────────────────────────────────────────────────────────────────┘
+  REGRESSION STATUS: <date>
+  Total tests: <N>
+  Passing: <N> (<pct>%)
+  Failing: <N> (<pct>%)
+  New failures: <N> (introduced since last run)
+  Fixed: <N> (previously failing, now passing)
+  Failing tests:
+  ┌──────────┬─────────────────────────────┬────────────┬────────────┐
+|  | ID | Description | Since | Severity |  |
+  ├──────────┼─────────────────────────────┼────────────┼────────────┤
+|  | REG-042 | Misclassifies refund query | 2025-03-10 | HIGH |  |
+|  | REG-087 | Wrong date format in output | 2025-03-15 | MEDIUM |  |
+  └──────────┴─────────────────────────────┴────────────┴────────────┘
+  VERDICT: <PASS — all tests pass | BLOCK — regressions detected>
 
 CI/CD integration:
   - Run regression suite on every PR that touches prompts, models, or AI pipeline
@@ -235,16 +221,14 @@ STATISTICAL ANALYSIS:
 Comparison: <System A> vs <System B>
 
 Per-metric comparison:
-┌──────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
-│ Metric           │ System A │ System B │ Diff     │ p-value  │ Sig?     │
-├──────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│ Correctness      │ <val>    │ <val>    │ <delta>  │ <p>      │ YES | NO │
-│ Relevance        │ <val>    │ <val>    │ <delta>  │ <p>      │ YES | NO │
-│ Faithfulness     │ <val>    │ <val>    │ <delta>  │ <p>      │ YES | NO │
-│ Safety           │ <val>    │ <val>    │ <delta>  │ <p>      │ YES | NO │
-│ Latency p95      │ <ms>     │ <ms>     │ <delta>  │ <p>      │ YES | NO │
-│ Cost per call    │ <$>      │ <$>      │ <delta>  │ —        │ —        │
-└──────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+| Metric | System A | System B | Diff | p-value | Sig? |
+|---|---|---|---|---|---|
+| Correctness | <val> | <val> | <delta> | <p> | YES | NO |
+| Relevance | <val> | <val> | <delta> | <p> | YES | NO |
+| Faithfulness | <val> | <val> | <delta> | <p> | YES | NO |
+| Safety | <val> | <val> | <delta> | <p> | YES | NO |
+| Latency p95 | <ms> | <ms> | <delta> | <p> | YES | NO |
+| Cost per call | <$> | <$> | <delta> | — | — |
 
 Statistical tests:
   Paired comparisons (same inputs, different systems):
@@ -293,17 +277,15 @@ Dataset: <N examples> across <N categories>
 Methods: <automated (LLM judge) | human | hybrid>
 
 Results summary:
-┌────────────────────┬──────────┬──────────┬──────────┐
-│ Metric             │ Score    │ Target   │ Status   │
-├────────────────────┼──────────┼──────────┼──────────┤
-│ Correctness        │ <val>    │ <val>    │ PASS|FAIL│
-│ Relevance          │ <val>    │ <val>    │ PASS|FAIL│
-│ Faithfulness       │ <val>    │ <val>    │ PASS|FAIL│
-│ Safety             │ <val>    │ 100%     │ PASS|FAIL│
-│ Format compliance  │ <val>    │ 100%     │ PASS|FAIL│
-│ Latency p95        │ <ms>     │ <ms>     │ PASS|FAIL│
-│ Cost per call      │ $<val>   │ $<val>   │ PASS|FAIL│
-└────────────────────┴──────────┴──────────┴──────────┘
+| Metric | Score | Target | Status |
+|---|---|---|---|
+| Correctness | <val> | <val> | PASS|FAIL |
+| Relevance | <val> | <val> | PASS|FAIL |
+| Faithfulness | <val> | <val> | PASS|FAIL |
+| Safety | <val> | 100% | PASS|FAIL |
+| Format compliance | <val> | 100% | PASS|FAIL |
+| Latency p95 | <ms> | <ms> | PASS|FAIL |
+| Cost per call | $<val> | $<val> | PASS|FAIL |
 
 Regression tests: <N>/<N> passing
 vs Baseline: <+X% correctness, +Y% relevance, -Z% latency>
@@ -379,18 +361,17 @@ After each eval skill invocation, emit a structured report:
 
 ```
 EVALUATION REPORT:
-┌──────────────────────────────────────────────────────┐
-│  System evaluated    │  <name and version>             │
-│  Eval framework      │  <DeepEval | RAGAS | Promptfoo | custom> │
-│  Test cases          │  <N> total (<N> golden, <N> regression) │
-│  Primary metric      │  <metric>: <value> (baseline: <value>) │
-│  Secondary metrics   │  <metric>: <value>, <metric>: <value> │
-│  Improvement         │  +<N>% over baseline             │
-│  Statistical sig.    │  p=<value> (significant: YES/NO) │
-│  Regressions found   │  <N>                             │
-│  Judge model         │  <model name> (calibrated: YES/NO) │
-│  Verdict             │  PASS | REGRESSED | NEEDS MORE DATA │
-└──────────────────────────────────────────────────────┘
+| System evaluated | <name and version> |
+|---|---|
+| Eval framework | <DeepEval | RAGAS | Promptfoo | custom> |
+| Test cases | <N> total (<N> golden, <N> regression) |
+| Primary metric | <metric>: <value> (baseline: <value>) |
+| Secondary metrics | <metric>: <value>, <metric>: <value> |
+| Improvement | +<N>% over baseline |
+| Statistical sig. | p=<value> (significant: YES/NO) |
+| Regressions found | <N> |
+| Judge model | <model name> (calibrated: YES/NO) |
+| Verdict | PASS | REGRESSED | NEEDS MORE DATA |
 ```
 
 ## TSV Logging
@@ -426,26 +407,24 @@ Framework: <DeepEval | RAGAS | Promptfoo | custom>
 Audit date: <date>
 
 METRIC SELECTION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Primary metric aligns with biz goal│ PASS|FAIL│ <metric->goal>  │
-│  Multiple dimensions covered (not   │ PASS|FAIL│ <dimension list>│
-│    just accuracy)                   │          │                 │
-│  Metrics are actionable (failure    │ PASS|FAIL│ <diagnosis path>│
-│    points to a fixable component)   │          │                 │
-│  No metric gaming (metric improves  │ PASS|FAIL│ <sanity checks> │
-│    but actual quality does not)     │          │                 │
-│  Metrics are stable across runs     │ PASS|FAIL│ <variance test> │
-│    (low variance on same input)     │          │                 │
-│  Human-automated metric correlation │ PASS|FAIL│ <correlation r> │
-│    verified (r > 0.7)              │          │                 │
-│  Cost-aware metrics included        │ PASS|FAIL│ <cost tracking> │
-│  Latency metrics included           │ PASS|FAIL│ <latency track> │
-│  Safety metrics included            │ PASS|FAIL│ <safety evals>  │
-│  Per-segment metrics available      │ PASS|FAIL│ <slice evals>   │
-│    (by category, difficulty, source)│          │                 │
-└──────────────────────────────────────────────────────────────────┘
+| Check | Status | Evidence |
+|---|---|---|
+| Primary metric aligns with biz goal | PASS|FAIL | <metric->goal> |
+| Multiple dimensions covered (not | PASS|FAIL | <dimension list> |
+| just accuracy) |  |  |
+| Metrics are actionable (failure | PASS|FAIL | <diagnosis path> |
+| points to a fixable component) |  |  |
+| No metric gaming (metric improves | PASS|FAIL | <sanity checks> |
+| but actual quality does not) |  |  |
+| Metrics are stable across runs | PASS|FAIL | <variance test> |
+| (low variance on same input) |  |  |
+| Human-automated metric correlation | PASS|FAIL | <correlation r> |
+| verified (r > 0.7) |  |  |
+| Cost-aware metrics included | PASS|FAIL | <cost tracking> |
+| Latency metrics included | PASS|FAIL | <latency track> |
+| Safety metrics included | PASS|FAIL | <safety evals> |
+| Per-segment metrics available | PASS|FAIL | <slice evals> |
+| (by category, difficulty, source) |  |  |
 
   Metric health check:
     FOR each metric:

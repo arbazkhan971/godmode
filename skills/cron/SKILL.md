@@ -24,26 +24,20 @@ Evaluate what needs to run, how often, and under what constraints:
 
 ```
 SCHEDULING REQUIREMENTS ASSESSMENT:
-+---------------------------------------------------------+
 |  Dimension            | Value                             |
-|  ------------------------------------------------------- |
 |  Task type            | <cleanup | report | sync | alert |
 |                       |  billing | digest | health check> |
 |  Frequency            | <seconds | minutes | hourly |     |
     # ... (condensed)
-+---------------------------------------------------------+
 ```
 
 #### Cron Expression Quick Reference
 ```
 CRON EXPRESSION SYNTAX:
-+---------------------------------------------------------+
 |  Field        | Values          | Special chars           |
-|  ------------------------------------------------------- |
 |  Minute       | 0-59            | * , - /                 |
 |  Hour         | 0-23            | * , - /                 |
 |  Day of month | 1-31            | * , - / ? L W           |
-+---------------------------------------------------------+
 
 Common patterns:
     # ... (condensed)
@@ -53,9 +47,8 @@ Common patterns:
 #### Scheduler Technology Selection Matrix
 ```
 SCHEDULER TECHNOLOGY SELECTION:
-+------------------+-------------+----------+------------+-----------+----------+
 | Technology       | Language    | Backend  | Distributed| Persistence| Ops cost |
-+------------------+-------------+----------+------------+-----------+----------+
+|---|---|---|---|---|---|
 | node-cron        | Node.js     | In-proc  | No         | None      | Minimal  |
 |                  | Simple cron | (memory) | (single)   | (restart  |          |
 |                  | schedules   |          |            | loses)    |          |
@@ -74,16 +67,11 @@ Design the scheduling topology, job registry, and execution flow:
 
 ```
 SCHEDULE ARCHITECTURE:
-+----------------------------------------------------------------------+
-|                                                                        |
 |  Scheduler              Job Registry               Executors           |
 |  ---------              ------------               ---------           |
-|                                                                        |
 |                     +-- daily-digest -------------- Worker Pool A (2)  |
 |  Cron Engine ------+-- cleanup-expired ----------- Worker Pool B (3)  |
-|                                                                        |
     # ... (condensed)
-+----------------------------------------------------------------------+
 ```
 
 #### BullMQ Repeatable Jobs (Node.js — Production)
@@ -166,13 +154,10 @@ Every scheduled job MUST safely run more than once for the same logical executio
 
 ```
 IDEMPOTENCY STRATEGIES FOR SCHEDULED JOBS:
-+---------------------------------------------------------+
 |  Strategy             | Use case                          |
-|  ------------------------------------------------------- |
 |  Date-based key       | "digest:2025-03-15" — one per day |
 |  Window-based key     | "sync:2025-03-15T10:00Z" — one   |
 |                       | per 15-min window                 |
-+---------------------------------------------------------+
 
 Principle: derive the idempotency key from the SCHEDULE, not the job ID.
   - The system re-creates the job on restart with a new ID
@@ -197,9 +182,7 @@ Prevent multiple scheduler instances from firing the same job simultaneously:
 
 ```
 DISTRIBUTED LOCKING STRATEGIES:
-+---------------------------------------------------------+
 |  Method              | Backend  | Pros            | Cons  |
-|  ------------------------------------------------------- |
 |  Redis SETNX + EX    | Redis    | Fast, simple    | Not   |
 |                      |          | atomic acquire   | CP    |
 |                      |          |                  |       |
@@ -238,13 +221,10 @@ Track schedule health and detect missed or failing runs:
 
 ```
 CRON JOB MONITORING:
-+---------------------------------------------------------+
 |  Metric                    | Current | Alert    | Status |
-|  ------------------------------------------------------- |
 |  Jobs scheduled            | 8       | —        | OK     |
 |  Last run: daily-digest    | 09:00   | miss > 1h| OK     |
 |  Last run: cleanup         | 06:00   | miss > 7h| OK     |
-+---------------------------------------------------------+
 ```
 
 #### Monitoring Implementation
@@ -264,13 +244,10 @@ Handle scheduled jobs that exhaust retries:
 
 ```
 SCHEDULED JOB DLQ DESIGN:
-+---------------------------------------------------------+
 |  DLQ for Scheduled Jobs                                   |
-|  ------------------------------------------------------- |
 |  Queue:       scheduled-jobs-dlq                          |
 |  Retention:   30 days                                     |
 |  Alert:       Any entry (scheduled jobs should not fail)  |
-|                                                           |
 ```
 
 ### Step 7: Priority Queues & Job Chaining
@@ -279,16 +256,12 @@ Design priority-aware scheduling and dependent job pipelines:
 
 ```
 SCHEDULED JOB PRIORITIES:
-+---------------------------------------------------------+
 |  Priority | Schedule         | Job               | SLA    |
-|  ------------------------------------------------------- |
 |  P0       | */5 * * * *      | Health check       | < 30s  |
 |  P1       | */15 * * * *     | Inventory sync     | < 2m   |
 |  P1       | 0 9 * * *        | Daily digest       | < 5m   |
-+---------------------------------------------------------+
 
 JOB CHAINING (dependent execution):
-+---------------------------------------------------------+
 |  Pipeline: "end-of-day"                                   |
 ```
 
@@ -309,13 +282,10 @@ Prevent scheduled jobs from overwhelming downstream services:
 
 ```
 RATE-LIMITED SCHEDULING:
-+---------------------------------------------------------+
 |  Scenario                | Strategy                       |
-|  ------------------------------------------------------- |
 |  API with 100 req/min    | Token bucket limiter on worker |
 |  Email provider 500/hr   | BullMQ limiter: 500 per 3600s |
 |  DB batch writes         | Chunk + delay between batches  |
-+---------------------------------------------------------+
 ```
 
 #### Rate-Limited Scheduled Job
@@ -335,9 +305,7 @@ Handle timezone-aware scheduling correctly:
 
 ```
 TIMEZONE HANDLING:
-+---------------------------------------------------------+
 |  Rule                                                     |
-|  ------------------------------------------------------- |
 |  1. Store all schedules in UTC internally                 |
 |  2. Convert to user timezone for display only             |
 |  3. Use IANA timezone names (America/New_York), never     |
@@ -349,13 +317,10 @@ Choose the right persistence layer:
 
 ```
 SCHEDULER PERSISTENCE COMPARISON:
-+---------------------------------------------------------+
 |  Aspect              | Redis-backed      | DB-backed      |
-|  ------------------------------------------------------- |
 |  Speed               | Sub-ms operations | 1-10ms queries |
 |  Durability          | RDB/AOF (config)  | Full ACID      |
 |  Crash recovery      | May lose last      | No data loss   |
-+---------------------------------------------------------+
 
 Use Redis-backed (BullMQ, Sidekiq-Cron) when:
     # ... (condensed)

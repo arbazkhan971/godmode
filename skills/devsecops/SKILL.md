@@ -23,20 +23,18 @@ Evaluate the current CI/CD pipeline security posture:
 
 ```
 PIPELINE SECURITY ASSESSMENT:
-┌──────────────────────────────────────────────────────────────┐
-│ CI/CD Platform: <GitHub Actions | GitLab CI | Jenkins | │
-│ CircleCI | Azure DevOps | Bitbucket> │
-│ Source control: <GitHub | GitLab | Bitbucket | Azure Repos> │
-│ Artifact registry: <Docker Hub | ECR | GCR | ACR | GHCR> │
-│ Deployment target: <K8s | ECS | Lambda | VMs | PaaS> │
-│ │
-│ CURRENT SECURITY CONTROLS: │
-│ ┌────────────────────┬──────────┬───────────────────────┐ │
-│ │ Control │ Status │ Tool │ │
-│ ├────────────────────┼──────────┼───────────────────────┤ │
-│ │ SAST │ YES/NO │ <tool or none> │ │
-│ │ DAST │ YES/NO │ <tool or none> │ │
-│ │ SCA │ YES/NO │ <tool or none> │ │
+  CI/CD Platform: <GitHub Actions | GitLab CI | Jenkins |
+  CircleCI | Azure DevOps | Bitbucket>
+  Source control: <GitHub | GitLab | Bitbucket | Azure Repos>
+  Artifact registry: <Docker Hub | ECR | GCR | ACR | GHCR>
+  Deployment target: <K8s | ECS | Lambda | VMs | PaaS>
+  CURRENT SECURITY CONTROLS:
+  ┌────────────────────┬──────────┬───────────────────────┐
+|  | Control | Status | Tool |  |
+  ├────────────────────┼──────────┼───────────────────────┤
+|  | SAST | YES/NO | <tool or none> |  |
+|  | DAST | YES/NO | <tool or none> |  |
+|  | SCA | YES/NO | <tool or none> |  |
 ```
 
 ### Step 2: SAST Integration (Static Application Security Testing)
@@ -150,20 +148,17 @@ on:
 
 ```
 SCA CONFIGURATION:
-┌──────────────────────────────────────────────────────────────┐
-│ Dependency Scanning Strategy │
-├──────────────────────────────────────────────────────────────┤
-│ Tool │ Purpose │ When │
-│ ─────────────────────────────────────────────────────────── │
-│ Dependabot/Renovate │ Auto-update PRs │ Daily │
-│ Snyk │ Deep vuln analysis │ Every PR + daily │
-│ npm/pip/cargo audit │ Native scanning │ Every PR │
-│ SBOM generator │ Supply chain │ Every release │
-│ License checker │ Compliance │ Every PR │
-├──────────────────────────────────────────────────────────────┤
-│ SEVERITY POLICY: │
-│ CRITICAL: Block merge + alert security team immediately │
-│ HIGH: Block merge + create ticket │
+  Dependency Scanning Strategy
+| Tool | Purpose | When |
+|---|---|---|
+| Dependabot/Renovate | Auto-update PRs | Daily |
+| Snyk | Deep vuln analysis | Every PR + daily |
+| npm/pip/cargo audit | Native scanning | Every PR |
+| SBOM generator | Supply chain | Every release |
+| License checker | Compliance | Every PR |
+  SEVERITY POLICY:
+  CRITICAL: Block merge + alert security team immediately
+  HIGH: Block merge + create ticket
 ```
 
 ### Step 5: Container Scanning
@@ -215,20 +210,18 @@ on:
 
 ```
 SECRET SCANNING LAYERS:
-┌──────────────────────────────────────────────────────────────┐
-│ Layer │ Tool │ When │
-├──────────────────────────────────────────────────────────────┤
-│ Pre-commit (local) │ gitleaks hook │ Before every commit │
-│ PR check (CI) │ gitleaks action │ Every pull request │
-│ Push protection │ GitHub/GitLab │ Every push │
-│ Scheduled scan │ trufflehog │ Daily full scan │
-│ Runtime detection │ detect-secrets │ Baseline tracking │
-├──────────────────────────────────────────────────────────────┤
-│ CUSTOM PATTERNS: │
-│.gitleaks.toml: │
-│ [[rules]] │
-│ id = "internal-api-key" │
-│ description = "Internal API key pattern" │
+| Layer | Tool | When |
+|---|---|---|
+| Pre-commit (local) | gitleaks hook | Before every commit |
+| PR check (CI) | gitleaks action | Every pull request |
+| Push protection | GitHub/GitLab | Every push |
+| Scheduled scan | trufflehog | Daily full scan |
+| Runtime detection | detect-secrets | Baseline tracking |
+  CUSTOM PATTERNS:
+  .gitleaks.toml:
+  [[rules]]
+  id = "internal-api-key"
+  description = "Internal API key pattern"
 ```
 
 ### Step 7: Security Gates in Deployment Pipelines
@@ -236,20 +229,18 @@ Define blocking security checks that prevent insecure deployments:
 
 ```
 SECURITY GATE CONFIGURATION:
-┌──────────────────────────────────────────────────────────────┐
-│ Gate │ Stage │ Action │ Override │
-├──────────────────────────────────────────────────────────────┤
-│ SAST findings │ PR check │ BLOCK │ Security team │
-│ SCA critical CVE │ PR check │ BLOCK │ Security team │
-│ Secret detected │ PR check │ BLOCK │ No override │
-│ DAST high vuln │ Pre-deploy │ BLOCK │ Security team │
-│ Container CVE │ Pre-deploy │ BLOCK │ Security team │
-│ SBOM missing │ Pre-deploy │ BLOCK │ Release eng │
-│ License violation │ PR check │ WARN │ Legal team │
-│ IaC misconfig │ PR check │ BLOCK │ Platform team │
-│ Unsigned artifact │ Pre-deploy │ BLOCK │ No override │
-│ SonarQube gate │ PR check │ BLOCK │ Security team │
-├──────────────────────────────────────────────────────────────┤
+| Gate | Stage | Action | Override |
+|---|---|---|---|
+| SAST findings | PR check | BLOCK | Security team |
+| SCA critical CVE | PR check | BLOCK | Security team |
+| Secret detected | PR check | BLOCK | No override |
+| DAST high vuln | Pre-deploy | BLOCK | Security team |
+| Container CVE | Pre-deploy | BLOCK | Security team |
+| SBOM missing | Pre-deploy | BLOCK | Release eng |
+| License violation | PR check | WARN | Legal team |
+| IaC misconfig | PR check | BLOCK | Platform team |
+| Unsigned artifact | Pre-deploy | BLOCK | No override |
+| SonarQube gate | PR check | BLOCK | Security team |
 ```
 
 ### Step 8: Infrastructure as Code (IaC) Security
@@ -257,50 +248,41 @@ Scan infrastructure definitions for misconfigurations:
 
 ```
 IAC SECURITY CHECKS:
-┌──────────────────────────────────────────────────────────────┐
-│ Category │ Examples │
-├──────────────────────────────────────────────────────────────┤
-│ Cloud misconfig │ Public S3 buckets, open SGs │
-│ Kubernetes security │ Privileged containers, no limits │
-│ Docker hardening │ Root user, missing healthcheck │
-│ Terraform state │ Remote state with encryption │
-│ Network exposure │ 0.0.0.0/0 ingress rules │
-│ Encryption │ Unencrypted storage/databases │
-│ Logging │ Missing audit trails │
-│ IAM │ Overly permissive policies │
-└──────────────────────────────────────────────────────────────┘
+| Category | Examples |
+|---|---|
+| Cloud misconfig | Public S3 buckets, open SGs |
+| Kubernetes security | Privileged containers, no limits |
+| Docker hardening | Root user, missing healthcheck |
+| Terraform state | Remote state with encryption |
+| Network exposure | 0.0.0.0/0 ingress rules |
+| Encryption | Unencrypted storage/databases |
+| Logging | Missing audit trails |
+| IAM | Overly permissive policies |
 ```
 
 SECURITY METRICS DASHBOARD:
-┌──────────────────────────────────────────────────────────────┐
-│ SECURITY POSTURE — <project> │
-├──────────────────────────────────────────────────────────────┤
-│ Open vulnerabilities: │
-│ CRITICAL: <N> (SLA: 24h) Overdue: <N> │
-│ HIGH: <N> (SLA: 7d) Overdue: <N> │
-│ MEDIUM: <N> (SLA: 30d) Overdue: <N> │
-│ LOW: <N> (SLA: 90d) Overdue: <N> │
-│ │
-│ Pipeline security: │
-│ PRs blocked by security gate: <N> this week │
-│ Average fix time (CRITICAL): <hours> │
-│ Average fix time (HIGH): <days> │
-│ Security gate override rate: <N>% │
-│ │
-│ Dependency health: │
-│ Total dependencies: <N> │
-│ With known vulnerabilities: <N> │
-│ Outdated (>1 major version): <N> │
-│ License violations: <N> │
-│ │
-│ Container health: │
-│ Images in production: <N> │
-│ With CRITICAL CVEs: <N> │
-│ Using :latest tag: <N> (target 0)    │
-│ Non-root containers: <N>/<N> │
-│ │
-│ Trend: IMPROVING | STABLE | DEGRADING │
-└──────────────────────────────────────────────────────────────┘
+  SECURITY POSTURE — <project>
+  Open vulnerabilities:
+  CRITICAL: <N> (SLA: 24h) Overdue: <N>
+  HIGH: <N> (SLA: 7d) Overdue: <N>
+  MEDIUM: <N> (SLA: 30d) Overdue: <N>
+  LOW: <N> (SLA: 90d) Overdue: <N>
+  Pipeline security:
+  PRs blocked by security gate: <N> this week
+  Average fix time (CRITICAL): <hours>
+  Average fix time (HIGH): <days>
+  Security gate override rate: <N>%
+  Dependency health:
+  Total dependencies: <N>
+  With known vulnerabilities: <N>
+  Outdated (>1 major version): <N>
+  License violations: <N>
+  Container health:
+  Images in production: <N>
+  With CRITICAL CVEs: <N>
+  Using :latest tag: <N> (target 0)
+  Non-root containers: <N>/<N>
+  Trend: IMPROVING | STABLE | DEGRADING
 ```
 
 ### Step 10: Commit and Transition
@@ -434,16 +416,13 @@ FOR each security scanner finding:
 Every devsecops invocation must produce a structured report:
 
 ```
-┌────────────────────────────────────────────────────────────────┐
-│ DEVSECOPS RESULT │
-├────────────────────────────────────────────────────────────────┤
-│ CI platform: <GitHub Actions | GitLab CI | Jenkins | etc.> │
-│ Controls configured: <N> / 11 │
-│ Security gates: <N blocking, N advisory> │
-│ Maturity level: <0-5> (before -> after) │
-│ Open findings: <N>C <N>H <N>M <N>L │
-│ Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED> │
-└────────────────────────────────────────────────────────────────┘
+  DEVSECOPS RESULT
+  CI platform: <GitHub Actions | GitLab CI | Jenkins | etc.>
+  Controls configured: <N> / 11
+  Security gates: <N blocking, N advisory>
+  Maturity level: <0-5> (before -> after)
+  Open findings: <N>C <N>H <N>M <N>L
+  Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED>
 ```
 
 ## TSV Logging

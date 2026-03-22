@@ -139,21 +139,17 @@ infracost diff --path . --compare-to infracost-base.json
 
 ```
 COST ESTIMATE:
-┌──────────────────────────────────────────────────────────┐
-│  Monthly Cost Estimate                                    │
-├──────────────────────────────────────────────────────────┤
-│  Resource                    │ Monthly    │ Change        │
-│  ─────────────────────────────────────────────────────── │
-│  aws_instance.api (t3.large) │ $60.74     │ +$60.74 NEW   │
-│  aws_rds.primary (db.r5.lg)  │ $172.80    │ —             │
-│  aws_s3.assets               │ $2.30      │ —             │
-│  aws_elasticache.redis       │ $48.62     │ +$48.62 NEW   │
-│  aws_alb.main                │ $22.27     │ —             │
-│  ─────────────────────────────────────────────────────── │
-│  TOTAL                       │ $306.73    │ +$109.36      │
-│  Previous                    │ $197.37    │               │
-│  Delta                       │ +$109.36   │ +55.4%        │
-└──────────────────────────────────────────────────────────┘
+  Monthly Cost Estimate
+| Resource | Monthly | Change |
+|---|---|---|
+| aws_instance.api (t3.large) | $60.74 | +$60.74 NEW |
+| aws_rds.primary (db.r5.lg) | $172.80 | — |
+| aws_s3.assets | $2.30 | — |
+| aws_elasticache.redis | $48.62 | +$48.62 NEW |
+| aws_alb.main | $22.27 | — |
+| TOTAL | $306.73 | +$109.36 |
+| Previous | $197.37 |  |
+| Delta | +$109.36 | +55.4% |
 
 Cost threshold: $500/mo — WITHIN BUDGET
 ```
@@ -174,21 +170,17 @@ aws cloudformation describe-stack-drift-detection-status --stack-drift-detection
 
 ```
 DRIFT REPORT:
-┌──────────────────────────────────────────────────────────┐
-│  Drift Detection Results                                  │
-├──────────────────────────────────────────────────────────┤
-│  Resources in sync:  14/16                                │
-│  Resources drifted:  2/16                                 │
-│  Resources deleted:  0/16                                 │
-├──────────────────────────────────────────────────────────┤
-│  DRIFTED RESOURCES:                                       │
-│  1. aws_security_group.api_sg                             │
-│     - Ingress rule added manually (port 8080 from 0.0.0.0/0) │
-│     - Action: REMOVE manual rule or UPDATE IaC definition │
-│  2. aws_instance.worker                                   │
-│     - Instance type changed: t3.medium -> t3.large        │
-│     - Action: UPDATE IaC to t3.large or REVERT instance   │
-└──────────────────────────────────────────────────────────┘
+  Drift Detection Results
+  Resources in sync:  14/16
+  Resources drifted:  2/16
+  Resources deleted:  0/16
+  DRIFTED RESOURCES:
+  1. aws_security_group.api_sg
+  - Ingress rule added manually (port 8080 from 0.0.0.0/0)
+  - Action: REMOVE manual rule or UPDATE IaC definition
+  2. aws_instance.worker
+  - Instance type changed: t3.medium -> t3.large
+  - Action: UPDATE IaC to t3.large or REVERT instance
 ```
 
 ### Step 6: IaC Testing
@@ -238,34 +230,27 @@ Produce a safe, reviewable deployment plan:
 
 ```
 DEPLOYMENT PLAN:
-┌──────────────────────────────────────────────────────────┐
-│  Infrastructure Deployment — <environment>                │
-├──────────────────────────────────────────────────────────┤
-│  Resources to CREATE:  3                                  │
-│  Resources to UPDATE:  1                                  │
-│  Resources to DELETE:  0                                  │
-│  Resources UNCHANGED:  12                                 │
-├──────────────────────────────────────────────────────────┤
-│  CREATE:                                                  │
-│  + aws_instance.api_server (t3.large)                     │
-│  + aws_security_group.api_sg                              │
-│  + aws_elasticache_cluster.redis                          │
-│                                                           │
-│  UPDATE:                                                  │
-│  ~ aws_alb_listener.https (add new target group)          │
-│                                                           │
-│  Estimated time: 4-6 minutes                              │
-│  Estimated cost delta: +$109.36/mo                        │
-│  Risk level: LOW (no destructive changes)                 │
-├──────────────────────────────────────────────────────────┤
-│  Pre-deployment checklist:                                │
-│  [x] terraform plan reviewed                              │
-│  [x] Policy checks passed                                 │
-│  [x] Cost within budget                                   │
-│  [x] No drift detected                                    │
-│  [x] Tests passing                                        │
-│  [ ] Manual approval (required for production)            │
-└──────────────────────────────────────────────────────────┘
+  Infrastructure Deployment — <environment>
+  Resources to CREATE:  3
+  Resources to UPDATE:  1
+  Resources to DELETE:  0
+  Resources UNCHANGED:  12
+  CREATE:
+  + aws_instance.api_server (t3.large)
+  + aws_security_group.api_sg
+  + aws_elasticache_cluster.redis
+  UPDATE:
+  ~ aws_alb_listener.https (add new target group)
+  Estimated time: 4-6 minutes
+  Estimated cost delta: +$109.36/mo
+  Risk level: LOW (no destructive changes)
+  Pre-deployment checklist:
+  [x] terraform plan reviewed
+  [x] Policy checks passed
+  [x] Cost within budget
+  [x] No drift detected
+  [x] Tests passing
+  [ ] Manual approval (required for production)
 ```
 
 ### Step 8: Apply Infrastructure Changes

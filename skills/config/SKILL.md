@@ -49,18 +49,16 @@ Compare configurations across environments to detect drift:
 #### Key-Level Comparison
 ```
 PARITY CHECK:
-┌─────────────────────┬──────┬─────────┬──────┐
-│ Config Key          │ Dev  │ Staging │ Prod │
-├─────────────────────┼──────┼─────────┼──────┤
-│ DATABASE_URL        │ ✓    │ ✓       │ ✓    │
-│ REDIS_URL           │ ✓    │ ✓       │ ✓    │
+| Config Key | Dev | Staging | Prod |
+|---|---|---|---|
+| DATABASE_URL | ✓ | ✓ | ✓ |
+| REDIS_URL | ✓ | ✓ | ✓ |
 │ LOG_LEVEL           │ debug│ info    │ warn │  ← EXPECTED DIFF
 │ FEATURE_NEW_UI      │ true │ true    │ false│  ← EXPECTED DIFF
 │ MAX_CONNECTIONS     │ 10   │ 50      │ 100  │  ← EXPECTED DIFF
-│ API_TIMEOUT_MS      │ 5000 │ 5000    │ 5000 │
+| API_TIMEOUT_MS | 5000 | 5000 | 5000 |
 │ SENTRY_DSN          │ ✓    │ ✓       │ ✗    │  ← MISSING IN PROD
 │ NEW_SERVICE_URL     │ ✓    │ ✗       │ ✗    │  ← ONLY IN DEV
-└─────────────────────┴──────┴─────────┴──────┘
 ```
 
 #### Drift Categories
@@ -210,38 +208,32 @@ Ensure secrets are handled safely across all environments:
 
 ```
 SECRET AUDIT:
-┌─────────────────────────┬──────────┬──────────────────────────┐
-│ Check                   │ Status   │ Finding                  │
-├─────────────────────────┼──────────┼──────────────────────────┤
-│ .env in .gitignore      │ PASS/FAIL│ <detail>                 │
-│ No secrets in code      │ PASS/FAIL│ <files with hardcoded>   │
-│ No secrets in logs      │ PASS/FAIL│ <log statements to fix>  │
-│ Secrets rotatable       │ PASS/FAIL│ <non-rotatable secrets>  │
-│ Secrets have expiry     │ PASS/FAIL│ <non-expiring secrets>   │
-│ Dev ≠ prod secrets      │ PASS/FAIL│ <shared secrets>         │
-│ Secret manager in use   │ PASS/FAIL│ <recommendation>         │
-│ Encryption at rest      │ PASS/FAIL│ <unencrypted stores>     │
-└─────────────────────────┴──────────┴──────────────────────────┘
+| Check | Status | Finding |
+|---|---|---|
+| .env in .gitignore | PASS/FAIL | <detail> |
+| No secrets in code | PASS/FAIL | <files with hardcoded> |
+| No secrets in logs | PASS/FAIL | <log statements to fix> |
+| Secrets rotatable | PASS/FAIL | <non-rotatable secrets> |
+| Secrets have expiry | PASS/FAIL | <non-expiring secrets> |
+| Dev ≠ prod secrets | PASS/FAIL | <shared secrets> |
+| Secret manager in use | PASS/FAIL | <recommendation> |
+| Encryption at rest | PASS/FAIL | <unencrypted stores> |
 ```
 
 ### Step 7: Generate Config Report
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  CONFIG AUDIT — <project>                                │
-├──────────────────────────────────────────────────────────┤
-│  Environments: <N> configured                            │
-│  Total config keys: <N>                                  │
-│  Sensitive keys: <N>                                     │
-│                                                          │
-│  PARITY:                                                 │
-│  Keys in all envs: <N>/<total>                           │
-│  Missing keys: <N> (CRITICAL)                            │
-│  Expected drift: <N> (documented)                        │
-│  Suspicious drift: <N> (needs investigation)             │
-│                                                          │
-│  VALIDATION:                                             │
-│  Schema coverage: <X>% of keys have validation           │
+  CONFIG AUDIT — <project>
+  Environments: <N> configured
+  Total config keys: <N>
+  Sensitive keys: <N>
+  PARITY:
+  Keys in all envs: <N>/<total>
+  Missing keys: <N> (CRITICAL)
+  Expected drift: <N> (documented)
+  Suspicious drift: <N> (needs investigation)
+  VALIDATION:
+  Schema coverage: <X>% of keys have validation
 ```
 
 ### Step 8: Commit and Transition

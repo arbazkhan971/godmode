@@ -12,19 +12,16 @@ The standard flow for server-side web applications. The most secure OAuth2 flow 
 
 ```
 ┌──────────┐     1. Redirect to authorize     ┌──────────────┐
-│          │ ──────────────────────────────►   │              │
-│  Browser │                                   │  Auth Server │
-│          │ ◄──────────────────────────────   │              │
-│          │     2. Redirect with auth code     │              │
-└────┬─────┘                                   └──────┬───────┘
-     │                                                 │
-     │  3. Send auth code                              │
+|  | ──────────────────────────────► |  |
+| Browser |  | Auth Server |
+|  | ◄────────────────────────────── |  |
+|  | 2. Redirect with auth code |  |
+  3. Send auth code
      ▼                                                 │
 ┌──────────┐     4. Exchange code for tokens   ┌──────┴───────┐
-│  Backend │ ──────────────────────────────►   │  Auth Server │
-│  Server  │ ◄──────────────────────────────   │  Token       │
-│          │     5. Access token + Refresh token│  Endpoint    │
-└──────────┘                                   └──────────────┘
+| Backend | ──────────────────────────────► | Auth Server |
+| Server | ◄────────────────────────────── | Token |
+|  | 5. Access token + Refresh token | Endpoint |
 ```
 
 **Step-by-step:**
@@ -76,21 +73,14 @@ The standard flow for server-side web applications. The most secure OAuth2 flow 
 The recommended flow for single-page applications (SPAs) and mobile apps that cannot securely store a client secret.
 
 ```
-┌──────────────┐                              ┌──────────────┐
-│  SPA/Mobile  │                              │  Auth Server │
-│              │                              │              │
-│  1. Generate │                              │              │
-│     code_verifier (random 43-128 chars)     │              │
-│     code_challenge = SHA256(code_verifier)  │              │
-│              │                              │              │
-│  2. ─────────── Authorize + code_challenge ──────────────► │
-│              │                              │              │
-│  3. ◄─────────── Auth code ──────────────────────────────  │
-│              │                              │              │
-│  4. ─────────── Exchange code + code_verifier ───────────► │
-│              │                              │              │
-│  5. ◄─────────── Access token + Refresh token ───────────  │
-└──────────────┘                              └──────────────┘
+| SPA/Mobile |  | Auth Server |
+| 1. Generate |  |  |
+| code_verifier (random 43-128 chars) |  |
+| code_challenge = SHA256(code_verifier) |  |
+  2. ─────────── Authorize + code_challenge ──────────────►
+  3. ◄─────────── Auth code ──────────────────────────────
+  4. ─────────── Exchange code + code_verifier ───────────►
+  5. ◄─────────── Access token + Refresh token ───────────
 ```
 
 **Key difference from standard Authorization Code:**
@@ -130,11 +120,10 @@ Machine-to-machine authentication. No user involved.
 
 ```
 ┌──────────────┐     POST /token              ┌──────────────┐
-│  Service A   │ ──────────────────────────►   │  Auth Server │
-│              │   client_id + client_secret   │              │
-│              │ ◄──────────────────────────   │              │
-│              │     Access token (no refresh)  │              │
-└──────────────┘                               └──────────────┘
+| Service A | ──────────────────────────► | Auth Server |
+|  | client_id + client_secret |  |
+|  | ◄────────────────────────── |  |
+|  | Access token (no refresh) |  |
 ```
 
 ```
@@ -168,33 +157,27 @@ For input-constrained devices (smart TVs, IoT, CLI tools) that cannot display a 
 
 ```
 ┌─────────────┐    1. Request device code     ┌──────────────┐
-│  Device     │ ─────────────────────────────► │  Auth Server │
-│  (Smart TV) │ ◄───────────────────────────── │              │
-│             │    2. Device code + user_code   │              │
-│             │       + verification_uri        │              │
-│             │                                │              │
-│  Display:   │                                │              │
-│  "Go to     │                                │              │
-│  example.com│                                │              │
-│  /activate  │                                │              │
-│  Enter code:│                                │              │
-│  ABCD-1234" │                                │              │
-│             │                                │              │
-│  3. Poll ──────────────────────────────────► │              │
-│     for     │    "authorization_pending"     │              │
-│     token   │ ◄───────────────────────────── │              │
-│             │                                │              │
-│  4. Poll ──────────────────────────────────► │              │
-│     again   │    Access token + Refresh token│              │
-│             │ ◄───────────────────────────── │              │
-└─────────────┘                                └──────────────┘
-
+| Device | ─────────────────────────────► | Auth Server |
+| (Smart TV) | ◄───────────────────────────── |  |
+|  | 2. Device code + user_code |  |
+|  | + verification_uri |  |
+| Display: |  |  |
+| "Go to |  |  |
+| example.com |  |  |
+| /activate |  |  |
+| Enter code: |  |  |
+| ABCD-1234" |  |  |
+| 3. Poll ──────────────────────────────────► |  |
+| for | "authorization_pending" |  |
+| token | ◄───────────────────────────── |  |
+| 4. Poll ──────────────────────────────────► |  |
+| again | Access token + Refresh token |  |
+|  | ◄───────────────────────────── |  |
 Meanwhile, on the user's phone/laptop:
 ┌─────────────┐    5. Visit verification_uri  ┌──────────────┐
-│  Browser    │ ─────────────────────────────► │  Auth Server │
-│  (Phone)    │    Enter code: ABCD-1234      │              │
-│             │    Authenticate + consent      │              │
-└─────────────┘                                └──────────────┘
+| Browser | ─────────────────────────────► | Auth Server |
+| (Phone) | Enter code: ABCD-1234 |  |
+|  | Authenticate + consent |  |
 ```
 
 ```
@@ -263,46 +246,27 @@ Signature:
 ### Token Lifecycle Diagram
 
 ```
-┌───────────────────────────────────────────────────────────────────────────┐
-│                           JWT LIFECYCLE                                    │
-│                                                                           │
-│  ┌─────────────┐                                                          │
-│  │   ISSUED    │ ← Auth server creates and signs token                    │
-│  │  (iat)      │                                                          │
-│  └──────┬──────┘                                                          │
-│         │                                                                 │
-│         ▼                                                                 │
-│  ┌─────────────┐                                                          │
-│  │   ACTIVE    │ ← Token is valid, accepted by resource servers           │
-│  │  (nbf→exp)  │   Validation: signature, exp, iss, aud, nbf             │
-│  └──────┬──────┘                                                          │
-│         │                                                                 │
-│         ├──── Normal use: Present in Authorization header ────────────►   │
-│         │     Authorization: Bearer eyJhbGciOiJSUzI1NiIs...              │
-│         │                                                                 │
-│         ├──── Approaching expiry: Use refresh token ──────────────────►   │
-│         │     POST /token { grant_type: "refresh_token", ... }            │
-│         │     → New access token + new refresh token                      │
-│         │                                                                 │
-│         ▼                                                                 │
-│  ┌─────────────┐                                                          │
-│  │  EXPIRED    │ ← Current time > exp claim                               │
-│  │  (past exp) │   Resource server rejects with 401                       │
-│  └──────┬──────┘                                                          │
-│         │                                                                 │
-│         ├──── Refresh token valid: Silent refresh ────────────────────►   │
-│         │     User does not notice, new tokens issued                     │
-│         │                                                                 │
-│         ├──── Refresh token expired: Re-authenticate ─────────────────►   │
-│         │     Redirect to login                                           │
-│         │                                                                 │
-│         ▼                                                                 │
-│  ┌─────────────┐                                                          │
-│  │  REVOKED    │ ← Explicit revocation (logout, password change, breach)  │
-│  │  (blocklist)│   Token added to blocklist until its natural expiry      │
-│  └─────────────┘                                                          │
-│                                                                           │
-└───────────────────────────────────────────────────────────────────────────┘
+  JWT LIFECYCLE
+|  | ISSUED | ← Auth server creates and signs token |
+|  | (iat) |  |
+  ▼
+|  | ACTIVE | ← Token is valid, accepted by resource servers |
+|  | (nbf→exp) | Validation: signature, exp, iss, aud, nbf |
+  ├──── Normal use: Present in Authorization header ────────────►
+|  | Authorization: Bearer eyJhbGciOiJSUzI1NiIs... |
+  ├──── Approaching expiry: Use refresh token ──────────────────►
+|  | POST /token { grant_type: "refresh_token", ... } |
+|  | → New access token + new refresh token |
+  ▼
+|  | EXPIRED | ← Current time > exp claim |
+|  | (past exp) | Resource server rejects with 401 |
+  ├──── Refresh token valid: Silent refresh ────────────────────►
+|  | User does not notice, new tokens issued |
+  ├──── Refresh token expired: Re-authenticate ─────────────────►
+|  | Redirect to login |
+  ▼
+|  | REVOKED | ← Explicit revocation (logout, password change, breach) |
+|  | (blocklist) | Token added to blocklist until its natural expiry |
 ```
 
 ### Token Validation Checklist
@@ -323,24 +287,18 @@ JWT VALIDATION (in order):
 ### Token Refresh Flow
 
 ```
-┌──────────┐                                    ┌──────────────┐
-│  Client  │                                    │  Auth Server │
-│          │  1. Access token expired (401)      │              │
-│          │                                    │              │
-│          │  2. POST /token                    │              │
-│          │     grant_type=refresh_token       │              │
-│          │     refresh_token=dGhpcyBpcyBh... │              │
-│          │ ──────────────────────────────────►│              │
-│          │                                    │              │
-│          │  3. New access token               │              │
-│          │     + new refresh token            │              │
-│          │     (refresh token rotation)       │              │
-│          │ ◄──────────────────────────────────│              │
-│          │                                    │              │
-│          │  4. Retry original request          │              │
-│          │     with new access token          │              │
-└──────────┘                                    └──────────────┘
-
+| Client |  | Auth Server |
+|  | 1. Access token expired (401) |  |
+|  | 2. POST /token |  |
+|  | grant_type=refresh_token |  |
+|  | refresh_token=dGhpcyBpcyBh... |  |
+|  | ──────────────────────────────────► |  |
+|  | 3. New access token |  |
+|  | + new refresh token |  |
+|  | (refresh token rotation) |  |
+|  | ◄────────────────────────────────── |  |
+|  | 4. Retry original request |  |
+|  | with new access token |  |
 REFRESH TOKEN ROTATION:
 - Each refresh returns a NEW refresh token
 - Old refresh token is invalidated immediately
@@ -351,26 +309,18 @@ REFRESH TOKEN ROTATION:
 ### Recommended Token Lifetimes
 
 ```
-┌─────────────────────────┬──────────────────┬────────────────────────────────┐
-│  Token Type             │  Lifetime         │  Rationale                      │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  Access token           │  15-60 minutes    │  Short-lived, limits blast     │
-│                         │                   │  radius of stolen token        │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  Refresh token          │  7-30 days        │  Long-lived for UX, but        │
-│                         │                   │  rotated on each use           │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  ID token               │  5-15 minutes     │  Only used at authentication   │
-│                         │                   │  time, not for API access      │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  Service token (M2M)    │  1-24 hours       │  Client credentials can be     │
-│                         │                   │  re-fetched easily             │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  Password reset token   │  15-60 minutes    │  Single use, time-limited      │
-├─────────────────────────┼──────────────────┼────────────────────────────────┤
-│  Email verification     │  24-72 hours      │  User may not check email      │
-│  token                  │                   │  immediately                   │
-└─────────────────────────┴──────────────────┴────────────────────────────────┘
+| Token Type | Lifetime | Rationale |
+| Access token | 15-60 minutes | Short-lived, limits blast |
+|  |  | radius of stolen token |
+| Refresh token | 7-30 days | Long-lived for UX, but |
+|  |  | rotated on each use |
+| ID token | 5-15 minutes | Only used at authentication |
+|  |  | time, not for API access |
+| Service token (M2M) | 1-24 hours | Client credentials can be |
+|  |  | re-fetched easily |
+| Password reset token | 15-60 minutes | Single use, time-limited |
+| Email verification | 24-72 hours | User may not check email |
+| token |  | immediately |
 ```
 
 ---
@@ -422,15 +372,12 @@ LOGOUT:
   Server clears cookie
 
 SESSION STORE OPTIONS:
-┌────────────────┬──────────────────────────────────────────────────┐
-│  Store         │  Characteristics                                  │
-├────────────────┼──────────────────────────────────────────────────┤
-│  Redis         │  Fast, TTL support, cluster mode for scale        │
-│  PostgreSQL    │  Durable, queryable, slower than Redis             │
-│  DynamoDB      │  Managed, auto-scaling, TTL support               │
-│  Memcached     │  Fast, but no persistence (restart = all logged out)│
-│  In-memory     │  Development only. Lost on server restart.         │
-└────────────────┴──────────────────────────────────────────────────┘
+| Store | Characteristics |
+| Redis | Fast, TTL support, cluster mode for scale |
+| PostgreSQL | Durable, queryable, slower than Redis |
+| DynamoDB | Managed, auto-scaling, TTL support |
+| Memcached | Fast, but no persistence (restart = all logged out) |
+| In-memory | Development only. Lost on server restart. |
 ```
 
 **Pros:** Instant revocation (delete from store). Small cookie size. Full server control.
@@ -466,29 +413,24 @@ ADVANTAGES:
 ```
 SESSION SECURITY:
 ├── Cookie flags
-│   ├── HttpOnly:   REQUIRED — prevents XSS access to session
-│   ├── Secure:     REQUIRED — HTTPS only
-│   ├── SameSite:   REQUIRED — Lax (default) or Strict
-│   └── Path:       SET to most restrictive path needed
-│
+  ├── HttpOnly:   REQUIRED — prevents XSS access to session
+  ├── Secure:     REQUIRED — HTTPS only
+  ├── SameSite:   REQUIRED — Lax (default) or Strict
+  └── Path:       SET to most restrictive path needed
 ├── Session fixation prevention
-│   └── Regenerate session ID after login (never reuse pre-auth session)
-│
+  └── Regenerate session ID after login (never reuse pre-auth session)
 ├── Session hijacking prevention
-│   ├── Bind session to IP (optional, breaks mobile users)
-│   ├── Bind session to User-Agent fingerprint
-│   └── Rotate session ID periodically
-│
+  ├── Bind session to IP (optional, breaks mobile users)
+  ├── Bind session to User-Agent fingerprint
+  └── Rotate session ID periodically
 ├── Timeout policies
-│   ├── Absolute timeout: 12-24 hours (force re-auth)
-│   ├── Idle timeout: 30-60 minutes (inactivity)
-│   └── Sliding expiration: reset idle timer on activity
-│
+  ├── Absolute timeout: 12-24 hours (force re-auth)
+  ├── Idle timeout: 30-60 minutes (inactivity)
+  └── Sliding expiration: reset idle timer on activity
 ├── Concurrent session control
-│   ├── Allow multiple sessions (default, user-friendly)
-│   ├── Limit to N sessions (e.g., 5 devices)
-│   └── Single session (high security: new login kills old session)
-│
+  ├── Allow multiple sessions (default, user-friendly)
+  ├── Limit to N sessions (e.g., 5 devices)
+  └── Single session (high security: new login kills old session)
 └── Session revocation events
     ├── Password change → revoke all sessions
     ├── Email change → revoke all sessions
@@ -591,21 +533,18 @@ FLOW:
   5. Server verifies code hash, single use
 
 SECURITY CONSIDERATIONS:
-  ┌───────────────────────────────────────────────────────────────────┐
-  │  SMS OTP RISKS:                                                   │
-  │  - SIM swapping attacks (attacker ports victim's number)          │
-  │  - SS7 network interception                                       │
-  │  - Social engineering of carrier support                           │
-  │  - Delivery delays and reliability issues                          │
-  │                                                                    │
-  │  MITIGATIONS:                                                      │
-  │  - Offer TOTP/WebAuthn as preferred alternatives                  │
-  │  - Rate limit OTP generation (max 3 per 10 minutes)               │
-  │  - OTP codes expire in 5-10 minutes                                │
-  │  - Single use — invalidate after first verification                │
-  │  - Do not reuse codes within the same time window                  │
-  │  - Log and alert on unusual MFA patterns                           │
-  └───────────────────────────────────────────────────────────────────┘
+  SMS OTP RISKS:
+  - SIM swapping attacks (attacker ports victim's number)
+  - SS7 network interception
+  - Social engineering of carrier support
+  - Delivery delays and reliability issues
+  MITIGATIONS:
+  - Offer TOTP/WebAuthn as preferred alternatives
+  - Rate limit OTP generation (max 3 per 10 minutes)
+  - OTP codes expire in 5-10 minutes
+  - Single use — invalidate after first verification
+  - Do not reuse codes within the same time window
+  - Log and alert on unusual MFA patterns
 ```
 
 ### 4. Push Notification MFA
@@ -645,39 +584,32 @@ USAGE:
   - After use: warn user to regenerate codes if running low
 
 FORMAT EXAMPLE:
-  ┌──────────────────────────────────────┐
-  │  RECOVERY CODES — Save these now     │
-  │                                      │
-  │  1. ABCD-1234                        │
-  │  2. EFGH-5678                        │
-  │  3. IJKL-9012                        │
-  │  4. MNOP-3456                        │
-  │  5. QRST-7890                        │
-  │  6. UVWX-1234                        │
-  │  7. YZAB-5678                        │
-  │  8. CDEF-9012                        │
-  │                                      │
-  │  Each code can only be used once.    │
-  │  Store in a safe place.              │
-  └──────────────────────────────────────┘
+  RECOVERY CODES — Save these now
+  1. ABCD-1234
+  2. EFGH-5678
+  3. IJKL-9012
+  4. MNOP-3456
+  5. QRST-7890
+  6. UVWX-1234
+  7. YZAB-5678
+  8. CDEF-9012
+  Each code can only be used once.
+  Store in a safe place.
 ```
 
 ### MFA Decision Matrix
 
 ```
-┌───────────────────┬──────────┬──────────┬──────────┬──────────┬──────────┐
-│  Factor           │  TOTP    │  WebAuthn│  SMS OTP │  Push    │  Email   │
-├───────────────────┼──────────┼──────────┼──────────┼──────────┼──────────┤
-│  Phishing resist. │  Low     │  High    │  Low     │  Medium  │  Low     │
-│  User convenience │  Medium  │  High    │  High    │  High    │  Medium  │
-│  Setup complexity │  Medium  │  Low     │  Low     │  High    │  Low     │
-│  Infra cost       │  None    │  None    │  Per-SMS │  Push svc│  Email   │
-│  Offline support  │  Yes     │  Yes     │  No      │  No      │  No      │
-│  Device required  │  Phone   │  Any     │  Phone   │  Phone   │  Email   │
-│  Recovery         │  Codes   │  Codes   │  Alt num │  Codes   │  Alt addr│
-│  Recommended for  │  General │  High    │  Low     │  General │  Low     │
-│                   │  use     │  security│  security│  use     │  security│
-└───────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
+| Factor | TOTP | WebAuthn | SMS OTP | Push | Email |
+| Phishing resist. | Low | High | Low | Medium | Low |
+| User convenience | Medium | High | High | High | Medium |
+| Setup complexity | Medium | Low | Low | High | Low |
+| Infra cost | None | None | Per-SMS | Push svc | Email |
+| Offline support | Yes | Yes | No | No | No |
+| Device required | Phone | Any | Phone | Phone | Email |
+| Recovery | Codes | Codes | Alt num | Codes | Alt addr |
+| Recommended for | General | High | Low | General | Low |
+|  | use | security | security | use | security |
 
 RECOMMENDATION:
   Primary:   WebAuthn/Passkeys (best security + UX)

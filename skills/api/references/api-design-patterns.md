@@ -631,25 +631,22 @@ GET /api/v1/jobs/job_abc123
 ## REST vs. GraphQL vs. gRPC Comparison
 
 ```
-┌────────────────────────┬──────────────────┬──────────────────┬──────────────────┐
-│  Criterion             │  REST             │  GraphQL          │  gRPC             │
-├────────────────────────┼──────────────────┼──────────────────┼──────────────────┤
-│  Transport             │  HTTP/1.1, HTTP/2 │  HTTP/1.1, HTTP/2│  HTTP/2 (required)│
-│  Data format           │  JSON (typically) │  JSON             │  Protocol Buffers │
-│  Schema/Contract       │  OpenAPI (opt.)   │  SDL (required)   │  .proto (required)│
-│  Type safety           │  Optional         │  Built-in         │  Built-in         │
-│  Over/under-fetching   │  Common problem   │  Solved by design │  Solved by design │
-│  Caching               │  HTTP caching     │  Complex (POST)   │  No HTTP caching  │
-│  Real-time             │  SSE, WebSocket   │  Subscriptions    │  Bidirectional    │
-│                        │                   │                   │  streaming        │
-│  Browser support       │  Native           │  Via fetch/libs   │  Requires proxy   │
-│                        │                   │                   │  (grpc-web)       │
-│  File upload           │  Multipart/form   │  Multipart spec   │  Streaming chunks │
-│  Learning curve        │  Low              │  Medium           │  High             │
-│  Tooling maturity      │  Excellent        │  Very good        │  Good             │
-│  Best for              │  Public APIs,     │  Flexible client  │  Internal service  │
-│                        │  simple CRUD      │  data needs       │  communication    │
-└────────────────────────┴──────────────────┴──────────────────┴──────────────────┘
+| Criterion | REST | GraphQL | gRPC |
+| Transport | HTTP/1.1, HTTP/2 | HTTP/1.1, HTTP/2 | HTTP/2 (required) |
+| Data format | JSON (typically) | JSON | Protocol Buffers |
+| Schema/Contract | OpenAPI (opt.) | SDL (required) | .proto (required) |
+| Type safety | Optional | Built-in | Built-in |
+| Over/under-fetching | Common problem | Solved by design | Solved by design |
+| Caching | HTTP caching | Complex (POST) | No HTTP caching |
+| Real-time | SSE, WebSocket | Subscriptions | Bidirectional |
+|  |  |  | streaming |
+| Browser support | Native | Via fetch/libs | Requires proxy |
+|  |  |  | (grpc-web) |
+| File upload | Multipart/form | Multipart spec | Streaming chunks |
+| Learning curve | Low | Medium | High |
+| Tooling maturity | Excellent | Very good | Good |
+| Best for | Public APIs, | Flexible client | Internal service |
+|  | simple CRUD | data needs | communication |
 ```
 
 ### When to Choose REST
@@ -683,23 +680,20 @@ GET /api/v1/jobs/job_abc123
 Use this matrix to select patterns based on your specific requirements.
 
 ```
-┌──────────────────────────┬─────────────────────────────────────────────────────┐
-│  Requirement             │  Recommended Patterns                               │
-├──────────────────────────┼─────────────────────────────────────────────────────┤
-│  Multiple client types   │  BFF, GraphQL, Sparse Fieldsets                     │
-│  Real-time updates       │  SSE, WebSocket, Long Polling, gRPC Streaming       │
-│  Third-party integration │  Webhooks, REST + OpenAPI, Idempotency Keys         │
-│  Large dataset traversal │  Cursor Pagination, Streaming                       │
-│  Bandwidth optimization  │  Sparse Fieldsets, gRPC (protobuf), Compression     │
-│  Long-running operations │  Async Request-Reply, Webhooks                      │
-│  High write throughput   │  CQRS, Event-Carried State Transfer, Batch Ops      │
-│  Complex data graphs     │  GraphQL, Expand/Include, Composite                 │
-│  Microservice gateway    │  Gateway Aggregation, BFF                           │
-│  Retry safety            │  Idempotency Keys, conditional requests (ETags)     │
-│  Public API stability    │  Versioned Schema Evolution, HATEOAS, Content Neg.  │
-│  Service resilience      │  Circuit Breaker, Rate Limiting, Backpressure       │
-│  Audit / compliance      │  Event-Carried State Transfer, Webhooks             │
-└──────────────────────────┴─────────────────────────────────────────────────────┘
+| Requirement | Recommended Patterns |
+| Multiple client types | BFF, GraphQL, Sparse Fieldsets |
+| Real-time updates | SSE, WebSocket, Long Polling, gRPC Streaming |
+| Third-party integration | Webhooks, REST + OpenAPI, Idempotency Keys |
+| Large dataset traversal | Cursor Pagination, Streaming |
+| Bandwidth optimization | Sparse Fieldsets, gRPC (protobuf), Compression |
+| Long-running operations | Async Request-Reply, Webhooks |
+| High write throughput | CQRS, Event-Carried State Transfer, Batch Ops |
+| Complex data graphs | GraphQL, Expand/Include, Composite |
+| Microservice gateway | Gateway Aggregation, BFF |
+| Retry safety | Idempotency Keys, conditional requests (ETags) |
+| Public API stability | Versioned Schema Evolution, HATEOAS, Content Neg. |
+| Service resilience | Circuit Breaker, Rate Limiting, Backpressure |
+| Audit / compliance | Event-Carried State Transfer, Webhooks |
 ```
 
 ## Common Anti-Patterns

@@ -42,20 +42,17 @@ Two identical environments, instant switchover:
 
 ```
 BLUE-GREEN DEPLOYMENT PLAN:
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   LOAD BALANCER                                             │
-│        │                                                    │
-│   ┌────┴────┐                                               │
+  LOAD BALANCER
+  ┌────┴────┐
 │   │         │                                               │
-│   ▼         ▼                                               │
-│ ┌──────┐  ┌──────┐                                          │
-│ │ BLUE │  │GREEN │                                          │
-│ │(live)│  │(idle)│                                          │
-│ │ v1.0 │  │ v1.1 │                                          │
-│ └──┬───┘  └──┬───┘                                          │
+  ▼         ▼
+  ┌──────┐  ┌──────┐
+|  | BLUE |  | GREEN |  |
+|  | (live) |  | (idle) |  |
+|  | v1.0 |  | v1.1 |  |
+  └──┬───┘  └──┬───┘
 │    │         │                                               │
-│    └────┬────┘                                               │
+  └────┬────┘
 ```
 
 ### Step 3: Canary Release
@@ -63,19 +60,15 @@ Route a small percentage of traffic to the new version:
 
 ```
 CANARY RELEASE PLAN:
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   LOAD BALANCER (traffic splitting)                         │
-│        │                                                    │
-│   ┌────┴──────────────┐                                     │
-│   │ 95%               │ 5%                                  │
-│   ▼                   ▼                                     │
-│ ┌──────────┐  ┌──────────┐                                  │
-│ │ STABLE   │  │ CANARY   │                                  │
-│ │ (N inst) │  │ (1 inst) │                                  │
-│ │  v1.0    │  │  v1.1    │                                  │
-│ └──────────┘  └──────────┘                                  │
-└─────────────────────────────────────────────────────────────┘
+  LOAD BALANCER (traffic splitting)
+  ┌────┴──────────────┐
+|  | 95% | 5% |
+  ▼                   ▼
+  ┌──────────┐  ┌──────────┐
+|  | STABLE |  | CANARY |  |
+|  | (N inst) |  | (1 inst) |  |
+|  | v1.0 |  | v1.1 |  |
+  └──────────┘  └──────────┘
 
 ```
 
@@ -84,16 +77,14 @@ Percentage-based traffic shifting with automated gates:
 
 ```
 PROGRESSIVE ROLLOUT PLAN:
-┌──────────┬──────────┬──────────┬──────────┬──────────┐
-│ Stage    │ Traffic  │ Duration │ Gate     │ Rollback │
-├──────────┼──────────┼──────────┼──────────┼──────────┤
-│ 1. Smoke │ 0% (int) │ 5 min    │ Auto     │ Auto     │
-│ 2. Seed  │ 1%       │ 10 min   │ Auto     │ Auto     │
-│ 3. Low   │ 5%       │ 15 min   │ Auto     │ Auto     │
-│ 4. Med   │ 25%      │ 30 min   │ Manual   │ Auto     │
-│ 5. High  │ 50%      │ 30 min   │ Manual   │ Auto     │
-│ 6. Full  │ 100%     │ Monitor  │ Manual   │ Manual   │
-└──────────┴──────────┴──────────┴──────────┴──────────┘
+| Stage | Traffic | Duration | Gate | Rollback |
+|---|---|---|---|---|
+| 1. Smoke | 0% (int) | 5 min | Auto | Auto |
+| 2. Seed | 1% | 10 min | Auto | Auto |
+| 3. Low | 5% | 15 min | Auto | Auto |
+| 4. Med | 25% | 30 min | Manual | Auto |
+| 5. High | 50% | 30 min | Manual | Auto |
+| 6. Full | 100% | Monitor | Manual | Manual |
 
 Gate criteria:
   Auto gate: pass if all success metrics within threshold for full duration
@@ -105,19 +96,16 @@ Define rollback criteria and execution plan:
 
 ```
 ROLLBACK PLAN:
-┌─────────────────────────────────────────────────────────────┐
-│ AUTOMATIC ROLLBACK TRIGGERS                                 │
-├─────────────────────────────────────────────────────────────┤
-│ Trigger                        │ Threshold    │ Window     │
-├────────────────────────────────┼──────────────┼────────────┤
-│ HTTP 5xx rate                  │ > 1%         │ 2 min      │
-│ P99 latency                   │ > 2x baseline│ 5 min      │
-│ Error log rate                 │ > 3x baseline│ 5 min      │
-│ Health check failures          │ > 2 consec.  │ immediate  │
-│ Business metric drop           │ > 10%        │ 15 min     │
-│ Memory usage                   │ > 90%        │ 5 min      │
-│ CPU usage                      │ > 95%        │ 5 min      │
-└────────────────────────────────┴──────────────┴────────────┘
+  AUTOMATIC ROLLBACK TRIGGERS
+| Trigger | Threshold | Window |
+|---|---|---|
+| HTTP 5xx rate | > 1% | 2 min |
+| P99 latency | > 2x baseline | 5 min |
+| Error log rate | > 3x baseline | 5 min |
+| Health check failures | > 2 consec. | immediate |
+| Business metric drop | > 10% | 15 min |
+| Memory usage | > 90% | 5 min |
+| CPU usage | > 95% | 5 min |
 
 ```
 
@@ -126,13 +114,11 @@ Coordinate feature flags with deployment stages:
 
 ```
 FEATURE FLAG ROLLOUT PLAN:
-┌──────────────────────────────────────────────────────────────┐
-│ Flag               │ Stage 1   │ Stage 2  │ Stage 3 │ Full  │
-├──────────────────────────────────────────────────────────────┤
-│ new-checkout-ui    │ internal  │ 5% users │ 50%     │ 100%  │
-│ payment-v2-api     │ internal  │ internal │ 5%      │ 100%  │
-│ new-recommendation │ OFF       │ OFF      │ 25%     │ 100%  │
-└──────────────────────────────────────────────────────────────┘
+| Flag | Stage 1 | Stage 2 | Stage 3 | Full |
+|---|---|---|---|---|
+| new-checkout-ui | internal | 5% users | 50% | 100% |
+| payment-v2-api | internal | internal | 5% | 100% |
+| new-recommendation | OFF | OFF | 25% | 100% |
 
 Flag dependencies:
   payment-v2-api REQUIRES new-checkout-ui (cannot enable v2 without new UI)
@@ -189,21 +175,18 @@ Phase 3: CUTOVER
 ### Step 8: Deployment Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  DEPLOYMENT PLAN                                           │
-├────────────────────────────────────────────────────────────┤
-│  Strategy: <Blue-Green | Canary | Progressive | Rolling>   │
-│  Risk level: <LOW | MEDIUM | HIGH | CRITICAL>              │
-│  Estimated duration: <time>                                │
-│  Rollback time: <time>                                     │
-│                                                            │
-│  Pre-deployment checklist:                                 │
-│  [x] All tests passing                                     │
-│  [x] Security audit passed                                 │
-│  [x] Database migration tested in staging                  │
-│  [x] Rollback procedure tested                             │
-│  [x] Monitoring dashboards ready                           │
-│  [x] On-call engineer confirmed                            │
+  DEPLOYMENT PLAN
+  Strategy: <Blue-Green | Canary | Progressive | Rolling>
+  Risk level: <LOW | MEDIUM | HIGH | CRITICAL>
+  Estimated duration: <time>
+  Rollback time: <time>
+  Pre-deployment checklist:
+  [x] All tests passing
+  [x] Security audit passed
+  [x] Database migration tested in staging
+  [x] Rollback procedure tested
+  [x] Monitoring dashboards ready
+  [x] On-call engineer confirmed
 ```
 
 ### Step 9: Commit and Transition

@@ -179,19 +179,14 @@ docs/perf/                     ← perf (flame graphs, profile reports)
 
 ```
                     .godmode/spec.md
-                         │
           think ─────────┤
                          ▼
           plan ──── .godmode/plan.yaml
-                         │
           predict ───────┤ (reads spec, gates back to think)
                          ▼
           build ──── source files ──── build/lint/test commands
-            │                              │
             └──→ fix ◄─────────────────────┘
-                  │
                   └──→ debug (when fix skips errors)
-                         │
                          └──→ fix (after root cause found)
 
           review ──── git diff ──── NIT-fix commits

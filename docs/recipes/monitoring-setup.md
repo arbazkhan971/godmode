@@ -144,11 +144,8 @@ LOGGING PIPELINE:
 Architecture:
   Application → stdout (JSON) → Container runtime → Promtail → Loki → Grafana
 
-  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-  │  App     │    │ Promtail │    │   Loki   │    │ Grafana  │
-  │ (stdout) │──→ │ (agent)  │──→ │ (store)  │──→ │ (query)  │
-  └──────────┘    └──────────┘    └──────────┘    └──────────┘
-
+| App |  | Promtail |  | Loki |  | Grafana |
+| (stdout) | ──→ | (agent) | ──→ | (store) | ──→ | (query) |
 Why stdout, not files:
   - Container-native (12-factor app)
   - Kubernetes captures stdout automatically

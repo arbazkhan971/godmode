@@ -9,52 +9,41 @@
 ### Binary Classification
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  When to Use                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  Accuracy            │  Balanced classes only. Misleading when classes are       │
-│                      │  imbalanced (99% accuracy by always predicting majority). │
-│                      │  Formula: (TP + TN) / (TP + TN + FP + FN)               │
-│                      │                                                          │
-│  Precision           │  When false positives are costly.                         │
-│                      │  "Of all predicted positive, how many are truly positive?"│
-│                      │  Example: Spam filter (don't mark real email as spam).    │
-│                      │  Formula: TP / (TP + FP)                                 │
-│                      │                                                          │
-│  Recall (Sensitivity)│  When false negatives are costly.                         │
-│                      │  "Of all actual positive, how many did we catch?"         │
-│                      │  Example: Cancer screening (don't miss real cancer).      │
-│                      │  Formula: TP / (TP + FN)                                 │
-│                      │                                                          │
-│  F1 Score            │  When you need a balance between precision and recall.    │
-│                      │  Harmonic mean; punishes extreme imbalance between P/R.   │
-│                      │  Formula: 2 * (P * R) / (P + R)                          │
-│                      │                                                          │
-│  F-beta Score        │  When you want to weight precision vs. recall.            │
-│                      │  beta < 1: weight precision more.                         │
-│                      │  beta > 1: weight recall more.                            │
-│                      │  F2: recall twice as important. F0.5: precision twice.    │
-│                      │                                                          │
-│  AUC-ROC             │  When you need a threshold-independent measure.           │
-│                      │  Probability that model ranks a random positive higher    │
-│                      │  than a random negative. Robust to class imbalance.       │
-│                      │  Range: 0.5 (random) to 1.0 (perfect).                   │
-│                      │                                                          │
-│  AUC-PR              │  Imbalanced datasets where positives are rare.            │
-│                      │  More informative than AUC-ROC when negative class        │
-│                      │  dominates. Precision-Recall curve area.                  │
-│                      │                                                          │
-│  Log Loss            │  When calibrated probabilities matter (not just ranking). │
-│                      │  Penalizes confident wrong predictions heavily.           │
-│                      │  Used in: betting, risk scoring, decision systems.        │
-│                      │  Formula: -1/N * sum(y*log(p) + (1-y)*log(1-p))          │
-│                      │                                                          │
-│  MCC                 │  Most informative single metric for binary classification.│
-│  (Matthews           │  Uses all four confusion matrix values. Works well even   │
-│   Correlation Coeff) │  with imbalanced datasets. Range: -1 to 1.               │
-│                      │  Formula: (TP*TN - FP*FN) /                              │
-│                      │           sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))             │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | When to Use |
+| Accuracy | Balanced classes only. Misleading when classes are |
+|  | imbalanced (99% accuracy by always predicting majority). |
+|  | Formula: (TP + TN) / (TP + TN + FP + FN) |
+| Precision | When false positives are costly. |
+|  | "Of all predicted positive, how many are truly positive?" |
+|  | Example: Spam filter (don't mark real email as spam). |
+|  | Formula: TP / (TP + FP) |
+| Recall (Sensitivity) | When false negatives are costly. |
+|  | "Of all actual positive, how many did we catch?" |
+|  | Example: Cancer screening (don't miss real cancer). |
+|  | Formula: TP / (TP + FN) |
+| F1 Score | When you need a balance between precision and recall. |
+|  | Harmonic mean; punishes extreme imbalance between P/R. |
+|  | Formula: 2 * (P * R) / (P + R) |
+| F-beta Score | When you want to weight precision vs. recall. |
+|  | beta < 1: weight precision more. |
+|  | beta > 1: weight recall more. |
+|  | F2: recall twice as important. F0.5: precision twice. |
+| AUC-ROC | When you need a threshold-independent measure. |
+|  | Probability that model ranks a random positive higher |
+|  | than a random negative. Robust to class imbalance. |
+|  | Range: 0.5 (random) to 1.0 (perfect). |
+| AUC-PR | Imbalanced datasets where positives are rare. |
+|  | More informative than AUC-ROC when negative class |
+|  | dominates. Precision-Recall curve area. |
+| Log Loss | When calibrated probabilities matter (not just ranking). |
+|  | Penalizes confident wrong predictions heavily. |
+|  | Used in: betting, risk scoring, decision systems. |
+|  | Formula: -1/N * sum(y*log(p) + (1-y)*log(1-p)) |
+| MCC | Most informative single metric for binary classification. |
+| (Matthews | Uses all four confusion matrix values. Works well even |
+| Correlation Coeff) | with imbalanced datasets. Range: -1 to 1. |
+|  | Formula: (TP*TN - FP*FN) / |
+|  | sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN)) |
 ```
 
 **Decision guide:**
@@ -74,155 +63,114 @@ What matters most?
 ### Multi-Class Classification
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  Description                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  Macro-Average       │  Compute metric per class, then average. Treats all       │
-│  (Precision, Recall, │  classes equally regardless of size.                      │
-│   F1)                │  Use when: All classes are equally important.              │
-│                      │                                                          │
-│  Weighted-Average    │  Compute metric per class, average weighted by class      │
-│                      │  support (number of samples). Accounts for imbalance.     │
-│                      │  Use when: Class sizes differ and larger classes matter.   │
-│                      │                                                          │
-│  Micro-Average       │  Aggregate TP, FP, FN globally, then compute.             │
-│                      │  Equivalent to accuracy for multi-class.                  │
-│                      │  Use when: Per-sample accuracy matters most.              │
-│                      │                                                          │
-│  Confusion Matrix    │  Full NxN matrix showing predicted vs. actual per class.  │
-│                      │  Essential for understanding per-class errors.             │
-│                      │                                                          │
-│  Cohen's Kappa       │  Agreement beyond chance. Adjusts for random agreement.   │
-│                      │  Range: -1 to 1. >0.8 is excellent.                       │
-│                      │  Use when: Comparing to random or baseline classifier.     │
-│                      │                                                          │
-│  Top-K Accuracy      │  Correct if true class is in top K predictions.           │
-│                      │  Use when: Multiple valid answers (image classification).  │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | Description |
+| Macro-Average | Compute metric per class, then average. Treats all |
+| (Precision, Recall, | classes equally regardless of size. |
+| F1) | Use when: All classes are equally important. |
+| Weighted-Average | Compute metric per class, average weighted by class |
+|  | support (number of samples). Accounts for imbalance. |
+|  | Use when: Class sizes differ and larger classes matter. |
+| Micro-Average | Aggregate TP, FP, FN globally, then compute. |
+|  | Equivalent to accuracy for multi-class. |
+|  | Use when: Per-sample accuracy matters most. |
+| Confusion Matrix | Full NxN matrix showing predicted vs. actual per class. |
+|  | Essential for understanding per-class errors. |
+| Cohen's Kappa | Agreement beyond chance. Adjusts for random agreement. |
+|  | Range: -1 to 1. >0.8 is excellent. |
+|  | Use when: Comparing to random or baseline classifier. |
+| Top-K Accuracy | Correct if true class is in top K predictions. |
+|  | Use when: Multiple valid answers (image classification). |
 ```
 
 ### Regression
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  When to Use                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  MSE                 │  When large errors are disproportionately bad.            │
-│  (Mean Squared Error)│  Penalizes outliers heavily (squared term).               │
-│                      │  Formula: 1/N * sum((y - y_hat)^2)                       │
-│                      │                                                          │
-│  RMSE                │  Same as MSE but in original units (interpretable).       │
-│  (Root MSE)          │  "Average prediction is off by RMSE units."               │
-│                      │  Formula: sqrt(MSE)                                       │
-│                      │                                                          │
-│  MAE                 │  When all errors are equally bad (not just large ones).   │
-│  (Mean Abs. Error)   │  More robust to outliers than MSE/RMSE.                  │
-│                      │  Formula: 1/N * sum(|y - y_hat|)                         │
-│                      │                                                          │
-│  MAPE               │  When relative error matters (percentage-based).           │
-│  (Mean Abs. % Error) │  Caution: undefined when y=0, biased toward              │
-│                      │  under-prediction.                                        │
-│                      │  Formula: 1/N * sum(|y - y_hat| / |y|) * 100             │
-│                      │                                                          │
-│  R-squared           │  Proportion of variance explained by the model.           │
-│  (Coeff. of Determ.) │  Range: -inf to 1. 1 = perfect, 0 = predicts mean,       │
-│                      │  <0 = worse than predicting mean.                         │
-│                      │  Formula: 1 - SS_res / SS_tot                             │
-│                      │                                                          │
-│  Adjusted R-squared  │  R-squared penalized for number of features.              │
-│                      │  Use when comparing models with different feature counts. │
-│                      │                                                          │
-│  Huber Loss          │  Hybrid: MSE for small errors, MAE for large errors.      │
-│                      │  Robust to outliers while still differentiable.            │
-│                      │  Controlled by delta parameter.                            │
-│                      │                                                          │
-│  Quantile Loss       │  When you care about specific percentiles of prediction.  │
-│                      │  Asymmetric penalty: weight over/under-prediction          │
-│                      │  differently. Used in demand forecasting.                  │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | When to Use |
+| MSE | When large errors are disproportionately bad. |
+| (Mean Squared Error) | Penalizes outliers heavily (squared term). |
+|  | Formula: 1/N * sum((y - y_hat)^2) |
+| RMSE | Same as MSE but in original units (interpretable). |
+| (Root MSE) | "Average prediction is off by RMSE units." |
+|  | Formula: sqrt(MSE) |
+| MAE | When all errors are equally bad (not just large ones). |
+| (Mean Abs. Error) | More robust to outliers than MSE/RMSE. |
+|  | Formula: 1/N * sum(|y - y_hat|) |
+| MAPE | When relative error matters (percentage-based). |
+| (Mean Abs. % Error) | Caution: undefined when y=0, biased toward |
+|  | under-prediction. |
+|  | Formula: 1/N * sum(|y - y_hat| / |y|) * 100 |
+| R-squared | Proportion of variance explained by the model. |
+| (Coeff. of Determ.) | Range: -inf to 1. 1 = perfect, 0 = predicts mean, |
+|  | <0 = worse than predicting mean. |
+|  | Formula: 1 - SS_res / SS_tot |
+| Adjusted R-squared | R-squared penalized for number of features. |
+|  | Use when comparing models with different feature counts. |
+| Huber Loss | Hybrid: MSE for small errors, MAE for large errors. |
+|  | Robust to outliers while still differentiable. |
+|  | Controlled by delta parameter. |
+| Quantile Loss | When you care about specific percentiles of prediction. |
+|  | Asymmetric penalty: weight over/under-prediction |
+|  | differently. Used in demand forecasting. |
 ```
 
 ### Ranking / Recommendation
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  When to Use                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  NDCG                │  When position in ranking matters (top results more       │
-│  (Normalized         │  important). Standard for search and recommendation.      │
-│   Discounted         │  Range: 0 to 1. Logarithmic discount for lower positions.│
-│   Cumulative Gain)   │                                                          │
-│                      │                                                          │
-│  MAP                 │  Mean of average precision across queries.                │
-│  (Mean Average       │  Good for information retrieval with binary relevance.    │
-│   Precision)         │  Emphasizes ranking relevant items higher.                │
-│                      │                                                          │
-│  MRR                 │  Mean of reciprocal rank of first relevant result.        │
-│  (Mean Reciprocal    │  Use when only the top result matters.                    │
-│   Rank)              │  Example: question answering, "I'm feeling lucky" search. │
-│                      │                                                          │
-│  Hit Rate @ K        │  Fraction of queries with at least one relevant item      │
-│                      │  in top K. Simple but useful for recommendations.         │
-│                      │                                                          │
-│  Precision @ K       │  Fraction of top K results that are relevant.             │
-│  Recall @ K          │  Fraction of all relevant items in top K.                 │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | When to Use |
+| NDCG | When position in ranking matters (top results more |
+| (Normalized | important). Standard for search and recommendation. |
+| Discounted | Range: 0 to 1. Logarithmic discount for lower positions. |
+| Cumulative Gain) |  |
+| MAP | Mean of average precision across queries. |
+| (Mean Average | Good for information retrieval with binary relevance. |
+| Precision) | Emphasizes ranking relevant items higher. |
+| MRR | Mean of reciprocal rank of first relevant result. |
+| (Mean Reciprocal | Use when only the top result matters. |
+| Rank) | Example: question answering, "I'm feeling lucky" search. |
+| Hit Rate @ K | Fraction of queries with at least one relevant item |
+|  | in top K. Simple but useful for recommendations. |
+| Precision @ K | Fraction of top K results that are relevant. |
+| Recall @ K | Fraction of all relevant items in top K. |
 ```
 
 ### Object Detection / Segmentation
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  When to Use                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  mAP                 │  Standard for object detection (COCO, VOC).               │
-│  (mean Average       │  Average precision across all classes and IoU thresholds. │
-│   Precision)         │  mAP@0.5: IoU threshold 0.5. mAP@[.5:.95]: COCO style.  │
-│                      │                                                          │
-│  IoU                 │  Overlap between predicted and ground truth bounding box. │
-│  (Intersection over  │  Range: 0 (no overlap) to 1 (perfect overlap).           │
-│   Union)             │  Threshold for "correct" detection: usually 0.5 or 0.75. │
-│                      │                                                          │
-│  Dice Coefficient    │  Segmentation overlap metric. Similar to F1.              │
-│                      │  Formula: 2 * |A ∩ B| / (|A| + |B|)                      │
-│                      │  Commonly used in medical image segmentation.             │
-│                      │                                                          │
-│  Pixel Accuracy      │  Fraction of correctly classified pixels.                 │
-│                      │  Misleading with imbalanced classes (large background).   │
-│                      │                                                          │
-│  Mean IoU            │  Average IoU across all classes. Standard for semantic    │
-│                      │  segmentation (Cityscapes, ADE20K benchmarks).            │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | When to Use |
+| mAP | Standard for object detection (COCO, VOC). |
+| (mean Average | Average precision across all classes and IoU thresholds. |
+| Precision) | mAP@0.5: IoU threshold 0.5. mAP@[.5:.95]: COCO style. |
+| IoU | Overlap between predicted and ground truth bounding box. |
+| (Intersection over | Range: 0 (no overlap) to 1 (perfect overlap). |
+| Union) | Threshold for "correct" detection: usually 0.5 or 0.75. |
+| Dice Coefficient | Segmentation overlap metric. Similar to F1. |
+|  | Formula: 2 * |A ∩ B| / (|A| + |B|) |
+|  | Commonly used in medical image segmentation. |
+| Pixel Accuracy | Fraction of correctly classified pixels. |
+|  | Misleading with imbalanced classes (large background). |
+| Mean IoU | Average IoU across all classes. Standard for semantic |
+|  | segmentation (Cityscapes, ADE20K benchmarks). |
 ```
 
 ### NLP / Generation
 
 ```
-┌──────────────────────┬──────────────────────────────────────────────────────────┐
-│  Metric              │  When to Use                                              │
-├──────────────────────┼──────────────────────────────────────────────────────────┤
-│  Perplexity          │  Language model quality. Lower = better.                  │
-│                      │  Measures how "surprised" the model is by the test set.   │
-│                      │                                                          │
-│  BLEU                │  Machine translation. N-gram overlap with reference.      │
-│                      │  Range: 0-1 (often 0-100). Focuses on precision.          │
-│                      │  Limitation: does not capture fluency or meaning.         │
-│                      │                                                          │
-│  ROUGE               │  Summarization. Measures recall of reference n-grams.     │
-│                      │  ROUGE-1 (unigrams), ROUGE-2 (bigrams), ROUGE-L (LCS).   │
-│                      │                                                          │
-│  BERTScore           │  Semantic similarity using contextual embeddings.          │
-│                      │  Better than BLEU/ROUGE for capturing meaning.             │
-│                      │                                                          │
-│  Human evaluation    │  The gold standard for generation quality.                 │
-│                      │  Measures fluency, relevance, faithfulness, etc.           │
-│                      │  Expensive but essential for production systems.            │
-│                      │                                                          │
-│  Exact Match (EM)    │  Question answering. Binary: predicted answer matches     │
-│                      │  ground truth exactly (after normalization).               │
-│                      │                                                          │
-│  Token-level F1      │  QA and NER. Overlap between predicted and gold tokens.   │
-└──────────────────────┴──────────────────────────────────────────────────────────┘
+| Metric | When to Use |
+| Perplexity | Language model quality. Lower = better. |
+|  | Measures how "surprised" the model is by the test set. |
+| BLEU | Machine translation. N-gram overlap with reference. |
+|  | Range: 0-1 (often 0-100). Focuses on precision. |
+|  | Limitation: does not capture fluency or meaning. |
+| ROUGE | Summarization. Measures recall of reference n-grams. |
+|  | ROUGE-1 (unigrams), ROUGE-2 (bigrams), ROUGE-L (LCS). |
+| BERTScore | Semantic similarity using contextual embeddings. |
+|  | Better than BLEU/ROUGE for capturing meaning. |
+| Human evaluation | The gold standard for generation quality. |
+|  | Measures fluency, relevance, faithfulness, etc. |
+|  | Expensive but essential for production systems. |
+| Exact Match (EM) | Question answering. Binary: predicted answer matches |
+|  | ground truth exactly (after normalization). |
+| Token-level F1 | QA and NER. Overlap between predicted and gold tokens. |
 ```
 
 ---
@@ -233,16 +181,13 @@ What matters most?
 
 ```
 K-FOLD (K=5):
-┌───────────────────────────────────────────────────────────────┐
-│  Fold 1: [TEST] [Train] [Train] [Train] [Train]              │
-│  Fold 2: [Train] [TEST] [Train] [Train] [Train]              │
-│  Fold 3: [Train] [Train] [TEST] [Train] [Train]              │
-│  Fold 4: [Train] [Train] [Train] [TEST] [Train]              │
-│  Fold 5: [Train] [Train] [Train] [Train] [TEST]              │
-│                                                                │
-│  Final score = mean(fold_scores)                               │
-│  Uncertainty = std(fold_scores)                                │
-└───────────────────────────────────────────────────────────────┘
+  Fold 1: [TEST] [Train] [Train] [Train] [Train]
+  Fold 2: [Train] [TEST] [Train] [Train] [Train]
+  Fold 3: [Train] [Train] [TEST] [Train] [Train]
+  Fold 4: [Train] [Train] [Train] [TEST] [Train]
+  Fold 5: [Train] [Train] [Train] [Train] [TEST]
+  Final score = mean(fold_scores)
+  Uncertainty = std(fold_scores)
 
 When to use: General-purpose, sufficient data (>1000 samples).
 K=5 or K=10 is standard.
@@ -276,25 +221,19 @@ LOO:
 
 ```
 TIME-SERIES SPLIT (expanding window):
-┌───────────────────────────────────────────────────────────────┐
-│  Fold 1: [Train]           [TEST]                             │
-│  Fold 2: [Train    Train]  [TEST]                             │
-│  Fold 3: [Train    Train    Train]  [TEST]                    │
-│  Fold 4: [Train    Train    Train    Train]  [TEST]           │
-│                                                                │
-│  NEVER use future data to predict the past.                   │
-│  Training window expands; test window slides forward.          │
-└───────────────────────────────────────────────────────────────┘
+  Fold 1: [Train]           [TEST]
+  Fold 2: [Train    Train]  [TEST]
+  Fold 3: [Train    Train    Train]  [TEST]
+  Fold 4: [Train    Train    Train    Train]  [TEST]
+  NEVER use future data to predict the past.
+  Training window expands; test window slides forward.
 
 SLIDING WINDOW VARIANT:
-┌───────────────────────────────────────────────────────────────┐
-│  Fold 1: [Train    Train]  [TEST]                             │
-│  Fold 2:           [Train    Train]  [TEST]                   │
-│  Fold 3:                    [Train    Train]  [TEST]          │
-│                                                                │
-│  Fixed-size training window slides forward.                    │
-│  Better when older data becomes less relevant.                 │
-└───────────────────────────────────────────────────────────────┘
+  Fold 1: [Train    Train]  [TEST]
+  Fold 2:           [Train    Train]  [TEST]
+  Fold 3:                    [Train    Train]  [TEST]
+  Fixed-size training window slides forward.
+  Better when older data becomes less relevant.
 
 When to use: ANY time-series or temporal data. Violating temporal
 order causes data leakage and inflated metrics.
@@ -319,23 +258,16 @@ GROUP K-FOLD:
 
 ```
 NESTED CV (for hyperparameter tuning + evaluation):
-┌──────────────────────────────────────────────────────────────────┐
-│  Outer Loop (K=5): Evaluate final model performance              │
-│                                                                   │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │  Inner Loop (K=3): Hyperparameter tuning                   │  │
-│  │                                                             │  │
-│  │  For each outer fold:                                       │  │
-│  │    Split outer-train into inner folds                       │  │
-│  │    Grid/random search across inner folds                    │  │
-│  │    Select best hyperparameters                              │  │
-│  │    Train on full outer-train with best params               │  │
-│  │    Evaluate on outer-test fold                              │  │
-│  └────────────────────────────────────────────────────────────┘  │
-│                                                                   │
-│  Result: Unbiased estimate of generalization performance          │
-│  with tuned hyperparameters.                                      │
-└──────────────────────────────────────────────────────────────────┘
+  Outer Loop (K=5): Evaluate final model performance
+|  | Inner Loop (K=3): Hyperparameter tuning |  |
+|  | For each outer fold: |  |
+|  | Split outer-train into inner folds |  |
+|  | Grid/random search across inner folds |  |
+|  | Select best hyperparameters |  |
+|  | Train on full outer-train with best params |  |
+|  | Evaluate on outer-test fold |  |
+  Result: Unbiased estimate of generalization performance
+  with tuned hyperparameters.
 
 When to use: When you need an honest performance estimate AND
 hyperparameter tuning. Prevents optimistic bias from tuning on test set.
@@ -344,18 +276,15 @@ hyperparameter tuning. Prevents optimistic bias from tuning on test set.
 ### CV Strategy Selection Guide
 
 ```
-┌──────────────────────────┬──────────────────────────────────────────────┐
-│  Situation               │  Recommended Strategy                         │
-├──────────────────────────┼──────────────────────────────────────────────┤
-│  Classification          │  Stratified K-Fold (K=5 or 10)               │
-│  Regression              │  K-Fold (K=5 or 10)                          │
-│  Time series             │  Time-Series Split (NEVER shuffle)           │
-│  Small dataset (<200)    │  Leave-One-Out or Repeated Stratified K-Fold │
-│  Grouped data            │  Group K-Fold                                 │
-│  Hyperparameter tuning   │  Nested CV (outer=5, inner=3)                │
-│  Large dataset (>100K)   │  Single train/val/test split (60/20/20)      │
-│  Imbalanced classes      │  Stratified K-Fold + class-weighted metrics   │
-└──────────────────────────┴──────────────────────────────────────────────┘
+| Situation | Recommended Strategy |
+| Classification | Stratified K-Fold (K=5 or 10) |
+| Regression | K-Fold (K=5 or 10) |
+| Time series | Time-Series Split (NEVER shuffle) |
+| Small dataset (<200) | Leave-One-Out or Repeated Stratified K-Fold |
+| Grouped data | Group K-Fold |
+| Hyperparameter tuning | Nested CV (outer=5, inner=3) |
+| Large dataset (>100K) | Single train/val/test split (60/20/20) |
+| Imbalanced classes | Stratified K-Fold + class-weighted metrics |
 ```
 
 ---
@@ -385,13 +314,10 @@ McNEMAR'S TEST:
   Tests whether they make different types of errors.
 
   Contingency table:
-  ┌───────────────────┬──────────────┬──────────────┐
-  │                   │ Model B      │ Model B      │
-  │                   │ Correct      │ Wrong        │
-  ├───────────────────┼──────────────┼──────────────┤
-  │ Model A Correct   │     a        │     b        │
-  │ Model A Wrong     │     c        │     d        │
-  └───────────────────┴──────────────┴──────────────┘
+|  | Model B | Model B |
+|  | Correct | Wrong |
+| Model A Correct | a | b |
+| Model A Wrong | c | d |
 
   H0: b = c (models make the same errors)
   chi2 = (|b - c| - 1)^2 / (b + c)
@@ -482,20 +408,15 @@ MULTIPLE COMPARISONS:
 
 ```
 EFFECT SIZES (report alongside p-values):
-┌──────────────────────┬────────────────────────────────────────────────┐
-│  Metric              │  Interpretation                                 │
-├──────────────────────┼────────────────────────────────────────────────┤
-│  Cohen's d           │  Standardized mean difference.                  │
-│                      │  Small: 0.2, Medium: 0.5, Large: 0.8          │
-│                      │  d = (mean_A - mean_B) / pooled_std            │
-│                      │                                                │
-│  Absolute improvement│  Direct metric difference.                      │
-│                      │  "Model B is 2.3% more accurate than Model A." │
-│                      │                                                │
-│  Relative improvement│  Percentage change.                             │
-│                      │  "Model B reduces error by 15% vs. Model A."   │
-│                      │  Better for communicating practical impact.     │
-└──────────────────────┴────────────────────────────────────────────────┘
+| Metric | Interpretation |
+| Cohen's d | Standardized mean difference. |
+|  | Small: 0.2, Medium: 0.5, Large: 0.8 |
+|  | d = (mean_A - mean_B) / pooled_std |
+| Absolute improvement | Direct metric difference. |
+|  | "Model B is 2.3% more accurate than Model A." |
+| Relative improvement | Percentage change. |
+|  | "Model B reduces error by 15% vs. Model A." |
+|  | Better for communicating practical impact. |
 ```
 
 ---
@@ -522,40 +443,32 @@ FAVORABLE OUTCOME:
 ### Group Fairness Metrics
 
 ```
-┌──────────────────────────┬───────────────────────────────────────────────────┐
-│  Metric                  │  Definition & Interpretation                       │
-├──────────────────────────┼───────────────────────────────────────────────────┤
-│  Demographic Parity      │  P(Y_hat=1 | A=0) = P(Y_hat=1 | A=1)             │
-│  (Statistical Parity)    │  Approval rate should be equal across groups.      │
-│                          │  "Equal proportion of each group gets positive     │
-│                          │   outcome."                                        │
-│                          │  Limitation: ignores actual qualification rates.   │
-│                          │                                                   │
-│  Equalized Odds          │  P(Y_hat=1 | Y=1, A=0) = P(Y_hat=1 | Y=1, A=1)  │
-│                          │  AND                                               │
-│                          │  P(Y_hat=1 | Y=0, A=0) = P(Y_hat=1 | Y=0, A=1)  │
-│                          │  Equal TPR AND FPR across groups.                  │
-│                          │  "Equally good at identifying positives and not    │
-│                          │   making false positive errors across groups."     │
-│                          │                                                   │
-│  Equal Opportunity       │  P(Y_hat=1 | Y=1, A=0) = P(Y_hat=1 | Y=1, A=1)  │
-│                          │  Equal TPR across groups (relaxed equalized odds). │
-│                          │  "Equally good at identifying qualified people     │
-│                          │   across groups."                                  │
-│                          │                                                   │
-│  Predictive Parity       │  P(Y=1 | Y_hat=1, A=0) = P(Y=1 | Y_hat=1, A=1)  │
-│                          │  Equal precision across groups.                    │
-│                          │  "When the model says yes, it's equally likely     │
-│                          │   to be correct for all groups."                   │
-│                          │                                                   │
-│  Calibration             │  P(Y=1 | S=s, A=0) = P(Y=1 | S=s, A=1) for all s│
-│                          │  Equal calibration curves across groups.           │
-│                          │  "A score of 0.8 means 80% probability for all    │
-│                          │   groups."                                         │
-│                          │                                                   │
-│  Treatment Equality      │  FN/FP ratio is equal across groups.              │
-│                          │  "The ratio of types of errors is the same."       │
-└──────────────────────────┴───────────────────────────────────────────────────┘
+| Metric | Definition & Interpretation |
+| Demographic Parity | P(Y_hat=1 | A=0) = P(Y_hat=1 | A=1) |
+| (Statistical Parity) | Approval rate should be equal across groups. |
+|  | "Equal proportion of each group gets positive |
+|  | outcome." |
+|  | Limitation: ignores actual qualification rates. |
+| Equalized Odds | P(Y_hat=1 | Y=1, A=0) = P(Y_hat=1 | Y=1, A=1) |
+|  | AND |
+|  | P(Y_hat=1 | Y=0, A=0) = P(Y_hat=1 | Y=0, A=1) |
+|  | Equal TPR AND FPR across groups. |
+|  | "Equally good at identifying positives and not |
+|  | making false positive errors across groups." |
+| Equal Opportunity | P(Y_hat=1 | Y=1, A=0) = P(Y_hat=1 | Y=1, A=1) |
+|  | Equal TPR across groups (relaxed equalized odds). |
+|  | "Equally good at identifying qualified people |
+|  | across groups." |
+| Predictive Parity | P(Y=1 | Y_hat=1, A=0) = P(Y=1 | Y_hat=1, A=1) |
+|  | Equal precision across groups. |
+|  | "When the model says yes, it's equally likely |
+|  | to be correct for all groups." |
+| Calibration | P(Y=1 | S=s, A=0) = P(Y=1 | S=s, A=1) for all s |
+|  | Equal calibration curves across groups. |
+|  | "A score of 0.8 means 80% probability for all |
+|  | groups." |
+| Treatment Equality | FN/FP ratio is equal across groups. |
+|  | "The ratio of types of errors is the same." |
 
 IMPOSSIBILITY THEOREM:
   It is mathematically impossible to satisfy Demographic Parity,
@@ -567,122 +480,93 @@ IMPOSSIBILITY THEOREM:
 ### Individual Fairness Metrics
 
 ```
-┌──────────────────────────┬───────────────────────────────────────────────────┐
-│  Metric                  │  Definition                                        │
-├──────────────────────────┼───────────────────────────────────────────────────┤
-│  Individual Fairness     │  Similar individuals should receive similar         │
-│                          │  predictions.                                      │
-│                          │  D(f(x_i), f(x_j)) <= L * d(x_i, x_j)            │
-│                          │  Requires defining a meaningful similarity metric. │
-│                          │                                                   │
-│  Counterfactual Fairness │  Prediction should not change if the protected     │
-│                          │  attribute were different (holding everything else │
-│                          │  constant via causal model).                       │
-│                          │  Requires a causal graph.                          │
-└──────────────────────────┴───────────────────────────────────────────────────┘
+| Metric | Definition |
+| Individual Fairness | Similar individuals should receive similar |
+|  | predictions. |
+|  | D(f(x_i), f(x_j)) <= L * d(x_i, x_j) |
+|  | Requires defining a meaningful similarity metric. |
+| Counterfactual Fairness | Prediction should not change if the protected |
+|  | attribute were different (holding everything else |
+|  | constant via causal model). |
+|  | Requires a causal graph. |
 ```
 
 ### Disparity Metrics
 
 ```
 DISPARITY MEASURES:
-┌──────────────────────────┬───────────────────────────────────────────────────┐
-│  Measure                 │  Formula & Threshold                               │
-├──────────────────────────┼───────────────────────────────────────────────────┤
-│  Disparate Impact Ratio  │  P(Y_hat=1 | unprivileged) /                      │
-│                          │  P(Y_hat=1 | privileged)                           │
-│                          │                                                   │
-│                          │  Four-fifths rule: ratio should be >= 0.8          │
-│                          │  (U.S. EEOC guideline for employment).             │
-│                          │                                                   │
-│  Statistical Parity      │  P(Y_hat=1 | unprivileged) -                      │
-│  Difference              │  P(Y_hat=1 | privileged)                           │
-│                          │                                                   │
-│                          │  Fair if close to 0. Range: -1 to 1.              │
-│                          │                                                   │
-│  Average Odds Difference │  0.5 * [(FPR_unpriv - FPR_priv) +                 │
-│                          │         (TPR_unpriv - TPR_priv)]                   │
-│                          │                                                   │
-│                          │  Fair if close to 0.                               │
-└──────────────────────────┴───────────────────────────────────────────────────┘
+| Measure | Formula & Threshold |
+| Disparate Impact Ratio | P(Y_hat=1 | unprivileged) / |
+|  | P(Y_hat=1 | privileged) |
+|  | Four-fifths rule: ratio should be >= 0.8 |
+|  | (U.S. EEOC guideline for employment). |
+| Statistical Parity | P(Y_hat=1 | unprivileged) - |
+| Difference | P(Y_hat=1 | privileged) |
+|  | Fair if close to 0. Range: -1 to 1. |
+| Average Odds Difference | 0.5 * [(FPR_unpriv - FPR_priv) + |
+|  | (TPR_unpriv - TPR_priv)] |
+|  | Fair if close to 0. |
 ```
 
 ### Bias Detection Workflow
 
 ```
 BIAS AUDIT WORKFLOW:
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                             │
-│  1. DEFINE                                                                  │
-│     ├── Identify protected attributes in the data                          │
-│     ├── Define favorable/unfavorable outcomes                              │
-│     ├── Choose fairness metrics appropriate to the context                 │
-│     └── Set acceptable thresholds (e.g., DI ratio >= 0.8)                  │
-│                                                                             │
-│  2. MEASURE                                                                 │
-│     ├── Compute all fairness metrics across all protected groups            │
-│     ├── Disaggregate performance metrics by group                           │
-│     │   (accuracy, FPR, FNR, precision, recall per group)                  │
-│     ├── Check intersectional groups (e.g., race x gender)                  │
-│     └── Visualize metric distributions across groups                        │
-│                                                                             │
-│  3. MITIGATE (if bias detected)                                             │
-│     ├── Pre-processing:                                                     │
-│     │   ├── Reweighting: adjust sample weights to balance outcomes          │
-│     │   ├── Resampling: over/undersample to equalize representation        │
-│     │   └── Disparate impact remover: transform features                    │
-│     ├── In-processing:                                                      │
-│     │   ├── Adversarial debiasing: add fairness constraint to loss         │
-│     │   ├── Prejudice remover: add regularization term for fairness        │
-│     │   └── Constrained optimization: optimize with fairness constraints   │
-│     └── Post-processing:                                                    │
-│         ├── Threshold adjustment: different thresholds per group            │
-│         ├── Reject option classification: defer uncertain predictions       │
-│         └── Calibrated equalized odds: adjust scores post-hoc              │
-│                                                                             │
-│  4. VALIDATE                                                                │
-│     ├── Re-measure all fairness metrics after mitigation                    │
-│     ├── Check that overall performance did not degrade unacceptably         │
-│     ├── Document trade-offs between fairness and performance                │
-│     └── Establish ongoing monitoring in production                          │
-│                                                                             │
-│  5. MONITOR (production)                                                    │
-│     ├── Track fairness metrics continuously                                 │
-│     ├── Alert on metric drift by group                                     │
-│     ├── Regular bias audits on new data                                    │
-│     └── Feedback loops: monitor for disparate real-world outcomes           │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+  1. DEFINE
+  ├── Identify protected attributes in the data
+  ├── Define favorable/unfavorable outcomes
+  ├── Choose fairness metrics appropriate to the context
+  └── Set acceptable thresholds (e.g., DI ratio >= 0.8)
+  2. MEASURE
+  ├── Compute all fairness metrics across all protected groups
+  ├── Disaggregate performance metrics by group
+|  | (accuracy, FPR, FNR, precision, recall per group) |
+  ├── Check intersectional groups (e.g., race x gender)
+  └── Visualize metric distributions across groups
+  3. MITIGATE (if bias detected)
+  ├── Pre-processing:
+|  | ├── Reweighting: adjust sample weights to balance outcomes |
+|  | ├── Resampling: over/undersample to equalize representation |
+|  | └── Disparate impact remover: transform features |
+  ├── In-processing:
+|  | ├── Adversarial debiasing: add fairness constraint to loss |
+|  | ├── Prejudice remover: add regularization term for fairness |
+|  | └── Constrained optimization: optimize with fairness constraints |
+  └── Post-processing:
+  ├── Threshold adjustment: different thresholds per group
+  ├── Reject option classification: defer uncertain predictions
+  └── Calibrated equalized odds: adjust scores post-hoc
+  4. VALIDATE
+  ├── Re-measure all fairness metrics after mitigation
+  ├── Check that overall performance did not degrade unacceptably
+  ├── Document trade-offs between fairness and performance
+  └── Establish ongoing monitoring in production
+  5. MONITOR (production)
+  ├── Track fairness metrics continuously
+  ├── Alert on metric drift by group
+  ├── Regular bias audits on new data
+  └── Feedback loops: monitor for disparate real-world outcomes
 ```
 
 ### Fairness Metric Selection Guide
 
 ```
 CHOOSING THE RIGHT FAIRNESS METRIC:
-┌──────────────────────────┬──────────────────────────────────────────────┐
-│  Context                 │  Recommended Metric                           │
-├──────────────────────────┼──────────────────────────────────────────────┤
-│  Loan approval           │  Equal Opportunity + Disparate Impact Ratio   │
-│                          │  (qualified people should be approved equally)│
-│                          │                                               │
-│  Criminal risk assess.   │  Equalized Odds                               │
-│                          │  (equal TPR and FPR across groups is critical)│
-│                          │                                               │
-│  Hiring                  │  Demographic Parity + 4/5ths rule             │
-│                          │  (legal compliance, EEOC guidelines)          │
-│                          │                                               │
-│  Medical diagnosis       │  Equal Opportunity (sensitivity)              │
-│                          │  (must catch disease equally across groups)   │
-│                          │                                               │
-│  Ad targeting            │  Demographic Parity                           │
-│                          │  (opportunities shown equally)                │
-│                          │                                               │
-│  Credit scoring          │  Calibration                                  │
-│                          │  (scores should mean the same for all groups) │
-│                          │                                               │
-│  Content moderation      │  Equalized Odds                               │
-│                          │  (false positive rates equal across groups)   │
-└──────────────────────────┴──────────────────────────────────────────────┘
+| Context | Recommended Metric |
+| Loan approval | Equal Opportunity + Disparate Impact Ratio |
+|  | (qualified people should be approved equally) |
+| Criminal risk assess. | Equalized Odds |
+|  | (equal TPR and FPR across groups is critical) |
+| Hiring | Demographic Parity + 4/5ths rule |
+|  | (legal compliance, EEOC guidelines) |
+| Medical diagnosis | Equal Opportunity (sensitivity) |
+|  | (must catch disease equally across groups) |
+| Ad targeting | Demographic Parity |
+|  | (opportunities shown equally) |
+| Credit scoring | Calibration |
+|  | (scores should mean the same for all groups) |
+| Content moderation | Equalized Odds |
+|  | (false positive rates equal across groups) |
 ```
 
 ---

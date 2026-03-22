@@ -124,19 +124,14 @@ RECOMMENDATION: Socket.IO with Redis adapter (Option A)
   a dedicated message broker (Redis Streams or NATS).
 
 SYSTEM ARCHITECTURE:
-  ┌─────────┐     ┌─────────────┐     ┌───────────┐
-  │ Client  │────→│ Load Balancer│────→│ WS Server │
-  │ (React) │←────│ (sticky)     │←────│ (Socket.IO)│
+| Client | ────→ | Load Balancer | ────→ | WS Server |
+| (React) | ←──── | (sticky) | ←──── | (Socket.IO) |
   └─────────┘     └─────────────┘     └─────┬─────┘
-                                             │
                           ┌──────────────────┼──────────────┐
-                          │                  │              │
                     ┌─────▼─────┐   ┌───────▼──────┐  ┌───▼────┐
-                    │ Redis     │   │ PostgreSQL   │  │ S3     │
-                    │ Pub/Sub   │   │ Messages     │  │ Files  │
-                    │ + Presence│   │ + Users      │  │        │
-                    └───────────┘   └──────────────┘  └────────┘
-
+| Redis |  | PostgreSQL |  | S3 |
+| Pub/Sub |  | Messages |  | Files |
+| + Presence |  | + Users |  |  |
   Key decisions:
     - Sticky sessions: WebSocket connections must stay on the same server
     - Redis pub/sub: broadcasts messages across server instances

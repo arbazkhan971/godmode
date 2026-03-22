@@ -22,20 +22,17 @@ Identify file storage needs and constraints:
 
 ```
 STORAGE REQUIREMENTS:
-┌──────────────────────────────────────────────────────────┐
-│  File Types:                                              │
-│    Images: <jpg, png, webp, svg>                          │
-│    Documents: <pdf, docx, xlsx>                           │
-│    Video: <mp4, webm>                                     │
-│    Audio: <mp3, wav>                                      │
-│    Other: <csv, json, zip>                                │
-│                                                           │
-│  Upload Constraints:                                      │
-│    Max file size: <size>                                   │
-│    Max files per request: <N>                              │
-│    Allowed MIME types: <list>                              │
-│    Authentication: <required | public>                     │
-│                                                           │
+  File Types:
+  Images: <jpg, png, webp, svg>
+  Documents: <pdf, docx, xlsx>
+  Video: <mp4, webm>
+  Audio: <mp3, wav>
+  Other: <csv, json, zip>
+  Upload Constraints:
+  Max file size: <size>
+  Max files per request: <N>
+  Allowed MIME types: <list>
+  Authentication: <required | public>
 ```
 
 ### Step 2: Object Storage Configuration
@@ -44,38 +41,35 @@ Set up the storage backend:
 #### S3 Bucket Design
 ```
 S3 BUCKET ARCHITECTURE:
-┌──────────────────────────────────────────────────────────┐
-│  Bucket: <app-name>-<env>-uploads                         │
-│  Region: <region>                                         │
-│  Versioning: Enabled                                      │
-│  Encryption: AES-256 (SSE-S3) or KMS                      │
-│                                                           │
-│  Folder Structure:                                        │
-│  /<tenant-id>/                                            │
-│    /originals/<uuid>.<ext>     — Original uploads          │
-│    /processed/<uuid>/                                     │
-│      /thumb_200x200.<ext>      — Thumbnails                │
-│      /medium_800x600.<ext>     — Medium size               │
-│      /large_1920x1080.<ext>    — Large size                │
-│    /documents/<uuid>.<ext>     — Documents                 │
+  Bucket: <app-name>-<env>-uploads
+  Region: <region>
+  Versioning: Enabled
+  Encryption: AES-256 (SSE-S3) or KMS
+  Folder Structure:
+  /<tenant-id>/
+  /originals/<uuid>.<ext>     — Original uploads
+  /processed/<uuid>/
+  /thumb_200x200.<ext>      — Thumbnails
+  /medium_800x600.<ext>     — Medium size
+  /large_1920x1080.<ext>    — Large size
+  /documents/<uuid>.<ext>     — Documents
 ```
 
 #### Cross-Provider Comparison
 ```
 OBJECT STORAGE COMPARISON:
-┌──────────────────────────────────────────────────────────┐
-│  Feature          │ S3        │ GCS       │ Azure Blob  │
-│  ─────────────────────────────────────────────────────── │
-│  Max object size  │ 5 TB      │ 5 TB      │ 190.7 TB    │
-│  Multipart min    │ 5 MB      │ 5 MB      │ N/A (blocks)│
-│  Consistency      │ Strong    │ Strong    │ Strong      │
-│  Versioning       │ Yes       │ Yes       │ Yes         │
-│  Lifecycle rules  │ Yes       │ Yes       │ Yes         │
-│  Replication      │ CRR/SRR   │ Dual/Multi│ GRS/RA-GRS  │
-│  CDN integration  │ CloudFront│ Cloud CDN │ Azure CDN   │
-│  Presigned URLs   │ Yes       │ Yes       │ SAS tokens  │
-│  Event triggers   │ Lambda    │ Functions │ Functions   │
-│  Storage classes  │ 6 tiers   │ 4 tiers   │ 4 tiers     │
+| Feature | S3 | GCS | Azure Blob |
+|---|---|---|---|
+| Max object size | 5 TB | 5 TB | 190.7 TB |
+| Multipart min | 5 MB | 5 MB | N/A (blocks) |
+| Consistency | Strong | Strong | Strong |
+| Versioning | Yes | Yes | Yes |
+| Lifecycle rules | Yes | Yes | Yes |
+| Replication | CRR/SRR | Dual/Multi | GRS/RA-GRS |
+| CDN integration | CloudFront | Cloud CDN | Azure CDN |
+| Presigned URLs | Yes | Yes | SAS tokens |
+| Event triggers | Lambda | Functions | Functions |
+| Storage classes | 6 tiers | 4 tiers | 4 tiers |
 ### Step 3: File Upload Architecture
 Design secure, scalable upload flows:
 
@@ -83,38 +77,35 @@ Design secure, scalable upload flows:
 ```
 PRESIGNED URL FLOW:
 ┌────────┐     ┌──────────┐     ┌────────┐
-│ Client │     │ API      │     │ S3/GCS │
+| Client |  | API |  | S3/GCS |
 └───┬────┘     └────┬─────┘     └───┬────┘
-    │               │               │
-    │ 1. Request    │               │
-    │   upload URL  │               │
+| 1. Request |  |
+|---|---|
+| upload URL |  |
     ├──────────────>│               │
-    │               │               │
-    │               │ 2. Generate   │
-    │               │   presigned   │
-    │               │   URL         │
-    │               │               │
-    │ 3. Return     │               │
-    │   presigned   │               │
-    │<──────────────┤               │
-    │               │               │
-    │ 4. Upload     │               │
-    │   directly    │               │
-    │   to storage  │               │
+|  | 2. Generate |
+|  | presigned |
+|  | URL |
+| 3. Return |  |
+|---|---|
+| presigned |  |
+  <──────────────┤
+| 4. Upload |  |
+|---|---|
+| directly |  |
+| to storage |  |
     ├───────────────────────────────>
-    │               │               │
-    │               │ 5. S3 Event   │
-    │               │   notification│
+|  | 5. S3 Event |
+|  | notification |
     │               │<──────────────┤
-    │               │               │
-    │               │ 6. Process    │
-    │               │   (validate,  │
-    │               │    resize,    │
-    │               │    scan)      │
-    │               │               │
-    │ 7. Confirm    │               │
-    │   upload done │               │
-    │<──────────────┤               │
+|  | 6. Process |
+|  | (validate, |
+|  | resize, |
+|  | scan) |
+| 7. Confirm |  |
+|---|---|
+| upload done |  |
+  <──────────────┤
     └───────────────┘               │
 ```
 
@@ -137,39 +128,32 @@ async function generateUploadUrl(req: Request): Promise<UploadUrlResponse> {
 #### Multipart Upload (Large Files)
 ```
 MULTIPART UPLOAD FLOW:
-┌──────────────────────────────────────────────────────────┐
-│  Phase 1: INITIATE                                        │
-│  - Client requests multipart upload                       │
-│  - Server creates upload session, returns upload ID       │
-│  - Server generates presigned URLs for each part          │
-│                                                           │
-│  Phase 2: UPLOAD PARTS                                    │
-│  - Client splits file into 5-100 MB chunks                │
-│  - Client uploads each chunk in parallel (3-5 concurrent) │
-│  - Client retries failed chunks individually              │
-│  - Client reports progress per chunk                      │
-│                                                           │
-│  Phase 3: COMPLETE                                        │
-│  - Client sends list of part ETags to server              │
+  Phase 1: INITIATE
+  - Client requests multipart upload
+  - Server creates upload session, returns upload ID
+  - Server generates presigned URLs for each part
+  Phase 2: UPLOAD PARTS
+  - Client splits file into 5-100 MB chunks
+  - Client uploads each chunk in parallel (3-5 concurrent)
+  - Client retries failed chunks individually
+  - Client reports progress per chunk
+  Phase 3: COMPLETE
+  - Client sends list of part ETags to server
 ```
 
 #### Resumable Upload (Unstable Connections)
 ```
 RESUMABLE UPLOAD (tus protocol):
-┌──────────────────────────────────────────────────────────┐
-│  Protocol: tus v1.0.0 (https://tus.io)                    │
-│                                                           │
-│  1. POST /uploads                                         │
-│     Upload-Length: <total-size>                            │
-│     Upload-Metadata: filename <base64>, type <base64>     │
-│     -> 201 Created, Location: /uploads/<id>               │
-│                                                           │
-│  2. PATCH /uploads/<id>                                   │
-│     Upload-Offset: <current-offset>                       │
-│     Content-Type: application/offset+octet-stream         │
-│     [binary chunk data]                                   │
-│     -> 204 No Content, Upload-Offset: <new-offset>        │
-│                                                           │
+  Protocol: tus v1.0.0 (https://tus.io)
+  1. POST /uploads
+  Upload-Length: <total-size>
+  Upload-Metadata: filename <base64>, type <base64>
+  -> 201 Created, Location: /uploads/<id>
+  2. PATCH /uploads/<id>
+  Upload-Offset: <current-offset>
+  Content-Type: application/offset+octet-stream
+  [binary chunk data]
+  -> 204 No Content, Upload-Offset: <new-offset>
 ```
 
 ### Step 4: Image and Video Processing Pipeline
@@ -179,8 +163,9 @@ Design media processing workflows:
 ```
 IMAGE PROCESSING PIPELINE:
 ┌────────┐    ┌────────┐    ┌──────────┐    ┌─────────┐
-│ Upload │───>│ Validate│───>│ Process  │───>│ Store   │
-│ (S3)   │    │ & Scan │    │ & Resize │    │ Variants│
+| Upload | ───> | Validate | ───> | Process | ───> | Store |
+|---|---|---|---|---|---|---|
+| (S3) |  | & Scan |  | & Resize |  | Variants |
 └────────┘    └────────┘    └──────────┘    └─────────┘
      │              │              │               │
   S3 Event     Virus scan    Sharp/ImageMagick   S3 + CDN
@@ -207,52 +192,41 @@ async function processImage(key: string): Promise<ProcessedImage> {
 #### Video Processing Pipeline
 ```
 VIDEO PROCESSING PIPELINE:
-┌────────────────────────────────────────────────────────────┐
-│  1. UPLOAD (multipart, resumable for large files)          │
-│     -> S3 originals bucket                                 │
-│                                                            │
-│  2. VALIDATE                                               │
-│     - Verify container format (MP4, WebM, MOV)             │
-│     - Check codec (H.264, H.265, VP9, AV1)                │
-│     - Verify duration < max allowed                        │
-│     - Scan for malware                                     │
-│                                                            │
-│  3. TRANSCODE (AWS MediaConvert / FFmpeg)                  │
-│     ┌──────────────────────────────────────────────────┐  │
-│     │  Preset      │ Resolution │ Bitrate  │ Format    │  │
-│     │  ──────────────────────────────────────────────  │  │
+  1. UPLOAD (multipart, resumable for large files)
+  -> S3 originals bucket
+  2. VALIDATE
+  - Verify container format (MP4, WebM, MOV)
+  - Check codec (H.264, H.265, VP9, AV1)
+  - Verify duration < max allowed
+  - Scan for malware
+  3. TRANSCODE (AWS MediaConvert / FFmpeg)
+|  | Preset | Resolution | Bitrate | Format |  |
+|  | ────────────────────────────────────────────── |  |
 ```
 STORAGE COST ANALYSIS:
-┌──────────────────────────────────────────────────────────┐
-│  Current Monthly Cost: $<amount>                          │
-│                                                           │
-│  Breakdown:                                               │
-│  Storage:     $<amount> (<N> TB at $<rate>/GB)            │
-│  Requests:    $<amount> (<N>M GET, <M>K PUT)              │
-│  Egress:      $<amount> (<N> TB transferred)              │
-│  Processing:  $<amount> (Lambda/MediaConvert)             │
-│                                                           │
-│  Optimization Opportunities:                              │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │ Action                 │ Savings  │ Risk    │ Effort│  │
-│  │ ────────────────────────────────────────────────── │  │
-│  │ Lifecycle to IA (90d)  │ 40%      │ Low     │ Low   │  │
-│  │ Lifecycle to Glacier   │ 80%      │ Medium  │ Low   │  │
-│  │   (365d)               │          │         │       │  │
-│  │ Delete incomplete      │ 5%       │ None    │ Low   │  │
-│  │   multipart uploads    │          │         │       │  │
-│  │ Compress before store  │ 30%      │ Low     │ Med   │  │
-│  │ Deduplicate files      │ 15%      │ Low     │ Med   │  │
-│  │ Serve via CDN (reduce  │ 50%      │ None    │ Med   │  │
-│  │   S3 egress)           │ (egress) │         │       │  │
-│  │ Delete orphaned files  │ 10%      │ Low     │ Med   │  │
-│  │ WebP conversion        │ 30%      │ None    │ Med   │  │
-│  │   (images)             │ (storage)│         │       │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Projected monthly cost after optimization: $<amount>     │
-│  Projected savings: $<amount>/month (<N>% reduction)      │
-└──────────────────────────────────────────────────────────┘
+  Current Monthly Cost: $<amount>
+  Breakdown:
+  Storage:     $<amount> (<N> TB at $<rate>/GB)
+  Requests:    $<amount> (<N>M GET, <M>K PUT)
+  Egress:      $<amount> (<N> TB transferred)
+  Processing:  $<amount> (Lambda/MediaConvert)
+  Optimization Opportunities:
+|  | Action | Savings | Risk | Effort |  |
+|  | ────────────────────────────────────────────────── |  |
+|  | Lifecycle to IA (90d) | 40% | Low | Low |  |
+|  | Lifecycle to Glacier | 80% | Medium | Low |  |
+|  | (365d) |  |  |  |  |
+|  | Delete incomplete | 5% | None | Low |  |
+|  | multipart uploads |  |  |  |  |
+|  | Compress before store | 30% | Low | Med |  |
+|  | Deduplicate files | 15% | Low | Med |  |
+|  | Serve via CDN (reduce | 50% | None | Med |  |
+|  | S3 egress) | (egress) |  |  |  |
+|  | Delete orphaned files | 10% | Low | Med |  |
+|  | WebP conversion | 30% | None | Med |  |
+|  | (images) | (storage) |  |  |  |
+  Projected monthly cost after optimization: $<amount>
+  Projected savings: $<amount>/month (<N>% reduction)
 ```
 
 #### Lifecycle Policy
@@ -276,20 +250,17 @@ Design data durability and disaster recovery:
 
 ```
 BACKUP AND REPLICATION STRATEGY:
-┌──────────────────────────────────────────────────────────┐
-│  Tier 1: SAME-REGION REDUNDANCY (automatic)               │
-│  S3: 11 nines durability across 3+ AZs                    │
-│  GCS: Dual-region or multi-region                          │
-│  Azure: LRS (3 copies) or ZRS (3 AZ copies)               │
-│                                                           │
-│  Tier 2: CROSS-REGION REPLICATION                          │
-│  Primary: <region-1>                                      │
-│  Replica: <region-2>                                      │
-│  Mode: Async replication (seconds of lag)                  │
-│  Scope: Entire bucket or prefix-filtered                   │
-│  Purpose: Disaster recovery, regional compliance           │
-│                                                           │
-│  Tier 3: CROSS-ACCOUNT BACKUP                              │
+  Tier 1: SAME-REGION REDUNDANCY (automatic)
+  S3: 11 nines durability across 3+ AZs
+  GCS: Dual-region or multi-region
+  Azure: LRS (3 copies) or ZRS (3 AZ copies)
+  Tier 2: CROSS-REGION REPLICATION
+  Primary: <region-1>
+  Replica: <region-2>
+  Mode: Async replication (seconds of lag)
+  Scope: Entire bucket or prefix-filtered
+  Purpose: Disaster recovery, regional compliance
+  Tier 3: CROSS-ACCOUNT BACKUP
 ```
 
 #### Replication Configuration
@@ -412,13 +383,12 @@ Total storage: <size>
 Monthly cost: <amount>
 
 ACCESS PATTERN ANALYSIS:
-┌──────────────────────────────────────────────────────────────────┐
-│  Time Window     │ Objects Accessed │ % of Total │ Storage Class  │
-├──────────────────────────────────────────────────────────────────┤
-│  Last 7 days     │ <N>              │ <pct>%     │ Use STD        │
-│  8-30 days       │ <N>              │ <pct>%     │ Use STD        │
-│  31-90 days      │ <N>              │ <pct>%     │ Use IA         │
-│  91-365 days     │ <N>              │ <pct>%     │ Use IA         │
+| Time Window | Objects Accessed | % of Total | Storage Class |
+|---|---|---|---|
+| Last 7 days | <N> | <pct>% | Use STD |
+| 8-30 days | <N> | <pct>% | Use STD |
+| 31-90 days | <N> | <pct>% | Use IA |
+| 91-365 days | <N> | <pct>% | Use IA |
 ```
 After EACH storage configuration change:
   1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.

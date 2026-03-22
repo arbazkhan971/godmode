@@ -47,18 +47,17 @@ Choose the embedding model based on quality, cost, and latency tradeoffs:
 EMBEDDING MODEL SELECTION:
 
 Candidates:
-┌─────────────────────────┬────────┬──────────┬──────────┬──────────┬──────────┐
-│ Model                   │ Dims   │ MTEB Avg │ Latency  │ Cost     │ Context  │
-├─────────────────────────┼────────┼──────────┼──────────┼──────────┼──────────┤
-│ OpenAI text-embedding-3 │ 3072   │ 64.6     │ ~80ms    │ $0.13/1M │ 8191    │
-│   -large                │        │          │          │          │          │
-│ OpenAI text-embedding-3 │ 1536   │ 62.3     │ ~50ms    │ $0.02/1M │ 8191    │
-│   -small                │        │          │          │          │          │
-│ Cohere embed-v3         │ 1024   │ 64.5     │ ~60ms    │ $0.10/1M │ 512     │
-│ Voyage voyage-3         │ 1024   │ 67.1     │ ~70ms    │ $0.06/1M │ 32000   │
-│ BGE-large-en-v1.5       │ 1024   │ 64.2     │ ~20ms*  │ Free*    │ 512     │
-│ GTE-large               │ 1024   │ 63.1     │ ~15ms*  │ Free*    │ 512     │
-│ E5-mistral-7b           │ 4096   │ 66.6     │ ~100ms* │ Free*    │ 32768   │
+| Model | Dims | MTEB Avg | Latency | Cost | Context |
+|---|---|---|---|---|---|
+| OpenAI text-embedding-3 | 3072 | 64.6 | ~80ms | $0.13/1M | 8191 |
+| -large |  |  |  |  |  |
+| OpenAI text-embedding-3 | 1536 | 62.3 | ~50ms | $0.02/1M | 8191 |
+| -small |  |  |  |  |  |
+| Cohere embed-v3 | 1024 | 64.5 | ~60ms | $0.10/1M | 512 |
+| Voyage voyage-3 | 1024 | 67.1 | ~70ms | $0.06/1M | 32000 |
+| BGE-large-en-v1.5 | 1024 | 64.2 | ~20ms* | Free* | 512 |
+| GTE-large | 1024 | 63.1 | ~15ms* | Free* | 512 |
+| E5-mistral-7b | 4096 | 66.6 | ~100ms* | Free* | 32768 |
 ```
 
 ### Step 3: Chunking Strategy
@@ -68,18 +67,17 @@ Design how documents are split into retrievable units:
 CHUNKING STRATEGY:
 
 Strategy candidates:
-┌────────────────────────┬──────────────────────────────────────────────────────┐
-│ Strategy               │ Best for                                             │
-├────────────────────────┼──────────────────────────────────────────────────────┤
-│ Fixed-size (token)     │ Uniform docs, simple implementation, baseline        │
-│ Recursive character    │ General-purpose, respects paragraph/section breaks   │
-│ Semantic chunking      │ Documents with varying topic density                 │
-│ Sentence-based         │ Short documents, high-precision retrieval            │
-│ Document-level         │ Short documents (emails, tickets, FAQs)              │
-│ Hierarchical           │ Long docs needing both summary and detail retrieval  │
-│ Code-aware (AST)       │ Source code repositories                             │
-│ Markdown/HTML headers  │ Structured docs with clear section hierarchy         │
-│ Sliding window         │ When context at chunk boundaries is critical         │
+| Strategy | Best for |
+|---|---|
+| Fixed-size (token) | Uniform docs, simple implementation, baseline |
+| Recursive character | General-purpose, respects paragraph/section breaks |
+| Semantic chunking | Documents with varying topic density |
+| Sentence-based | Short documents, high-precision retrieval |
+| Document-level | Short documents (emails, tickets, FAQs) |
+| Hierarchical | Long docs needing both summary and detail retrieval |
+| Code-aware (AST) | Source code repositories |
+| Markdown/HTML headers | Structured docs with clear section hierarchy |
+| Sliding window | When context at chunk boundaries is critical |
 ```
 
 ### Step 4: Vector Store Design
@@ -89,18 +87,17 @@ Select and configure the vector database:
 VECTOR STORE SELECTION:
 
 Candidates:
-┌─────────────────┬──────────┬──────────┬──────────┬──────────┬──────────────┐
-│ Store           │ Type     │ Scale    │ Filtering│ Cost     │ Best for     │
-├─────────────────┼──────────┼──────────┼──────────┼──────────┼──────────────┤
-│ Pinecone        │ Managed  │ Billions │ Advanced │ $70+/mo  │ Production,  │
-│                 │          │          │          │          │ serverless   │
-│ Weaviate        │ Managed/ │ Millions │ Advanced │ Free-$   │ Hybrid search│
-│                 │ Self-host│          │          │          │ multi-tenant │
-│ Chroma          │ Embedded │ Millions │ Basic    │ Free     │ Prototyping, │
-│                 │          │          │          │          │ local dev    │
-│ pgvector        │ Extension│ Millions │ SQL      │ Free*    │ Existing     │
-│                 │          │          │          │          │ Postgres     │
-│ Qdrant          │ Managed/ │ Billions │ Advanced │ Free-$   │ High perf,   │
+| Store | Type | Scale | Filtering | Cost | Best for |
+|---|---|---|---|---|---|
+| Pinecone | Managed | Billions | Advanced | $70+/mo | Production, |
+|  |  |  |  |  | serverless |
+| Weaviate | Managed/ | Millions | Advanced | Free-$ | Hybrid search |
+|  | Self-host |  |  |  | multi-tenant |
+| Chroma | Embedded | Millions | Basic | Free | Prototyping, |
+|  |  |  |  |  | local dev |
+| pgvector | Extension | Millions | SQL | Free* | Existing |
+|  |  |  |  |  | Postgres |
+| Qdrant | Managed/ | Billions | Advanced | Free-$ | High perf, |
 ```
 
 ### Step 5: Ingestion Pipeline Design
@@ -110,8 +107,9 @@ Design the document processing and indexing pipeline:
 INGESTION PIPELINE:
 
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ Document │ -> │  Parse/  │ -> │  Clean/  │ -> │  Chunk   │ -> │  Embed   │
-│ Sources  │    │  Extract │    │ Transform│    │          │    │  & Index │
+| Document | -> | Parse/ | -> | Clean/ | -> | Chunk | -> | Embed |
+|---|---|---|---|---|---|---|---|---|
+| Sources |  | Extract |  | Transform |  |  |  | & Index |
 └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
 
 Stage 1 — Document loading:
@@ -178,13 +176,12 @@ Evaluation dataset:
   - Covers: common questions, edge cases, out-of-scope queries
 
 Retrieval metrics:
-┌────────────────────────┬──────────┬──────────────────────────────────────────┐
-│ Metric                 │ Score    │ Description                              │
-├────────────────────────┼──────────┼──────────────────────────────────────────┤
-│ Hit rate @ K           │ <val>    │ % of queries where answer is in top-K    │
-│ MRR (Mean Reciprocal   │ <val>    │ Average 1/rank of first relevant result  │
-│   Rank)                │          │                                          │
-│ NDCG @ K              │ <val>    │ Ranking quality considering relevance     │
+| Metric | Score | Description |
+|---|---|---|
+| Hit rate @ K | <val> | % of queries where answer is in top-K |
+| MRR (Mean Reciprocal | <val> | Average 1/rank of first relevant result |
+| Rank) |  |  |
+| NDCG @ K | <val> | Ranking quality considering relevance |
 ```
 
 ### Step 9: RAG Artifacts & Commit
@@ -280,19 +277,18 @@ After each RAG skill invocation, emit a structured report:
 
 ```
 RAG PIPELINE REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Corpus              │  <N> documents / <N> chunks     │
-│  Embedding model     │  <model name> (<N> dimensions)  │
-│  Vector store        │  <store name>                   │
-│  Chunk strategy      │  <method> (<N> tokens, <N>% overlap) │
-│  Retrieval method    │  <dense | hybrid | dense+rerank>│
-│  Reranker            │  <model name> / NONE            │
-│  Retrieval quality   │  Recall@10: <N>%  MRR: <N>      │
-│  Generation quality  │  Faithfulness: <N>%  Relevance: <N>% │
-│  Hallucination rate  │  <N>%                           │
-│  Latency (p50/p99)   │  <N>ms / <N>ms                  │
-│  Verdict             │  PASS | NEEDS TUNING            │
-└──────────────────────────────────────────────────────┘
+| Corpus | <N> documents / <N> chunks |
+|---|---|
+| Embedding model | <model name> (<N> dimensions) |
+| Vector store | <store name> |
+| Chunk strategy | <method> (<N> tokens, <N>% overlap) |
+| Retrieval method | <dense | hybrid | dense+rerank> |
+| Reranker | <model name> / NONE |
+| Retrieval quality | Recall@10: <N>%  MRR: <N> |
+| Generation quality | Faithfulness: <N>%  Relevance: <N>% |
+| Hallucination rate | <N>% |
+| Latency (p50/p99) | <N>ms / <N>ms |
+| Verdict | PASS | NEEDS TUNING |
 ```
 
 ## TSV Logging
@@ -374,14 +370,12 @@ Optimization target: <metric to improve — e.g., hit_rate, faithfulness, halluc
 Golden set: <N evaluation queries with ground-truth relevant passages>
 
 RETRIEVAL PRECISION/RECALL TUNING:
-┌──────────────────────────────────────────────────────────────────┐
-│  Metric              │ Current │ Target  │ Gap     │ Priority    │
-├──────────────────────────────────────────────────────────────────┤
-│  Precision @ 5       │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
-│  Recall @ 10         │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
-│  MRR                 │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
-│  NDCG @ 10           │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
-│  Retrieval latency   │ <ms>    │ <ms>    │ <delta> │ <H/M/L>    │
-└──────────────────────────────────────────────────────────────────┘
+| Metric | Current | Target | Gap | Priority |
+|---|---|---|---|---|
+| Precision @ 5 | <val> | <val> | <delta> | <H/M/L> |
+| Recall @ 10 | <val> | <val> | <delta> | <H/M/L> |
+| MRR | <val> | <val> | <delta> | <H/M/L> |
+| NDCG @ 10 | <val> | <val> | <delta> | <H/M/L> |
+| Retrieval latency | <ms> | <ms> | <delta> | <H/M/L> |
 ```
 

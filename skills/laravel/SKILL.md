@@ -37,22 +37,20 @@ Deployment: Docker | Laravel Forge | Vapor (serverless) | Envoyer
 
 ```
 LARAVEL SETUP DECISIONS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Decision                            │  Choice & Justification          │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Full-stack vs API-only              │  Blade+Livewire: Server-rendered │
-│                                      │  Inertia: SPA feel, Vue/React   │
-│                                      │  API-only: Separate frontend    │
-│  Auth starter kit                    │  Breeze: Simple, Blade/Inertia  │
-│                                      │  Jetstream: Full-featured, teams│
-│  API auth                            │  Sanctum: SPA + mobile tokens   │
-│                                      │  Passport: Full OAuth2 server   │
-│  Queue driver                        │  Redis: Fast, reliable, standard│
-│                                      │  Database: No Redis dependency  │
-│  Real-time                           │  Reverb: Laravel native WS      │
-│  Testing                             │  Pest: Modern, expressive syntax│
-│                                      │  PHPUnit: Standard, full control│
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Decision | Choice & Justification |
+|---|---|
+| Full-stack vs API-only | Blade+Livewire: Server-rendered |
+|  | Inertia: SPA feel, Vue/React |
+|  | API-only: Separate frontend |
+| Auth starter kit | Breeze: Simple, Blade/Inertia |
+|  | Jetstream: Full-featured, teams |
+| API auth | Sanctum: SPA + mobile tokens |
+|  | Passport: Full OAuth2 server |
+| Queue driver | Redis: Fast, reliable, standard |
+|  | Database: No Redis dependency |
+| Real-time | Reverb: Laravel native WS |
+| Testing | Pest: Modern, expressive syntax |
+|  | PHPUnit: Standard, full control |
 ```
 
 Rules:
@@ -76,23 +74,21 @@ class Order extends Model
 
 ```
 ELOQUENT QUERY OPTIMIZATION:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Usage                           │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  with('relation')                    │  Eager load (prevent N+1)        │
-│  load('relation')                    │  Lazy eager load (post-query)    │
-│  withCount('relation')               │  Count without loading           │
-│  select('col1', 'col2')             │  Reduce memory footprint         │
-│  pluck('column')                     │  Extract array of values         │
-│  chunk(1000, fn)                     │  Process large datasets          │
-│  chunkById(1000, fn)                 │  Safe chunking with mutations    │
-│  lazy()                              │  Lazy collection (memory safe)   │
-│  cursor()                            │  One-by-one streaming            │
-│  whereHas('relation', fn)            │  Filter by relationship          │
-│  withWhereHas('relation', fn)        │  Eager load + filter combined    │
-│  upsert(data, unique, update)        │  Bulk insert/update              │
-│  Model::query()->toSql()            │  Debug query output              │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | Usage |
+|---|---|
+| with('relation') | Eager load (prevent N+1) |
+| load('relation') | Lazy eager load (post-query) |
+| withCount('relation') | Count without loading |
+| select('col1', 'col2') | Reduce memory footprint |
+| pluck('column') | Extract array of values |
+| chunk(1000, fn) | Process large datasets |
+| chunkById(1000, fn) | Safe chunking with mutations |
+| lazy() | Lazy collection (memory safe) |
+| cursor() | One-by-one streaming |
+| whereHas('relation', fn) | Filter by relationship |
+| withWhereHas('relation', fn) | Eager load + filter combined |
+| upsert(data, unique, update) | Bulk insert/update |
+| Model::query()->toSql() | Debug query output |
 ```
 
 ```php
@@ -128,18 +124,16 @@ interface PaymentGateway
 
 ```
 SERVICE ARCHITECTURE:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  When to Use                     │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Action classes (single method)      │  Complex operations (CreateOrder)│
-│  Service classes (multiple methods)  │  Related operations (OrderService) │
-│  Repository pattern                  │  Abstract data access layer      │
-│  DTOs (Data Transfer Objects)        │  Typed input/output structures   │
-│  Contracts (interfaces)              │  Swappable implementations       │
-│  Service Providers                   │  Binding interfaces to concrete  │
-│  Facades                             │  Static-like access to services  │
-│  Pipeline pattern                    │  Sequential processing steps     │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Pattern | When to Use |
+|---|---|
+| Action classes (single method) | Complex operations (CreateOrder) |
+| Service classes (multiple methods) | Related operations (OrderService) |
+| Repository pattern | Abstract data access layer |
+| DTOs (Data Transfer Objects) | Typed input/output structures |
+| Contracts (interfaces) | Swappable implementations |
+| Service Providers | Binding interfaces to concrete |
+| Facades | Static-like access to services |
+| Pipeline pattern | Sequential processing steps |
 ```
 
 Rules:
@@ -164,19 +158,17 @@ class ProcessOrderPayment implements ShouldQueue
 
 ```
 ASYNC ARCHITECTURE:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Component                           │  Purpose                         │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Jobs (ShouldQueue)                  │  Async task processing           │
-│  Events + Listeners                  │  Decoupled event handling        │
-│  Notifications                       │  Multi-channel alerts            │
-│  Broadcasting (ShouldBroadcast)      │  Real-time via WebSocket         │
-│  Mail (Mailable + queue)             │  Email sending                   │
-│  Job Batches                         │  Group related jobs              │
-│  Job Chains                          │  Sequential job execution        │
-│  Rate Limiting (middleware)          │  Throttle job execution          │
-│  Unique Jobs (ShouldBeUnique)        │  Prevent duplicate processing   │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Component | Purpose |
+|---|---|
+| Jobs (ShouldQueue) | Async task processing |
+| Events + Listeners | Decoupled event handling |
+| Notifications | Multi-channel alerts |
+| Broadcasting (ShouldBroadcast) | Real-time via WebSocket |
+| Mail (Mailable + queue) | Email sending |
+| Job Batches | Group related jobs |
+| Job Chains | Sequential job execution |
+| Rate Limiting (middleware) | Throttle job execution |
+| Unique Jobs (ShouldBeUnique) | Prevent duplicate processing |
 
 ```
 
@@ -203,16 +195,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ```
 AUTH ARCHITECTURE:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Auth Method                         │  When to Use                     │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Sanctum (SPA mode)                  │  SPA with same-domain backend    │
-│  Sanctum (token mode)                │  Mobile apps, third-party tokens │
-│  Passport                            │  Full OAuth2 server needed       │
-│  Breeze                              │  Simple auth scaffolding         │
-│  Jetstream                           │  Auth + teams + 2FA + API tokens │
-│  Socialite                           │  OAuth social login providers    │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Auth Method | When to Use |
+|---|---|
+| Sanctum (SPA mode) | SPA with same-domain backend |
+| Sanctum (token mode) | Mobile apps, third-party tokens |
+| Passport | Full OAuth2 server needed |
+| Breeze | Simple auth scaffolding |
+| Jetstream | Auth + teams + 2FA + API tokens |
+| Socialite | OAuth social login providers |
 
 AUTHORIZATION LAYERS:
 - Gates: Simple closures for non-model actions
@@ -246,19 +236,17 @@ class OrderFactory extends Factory
 
 ```
 TESTING STRATEGY:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Layer                               │  Approach                        │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Models                              │  Pest + Factories + Assertions   │
-│  API endpoints                       │  Pest + Sanctum::actingAs        │
-│  Jobs/Listeners                      │  Pest + Queue::fake + Event::fake│
-│  Services/Actions                    │  Pest + Mockery for dependencies │
-│  Policies                            │  Pest + authorize assertions     │
-│  Validation                          │  Pest + assertUnprocessable      │
-│  Browser/E2E                         │  Laravel Dusk (Selenium)         │
-│  Mail                                │  Mail::fake + assertQueued       │
-│  Notifications                       │  Notification::fake              │
-└──────────────────────────────────────┴──────────────────────────────────┘
+| Layer | Approach |
+|---|---|
+| Models | Pest + Factories + Assertions |
+| API endpoints | Pest + Sanctum::actingAs |
+| Jobs/Listeners | Pest + Queue::fake + Event::fake |
+| Services/Actions | Pest + Mockery for dependencies |
+| Policies | Pest + authorize assertions |
+| Validation | Pest + assertUnprocessable |
+| Browser/E2E | Laravel Dusk (Selenium) |
+| Mail | Mail::fake + assertQueued |
+| Notifications | Notification::fake |
 
 ```
 
@@ -275,20 +263,19 @@ Verify the Laravel application:
 
 ```
 LARAVEL VALIDATION:
-┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│  Check                               │  Status  │  Notes               │
-├──────────────────────────────────────┼──────────┼──────────────────────┤
-│  N+1 prevention (preventLazyLoading) │  PASS    │  Enabled in dev      │
-│  Eager loading on all endpoints      │  PASS    │  with() used         │
-│  API Resources (no raw models)       │  PASS    │  JsonResource used   │
-│  Form Requests for validation        │  PASS    │  No inline rules     │
-│  Policies for authorization          │  PASS    │  All endpoints gated │
-│  Jobs idempotent with backoff        │  PASS    │  Retry-safe          │
-│  Events for side effects             │  PASS    │  Decoupled listeners │
-│  Config cached for production        │  PASS    │  config:cache        │
-│  Routes cached for production        │  PASS    │  route:cache         │
-│  Environment variables validated     │  PASS    │  No missing env vars │
-│  Database indexes on FKs             │  PASS    │  All foreign keys    │
+| Check | Status | Notes |
+|---|---|---|
+| N+1 prevention (preventLazyLoading) | PASS | Enabled in dev |
+| Eager loading on all endpoints | PASS | with() used |
+| API Resources (no raw models) | PASS | JsonResource used |
+| Form Requests for validation | PASS | No inline rules |
+| Policies for authorization | PASS | All endpoints gated |
+| Jobs idempotent with backoff | PASS | Retry-safe |
+| Events for side effects | PASS | Decoupled listeners |
+| Config cached for production | PASS | config:cache |
+| Routes cached for production | PASS | route:cache |
+| Environment variables validated | PASS | No missing env vars |
+| Database indexes on FKs | PASS | All foreign keys |
 ```
 
 ```

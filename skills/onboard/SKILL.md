@@ -72,13 +72,10 @@ Client → [Load Balancer] → [Middleware Pipeline] → [Router]
                                     ┌─────────────────┼─────────────────┐
                                     ▼                 ▼                 ▼
                               [Controller A]    [Controller B]    [Controller C]
-                                    │                 │                 │
                                     ▼                 ▼                 ▼
                               [Service A]       [Service B]       [Service C]
-                                    │                 │                 │
                                     ▼                 ▼                 ▼
                               [Repository]      [Repository]      [Cache]
-                                    │                 │                 │
                                     ▼                 ▼                 ▼
                               [Database]        [Database]        [Redis]
 ```
@@ -86,17 +83,15 @@ Client → [Load Balancer] → [Middleware Pipeline] → [Router]
 #### Layer Responsibilities
 ```
 LAYER MAP:
-┌─────────────┬──────────────────────────────────────────────────────────┐
-│ Layer       │ Responsibility                                          │
-├─────────────┼──────────────────────────────────────────────────────────┤
-│ Routes      │ URL mapping, request parsing, response formatting       │
-│ Middleware  │ Auth, rate limiting, logging, error handling             │
-│ Controllers │ Request validation, orchestration, response shaping     │
-│ Services    │ Business logic, domain rules, cross-service coordination│
-│ Repositories│ Data access, queries, caching strategy                  │
-│ Models      │ Data shapes, validation rules, relationships            │
-│ Utils       │ Pure helper functions, shared across layers             │
-└─────────────┴──────────────────────────────────────────────────────────┘
+| Layer | Responsibility |
+|---|---|
+| Routes | URL mapping, request parsing, response formatting |
+| Middleware | Auth, rate limiting, logging, error handling |
+| Controllers | Request validation, orchestration, response shaping |
+| Services | Business logic, domain rules, cross-service coordination |
+| Repositories | Data access, queries, caching strategy |
+| Models | Data shapes, validation rules, relationships |
+| Utils | Pure helper functions, shared across layers |
 ```
 
 ### Step 3: Key File Identification
@@ -151,19 +146,15 @@ Visualize internal and external dependencies:
 #### Internal Module Dependencies
 ```
 MODULE DEPENDENCY GRAPH:
-┌─────────────────────────────────────────────────────────┐
-│  Arrows show "depends on" relationships                 │
-│                                                         │
-│  routes ──→ controllers ──→ services ──→ repositories   │
+  Arrows show "depends on" relationships
+  routes ──→ controllers ──→ services ──→ repositories
 │    │              │             │              │         │
-│    ▼              ▼             ▼              ▼         │
-│  middleware     validators    models        database     │
+  ▼              ▼             ▼              ▼
+  middleware     validators    models        database
 │    │                            │                        │
-│    ▼                            ▼                        │
-│  auth-service               migrations                  │
-│                                                         │
-│  Shared by all: utils, config, logger, types            │
-└─────────────────────────────────────────────────────────┘
+  ▼                            ▼
+  auth-service               migrations
+  Shared by all: utils, config, logger, types
 
 CIRCULAR DEPENDENCIES: <none | list>
 HIGH FAN-OUT (depends on many): <file> imports <N> modules
@@ -215,21 +206,17 @@ Stop 3: Routing (<file>)
 ### Step 7: Generate Onboarding Report
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  CODEBASE ONBOARDING — <project-name>                     │
-├────────────────────────────────────────────────────────────┤
-│  Project: <type> built with <framework>                    │
-│  Language: <primary> (+<secondary>)                        │
-│  Size: ~<N> files, ~<N>K lines                             │
-│                                                            │
-│  Architecture: <monolith | microservices | serverless>     │
-│  Pattern: <MVC | Clean Architecture | Hexagonal | etc.>    │
-│  Data: <PostgreSQL | MongoDB | etc.> via <ORM/driver>      │
-│                                                            │
-│  Key files to read first:                                  │
-│  1. <file> — <why>                                         │
-│  2. <file> — <why>                                         │
-│  3. <file> — <why>                                         │
+  CODEBASE ONBOARDING — <project-name>
+  Project: <type> built with <framework>
+  Language: <primary> (+<secondary>)
+  Size: ~<N> files, ~<N>K lines
+  Architecture: <monolith | microservices | serverless>
+  Pattern: <MVC | Clean Architecture | Hexagonal | etc.>
+  Data: <PostgreSQL | MongoDB | etc.> via <ORM/driver>
+  Key files to read first:
+  1. <file> — <why>
+  2. <file> — <why>
+  3. <file> — <why>
 ```
 
 ### Step 8: Commit and Transition
@@ -316,19 +303,18 @@ After each onboarding skill invocation, emit a structured report:
 
 ```
 ONBOARDING REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Repository          │  <name>                        │
-│  Languages           │  <list>                        │
-│  Framework           │  <detected framework>          │
-│  Architecture        │  <monolith | microservices | monorepo> │
-│  Key files analyzed  │  <N>                           │
-│  Entry points found  │  <N>                           │
-│  Dependencies        │  <N> production / <N> dev      │
-│  Test coverage       │  <N>% (detected)               │
-│  Dev setup steps     │  <N> steps documented          │
-│  Time to first run   │  ~<N> minutes                  │
-│  Verdict             │  COMPLETE | NEEDS INVESTIGATION │
-└──────────────────────────────────────────────────────┘
+| Repository | <name> |
+|---|---|
+| Languages | <list> |
+| Framework | <detected framework> |
+| Architecture | <monolith | microservices | monorepo> |
+| Key files analyzed | <N> |
+| Entry points found | <N> |
+| Dependencies | <N> production / <N> dev |
+| Test coverage | <N>% (detected) |
+| Dev setup steps | <N> steps documented |
+| Time to first run | ~<N> minutes |
+| Verdict | COMPLETE | NEEDS INVESTIGATION |
 ```
 
 ## TSV Logging

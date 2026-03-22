@@ -22,18 +22,16 @@ Identify the project's CI/CD requirements and existing configuration:
 
 ```
 PIPELINE CONTEXT:
-┌──────────────────────────────────────────────────────────┐
-│  Platform: <GitHub Actions | GitLab CI | CircleCI |       │
-│            Jenkins | None detected>                       │
-│  Language: <detected language/framework>                  │
-│  Package Manager: <npm | pip | go mod | maven | etc.>     │
-│  Test Framework: <jest | pytest | go test | junit | etc.> │
-│  Linter: <eslint | ruff | golangci-lint | etc.>          │
-│  Container: <Dockerfile present? Y/N>                     │
-│  Deploy Target: <K8s | ECS | Lambda | Vercel | etc.>     │
-│  Existing Pipeline: <path to config or "none">            │
-│  Branch Strategy: <trunk-based | gitflow | github flow>  │
-└──────────────────────────────────────────────────────────┘
+  Platform: <GitHub Actions | GitLab CI | CircleCI |
+  Jenkins | None detected>
+  Language: <detected language/framework>
+  Package Manager: <npm | pip | go mod | maven | etc.>
+  Test Framework: <jest | pytest | go test | junit | etc.>
+  Linter: <eslint | ruff | golangci-lint | etc.>
+  Container: <Dockerfile present? Y/N>
+  Deploy Target: <K8s | ECS | Lambda | Vercel | etc.>
+  Existing Pipeline: <path to config or "none">
+  Branch Strategy: <trunk-based | gitflow | github flow>
 ```
 
 If no pipeline exists: "No CI/CD configuration found. Shall I create one? Specify your preferred platform (GitHub Actions, GitLab CI, CircleCI, Jenkins)."
@@ -44,11 +42,12 @@ Design the pipeline stages based on project needs:
 ```
 PIPELINE ARCHITECTURE:
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
-│  Lint   │ -> │  Test   │ -> │  Build  │ -> │ Security│ -> │ Deploy  │
+| Lint | -> | Test | -> | Build | -> | Security | -> | Deploy |
 │         │    │         │    │         │    │         │    │         │
-│ Format  │    │ Unit    │    │ Docker  │    │ SAST    │    │ Staging │
-│ Lint    │    │ Integ.  │    │ Assets  │    │ Deps    │    │ Prod    │
-│ Types   │    │ E2E     │    │ Publish │    │ Secrets │    │ Verify  │
+| Format |  | Unit |  | Docker |  | SAST |  | Staging |
+|---|---|---|---|---|---|---|---|---|
+| Lint |  | Integ. |  | Assets |  | Deps |  | Prod |
+| Types |  | E2E |  | Publish |  | Secrets |  | Verify |
 └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
      |              |              |              |              |
    ~30s          ~2-5m          ~1-3m          ~1-2m          ~2-5m
@@ -80,25 +79,23 @@ stages:
 # ... (condensed)
 ```
 CACHING STRATEGY:
-┌──────────────────────────────────────────────────────────┐
-│  Cache Type        │ Key                │ Savings         │
-│  ─────────────────────────────────────────────────────── │
-│  Dependencies      │ lockfile hash      │ 30-90s          │
-│  (node_modules,    │ (package-lock.json │                 │
-│   .venv, vendor)   │  Pipfile.lock)     │                 │
-│                    │                    │                 │
-│  Build cache       │ source hash        │ 60-180s         │
-│  (Docker layers,   │ (Dockerfile +      │                 │
-│   compiled assets) │  source files)     │                 │
-│                    │                    │                 │
-│  Test cache        │ test file hash     │ 10-30s          │
-│  (jest cache,      │                    │                 │
-│   pytest cache)    │                    │                 │
-│                    │                    │                 │
-│  Tool cache        │ version string     │ 20-60s          │
-│  (Go, Node, Python │                    │                 │
-│   runtime install) │                    │                 │
-└──────────────────────────────────────────────────────────┘
+| Cache Type | Key | Savings |
+|---|---|---|
+| Dependencies | lockfile hash | 30-90s |
+| (node_modules, | (package-lock.json |  |
+| .venv, vendor) | Pipfile.lock) |  |
+| Build cache | source hash | 60-180s |
+|---|---|---|
+| (Docker layers, | (Dockerfile + |  |
+| compiled assets) | source files) |  |
+| Test cache | test file hash | 10-30s |
+|---|---|---|
+| (jest cache, |  |  |
+| pytest cache) |  |  |
+| Tool cache | version string | 20-60s |
+|---|---|---|
+| (Go, Node, Python |  |  |
+| runtime install) |  |  |
 
 Total estimated savings: 2-6 minutes per pipeline run
 ```
@@ -124,22 +121,19 @@ Analyze and improve pipeline performance:
 
 ```
 PIPELINE PERFORMANCE ANALYSIS:
-┌──────────────────────────────────────────────────────────┐
-│  Stage          │ Current │ Optimized │ Savings           │
-│  ─────────────────────────────────────────────────────── │
-│  Checkout       │ 15s     │ 8s        │ Shallow clone     │
-│  Install deps   │ 90s     │ 5s        │ Cache hit         │
-│  Lint           │ 30s     │ 30s       │ —                 │
-│  Type check     │ 45s     │ 45s       │ —                 │
-│  Unit tests     │ 180s    │ 65s       │ 3x sharding       │
-│  Integration    │ 120s    │ 120s      │ Parallel with unit│
-│  Build image    │ 180s    │ 45s       │ Layer caching     │
-│  Security scan  │ 60s     │ 60s       │ —                 │
-│  Deploy staging │ 120s    │ 90s       │ Parallel verify   │
-├──────────────────────────────────────────────────────────┤
-│  TOTAL          │ 14m 0s  │ 7m 48s    │ -44%              │
-│  Serial path    │ 14m 0s  │ 5m 30s    │ With parallelism  │
-└──────────────────────────────────────────────────────────┘
+| Stage | Current | Optimized | Savings |
+|---|---|---|---|
+| Checkout | 15s | 8s | Shallow clone |
+| Install deps | 90s | 5s | Cache hit |
+| Lint | 30s | 30s | — |
+| Type check | 45s | 45s | — |
+| Unit tests | 180s | 65s | 3x sharding |
+| Integration | 120s | 120s | Parallel with unit |
+| Build image | 180s | 45s | Layer caching |
+| Security scan | 60s | 60s | — |
+| Deploy staging | 120s | 90s | Parallel verify |
+| TOTAL | 14m 0s | 7m 48s | -44% |
+| Serial path | 14m 0s | 5m 30s | With parallelism |
 ```
 
 #### Optimization Techniques
@@ -174,17 +168,14 @@ strategy:
 
 ```
 MATRIX EXECUTION:
-┌──────────────────────────────────────────────────────────┐
-│  Combination              │ Status  │ Duration │ Result  │
-│  ─────────────────────────────────────────────────────── │
-│  ubuntu / node-18         │ PASS    │ 2m 15s   │ 42/42   │
-│  ubuntu / node-20         │ PASS    │ 2m 08s   │ 42/42   │
-│  ubuntu / node-22         │ PASS    │ 2m 22s   │ 42/42   │
-│  macos / node-20          │ PASS    │ 3m 01s   │ 42/42   │
-│  macos / node-22          │ PASS    │ 3m 12s   │ 42/42   │
-├──────────────────────────────────────────────────────────┤
-│  Total: 5/5 passing (all combinations green)              │
-└──────────────────────────────────────────────────────────┘
+| Combination | Status | Duration | Result |
+|---|---|---|---|
+| ubuntu / node-18 | PASS | 2m 15s | 42/42 |
+| ubuntu / node-20 | PASS | 2m 08s | 42/42 |
+| ubuntu / node-22 | PASS | 2m 22s | 42/42 |
+| macos / node-20 | PASS | 3m 01s | 42/42 |
+| macos / node-22 | PASS | 3m 12s | 42/42 |
+  Total: 5/5 passing (all combinations green)
 ```
 
 ### Step 7: Pipeline Templating
@@ -217,17 +208,15 @@ Handle build outputs, test results, and deployment packages:
 
 ```
 ARTIFACT STRATEGY:
-┌──────────────────────────────────────────────────────────┐
-│  Artifact           │ Retention │ Size Limit │ Purpose    │
-│  ─────────────────────────────────────────────────────── │
-│  Test results (JUnit)│ 30 days  │ 10 MB      │ PR checks  │
-│  Coverage reports   │ 30 days   │ 50 MB      │ Tracking   │
-│  Docker images      │ 90 days   │ —          │ Deployment │
-│  Build logs         │ 90 days   │ —          │ Debugging  │
-│  SBOM               │ 365 days  │ 5 MB       │ Compliance │
-│  SARIF (security)   │ 365 days  │ 10 MB      │ Audit      │
-│  Release binaries   │ Permanent │ 500 MB     │ Distribution│
-└──────────────────────────────────────────────────────────┘
+| Artifact | Retention | Size Limit | Purpose |
+|---|---|---|---|
+| Test results (JUnit) | 30 days | 10 MB | PR checks |
+| Coverage reports | 30 days | 50 MB | Tracking |
+| Docker images | 90 days | — | Deployment |
+| Build logs | 90 days | — | Debugging |
+| SBOM | 365 days | 5 MB | Compliance |
+| SARIF (security) | 365 days | 10 MB | Audit |
+| Release binaries | Permanent | 500 MB | Distribution |
 ```
 
 ### Step 9: Commit and Report

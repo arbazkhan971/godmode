@@ -111,36 +111,27 @@ DOMAIN EVENTS DISCOVERED:
 
 Step 2: Bounded Context Mapping
 
-┌─────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Identity   │    │   Catalog    │    │  Inventory   │
-│   Context    │    │   Context    │    │   Context    │
+| Identity |  | Catalog |  | Inventory |
+| Context |  | Context |  | Context |
 │              │    │              │    │              │
-│ - User       │    │ - Product    │    │ - StockItem  │
-│ - Profile    │    │ - Category   │    │ - Warehouse  │
-│ - Auth       │    │ - Price      │    │ - Reservation│
-│ - Permission │    │ - Image      │    │              │
-└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
-       │                   │                   │
-       │            ┌──────┴───────┐           │
+| - User |  | - Product |  | - StockItem |
+| - Profile |  | - Category |  | - Warehouse |
+| - Auth |  | - Price |  | - Reservation |
+| - Permission |  | - Image |  |  |
+  ┌──────┴───────┐
        └────────────┤    Order     ├───────────┘
-                    │   Context    │
-                    │              │
-                    │ - Order      │
-                    │ - OrderLine  │
-                    │ - Cart       │
-                    └──────┬───────┘
-                           │
+  Context
+  - Order
+  - OrderLine
+  - Cart
               ┌────────────┼────────────┐
-              │            │            │
        ┌──────┴──────┐ ┌──┴──────┐ ┌──┴──────────┐
-       │  Payment    │ │Shipping │ │  Review      │
-       │  Context    │ │ Context │ │  Context     │
+| Payment |  | Shipping |  | Review |
+| Context |  | Context |  | Context |
        │             │ │         │ │              │
-       │ - Payment   │ │- Shipment│ │ - Review    │
-       │ - Refund    │ │- Carrier│ │ - Rating    │
-       │ - Invoice   │ │- Tracking│ │ - Moderation│
-       └─────────────┘ └─────────┘ └──────────────┘
-
+| - Payment |  | - Shipment |  | - Review |
+| - Refund |  | - Carrier |  | - Rating |
+| - Invoice |  | - Tracking |  | - Moderation |
 Step 3: Context Relationships
 
 RELATIONSHIPS:
@@ -196,7 +187,6 @@ Infrastructure: Apache Kafka
 TOPIC DESIGN:
 
   Topic                        Partitions  Retention  Key
-  ──────────────────────────────────────────────────────────
   identity.user.events         6           7 days     user_id
   catalog.product.events       12          7 days     product_id
   inventory.stock.events       6           7 days     product_id
@@ -389,11 +379,11 @@ Step 2: Create the new service
   Files generated:
     payment-service/
     ├── src/
-    │   ├── api/           — FastAPI endpoints (matching current URLs)
-    │   ├── services/      — Business logic extracted from Django views
-    │   ├── models/        — SQLAlchemy models (from Django models)
-    │   ├── events/        — Kafka producers and consumers
-    │   └── stripe/        — Stripe integration (extracted from monolith)
+  ├── api/           — FastAPI endpoints (matching current URLs)
+  ├── services/      — Business logic extracted from Django views
+  ├── models/        — SQLAlchemy models (from Django models)
+  ├── events/        — Kafka producers and consumers
+  └── stripe/        — Stripe integration (extracted from monolith)
     ├── tests/             — Tests migrated from monolith
     ├── migrations/        — Alembic migrations
     └── Dockerfile
@@ -567,7 +557,6 @@ Saved: docs/deployment/progressive-rollout.md
 MIGRATION STATUS (Week 14 of 20):
 
 Service              Status          Traffic    Tests    Deploy
-─────────────────────────────────────────────────────────────────
 review-service       ✓ COMPLETE      100%       47       Independent
 analytics-service    ✓ COMPLETE      100%       62       Independent
 shipping-service     ✓ COMPLETE      100%       54       Independent

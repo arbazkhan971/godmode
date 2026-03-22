@@ -47,20 +47,17 @@ Map all the ways the system can fail:
 
 ```
 FAILURE DOMAIN MAP:
-┌──────────────────────────────────────────────────────────────┐
-│  Category        │ Components              │ Impact if Failed │
-├──────────────────────────────────────────────────────────────┤
-│  Network         │ Load balancer           │ Total outage     │
-│                  │ DNS resolution          │ Total outage     │
-│                  │ Inter-service network   │ Partial outage   │
-│                  │ External API access     │ Feature degraded │
-├──────────────────────────────────────────────────────────────┤
-│  Compute         │ Application process     │ Service restart  │
-│                  │ Worker processes        │ Queue backlog    │
-│                  │ Cron/scheduled jobs     │ Delayed tasks    │
-│                  │ Container/VM host       │ Service relocation│
-├──────────────────────────────────────────────────────────────┤
-│  Storage         │ Primary database        │ Read/write loss  │
+| Category | Components | Impact if Failed |
+|---|---|---|
+| Network | Load balancer | Total outage |
+|  | DNS resolution | Total outage |
+|  | Inter-service network | Partial outage |
+|  | External API access | Feature degraded |
+| Compute | Application process | Service restart |
+|  | Worker processes | Queue backlog |
+|  | Cron/scheduled jobs | Delayed tasks |
+|  | Container/VM host | Service relocation |
+| Storage | Primary database | Read/write loss |
 ```
 
 ### Step 3: Design Chaos Experiments
@@ -265,19 +262,15 @@ Specifically test circuit breaker behavior:
 
 ```
 CIRCUIT BREAKER VALIDATION:
-┌───────────────────────────────────────────────────────────────┐
-│  State Transitions                                            │
-│                                                               │
-│  CLOSED ──(failures > threshold)──→ OPEN                     │
-│    ▲                                  │                       │
-│    │                                  │ (timeout)             │
-│    │                                  ▼                       │
-│    └──(success)── HALF-OPEN ←─────────┘                      │
-│                                                               │
-│  CLOSED: Normal operation, requests flow through              │
-│  OPEN: All requests fail fast (no network call)               │
-│  HALF-OPEN: Limited requests to test recovery                 │
-└───────────────────────────────────────────────────────────────┘
+  State Transitions
+  CLOSED ──(failures > threshold)──→ OPEN
+| ▲ |  |
+|  |  | (timeout) |
+|  | ▼ |
+  └──(success)── HALF-OPEN ←─────────┘
+  CLOSED: Normal operation, requests flow through
+  OPEN: All requests fail fast (no network call)
+  HALF-OPEN: Limited requests to test recovery
 
 ```
 
@@ -297,29 +290,24 @@ OBJECTIVES:
 3. Verify <recovery time objective>
 
 TIMELINE:
-┌──────┬──────────────────────────────────────────────────────┐
-│ Time │ Activity                                             │
-├──────┼──────────────────────────────────────────────────────┤
+| Time | Activity |
 ```
 
 ### Step 6: Resilience Scorecard
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  CHAOS ENGINEERING REPORT — <system>                         │
-├──────────────────────────────────────────────────────────────┤
-│  Experiments run: <N>                                        │
-│  Hypotheses confirmed: <N>/<total>                           │
-│  Surprises found: <N>                                        │
-│                                                              │
-│  RESILIENCE SCORECARD:                                       │
-│  ┌─────────────────────────┬────────┬───────────────────┐    │
-│  │ Failure Domain          │ Grade  │ Notes             │    │
-│  ├─────────────────────────┼────────┼───────────────────┤    │
-│  │ Network latency         │ A/B/C/F│ <detail>          │    │
-│  │ Network partition       │ A/B/C/F│ <detail>          │    │
-│  │ Process crash           │ A/B/C/F│ <detail>          │    │
-│  │ Memory pressure         │ A/B/C/F│ <detail>          │    │
+  CHAOS ENGINEERING REPORT — <system>
+  Experiments run: <N>
+  Hypotheses confirmed: <N>/<total>
+  Surprises found: <N>
+  RESILIENCE SCORECARD:
+  ┌─────────────────────────┬────────┬───────────────────┐
+|  | Failure Domain | Grade | Notes |  |
+  ├─────────────────────────┼────────┼───────────────────┤
+|  | Network latency | A/B/C/F | <detail> |  |
+|  | Network partition | A/B/C/F | <detail> |  |
+|  | Process crash | A/B/C/F | <detail> |  |
+|  | Memory pressure | A/B/C/F | <detail> |  |
 ```
 
 ### Step 7: Commit and Transition

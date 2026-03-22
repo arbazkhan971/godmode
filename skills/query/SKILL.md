@@ -297,17 +297,14 @@ After applying changes, measure the improvement:
 
 ```
 OPTIMIZATION RESULTS:
-+---------------------------------------------------------------+
 |  Before                    |  After                            |
-+---------------------------------------------------------------+
+|---|---|
 |  Execution time: <X>ms     |  Execution time: <Y>ms           |
 |  Rows scanned:   <N>       |  Rows scanned:   <M>             |
 |  Scan type:      Seq Scan  |  Scan type:      Index Scan      |
 |  Buffers read:   <A>       |  Buffers read:   <B>             |
 |  Queries:        <P>       |  Queries:        <Q>             |
-+---------------------------------------------------------------+
 |  Improvement: <X/Y>x faster, <N/M>x fewer rows scanned       |
-+---------------------------------------------------------------+
 ```
 
 Verification steps:
@@ -323,19 +320,15 @@ Verification steps:
 ### Step 6: Report and Transition
 
 ```
-+------------------------------------------------------------+
 |  QUERY OPTIMIZATION -- <description>                        |
-+------------------------------------------------------------+
 |  Database:        <engine>                                  |
 |  Tables:          <affected tables>                         |
 |  Original time:   <X>ms                                     |
 |  Optimized time:  <Y>ms                                     |
 |  Speedup:         <X/Y>x                                    |
-+------------------------------------------------------------+
 |  Changes made:                                              |
 |  1. <change description>                                    |
 |  2. <change description>                                    |
-|                                                             |
 |  Indexes added:                                             |
 |  - idx_<name> ON <table> (<columns>)                        |
 ```
@@ -442,11 +435,9 @@ QUERY OPTIMIZATION COMPLETE:
   Total latency reduction: <X>% (avg across optimized queries)
 
 QUERY SUMMARY:
-+--------------------------------------------------------------+
 |  Query / Operation   | Before (ms) | After (ms) | Change     |
-+--------------------------------------------------------------+
+|---|---|---|---|
 |  <description>       | 1,200       | 45         | -96%       |
-+--------------------------------------------------------------+
 
 ```
 
@@ -465,9 +456,8 @@ Append after every completed optimization pass. One row per session. If the file
 
 ```
 QUERY OPTIMIZATION SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 |  Criterion                                  | Required         |
-+--------------------------------------------------------------+
+|---|---|
 |  EXPLAIN ANALYZE run before AND after       | YES              |
 |  Every optimization measured with numbers   | YES              |
 |  No sequential scan on tables > 10K rows    | YES              |
@@ -477,7 +467,6 @@ QUERY OPTIMIZATION SUCCESS CRITERIA:
 |  No OFFSET-based deep pagination            | YES              |
 |  Statistics up to date (ANALYZE run)        | YES              |
 |  Regression test for critical query perf    | RECOMMENDED      |
-+--------------------------------------------------------------+
 
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```

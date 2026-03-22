@@ -894,7 +894,6 @@ test('async', (done) => { /* ... */ done(); });
 
 ```
 Jest                          Vitest
-─────────────────────────────────────────────────
 jest.config.js                vitest.config.ts
 __mocks__/                    __mocks__/ (same)
 jest.setup.ts                 setupFiles: [...]

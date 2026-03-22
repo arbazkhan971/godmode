@@ -37,21 +37,19 @@ Identify the core resources and their relationships:
 
 ```
 RESOURCE MODEL:
-┌─────────────────────────────────────────────────┐
-│  Resource: <Name>                                │
-│  Description: <what it represents>               │
-│  Attributes:                                     │
-│    - id: string (UUID v4)                        │
-│    - <field>: <type> (<constraints>)             │
-│    - <field>: <type> (<constraints>)             │
-│    - created_at: datetime (ISO 8601)             │
-│    - updated_at: datetime (ISO 8601)             │
-│  Relationships:                                  │
-│    - belongs_to: <Resource> (via <foreign_key>)  │
-│    - has_many: <Resource>                        │
-│  Constraints:                                    │
-│    - <uniqueness, required fields, validations>  │
-└─────────────────────────────────────────────────┘
+  Resource: <Name>
+  Description: <what it represents>
+  Attributes:
+  - id: string (UUID v4)
+  - <field>: <type> (<constraints>)
+  - <field>: <type> (<constraints>)
+  - created_at: datetime (ISO 8601)
+  - updated_at: datetime (ISO 8601)
+  Relationships:
+  - belongs_to: <Resource> (via <foreign_key>)
+  - has_many: <Resource>
+  Constraints:
+  - <uniqueness, required fields, validations>
 ```
 
 Rules:
@@ -65,23 +63,22 @@ For REST APIs, design endpoints following RESTful conventions:
 
 ```
 ENDPOINT CATALOG:
-┌──────────┬──────────────────────────┬──────────────────────────────┐
-│  Method  │  Path                    │  Description                 │
-├──────────┼──────────────────────────┼──────────────────────────────┤
-│  GET     │  /api/v1/<resources>     │  List <resources> (paginated)│
-│  POST    │  /api/v1/<resources>     │  Create a <resource>         │
-│  GET     │  /api/v1/<resources>/:id │  Get a single <resource>     │
-│  PUT     │  /api/v1/<resources>/:id │  Replace a <resource>        │
-│  PATCH   │  /api/v1/<resources>/:id │  Partial update a <resource> │
-│  DELETE  │  /api/v1/<resources>/:id │  Delete a <resource>         │
-└──────────┴──────────────────────────┴──────────────────────────────┘
+| Method | Path | Description |
+|---|---|---|
+| GET | /api/v1/<resources> | List <resources> (paginated) |
+| POST | /api/v1/<resources> | Create a <resource> |
+| GET | /api/v1/<resources>/:id | Get a single <resource> |
+| PUT | /api/v1/<resources>/:id | Replace a <resource> |
+| PATCH | /api/v1/<resources>/:id | Partial update a <resource> |
+| DELETE | /api/v1/<resources>/:id | Delete a <resource> |
 
 Nested resources:
-│  GET     │  /api/v1/<parents>/:id/<children>  │  List children of parent │
-│  POST    │  /api/v1/<parents>/:id/<children>  │  Create child under parent│
+| GET | /api/v1/<parents>/:id/<children> | List children of parent |
+|---|---|---|
+| POST | /api/v1/<parents>/:id/<children> | Create child under parent |
 
 Custom actions (use sparingly):
-│  POST    │  /api/v1/<resources>/:id/<action>  │  Trigger <action>        │
+| POST | /api/v1/<resources>/:id/<action> | Trigger <action> |
 ```
 
 For **GraphQL** APIs:
@@ -187,14 +184,12 @@ Algorithm: Token Bucket | Sliding Window | Fixed Window
 Scope: Per API key | Per user | Per IP | Per endpoint
 
 TIERS:
-┌──────────────┬──────────────┬──────────────┬──────────────┐
-│  Tier        │  Rate        │  Burst       │  Daily Cap   │
-├──────────────┼──────────────┼──────────────┼──────────────┤
-│  Free        │  60/min      │  10          │  1,000       │
-│  Standard    │  600/min     │  50          │  50,000      │
-│  Premium     │  6,000/min   │  200         │  500,000     │
-│  Internal    │  60,000/min  │  1,000       │  Unlimited   │
-└──────────────┴──────────────┴──────────────┴──────────────┘
+| Tier | Rate | Burst | Daily Cap |
+|---|---|---|---|
+| Free | 60/min | 10 | 1,000 |
+| Standard | 600/min | 50 | 50,000 |
+| Premium | 6,000/min | 200 | 500,000 |
+| Internal | 60,000/min | 1,000 | Unlimited |
 
 RESPONSE HEADERS:
 ```
@@ -217,20 +212,19 @@ Validate the API design against best practices:
 
 ```
 API DESIGN VALIDATION:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                              │  Status                │
-├──────────────────────────────────────┼────────────────────────┤
-│  Consistent naming (plural nouns)   │  PASS | FAIL           │
-│  Proper HTTP method usage           │  PASS | FAIL           │
-│  Correct status codes               │  PASS | FAIL           │
-│  Error response consistency         │  PASS | FAIL           │
-│  Pagination on all list endpoints   │  PASS | FAIL           │
-│  Rate limiting defined              │  PASS | FAIL           │
-│  Auth on protected endpoints        │  PASS | FAIL           │
-│  Versioning strategy applied        │  PASS | FAIL           │
-│  Request/response examples exist    │  PASS | FAIL           │
-│  No breaking changes (if updating)  │  PASS | FAIL | N/A     │
-│  HATEOAS links (if applicable)      │  PASS | FAIL | N/A     │
+| Check | Status |
+|---|---|
+| Consistent naming (plural nouns) | PASS | FAIL |
+| Proper HTTP method usage | PASS | FAIL |
+| Correct status codes | PASS | FAIL |
+| Error response consistency | PASS | FAIL |
+| Pagination on all list endpoints | PASS | FAIL |
+| Rate limiting defined | PASS | FAIL |
+| Auth on protected endpoints | PASS | FAIL |
+| Versioning strategy applied | PASS | FAIL |
+| Request/response examples exist | PASS | FAIL |
+| No breaking changes (if updating) | PASS | FAIL | N/A |
+| HATEOAS links (if applicable) | PASS | FAIL | N/A |
 ```
 
 If the project has an existing OpenAPI spec, validate it:
@@ -363,11 +357,9 @@ API DESIGN COMPLETE:
   Validation: <PASS | FAIL> (<N> issues)
 
 ENDPOINT SUMMARY:
-+--------------------------------------------------------------+
 |  Resource        | GET | POST | PUT | PATCH | DELETE | Notes  |
-+--------------------------------------------------------------+
+|---|---|---|---|---|---|---|
 |  /api/v1/<res>   | Y   | Y    | --  | Y     | Y      | ...    |
-+--------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -385,9 +377,8 @@ Append after every completed design or validation pass. One row per session. If 
 
 ```
 API DESIGN SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 |  Criterion                                  | Required         |
-+--------------------------------------------------------------+
+|---|---|
 |  OpenAPI spec generated and valid           | YES              |
 |  All list endpoints paginated               | YES              |
 |  Unified error response schema              | YES              |
@@ -397,7 +388,6 @@ API DESIGN SUCCESS CRITERIA:
 |  Example request/response for each endpoint | YES              |
 |  Spec validates with spectral/redocly lint  | YES              |
 |  No breaking changes vs previous version    | YES (if exists)  |
-+--------------------------------------------------------------+
 
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```
@@ -470,19 +460,18 @@ WHILE current_iteration < max_iterations AND NOT all_checks_pass:
 
 ```
 BREAKING CHANGE CATEGORIES (auto-detected by oasdiff):
-┌────────────────────────────────────────┬──────────────┬─────────────────────────────┐
-│ Change                                 │ Severity     │ Auto-fix                    │
-├────────────────────────────────────────┼──────────────┼─────────────────────────────┤
-│ Endpoint removed                       │ BREAKING     │ Revert, add Sunset header   │
-│ Required field added to request        │ BREAKING     │ Make optional with default   │
-│ Response field removed                 │ BREAKING     │ Revert, deprecate instead   │
-│ Response type narrowed (enum reduced)  │ BREAKING     │ Revert, keep old values     │
-│ Status code removed from responses     │ BREAKING     │ Revert                      │
-│ Path parameter renamed                 │ BREAKING     │ Revert, add new path        │
-│ New optional request field added       │ ADDITIVE     │ Keep                        │
-│ New response field added               │ ADDITIVE     │ Keep                        │
-│ New endpoint added                     │ ADDITIVE     │ Keep                        │
-│ Enum value added                       │ ADDITIVE     │ Keep                        │
-│ Field marked deprecated                │ DEPRECATION  │ Keep, add Sunset            │
+| Change | Severity | Auto-fix |
+|---|---|---|
+| Endpoint removed | BREAKING | Revert, add Sunset header |
+| Required field added to request | BREAKING | Make optional with default |
+| Response field removed | BREAKING | Revert, deprecate instead |
+| Response type narrowed (enum reduced) | BREAKING | Revert, keep old values |
+| Status code removed from responses | BREAKING | Revert |
+| Path parameter renamed | BREAKING | Revert, add new path |
+| New optional request field added | ADDITIVE | Keep |
+| New response field added | ADDITIVE | Keep |
+| New endpoint added | ADDITIVE | Keep |
+| Enum value added | ADDITIVE | Keep |
+| Field marked deprecated | DEPRECATION | Keep, add Sunset |
 ```
 

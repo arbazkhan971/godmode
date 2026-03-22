@@ -11,24 +11,18 @@
 Single deployable unit with strictly enforced internal module boundaries.
 
 ```
-┌────────────────────────────────────────────────────────┐
-│  MODULAR MONOLITH                                      │
-│                                                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │ Module A │  │ Module B │  │ Module C │             │
-│  │ (Orders) │  │(Inventory│  │(Payments)│             │
+  MODULAR MONOLITH
+|  | Module A |  | Module B |  | Module C |  |
+|  | (Orders) |  | (Inventory |  | (Payments) |  |
 │  │          │  │          │  │          │             │
-│  │ Public   │  │ Public   │  │ Public   │             │
-│  │ API ────►│──│◄── API ──│──│◄── API   │             │
-│  │ Internal │  │ Internal │  │ Internal │             │
-│  │ logic    │  │ logic    │  │ logic    │             │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘             │
+|  | Public |  | Public |  | Public |  |
+|  | API ────► | ── | ◄── API ── | ── | ◄── API |  |
+|  | Internal |  | Internal |  | Internal |  |
+|  | logic |  | logic |  | logic |  |
 │       │              │              │                   │
-│  ┌────┴──────────────┴──────────────┴─────┐            │
-│  │           Shared Database               │            │
-│  │  (schema-per-module or shared schema)   │            │
-│  └─────────────────────────────────────────┘            │
-└────────────────────────────────────────────────────────┘
+  ┌────┴──────────────┴──────────────┴─────┐
+|  | Shared Database |  |
+|  | (schema-per-module or shared schema) |  |
 ```
 
 **Appropriate when:**
@@ -51,14 +45,11 @@ Single deployable unit with strictly enforced internal module boundaries.
 Independently deployable services, each owning its data and communicating via APIs or messaging.
 
 ```
-┌──────────┐    ┌──────────┐    ┌──────────┐
-│ Order    │    │ Inventory│    │ Payment  │
-│ Service  │◄──►│ Service  │◄──►│ Service  │
+| Order |  | Inventory |  | Payment |
+| Service | ◄──► | Service | ◄──► | Service |
 │          │    │          │    │          │
-│ Own DB   │    │ Own DB   │    │ Own DB   │
-└────┬─────┘    └────┬─────┘    └────┬─────┘
+| Own DB |  | Own DB |  | Own DB |
      │               │               │
-     └───────────────┴───────────────┘
               Message Bus / API Gateway
 ```
 
@@ -101,14 +92,12 @@ Functions triggered by events, with fully managed infrastructure.
 Components communicate through asynchronous events via a message broker.
 
 ```
-┌──────────┐    ┌───────────────┐    ┌──────────┐
-│ Producer │───►│  Event Bus    │───►│ Consumer │
-│          │    │  (Kafka /     │    │  A       │
-│ Emits:   │    │   RabbitMQ /  │───►│ Consumer │
-│ OrderPlaced   │   SNS+SQS)   │    │  B       │
-│ OrderShipped  │               │───►│ Consumer │
+| Producer | ───► | Event Bus | ───► | Consumer |
+|  |  | (Kafka / |  | A |
+| Emits: |  | RabbitMQ / | ───► | Consumer |
+| OrderPlaced | SNS+SQS) |  | B |
+| OrderShipped |  | ───► | Consumer |
 └──────────┘    └───────────────┘    │  C       │
-                                     └──────────┘
 ```
 
 **Appropriate when:**
@@ -132,20 +121,19 @@ Separate models for read and write operations.
 
 ```
 ┌───────────┐     Commands      ┌────────────────┐
-│  Client   │──────────────────►│  Write Model   │
-│           │                   │  (Domain logic) │
-│           │                   │  ┌────────────┐ │
-│           │                   │  │ Event Store │ │
-│           │                   │  └──────┬─────┘ │
+| Client | ──────────────────► | Write Model |
+|  |  | (Domain logic) |
+|  |  | ┌────────────┐ |
+|  |  |  | Event Store |  |
+|  |  | └──────┬─────┘ |
 │           │                   └─────────┼───────┘
 │           │                             │ Events
 │           │                             ▼
 │           │                   ┌─────────────────┐
-│           │     Queries       │  Read Model     │
-│           │◄──────────────────│  (Projections)  │
-│           │                   │  Denormalized   │
+|  | Queries | Read Model |
+|  | ◄────────────────── | (Projections) |
+|  |  | Denormalized |
 └───────────┘                   │  for fast reads │
-                                └─────────────────┘
 ```
 
 **Appropriate when:**
@@ -168,32 +156,25 @@ Separate models for read and write operations.
 Business logic at the center, all external concerns at the edges via well-defined ports and adapters.
 
 ```
-              ┌─────────────────────────────────────┐
-              │          ADAPTERS (outer)            │
-              │  ┌──────┐  ┌──────┐  ┌──────────┐   │
-              │  │ REST │  │ gRPC │  │ Event    │   │
-              │  │ API  │  │ API  │  │ Consumer │   │
-              │  └──┬───┘  └──┬───┘  └────┬─────┘   │
+  ADAPTERS (outer)
+|  | REST |  | gRPC |  | Event |  |
+|  | API |  | API |  | Consumer |  |
               │     │         │           │          │
-              │  ┌──┴─────────┴───────────┴───────┐  │
-              │  │       PORTS (interfaces)        │  │
-              │  └──────────────┬──────────────────┘  │
+  ┌──┴─────────┴───────────┴───────┐
+|  | PORTS (interfaces) |  |
               │                 │                     │
-              │  ┌──────────────┴──────────────────┐  │
-              │  │     DOMAIN (business logic)     │  │
-              │  │     Pure, no dependencies on     │  │
-              │  │     infrastructure                │  │
-              │  └──────────────┬──────────────────┘  │
+  ┌──────────────┴──────────────────┐
+|  | DOMAIN (business logic) |  |
+|  | Pure, no dependencies on |  |
+|  | infrastructure |  |
               │                 │                     │
-              │  ┌──────────────┴──────────────────┐  │
-              │  │       PORTS (interfaces)        │  │
-              │  └──┬─────────┬───────────┬───────┘  │
+  ┌──────────────┴──────────────────┐
+|  | PORTS (interfaces) |  |
+  └──┬─────────┬───────────┬───────┘
               │     │         │           │          │
-              │  ┌──┴───┐  ┌─┴──────┐  ┌─┴───────┐  │
-              │  │Postgr│  │ Redis  │  │ Kafka   │  │
-              │  │ es   │  │ Cache  │  │ Producer│  │
-              │  └──────┘  └────────┘  └─────────┘  │
-              └─────────────────────────────────────┘
+  ┌──┴───┐  ┌─┴──────┐  ┌─┴───────┐
+|  | Postgr |  | Redis |  | Kafka |  |
+|  | es |  | Cache |  | Producer |  |
 ```
 
 **Appropriate when:**
@@ -216,17 +197,11 @@ Business logic at the center, all external concerns at the edges via well-define
 Traditional horizontal layering with strict dependency direction.
 
 ```
-┌──────────────────────────┐
 │  Presentation Layer      │  ← UI, API controllers
-├──────────────────────────┤
 │  Application Layer       │  ← Use cases, orchestration
-├──────────────────────────┤
 │  Domain/Business Layer   │  ← Business rules, entities
-├──────────────────────────┤
 │  Data Access Layer       │  ← Repositories, ORM
-├──────────────────────────┤
 │  Infrastructure Layer    │  ← Database, file system, external APIs
-└──────────────────────────┘
 
 Rule: Each layer only depends on the layer directly below it.
 ```
@@ -250,26 +225,20 @@ Rule: Each layer only depends on the layer directly below it.
 Concentric circles with dependency rule: dependencies point inward, domain at center.
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  FRAMEWORKS & DRIVERS (outermost)                     │
-│  Web frameworks, DB drivers, UI, external APIs        │
-│                                                       │
-│  ┌──────────────────────────────────────────────────┐ │
-│  │  INTERFACE ADAPTERS                               │ │
-│  │  Controllers, Presenters, Gateways                │ │
+  FRAMEWORKS & DRIVERS (outermost)
+  Web frameworks, DB drivers, UI, external APIs
+|  | INTERFACE ADAPTERS |  |
+|  | Controllers, Presenters, Gateways |  |
 │  │                                                    │ │
-│  │  ┌──────────────────────────────────────────────┐ │ │
-│  │  │  APPLICATION BUSINESS RULES                   │ │ │
-│  │  │  Use Cases                                    │ │ │
+|  | ┌──────────────────────────────────────────────┐ |  |
+|  |  | APPLICATION BUSINESS RULES |  |  |
+|  |  | Use Cases |  |  |
 │  │  │                                                │ │ │
-│  │  │  ┌──────────────────────────────────────────┐ │ │ │
-│  │  │  │  ENTERPRISE BUSINESS RULES               │ │ │ │
-│  │  │  │  Entities, Value Objects                  │ │ │ │
-│  │  │  └──────────────────────────────────────────┘ │ │ │
-│  │  └──────────────────────────────────────────────┘ │ │
-│  └──────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────┘
-
+|  |  | ┌──────────────────────────────────────────┐ |  |  |
+|  |  |  | ENTERPRISE BUSINESS RULES |  |  |  |
+|  |  |  | Entities, Value Objects |  |  |  |
+|  |  | └──────────────────────────────────────────┘ |  |  |
+|  | └──────────────────────────────────────────────┘ |  |
 DEPENDENCY RULE: Source code dependencies point INWARD only.
 Nothing in an inner circle can know about anything in an outer circle.
 ```
@@ -292,26 +261,21 @@ Nothing in an inner circle can know about anything in an outer circle.
 Infrastructure layer for service-to-service communication with sidecar proxies.
 
 ```
-┌──────────────────┐       ┌──────────────────┐
-│  Service A       │       │  Service B       │
-│  ┌────────────┐  │       │  ┌────────────┐  │
-│  │ App Logic  │  │       │  │ App Logic  │  │
-│  └─────┬──────┘  │       │  └─────┬──────┘  │
+| Service A |  | Service B |
+| ┌────────────┐ |  | ┌────────────┐ |
+|  | App Logic |  |  |  | App Logic |  |
+| └─────┬──────┘ |  | └─────┬──────┘ |
 │        │         │       │        │         │
-│  ┌─────┴──────┐  │ mTLS  │  ┌─────┴──────┐  │
-│  │ Sidecar    │◄─┼───────┼─►│ Sidecar    │  │
-│  │ Proxy      │  │       │  │ Proxy      │  │
-│  │ (Envoy)    │  │       │  │ (Envoy)    │  │
-│  └────────────┘  │       │  └────────────┘  │
-└──────────────────┘       └──────────────────┘
-         │                          │
-         └──────────┬───────────────┘
+| ┌─────┴──────┐ | mTLS | ┌─────┴──────┐ |
+|  | Sidecar | ◄─┼───────┼─► | Sidecar |  |
+|  | Proxy |  |  |  | Proxy |  |
+|  | (Envoy) |  |  |  | (Envoy) |  |
+| └────────────┘ |  | └────────────┘ |
               ┌─────┴──────┐
-              │ Control    │
-              │ Plane      │
-              │ (Istio /   │
-              │  Linkerd)  │
-              └────────────┘
+  Control
+  Plane
+  (Istio /
+  Linkerd)
 
 Provides: mTLS, load balancing, circuit breaking,
           retries, observability, traffic splitting
@@ -337,19 +301,13 @@ Provides: mTLS, load balancing, circuit breaking,
 Extend microservice principles to the frontend.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Shell / Container App                               │
-│                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │ Team A       │  │ Team B       │  │ Team C     │ │
-│  │ Product List │  │ Shopping Cart│  │ User       │ │
-│  │ (React)      │  │ (Vue)        │  │ Profile    │ │
-│  │              │  │              │  │ (Svelte)   │ │
-│  └──────────────┘  └──────────────┘  └────────────┘ │
-│                                                      │
-│  Integration: Module Federation / Web Components /   │
-│               iframes / server-side composition      │
-└─────────────────────────────────────────────────────┘
+  Shell / Container App
+|  | Team A |  | Team B |  | Team C |  |
+|  | Product List |  | Shopping Cart |  | User |  |
+|  | (React) |  | (Vue) |  | Profile |  |
+|  |  |  |  |  | (Svelte) |  |
+  Integration: Module Federation / Web Components /
+  iframes / server-side composition
 ```
 
 **Appropriate when:**
@@ -422,16 +380,14 @@ Incrementally replace a legacy system by routing traffic to new implementations.
 
 ```
 PHASE 1:                    PHASE 2:                    PHASE 3:
-┌──────────┐               ┌──────────┐               ┌──────────┐
-│  Proxy   │               │  Proxy   │               │  Proxy   │
-└────┬─────┘               └────┬─────┘               └────┬─────┘
+| Proxy |  | Proxy |  | Proxy |
      │                          │                          │
   100% legacy              /orders → new             100% new
-     │                     /rest → legacy                  │
+  /rest → legacy
      ▼                          │                          ▼
 ┌──────────┐          ┌────────┴────────┐          ┌──────────┐
-│  Legacy  │          │ Legacy │  New   │          │   New    │
-│  System  │          │ System │ Service│          │  System  │
+| Legacy |  | Legacy | New |  | New |
+| System |  | System | Service |  | System |
 └──────────┘          └────────┴────────┘          └──────────┘
 ```
 
@@ -458,12 +414,11 @@ SIDECAR:                 AMBASSADOR:              ADAPTER:
 App + helper process     App + proxy to           App + format translator
                          external services
 
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│ ┌─────┐ ┌─────┐│     │ ┌─────┐ ┌─────┐│     │ ┌─────┐ ┌─────┐│
-│ │ App │ │Log  ││     │ │ App │ │Proxy││     │ │ App │ │Adapt││
-│ │     │ │Agent││     │ │     │ │     ││     │ │     │ │ er  ││
-│ └─────┘ └─────┘│     │ └─────┘ └──┬──┘│     │ └─────┘ └──┬──┘│
-│     Pod         │     │     Pod    │   │     │     Pod    │   │
+| ┌─────┐ ┌─────┐ |  | ┌─────┐ ┌─────┐ |  | ┌─────┐ ┌─────┐ |
+|  | App |  | Log |  |  |  | App |  | Proxy |  |  |  | App |  | Adapt |  |
+|  |  |  | Agent |  |  |  |  |  |  |  |  |  |  |  | er |  |
+| └─────┘ └─────┘ |  | └─────┘ └──┬──┘ |  | └─────┘ └──┬──┘ |
+| Pod |  | Pod |  |  | Pod |  |
 └─────────────────┘     └────────────┼───┘     └────────────┼───┘
                                      ▼                      ▼
                               External APIs          Legacy System
@@ -483,19 +438,16 @@ App + helper process     App + proxy to           App + format translator
 Isolate groups of functionality into independent, self-contained cells for blast radius containment.
 
 ```
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│   Cell A        │  │   Cell B        │  │   Cell C        │
-│   (US-East)     │  │   (US-West)     │  │   (EU)          │
+| Cell A |  | Cell B |  | Cell C |
+| (US-East) |  | (US-West) |  | (EU) |
 │                 │  │                 │  │                 │
-│  ┌───┐ ┌───┐   │  │  ┌───┐ ┌───┐   │  │  ┌───┐ ┌───┐   │
-│  │API│ │DB │   │  │  │API│ │DB │   │  │  │API│ │DB │   │
-│  └───┘ └───┘   │  │  └───┘ └───┘   │  │  └───┘ └───┘   │
-│  ┌───┐ ┌───┐   │  │  ┌───┐ ┌───┐   │  │  ┌───┐ ┌───┐   │
-│  │Q  │ │$  │   │  │  │Q  │ │$  │   │  │  │Q  │ │$  │   │
-│  └───┘ └───┘   │  │  └───┘ └───┘   │  │  └───┘ └───┘   │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+| ┌───┐ ┌───┐ |  | ┌───┐ ┌───┐ |  | ┌───┐ ┌───┐ |
+|  | API |  | DB |  |  |  | API |  | DB |  |  |  | API |  | DB |  |
+| └───┘ └───┘ |  | └───┘ └───┘ |  | └───┘ └───┘ |
+| ┌───┐ ┌───┐ |  | ┌───┐ ┌───┐ |  | ┌───┐ ┌───┐ |
+|  | Q |  | $ |  |  |  | Q |  | $ |  |  |  | Q |  | $ |  |
+| └───┘ └───┘ |  | └───┘ └───┘ |  | └───┘ └───┘ |
         │                    │                    │
-        └────────────────────┴────────────────────┘
                     Cell Router
            (routes users to their assigned cell)
 ```
@@ -521,15 +473,13 @@ Organize code by feature rather than by technical layer. Each slice contains all
 
 ```
 TRADITIONAL LAYERED:              VERTICAL SLICE:
-┌──────────────────┐              ┌─────┐ ┌─────┐ ┌─────┐
-│  Controllers     │              │Feat.│ │Feat.│ │Feat.│
+| Controllers |  | Feat. |  | Feat. |  | Feat. |
 ├──────────────────┤              │  A  │ │  B  │ │  C  │
-│  Services        │              │     │ │     │ │     │
+| Services |  |  |  |  |  |  |
 ├──────────────────┤     →        │Ctrl │ │Ctrl │ │Ctrl │
-│  Repositories    │              │Svc  │ │Svc  │ │Svc  │
+| Repositories |  | Svc |  | Svc |  | Svc |
 ├──────────────────┤              │Repo │ │Repo │ │Repo │
-│  Entities        │              │Model│ │Model│ │Model│
-└──────────────────┘              └─────┘ └─────┘ └─────┘
+| Entities |  | Model |  | Model |  | Model |
 ```
 
 **Appropriate when:**
@@ -551,22 +501,19 @@ TRADITIONAL LAYERED:              VERTICAL SLICE:
 Use this matrix to select an architecture based on your constraints.
 
 ```
-┌────────────────────┬────────┬────────┬────────┬────────┬────────┬────────┬────────┐
-│  Criterion         │Mod.    │Micro-  │Server- │Event-  │CQRS    │Hexag.  │Clean   │
-│                    │Monolith│services│less    │Driven  │        │        │Arch.   │
-├────────────────────┼────────┼────────┼────────┼────────┼────────┼────────┼────────┤
-│  Team size <10     │ ★★★★★ │ ★★☆☆☆ │ ★★★★☆ │ ★★★☆☆ │ ★★☆☆☆ │ ★★★★☆ │ ★★★★☆ │
-│  Team size 10-30   │ ★★★☆☆ │ ★★★★☆ │ ★★★☆☆ │ ★★★★☆ │ ★★★★☆ │ ★★★★☆ │ ★★★★☆ │
-│  Team size 30+     │ ★★☆☆☆ │ ★★★★★ │ ★★★☆☆ │ ★★★★★ │ ★★★★★ │ ★★★☆☆ │ ★★★☆☆ │
-│  Time to market    │ ★★★★★ │ ★★☆☆☆ │ ★★★★☆ │ ★★☆☆☆ │ ★★☆☆☆ │ ★★★☆☆ │ ★★★☆☆ │
-│  Scalability       │ ★★★☆☆ │ ★★★★★ │ ★★★★★ │ ★★★★★ │ ★★★★★ │ ★★★☆☆ │ ★★★☆☆ │
-│  Operational cost  │ ★★★★★ │ ★★☆☆☆ │ ★★★★☆ │ ★★☆☆☆ │ ★★☆☆☆ │ ★★★★☆ │ ★★★★☆ │
-│  Testability       │ ★★★☆☆ │ ★★★★☆ │ ★★☆☆☆ │ ★★★☆☆ │ ★★★★☆ │ ★★★★★ │ ★★★★★ │
-│  Domain complexity │ ★★★☆☆ │ ★★★★☆ │ ★★☆☆☆ │ ★★★★☆ │ ★★★★★ │ ★★★★★ │ ★★★★★ │
-│  Data consistency  │ ★★★★★ │ ★★☆☆☆ │ ★★★☆☆ │ ★★☆☆☆ │ ★★☆☆☆ │ ★★★★★ │ ★★★★★ │
-│  Fault isolation   │ ★★☆☆☆ │ ★★★★★ │ ★★★★★ │ ★★★★☆ │ ★★★★☆ │ ★★☆☆☆ │ ★★☆☆☆ │
-│  Learning curve    │ ★★★★★ │ ★★☆☆☆ │ ★★★☆☆ │ ★★☆☆☆ │ ★★☆☆☆ │ ★★★☆☆ │ ★★★☆☆ │
-└────────────────────┴────────┴────────┴────────┴────────┴────────┴────────┴────────┘
+| Criterion | Mod. | Micro- | Server- | Event- | CQRS | Hexag. | Clean |
+|  | Monolith | services | less | Driven |  |  | Arch. |
+| Team size <10 | ★★★★★ | ★★☆☆☆ | ★★★★☆ | ★★★☆☆ | ★★☆☆☆ | ★★★★☆ | ★★★★☆ |
+| Team size 10-30 | ★★★☆☆ | ★★★★☆ | ★★★☆☆ | ★★★★☆ | ★★★★☆ | ★★★★☆ | ★★★★☆ |
+| Team size 30+ | ★★☆☆☆ | ★★★★★ | ★★★☆☆ | ★★★★★ | ★★★★★ | ★★★☆☆ | ★★★☆☆ |
+| Time to market | ★★★★★ | ★★☆☆☆ | ★★★★☆ | ★★☆☆☆ | ★★☆☆☆ | ★★★☆☆ | ★★★☆☆ |
+| Scalability | ★★★☆☆ | ★★★★★ | ★★★★★ | ★★★★★ | ★★★★★ | ★★★☆☆ | ★★★☆☆ |
+| Operational cost | ★★★★★ | ★★☆☆☆ | ★★★★☆ | ★★☆☆☆ | ★★☆☆☆ | ★★★★☆ | ★★★★☆ |
+| Testability | ★★★☆☆ | ★★★★☆ | ★★☆☆☆ | ★★★☆☆ | ★★★★☆ | ★★★★★ | ★★★★★ |
+| Domain complexity | ★★★☆☆ | ★★★★☆ | ★★☆☆☆ | ★★★★☆ | ★★★★★ | ★★★★★ | ★★★★★ |
+| Data consistency | ★★★★★ | ★★☆☆☆ | ★★★☆☆ | ★★☆☆☆ | ★★☆☆☆ | ★★★★★ | ★★★★★ |
+| Fault isolation | ★★☆☆☆ | ★★★★★ | ★★★★★ | ★★★★☆ | ★★★★☆ | ★★☆☆☆ | ★★☆☆☆ |
+| Learning curve | ★★★★★ | ★★☆☆☆ | ★★★☆☆ | ★★☆☆☆ | ★★☆☆☆ | ★★★☆☆ | ★★★☆☆ |
 
 READING GUIDE:
   ★★★★★ = Excellent fit for this criterion
@@ -580,17 +527,15 @@ START HERE:
 
   Team size?
   ├── 1-8 developers
-  │   └── Domain complexity?
-  │       ├── Simple CRUD → Modular Monolith
-  │       ├── Complex domain → Modular Monolith + Hexagonal
-  │       └── Bursty workload → Serverless
-  │
+  └── Domain complexity?
+  ├── Simple CRUD → Modular Monolith
+  ├── Complex domain → Modular Monolith + Hexagonal
+  └── Bursty workload → Serverless
   ├── 8-20 developers
-  │   └── Domain boundaries clear?
-  │       ├── Yes → Start extracting key services (2-5 services)
-  │       ├── No → Modular Monolith (discover boundaries first)
-  │       └── Read-heavy → CQRS within monolith
-  │
+  └── Domain boundaries clear?
+  ├── Yes → Start extracting key services (2-5 services)
+  ├── No → Modular Monolith (discover boundaries first)
+  └── Read-heavy → CQRS within monolith
   └── 20+ developers (multiple squads)
       └── Microservices, with:
           ├── Event-driven for async communication
@@ -749,19 +694,16 @@ RISKS:
 Which patterns combine well together?
 
 ```
-┌────────────────────┬─────────┬─────────┬─────────┬─────────┬─────────┐
-│  Combines with     │ Micro-  │ Event-  │ CQRS    │ Hexag.  │ Service │
-│                    │ services│ Driven  │         │         │ Mesh    │
-├────────────────────┼─────────┼─────────┼─────────┼─────────┼─────────┤
-│  Microservices     │    —    │ ★★★★★  │ ★★★★☆  │ ★★★★★  │ ★★★★★  │
-│  Event-Driven      │ ★★★★★  │    —    │ ★★★★★  │ ★★★★☆  │ ★★★☆☆  │
-│  CQRS              │ ★★★★☆  │ ★★★★★  │    —    │ ★★★★☆  │ ★★☆☆☆  │
-│  Hexagonal         │ ★★★★★  │ ★★★★☆  │ ★★★★☆  │    —    │ ★★★☆☆  │
-│  Service Mesh      │ ★★★★★  │ ★★★☆☆  │ ★★☆☆☆  │ ★★★☆☆  │    —    │
-│  Serverless        │ ★★★☆☆  │ ★★★★★  │ ★★★☆☆  │ ★★☆☆☆  │ ☆☆☆☆☆  │
-│  Mod. Monolith     │ ☆☆☆☆☆  │ ★★★☆☆  │ ★★★★☆  │ ★★★★★  │ ☆☆☆☆☆  │
-│  Strangler Fig     │ ★★★★★  │ ★★★★☆  │ ★★★☆☆  │ ★★★☆☆  │ ★★★★☆  │
-└────────────────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
+| Combines with | Micro- | Event- | CQRS | Hexag. | Service |
+|  | services | Driven |  |  | Mesh |
+| Microservices | — | ★★★★★ | ★★★★☆ | ★★★★★ | ★★★★★ |
+| Event-Driven | ★★★★★ | — | ★★★★★ | ★★★★☆ | ★★★☆☆ |
+| CQRS | ★★★★☆ | ★★★★★ | — | ★★★★☆ | ★★☆☆☆ |
+| Hexagonal | ★★★★★ | ★★★★☆ | ★★★★☆ | — | ★★★☆☆ |
+| Service Mesh | ★★★★★ | ★★★☆☆ | ★★☆☆☆ | ★★★☆☆ | — |
+| Serverless | ★★★☆☆ | ★★★★★ | ★★★☆☆ | ★★☆☆☆ | ☆☆☆☆☆ |
+| Mod. Monolith | ☆☆☆☆☆ | ★★★☆☆ | ★★★★☆ | ★★★★★ | ☆☆☆☆☆ |
+| Strangler Fig | ★★★★★ | ★★★★☆ | ★★★☆☆ | ★★★☆☆ | ★★★★☆ |
 ```
 
 ---

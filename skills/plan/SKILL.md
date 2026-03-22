@@ -314,17 +314,14 @@ WHILE current_iteration < max_iterations:
 
     2. PRODUCE effort estimate per task:
        EFFORT ESTIMATES:
-       ┌──────────┬─────────────────────────┬───────┬──────────┬─────────────┐
-       │  Task    │  Title                  │  Size │  Effort  │  Confidence │
-       ├──────────┼─────────────────────────┼───────┼──────────┼─────────────┤
-       │  task-01 │  Add user schema        │  S    │  45 min  │  HIGH       │
-       │  task-02 │  Add migration          │  S    │  60 min  │  HIGH       │
-       │  task-03 │  Add API routes         │  M    │  90 min  │  MEDIUM     │
-       │  task-04 │  Add external API call  │  M    │  180 min │  LOW        │
-       │  task-05 │  Add tests              │  M    │  120 min │  MEDIUM     │
-       ├──────────┼─────────────────────────┼───────┼──────────┼─────────────┤
-       │  TOTAL   │                         │       │  ~8.3 hrs│             │
-       └──────────┴─────────────────────────┴───────┴──────────┴─────────────┘
+| Task | Title | Size | Effort | Confidence |
+|---|---|---|---|---|
+| task-01 | Add user schema | S | 45 min | HIGH |
+| task-02 | Add migration | S | 60 min | HIGH |
+| task-03 | Add API routes | M | 90 min | MEDIUM |
+| task-04 | Add external API call | M | 180 min | LOW |
+| task-05 | Add tests | M | 120 min | MEDIUM |
+| TOTAL |  |  | ~8.3 hrs |  |
 
     3. COMPUTE total effort:
        sequential_effort = sum(all task efforts)
@@ -366,15 +363,12 @@ WHILE current_iteration < max_iterations:
 
     3. PRODUCE risk matrix:
        RISK ASSESSMENT:
-       ┌──────────┬──────────────┬──────────────┬────────────┬──────────────┐
-       │  Task    │  Technical   │  Integration │  Dependency│  Scope       │
-       ├──────────┼──────────────┼──────────────┼────────────┼──────────────┤
-       │  task-01 │  LOW         │  LOW         │  LOW       │  LOW         │
-       │  task-03 │  MEDIUM      │  HIGH        │  LOW       │  LOW         │
-       │  task-04 │  HIGH        │  MEDIUM      │  HIGH      │  MEDIUM      │
-       ├──────────┼──────────────┼──────────────┼────────────┼──────────────┤
-       │  Overall │  MEDIUM      │  HIGH        │  MEDIUM    │  LOW         │
-       └──────────┴──────────────┴──────────────┴────────────┴──────────────┘
+| Task | Technical | Integration | Dependency | Scope |
+|---|---|---|---|---|
+| task-01 | LOW | LOW | LOW | LOW |
+| task-03 | MEDIUM | HIGH | LOW | LOW |
+| task-04 | HIGH | MEDIUM | HIGH | MEDIUM |
+| Overall | MEDIUM | HIGH | MEDIUM | LOW |
 
        HIGH RISK TASKS WITH MITIGATIONS:
        task-04: "Add external API call"
@@ -439,19 +433,15 @@ WHILE current_iteration < max_iterations:
   REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS REVISION}"
 
 FINAL PLAN RIGOR ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│  PLAN RIGOR SUMMARY                                       │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Status │ Key Metric                 │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Dependency graph    │ VALID  │ {N} tasks, {M} rounds      │
-│  Effort estimation   │ DONE   │ ~{N} hours total           │
-│  Risk assessment     │ DONE   │ {N} HIGH risks mitigated   │
-│  Critical path       │ FOUND  │ {N} hours min delivery     │
-│  Plan validation     │ PASS   │ All checks pass            │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │ READY  │ Proceed to /godmode:build  │
-└──────────────────────┴────────┴───────────────────────────┘
+  PLAN RIGOR SUMMARY
+| Phase | Status | Key Metric |
+|---|---|---|
+| Dependency graph | VALID | {N} tasks, {M} rounds |
+| Effort estimation | DONE | ~{N} hours total |
+| Risk assessment | DONE | {N} HIGH risks mitigated |
+| Critical path | FOUND | {N} hours min delivery |
+| Plan validation | PASS | All checks pass |
+| Overall | READY | Proceed to /godmode:build |
 ```
 
 ## Keep/Discard Discipline

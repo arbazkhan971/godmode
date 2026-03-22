@@ -39,20 +39,19 @@ Select the optimal chart type based on the data and communication goal:
 
 ```
 CHART TYPE SELECTION:
-┌─────────────────────┬──────────────────────────────────────────────────────┐
-│  Goal               │  Recommended Chart Types                            │
-├─────────────────────┼──────────────────────────────────────────────────────┤
-│  Compare values     │  Bar (vertical/horizontal), Grouped bar, Lollipop   │
-│  Show trends        │  Line, Area, Sparkline, Step                        │
-│  Show distribution  │  Histogram, Box plot, Violin, Density               │
-│  Show correlation   │  Scatter, Bubble, Heatmap (correlation matrix)      │
-│  Show composition   │  Stacked bar, Treemap, Sunburst, Waffle             │
-│  Show flow/process  │  Sankey, Alluvial, Chord diagram                    │
-│  Show hierarchy     │  Treemap, Sunburst, Dendrogram, Circle packing      │
-│  Show geographic    │  Choropleth, Bubble map, Hex bin map                │
-│  Show part-to-whole │  Donut, Stacked area, Marimekko                     │
-│  Show ranking       │  Horizontal bar, Bump chart, Slope graph            │
-│  Show time series   │  Line, Candlestick, Calendar heatmap               │
+| Goal | Recommended Chart Types |
+|---|---|
+| Compare values | Bar (vertical/horizontal), Grouped bar, Lollipop |
+| Show trends | Line, Area, Sparkline, Step |
+| Show distribution | Histogram, Box plot, Violin, Density |
+| Show correlation | Scatter, Bubble, Heatmap (correlation matrix) |
+| Show composition | Stacked bar, Treemap, Sunburst, Waffle |
+| Show flow/process | Sankey, Alluvial, Chord diagram |
+| Show hierarchy | Treemap, Sunburst, Dendrogram, Circle packing |
+| Show geographic | Choropleth, Bubble map, Hex bin map |
+| Show part-to-whole | Donut, Stacked area, Marimekko |
+| Show ranking | Horizontal bar, Bump chart, Slope graph |
+| Show time series | Line, Candlestick, Calendar heatmap |
 ```
 
 Rules:
@@ -67,20 +66,16 @@ Choose the right visualization library for the project:
 
 ```
 LIBRARY SELECTION:
-┌──────────────┬──────────────────────┬──────────────┬──────────────────────┐
-│  Library     │  Best For            │  Bundle Size │  Learning Curve      │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  D3.js       │  Custom, complex,    │  ~90KB       │  Steep — full control│
-│              │  unique visualizations│             │  over every pixel    │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Chart.js    │  Standard charts,    │  ~60KB       │  Low — declarative   │
-│              │  quick setup, canvas │              │  config-based API    │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Recharts    │  React dashboards,   │  ~120KB      │  Low — React-native  │
-│              │  composable charts   │              │  component API       │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Plotly      │  Scientific/data     │  ~1MB        │  Medium — rich       │
-│              │  analysis, 3D plots  │              │  interactive charts  │
+| Library | Best For | Bundle Size | Learning Curve |
+|---|---|---|---|
+| D3.js | Custom, complex, | ~90KB | Steep — full control |
+|  | unique visualizations |  | over every pixel |
+| Chart.js | Standard charts, | ~60KB | Low — declarative |
+|  | quick setup, canvas |  | config-based API |
+| Recharts | React dashboards, | ~120KB | Low — React-native |
+|  | composable charts |  | component API |
+| Plotly | Scientific/data | ~1MB | Medium — rich |
+|  | analysis, 3D plots |  | interactive charts |
 ```
 
 ### Step 4: Data Transformation
@@ -122,25 +117,23 @@ Build the chart with full configuration:
 
 ```
 CHART CONFIGURATION:
-┌─────────────────────────────────────────────────────────────────────┐
-│  Property              │  Value                                     │
-├────────────────────────┼────────────────────────────────────────────┤
-│  Type                  │  <bar | line | scatter | heatmap | ...>   │
-│  Width                 │  <responsive | fixed px>                   │
-│  Height                │  <responsive | fixed px>                   │
-│  Aspect ratio          │  <16:9 | 4:3 | 1:1 | custom>             │
-│  Margins               │  top=<N> right=<N> bottom=<N> left=<N>   │
-│  Colors                │  <palette name or hex values>              │
-│  Font family           │  <system | project font>                  │
-│  Animation             │  <none | enter | update | transition>     │
-│  Legend                 │  <position: top | right | bottom | none> │
-│  Tooltip               │  <format and fields>                      │
-│  Axis X                │  <label, format, ticks, rotation>         │
-│  Axis Y                │  <label, format, ticks, domain>           │
-│  Grid lines            │  <horizontal | vertical | both | none>    │
-│  Annotations           │  <threshold lines, labels, callouts>      │
-│  Interactions          │  <hover | click | brush | zoom | pan>     │
-└────────────────────────┴────────────────────────────────────────────┘
+| Property | Value |
+|---|---|
+| Type | <bar | line | scatter | heatmap | ...> |
+| Width | <responsive | fixed px> |
+| Height | <responsive | fixed px> |
+| Aspect ratio | <16:9 | 4:3 | 1:1 | custom> |
+| Margins | top=<N> right=<N> bottom=<N> left=<N> |
+| Colors | <palette name or hex values> |
+| Font family | <system | project font> |
+| Animation | <none | enter | update | transition> |
+| Legend | <position: top | right | bottom | none> |
+| Tooltip | <format and fields> |
+| Axis X | <label, format, ticks, rotation> |
+| Axis Y | <label, format, ticks, domain> |
+| Grid lines | <horizontal | vertical | both | none> |
+| Annotations | <threshold lines, labels, callouts> |
+| Interactions | <hover | click | brush | zoom | pan> |
 ```
 
 #### D3.js Implementation Pattern
@@ -170,19 +163,15 @@ Ensure charts work across all viewport sizes:
 
 ```
 RESPONSIVE STRATEGY:
-┌──────────────────┬──────────────┬──────────────────────────────────────────┐
-│  Breakpoint      │  Width       │  Adaptations                             │
-├──────────────────┼──────────────┼──────────────────────────────────────────┤
-│  Mobile          │  < 480px     │  Stack legend below, reduce tick count,  │
-│                  │              │  hide secondary axes, enlarge touch       │
-│                  │              │  targets, swap to simplified chart type   │
-├──────────────────┼──────────────┼──────────────────────────────────────────┤
-│  Tablet          │  480-1024px  │  Side legend, moderate tick density,     │
-│                  │              │  full interactivity                       │
-├──────────────────┼──────────────┼──────────────────────────────────────────┤
-│  Desktop         │  > 1024px    │  Full layout, all annotations visible,   │
-│                  │              │  hover tooltips, brush/zoom enabled       │
-└──────────────────┴──────────────┴──────────────────────────────────────────┘
+| Breakpoint | Width | Adaptations |
+|---|---|---|
+| Mobile | < 480px | Stack legend below, reduce tick count, |
+|  |  | hide secondary axes, enlarge touch |
+|  |  | targets, swap to simplified chart type |
+| Tablet | 480-1024px | Side legend, moderate tick density, |
+|  |  | full interactivity |
+| Desktop | > 1024px | Full layout, all annotations visible, |
+|  |  | hover tooltips, brush/zoom enabled |
 
 ```
 
@@ -191,20 +180,19 @@ Design accessible visualizations that work for everyone:
 
 ```
 ACCESSIBILITY CHECKLIST:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Check                                           │  Status           │
-├──────────────────────────────────────────────────┼───────────────────┤
-│  Color contrast ratio >= 3:1 against background  │  PASS | FAIL     │
-│  Colorblind-safe palette (no red/green only)     │  PASS | FAIL     │
-│  Patterns/textures as secondary differentiator   │  PASS | FAIL     │
-│  aria-label on chart container (SVG role="img")  │  PASS | FAIL     │
-│  Data table alternative available                │  PASS | FAIL     │
-│  Keyboard navigable (focus on data points)       │  PASS | FAIL     │
-│  Screen reader descriptions for trends           │  PASS | FAIL     │
-│  Tooltip accessible via keyboard (not hover-only)│  PASS | FAIL     │
-│  Text labels minimum 12px font size              │  PASS | FAIL     │
-│  No information conveyed by color alone          │  PASS | FAIL     │
-│  Reduced motion support (@prefers-reduced-motion)│  PASS | FAIL     │
+| Check | Status |
+|---|---|
+| Color contrast ratio >= 3:1 against background | PASS | FAIL |
+| Colorblind-safe palette (no red/green only) | PASS | FAIL |
+| Patterns/textures as secondary differentiator | PASS | FAIL |
+| aria-label on chart container (SVG role="img") | PASS | FAIL |
+| Data table alternative available | PASS | FAIL |
+| Keyboard navigable (focus on data points) | PASS | FAIL |
+| Screen reader descriptions for trends | PASS | FAIL |
+| Tooltip accessible via keyboard (not hover-only) | PASS | FAIL |
+| Text labels minimum 12px font size | PASS | FAIL |
+| No information conveyed by color alone | PASS | FAIL |
+| Reduced motion support (@prefers-reduced-motion) | PASS | FAIL |
 ```
 
 ### Step 8: Dashboard Composition
@@ -233,12 +221,11 @@ Ensure charts render efficiently with large datasets:
 
 ```
 PERFORMANCE STRATEGIES:
-┌───────────────────┬─────────────────────────────────────────────────┐
-│  < 1,000 points   │  Render all — no optimization needed            │
-│  1K - 10K points  │  Canvas rendering (not SVG), debounce tooltips  │
-│  10K - 100K points│  Data aggregation, LTTB downsampling, WebGL     │
-│  > 100K points    │  Server-side aggregation, WebGL (deck.gl)       │
-└───────────────────┴─────────────────────────────────────────────────┘
+| < 1,000 points | Render all — no optimization needed |
+|---|---|
+| 1K - 10K points | Canvas rendering (not SVG), debounce tooltips |
+| 10K - 100K points | Data aggregation, LTTB downsampling, WebGL |
+| > 100K points | Server-side aggregation, WebGL (deck.gl) |
 
 Key techniques: Canvas over SVG for > 1K points, LTTB downsampling for time series,
 IntersectionObserver for lazy-loading, useMemo for data transforms, Web Workers for heavy processing.
@@ -249,22 +236,20 @@ Validate the visualization and produce deliverables:
 
 ```
 VISUALIZATION VALIDATION:
-┌──────────────────────────────────────────────────────┬──────────────┐
-│  Check                                               │  Status      │
-├──────────────────────────────────────────────────────┼──────────────┤
-│  Chart type matches data and communication goal      │  PASS | FAIL │
-│  Data transformations produce correct output          │  PASS | FAIL │
-│  Responsive at mobile, tablet, desktop breakpoints   │  PASS | FAIL │
-│  Accessibility checklist complete (all items pass)    │  PASS | FAIL │
-│  Color palette is colorblind-safe                    │  PASS | FAIL │
-│  Performance acceptable at expected data volume      │  PASS | FAIL │
-│  Tooltips show correct formatted values              │  PASS | FAIL │
-│  Axis labels and titles are clear and formatted      │  PASS | FAIL │
-│  Legend is present and correctly maps to data series  │  PASS | FAIL │
-│  No misleading scale (y-axis starts at 0 for bars)  │  PASS | FAIL │
-│  Loading and error states handled                    │  PASS | FAIL │
-│  Data table alternative provided for screen readers  │  PASS | FAIL │
-└──────────────────────────────────────────────────────┴──────────────┘
+| Check | Status |
+|---|---|
+| Chart type matches data and communication goal | PASS | FAIL |
+| Data transformations produce correct output | PASS | FAIL |
+| Responsive at mobile, tablet, desktop breakpoints | PASS | FAIL |
+| Accessibility checklist complete (all items pass) | PASS | FAIL |
+| Color palette is colorblind-safe | PASS | FAIL |
+| Performance acceptable at expected data volume | PASS | FAIL |
+| Tooltips show correct formatted values | PASS | FAIL |
+| Axis labels and titles are clear and formatted | PASS | FAIL |
+| Legend is present and correctly maps to data series | PASS | FAIL |
+| No misleading scale (y-axis starts at 0 for bars) | PASS | FAIL |
+| Loading and error states handled | PASS | FAIL |
+| Data table alternative provided for screen readers | PASS | FAIL |
 
 VERDICT: <PASS | NEEDS REVISION>
 ```
@@ -351,18 +336,17 @@ After each chart skill invocation, emit a structured report:
 
 ```
 CHART BUILD REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Charts created     │  <N>                            │
-│  Charts updated     │  <N>                            │
-│  Library used       │  <library name>                 │
-│  Data points        │  <N> total across all charts    │
-│  Responsive         │  YES / NO                       │
-│  A11y (data table)  │  YES / NO                       │
-│  Colorblind-safe    │  YES / NO                       │
-│  Bundle impact      │  +<N> KB (gzipped)              │
-│  Render time        │  <N> ms (largest chart)         │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+| Charts created | <N> |
+|---|---|
+| Charts updated | <N> |
+| Library used | <library name> |
+| Data points | <N> total across all charts |
+| Responsive | YES / NO |
+| A11y (data table) | YES / NO |
+| Colorblind-safe | YES / NO |
+| Bundle impact | +<N> KB (gzipped) |
+| Render time | <N> ms (largest chart) |
+| Verdict | PASS | NEEDS REVISION |
 ```
 
 ## TSV Logging

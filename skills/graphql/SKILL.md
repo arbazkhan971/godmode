@@ -90,20 +90,15 @@ Design resolvers with clear separation of concerns:
 
 ```
 RESOLVER ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│  Request                                                     │
-│    │                                                         │
-│    ▼                                                         │
-│  ┌──────────────┐                                            │
-│  │  Middleware   │  Auth, logging, rate limiting, tracing     │
-│  └──────┬───────┘                                            │
-│         ▼                                                    │
-│  ┌──────────────┐                                            │
-│  │  Resolver     │  Orchestration only — no business logic   │
-│  │  (thin layer) │  Calls services, returns results          │
-│  └──────┬───────┘                                            │
-│         ▼                                                    │
-│  ┌──────────────┐                                            │
+  Request
+  ▼
+|  | Middleware | Auth, logging, rate limiting, tracing |
+  └──────┬───────┘
+  ▼
+|  | Resolver | Orchestration only — no business logic |
+|  | (thin layer) | Calls services, returns results |
+  └──────┬───────┘
+  ▼
 ```
 
 Resolver implementation pattern:
@@ -122,20 +117,16 @@ Identify and eliminate N+1 query problems:
 
 ```
 N+1 DETECTION CHECKLIST:
-┌──────────────────────────────────────────────────────────────┐
-│  Pattern                           │  Status                 │
-├────────────────────────────────────┼─────────────────────────┤
-│  List query with nested relations  │  CHECK for N+1          │
-│  Field resolver with DB call       │  MUST use DataLoader    │
-│  Nested connection within list     │  CHECK batch strategy   │
-│  Polymorphic relations (unions)    │  CHECK loader per type  │
-│  Deeply nested queries (3+ levels) │  CHECK cumulative load  │
-└────────────────────────────────────┴─────────────────────────┘
+| Pattern | Status |
+|---|---|
+| List query with nested relations | CHECK for N+1 |
+| Field resolver with DB call | MUST use DataLoader |
+| Nested connection within list | CHECK batch strategy |
+| Polymorphic relations (unions) | CHECK loader per type |
+| Deeply nested queries (3+ levels) | CHECK cumulative load |
 
 DATALOADER IMPLEMENTATION:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  WITHOUT DataLoader (N+1):                                   │
+  WITHOUT DataLoader (N+1):
 ```
 
 DataLoader factory pattern:
@@ -154,20 +145,16 @@ Design real-time GraphQL subscriptions:
 
 ```
 SUBSCRIPTION ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  Transport: WebSocket (graphql-ws) | SSE (for HTTP/2)        │
-│  Protocol: graphql-ws (preferred) | subscriptions-transport-ws (legacy)│
-│  Pub/Sub backend: In-memory | Redis | Kafka | NATS           │
-│                                                              │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐               │
-│  │  Client   │◄──│  Gateway  │◄──│  Pub/Sub  │               │
-│  │(WebSocket)│   │  Server   │   │  Backend  │               │
-│  └──────────┘    └──────────┘    └──────────┘               │
-│                                       ▲                      │
-│                                       │                      │
-│                               ┌───────┴───────┐             │
-│                               │   Mutation     │             │
+  Transport: WebSocket (graphql-ws) | SSE (for HTTP/2)
+  Protocol: graphql-ws (preferred) | subscriptions-transport-ws (legacy)
+  Pub/Sub backend: In-memory | Redis | Kafka | NATS
+  ┌──────────┐    ┌──────────┐    ┌──────────┐
+|  | Client | ◄── | Gateway | ◄── | Pub/Sub |  |
+|  | (WebSocket) |  | Server |  | Backend |  |
+  └──────────┘    └──────────┘    └──────────┘
+  ▲
+  ┌───────┴───────┐
+|  | Mutation |  |
 ```
 
 ### Step 7: Schema Federation for Microservices
@@ -317,11 +304,9 @@ GRAPHQL DESIGN COMPLETE:
   Validation: schema snapshot <PASS|FAIL>, breaking changes <NONE|N found>
 
 SCHEMA SUMMARY:
-+--------------------------------------------------------------+
 |  Domain        | Types | Queries | Mutations | DataLoaders    |
-+--------------------------------------------------------------+
+|---|---|---|---|---|
 |  <domain>      | N     | N       | N         | N              |
-+--------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -339,9 +324,8 @@ Append after every completed design or extension pass. One row per session. If t
 
 ```
 GRAPHQL SUCCESS CRITERIA:
-+--------------------------------------------------------------+
 |  Criterion                                  | Required         |
-+--------------------------------------------------------------+
+|---|---|
 |  Schema compiles without errors             | YES              |
 |  All list fields use Relay connections       | YES              |
 |  All relation fields have DataLoaders       | YES              |
@@ -352,7 +336,6 @@ GRAPHQL SUCCESS CRITERIA:
 |  Schema snapshot test passes                | YES              |
 |  No breaking changes vs previous schema     | YES (if exists)  |
 |  Persisted queries or allowlist in prod     | YES (production)  |
-+--------------------------------------------------------------+
 
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```

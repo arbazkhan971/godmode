@@ -95,13 +95,11 @@ For each detected command (`test_cmd`, `lint_cmd`, `build_cmd`), run it and veri
 
 ```
 COMMAND VALIDATION:
-┌──────────┬──────────────────┬────────┬──────────┐
-│ Command  │ Value            │ Status │ Time     │
-├──────────┼──────────────────┼────────┼──────────┤
-│ test     │ npx vitest       │ PASS   │ 4.2s     │
-│ lint     │ eslint --fix     │ PASS   │ 1.8s     │
-│ build    │ tsc --noEmit     │ FAIL   │ 0.3s     │
-└──────────┴──────────────────┴────────┴──────────┘
+| Command | Value | Status | Time |
+|---|---|---|---|
+| test | npx vitest | PASS | 4.2s |
+| lint | eslint --fix | PASS | 1.8s |
+| build | tsc --noEmit | FAIL | 0.3s |
 ```
 
 For each FAIL:
@@ -256,17 +254,15 @@ WHILE current_iteration < max_iterations:
   IF phase == "env_detection":
     1. DETECT runtime environment:
        RUNTIME CHECKS:
-       ┌──────────────────────┬────────────┬──────────────┬──────────┐
-       │  Runtime             │  Required  │  Detected    │  Status  │
-       ├──────────────────────┼────────────┼──────────────┼──────────┤
-       │  Node.js             │  >= 18     │  <version>   │  OK/FAIL │
-       │  npm/pnpm/yarn/bun   │  >= <ver>  │  <version>   │  OK/FAIL │
-       │  Python              │  >= 3.10   │  <version>   │  OK/FAIL │
-       │  Go                  │  >= 1.21   │  <version>   │  OK/FAIL │
-       │  Rust                │  >= 1.70   │  <version>   │  OK/FAIL │
-       │  Docker              │  >= 20     │  <version>   │  OK/FAIL │
-       │  Git                 │  >= 2.30   │  <version>   │  OK/FAIL │
-       └──────────────────────┴────────────┴──────────────┴──────────┘
+| Runtime | Required | Detected | Status |
+|---|---|---|---|
+| Node.js | >= 18 | <version> | OK/FAIL |
+| npm/pnpm/yarn/bun | >= <ver> | <version> | OK/FAIL |
+| Python | >= 3.10 | <version> | OK/FAIL |
+| Go | >= 1.21 | <version> | OK/FAIL |
+| Rust | >= 1.70 | <version> | OK/FAIL |
+| Docker | >= 20 | <version> | OK/FAIL |
+| Git | >= 2.30 | <version> | OK/FAIL |
 
     2. CHECK system dependencies:
        - Database clients: psql, mysql, mongosh (if project uses DB)
@@ -336,15 +332,13 @@ WHILE current_iteration < max_iterations:
 
     2. REPORT:
        COMMAND VALIDATION:
-       ┌──────────┬──────────────────┬────────┬──────────┐
-       │ Command  │ Value            │ Status │ Time     │
-       ├──────────┼──────────────────┼────────┼──────────┤
-       │ test     │ npx vitest       │ PASS   │ 4.2s     │
-       │ lint     │ eslint --fix     │ PASS   │ 1.8s     │
-       │ typecheck│ tsc --noEmit     │ PASS   │ 3.1s     │
-       │ build    │ npm run build    │ FAIL   │ 0.3s     │
-       │ dev      │ npm run dev      │ PASS   │ 2.1s     │
-       └──────────┴──────────────────┴────────┴──────────┘
+| Command | Value | Status | Time |
+|---|---|---|---|
+| test | npx vitest | PASS | 4.2s |
+| lint | eslint --fix | PASS | 1.8s |
+| typecheck | tsc --noEmit | PASS | 3.1s |
+| build | npm run build | FAIL | 0.3s |
+| dev | npm run dev | PASS | 2.1s |
 
   IF phase == "config_integrity":
     1. VALIDATE .godmode/config.yaml:
@@ -390,15 +384,13 @@ WHILE current_iteration < max_iterations:
 
     2. REPORT:
        SMOKE TEST:
-       ┌──────────────────────────────────────┬──────────┐
-       │  Check                               │  Status  │
-       ├──────────────────────────────────────┼──────────┤
-       │  Application starts                  │  OK/FAIL │
-       │  Application responds (HTTP/CLI)     │  OK/FAIL │
-       │  Hot reload works                    │  OK/FAIL │
-       │  Tests pass after smoke              │  OK/FAIL │
-       │  Graceful shutdown                   │  OK/FAIL │
-       └──────────────────────────────────────┴──────────┘
+| Check | Status |
+|---|---|
+| Application starts | OK/FAIL |
+| Application responds (HTTP/CLI) | OK/FAIL |
+| Hot reload works | OK/FAIL |
+| Tests pass after smoke | OK/FAIL |
+| Graceful shutdown | OK/FAIL |
 
   IF phase == "developer_readiness":
     1. AGGREGATE all validation results into final readiness score:
@@ -428,18 +420,15 @@ WHILE current_iteration < max_iterations:
   REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | FAIL | WARNING}"
 
 FINAL SETUP VALIDATION:
-┌──────────────────────────────────────────────────────────┐
-│  SETUP VALIDATION SUMMARY                                 │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Status │ Details                    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Env detection       │ PASS   │ Node 20.11, pnpm 8.14     │
-│  Dependency install  │ PASS   │ 847 packages, 12s          │
-│  Command validation  │ PASS   │ 5/5 commands working       │
-│  Config integrity    │ PASS   │ All configs valid           │
-│  Smoke test          │ PASS   │ App starts, tests pass      │
-│  Developer readiness │ READY  │ All systems go              │
-└──────────────────────┴────────┴───────────────────────────┘
+  SETUP VALIDATION SUMMARY
+| Phase | Status | Details |
+|---|---|---|
+| Env detection | PASS | Node 20.11, pnpm 8.14 |
+| Dependency install | PASS | 847 packages, 12s |
+| Command validation | PASS | 5/5 commands working |
+| Config integrity | PASS | All configs valid |
+| Smoke test | PASS | App starts, tests pass |
+| Developer readiness | READY | All systems go |
 ```
 
 ## Keep/Discard Discipline

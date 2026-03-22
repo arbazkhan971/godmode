@@ -195,7 +195,6 @@ Godmode: Starting 50-iteration backend optimization...
 Baseline (3 runs): 4,712ms | 4,698ms | 4,723ms → Median: 4,712ms
 
 ITERATION  HYPOTHESIS                               BEFORE    AFTER    CHANGE  VERDICT
-─────────────────────────────────────────────────────────────────────────────────────────
  1         Add index on events(created_at)          4,712ms   3,298ms  -30.0%  KEEP
  2         Add index on transactions(created_at,    3,298ms   2,340ms  -29.1%  KEEP
            amount)
@@ -257,7 +256,6 @@ Godmode: Starting 50-iteration frontend optimization...
 Baseline: Lighthouse score 23
 
 ITERATION  HYPOTHESIS                               BEFORE  AFTER   CHANGE   VERDICT
-──────────────────────────────────────────────────────────────────────────────────────
  1         Replace moment.js with date-fns           23      31     +8 pts   KEEP
            (560 KB → 12 KB)
  2         Replace full lodash with lodash-es         31      35     +4 pts   KEEP

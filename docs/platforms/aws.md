@@ -125,21 +125,17 @@ cost_budget: 500                 # monthly USD threshold
 ### Example Cost Report
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ AWS Cost Optimization Report                            │
-├─────────────────────────────────────────────────────────┤
-│ Current monthly spend:           $12,450                │
-│ Projected savings:               $3,820 (30.7%)        │
-│                                                         │
-│ Top recommendations:                                    │
-│  1. Switch 4x m5.xlarge → Savings Plan    → −$1,200/mo │
-│  2. Enable S3 Intelligent-Tiering         → −$680/mo   │
-│  3. Right-size RDS db.r5.2xl → db.r5.xl  → −$520/mo   │
-│  4. Replace NAT Gateway with VPC endpoints→ −$440/mo   │
-│  5. Move infrequent DynamoDB tables to OD → −$380/mo   │
-│  6. Delete 47 unused EBS snapshots        → −$320/mo   │
-│  7. Enable gp3 for 12 gp2 EBS volumes    → −$280/mo   │
-└─────────────────────────────────────────────────────────┘
+  AWS Cost Optimization Report
+  Current monthly spend:           $12,450
+  Projected savings:               $3,820 (30.7%)
+  Top recommendations:
+  1. Switch 4x m5.xlarge → Savings Plan    → −$1,200/mo
+  2. Enable S3 Intelligent-Tiering         → −$680/mo
+  3. Right-size RDS db.r5.2xl → db.r5.xl  → −$520/mo
+  4. Replace NAT Gateway with VPC endpoints→ −$440/mo
+  5. Move infrequent DynamoDB tables to OD → −$380/mo
+  6. Delete 47 unused EBS snapshots        → −$320/mo
+  7. Enable gp3 for 12 gp2 EBS volumes    → −$280/mo
 ```
 
 ---
@@ -279,17 +275,12 @@ cost_budget: 500                 # monthly USD threshold
 ### Pipeline Stages
 
 ```
-┌────────┐   ┌──────┐   ┌──────┐   ┌────────┐   ┌─────────┐   ┌──────────┐
-│  Push  │──▶│Build │──▶│ Test │──▶│  ECR   │──▶│ Deploy  │──▶│ Verify   │
-│        │   │Docker│   │Unit+ │   │ Push   │   │ Staging │   │ Smoke +  │
-│        │   │Image │   │ Intg │   │        │   │         │   │ Canary   │
-└────────┘   └──────┘   └──────┘   └────────┘   └─────────┘   └──────────┘
-                                                       │
+| Push | ──▶ | Build | ──▶ | Test | ──▶ | ECR | ──▶ | Deploy | ──▶ | Verify |
+|  |  | Docker |  | Unit+ |  | Push |  | Staging |  | Smoke + |
+|  |  | Image |  | Intg |  |  |  |  |  | Canary |
                                                        ▼
-                                                 ┌──────────┐
-                                                 │  Deploy  │
-                                                 │Production│
-                                                 └──────────┘
+  Deploy
+  Production
 ```
 
 ### OIDC Authentication (No Long-Lived Keys)
