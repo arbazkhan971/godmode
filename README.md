@@ -1,6 +1,8 @@
 <div align="center">
 
-# GODMODE
+# Godmode — Autonomous AI Coding Skills (Inspired by Karpathy's Autoresearch)
+
+> The autoresearch-powered skill system for Claude Code, Cursor, Gemini CLI, OpenCode, and Codex. 126 autonomous skills. 7 subagents. Keep/discard discipline. Zero configuration.
 
 ### Turn on Godmode for Claude Code, Codex, Gemini CLI, Cursor & OpenCode.
 
@@ -23,7 +25,7 @@ Your AI writes code. Godmode makes it write *great* code.
 
 ### Quick Links
 
-[Why Godmode?](#why-godmode) · [Philosophy](#philosophy) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
+[Why Godmode?](#why-godmode) · [Philosophy](#philosophy) · [Godmode vs Autoresearch](#godmode-vs-autoresearch) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Related Projects](#related-projects) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
 
 ---
 
@@ -31,7 +33,9 @@ Your AI writes code. Godmode makes it write *great* code.
 
 AI coding assistants can write code. But writing code is the easy part.
 
-The hard part is everything that happens *after* the first draft: verifying it works, measuring its performance, catching regressions, iterating until it's actually good, and knowing when to throw a change away. That is engineering discipline, and no AI coding tool does it on its own.
+The hard part is everything that happens *after* the first draft: verifying it works, measuring its performance, catching regressions, iterating until it's actually good, and knowing when to throw a change away. That is engineering discipline, and no autonomous coding agent does it on its own.
+
+Godmode brings autoresearch-inspired iterative optimization to your entire AI development workflow — not just ML training, but every phase of software engineering.
 
 **Without Godmode**, AI assistants:
 - Generate code and hope it works
@@ -66,6 +70,24 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch):
 
 Godmode turns iterative improvement from art (hoping changes work)
 into engineering (knowing changes work by measurement).
+
+---
+
+## Godmode vs Autoresearch
+
+[Karpathy's autoresearch](https://github.com/karpathy/autoresearch) pioneered autonomous AI research: loop, measure, keep/discard, repeat. Godmode extends this to all software engineering:
+
+| | Autoresearch | Godmode |
+|--|--|--|
+| Scope | ML training (single file) | All software engineering (126 skills) |
+| Agent model | Single agent | Up to 5 parallel agents per round |
+| Metric | val_bpb (fixed) | Any shell command returning a number |
+| Platform | Local GPU | Claude Code, Cursor, Gemini CLI, OpenCode, Codex |
+| Keep/Discard | git reset on worse | git reset + complexity tax thresholds |
+| Logging | results.tsv | .godmode/<skill>-results.tsv + session-log.tsv |
+| Loop | WHILE TRUE | WHILE goal_not_met AND budget_not_exhausted |
+
+Same DNA: measure everything, keep winners, discard losers, never stop.
 
 ---
 
@@ -486,6 +508,14 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide, including:
 - [Adding a New Platform Adapter](CONTRIBUTING.md#adding-a-new-platform-adapter) -- how to support a new AI coding tool
 - [Testing Your Changes](CONTRIBUTING.md#testing-your-skill) -- 6 test levels from readability to live execution
 - [Style Guide](CONTRIBUTING.md#skill-writing-style-guide) -- how to write skills that AI agents execute reliably
+
+---
+
+## Related Projects
+
+- [autoresearch](https://github.com/karpathy/autoresearch) — Karpathy's autonomous ML research framework (inspiration)
+- [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) — Anthropic's CLI for Claude
+- [superpowers](https://github.com/danielmeloalencar/superpowers) — Claude Code skill framework
 
 ---
 

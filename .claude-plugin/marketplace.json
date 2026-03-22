@@ -1,7 +1,7 @@
 {
   "name": "godmode",
   "version": "1.0.0",
-  "description": "Turn on Godmode for Claude Code. 126 skills. 7 subagents. Zero configuration. One command.",
+  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 126 skills, 7 subagents, 5 platforms. Zero configuration. One command.",
   "author": "godmode-team",
   "license": "MIT",
   "skills": [
