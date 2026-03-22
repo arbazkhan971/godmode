@@ -417,7 +417,7 @@ WHILE current_feature < total_features:
 4. NEVER skip ProGuard/R8 rules testing. Missing rules cause release builds
    to crash while debug builds work fine. Test release builds on device.
 
-5. EVERY image MUST be resized to display size before rendering.
+5. RESIZE EVERY image to display size before rendering.
    Never load a 4K image for a 100px thumbnail.
 
 ```

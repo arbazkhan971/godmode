@@ -296,7 +296,7 @@ SECURITY METRICS DASHBOARD:
 │ Container health: │
 │ Images in production: <N> │
 │ With CRITICAL CVEs: <N> │
-│ Using :latest tag: <N> (should be 0) │
+│ Using :latest tag: <N> (target 0)    │
 │ Non-root containers: <N>/<N> │
 │ │
 │ Trend: IMPROVING | STABLE | DEGRADING │
@@ -354,7 +354,7 @@ STOP CONDITIONS:
 
 - NEVER allow secrets to pass the security gate — secret scanning has ZERO exceptions and NO override process
 - NEVER use `:latest` for scanner images in CI — pin scanner versions to prevent silent policy changes
-- NEVER scan only on main branch — security issues MUST be caught in PRs before merge
+- NEVER scan only on main branch — CATCH security issues in PRs before merge
 - NEVER deploy unsigned container images to production — sign with cosign/notation and verify before deploy
 - NEVER store scanner tokens as plain environment variables — use CI/CD secret management
 - ALL CRITICAL/HIGH severity findings MUST block merge (no silent pass-through)

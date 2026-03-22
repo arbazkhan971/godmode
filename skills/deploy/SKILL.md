@@ -136,7 +136,7 @@ FEATURE FLAG ROLLOUT PLAN:
 
 Flag dependencies:
   payment-v2-api REQUIRES new-checkout-ui (cannot enable v2 without new UI)
-  new-recommendation INDEPENDENT (can be toggled separately)
+  new-recommendation INDEPENDENT (toggle separately)
 
 Kill switches:
   Each flag has a kill switch that disables it within 30 seconds
@@ -365,7 +365,7 @@ Columns: step, environment, strategy, canary_pct, error_rate, latency_p99, rollb
 
 ## Error Recovery
 - **Canary health check fails**: Automatically rollback canary traffic to zero. Investigate logs for the canary pods/instances. Check for configuration drift between canary and stable versions.
-- **Database migration fails mid-deploy**: Do not retry the migration blindly. Check for partial schema changes. Use idempotent migrations that can be re-run safely. If the migration is not reversible, restore from the pre-deploy backup.
+- **Database migration fails mid-deploy**: Do not retry the migration blindly. Check for partial schema changes. Use idempotent migrations that you re-run safely. If the migration is not reversible, restore from the pre-deploy backup.
 - **Rollback fails**: If automated rollback fails, manually set the deployment to the previous known-good image/version. Check that the rollback target is still available in the container registry. Verify database compatibility with the older version.
 - **Traffic spike during deployment**: Pause the canary promotion. Wait for traffic to stabilize. Resume only when error rate and latency return to baseline.
 - **Feature flag service is down**: Deploy without feature flags by keeping new code paths disabled by default. Never deploy with flags enabled if the flag service is unreachable.

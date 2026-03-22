@@ -1,7 +1,7 @@
 ---
 name: backup
 description: |
-  Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets, test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, "backup strategy", "disaster recovery", "what's our RPO?", "can we recover from", or when critical data infrastructure is being designed.
+  Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets, test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, "backup strategy", "disaster recovery", "what's our RPO?", "can we recover from", or when designing critical data infrastructure.
 ---
 
 # Backup — Backup & Disaster Recovery
@@ -188,7 +188,7 @@ PROCEDURE:
      a. Promote cross-region database replica
      b. Verify file storage is accessible in DR region
      c. Scale up application instances in DR region
-     d. Update DNS to point to DR region (TTL should be low: 60s)
+     d. Update DNS to point to DR region (set TTL low: 60s)
   3. Verify DR environment is serving traffic
   4. Communicate to stakeholders: estimated recovery, data loss assessment
   5. Monitor DR environment stability
@@ -337,10 +337,10 @@ WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
 MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 1. NEVER treat a backup as valid until a restore test has succeeded.
 2. NEVER store backups in the same failure domain as production (same region, same account).
-3. EVERY backup MUST be encrypted at rest — no exceptions for any data tier.
+3. ENCRYPT EVERY backup at rest — no exceptions for any data tier.
 4. EVERY backup job MUST alert on failure — silent backup failures are the worst kind.
 5. EVERY backup MUST have a TTL/retention policy — no infinite storage growth.
-6. RPO and RTO MUST be defined BEFORE designing backup strategy — business drives engineering.
+6. DEFINE RPO and RTO BEFORE designing backup strategy — business drives engineering.
 7. git commit backup configurations BEFORE testing — baseline for debugging.
 8. Automatic revert on regression: if backup config change causes production issues, revert immediately.
 9. NEVER skip quarterly DR tests — schedule them and treat them as P1 obligations.

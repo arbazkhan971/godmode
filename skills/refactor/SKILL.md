@@ -77,7 +77,7 @@ INLINE PATTERNS:
 Before making any changes, analyze the blast radius:
 
 ```bash
-# Find all files that will be affected
+# Find all files this change affects
 grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
 
 # Map the dependency graph
@@ -204,8 +204,8 @@ After all transformations are complete:
 npm test
 
 # Check that no functionality changed
-# Compare test count: should be same or higher
-# Compare coverage: should be same or higher
+# Compare test count: expect same or higher
+# Compare coverage: expect same or higher
 # ... (condensed)
 ```
 
@@ -267,7 +267,7 @@ refactor_targets = [list of files/modules to refactor, ordered by dependency dep
 
 WHILE refactor_targets is not empty AND current_iteration < max_iterations:
     target = refactor_targets.pop(0)
-    1. Run full test suite — MUST be green before touching anything
+    1. Run full test suite — MUST pass green before touching anything
     2. Analyze target: complexity score, coupling, number of dependents
     3. Plan transformation (extract, inline, move, rename, simplify)
     4. Apply transformation — ONE pattern per iteration
@@ -290,10 +290,10 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 4. NEVER skip the impact analysis step. Know every caller before changing a signature.
 5. NEVER delete code without verifying zero references (grep + type checker).
 6. ALWAYS run tests after every transformation. No batching "I'll test at the end."
-7. NEVER force-push refactoring branches. Every step must be revertable.
+7. NEVER force-push refactoring branches. Keep every step revertable.
 8. IF tests fail after a transformation, REVERT first, THEN diagnose. Do not debug forward.
 9. Coverage MUST NOT decrease after refactoring. If it does, add tests before proceeding.
-10. EVERY renamed symbol must be updated in comments, docs, and error messages — not just code.
+10. EVERY renamed symbol requires updates in comments, docs, and error messages — not just code.
 ```
 
 ## Output Format

@@ -309,10 +309,10 @@ Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 2. **Strangler fig by default.** Unless the codebase is small and downtime is acceptable, always prefer incremental migration over big bang rewrites. The strangler fig pattern allows continuous feature development alongside migration.
 3. **Parallel run for data integrity.** When data correctness is critical, run old and new systems side by side and compare outputs. Do not trust the new system until the match rate exceeds 99.9%.
 4. **Every migration is reversible.** Document the rollback plan before starting. If you cannot describe how to roll back, you are not ready to migrate forward.
-5. **Feature flags control the cutover.** Never switch traffic with a deployment. Use feature flags to control which system handles requests. Flags can be flipped instantly; deployments cannot.
+5. **Feature flags control the cutover.** Never switch traffic with a deployment. Use feature flags to control which system handles requests. Flip flags instantly; deployments cannot match that speed.
 6. **Migrate tests first.** Before migrating application code, migrate or create tests. Tests are the safety net that proves the migration preserves behavior.
 7. **Track and report progress.** Large migrations span weeks or months. Without visible progress tracking, stakeholders lose confidence and teams lose momentum.
-8. **One boundary at a time.** Extract one module, one endpoint, one component at a time. Each extraction is a self-contained unit of work that can be shipped, verified, and rolled back independently.
+8. **One boundary at a time.** Extract one module, one endpoint, one component at a time. Each extraction is a self-contained unit of work you ship, verify, and roll back independently.
 
 ## Flags & Options
 
@@ -368,7 +368,7 @@ FOR each component (fewest dependencies first):
 3. NEVER migrate without tests. If the old system lacks tests,
    add characterization tests BEFORE starting migration.
 
-4. NEVER remove the old system until the new system has been stable
+4. NEVER remove the old system until the new system runs stable
    in production for at least 2 weeks.
 
 5. ALWAYS use feature flags for cutover. Never switch traffic via deployment.

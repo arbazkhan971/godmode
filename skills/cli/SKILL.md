@@ -347,7 +347,7 @@ STEP\tCOMMAND\tLANGUAGE\tSTATUS\tDETAILS
 Print final summary: `CLI: {tool_name}, language: {lang}, commands: {N}. Parser: {library}. Distribution: {methods}. Tests: {pass}/{total}. Shell completions: {yes/no}.`
 
 ## Success Criteria
-All of these must be true before marking the task complete:
+Verify all of these before marking the task complete:
 1. All planned commands work with correct argument parsing (required args, optional flags, defaults).
 2. `--help` output is present for every command and subcommand with descriptions and examples.
 3. Exit codes are correct: 0 for success, 1 for user error, 2 for system error.

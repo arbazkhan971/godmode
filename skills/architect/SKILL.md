@@ -247,5 +247,5 @@ ARCHITECTURE HEALTH SCORECARD:
 |---------|--------|
 | Architecture decision contested by team | Document tradeoffs in an ADR (Architecture Decision Record). Present alternatives with pros/cons. Let data decide — prototype competing approaches if needed. |
 | Chosen pattern does not fit after implementation starts | Revisit constraints. If <30% implemented, pivot early. If >30%, adapt the pattern rather than restarting. Document the pivot in the ADR. |
-| Dependency creates vendor lock-in | Introduce an adapter/port layer. Abstract the dependency behind an interface so it can be swapped. |
+| Dependency creates vendor lock-in | Introduce an adapter/port layer. Abstract the dependency behind an interface so you swap it easily. |
 | Performance bottleneck in chosen architecture | Profile first. Check if the bottleneck is in the architecture or implementation. Add caching, async processing, or read replicas before restructuring. |

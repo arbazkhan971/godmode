@@ -360,7 +360,7 @@ Scoring:
 3. **CSS Grid for layout, Flexbox for alignment.** Grid is for 2D page-level layout (rows and columns). Flexbox is for 1D component-level alignment (a row of buttons, a nav bar). Using the right tool simplifies the code.
 4. **Fluid typography eliminates breakpoints.** `clamp(1rem, 0.9rem + 0.5vw, 1.125rem)` scales smoothly between mobile and desktop. No media queries needed for type. Fewer breakpoints means less code and fewer edge cases.
 5. **Images are the biggest responsive problem.** An unoptimized 2400px hero image on a 320px phone wastes bandwidth. Use `srcset` for resolution switching, `<picture>` for art direction, and modern formats (avif, webp) with fallbacks.
-6. **Touch targets must be at least 44x44px.** WCAG 2.5.5 requires minimum 44x44 CSS pixels. On touch devices, users cannot aim a 1px cursor. Buttons, links, and interactive elements must be large enough to tap without mis-tapping.
+6. **Size touch targets at least 44x44px.** WCAG 2.5.5 requires minimum 44x44 CSS pixels. On touch devices, users cannot aim a 1px cursor. Size buttons, links, and interactive elements large enough to tap without mis-tapping.
 7. **Print is a viewport too.** If users will print the content (articles, invoices, reports, documentation), add a print stylesheet. Hide navigation, show link URLs, control page breaks, and ensure readability in black and white.
 
 ## Flags & Options
@@ -403,7 +403,7 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 4. EVERY image must have srcset + sizes OR be an SVG. No single-resolution raster images.
 5. EVERY interactive element must have a minimum 44x44px touch target.
 6. NEVER mix min-width and max-width media queries. Pick one direction (mobile-first = min-width).
-7. EVERY page must be tested at 320px minimum width. No horizontal overflow allowed.
+7. TEST EVERY page at 320px minimum width. No horizontal overflow allowed.
 8. NEVER use viewport units for font-size without clamp(). Unbound vw = unreadable text.
 9. EVERY layout must work without JavaScript. CSS-only responsive behavior.
 10. ALWAYS set explicit width and height (or aspect-ratio) on images/video to prevent CLS.
@@ -466,7 +466,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 
 

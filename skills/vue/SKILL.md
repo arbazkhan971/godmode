@@ -416,5 +416,5 @@ Print: `Vue: {action} complete. Components: {N}. Stores: {N}. Composables: {N}. 
 |---------|--------|
 | `vue-tsc` type errors | Read error output line by line. Fix prop type mismatches, missing generic args, and incorrect emit signatures first. Re-run after each batch. |
 | HMR not reflecting changes | Check for circular imports in composables. Verify Vite config `optimizeDeps.include` lists heavy deps. Restart dev server as last resort. |
-| Pinia store not reactive after destructure | Use `storeToRefs()` for state/getters. Direct destructure loses reactivity. Actions can be destructured directly. |
+| Pinia store not reactive after destructure | Use `storeToRefs()` for state/getters. Direct destructure loses reactivity. Destructure actions directly. |
 | Hydration mismatch (Nuxt) | Wrap browser-only code in `<ClientOnly>` or `onMounted`. Avoid `Date.now()` or `Math.random()` during SSR. |

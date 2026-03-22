@@ -287,5 +287,5 @@ PREFER the simpler resilience approach:
 |---------|--------|
 | Circuit breaker never opens | Check failure threshold configuration. Verify error counting includes timeouts. Test with forced failures. |
 | Retry storm amplifies outage | Add exponential backoff with jitter. Set max retries. Add circuit breaker before retry logic. Monitor retry rate. |
-| Fallback returns stale data too long | Set max staleness on cached fallback. Add monitoring for fallback activation. Alert when primary has been down >threshold. |
+| Fallback returns stale data too long | Set max staleness on cached fallback. Add monitoring for fallback activation. Alert when primary stays down >threshold. |
 | Bulkhead rejects too many requests | Tune semaphore/thread pool size. Check for slow downstream services consuming all slots. Add timeout to bulkhead operations. |

@@ -232,7 +232,7 @@ Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/asy
 - NEVER use the default User model — always create a custom user model with AbstractUser at project start
 - NEVER use synchronous HTTP calls (requests) in async views — use httpx.AsyncClient instead
 - NEVER skip database indexes on fields used in filter(), order_by(), or WHERE clauses
-- ALL N+1 queries MUST be eliminated with select_related (ForeignKey) and prefetch_related (ManyToMany)
+- ELIMINATE ALL N+1 queries with select_related (ForeignKey) and prefetch_related (ManyToMany)
 - ALL admin ModelAdmin classes MUST use list_select_related to prevent N+1 in the admin interface
 - ALL API list endpoints MUST have pagination configured — unbounded queries are not acceptable
 
@@ -327,7 +327,7 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 IF manage.py check fails:
   1. Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS)
 IF tests fail:
-  1. Check that test database can be created (permissions)
+  1. Check that the system creates the test database successfully (permissions)
 IF migration errors:
   1. Conflicting migrations → run makemigrations --merge
 IF N+1 query detected:
@@ -375,6 +375,6 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 

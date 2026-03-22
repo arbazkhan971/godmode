@@ -344,8 +344,8 @@ EXIT when all strings extracted OR user requests stop
 1. NEVER concatenate translated strings — use ICU MessageFormat with placeholders. No exceptions.
 2. NEVER use binary plural logic (`count === 1 ? ... : ...`) — use CLDR plural rules via the i18n library.
 3. NEVER hardcode locale-specific formats (dates, numbers, currency) — use `Intl` APIs or equivalent.
-4. NEVER skip RTL audit if any target locale is RTL — every layout must be verified.
-5. NEVER expose raw Eloquent/ORM models in translation resource files — keys must be semantic.
+4. NEVER skip RTL audit if any target locale is RTL — verify every layout.
+5. NEVER expose raw Eloquent/ORM models in translation resource files — keep keys semantic.
 6. NEVER commit translation files with missing placeholders — validate placeholder preservation before merge.
 7. ALWAYS use full locale codes (`en-US`, not `en`) — locale is not language.
 8. ALWAYS add translator context/notes for ambiguous strings ("Save" can mean save-to-disk or save-money).

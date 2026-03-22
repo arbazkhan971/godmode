@@ -290,7 +290,7 @@ HARD RULES — NEVER VIOLATE:
 ## Key Behaviors
 
 1. **Small PRs are non-negotiable.** A 500-line PR will get rubber-stamped. Four 125-line PRs will get thoughtful reviews. Always split large changes.
-2. **Description is for the reviewer.** Write the PR description as if the reviewer knows nothing about what you have been working on. Give them the context to review efficiently.
+2. **Description is for the reviewer.** Write the PR description as if the reviewer knows nothing about your recent work. Give them the context to review efficiently.
 3. **Self-review first.** Read your own diff before clicking "Request review." You will catch 30% of issues yourself and save your reviewer time.
 4. **Stacked PRs for large features.** If a feature takes more than 200 lines, plan the stack before writing code. Make each PR independently reviewable and mergeable.
 5. **Automate the boring parts.** Automate labels, assignment, size checks, and template enforcement. Humans focus on code quality, not metadata.

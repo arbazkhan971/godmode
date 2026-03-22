@@ -81,7 +81,7 @@ Check: types categorized, naming enforced, owner assigned, cleanup dates set, ki
 5. **Sticky bucketing is mandatory.** Same user, same variant, every request.
 6. **Test both paths.** On, off, and transition.
 7. **Default to off, fail to off.** Safe defaults when flag service unreachable.
-8. **Flag evaluation must be fast.** In-memory with periodic sync.
+8. **Keep flag evaluation fast.** In-memory with periodic sync.
 
 ## Flags & Options
 

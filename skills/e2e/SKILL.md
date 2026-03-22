@@ -254,7 +254,7 @@ CROSS-BROWSER ISSUES FOUND:
 
 1. **Never use CSS selectors as test locators.** `div.class > span:nth-child(3)` breaks on any DOM change. Use `data-testid`, `getByRole`, or `getByLabel` exclusively.
 2. **Never use fixed `sleep()` or `waitForTimeout()` in tests.** Use auto-waiting assertions (`expect(locator).toBeVisible()`) that resolve as soon as the condition is met.
-3. **Never depend on test execution order.** Each test must be fully independent. Create its own data in `beforeEach`, clean up in `afterEach`.
+3. **Never depend on test execution order.** Keep each test fully independent. Create its own data in `beforeEach`, clean up in `afterEach`.
 4. **Never put selectors directly in test files.** All locators live in Page Object classes. Tests call page object methods only.
 5. **Never skip flaky test investigation.** A flaky test is either fixed or deleted within 48 hours. No `test.skip()` without a linked issue.
 

@@ -434,7 +434,7 @@ IF hydration mismatch occurs:
  4. Check that stores are not shared across requests (use context instead)
 
 IF load function errors:
- 1. Verify +page.server.ts vs +page.ts placement (server secrets must be in.server)
+ 1. Verify +page.server.ts vs +page.ts placement (keep server secrets in .server)
  2. Check that error() and redirect() are thrown, not returned
  3. Verify parent() calls are awaited in nested layouts
  4. Check that invalidateAll() or invalidate() is called after mutations

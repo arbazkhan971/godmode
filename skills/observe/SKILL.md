@@ -10,7 +10,7 @@ description: |
 - User invokes `/godmode:observe`
 - User says "add monitoring", "set up logging", "create alerts"
 - User says "define SLOs", "build dashboard", "add tracing"
-- Application is being shipped without observability instrumentation
+- Team ships application without observability instrumentation
 - Incident response reveals missing visibility into system behavior
 - Pre-ship check identifies observability gaps
 
@@ -339,7 +339,7 @@ DASHBOARD LAYOUT — Service Overview:
 ## Key Behaviors
 
 1. **Three pillars are mandatory.** Metrics, logs, and traces are not optional. Each gives visibility that the others cannot.
-2. **Structured logs only.** No `console.log("something happened")`. Every log entry must be structured JSON with consistent fields.
+2. **Structured logs only.** No `console.log("something happened")`. Format every log entry as structured JSON with consistent fields.
 3. **Make alerts actionable.** If an alert fires and the on-call cannot act on it, the alert is noise. Remove or fix it.
 4. **SLOs drive decisions.** Error budget remaining determines whether you ship features or fix reliability. Define SLOs before you need them.
 5. **Dashboards tell stories.** A dashboard is not a wall of graphs. It answers specific questions: "Is the service healthy?" "What changed?"
@@ -357,7 +357,7 @@ DASHBOARD LAYOUT — Service Overview:
 
 ## HARD RULES
 
-1. **NEVER ship without at least metrics + structured logging.** Tracing can be added later. Metrics and logs are day-one requirements.
+1. **NEVER ship without at least metrics + structured logging.** Add tracing later. Metrics and logs are day-one requirements.
 2. **NEVER use `console.log` / `print` in production code.** All logging goes through the structured logger with consistent fields.
 3. **NEVER put high-cardinality values in metric labels.** `user_id`, `request_id`, `trace_id` go in logs/traces, not metric labels. Violating this kills Prometheus/DataDog.
 4. **NEVER create alerts without a `for` duration.** Minimum 5 minutes for warnings, 2 minutes for critical. No flapping alerts.

@@ -28,7 +28,7 @@ Consistency Requirement: Strong | Eventual (seconds) | Eventual (minutes)
 Throughput: <events per second — current and projected>
 Consumer Count: <number of services consuming events>
 Ordering Requirement: None | Per-entity | Global
-Retention: <how long events must be stored>
+Retention: <how long to store events>
 Replay Requirement: Yes (audit/rebuild) | No
 Compliance: <GDPR, HIPAA, SOX requirements affecting event data>
 ```
@@ -348,11 +348,11 @@ Commit: `"event: <system> -- <N> event types, <broker>, <pattern (ES/CQRS/pub-su
 1. **Events are facts, not commands.** An event says "OrderPlaced" (past tense, something happened). A command says "PlaceOrder" (imperative, do something). Do not conflate them.
 2. **Events are immutable.** Once published, an event cannot be changed. If the data was wrong, publish a corrective event (e.g., OrderAmountCorrected). Never mutate event history.
 3. **Schema evolution is mandatory.** Events will change. Design for backward and forward compatibility from day one. Use a schema registry to enforce compatibility.
-4. **Every consumer must be idempotent.** Messages will be delivered more than once. Processing the same event twice must produce the same result.
+4. **Keep every consumer idempotent.** The broker delivers messages more than once. Processing the same event twice produces the same result.
 5. **Dead letter queues are not optional.** Every consumer needs a DLQ for messages that cannot be processed. Monitor DLQ depth and alert on non-zero.
 6. **Correlation IDs trace the full flow.** Every event in a business flow shares the same correlation_id. Without it, debugging distributed event chains is impossible.
 7. **Consumer lag is the most important metric.** If consumers fall behind, the system is degrading. Alert on growing lag before it becomes a crisis.
-8. **Projections are disposable.** Read models can be deleted and rebuilt from the event store. Design projections with this in mind.
+8. **Projections are disposable.** Delete and rebuild read models from the event store at any time. Design projections with this in mind.
 
 ## Flags & Options
 

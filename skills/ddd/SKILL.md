@@ -117,7 +117,7 @@ AGGREGATES:
 │  Events: OrderPlaced, OrderCancelled,           │
 │          OrderShipped, OrderDelivered            │
 │  Invariants:                                    │
-│  - Order total must be > 0                      │
+│  - Order total stays > 0                         │
 │  - Cannot cancel a delivered order              │
 │  - Cannot ship without payment                  │
 └─────────────────────────────────────────────────┘
@@ -204,7 +204,7 @@ AGGREGATE BOUNDARY RULES:
 4. REFERENCE RULE: Aggregates reference each other by ID only, never
    by direct object reference.
 
-5. CASCADE RULE: Only the aggregate root can be referenced from outside.
+5. CASCADE RULE: External code references only the aggregate root.
    Internal entities are accessed through the root.
 ```
 
@@ -356,7 +356,7 @@ IF user asks to start with database schema:
 
 IF aggregate grows beyond 4 entities:
   → Flag: "Aggregate {name} has {N} entities — exceeds recommended maximum of 4"
-  → Analyze which entities can be extracted into separate aggregates
+  → Analyze which entities to extract into separate aggregates
   → Verify: extracted entities communicate via domain events, not direct references
 
 IF same term means different things in different contexts:

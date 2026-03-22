@@ -68,7 +68,7 @@ import { z } from 'zod';
 
 export const registrationSchema = z.object({
   name: z.string()
-    .min(2, 'Name must be at least 2 characters')
+    .min(2, 'Name requires at least 2 characters')
 # ... (condensed)
 ```
 
@@ -315,7 +315,7 @@ FORM ARCHITECTURE REPORT:
 1. **Validation runs on both client and server.** Client-side validation is for UX (fast feedback). Server-side validation is for security (never trust the client). Share the schema (Zod) between both.
 2. **Errors are shown on blur, not on mount.** Showing errors before the user has interacted with a field is hostile UX. Validate on blur for first visit, on change after the first error is shown.
 3. **Focus management is mandatory.** On submit failure, focus must move to the first invalid field. On step transition, focus must move to the first field of the new step. Lost focus means lost users.
-4. **Every field has a visible label.** Placeholder text is not a label. Floating labels that disappear are not acceptable. Labels must be always visible, always associated via htmlFor/id.
+4. **Every field has a visible label.** Placeholder text is not a label. Floating labels that disappear are not acceptable. Keep labels always visible, always associated via htmlFor/id.
 5. **Multi-step forms persist state.** Navigating back must restore previous values. Page refresh should not lose progress (use sessionStorage). Only clear on successful submission.
 6. **File uploads need comprehensive validation.** Check file type, file size, and file count before uploading. Show progress. Provide preview for images. Make the drop zone keyboard-accessible.
 7. **Form state libraries exist for a reason.** For anything beyond 3 fields, use React Hook Form (or equivalent). Manual state management with useState leads to re-render storms, validation inconsistency, and lost edge cases.

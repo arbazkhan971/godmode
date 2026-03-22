@@ -151,7 +151,7 @@ Example row:
 
 ## Anti-Patterns
 1. **Never verify in your head.** "The code looks correct" is not verification. Run the command. Read the output. Report what happened.
-2. **Never trust cached results.** If ANY file has been edited since the last verify, all previous results are void. Re-run.
+2. **Never trust cached results.** If ANY file changed since the last verify, all previous results are void. Re-run.
 3. **Never filter or truncate output.** Read all of stdout and stderr. A warning on line 847 can invalidate a "PASS" on line 1.
 4. **Never accept partial pass as pass.** 99/100 tests passing is a FAIL if the claim is "all tests pass". 95% coverage is FAIL if the target is 96%.
 5. **Never combine multiple claims in one verify.** Each claim gets its own command, its own run, its own verdict. "Tests pass and coverage is 80%" is two verifications.
@@ -229,7 +229,7 @@ WHILE current_layer < max_layers:
     PURPOSE: Verify individual components work correctly in isolation.
 
     1. IDENTIFY unit test scope:
-       - Parse the claim to determine which module/function is being verified
+       - Parse the claim to identify the target module/function
        - Find corresponding unit test files
        - IF no unit tests exist for the claimed functionality: FAIL — "No unit tests cover this claim"
 
@@ -292,7 +292,7 @@ WHILE current_layer < max_layers:
        - Are there e2e/acceptance tests for this behavior?
        - Does the application need to be running for these tests?
 
-    2. IF application must be running:
+    2. IF the application requires a running server:
        Start application in test mode: {dev_cmd} or {start_cmd}
        Wait for ready signal (port listening, health check)
 
@@ -405,12 +405,12 @@ EVIDENCE STANDARDS (for auditable verification):
    - Duration in milliseconds
    - File path for retrieval
 
-2. EVERY evidence file must be immutable:
+2. EVERY evidence file stays immutable:
    - Write once, never modify
    - Timestamped filename prevents collisions
    - Stored in /tmp/godmode-verify-* or .godmode/verify-evidence/
 
-3. EVERY verification must be reproducible:
+3. EVERY verification stays reproducible:
    - Log the exact command (not paraphrased)
    - Log the working directory
    - Log relevant environment variables (without values for secrets)
@@ -429,7 +429,7 @@ EVIDENCE STANDARDS (for auditable verification):
    - If 3 runs produce different results: verdict = FLAKY (not PASS or FAIL)
    - Flaky tests undermine the entire verification chain
    - Report flaky tests separately: .godmode/flaky-tests.tsv
-   - Flaky tests must be fixed or quarantined before claiming verification
+   - Fix or quarantine flaky tests before claiming verification
 ```
 
 ## Keep/Discard Discipline

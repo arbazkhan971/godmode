@@ -395,7 +395,7 @@ STOP when ANY of these are true:
   - A rollback was triggered (investigate before retrying)
 
 DO NOT STOP just because:
-  - HPA is not yet configured (pods should be healthy first, then add autoscaling)
+  - HPA is not yet configured (get pods healthy first, then add autoscaling)
   - Network policies are not yet applied (apply after core deployment is stable)
 ```
 
@@ -448,5 +448,5 @@ Columns: iteration, task, namespace, resources_created, resources_modified, heal
 - **ImagePullBackOff**: Verify image exists in registry. Check `imagePullSecrets` on the service account. Verify registry credentials are valid and not expired.
 - **Service returns 503**: Check if endpoints exist (`kubectl get endpoints <service>`). Verify readiness probe is passing. Check if the pod labels match the service selector.
 - **HPA not scaling**: Verify metrics-server is running. Check `kubectl describe hpa` for conditions. Verify resource requests are set (HPA needs requests to calculate utilization).
-- **ConfigMap/Secret changes not picked up**: Pods must be restarted to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
+- **ConfigMap/Secret changes not picked up**: Restart pods to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
 

@@ -314,7 +314,7 @@ MODEL MONITORING DASHBOARD:
 2. **Shadow mode before live traffic.** When possible, run new models in shadow mode first — they receive real traffic but their responses are not returned to users. Compare against champion silently.
 3. **Canary before full rollout.** Start with 1-5% traffic. Watch error rates and latency. Only increase if stable.
 4. **Monitor continuously, not at deploy time.** Drift happens gradually. Set up alerts for degradation, not outages.
-5. **Automate retraining, but gate deployment.** Retraining can be automated. Deployment should require validation gate (A/B test or human review).
+5. **Automate retraining, but gate deployment.** Automate retraining freely. Require a validation gate (A/B test or human review) for deployment.
 6. **Keep rollback instant.** Always maintain the previous champion model ready to serve. Rollback should take seconds, not minutes.
 
 ## Flags & Options
@@ -372,7 +372,7 @@ WHILE current_phase != "complete":
 
 ```
 1. NEVER deploy a model without completing the readiness checklist.
-   Latency, bias, input validation, and fallback MUST be verified.
+   VERIFY latency, bias, input validation, and fallback.
 
 2. NEVER send 100% of traffic to a new model on day one.
    Start with shadow mode, then 5% canary, then ramp.
@@ -381,7 +381,7 @@ WHILE current_phase != "complete":
    Rollback must take seconds, not minutes.
 
 4. NEVER automate model promotion without a validation gate.
-   Retraining can be automated; deployment requires A/B test or human review.
+   Automate retraining freely; deployment requires A/B test or human review.
 
 5. EVERY model in production MUST have drift monitoring with alerting.
    Check feature drift (PSI) and performance degradation continuously.

@@ -95,7 +95,7 @@ Pattern 1 — Request Pipeline (Express/Fastify):
   app.use(compress())            // 7. Response compression
   // --- Routes execute here ---
   app.use(notFoundHandler)       // 8. 404 handler
-  app.use(errorHandler)          // 9. Global error handler (MUST be last)
+  app.use(errorHandler)          // 9. Global error handler (ALWAYS place last)
 
 ```
 

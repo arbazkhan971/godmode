@@ -162,7 +162,7 @@ public class QuartzConfig {
 
 ### Step 3: Idempotency for Retries
 
-Every scheduled job MUST be safe to run more than once for the same logical execution window:
+Every scheduled job MUST safely run more than once for the same logical execution window:
 
 ```
 IDEMPOTENCY STRATEGIES FOR SCHEDULED JOBS:
@@ -175,7 +175,7 @@ IDEMPOTENCY STRATEGIES FOR SCHEDULED JOBS:
 +---------------------------------------------------------+
 
 Principle: derive the idempotency key from the SCHEDULE, not the job ID.
-  - Job will be re-created on restart with a new ID
+  - The system re-creates the job on restart with a new ID
   - Schedule window (e.g., "2025-03-15T09:00Z") is stable
   - Use: `{job-name}:{schedule-window}` as the key
 ```
@@ -377,7 +377,7 @@ Use Redis-backed (BullMQ, Sidekiq-Cron) when:
 
 ## Key Behaviors
 
-1. **Cron is not fire-and-forget.** Every scheduled job must be monitored for missed runs, failures, and duration anomalies. A job that silently stops running is worse than a job that loudly fails.
+1. **Cron is not fire-and-forget.** Monitor every scheduled job for missed runs, failures, and duration anomalies. A job that silently stops running is worse than a job that loudly fails.
 2. **Idempotency is mandatory.** Schedulers fire duplicate runs during restarts, leader failovers, and clock skew. Every handler must produce the same result when called twice for the same schedule window.
 3. **Distributed locking is required in production.** If you run more than one instance of your application, you need a distributed lock to prevent duplicate job fires. No exceptions.
 4. **Overlap protection is not optional.** A job that runs every 5 minutes but takes 7 minutes will overlap and compound. Use `max_instances: 1`, `coalesce: true`, or a lock that spans the execution.
@@ -463,7 +463,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One job is complex (still configure the simpler ones)
-  - Monitoring is not yet configured (that can be a separate pass)
+  - Monitoring is not yet configured (handle that in a separate pass)
 ```
 
 ## Simplicity Criterion

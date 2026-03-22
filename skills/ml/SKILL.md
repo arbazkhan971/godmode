@@ -206,7 +206,7 @@ Statistical significance:
 
 ## Key Behaviors
 
-1. **Reproducibility is non-negotiable.** Every experiment must record: code version (git SHA), data version, hyperparameters, random seeds, and environment. Anyone should be able to reproduce the result.
+1. **Reproducibility is non-negotiable.** Every experiment must record: code version (git SHA), data version, hyperparameters, random seeds, and environment. Anyone reproduces the result by following these records.
 2. **Baselines first.** Never evaluate a model without a baseline. Even a naive baseline (majority class, mean prediction) provides essential context.
 3. **Statistical significance matters.** A 0.2% improvement could be noise. Test significance before claiming improvement.
 4. **Evaluation on held-out test set.** Never tune hyperparameters on the test set. That is the final, one-time evaluation. Validation set is for tuning.

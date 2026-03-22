@@ -94,7 +94,7 @@ Components: extractor, transformer, loader, quality checks, orchestrator config,
 1. **Design before coding.** Map full data flow before writing code.
 2. **Idempotency is non-negotiable.** Use upserts, watermarks, deduplication.
 3. **Data quality is part of the pipeline.** Checks between every stage.
-4. **Transformations must be pure functions.** No side effects.
+4. **Write transformations as pure functions.** No side effects.
 5. **Schema contracts at every boundary.** Fail loudly on unexpected changes.
 6. **Dead-letter queues save investigations.** Never silently drop records.
 7. **Reconcile source-target counts after every load.**

@@ -73,8 +73,8 @@ Create tasks with full metadata. Each task:
 Rules for decomposition:
 - One responsibility per task. If you need "and" to describe it, split it.
 - `files[]` max 5. More than 5 = split into subtasks with a shared interface.
-- `done_when` must be a shell command that exits 0 when complete. No subjective criteria.
-- `skill` is the godmode skill that will execute: usually `build`, but can be `test`, `fix`, `secure`.
+- `done_when` requires a shell command that exits 0 when complete. No subjective criteria.
+- `skill` is the godmode skill that will execute: usually `build`, but also supports `test`, `fix`, `secure`.
 
 ### Step 4: Build Dependency Graph
 Arrange tasks into execution rounds:
@@ -91,7 +91,7 @@ Topological sort. Group independent tasks into rounds (max 5 tasks per round). E
 - Data-layer tasks before API tasks before UI tasks
 - Schema/type tasks before implementation tasks
 - No circular dependencies (detect and error)
-- Tasks touching the same file must be in different rounds (sequential)
+- Place tasks touching the same file in different rounds (sequential)
 
 ### Step 5: Validate Plan Integrity
 Run validation checks before writing:
@@ -180,7 +180,7 @@ The plan is done when ALL of the following are true:
 - **Too many tasks (>20):** Split into phases. Write `.godmode/plan-phase-1.yaml` and `.godmode/plan-phase-2.yaml`. Each phase independently buildable.
 
 ## Anti-Patterns
-1. **Vague done_when:** `"works correctly"`, `"looks good"`, `"is complete"` are never valid. Must be a shell command with exit code 0.
+1. **Vague done_when:** `"works correctly"`, `"looks good"`, `"is complete"` are never valid. Write a shell command with exit code 0.
 2. **Monolith tasks:** A task touching 8 files across 3 layers. Split it. Max 5 files, one layer per task.
 3. **Over-sequencing:** Making every task depend on the previous one when they could run in parallel. Check: can task B start before task A finishes? If yes, no dependency edge.
 4. **Missing test tasks:** Plan has 10 implementation tasks and 0 test tasks. Every new module needs a test task in the plan.
@@ -395,7 +395,7 @@ WHILE current_iteration < max_iterations:
     2. IDENTIFY slack (non-critical tasks):
        FOR each task NOT on the critical path:
          slack = latest_start - earliest_start
-         IF slack > 2 hours: task can be deferred without affecting delivery
+         IF slack > 2 hours: defer the task without affecting delivery
 
     3. REPORT:
        CRITICAL PATH:
@@ -405,7 +405,7 @@ WHILE current_iteration < max_iterations:
        Total plan duration (sequential): 8.3 hours
        Parallelism speedup: 1.6x
 
-       Non-critical tasks (can be reordered):
+       Non-critical tasks (reorder freely):
        - task-02 (60m) — slack: 2.5 hours
        - task-04 (180m) — slack: 0 hours (also on critical path)
 
@@ -476,5 +476,5 @@ STOP when FIRST of:
 If your platform lacks `Agent()` or worktree isolation:
 - Plan generation itself requires no parallel agents — runs identically on all platforms.
 - When writing `agent: true|false` on tasks, set `agent: false` for all tasks if the platform cannot dispatch agents.
-- The resulting plan will be consumed by `/godmode:build`, which handles sequential fallback independently.
+- `/godmode:build` consumes the resulting plan and handles sequential fallback independently.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.

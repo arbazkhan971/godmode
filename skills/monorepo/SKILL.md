@@ -69,7 +69,7 @@ RULES:
   apps/ CANNOT import other apps/ — BLOCKED
   packages/ CANNOT import apps/ — BLOCKED
   No circular dependencies — BLOCKED
-  All cross-package deps must be explicit — ENFORCED
+  Declare all cross-package deps explicitly — ENFORCED
 
 ENFORCEMENT:
   Nx: @nx/enforce-module-boundaries with sourceTag/onlyDependOnLibsWithTags
@@ -160,7 +160,7 @@ apps/+packages/ directories, multiple package.json files at depth 2+.
 4. apps/ MUST NOT import other apps/.
 5. ALWAYS commit lock file. Use --frozen-lockfile in CI.
 6. EVERY PR: only build/test affected packages.
-7. Shared config MUST be centralized in packages/config/.
+7. CENTRALIZE shared config in packages/config/.
 8. NEVER hoist all deps to root. Causes phantom dependency problems.
 
 ## Iterative Health Protocol

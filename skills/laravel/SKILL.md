@@ -147,7 +147,7 @@ Rules:
 - Use Action classes for complex single operations — one public method: `execute()`
 - Use DTOs instead of arrays for passing structured data between layers
 - Constructor injection over facade usage in application code — facades are for convenience, DI is for testability
-- Use `DB::transaction()` for operations that must be atomic
+- Use `DB::transaction()` for operations requiring atomicity
 
 ### Step 4: Queue System, Events & Broadcasting
 Handle async work and real-time updates:
@@ -181,7 +181,7 @@ ASYNC ARCHITECTURE:
 ```
 
 Rules:
-- Jobs MUST be idempotent — safe to retry without side effects
+- Jobs MUST stay idempotent — safe to retry without side effects
 - Use `$backoff` array for exponential backoff on retries
 - Use `WithoutOverlapping` middleware to prevent concurrent processing of the same entity
 - Use events for side effects (email, notification, logging) — keep the main action clean
@@ -320,7 +320,7 @@ Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
 2. **API Resources, always.** Never return raw Eloquent models from controllers. API Resources control the shape of your response and decouple your API from your database schema.
 3. **Prevent lazy loading.** Enable `Model::preventLazyLoading()` in development to catch N+1 queries before they reach production.
 4. **Events for side effects.** Email, notifications, analytics, logging — put them in event listeners. Keep your primary action clean and testable.
-5. **Jobs must be idempotent.** Queued jobs will be retried on failure. Design them so that running twice produces the same result as running once.
+5. **Keep jobs idempotent.** The queue retries failed jobs. Design them so that running twice produces the same result as running once.
 6. **Pest for testing.** Pest's expressive syntax makes tests readable and maintainable. Use fake facades to isolate side effects.
 7. **Cache everything in production.** Run `config:cache`, `route:cache`, `view:cache`, and `event:cache` in production. The performance difference is significant.
 
@@ -329,11 +329,11 @@ Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
 2. NEVER use `$guarded = []` — explicitly define `$fillable` on every model. Mass assignment vulnerabilities are real.
 3. NEVER put business logic in controllers — controllers receive requests and return responses. Logic belongs in Action/Service classes.
 4. NEVER use inline validation in controllers — use Form Request classes. They are reusable, testable, and self-documenting.
-5. NEVER process heavy work synchronously — email, PDF, payments, and external API calls MUST be queued.
+5. NEVER process heavy work synchronously — queue email, PDF, payments, and external API calls.
 6. NEVER reference `env()` outside config files — use `config()` helper in application code.
 7. NEVER skip authorization — every endpoint must check Policies or Gates. No exceptions.
 8. ALWAYS enable `Model::preventLazyLoading()` in development — catch N+1 queries before production.
-9. ALWAYS use `DB::transaction()` for operations that must be atomic.
+9. ALWAYS use `DB::transaction()` for operations requiring atomicity.
 10. ALWAYS use backed enums (PHP 8.1+) for status fields and `$casts` for type safety.
 
 ## Auto-Detection
@@ -481,6 +481,6 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 

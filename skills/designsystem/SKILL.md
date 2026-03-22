@@ -90,9 +90,9 @@ Transition: Run /godmode:ui for component audit, /godmode:a11y for accessibility
 ## Key Behaviors
 1. **Tokens are the single source of truth.** Every visual decision is a token.
 2. **Three-tier architecture is mandatory.** Primitives -> Semantic -> Component.
-3. **Component APIs must be predictable.** Same prop naming, composition, typing everywhere.
+3. **Keep component APIs predictable.** Same prop naming, composition, typing everywhere.
 4. **Theming is infrastructure.** Dark mode requires complete semantic token layer.
-5. **Pipeline must be automated.** Manual sync guarantees drift.
+5. **Automate the pipeline.** Manual sync guarantees drift.
 6. **Version like a product.** Semver, changelogs, migration guides.
 7. **Storybook is the documentation.** If not in Storybook, it does not exist.
 

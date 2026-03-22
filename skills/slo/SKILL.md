@@ -35,7 +35,7 @@ Traffic Pattern: <steady | diurnal | spiky | seasonal>
 Request Volume: <approximate requests per second or per day>
 ```
 
-If the user has not provided context, ask: "What does this service do and who are its users? The answers determine which SLIs matter and how aggressive the SLO targets should be."
+If the user has not provided context, ask: "What does this service do and who are its users? The answers determine which SLIs matter and how aggressively to set SLO targets."
 
 ### Step 2: SLA vs SLO vs SLI -- Establish the Hierarchy
 Clarify the three levels before defining anything:
@@ -135,7 +135,7 @@ ERROR BUDGET REFERENCE TABLE:
 ```
 
 ### Step 6: Burn Rate Alerts -- Multi-Window, Multi-Burn-Rate
-Configure alerting based on how fast the error budget is being consumed:
+Configure alerting based on how fast errors consume the budget:
 
 ```
 BURN RATE CONCEPT:
@@ -278,7 +278,7 @@ Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
 
 1. **SLOs are the contract between the service and its users.** Without SLOs, reliability is a feeling, not a fact. Define them explicitly, measure them continuously, and use them to make decisions.
 2. **Error budgets turn reliability into an engineering tool.** When budget is healthy, ship fast. When budget is depleted, stop and fix. This creates a self-regulating system where velocity and reliability are in dynamic equilibrium.
-3. **Burn rate alerts replace threshold alerts.** Do not alert on "error rate > 1%". Alert on "error budget is being consumed N times faster than sustainable". This connects the alert to business impact.
+3. **Burn rate alerts replace threshold alerts.** Do not alert on "error rate > 1%". Alert on "errors consuming the budget N times faster than sustainable". This connects the alert to business impact.
 4. **Composite SLOs reflect user experience.** A user journey that spans five services has an SLO that is the product of all five. Optimize the weakest link, not the strongest.
 5. **SLO review cadence prevents drift.** Weekly checks catch acute issues. Monthly reviews adjust tactics. Quarterly reviews adjust strategy and targets.
 6. **Release gating with error budgets prevents preventable outages.** If the budget is already low, a risky deployment could breach the SLA. Gate the deploy until budget recovers.

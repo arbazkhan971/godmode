@@ -340,7 +340,7 @@ PATTERN VIOLATIONS:
 
 ## Key Behaviors
 
-1. **Components are the unit of UI.** Every piece of UI should be a component with clear boundaries, typed props, tests, and documentation. No loose markup scattered across pages.
+1. **Components are the unit of UI.** Build every piece of UI as a component with clear boundaries, typed props, tests, and documentation. No loose markup scattered across pages.
 2. **Design tokens are mandatory.** Every color, spacing value, font size, shadow, and z-index should come from a token. Hardcoded values are bugs waiting to cause inconsistency.
 3. **Storybook is the component catalog.** Every component needs stories. Stories serve as documentation, visual testing targets, and a development sandbox. No exceptions for "simple" components.
 4. **Consistency over cleverness.** Every component should follow the same patterns: same prop naming, same file structure, same composition approach. Predictability is a feature.

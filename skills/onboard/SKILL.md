@@ -261,7 +261,7 @@ Stop 3: Routing (<file>)
 1. **NEVER make architectural claims without reading the actual code.** Directory names lie. Read the files.
 2. **NEVER list more than 10 key files.** The goal is 10-20% of files that explain 80% of the system. More than 10 means you have not prioritized.
 3. **NEVER skip the git history.** `git log --oneline -20` and `git log --since="30 days ago" --pretty=format:"%h %s" --diff-filter=M` are mandatory steps.
-4. **NEVER generate onboarding docs without verifying claims against source code.** Every file path, function name, and architectural statement must be confirmed.
+4. **NEVER generate onboarding docs without verifying claims against source code.** Confirm every file path, function name, and architectural statement.
 5. **NEVER assume REST.** Detect the actual protocol: REST, GraphQL, gRPC, WebSocket, CLI, event-driven. Read the router/handler code.
 6. **ALWAYS read the README first if it exists.** It sets context even if outdated.
 7. **ALWAYS identify the entry point before anything else.** The entry point is the root of understanding.

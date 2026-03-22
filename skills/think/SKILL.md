@@ -149,7 +149,7 @@ for f in <files_to_create>; do test -d "$(dirname "$f")" || echo "MISSING: $(dir
 bash -n -c '<success_criteria_cmd>' 2>&1
 
 # 4. Verify spec length
-wc -l .godmode/spec.md  # must be <100
+wc -l .godmode/spec.md  # target <100
 
 # 5. Verify problem statement is 1 sentence
 head -5 .godmode/spec.md  # inspect manually
@@ -211,7 +211,7 @@ The design session is done when ALL of the following are true:
 ## Anti-Patterns
 1. **Analysis paralysis:** Generating 5+ approaches and agonizing over trade-offs. Max 3 approaches. Pick one and move on.
 2. **Skipping the scan:** Designing in a vacuum without reading existing code. Always scan first (unless greenfield) — the codebase has patterns to follow.
-3. **Subjective success criteria:** "Works well", "is performant", "looks clean". Every criterion must be a shell command or a metric with a threshold.
+3. **Subjective success criteria:** "Works well", "is performant", "looks clean". Express every criterion as a shell command or a metric with a threshold.
 4. **Gold-plating the spec:** Writing 200 lines of implementation detail. The spec describes WHAT and WHY, not HOW. Implementation details belong in the plan and build phases.
 5. **Ignoring existing patterns:** Proposing a new ORM when the project already uses one, or a new state library when one exists. Reuse what is there.
 6. **Open-ended clarification:** Asking "what do you want?" instead of offering 2 concrete interpretations. Always constrain the question.

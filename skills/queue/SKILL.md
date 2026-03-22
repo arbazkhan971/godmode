@@ -153,7 +153,7 @@ Save queue config, workers, retry/DLQ policy, schedules. Commit: `"queue: <name>
 ## Key Behaviors
 
 1. **Async anything over 500ms.** Never make users wait for background work.
-2. **Idempotency is mandatory.** Every at-least-once handler must be safe to run multiple times.
+2. **Idempotency is mandatory.** Design every at-least-once handler to run safely multiple times.
 3. **Dead letters are not trash.** Every DLQ message is a failed user action. Monitor daily.
 4. **Retry with backoff, not forever.** Exponential + jitter, cap at 3-5, then DLQ.
 5. **Separate priority queues need separate workers.** Bulk backlogs must not starve critical.

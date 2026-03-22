@@ -43,7 +43,7 @@ app/
 └── sitemap.ts
 ```
 
-Rules: Route groups `(name)` organize without affecting URLs. Every segment can have `layout.tsx`, `loading.tsx`, `error.tsx`. `error.tsx` MUST be `'use client'`. `loading.tsx` creates automatic Suspense boundary. Use parallel routes `@slot` and intercepting routes `(.)` for modals.
+Rules: Route groups `(name)` organize without affecting URLs. Every segment can have `layout.tsx`, `loading.tsx`, `error.tsx`. Mark `error.tsx` as `'use client'`. `loading.tsx` creates automatic Suspense boundary. Use parallel routes `@slot` and intercepting routes `(.)` for modals.
 
 ### Step 3: Server vs Client Components
 

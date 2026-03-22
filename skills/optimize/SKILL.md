@@ -98,7 +98,7 @@ STOP when FIRST of:
 Print: `Skill: {metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} discarded. Status: {DONE|PARTIAL}.`
 
 ## Rules
-1. Metric must be a shell command that outputs a single number. No subjective assessment.
+1. Define the metric as a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.
 3. Never modify test files. Never cache mutable data. Never trade readability for <1% gain. Profile before guessing.
 4. +0.1% with added complexity → discard. Same metric + fewer lines → keep. Simpler code > marginal gains.

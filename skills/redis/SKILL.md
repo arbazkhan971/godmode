@@ -249,7 +249,7 @@ Commit: `"redis: <description> -- <key outcome>"`
 2. **Always set TTL.** Data without TTL grows forever until maxmemory eviction kicks in. Explicit TTL on every key is a hygiene requirement.
 3. **Use pipelining for batch operations.** Sending 100 commands one at a time takes 100 round trips. Pipeline them into one round trip.
 4. **Avoid O(N) commands on large collections.** KEYS *, SMEMBERS on a 1M-member set, HGETALL on a 10K-field hash. Use SCAN, SSCAN, HSCAN for iteration.
-5. **Use Lua/Functions for atomicity.** Multi-step operations (check-and-set, rate limiting) must be atomic. Lua scripts execute on the server without interleaving.
+5. **Use Lua/Functions for atomicity.** Keep multi-step operations (check-and-set, rate limiting) atomic. Lua scripts execute on the server without interleaving.
 6. **Hash tags for multi-key operations in Cluster.** MGET, transactions, and Lua scripts require all keys on the same node. Use {hash-tag} in key names.
 7. **Sentinel for HA, Cluster for scaling.** If data fits in one node, use Sentinel for failover. If data exceeds one node or you need > 100K ops/sec, use Cluster.
 8. **Monitor memory fragmentation.** mem_fragmentation_ratio > 1.5 indicates fragmentation. Use MEMORY PURGE or restart Redis to reclaim.
@@ -270,7 +270,7 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 4. NEVER use SELECT (multi-database). Use key prefixes for namespacing.
 5. NEVER use Pub/Sub for reliable messaging. Use Streams with consumer groups.
 6. NEVER connect without a connection pool. One connection per request kills throughput.
-7. EVERY Lua script must be idempotent. Scripts may be retried on MOVED errors in Cluster mode.
+7. EVERY Lua script stays idempotent. Scripts may retry on MOVED errors in Cluster mode.
 8. EVERY key must follow the naming convention: {service}:{entity}:{id}[:{field}].
 9. NEVER run O(N) commands on large collections without SCAN or pagination.
 10. ALWAYS set maxmemory and maxmemory-policy. An unbounded Redis is a ticking bomb.
@@ -286,7 +286,7 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 4. NEVER use SELECT (multi-database). Use key prefixes for namespacing.
 5. NEVER use Pub/Sub for reliable messaging. Use Streams with consumer groups.
 6. NEVER connect without a connection pool. One connection per request kills throughput.
-7. EVERY Lua script must be idempotent. Scripts may be retried on MOVED errors in Cluster mode.
+7. EVERY Lua script stays idempotent. Scripts may retry on MOVED errors in Cluster mode.
 8. EVERY key must follow the naming convention: {service}:{entity}:{id}[:{field}].
 9. NEVER run O(N) commands on large collections without SCAN or pagination.
 10. ALWAYS set maxmemory and maxmemory-policy. An unbounded Redis is a ticking bomb.
@@ -317,7 +317,7 @@ timestamp	operation	data_structure	key_pattern	ttl	eviction_policy	memory_estima
 
 ## Success Criteria
 
-**HEALTHY** (all must be true):
+**HEALTHY** (verify all):
 - `used_memory` < 80% of `maxmemory`
 - `mem_fragmentation_ratio` between 1.0 and 1.5
 - `connected_clients` < 80% of `maxclients`

@@ -284,7 +284,7 @@ AUTH SECURITY HARDENING:
 1. **Security by default.** Every design choice defaults to the most secure option. Weaker options require explicit justification. Never suggest HS256 for multi-service JWT. Never suggest implicit grant. Never suggest SMS as primary MFA.
 2. **Strategy must match architecture.** JWTs for stateless microservices. Server-side sessions for traditional web apps. OAuth2/OIDC for third-party integration. Do not force a strategy that does not fit the application type.
 3. **Token lifecycle is non-negotiable.** Every token must have issuance, validation, refresh, revocation, and cleanup. Missing any stage is a security gap.
-4. **MFA is not optional for production.** At minimum, TOTP support must be available. WebAuthn/passkeys are the recommended primary factor for new applications.
+4. **MFA is not optional for production.** At minimum, provide TOTP support. WebAuthn/passkeys are the recommended primary factor for new applications.
 5. **Social login is account linking, not account creation.** Social providers give you identity signals, not user accounts. Design the linking strategy carefully to prevent account takeover.
 6. **Show the code, not the design.** Produce implementation artifacts: middleware, controllers, services, models, and tests. Architecture without code is a diagram.
 7. **Password handling has exactly one right answer.** Argon2id (preferred) or bcrypt with cost factor 12+. No MD5, no SHA-256, no PBKDF2 with low iterations. No exceptions.

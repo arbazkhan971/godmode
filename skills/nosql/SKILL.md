@@ -208,9 +208,9 @@ Commit: `"nosql: <description> -- <database>, <key design decisions>"`
 3. **Know your partition key.** In DynamoDB and Cassandra, the partition key determines everything: data distribution, query capability, and hot partition risk. Get it right on day one.
 4. **Embed vs. reference in MongoDB.** Embed when data is read together and the subdocument is small and bounded. Reference when data is independent, large, or shared across documents.
 5. **One table per query in Cassandra.** Cassandra has no JOINs. Each query needs its own table optimized for that exact read pattern, even if it means writing the same data 3-4 times.
-6. **Graph databases for relationships.** If your queries are "find connections", "shortest path", or "people who also X", a graph database will be 100-1000x faster than JOINs.
+6. **Graph databases for relationships.** If your queries are "find connections", "shortest path", or "people who also X", a graph database runs 100-1000x faster than JOINs.
 7. **Time-series databases for metrics.** PostgreSQL with TimescaleDB handles most time-series workloads. Use InfluxDB for high-cardinality pure metrics at massive scale.
-8. **Start with PostgreSQL.** The default database should be PostgreSQL. Move to NoSQL only when PostgreSQL cannot meet a specific technical requirement.
+8. **Start with PostgreSQL.** Default to PostgreSQL. Move to NoSQL only when PostgreSQL cannot meet a specific technical requirement.
 9. **Bound your partitions.** In DynamoDB, Cassandra, and MongoDB, unbounded collections (growing forever in one partition/document) cause performance degradation. Use time buckets, size limits, or pagination.
 10. **Schema validation in MongoDB.** MongoDB is schemaless, not schema-free. Use JSON Schema validation to enforce document structure in production.
 
@@ -253,7 +253,7 @@ max_iterations = 15
 
 WHILE NOT all_patterns_covered AND iteration < max_iterations:
   Phase 1 — Access Pattern Coverage:
-    FOR each access pattern: verify it can be served without scan
+    FOR each access pattern: verify it serves without scan
     MongoDB: check index covers query. DynamoDB: PK/SK or GSI. Cassandra: table exists.
     Fix uncovered patterns: add GSI, index, or denormalized table.
 
@@ -285,7 +285,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 
 

@@ -345,7 +345,7 @@ HARD RULES — EXPERIMENT:
 ```
 
 ## Success Criteria
-All of these must be true before marking the task complete:
+Verify all of these before marking the task complete:
 1. Feature flag creates clean separation between control and treatment (no code leakage between variants).
 2. Assignment is deterministic per user (same user always gets same variant across sessions).
 3. Exposure event fires exactly once per user per experiment per session (deduplication verified).

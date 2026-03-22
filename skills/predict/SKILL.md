@@ -16,7 +16,7 @@ The godmode orchestrator routes here when:
 
 ## Step-by-step Workflow
 ```
-# 1. DEFINE — What is being evaluated?
+# 1. DEFINE — What to evaluate?
 spec = read(".godmode/spec.md")
 IF spec does not exist:
     proposal = ask user for description

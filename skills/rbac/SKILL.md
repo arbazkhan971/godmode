@@ -203,7 +203,7 @@ Design comprehensive audit logging:
 
 ```
 AUDIT LOGGING:
-Every authorization decision MUST be logged.
+LOG every authorization decision.
 
 Audit log schema:
   {
@@ -359,7 +359,7 @@ HARD RULES — NEVER VIOLATE:
 1. **Default deny.** If no policy explicitly grants access, the answer is DENY. Never default to ALLOW. This is the single most important security principle in access control.
 2. **Least privilege.** Every role should have the minimum permissions needed to perform its function. Start with zero permissions and add only what is required. It is easier to grant additional permissions than to revoke excessive ones.
 3. **Separation of duties.** Critical operations should require multiple roles. The person who creates an invoice should not be the person who approves payment. Encode these constraints in the role model.
-4. **Audit everything.** Every authorization decision — ALLOW and DENY — must be logged with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
+4. **Audit everything.** Log every authorization decision — ALLOW and DENY — with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
 5. **Roles are not permissions.** Roles are collections of permissions assigned to users. Permissions are fine-grained actions on resources. Check permissions in code, not roles. `if (can(user, "delete", project))` is correct. `if (user.role === "admin")` is fragile.
 6. **Resource ownership matters.** The owner of a resource should always have full control. Ownership is a relationship, not a role. Combine RBAC (role-based) with resource ownership (relationship-based) for practical systems.
 7. **Test authorization, not authentication.** Write tests that verify: users CAN access what they should, users CANNOT access what they should not, permission changes take effect, and audit logs are generated.

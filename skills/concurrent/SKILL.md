@@ -393,7 +393,7 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 5. **Test concurrency with stress and chaos.** Running a test once proves nothing about concurrent correctness. Run it 1000 times. Inject delays. Simulate failures.
 6. **Cancellation is not optional.** Every concurrent operation must support cancellation. Leaked goroutines, orphaned tasks, and zombie threads are resource leaks.
 7. **Start with the simplest correct solution.** A mutex that works is better than a lock-free structure that could fail subtly. Optimize only with profiling evidence.
-8. **Document the concurrency model.** Future developers need to understand why a particular approach was chosen and what invariants must be maintained.
+8. **Document the concurrency model.** Future developers need to understand why a particular approach was chosen and what invariants to maintain.
 
 ## Flags & Options
 

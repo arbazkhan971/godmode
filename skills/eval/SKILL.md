@@ -24,7 +24,7 @@ Understand what needs to be evaluated and why:
 
 ```
 EVALUATION DISCOVERY:
-System under test: <what AI system is being evaluated>
+System under test: <which AI system to evaluate>
   Type: <LLM prompt | RAG pipeline | AI agent | fine-tuned model | full application>
   Model: <underlying model(s)>
   Current version: <version or commit>
@@ -91,7 +91,7 @@ Design automated scoring using LLM judges:
 LLM-AS-JUDGE DESIGN:
 
 Judge model: <strong model — e.g., Claude 3.5 Sonnet, GPT-4>
-  Rationale: Judge model should be stronger than the system under test.
+  Rationale: Pick a judge model stronger than the system under test.
   Never judge a model with itself.
 
 Scoring rubrics:
@@ -191,7 +191,7 @@ Regression pipeline:
 
 Comparison strategies:
   Exact match: output must exactly match reference (for structured/JSON outputs)
-  Semantic match: output must be semantically equivalent (cosine similarity > threshold)
+  Semantic match: output matches semantically (cosine similarity > threshold)
   LLM judge: judge model determines if output is acceptable
   Assertion-based: output must satisfy a set of assertions (contains X, does not contain Y)
   Rubric-based: output must score >= threshold on scoring rubric
@@ -333,7 +333,7 @@ Commit: `"eval: <system> — v<version>, <N> examples, correctness=<val>, faithf
 1. **Evaluate before shipping.** No AI system goes to production without evaluation. "It works on my examples" is not evidence. Run the full eval suite.
 2. **Baseline everything.** Every metric is meaningless without a baseline. Compare against the previous version, a naive baseline, or a published benchmark. Never report absolute numbers alone.
 3. **Separate retrieval from generation.** In RAG systems, evaluate retrieval quality and generation quality independently. A bad answer from good retrieval is a different problem than a bad answer from bad retrieval.
-4. **LLM judges need calibration.** An uncalibrated LLM judge can be worse than no evaluation. Calibrate against human judgments. Measure agreement. Refine rubrics.
+4. **LLM judges need calibration.** An uncalibrated LLM judge performs worse than no evaluation. Calibrate against human judgments. Measure agreement. Refine rubrics.
 5. **Statistical significance is not optional.** A 2% improvement is often noise. Run significance tests. Report confidence intervals. Do not deploy based on noise.
 6. **Regression tests only grow.** Every production bug becomes a regression test. The regression set never shrinks. It is the immune system of your AI system.
 7. **Evaluation datasets are living artifacts.** They need versioning, maintenance, and periodic expansion. A stale benchmark produces false confidence.

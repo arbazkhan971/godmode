@@ -397,7 +397,7 @@ DO NOT STOP just because:
 ## Simplicity Criterion
 ```
 PREFER the simpler config approach:
-  - If a key can be a static default instead of per-environment override → use the default
+  - If a key works as a static default instead of per-environment override → use the default
   - If a validation schema has >10 constraints on a single key → reduce to the 3 most important
   - If a feature flag system has >30 flags → audit and remove dead/stale flags before adding more
   - If config validation requires a new dependency → prefer built-in runtime checks first

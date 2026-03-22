@@ -316,11 +316,11 @@ timestamp	skill	target	action	coverage_pct	stale_count	status
 The docs skill is complete when ALL of the following are true:
 1. Every public function/method/endpoint has a description, parameters, return type, and error cases
 2. Documentation matches the actual code behavior (verified by reading the source)
-3. Every error that can be thrown is documented with its condition
+3. Every throwable error is documented with its condition
 4. Code examples are included and syntactically correct (copy-pasteable)
 5. No stale documentation (docs last modified before code was last modified)
 6. All internal links resolve (no broken cross-references)
-7. Runbooks (if any) contain exact commands that have been verified to work
+7. Runbooks (if any) contain exact commands verified to work
 
 ## Error Recovery
 

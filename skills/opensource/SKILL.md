@@ -12,7 +12,7 @@ description: |
 - User says "add contributing guide", "create code of conduct", "set up issue templates"
 - User says "configure community health files", "add PR template"
 - User says "set up governance", "maintainer workflow", "triage process"
-- Project is being open-sourced or published publicly
+- Team plans to open-source or publicly publish the project
 - Repository is missing standard community health files
 - Maintainer wants to improve contributor experience
 
@@ -278,7 +278,7 @@ Based on the selected model, create the governance document:
 4. **Governance scales with the project.** A solo project needs BDFL. A 50-person project needs a steering committee. Match the model to the reality.
 5. **Triage is maintenance.** Untriaged issues and unreviewed PRs kill contributor motivation. Set SLAs and honor them.
 6. **First impressions matter.** A contributor's first PR review shapes whether they come back. Be welcoming, constructive, and timely.
-7. **Document decisions.** When a design choice is made, record it. Future contributors will ask "why" and the answer should be findable.
+7. **Document decisions.** When you make a design choice, record it. Future contributors will ask "why" and the answer needs to exist in writing.
 
 ## HARD RULES
 
@@ -286,7 +286,7 @@ Based on the selected model, create the governance document:
 2. **NEVER skip Code of Conduct.** Every public project must have one. Use Contributor Covenant 2.1 as the default.
 3. **NEVER commit secrets to a public repository.** Audit all files with `grep -rn "sk_\|password\|secret\|token\|api_key" . --include="*.ts" --include="*.py" --include="*.env*"` before going public.
 4. **NEVER use blank issue templates.** All issues must use structured YAML templates. Disable blank issues in config.yml.
-5. **NEVER set stale bot to auto-close issues labeled `security` or `critical`.** These labels must be exempt.
+5. **NEVER set stale bot to auto-close issues labeled `security` or `critical`.** Exempt these labels always.
 6. **ALWAYS include private vulnerability reporting.** Security issues must never be filed as public issues.
 7. **ALWAYS match governance model to project size.** Solo project = BDFL. 10+ contributors = consensus. 50+ = steering committee.
 8. **ALWAYS test CONTRIBUTING.md instructions on a clean machine.** If setup takes more than 15 minutes, contributors will leave.

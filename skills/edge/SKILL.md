@@ -441,6 +441,6 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 

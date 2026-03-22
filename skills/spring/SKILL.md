@@ -388,7 +388,7 @@ IF build fails (mvnw/gradlew):
   4. Check for missing @ComponentScan or @EntityScan configurations
 
 IF tests fail:
-  1. Verify TestContainers is running (Docker must be available)
+  1. Verify TestContainers is running (Docker needs to run)
   2. Check @SpringBootTest vs @WebMvcTest vs @DataJpaTest scope
   3. Verify @MockBean and @SpyBean are correctly applied
   4. Check that test properties override production config

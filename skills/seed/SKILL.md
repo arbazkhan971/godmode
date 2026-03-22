@@ -99,7 +99,7 @@ Files: seed script, factories/, environment configs, package.json seed command
 
 ## Key Behaviors
 
-1. **Seeds must be idempotent.** Use upsert, skipDuplicates, update_or_create. Never blindly insert.
+1. **Keep seeds idempotent.** Use upsert, skipDuplicates, update_or_create. Never blindly insert.
 2. **Use factories for tests, seed scripts for environments.** Different problems, use both.
 3. **Seed in dependency order.** Parents before children. Violating = FK errors.
 4. **Use deterministic seeds for development.** `faker.seed(42)` = reproducible data.

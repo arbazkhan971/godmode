@@ -12,8 +12,8 @@ description: |
 - User says "generate migration guide", "breaking change documentation"
 - User says "set up conventional commits", "auto-generate changelog"
 - Preparing a release (often chained from `/godmode:release` or `/godmode:ship`)
-- Breaking changes have been introduced and need communication
-- New version is being published to a package registry
+- Recent commits introduced breaking changes that need communication
+- Team publishes a new version to a package registry
 
 ## Workflow
 
@@ -63,7 +63,7 @@ Generate or update CHANGELOG.md following the Keep a Changelog standard:
 ```markdown
 # Changelog
 
-All notable changes to this project will be documented in this file.
+This file documents all notable changes to this project.
 ```
 
 #### Keep a Changelog Rules

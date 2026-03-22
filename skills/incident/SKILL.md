@@ -176,7 +176,7 @@ Generate the full post-mortem in blameless format:
 
 ## Where We Got Lucky
 - <things that could have made it worse but didn't>
-- <near-misses that should be addressed>
+- <near-misses to address>
 
 ## Action Items
 <table from Step 6>
@@ -250,7 +250,7 @@ Repeat incidents: <count of incidents with same root cause as prior>
 1. **Severity drives response.** SEV1 means drop everything. SEV4 means queue it up. Never over- or under-classify.
 2. **Timeline is sacred.** Every action, discovery, and decision gets a timestamp. Memory fails under stress; logs don't.
 3. **Blameless or useless.** The moment blame enters, people stop sharing information. Blame systems, not humans.
-4. **Action items must be actionable.** "Be more careful" is not an action item. "Add integration test for payment edge case X" is.
+4. **Keep action items actionable.** "Be more careful" is not an action item. "Add integration test for payment edge case X" is.
 5. **Every incident is a gift.** It reveals a weakness you didn't know about. The post-mortem is how you extract that value.
 6. **Follow up.** A post-mortem without completed action items is theater. Track completion and hold teams accountable to deadlines.
 

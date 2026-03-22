@@ -199,7 +199,7 @@ DO NOT STOP just because: dashboards not built or monthly quotas not yet enforce
 ```
 
 ## Anti-Patterns
-- Do NOT hardcode limits — must be configurable per tier/endpoint without deploy.
+- Do NOT hardcode limits — keep them configurable per tier/endpoint without deploy.
 - Do NOT trust X-Forwarded-For blindly — only from known proxy IPs.
 - Do NOT apply same limit to all endpoints — login=5/min, products=1000/min.
 - Do NOT forget quotas — 99 req/min for 24h = 142K requests.

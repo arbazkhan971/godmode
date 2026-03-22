@@ -135,7 +135,7 @@ For each memory finding:
 MEMORY FINDING <N>:
 Type: LEAK | EXCESSIVE ALLOCATION | FRAGMENTATION | CACHE UNBOUNDED
 Location: <file>:<line>
-Object type: <what is being allocated/leaked>
+Object type: <the allocated/leaked object type>
 Growth rate: <MB per hour / per request / per iteration>
 
 Evidence:
@@ -318,7 +318,7 @@ General:
 For each benchmark result:
 ```
 BENCHMARK: <name>
-Target: <what is being benchmarked>
+Target: <the benchmarked function/operation>
 Environment: <hardware, OS, runtime version>
 
 Results:

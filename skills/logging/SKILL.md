@@ -323,7 +323,7 @@ LOGGING VERIFICATION CHECKLIST:
 4. NEVER use string interpolation for structured data — use structured fields (`{ orderId, userId }` not `"order ${id}"`).
 5. NEVER log at every function entry/exit — log at boundaries (HTTP, queue, service) not inside every function.
 6. NEVER use synchronous file writes for logging in hot paths — use async loggers with buffered output.
-7. NEVER deploy without correlation IDs — requestId and traceId must be in every log line within a request.
+7. NEVER deploy without correlation IDs — include requestId and traceId in every log line within a request.
 8. ALWAYS use JSON format in production — machine-parseable, searchable, aggregatable.
 9. ALWAYS include base fields in every log line: service, environment, version, timestamp (ISO 8601).
 10. ALWAYS make log level configurable at runtime — enable DEBUG for specific modules during incidents without redeployment.

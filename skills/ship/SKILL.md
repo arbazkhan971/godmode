@@ -461,6 +461,6 @@ STOP when FIRST of:
 If your platform lacks `Agent()` or worktree isolation:
 - The ship skill is inherently sequential (checklist → dry-run → ship → verify), so no parallel dispatch is needed.
 - If `gh` CLI is unavailable, use `git push` and construct the PR URL manually: `https://github.com/{org}/{repo}/compare/main...{branch}`.
-- For releases without `gh`: `git tag {tag} && git push origin {tag}`. Release notes must be added manually on GitHub.
+- For releases without `gh`: `git tag {tag} && git push origin {tag}`. Add release notes manually on GitHub.
 - TSV logging, checklist logic, and dry-run printing remain identical.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -61,7 +61,7 @@ CAP THEOREM ANALYSIS:
 
 Rules:
 - CAP is a spectrum, not a binary choice -- tune consistency per operation
-- Financial transactions need strong consistency; analytics can be eventual
+- Financial transactions need strong consistency; analytics tolerate eventual consistency
 - Understand PACELC -- during normal operation, you still choose between latency and consistency
 - Document which operations require which consistency level
 
@@ -140,7 +140,7 @@ REDLOCK ALGORITHM:
 
 CONFIGURATION:
  Redis instances: <N> (odd, typically 5, on independent machines)
- Lock TTL: <duration> (must be >> clock drift + operation time)
+ Lock TTL: <duration> (set >> clock drift + operation time)
  Retry delay: <random 0-retry_max ms>
  Retry count: <3-5 attempts>
 ```
@@ -382,7 +382,7 @@ Commit: `"distributed: <system> -- <consistency model>, <consensus>, <N> shards,
 1. **CAP is the first conversation.** Before any design work, establish whether the system prioritizes consistency or availability during partitions. This decision cascades through everything.
 2. **Consistency is per-operation, not per-system.** The same system can use strong consistency for payments and eventual consistency for read counters. Document the level for each operation.
 3. **Network partitions are inevitable.** Design for partitions, not around them. Every distributed system will experience network issues -- the question is how it behaves.
-4. **Fencing tokens prevent split-brain corruption.** A leader that does not know it has been replaced will issue stale writes. Fencing tokens are the only reliable protection.
+4. **Fencing tokens prevent split-brain corruption.** A leader that does not know a new leader replaced it will issue stale writes. Fencing tokens are the only reliable protection.
 5. **Prefer Raft over Paxos for new systems.** Raft is provably equivalent to Paxos but dramatically easier to understand, implement, and debug. Use Paxos only when leaderless operation is required.
 6. **Sharding decisions are hard to change.** Choose partition keys carefully. Resharding a live system is one of the hardest distributed operations.
 7. **Test with real partitions.** Use chaos engineering to inject network partitions, clock skew, and node failures. Paper designs are insufficient.
@@ -439,9 +439,9 @@ Each design decision either passes validation or gets revised.
 - NEVER deploy a leader election without fencing tokens — a stale leader WILL corrupt data
 - NEVER use 2-phase commit at scale — use sagas or compensation-based approaches instead
 - NEVER shard prematurely — start with single node, then replicas, then shard only when data volume or write throughput demands it
-- ALL consistency levels MUST be documented per operation, not per system
-- ALL failure modes MUST be documented for every component ("what happens when X is down?")
-- ALL distributed systems MUST be tested with real network partitions via chaos engineering before production
+- DOCUMENT ALL consistency levels per operation, not per system
+- DOCUMENT ALL failure modes for every component ("what happens when X is down?")
+- TEST ALL distributed systems with real network partitions via chaos engineering before production
 
 ## Output Format
 Print on completion:

@@ -387,7 +387,7 @@ After EACH rule group is enabled and auto-fixed:
      - DISCARD if: tests fail OR auto-fix changed code semantics OR rule produces excessive false positives
   4. COMMIT kept changes. Revert discarded changes and reconsider the rule before retrying.
 
-Never keep a rule that produces >20% false positives — it will be circumvented with disable comments.
+Never keep a rule that produces >20% false positives — developers circumvent it with disable comments.
 ```
 
 ## Stuck Recovery

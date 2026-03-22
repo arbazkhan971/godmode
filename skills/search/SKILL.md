@@ -164,11 +164,11 @@ search endpoints, client SDK, autocomplete config, synonyms/stopwords files.
 3. NEVER high fuzziness without prefix_length >= 2.
 4. ALWAYS track zero-result queries.
 5. NEVER reindex in place. Use aliases and swap atomically.
-6. EVERY search input must be sanitized (escape reserved chars).
+6. SANITIZE EVERY search input (escape reserved chars).
 7. NEVER couple personalization with query DSL. Use function_score.
 8. ALWAYS use index aliases (never raw index names).
 9. Autocomplete must respond < 100ms.
-10. EVERY aggregation must be paired with a filter.
+10. PAIR EVERY aggregation with a filter.
 
 ## Loop Protocol
 ```

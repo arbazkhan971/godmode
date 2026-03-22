@@ -31,7 +31,7 @@ For each stage, list:
 Print: `[scenario:read] Feature: {name} | {N} external calls | {N} state mutations | {N} side effects | {N} trust boundaries`
 
 ### 2. Identify the Feature Scope
-Define the boundary of what is being explored:
+Define the boundary of the exploration:
 - **Entry points**: API routes, CLI commands, UI events, cron triggers, queue consumers
 - **Dependencies**: Services, databases, caches, third-party APIs this feature calls
 - **Data shapes**: Input schemas, output schemas, persisted models
@@ -88,7 +88,7 @@ For every scenario scored HIGH (12+) or CRITICAL (20+), generate a runnable test
 - Include setup and teardown (create test data, clean up after)
 - Save to `tests/scenarios/{feature}.scenario.test.{ext}`
 
-Each test must be runnable with the project's test command. No stubs, no TODOs, no `// implement later`.
+Run each test with the project's test command. No stubs, no TODOs, no `// implement later`.
 
 ```
 # Example test structure (Jest):

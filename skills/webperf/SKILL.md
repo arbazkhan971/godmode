@@ -133,7 +133,7 @@ IMAGE AUDIT:
 │ hero.jpg         │ JPEG   │ 1.2 MB  │ 4000x2000  │ No srcset, oversized │
 │ logo.png         │ PNG    │ 45 KB   │ 400x100    │ Could be SVG   │
 │ team-photo.jpg   │ JPEG   │ 800 KB  │ 3000x2000  │ No lazy load   │
-│ icon-set.png     │ PNG    │ 120 KB  │ 500x500    │ Should be SVG  │
+│ icon-set.png     │ PNG    │ 120 KB  │ 500x500    │ Convert to SVG │
 │ product-1.jpg    │ JPEG   │ 650 KB  │ 2400x1600  │ No WebP        │
 └──────────────────────────────────────────────────────────────────┘
 
@@ -366,7 +366,7 @@ Verdicts:
 ## Key Behaviors
 
 1. **Measure before optimizing.** Run Lighthouse and bundle analysis to establish a baseline. Without numbers, you are guessing. Optimization without measurement is superstition.
-2. **JavaScript is the most expensive resource.** A 200KB image and 200KB of JavaScript are not equivalent. JavaScript must be parsed, compiled, and executed. Reduce JS first.
+2. **JavaScript is the most expensive resource.** A 200KB image and 200KB of JavaScript are not equivalent. The browser parses, compiles, and executes JavaScript. Reduce JS first.
 3. **Images are the lowest-hanging fruit.** Converting to WebP/AVIF, adding responsive srcset, and enabling lazy loading often saves more bytes than any code change.
 4. **Critical CSS eliminates render blocking.** Inlining above-the-fold CSS and async-loading the rest removes the single biggest cause of slow First Contentful Paint.
 5. **Fonts cause invisible text.** Without font-display: swap and proper preloading, custom fonts cause Flash of Invisible Text (FOIT). Users see a blank page while fonts download.

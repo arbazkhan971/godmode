@@ -470,5 +470,5 @@ Columns: iteration, task, provider, resources_planned, resources_changed, drift_
 - **Provider authentication failure**: Check environment variables or credential files. Verify IAM roles/service accounts have required permissions. Check token expiration.
 - **Drift detected in production**: Do not auto-apply to fix drift. Investigate why manual changes were made. Import the manual change into state if intentional, or revert it in the console if accidental. Then apply from code.
 - **Module version conflict**: Pin module versions explicitly. Use version constraints (`~> 3.0`). Check for breaking changes in the module changelog before upgrading.
-- **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources that should be in a lower tier. Verify auto-scaling max limits are set.
+- **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources belonging in a lower tier. Verify auto-scaling max limits are set.
 

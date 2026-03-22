@@ -211,7 +211,7 @@ BACKGROUND JOB STRATEGY:
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 JOB DESIGN RULES:
-- Jobs MUST be idempotent — safe to retry
+- Jobs MUST stay idempotent — safe to retry
 - Jobs MUST accept simple arguments (IDs, not objects) for serialization
 ```
 
@@ -360,7 +360,7 @@ HARD RULES — NEVER VIOLATE:
 4. **Hotwire first, React later.** Most Rails apps do not need a JavaScript SPA. Turbo Frames and Streams handle 90% of interactive UI needs.
 5. **Background everything slow.** Email sending, PDF generation, external API calls, and anything over 200ms belongs in a background job.
 6. **Test behavior, not implementation.** RSpec request specs test the HTTP interface. Model specs test business rules. System specs test critical user flows.
-7. **Migrations are forever.** Every migration must be reversible. Never edit a migration that has been committed — write a new one.
+7. **Migrations are forever.** Keep every migration reversible. Never edit a committed migration — write a new one.
 
 ## Flags & Options
 

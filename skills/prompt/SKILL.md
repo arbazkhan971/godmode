@@ -34,7 +34,7 @@ Budget: max tokens, latency, cost per call
 | ReAct | Tool-using agents, search + reason loops |
 | Tree-of-thought | Problems needing exploration of alternatives |
 | Self-consistency | High-stakes answers needing multiple paths |
-| Structured output | Output must be JSON, XML, or typed schema |
+| Structured output | Output requires JSON, XML, or typed schema |
 
 ### Step 3: System Prompt Design
 Structure: 1) Role, 2) Task, 3) Input Format, 4) Output Format, 5) Constraints, 6) Examples, 7) Edge Cases.

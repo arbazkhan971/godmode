@@ -341,7 +341,7 @@ Commit: `"schema: design <description> data model"`
 4. **Foreign keys are not optional.** They enforce referential integrity at the database level. Application-level checks are not a substitute. Include ON DELETE behavior (CASCADE, SET NULL, RESTRICT).
 5. **Timestamps on everything.** Every table gets `created_at` and `updated_at`. Use TIMESTAMPTZ, not TIMESTAMP. Time zones matter.
 6. **Constraints in the database, validation in the application.** The database is the last line of defense. CHECK constraints, NOT NULL, UNIQUE, and foreign keys prevent invalid data even when application code has bugs.
-7. **Schema evolution must be backward compatible.** Every migration must be deployable without downtime. Use the expand-contract pattern for breaking changes.
+7. **Keep schema evolution backward compatible.** Deploy every migration without downtime. Use the expand-contract pattern for breaking changes.
 8. **Document models are designed around queries.** In NoSQL, embed data that is read together, reference data that is shared. There is no "correct" document structure -- only structures that serve your access patterns.
 9. **Validation schemas are the single source of truth.** Define the schema once (Zod, Protobuf, Avro), derive types, API docs, and database constraints from it. Never maintain parallel definitions.
 10. **Test schema changes against production-scale data.** A migration that runs in 100ms on dev (1000 rows) may lock the table for 30 minutes in production (10M rows).

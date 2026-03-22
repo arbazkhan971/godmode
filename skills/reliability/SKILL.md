@@ -78,7 +78,7 @@ VERDICT: <RELIABLE | NEEDS WORK>
 1. **SLOs drive decisions.** Define first.
 2. **Error budgets balance velocity and reliability.**
 3. **Toil is the enemy.** Track monthly, never exceed 50%.
-4. **On-call must be sustainable.**
+4. **Keep on-call sustainable.**
 5. **Every alert needs a runbook.**
 6. **Incidents are learning.** Blameless post-mortems.
 7. **Production readiness is a gate.**
@@ -101,7 +101,7 @@ VERDICT: <RELIABLE | NEEDS WORK>
 1. NEVER set SLO at 100%.
 2. EVERY alert must have a runbook.
 3. NEVER alert on raw metrics — use burn rate.
-4. SLO MUST be stricter than SLA.
+4. SET SLO stricter than SLA.
 5. SLIs from real user traffic.
 6. NEVER skip SEV1/SEV2 post-mortems.
 7. Budget policy MUST define exhaustion response.

@@ -190,7 +190,7 @@ Architecture:
 Evaluation:
 - Task completion rate: <val>
 - Tool selection accuracy: <val>
-- Safety violation rate: <val> (must be 0%)
+- Safety violation rate: <val> (require 0%)
 - Avg steps per task: <N>
 - Avg latency per task: <seconds>
 ```
@@ -246,7 +246,7 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 3. EVERY agent loop MUST have a max_steps termination — no unbounded loops.
 4. EVERY agent MUST have a cost budget (max tokens per task) — no runaway spending.
 5. git commit BEFORE running evaluation — if eval reveals regression, revert.
-6. Safety violation rate MUST be 0% — any safety failure is a blocking issue.
+6. Safety violation rate MUST equal 0% — any safety failure is a blocking issue.
 7. Log every agent step in structured format:
    STEP\tACTION\tTOOL\tRESULT\tTOKENS\tLATENCY
 8. Test trajectories, not just final outputs — correct answer via unsafe path is a failure.
@@ -266,11 +266,11 @@ AUTO-DETECT agent context:
 ```
 
 ## Success Criteria
-All of these must be true before marking the task complete:
+Verify all of these before marking the task complete:
 1. Agent completes its target task end-to-end with correct output (verified on at least 3 test inputs).
 2. Max steps termination works (agent stops at limit, does not loop forever).
 3. Cost budget enforced (token counter tracks usage, agent stops when budget exceeded).
-4. Guardrails block unsafe actions (test with at least one adversarial input that should be rejected).
+4. Guardrails block unsafe actions (test with at least one adversarial input that the system rejects).
 5. Every agent step is logged with: step number, action, tool called, result, tokens used, latency.
 6. Irreversible actions (delete, send, deploy, pay) require explicit confirmation gate.
 7. Tool errors are handled gracefully (agent retries or reports failure, does not crash).

@@ -406,12 +406,12 @@ AUTO-DETECT:
 ```
 
 ## Success Criteria
-All of these must be true before marking the task complete:
+Verify all of these before marking the task complete:
 1. Steady state hypothesis is defined with measurable metric and threshold (e.g., `p99 latency < 200ms`).
 2. At least one chaos experiment designed with: hypothesis, injection method, blast radius, abort conditions.
 3. Monitoring dashboards show the target metric BEFORE injection (baseline captured).
 4. Experiment runs in a non-production environment first (dev or staging) with expected behavior validated.
-5. Abort mechanism works: injection can be stopped within 30 seconds and system recovers.
+5. Abort mechanism works: operator stops injection within 30 seconds and system recovers.
 6. Findings documented: each surprise becomes a backlog item with severity and remediation plan.
 7. Circuit breakers (if applicable) trip correctly under failure conditions and recover when failure is removed.
 8. Runbook updated with observed failure modes and recovery steps.

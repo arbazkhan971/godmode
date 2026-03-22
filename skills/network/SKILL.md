@@ -353,7 +353,7 @@ Defense in Depth Checklist:
 1. **HTTPS everywhere.** No exceptions. Every public endpoint must use TLS 1.2+ with valid certificates. HTTP exists only to redirect to HTTPS.
 2. **DNS TTL strategy.** Long TTLs (3600s+) for stable records. Short TTLs (60-300s) for records that may change during deployments. Lower TTL before migration, raise after.
 3. **Certificate auto-renewal is mandatory.** Manual certificate management leads to outages. Use Let's Encrypt with certbot or cert-manager for automatic renewal.
-4. **CDN caches must be invalidatable.** Use content hashing for static assets. Never cache API responses at the CDN unless explicitly designed for it.
+4. **Keep CDN caches invalidatable.** Use content hashing for static assets. Never cache API responses at the CDN unless explicitly designed for it.
 5. **Load balancers need health checks.** Without health checks, the LB sends traffic to dead backends. Configure check interval, thresholds, and timeout.
 6. **Security groups are allowlists.** Default deny. Explicitly allow only the traffic each tier needs. Never use 0.0.0.0/0 for anything except the ALB inbound.
 7. **VPC design uses three tiers.** Public (LB), private (app), isolated (data). Data tier has no internet access. All tiers span multiple availability zones.
@@ -399,7 +399,7 @@ WHILE current_component < total_components:
 3. NEVER use 0.0.0.0/0 in security group inbound rules
    except for ALB on ports 80 and 443.
 
-4. Certificate auto-renewal MUST be configured. Manual certificate
+4. CONFIGURE certificate auto-renewal. Manual certificate
    management leads to outages. Use Let's Encrypt + certbot or cert-manager.
 
 5. Load balancers MUST have health checks configured.

@@ -55,7 +55,7 @@ Validate with Google Rich Results Test and Schema.org validator. Structured data
 ```
 SITEMAP AUDIT:
   Location: /sitemap.xml. Format: XML. Check: missing pages, dead URLs, non-canonical URLs,
-  missing lastmod, size limits (50MB / 50K URLs → split). Must be in robots.txt.
+  missing lastmod, size limits (50MB / 50K URLs → split). Reference in robots.txt.
 
 ROBOTS.TXT:
   Allow important pages. Block admin/login/API/internal and duplicate params (?sort=, ?filter=).
@@ -155,7 +155,7 @@ JSON-LD, sitemap, robots.txt, analytics, canonical tags, image optimization.
 3. EVERY image: alt text. Decorative = alt="" (empty, not missing).
 4. NEVER client-side render SEO-critical content. SSR/SSG for indexable pages.
 5. Structured data MUST match visible content. Fake markup = manual penalty.
-6. Sitemap MUST be auto-generated and updated on deploy.
+6. AUTO-GENERATE sitemap and update on deploy.
 7. EVERY page: single H1 tag with logical heading hierarchy.
 8. CWV targets: LCP < 2.5s, INP < 200ms, CLS < 0.1. Non-negotiable.
 9. NEVER block CSS/JS in robots.txt.

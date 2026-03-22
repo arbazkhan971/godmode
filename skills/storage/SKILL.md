@@ -383,7 +383,7 @@ STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
 Print final summary: `Storage: {provider}, bucket: {name}. CDN: {cdn_provider}. Presigned URLs: {yes/no}. Image processing: {yes/no}. Lifecycle: {rules}. Backup: {strategy}.`
 
 ## Success Criteria
-All of these must be true before marking the task complete:
+Verify all of these before marking the task complete:
 1. Storage client works: upload, download, delete, and presigned URL generation all succeed with test files.
 2. Presigned URLs expire correctly (test: URL works before expiry, returns 403 after expiry).
 3. CDN serves files with correct cache headers (`Cache-Control: public, max-age=31536000, immutable` for hashed filenames).
@@ -415,10 +415,10 @@ ACCESS PATTERN ANALYSIS:
 ┌──────────────────────────────────────────────────────────────────┐
 │  Time Window     │ Objects Accessed │ % of Total │ Storage Class  │
 ├──────────────────────────────────────────────────────────────────┤
-│  Last 7 days     │ <N>              │ <pct>%     │ Should be STD  │
-│  8-30 days       │ <N>              │ <pct>%     │ Should be STD  │
-│  31-90 days      │ <N>              │ <pct>%     │ Should be IA   │
-│  91-365 days     │ <N>              │ <pct>%     │ Should be IA   │
+│  Last 7 days     │ <N>              │ <pct>%     │ Use STD        │
+│  8-30 days       │ <N>              │ <pct>%     │ Use STD        │
+│  31-90 days      │ <N>              │ <pct>%     │ Use IA         │
+│  91-365 days     │ <N>              │ <pct>%     │ Use IA         │
 ```
 After EACH storage configuration change:
   1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.

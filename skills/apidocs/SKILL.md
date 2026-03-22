@@ -308,7 +308,7 @@ Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation c
 1. **Every field gets a description and an example.** An undocumented field is an undocumented bug. Consumers should never have to guess what a field means.
 2. **$ref everything shared.** Pagination parameters, error responses, auth schemes — extract once, reference everywhere. A duplicated schema is a schema that will drift.
 3. **Validate in CI, not just locally.** Specs break silently. Spectral catches lint issues, Optic catches breaking changes, Redocly catches structural problems. Run all three.
-4. **Examples must be realistic.** `"string"` as an example for an email field is useless. Use `"jane.doe@example.com"`. Consumers copy-paste examples.
+4. **Use realistic examples.** `"string"` as an example for an email field is useless. Use `"jane.doe@example.com"`. Consumers copy-paste examples.
 5. **Generate, don't handwrite, when code exists.** If you have a NestJS app with decorators, generate the spec from code. If you have a greenfield project, write the spec first.
 6. **Publish docs automatically.** Docs that live in a YAML file nobody reads are not docs. Render them with Swagger UI, Redoc, or Stoplight and deploy on every merge.
 7. **Track breaking changes.** A spec diff in CI is worth a thousand "we accidentally broke the mobile app" incidents.
@@ -317,8 +317,8 @@ Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation c
 
 1. **NEVER write endpoint docs without realistic examples.** A schema without examples is a guessing game. Every request and response must have at least one realistic example.
 2. **NEVER duplicate schemas.** Extract shared shapes to `components/schemas` and use `$ref`. Duplicated schemas drift.
-3. **NEVER skip CI validation.** Lint and validate the OpenAPI spec on every PR. A spec that was valid last week can be broken today.
-4. **NEVER hand-edit generated specs in code-first workflows.** Modify annotations in code instead. Manual edits will be overwritten.
+3. **NEVER skip CI validation.** Lint and validate the OpenAPI spec on every PR. A spec valid last week can break today.
+4. **NEVER hand-edit generated specs in code-first workflows.** Modify annotations in code instead. The generator overwrites manual edits.
 5. **NEVER ignore breaking changes.** Use Optic or oasdiff in CI to catch removed endpoints, renamed parameters, and type changes.
 6. **NEVER skip security scheme documentation.** Undocumented auth forces every consumer to reverse-engineer your auth flow.
 7. **ALWAYS serve docs in all environments** or publish static docs. Docs behind `if (env === 'development')` are invisible to production consumers.
@@ -372,7 +372,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 
 

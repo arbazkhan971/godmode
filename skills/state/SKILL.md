@@ -209,7 +209,7 @@ STATE MACHINE DECISION:
 Use a state machine when:
 [x] The entity has a fixed set of states (loading, success, error, idle)
 [x] Transitions between states follow strict rules (can't go from "idle" to "success")
-[x] Invalid state combinations are possible ("loading AND error" should be impossible)
+[x] Invalid state combinations are possible (prevent "loading AND error" from coexisting)
 [x] The flow has branching logic (checkout: shipping -> payment -> review -> confirm)
 [x] Complex async workflows (file upload: selecting -> uploading -> processing -> done)
 [x] WebSocket/real-time lifecycle management (connecting -> connected -> disconnected -> reconnecting)
@@ -307,7 +307,7 @@ Commit: `"state: design <description> state architecture"`
 ## Key Behaviors
 
 1. **Classify state before choosing a tool.** The single most important decision is separating server state from client state. Server state goes in React Query/SWR/Apollo. Client state goes in Zustand/Redux/Jotai.
-2. **Minimize state.** If it can be computed from other state, it is derived state -- use selectors, not stored values. If it can live in the URL, put it in the URL. Less state means fewer bugs.
+2. **Minimize state.** If you compute it from other state, it is derived state -- use selectors, not stored values. If it fits in the URL, put it in the URL. Less state means fewer bugs.
 3. **Colocate state.** State should live as close to where it is used as possible. useState > Zustand store > Redux global. Only lift state when two distant components genuinely need it.
 4. **Server state is a cache, not a store.** You do not own server data. You cache it. It can become stale. React Query/SWR handle staleness, refetching, and garbage collection. Redux does not.
 5. **Optimistic updates need rollback.** Every optimistic update must have an onError rollback path. Snapshot previous state before mutating. Invalidate after settling.
@@ -315,7 +315,7 @@ Commit: `"state: design <description> state architecture"`
 7. **Persistence is not free.** localStorage is synchronous and blocks the main thread. IndexedDB is async but complex. Choose based on data size and access pattern.
 8. **Selectors prevent re-renders.** Always access store state through selectors that pick only what the component needs. Never subscribe to the entire store.
 9. **URL state is shareable state.** Put filters, pagination, sort order, and selected items in the URL so users can share and bookmark.
-10. **Hydration must be idempotent.** SSR hydration produces the same result whether it runs once or twice. No side effects in hydration logic.
+10. **Keep hydration idempotent.** SSR hydration produces the same result whether it runs once or twice. No side effects in hydration logic.
 
 ## Flags & Options
 
@@ -328,7 +328,7 @@ Commit: `"state: design <description> state architecture"`
 ## HARD RULES
 
 1. **NEVER put server data in Redux/Zustand/Pinia.** API data is server state. It belongs in React Query, SWR, or Apollo Client -- tools designed for cache management, staleness, and refetching.
-2. **NEVER store derived state.** If `totalPrice` can be computed from `items`, compute it in a selector. Storing it creates synchronization bugs.
+2. **NEVER store derived state.** If you derive `totalPrice` from `items`, compute it in a selector. Storing it creates synchronization bugs.
 3. **NEVER use React Context for frequently-changing state.** Context re-renders ALL consumers on ANY change. Use Zustand, Jotai, or Signals instead.
 4. **NEVER subscribe to the entire store.** Always use selectors: `useStore((s) => s.count)`, not `useStore()`.
 5. **NEVER persist sensitive data in localStorage.** Auth tokens in localStorage are vulnerable to XSS. Use httpOnly cookies for auth.

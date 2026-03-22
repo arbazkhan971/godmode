@@ -406,7 +406,7 @@ WHILE current_iteration < max_iterations:
        recommended_pass = [config_integrity, smoke_test]
 
        IF all required PASS: "READY — development environment is fully functional"
-       IF any required FAIL: "BLOCKED — {N} critical issues must be resolved"
+       IF any required FAIL: "BLOCKED — resolve {N} critical issues"
        IF required PASS but recommended FAIL: "READY WITH WARNINGS — {N} non-critical issues"
 
     2. GENERATE developer quickstart from validated commands:

@@ -303,7 +303,7 @@ PREVENTION LAYER:
 
 ```
 AUTO-DETECT SEQUENCE:
-1. Check for .env files: .env, .env.local, .env.production (should be in .gitignore)
+1. Check for .env files: .env, .env.local, .env.production (verify presence in .gitignore)
 2. Check .gitignore for .env entries: if missing, flag as CRITICAL
 3. Detect secret manager: vault config, AWS Secrets Manager SDK, GCP Secret Manager, Azure Key Vault
 4. Scan for hardcoded secrets: grep for API_KEY=, SECRET=, PASSWORD=, TOKEN= in source files
@@ -391,14 +391,14 @@ DO NOT STOP just because:
 ```
 MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 1. NEVER hardcode secrets in source code, config files, Dockerfiles, or CI configs.
-2. .env files MUST be in .gitignore. Verify before first commit.
+2. ADD .env files to .gitignore. Verify before first commit.
 3. NEVER share secrets via Slack, email, or chat. Use a secret manager or one-time links.
 4. EVERY environment (dev, staging, prod) must have unique credentials.
 5. NEVER log secrets. Sanitize all log output. Mask values in error messages.
 6. Prefer short-lived credentials over long-lived ones (IAM roles > access keys, short JWT > permanent tokens).
 7. EVERY repository must have a pre-commit secret scanning hook. No exceptions.
 8. IF a secret is exposed in git history, rotate it IMMEDIATELY. Then scrub history.
-9. Secret rotation MUST be automated. Manual rotation is forgotten rotation.
+9. AUTOMATE secret rotation. Manual rotation is forgotten rotation.
 10. NEVER store secrets in plain text at rest. Use encrypted storage (Vault, KMS, Secrets Manager).
 ```
 

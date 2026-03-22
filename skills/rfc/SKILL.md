@@ -78,7 +78,7 @@ Create the RFC using the structured template:
 - **Decision:** <Pending | Approved | Rejected | Deferred>
 
 ## Summary
-<2-3 sentence executive summary. A busy person should be able to read just this
+<2-3 sentence executive summary. A busy person reads just this
 and understand what you're proposing and why.>
 
 ## Problem Statement
@@ -349,8 +349,8 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 2. NEVER write an RFC after the code is already written. RFC = proposal, not notification.
 3. EVERY RFC must have a review deadline. Open-ended reviews never close.
 4. NEVER accept an RFC with unresolved open questions. Resolve or explicitly defer each one.
-5. EVERY rejected RFC must be preserved with rejection rationale. Future teams need this context.
-6. RFC scope must be small enough to explain in < 5 pages. If longer, split into multiple RFCs.
+5. EVERY rejected RFC stays preserved with rejection rationale. Future teams need this context.
+6. Keep RFC scope small enough to explain in < 5 pages. If longer, split into multiple RFCs.
 7. EVERY RFC must include a rollback/migration plan. Irreversible decisions need extra scrutiny.
 8. NEVER skip the alternatives section. Single-option RFCs are not proposals — they are mandates.
 ```
@@ -416,7 +416,7 @@ IF all reviewers reject:
 - **Do NOT skip "Do Nothing."** If you can't articulate why the status quo is unacceptable, the status quo is fine.
 - **Do NOT write a 20-page RFC.** If it takes 20 pages to explain, your proposal is too big. Split it into smaller RFCs.
 - **Do NOT present a fait accompli.** An RFC published after the code is written is not a proposal — it's a notification. Write the RFC BEFORE implementation.
-- **Do NOT leave open questions unanswered.** Every open question must be resolved (answered or explicitly deferred) before the RFC can be accepted.
+- **Do NOT leave open questions unanswered.** Resolve every open question (answer or explicitly defer) before accepting the RFC.
 - **Do NOT ignore rejected RFCs.** A rejected RFC is valuable documentation. It explains why a path was NOT taken, saving future teams from re-exploring it.
 
 

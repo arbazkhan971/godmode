@@ -57,7 +57,7 @@ RESOURCE MODEL:
 Rules:
 - Use nouns for resource names, plural for collections
 - Every resource has an `id`, `created_at`, `updated_at`
-- Relationships must be explicit — no implicit joins
+- Define relationships explicitly — no implicit joins
 - Field types must map to the target format (JSON Schema for REST, SDL for GraphQL, protobuf for gRPC)
 
 ### Step 3: Endpoint Design (REST)
@@ -272,7 +272,7 @@ Commit: `"api: <service> — <N> endpoints, <M> resources, OpenAPI spec generate
 2. **Consistency is king.** Every endpoint must follow the same naming, error format, pagination, and auth patterns. No snowflakes.
 3. **Design for consumers.** Think about who will call this API. Frontend devs want predictable responses. Third-party devs want clear docs. Internal services want performance.
 4. **Version from day one.** Even if you think you'll never change the API, version it. /api/v1/ is cheap insurance.
-5. **Error messages help developers.** "Bad Request" is useless. "Field 'email' must be a valid email address" is useful.
+5. **Error messages help developers.** "Bad Request" is useless. "Field 'email' requires a valid email address" is useful.
 6. **Rate limit everything.** Every public endpoint needs rate limiting. Internal endpoints need it too — they just get higher limits.
 7. **Validate the spec.** Generate it, then validate it with tooling. A broken OpenAPI spec is worse than no spec.
 

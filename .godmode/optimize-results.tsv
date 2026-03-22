@@ -3,3 +3,4 @@ round	change	metric_before	metric_after	delta%	status	lines_changed
 1	add_missing_sections_trim_bloat_126_skills	54.65	32.65	-40.2%	kept	-12000
 2	aggressive_trim_all_skills_under_500_lines	32.65	1.03	-96.8%	kept	-50000
 3	remove_vague_words_passive_voice_trim_last_2	1.03	0.59	-42.7%	kept	-92
+4	eliminate_passive_voice_194_rewrites	0.59	0.02	-96.6%	kept	-194

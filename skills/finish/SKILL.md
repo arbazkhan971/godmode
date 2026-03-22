@@ -325,11 +325,11 @@ WHILE current_iteration < max_iterations:
   IF dimension == "lint_clean":
     1. RUN full lint suite:
        lint_result = run({lint_cmd})
-       IF lint fails: FAIL — "Lint errors must be fixed before finishing."
+       IF lint fails: FAIL — "Fix lint errors before finishing."
 
     2. RUN type check (if applicable):
        typecheck_result = run({typecheck_cmd})
-       IF typecheck fails: FAIL — "Type errors must be fixed before finishing."
+       IF typecheck fails: FAIL — "Fix type errors before finishing."
 
     3. CHECK for code quality signals:
        - grep for TODO/FIXME/HACK/XXX in changed files

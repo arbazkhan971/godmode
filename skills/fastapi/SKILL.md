@@ -208,7 +208,7 @@ WEBSOCKET PATTERNS:
 Rules:
 - Use `BackgroundTasks` for simple, quick tasks that don't need retry logic
 - Use Celery or ARQ for tasks that need retries, scheduling, or monitoring
-- WebSocket connections must be authenticated — check JWT in the initial handshake
+- Authenticate WebSocket connections — check JWT in the initial handshake
 - Use Redis Pub/Sub when running multiple uvicorn workers — in-memory ConnectionManager is per-process
 - Always handle `WebSocketDisconnect` gracefully — clients disconnect without warning
 
@@ -469,6 +469,6 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (that can be a follow-up pass)
+  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 

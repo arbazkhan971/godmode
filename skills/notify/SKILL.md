@@ -217,7 +217,7 @@ DO NOT STOP just because: digest batching incomplete or analytics dashboards mis
 
 ## Anti-Patterns
 - Do NOT send notifications directly from business logic — always route through the service.
-- Do NOT batch security notifications — login alerts, 2FA, password resets must be immediate.
+- Do NOT batch security notifications — send login alerts, 2FA, password resets immediately.
 - Do NOT ignore timezone in quiet hours — server time instead of user timezone is worse than none.
 - Do NOT use a single queue for all channels — provider outage must not block other channels.
 
