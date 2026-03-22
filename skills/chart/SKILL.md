@@ -31,7 +31,6 @@ Environment: <React | Vue | Angular | vanilla JS | server-side PDF | Jupyter>
 Existing library: <D3.js | Chart.js | Recharts | Plotly | Nivo | Victory | none>
 Constraints: <bundle size limit | IE support | print-friendly | offline | color-blind safe>
 ```
-
 If the user hasn't specified, ask: "What story should this visualization tell? Who is the audience?"
 
 ### Step 2: Chart Type Selection
@@ -40,7 +39,7 @@ Select the optimal chart type based on the data and communication goal:
 ```
 CHART TYPE SELECTION:
 | Goal | Recommended Chart Types |
-|---|---|
+|--|--|
 | Compare values | Bar (vertical/horizontal), Grouped bar, Lollipop |
 | Show trends | Line, Area, Sparkline, Step |
 | Show distribution | Histogram, Box plot, Violin, Density |
@@ -50,10 +49,8 @@ CHART TYPE SELECTION:
 | Show hierarchy | Treemap, Sunburst, Dendrogram, Circle packing |
 | Show geographic | Choropleth, Bubble map, Hex bin map |
 | Show part-to-whole | Donut, Stacked area, Marimekko |
-| Show ranking | Horizontal bar, Bump chart, Slope graph |
-| Show time series | Line, Candlestick, Calendar heatmap |
+  ...
 ```
-
 Rules:
 - Never use pie charts for more than 5 categories — use bar charts instead
 - Never use 3D charts — they distort perception and reduce accuracy
@@ -67,7 +64,7 @@ Choose the right visualization library for the project:
 ```
 LIBRARY SELECTION:
 | Library | Best For | Bundle Size | Learning Curve |
-|---|---|---|---|
+|--|--|--|--|
 | D3.js | Custom, complex, | ~90KB | Steep — full control |
 |  | unique visualizations |  | over every pixel |
 | Chart.js | Standard charts, | ~60KB | Low — declarative |
@@ -77,7 +74,6 @@ LIBRARY SELECTION:
 | Plotly | Scientific/data | ~1MB | Medium — rich |
 |  | analysis, 3D plots |  | interactive charts |
 ```
-
 ### Step 4: Data Transformation
 Prepare data for the selected chart type:
 
@@ -94,13 +90,8 @@ Transformations needed:
   5. <transformation — e.g., compute rolling average>
 
 Missing data strategy: <omit | zero-fill | interpolate | show gap>
-Outlier handling: <include | cap at percentile | separate series>
-Date parsing: <format — e.g., ISO 8601, Unix timestamp>
-
-Sample transformed data:
-  <3-5 rows of the transformed data structure>
+  ...
 ```
-
 Generate the transformation code:
 ```typescript
 // Data transformation pipeline
@@ -117,7 +108,7 @@ Build the chart with full configuration:
 ```
 CHART CONFIGURATION:
 | Property | Value |
-|---|---|
+|--|--|
 | Type | <bar | line | scatter | heatmap | ...> |
 | Width | <responsive | fixed px> |
 | Height | <responsive | fixed px> |
@@ -127,14 +118,8 @@ CHART CONFIGURATION:
 | Font family | <system | project font> |
 | Animation | <none | enter | update | transition> |
 | Legend | <position: top | right | bottom | none> |
-| Tooltip | <format and fields> |
-| Axis X | <label, format, ticks, rotation> |
-| Axis Y | <label, format, ticks, domain> |
-| Grid lines | <horizontal | vertical | both | none> |
-| Annotations | <threshold lines, labels, callouts> |
-| Interactions | <hover | click | brush | zoom | pan> |
+  ...
 ```
-
 #### D3.js Implementation Pattern
 ```typescript
 import * as d3 from 'd3';
@@ -161,7 +146,7 @@ Ensure charts work across all viewport sizes:
 ```
 RESPONSIVE STRATEGY:
 | Breakpoint | Width | Adaptations |
-|---|---|---|
+|--|--|--|
 | Mobile | < 480px | Stack legend below, reduce tick count, |
 |  |  | hide secondary axes, enlarge touch |
 |  |  | targets, swap to simplified chart type |
@@ -171,14 +156,13 @@ RESPONSIVE STRATEGY:
 |  |  | hover tooltips, brush/zoom enabled |
 
 ```
-
 ### Step 7: Color & Accessibility
 Design accessible visualizations that work for everyone:
 
 ```
 ACCESSIBILITY CHECKLIST:
 | Check | Status |
-|---|---|
+|--|--|
 | Color contrast ratio >= 3:1 against background | PASS | FAIL |
 | Colorblind-safe palette (no red/green only) | PASS | FAIL |
 | Patterns/textures as secondary differentiator | PASS | FAIL |
@@ -188,10 +172,8 @@ ACCESSIBILITY CHECKLIST:
 | Screen reader descriptions for trends | PASS | FAIL |
 | Tooltip accessible via keyboard (not hover-only) | PASS | FAIL |
 | Text labels minimum 12px font size | PASS | FAIL |
-| No information conveyed by color alone | PASS | FAIL |
-| Reduced motion support (@prefers-reduced-motion) | PASS | FAIL |
+  ...
 ```
-
 ### Step 8: Dashboard Composition
 When building multi-chart dashboards, apply layout principles:
 
@@ -208,18 +190,15 @@ DASHBOARD PRINCIPLES:
   1. Most important metric is top-left (F-pattern reading)
   2. KPI cards first — give the executive summary before details
   3. Max 7 ± 2 charts per dashboard (cognitive load limit)
-  4. Consistent color encoding across all charts (same color = same category)
-  5. Linked interactions — filtering one chart filters all charts
-  6. Date range selector affects all charts simultaneously
+  ...
 ```
-
 ### Step 9: Performance Optimization
 Ensure charts render efficiently with large datasets:
 
 ```
 PERFORMANCE STRATEGIES:
 | < 1,000 points | Render all — no optimization needed |
-|---|---|
+|--|--|
 | 1K - 10K points | Canvas rendering (not SVG), debounce tooltips |
 | 10K - 100K points | Data aggregation, LTTB downsampling, WebGL |
 | > 100K points | Server-side aggregation, WebGL (deck.gl) |
@@ -227,14 +206,13 @@ PERFORMANCE STRATEGIES:
 Key techniques: Canvas over SVG for > 1K points, LTTB downsampling for time series,
 IntersectionObserver for lazy-loading, useMemo for data transforms, Web Workers for heavy processing.
 ```
-
 ### Step 10: Validation & Delivery
 Validate the visualization and produce deliverables:
 
 ```
 VISUALIZATION VALIDATION:
 | Check | Status |
-|---|---|
+|--|--|
 | Chart type matches data and communication goal | PASS | FAIL |
 | Data transformations produce correct output | PASS | FAIL |
 | Responsive at mobile, tablet, desktop breakpoints | PASS | FAIL |
@@ -244,13 +222,8 @@ VISUALIZATION VALIDATION:
 | Tooltips show correct formatted values | PASS | FAIL |
 | Axis labels and titles are clear and formatted | PASS | FAIL |
 | Legend is present and correctly maps to data series | PASS | FAIL |
-| No misleading scale (y-axis starts at 0 for bars) | PASS | FAIL |
-| Loading and error states handled | PASS | FAIL |
-| Data table alternative provided for screen readers | PASS | FAIL |
-
-VERDICT: <PASS | NEEDS REVISION>
+  ...
 ```
-
 Produce deliverables:
 
 ```
@@ -266,11 +239,8 @@ Artifacts:
 Validation: <PASS | NEEDS REVISION>
 Chart type: <type>
 Library: <library>
-Data points: <N>
-Responsive: <yes — tested at 320px, 768px, 1440px>
-Accessible: <yes — all 12 checks pass>
+  ...
 ```
-
 Commit: `"chart: <component> — <chart type>, <library>, <N> data series, responsive + accessible"`
 
 ## Key Behaviors
@@ -286,7 +256,7 @@ Commit: `"chart: <component> — <chart type>, <library>, <N> data series, respo
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full chart design and implementation workflow |
 | `--type <chart>` | Force chart type: `bar`, `line`, `scatter`, `heatmap`, `treemap`, `sankey`, `pie`, `area` |
 | `--lib <library>` | Force library: `d3`, `chartjs`, `recharts`, `plotly`, `nivo`, `victory` |
@@ -322,11 +292,8 @@ AUTO-DETECT:
 3. Design system:
    ls src/theme* src/styles/tokens* tailwind.config* 2>/dev/null
    # Extract color palette, font family, spacing tokens
-
-4. Data source:
-   # Scan for API clients, GraphQL queries, or static data files
+  ...
 ```
-
 ## Output Format
 
 After each chart skill invocation, emit a structured report:
@@ -334,7 +301,7 @@ After each chart skill invocation, emit a structured report:
 ```
 CHART BUILD REPORT:
 | Charts created | <N> |
-|---|---|
+|--|--|
 | Charts updated | <N> |
 | Library used | <library name> |
 | Data points | <N> total across all charts |
@@ -345,7 +312,6 @@ CHART BUILD REPORT:
 | Render time | <N> ms (largest chart) |
 | Verdict | PASS | NEEDS REVISION |
 ```
-
 ## TSV Logging
 
 Log every chart creation for tracking:
@@ -355,7 +321,6 @@ timestamp	skill	chart_type	library	data_points	render_ms	a11y_table	status
 2026-03-20T14:00:00Z	chart	bar	recharts	240	45	yes	pass
 2026-03-20T14:05:00Z	chart	line	d3	12000	180	yes	pass
 ```
-
 ## Success Criteria
 
 The chart skill is complete when ALL of the following are true:
@@ -383,11 +348,8 @@ IF chart is too slow (> 500ms render):
   3. Debounce resize handlers to prevent layout thrashing
   4. Use virtualization for very large datasets
 
-IF colors fail colorblind simulation:
-  1. Switch to a verified colorblind-safe palette (e.g., Okabe-Ito, ColorBrewer)
-  2. Add patterns or shapes in addition to color differentiation
+  ...
 ```
-
 ## Data Visualization Audit Loop
 
 Autoresearch-grade iterative audit for data visualization quality. Covers rendering performance, accessibility compliance, and responsive behavior through measured, repeatable cycles.
@@ -405,11 +367,8 @@ Phase 1 — Rendering Performance Audit
   current_iteration = 0
   max_iterations = 8
 
-  FOR EACH chart/visualization in the application:
-    1. MEASURE initial render time:
-       - Browser DevTools Performance tab → record page load
+  ...
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH chart implementation or optimization:

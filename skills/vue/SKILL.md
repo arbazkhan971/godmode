@@ -27,7 +27,6 @@ cat package.json 2>/dev/null | grep -E '"vue"|"nuxt"|"@vue/"'
 cat node_modules/vue/package.json 2>/dev/null | grep '"version"'
 
 ```
-
 ## Workflow
 
 ### Step 1: Project Discovery & Assessment
@@ -50,7 +49,6 @@ Component count: <N>
 Directory structure:
  src/
 ```
-
 If starting fresh, ask: "What are you building? Do you need SSR (Nuxt) or is a SPA sufficient?"
 
 ### Step 2: API Style Decision — Composition vs Options
@@ -60,7 +58,7 @@ Guide the decision between Composition API and Options API:
 ```
 API STYLE DECISION:
 | Factor | Composition API | Options API |
-|---|---|---|
+|--|--|--|
 | Vue version | Vue 3 (native) | Vue 2 & 3 |
 | TypeScript support | Excellent (inferred) | Requires decorators |
 | Logic reuse | Composables (natural) | Mixins (fragile) |
@@ -73,7 +71,6 @@ API STYLE DECISION:
 RECOMMENDATION: <Composition API | Options API>
 JUSTIFICATION: <reason based on project context>
 ```
-
 Rules:
 - **New Vue 3 projects:** Default to Composition API with `<script setup>`
 - **Existing Vue 2 projects:** Keep Options API unless migrating to Vue 3
@@ -126,14 +123,13 @@ Design and implement Pinia stores:
 ```
 PINIA STORE ARCHITECTURE:
 | Store | Purpose | Persistence |
-|---|---|---|
+|--|--|--|
 | useAuthStore | Authentication state | localStorage (token) |
 | useUserStore | User profile data | Session only |
 | useCartStore | Shopping cart | localStorage |
 | useNotifyStore | Toast notifications | Session only |
 | useSettingsStore | User preferences | localStorage |
 ```
-
 #### Setup Store Pattern (Recommended)
 ```typescript
 // stores/auth.ts
@@ -158,7 +154,7 @@ Design routing architecture:
 ```
 ROUTE ARCHITECTURE:
 | Path | Component | Guard | Meta |
-|---|---|---|---|
+|--|--|--|--|
 | / | Home.vue | none |  |
 | /login | Login.vue | guest-only |  |
 | /dashboard | Dashboard.vue | auth-required |  |
@@ -166,7 +162,6 @@ ROUTE ARCHITECTURE:
 | /admin/* | AdminLayout.vue | admin-only | lazy |
 | /:pathMatch(.*)* | NotFound.vue | none |  |
 ```
-
 #### Router Setup
 ```typescript
 // router/index.ts
@@ -191,14 +186,13 @@ For projects using Nuxt 3:
 ```
 NUXT RENDERING STRATEGY:
 | Route Pattern | Strategy | Reason |
-|---|---|---|
+|--|--|--|
 | / | SSG | Static marketing page |
 | /blog/:slug | ISR (60s) | Content changes infrequently |
 | /dashboard | SPA | Auth-gated, dynamic data |
 | /api/* | Server-only | API routes |
 | /products/:id | SSR | SEO-critical, dynamic data |
 ```
-
 #### Nuxt Configuration
 ```typescript
 // nuxt.config.ts
@@ -258,7 +252,6 @@ Component testing: @vue/test-utils
 E2E: Playwright | Cypress
 Coverage target: > 80% (statements), > 70% (branches)
 ```
-
 #### Component Testing Patterns
 ```typescript
 // tests/components/UserCard.test.ts
@@ -285,7 +278,7 @@ Validate the Vue application against best practices:
 ```
 VUE APPLICATION AUDIT:
 | Check | Status |
-|---|---|
+|--|--|
 | API style consistency (Comp/Options) | PASS | FAIL |
 | <script setup> used where possible | PASS | FAIL |
 | TypeScript strict mode enabled | PASS | FAIL |
@@ -298,7 +291,6 @@ VUE APPLICATION AUDIT:
 | No direct DOM manipulation | PASS | FAIL |
 | No v-html with user input | PASS | FAIL |
 ```
-
 ### Step 10: Deliverables & Handoff
 Generate the project artifacts:
 
@@ -321,7 +313,6 @@ Next steps:
 -> /godmode:build — Implement features
 -> /godmode:ship — Deploy the application
 ```
-
 Commit: `"vue: <project> — <N> components, <M> stores, <Composition API | Options API>"`
 
 ## Key Behaviors
@@ -337,7 +328,7 @@ Commit: `"vue: <project> — <N> components, <M> stores, <Composition API | Opti
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Vue project assessment and setup |
 | `--audit` | Audit existing Vue project against best practices |
 | `--migrate` | Migrate Options API to Composition API |
@@ -349,7 +340,6 @@ Append one row per invocation to `.godmode/vue-results.tsv`:
 ```
 timestamp	project	action	components_count	stores_count	composables_count	audit_status	notes
 ```
-
 IF `.godmode/` directory does not exist, create it.
 
 ## Success Criteria
@@ -397,7 +387,7 @@ Print: `Vue: {action} complete. Components: {N}. Stores: {N}. Composables: {N}. 
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | `vue-tsc` type errors | Read error output line by line. Fix prop type mismatches, missing generic args, and incorrect emit signatures first. Re-run after each batch. |
 | HMR not reflecting changes | Check for circular imports in composables. Verify Vite config `optimizeDeps.include` lists heavy deps. Restart dev server as last resort. |
 | Pinia store not reactive after destructure | Use `storeToRefs()` for state/getters. Direct destructure loses reactivity. Destructure actions directly. |

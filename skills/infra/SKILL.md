@@ -29,7 +29,6 @@ Existing Resources:
 Environments: <dev | staging | production>
 Modules/Stacks: <list of reusable modules or stacks>
 ```
-
 If no IaC is detected: "No infrastructure code found. Shall I scaffold a new IaC project? Specify your preferred tool (Terraform, CloudFormation, Pulumi, CDK) and cloud provider."
 
 ### Step 2: Validate Infrastructure Definitions
@@ -49,8 +48,7 @@ terraform init -backend=false
 # Generate plan (no apply)
 terraform plan -out=tfplan
 
-# Convert plan to readable output
-terraform show -json tfplan > plan.json
+  ...
 ```
 
 #### CloudFormation
@@ -136,12 +134,11 @@ Estimate monthly costs for the planned infrastructure:
 infracost breakdown --path .
 infracost diff --path . --compare-to infracost-base.json
 ```
-
 ```
 COST ESTIMATE:
   Monthly Cost Estimate
 | Resource | Monthly | Change |
-|---|---|---|
+|--|--|--|
 | aws_instance.api (t3.large) | $60.74 | +$60.74 NEW |
 | aws_rds.primary (db.r5.lg) | $172.80 | — |
 | aws_s3.assets | $2.30 | — |
@@ -150,10 +147,8 @@ COST ESTIMATE:
 | TOTAL | $306.73 | +$109.36 |
 | Previous | $197.37 |  |
 | Delta | +$109.36 | +55.4% |
-
-Cost threshold: $500/mo — WITHIN BUDGET
+  ...
 ```
-
 If cost exceeds threshold: "Estimated cost ($X) exceeds budget threshold ($Y). Use: <specific cost optimization suggestions>."
 
 ### Step 5: Drift Detection
@@ -167,7 +162,6 @@ terraform plan -detailed-exitcode
 aws cloudformation detect-stack-drift --stack-name <stack>
 aws cloudformation describe-stack-drift-detection-status --stack-drift-detection-id <id>
 ```
-
 ```
 DRIFT REPORT:
   Drift Detection Results
@@ -182,7 +176,6 @@ DRIFT REPORT:
   - Instance type changed: t3.medium -> t3.large
   - Action: UPDATE IaC to t3.large or REVERT instance
 ```
-
 ### Step 6: IaC Testing
 Run infrastructure tests to validate behavior:
 
@@ -224,7 +217,6 @@ Integration:    8/8 passing
 Compliance:     45/47 passing (2 warnings)
 Policy:         All policies satisfied
 ```
-
 ### Step 7: Generate Deployment Plan
 Produce a safe, reviewable deployment plan:
 
@@ -241,18 +233,8 @@ DEPLOYMENT PLAN:
   + aws_elasticache_cluster.redis
   UPDATE:
   ~ aws_alb_listener.https (add new target group)
-  Estimated time: 4-6 minutes
-  Estimated cost delta: +$109.36/mo
-  Risk level: LOW (no destructive changes)
-  Pre-deployment checklist:
-  [x] terraform plan reviewed
-  [x] Policy checks passed
-  [x] Cost within budget
-  [x] No drift detected
-  [x] Tests passing
-  [ ] Manual approval (required for production)
+  ...
 ```
-
 ### Step 8: Apply Infrastructure Changes
 Execute the deployment with safety guardrails:
 
@@ -263,7 +245,6 @@ terraform apply tfplan
 # Monitor deployment
 terraform output -json > outputs.json
 ```
-
 ```
 DEPLOYMENT RESULT:
 Apply complete! Resources: 3 added, 1 changed, 0 destroyed.
@@ -278,7 +259,6 @@ Post-deployment verification:
   [x] Redis connectivity — CONNECTED
   [x] Security group rules — VERIFIED
 ```
-
 ### Step 9: Commit and Report
 ```
 1. Save infrastructure report as `docs/infra/<environment>-deployment.md`
@@ -326,42 +306,7 @@ AUTO-DETECT:
    - azurerm provider blocks, Microsoft.* resources → Azure
 3. Detect state backend:
    - backend "s3", backend "gcs", backend "azurerm", cloud {} block
-4. Scan for environments:
-   - *.tfvars files, environments/ directories, workspace list
-5. Detect modules/stacks:
-   - modules/ directory, source references in .tf files
-6. Check for existing CI/CD:
-   - .github/workflows/ with terraform/cdk/pulumi steps
-   - Terraform Cloud/Enterprise workspace configuration
-7. Detect cost tooling:
-   - .infracost.yml, infracost-*.json
-```
-
-## Iterative Validation Protocol
-Infrastructure validation is iterative across environments:
-```
-current_env = 0
-environments = ["dev", "staging", "production"]
-
-WHILE current_env < len(environments):
-  env = environments[current_env]
-  1. INIT: terraform init -backend-config={env}.backend.hcl
-  2. VALIDATE: terraform validate
-  3. PLAN: terraform plan -var-file={env}.tfvars -out={env}.tfplan
-  4. POLICY CHECK: Run OPA/Sentinel against plan output
-  5. COST CHECK: infracost diff --path . --compare-to baseline
-  6. IF policy violations OR cost threshold exceeded:
-     - REPORT violations with remediation steps
-     - HALT — do not proceed to next environment
-     - WAIT for user to fix and re-run
-  7. IF all checks pass:
-     - REPORT: "{env} validated — {N} resources, ${cost}/mo"
-     - current_env += 1
-  8. DRIFT CHECK (production only):
-     - terraform plan -detailed-exitcode
-     - If drift detected → report and halt
-
-EXIT when all environments validated OR user halts
+  ...
 ```
 
 ## Keep/Discard Discipline
@@ -377,15 +322,6 @@ After EACH infrastructure change:
 Never apply infrastructure changes without reviewing the plan output first.
 ```
 
-## Stuck Recovery
-```
-IF >3 consecutive iterations fail to resolve a policy violation or drift issue:
-  1. Re-read the policy definition — the violation may be a false positive from an overly strict policy.
-  2. Check state consistency: run `terraform state list` and compare with actual cloud resources.
-  3. If state is corrupted: use `terraform import` to reconcile, not manual state editing.
-  4. If still stuck → log stop_reason=stuck, document the issue, halt deployment for this environment.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -399,21 +335,10 @@ DO NOT STOP just because:
   - Non-production environments have minor policy warnings
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler infrastructure approach:
-  - Managed services (RDS, Cloud SQL) before self-managed databases
-  - Standard module patterns before custom module abstractions
-  - Fewer resources with right-sized capacity before many small resources
-  - Built-in cloud encryption before custom KMS key management
-  - Single state file per environment before complex state partitioning
-  - Terraform workspaces before duplicated directory structures (for simple cases)
-```
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full validation: lint, plan, policy, cost, drift |
 | `--validate` | Syntax and configuration validation only |
 | `--plan` | Generate and review execution plan |
@@ -456,4 +381,3 @@ Columns: iteration, task, provider, resources_planned, resources_changed, drift_
 - **Drift detected in production**: Do not auto-apply to fix drift. Investigate why manual changes were made. Import the manual change into state if intentional, or revert it in the console if accidental. Then apply from code.
 - **Module version conflict**: Pin module versions explicitly. Use version constraints (`~> 3.0`). Check for breaking changes in the module changelog before upgrading.
 - **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources belonging in a lower tier. Verify auto-scaling max limits are set.
-

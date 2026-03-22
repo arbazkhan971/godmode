@@ -32,13 +32,12 @@ Auth: Sanctum (SPA/token) | Passport (OAuth2) | Breeze | Jetstream
 Frontend: Blade + Livewire | Inertia (Vue/React) | API-only
 CSS: Tailwind (default) | Bootstrap
 Cache: Redis | Memcached | File | Database
-Deployment: Docker | Laravel Forge | Vapor (serverless) | Envoyer
+  ...
 ```
-
 ```
 LARAVEL SETUP DECISIONS:
 | Decision | Choice & Justification |
-|---|---|
+|--|--|
 | Full-stack vs API-only | Blade+Livewire: Server-rendered |
 |  | Inertia: SPA feel, Vue/React |
 |  | API-only: Separate frontend |
@@ -48,11 +47,8 @@ LARAVEL SETUP DECISIONS:
 |  | Passport: Full OAuth2 server |
 | Queue driver | Redis: Fast, reliable, standard |
 |  | Database: No Redis dependency |
-| Real-time | Reverb: Laravel native WS |
-| Testing | Pest: Modern, expressive syntax |
-|  | PHPUnit: Standard, full control |
+  ...
 ```
-
 Rules:
 - ALWAYS use the latest PHP version (8.3+) for performance and type system improvements
 - Laravel Sanctum for SPA + mobile token auth — Passport only when you need a full OAuth2 server
@@ -70,11 +66,10 @@ class Order extends Model
 
     protected $fillable = [
 ```
-
 ```
 ELOQUENT QUERY OPTIMIZATION:
 | Pattern | Usage |
-|---|---|
+|--|--|
 | with('relation') | Eager load (prevent N+1) |
 | load('relation') | Lazy eager load (post-query) |
 | withCount('relation') | Count without loading |
@@ -84,12 +79,8 @@ ELOQUENT QUERY OPTIMIZATION:
 | chunkById(1000, fn) | Safe chunking with mutations |
 | lazy() | Lazy collection (memory safe) |
 | cursor() | One-by-one streaming |
-| whereHas('relation', fn) | Filter by relationship |
-| withWhereHas('relation', fn) | Eager load + filter combined |
-| upsert(data, unique, update) | Bulk insert/update |
-| Model::query()->toSql() | Debug query output |
+  ...
 ```
-
 ```php
 // Controller with optimized queries
 class OrderController extends Controller
@@ -98,7 +89,6 @@ class OrderController extends Controller
     {
         $orders = Order::query()
 ```
-
 Rules:
 - ALWAYS use `with()` to eager load relationships displayed in responses
 - ALWAYS use API Resources — never return Eloquent models directly from controllers
@@ -118,11 +108,10 @@ interface PaymentGateway
 {
     public function charge(int $amountCents, string $currency, array $metadata = []): PaymentResult;
 ```
-
 ```
 SERVICE ARCHITECTURE:
 | Pattern | When to Use |
-|---|---|
+|--|--|
 | Action classes (single method) | Complex operations (CreateOrder) |
 | Service classes (multiple methods) | Related operations (OrderService) |
 | Repository pattern | Abstract data access layer |
@@ -132,7 +121,6 @@ SERVICE ARCHITECTURE:
 | Facades | Static-like access to services |
 | Pipeline pattern | Sequential processing steps |
 ```
-
 Rules:
 - Bind interfaces (contracts) in service providers — swap implementations for testing
 - Use Action classes for complex single operations — one public method: `execute()`
@@ -151,11 +139,10 @@ class ProcessOrderPayment implements ShouldQueue
     use Batchable; // For batch processing
 
 ```
-
 ```
 ASYNC ARCHITECTURE:
 | Component | Purpose |
-|---|---|
+|--|--|
 | Jobs (ShouldQueue) | Async task processing |
 | Events + Listeners | Decoupled event handling |
 | Notifications | Multi-channel alerts |
@@ -165,9 +152,8 @@ ASYNC ARCHITECTURE:
 | Job Chains | Sequential job execution |
 | Rate Limiting (middleware) | Throttle job execution |
 | Unique Jobs (ShouldBeUnique) | Prevent duplicate processing |
-
+  ...
 ```
-
 Rules:
 - Jobs MUST stay idempotent — safe to retry without side effects
 - Use `$backoff` array for exponential backoff on retries
@@ -187,11 +173,10 @@ Implement secure authentication:
 // API routes with Sanctum
 Route::middleware('auth:sanctum')->group(function () {
 ```
-
 ```
 AUTH ARCHITECTURE:
 | Auth Method | When to Use |
-|---|---|
+|--|--|
 | Sanctum (SPA mode) | SPA with same-domain backend |
 | Sanctum (token mode) | Mobile apps, third-party tokens |
 | Passport | Full OAuth2 server needed |
@@ -201,11 +186,8 @@ AUTH ARCHITECTURE:
 
 AUTHORIZATION LAYERS:
 - Gates: Simple closures for non-model actions
-- Policies: Model-specific authorization logic
-- Middleware: Route-level access control
-- Token abilities: Fine-grained API token permissions
+  ...
 ```
-
 ### Step 6: Testing with PHPUnit & Pest
 Comprehensive testing strategy:
 
@@ -217,7 +199,6 @@ describe('Order', function () {
         expect($order->customer)->toBeInstanceOf(Customer::class);
     });
 ```
-
 ```php
 // Factory with states
 class OrderFactory extends Factory
@@ -226,11 +207,10 @@ class OrderFactory extends Factory
 
     public function definition(): array
 ```
-
 ```
 TESTING STRATEGY:
 | Layer | Approach |
-|---|---|
+|--|--|
 | Models | Pest + Factories + Assertions |
 | API endpoints | Pest + Sanctum::actingAs |
 | Jobs/Listeners | Pest + Queue::fake + Event::fake |
@@ -240,16 +220,15 @@ TESTING STRATEGY:
 | Browser/E2E | Laravel Dusk (Selenium) |
 | Mail | Mail::fake + assertQueued |
 | Notifications | Notification::fake |
-
+  ...
 ```
-
 Rules:
 - Use Pest for new Laravel projects — it is the modern standard with cleaner syntax
 - Use `RefreshDatabase` trait — it wraps tests in transactions for speed
 - Use `Queue::fake()`, `Event::fake()`, `Mail::fake()` to test side effects without executing them
 - Use factory states for common variations (`:confirmed`, `:withItems`)
 - Test authorization rules in every endpoint test — authorization bugs are security bugs
-- Use `assertDatabaseHas` to verify persistence, not just response status codes
+- Use `assertDatabaseHas` to verify persistence, not only response status codes
 
 ### Step 7: Validation & Delivery
 Verify the Laravel application:
@@ -257,7 +236,7 @@ Verify the Laravel application:
 ```
 LARAVEL VALIDATION:
 | Check | Status | Notes |
-|---|---|---|
+|--|--|--|
 | N+1 prevention (preventLazyLoading) | PASS | Enabled in dev |
 | Eager loading on all endpoints | PASS | with() used |
 | API Resources (no raw models) | PASS | JsonResource used |
@@ -267,10 +246,8 @@ LARAVEL VALIDATION:
 | Events for side effects | PASS | Decoupled listeners |
 | Config cached for production | PASS | config:cache |
 | Routes cached for production | PASS | route:cache |
-| Environment variables validated | PASS | No missing env vars |
-| Database indexes on FKs | PASS | All foreign keys |
+  ...
 ```
-
 ```
 LARAVEL DELIVERY:
 
@@ -284,14 +261,8 @@ Artifacts:
 - Migrations: <N> database migrations
 - Validation: <PASS | NEEDS REVISION>
 
-Next steps:
--> /godmode:test — Increase test coverage
--> /godmode:secure — Security hardening audit
--> /godmode:deploy — Deploy with Forge/Vapor
--> /godmode:optimize — Performance tuning (caching, query optimization)
--> /godmode:observe — Set up monitoring with Telescope/Pulse
+  ...
 ```
-
 Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
 
 ## Key Behaviors
@@ -331,35 +302,13 @@ AUTO-DETECT:
    - routes/web.php present → full-stack (Blade/Livewire/Inertia)
    - routes/api.php present → API routes exist
    - resources/views/ → Blade templates
-   - resources/js/ with Vue/React → Inertia
-4. Detect auth:
-   - config/sanctum.php → Sanctum
-```
-
-## Iterative Build Protocol
-Laravel features are built iteratively through the stack:
-```
-current_layer = 0
-layers = ["migration", "model", "policy", "formrequest", "controller", "resource", "routes", "tests"]
-
-WHILE current_layer < len(layers):
-  layer = layers[current_layer]
-  1. IMPLEMENT layer:
-     - migration: Create schema with proper indexes and foreign keys
-     - model: Relationships, scopes, casts, fillable, accessors
-     - policy: Authorization rules for every action
-     - formrequest: Validation rules with custom messages
-     - controller: Thin controller using Action/Service classes
-     - resource: API Resource with conditional relationships
-     - routes: Route registration with middleware
-     - tests: Pest tests for this layer
-  2. VALIDATE layer:
+  ...
 ```
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Laravel setup workflow |
 | `--api` | API-only Laravel application |
 | `--auth sanctum` | Configure Sanctum auth |
@@ -380,7 +329,6 @@ Build status: <passing | failing | not-checked>
 Issues fixed: <N>
 Notes: <one-line summary>
 ```
-
 ## TSV Logging
 
 Log every invocation to `.godmode/` as TSV. Create on first run.
@@ -388,7 +336,6 @@ Log every invocation to `.godmode/` as TSV. Create on first run.
 ```
 timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
 ```
-
 ## Success Criteria
 
 Every Laravel skill invocation must pass ALL of these checks before reporting success:
@@ -419,28 +366,6 @@ IF queue job fails:
 IF authorization errors:
   1. Verify Policy is registered in AuthServiceProvider
 
-## Laravel Optimization Loop
-
-Run this systematic audit when optimizing an existing Laravel application:
-
-```
-LARAVEL OPTIMIZATION PASSES:
-
-Pass 1 — Eloquent Query Optimization:
-  1. Enable Model::preventLazyLoading() in AppServiceProvider::boot()
-  2. Baseline query count per endpoint with Debugbar
-  3. Fix N+1: add with(), withCount(), withWhereHas() for eager loading
-  4. Replace create() loops with insert()/upsert() for bulk operations
-  5. Use chunk()/chunkById() for large dataset processing
-
-Pass 2 — Queue Processing:
-  1. Catalog all queued jobs with queue, avg time, retries
-  2. Set explicit $tries, $timeout, $backoff on every job
-  3. Add uniqueId() to prevent duplicate jobs, failed() for error notification
-  4. Enable after_commit on queue connection
-  5. Scale workers per queue priority with Horizon
-```
-
 ## Keep/Discard Discipline
 ```
 After EACH implementation or optimization change:
@@ -463,4 +388,3 @@ DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
-

@@ -34,12 +34,11 @@ Framework: <PyTorch | TensorFlow | scikit-learn | JAX | XGBoost | custom>
 Compute: <local | GPU type | cloud instance type>
 Estimated training time: <duration>
 ```
-
 #### Experiment Registry
 ```
 EXPERIMENT REGISTRY:
 | ID | Name | Status | Metric | Score | vs Base |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | EXP-2025-03-15-1 | baseline | COMPLETE | F1 | 0.847 | — |
 | EXP-2025-03-15-2 | larger-lr | COMPLETE | F1 | 0.862 | +1.8% |
 | EXP-2025-03-15-3 | dropout-05 | RUNNING | F1 | (pending) | — |
@@ -58,7 +57,6 @@ model:
   layers: <layer configuration>
   hidden_size: <N>
 ```
-
 #### Hyperparameter Search
 ```
 HYPERPARAMETER SEARCH:
@@ -102,7 +100,6 @@ Quality checks:
   Duplicates: <count of exact duplicate rows>
   Outliers: <count per feature, method used>
 ```
-
 ### Step 4: Bias Detection
 
 Systematically check for bias across protected attributes:
@@ -113,7 +110,7 @@ Protected attributes analyzed: <list — e.g., gender, race, age, geography>
 
 Per-attribute analysis:
 | Attribute | Group | Samples | Accuracy | FPR | FNR |
-|---|---|---|---|---|---|
+|--|--|--:|--:|--:|--:|
 | Gender | Male | <N> | <val> | <val> | <val> |
 |  | Female | <N> | <val> | <val> | <val> |
 |  | Non-bin. | <N> | <val> | <val> | <val> |
@@ -121,7 +118,6 @@ Per-attribute analysis:
 |  | 31-50 | <N> | <val> | <val> | <val> |
 |  | 51+ | <N> | <val> | <val> | <val> |
 ```
-
 ### Step 5: Model Training and Tracking
 
 Execute training with full observability:
@@ -143,7 +139,6 @@ Live metrics:
   Validation loss:  <value> (trend: <decreasing | plateauing | increasing>)
   Primary metric:   <value> (best: <value> at epoch <N>)
 ```
-
 ### Step 6: Model Evaluation
 
 Rigorous evaluation on held-out test set:
@@ -164,7 +159,6 @@ Classification metrics:
 Per-class metrics:
 | Class | Precision | Recall | F1 | Support |
 ```
-
 ### Step 7: Experiment Comparison
 
 Compare experiments to select the best model:
@@ -172,7 +166,7 @@ Compare experiments to select the best model:
 ```
 EXPERIMENT COMPARISON:
 | Experiment | F1 | AUC-ROC | Latency | Size | Params |
-|---|---|---|---|---|---|
+|--|--:|--:|--:|--:|--:|
 | EXP-001 (base) | 0.847 | 0.912 | 45ms | 120MB | 12M |
 | EXP-002 (lr=3e4) | 0.862 | 0.928 | 45ms | 120MB | 12M |
 | EXP-003 (large) | 0.879 | 0.941 | 120ms | 450MB | 48M |
@@ -186,7 +180,6 @@ Statistical significance:
   EXP-004 vs baseline: p=0.003 (significant at alpha=0.01)
   Method: paired bootstrap test, 10000 iterations
 ```
-
 ### Step 8: Commit and Transition
 1. Save experiment results as `docs/ml/EXP-<ID>-results.md`
 2. Save best hyperparameters as `configs/ml/EXP-<ID>-params.yaml`
@@ -207,7 +200,7 @@ Statistical significance:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive experiment setup and tracking |
 | `--track` | Track a running experiment (attach to training process) |
 | `--compare <ids>` | Compare multiple experiments side by side |
@@ -235,7 +228,6 @@ IF directory contains data/ AND models/:
 IF directory contains configs/ with *.yaml containing "learning_rate" OR "batch_size":
   SUGGEST "ML hyperparameter configs detected. Activate /godmode:ml?"
 ```
-
 ## Iterative Experiment Protocol
 
 ```
@@ -255,7 +247,6 @@ WHILE current_experiment < total_experiments:
   3. TRAIN model with checkpointing
   4. EVALUATE on validation set
 ```
-
 ## HARD RULES
 
 ```
@@ -275,7 +266,6 @@ WHILE current_experiment < total_experiments:
    A 0.2% improvement could be noise. Use paired bootstrap (10K iterations).
 
 ```
-
 ## Output Format
 
 After each ML skill invocation, emit a structured report:
@@ -283,7 +273,7 @@ After each ML skill invocation, emit a structured report:
 ```
 ML EXPERIMENT REPORT:
 | Task type | <classification | regression | etc> |
-|---|---|---|---|
+|--|--|--|--|
 | Dataset | <name> (<N> train / <N> val / <N> test) |
 | Baseline | <model> — <metric>: <value> |
 | Best model | <model> — <metric>: <value> |
@@ -294,7 +284,6 @@ ML EXPERIMENT REPORT:
 | Data leakage check | PASS / FAIL |
 | Verdict | SHIP | ITERATE | INSUFFICIENT DATA |
 ```
-
 ## TSV Logging
 
 Log every experiment for tracking:
@@ -304,7 +293,6 @@ timestamp	skill	experiment_id	model	metric	baseline	result	improvement	status
 2026-03-20T14:00:00Z	ml	exp-001	random_forest	f1	0.72	0.72	0%	baseline
 2026-03-20T14:30:00Z	ml	exp-002	xgboost	f1	0.72	0.84	+16.7%	improvement
 ```
-
 ## Success Criteria
 
 The ML skill is complete when ALL of the following are true:
@@ -336,7 +324,6 @@ IF model passes validation but fails in production:
   1. Compare production data distribution with training data distribution
   2. Check for feature drift (features computed differently in production)
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH experiment run:
@@ -375,7 +362,7 @@ Auditor: <team or individual>
 
 DATA VALIDATION AUDIT:
 | Check | Status | Evidence |
-|---|---|---|
+|--|--|--|
 | Schema enforcement on input data | PASS|FAIL | <schema tool> |
 | Missing value thresholds defined | PASS|FAIL | <max % allowed> |
 | Feature distribution monitoring | PASS|FAIL | <drift tool> |
@@ -383,7 +370,6 @@ DATA VALIDATION AUDIT:
 | Data versioning (DVC, LakeFS, etc) | PASS|FAIL | <tool + version> |
 | Train/val/test split reproducible | PASS|FAIL | <seed + method> |
 ```
-
 ### ML Pipeline Audit Loop
 
 ```
@@ -401,4 +387,3 @@ SCORING:
   80-95%: conditionally ready (fix critical items)
   >= 95%: production-ready (next audit in 30 days)
 ```
-

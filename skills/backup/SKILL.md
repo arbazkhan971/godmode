@@ -70,7 +70,7 @@ Ensure backed-up data is consistent and usable:
 ```
 DATA INTEGRITY CHECKS:
 | Check | Method | Frequency |
-|---|---|---|
+|--|--|--|
 | Row count consistency | Compare source vs | After each |
 |  | restored backup | restore test |
 | Checksum verification | SHA-256 of backup | Every backup |
@@ -141,7 +141,7 @@ PROCEDURE:
 
   2. ASSESS RECOVERY OPTIONS
      Option A: Point-in-time recovery (best for recent corruption)
-       - Determine the timestamp just before corruption
+       - Determine the timestamp immediately before corruption
        - Restore WAL to that point-in-time
        - Extract corrected data
        - Apply to production
@@ -206,7 +206,7 @@ Generate a comprehensive runbook document:
   On-call escalation: <contact chain>
   Recovery objectives:
 | Tier 1 RPO: < 1 min | RTO: < 15 min |
-|---|---|
+|--|--|
 | Tier 2 RPO: < 1 hour | RTO: < 1 hour |
 | Tier 3 RPO: < 24 hour | RTO: < 4 hours |
   Scenarios covered:
@@ -357,7 +357,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations (10) reached — report remaining gaps
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Tier 3 assets lack backup (address Tier 1 first)
   - A restore test takes time to run (schedule it, do not skip it)
 ```
@@ -375,7 +375,7 @@ PREFER the simpler backup approach:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Backup job fails silently | Add alerting on backup completion. Check disk space, permissions, and network connectivity. Verify backup tool exit code is checked. |
 | Restore test fails | Compare backup format with current schema version. Check for schema drift since backup was taken. Test restore on a fresh instance. |
 | Backup takes too long | Switch to incremental backups. Check if WAL archiving (Postgres) or binlog (MySQL) is available. Compress during transfer. |

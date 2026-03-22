@@ -32,23 +32,15 @@ Health indicators (must all be true for "steady state"):
   - CPU usage: < <X>% (e.g., 80%)
   - Memory usage: < <X>% (e.g., 85%)
   - Active connections: < <N> (e.g., connection pool max)
-
-Monitoring:
-  Dashboard: <URL or tool — Grafana, Datadog, CloudWatch>
-  Alerts: <PagerDuty, Opsgenie, Slack channel>
-  Logs: <ELK, CloudWatch, Datadog Logs>
-
-Verification command:
-  <health check endpoint or monitoring query>
+  ...
 ```
-
 ### Step 2: Identify Failure Domains
 Map all the ways the system can fail:
 
 ```
 FAILURE DOMAIN MAP:
 | Category | Components | Impact if Failed |
-|---|---|---|
+|--|--|--|
 | Network | Load balancer | Total outage |
 |  | DNS resolution | Total outage |
 |  | Inter-service network | Partial outage |
@@ -59,7 +51,6 @@ FAILURE DOMAIN MAP:
 |  | Container/VM host | Service relocation |
 | Storage | Primary database | Read/write loss |
 ```
-
 ### Step 3: Design Chaos Experiments
 Create specific, controlled experiments for each failure domain:
 
@@ -77,10 +68,7 @@ Prerequisites:
   - [ ] Rollback procedure tested
   - [ ] Team notified (if production)
   - [ ] Incident response team on standby (if production)
-
-Injection method: <tool or technique>
-Success criteria: <what constitutes a "pass">
-Failure criteria: <what triggers immediate rollback>
+  ...
 ```
 
 #### Network Failure Experiments
@@ -99,9 +87,7 @@ Injection:
   toxiproxy-cli toxic add -n latency -t latency \
     -a latency=5000 payment-api
 
-  # Or in application code (test mode)
-  CHAOS_PAYMENT_LATENCY_MS=5000
-
+  ...
 ```
 
 **Experiment N2: DNS Failure**
@@ -116,10 +102,9 @@ Injection:
   # Or modify /etc/hosts to return wrong IP
   echo "127.0.0.1 api.external-service.com" >> /etc/hosts
 
-Expected behavior:
+Verify:
   - Cached responses served for previously-resolved hosts
-  - Clear error logging with DNS failure details
-  - No cascading failures to unrelated services
+  ...
 ```
 
 **Experiment N3: Packet Loss**
@@ -131,7 +116,7 @@ Injection:
   # Add 10% packet loss
   tc qdisc add dev eth0 root netem loss 10%
 
-Expected behavior:
+Verify:
   - Retry logic handles transient failures
   - Response time increases but stays under SLO
   - Error rate stays below threshold
@@ -153,12 +138,8 @@ Injection:
   # Or in Kubernetes
   kubectl delete pod <pod-name> --grace-period=0
 
-Expected behavior:
-  - Health check detects failure within 10 seconds
-  - Load balancer removes instance from rotation
-  - Process manager restarts the process
-  - New instance passes health check within 30 seconds
-  - Zero dropped requests (other instances handle traffic)
+Verify:
+  ...
 ```
 
 **Experiment P2: Memory Pressure**
@@ -173,12 +154,9 @@ Injection:
   # Or in application (test mode)
   CHAOS_MEMORY_LEAK_MB_PER_SEC=10
 
-Expected behavior:
+Verify:
   - Application detects memory pressure
-  - Non-critical caches are evicted
-  - New requests are rejected with 503 (not crashed)
-  - Alerts fire before OOM threshold
-  - Process restarts cleanly if OOM occurs
+  ...
 ```
 
 **Experiment P3: CPU Saturation**
@@ -190,7 +168,7 @@ Injection:
   # Saturate CPU
   stress-ng --cpu $(nproc) --timeout 300s
 
-Expected behavior:
+Verify:
   - Health check endpoint still responds (< 1s)
   - Background jobs are deferred (not dropped)
   - Critical API endpoints degraded but functional
@@ -211,12 +189,9 @@ Injection:
   # Or in cloud — promote replica
   aws rds failover-db-cluster --db-cluster-identifier <cluster>
 
-Expected behavior:
+Verify:
   - Read traffic continues on replica immediately
-  - Write traffic queued or returns 503 for < 30s
-  - Automatic failover promotes replica to primary
-  - Application reconnects without restart
-  - No data loss (RPO = 0 with synchronous replication)
+  ...
 ```
 
 **Experiment S2: Cache Failure (Cold Cache)**
@@ -232,12 +207,8 @@ Injection:
   # Or kill Redis entirely
   docker stop redis
 
-Expected behavior:
-  - Application detects cache unavailability
-  - Requests hit database directly
-  - Response time increases but stays functional
-  - Cache reconnects automatically when available
-  - No error responses to users (just slower)
+Verify:
+  ...
 ```
 
 **Experiment S3: Disk Full**
@@ -249,12 +220,12 @@ Injection:
   # Fill disk to 95%
   fallocate -l $(df --output=avail / | tail -1 | awk '{print int($1*0.90)}')k /tmp/fill-disk
 
-Expected behavior:
+Verify:
   - Log rotation and temp file cleanup triggered
   - Non-critical writes (analytics, logs) paused
   - Critical writes (transactions) continue to reserved space
   - Alert fires with disk usage percentage
-  - Application does not crash
+  ...
 ```
 
 ### Step 4: Circuit Breaker Validation
@@ -273,7 +244,6 @@ CIRCUIT BREAKER VALIDATION:
   HALF-OPEN: Limited requests to test recovery
 
 ```
-
 ### Step 5: Game Day Planning
 Organize a structured resilience testing exercise:
 
@@ -290,9 +260,8 @@ OBJECTIVES:
 3. Verify <recovery time objective>
 
 TIMELINE:
-| Time | Activity |
+  ...
 ```
-
 ### Step 6: Resilience Scorecard
 
 ```
@@ -309,7 +278,6 @@ TIMELINE:
 |  | Process crash | A/B/C/F | <detail> |  |
 |  | Memory pressure | A/B/C/F | <detail> |  |
 ```
-
 ### Step 7: Commit and Transition
 1. Save chaos experiment definitions to `docs/chaos/<system>-experiments.md`
 2. Save game day plan to `docs/chaos/<system>-gameday-plan.md`
@@ -331,7 +299,7 @@ TIMELINE:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full chaos assessment — map failure domains, design experiments |
 | `--experiment <name>` | Run a specific pre-designed experiment |
 | `--network` | Network failure experiments only |
@@ -348,28 +316,6 @@ TIMELINE:
 5. **NEVER run production chaos without steady state verification first.**
 6. **NEVER inject failure without a tested rollback procedure.**
 7. **ALWAYS document surprises** — unexpected behavior is the most valuable output.
-
-## Explicit Loop Protocol
-
-When running a series of chaos experiments:
-
-```
-current_iteration = 0
-experiments = planned_experiment_list
-results = []
-
-WHILE experiments is not empty:
-    current_iteration += 1
-    experiment = experiments.pop(0)
-
-    # Pre-flight
-    steady_state = verify_steady_state()
-    IF NOT steady_state:
-        ABORT "System not healthy — cannot inject failure"
-
-    rollback_tested = test_rollback(experiment)
-    IF NOT rollback_tested:
-```
 
 ## Auto-Detection
 
@@ -388,11 +334,8 @@ AUTO-DETECT:
 3. Service mesh / proxy:
    kubectl get crd | grep -i istio && echo "istio"
    linkerd check 2>/dev/null && echo "linkerd"
-
-4. Monitoring stack:
-   kubectl get svc -A | grep -i "grafana\|prometheus\|datadog"
+  ...
 ```
-
 ## Success Criteria
 Verify all of these before marking the task complete:
 1. Steady state hypothesis is defined with measurable metric and threshold (e.g., `p99 latency < 200ms`).
@@ -406,7 +349,7 @@ Verify all of these before marking the task complete:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Injection cannot be reversed | Kill the injection process immediately. If using Toxiproxy: `toxiproxy-cli toxic remove`. If using tc: `tc qdisc del dev eth0 root`. If process kill: restart the service. Document the failed abort path and fix it before next experiment. |
 | Monitoring not showing impact | Verify metric queries target the correct service/pod. Check time range alignment. If metrics are delayed (>30s lag), do not proceed — you cannot observe what you cannot measure. |
 | System crashes instead of degrading | This IS a finding. Document it. The expected behavior was graceful degradation; actual behavior was crash. Create a high-priority backlog item for resilience improvement. |
@@ -436,7 +379,6 @@ DO NOT STOP just because:
   - Some failure domains scored C instead of A (document and prioritize fixes)
   - Production experiments are not yet approved (complete staging experiments first)
 ```
-
 
 ## Output Format
 Print: `Chaos: {system} — {N} experiments, {confirmed}/{total} hypotheses confirmed. Surprises: {S}. Resilience: {RESILIENT|ADEQUATE|FRAGILE}. Status: {DONE|PARTIAL}.`

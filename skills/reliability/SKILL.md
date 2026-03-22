@@ -86,7 +86,7 @@ VERDICT: <RELIABLE | NEEDS WORK>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full SRE assessment |
 | `--slo` | SLO/SLI/SLA definition |
 | `--budget` | Error budget policy |
@@ -124,7 +124,7 @@ Run sequentially: SLOs, then alerts, then runbooks.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | SLO too aggressive (always breached) | Review historical data. Set SLO at current p95 performance. Improve gradually. An SLO nobody can meet erodes trust. |
 | Alert fires too often (alert fatigue) | Increase threshold or `for:` duration. Use multi-signal alerts. Route low-severity to tickets, not pages. |
 | Runbook outdated (does not match current system) | Add runbook review to deploy checklist. Auto-link runbooks to alerts. Test runbooks in game days. |

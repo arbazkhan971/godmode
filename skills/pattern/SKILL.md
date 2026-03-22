@@ -24,7 +24,6 @@ PATTERN CONTEXT:
 Problem: <What is the design challenge?>
 Language: <Primary implementation language>
 ```
-
 ### Step 2: Pattern Classification
 Classify the problem into one of four categories, then evaluate patterns within that category:
 
@@ -33,33 +32,29 @@ When the problem is about object creation — too many constructors, complex ini
 
 ```
 CREATIONAL PATTERNS:
-| Pattern | Use When |
+| Creational Pattern | Use When |
 ```
-
 #### Category B: Structural Patterns
 When the problem is about composing objects — how to assemble classes and objects into larger structures.
 
 ```
 STRUCTURAL PATTERNS:
-| Pattern | Use When |
+| Structural Pattern | Use When |
 ```
-
 #### Category C: Behavioral Patterns
 When the problem is about object communication — how objects interact and distribute responsibilities.
 
 ```
 BEHAVIORAL PATTERNS:
-| Pattern | Use When |
+| Behavioral Pattern | Use When |
 ```
-
 #### Category D: Modern / Distributed System Patterns
 When the problem involves distributed systems, resilience, or data consistency across services.
 
 ```
 MODERN PATTERNS:
-| Pattern | Use When |
+| Distributed Pattern | Use When |
 ```
-
 ### Step 3: Pattern Recommendation
 For each candidate pattern, provide a structured recommendation:
 
@@ -67,7 +62,6 @@ For each candidate pattern, provide a structured recommendation:
 PATTERN RECOMMENDATION:
   Pattern: <Name>
 ```
-
 ### Step 4: Language-Specific Implementation
 Produce implementation in the project's language with:
 
@@ -76,7 +70,6 @@ IMPLEMENTATION GUIDE:
 1. Interface/type definitions
 2. Core pattern implementation
 ```
-
 Adapt to language idioms:
 - **TypeScript/JavaScript**: Use interfaces, generics, dependency injection
 - **Python**: Use protocols (typing.Protocol), abstract base classes, decorators
@@ -91,7 +84,6 @@ Scan the codebase for common anti-patterns:
 ANTI-PATTERN SCAN:
 | Anti-Pattern | Detection Signals |
 ```
-
 For each detected anti-pattern:
 ```
 ANTI-PATTERN FINDING:
@@ -131,32 +123,6 @@ AUTO-DETECT SEQUENCE:
 4. Output: PATTERN CONTEXT auto-populated with detected patterns and signals.
 ```
 
-## Explicit Loop Protocol
-
-```
-current_iteration = 0
-findings = []  # anti-patterns found, patterns to recommend
-
-# Initial scan
-SCAN codebase for: god objects, switch blocks, circular deps, primitive obsession
-findings = scan_results
-
-WHILE findings is not empty AND current_iteration < 8:
-    current_iteration += 1
-    finding = findings.pop(0)
-
-    1. ANALYZE: understand the specific design problem
-    2. CLASSIFY: categorize (Creational/Structural/Behavioral/Modern)
-    3. RECOMMEND: select pattern with rationale and trade-offs
-    4. IMPLEMENT: produce language-specific code with tests
-    5. VERIFY: confirm the pattern resolves the original symptom
-    6. IF new anti-patterns emerge from refactoring:
-        findings.extend(new_findings)
-    7. REPORT: "Finding {finding.name}: {pattern} applied -- iteration {current_iteration}"
-
-OUTPUT: Pattern analysis report with all recommendations and implementations.
-```
-
 ## HARD RULES
 
 1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Always complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
@@ -168,8 +134,7 @@ OUTPUT: Pattern analysis report with all recommendations and implementations.
 7. **ALWAYS show alternatives considered.** Explain why the recommended pattern was chosen over at least one alternative.
 8. **ALWAYS include a unit test demonstrating the pattern.** If the pattern cannot be tested, reconsider the recommendation.
 
-## Output Format
-Print on completion:
+  ...
 ```
 PATTERN ANALYSIS: {feature_or_problem}
 Recommended: {pattern_name} ({category}) — Confidence: {HIGH|MEDIUM|LOW}
@@ -207,7 +172,7 @@ STOP when ANY of these are true:
   - One pattern recommended with trade-offs and at least one rejected alternative
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Additional anti-patterns exist (prioritize by severity/effort ratio)
   - The pattern could be extended further (ship the minimal viable pattern)
 ```
@@ -241,7 +206,7 @@ FINAL: Pattern audit report with prioritized refactor suggestions
 ```
 PATTERN DETECTION SCAN:
 | Pattern | Detection Signal | Found |
-|---|---|---|
+|--|--|--|
 | Singleton | static instance, getInstance() | <files> |
 | Factory | create*, Factory class/func | <files> |
 | Builder | .setX().setY().build() | <files> |
@@ -290,7 +255,7 @@ For each detected pattern:
 ```
 ANTI-PATTERN AUDIT:
 | Anti-Pattern | Severity | Files | Impact |
-|---|---|---|---|
+|--|--|--|--|
 | God Object | HIGH | <N> | Unmodifiable core |
 | (class > 500 LOC, |  |  | module, high merge |
 | > 20 methods, |  |  | conflict rate |
@@ -396,10 +361,9 @@ PATTERN AUDIT SUMMARY:
   Recommended first action: {highest priority refactor}
 ```
 
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Pattern adds complexity without benefit | Revert. Simple code that works beats elegant code that confuses. Only apply patterns to solve proven problems, not hypothetical ones. |
 | Refactoring breaks existing tests | Run tests after each small step. If a single refactor step breaks tests, the step is too large — split into smaller steps. |
 | Team unfamiliar with chosen pattern | Document the pattern with a concrete example from the codebase. Keep the implementation minimal — avoid gold-plating. |

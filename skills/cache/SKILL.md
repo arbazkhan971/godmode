@@ -98,7 +98,7 @@ VERDICT: <PASS | NEEDS REVISION>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full caching strategy design |
 | `--assess` | Assess current caching |
 | `--redis` | Configure Redis layer |
@@ -144,14 +144,14 @@ Run caching tasks sequentially: design, then infrastructure, then monitoring.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Cache stampede (thundering herd) | Use lock-based refresh or stale-while-revalidate. Add jitter to TTLs. Never let all keys expire simultaneously. |
 | Cache poisoning (wrong data cached) | Add cache key versioning. Invalidate on write. Verify cache content matches source on critical paths. |
 | Redis OOM | Set `maxmemory-policy` to `allkeys-lru`. Audit key sizes with `--bigkeys`. Set TTLs on all cache keys. |
 | Cache hit rate too low | Check key design matches query patterns. Verify TTL is long enough. Monitor which keys are evicted most. |
 
 ## Success Criteria
-1. Cache hit rate meets target (typically >80% for application cache).
+1. Cache hit rate meets target (target: >80% for application cache).
 2. No stale data served beyond defined TTL.
 3. Cache invalidation works on all write paths.
 4. No cache stampede under load (verified with concurrent test).

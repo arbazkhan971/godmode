@@ -22,17 +22,14 @@ Evaluate the current state of the three observability pillars:
 ```
 OBSERVABILITY ASSESSMENT:
 | Pillar | Status | Coverage | Tools |
-|---|---|---|---|
+|--|--|--|--|
 | Metrics | PARTIAL | 40% | Prometheus |
 | Logging | BASIC | 60% | stdout only |
 | Tracing | NONE | 0% | — |
 | Alerting | MINIMAL | 20% | PagerDuty |
 | Dashboards | NONE | 0% | — |
-| SLOs | NONE | 0% | — |
-  Overall Score: 2/10 — INSUFFICIENT
-  Priority: Set up structured logging + core metrics
+  ...
 ```
-
 ### Step 2: Metrics Design
 Design application and infrastructure metrics using the RED/USE methodology:
 
@@ -40,17 +37,13 @@ Design application and infrastructure metrics using the RED/USE methodology:
 ```
 REQUEST METRICS:
 | Metric | Type | Labels |
-|---|---|---|
+|--|--|--|
 | http_requests_total | Counter | method, path, |
 |  |  | status_code |
 | http_request_duration_sec | Histogram | method, path |
 | http_requests_in_flight | Gauge | — |
 | http_request_size_bytes | Histogram | method, path |
-| http_response_size_bytes | Histogram | method, path |
-
-Rate:    rate(http_requests_total[5m])
-Errors:  rate(http_requests_total{status_code=~"5.."}[5m])
-Duration: histogram_quantile(0.95, rate(http_request_duration_sec_bucket[5m]))
+  ...
 ```
 
 #### USE Method (Infrastructure resources)
@@ -63,21 +56,20 @@ RESOURCE METRICS:
 | Disk | disk_usage_bytes | disk_io_wait_sec |
 | Network | network_bytes_total | network_errors_total |
 | Connections | db_connections_open | db_conn_wait_total |
-| Queue | queue_depth | queue_age_seconds |
+  ...
 ```
 
 #### Business Metrics
 ```
 BUSINESS METRICS:
 | Metric | Type | Purpose |
-|---|---|---|
+|--|--|--|
 | user_signups_total | Counter | Growth tracking |
 | orders_completed_total | Counter | Revenue proxy |
 | payment_failures_total | Counter | Revenue risk |
 | active_sessions_current | Gauge | Load indicator |
 | feature_flag_evaluations | Counter | Feature adoption |
-| background_job_duration_sec | Hist | Job performance |
-| cache_hit_ratio | Gauge | Cache efficiency |
+  ...
 ```
 
 #### Instrumentation Examples
@@ -119,20 +111,13 @@ Design a consistent, queryable logging approach:
 ```
 LOG LEVEL GUIDE:
 | Level | When to use | Alert? |
-|---|---|---|
+|--|--|--|
 | FATAL | Process cannot continue | Page on-call |
 | ERROR | Operation failed, needs fix | Alert to channel |
 | WARN | Unexpected but handled | Track trend |
 | INFO | Significant business events | No |
 | DEBUG | Diagnostic detail | No (dev only) |
-| TRACE | Fine-grained flow tracking | No (dev only) |
-
-Rules:
-- Production: INFO and above only (DEBUG/TRACE disabled)
-- Every ERROR log must include: error message, stack trace, context
-- Every request must have a request_id for correlation
-- Never log: passwords, tokens, PII, credit card numbers
-- Always log: request start/end, external calls, business events
+  ...
 ```
 
 #### Log Aggregation Setup
@@ -170,11 +155,7 @@ LOGGING CHECKLIST:
 - [ ] Authentication events (login, logout, failed attempts)
 - [ ] Authorization failures (who tried to access what)
 - [ ] Business events (order placed, payment processed, user signup)
-- [ ] Background job start/complete/fail
-- [ ] Cache hits and misses
-- [ ] Configuration changes
-- [ ] Application startup and shutdown
-- [ ] Health check failures
+  ...
 ```
 
 ### Step 4: Distributed Tracing
@@ -200,25 +181,20 @@ Client -> API Gateway -> Auth Service -> User Service -> Database
   span 1     span 2         span 3          span 4         span 5
   (12ms)     (8ms)          (3ms)           (5ms)          (2ms)
 
-W3C Trace Context Headers:
-  traceparent: 00-abc123-span1-01
-  tracestate: vendor=value
+  ...
 ```
 
 #### Trace Backend Options
 ```
 TRACING BACKENDS:
 | Backend | Best for | Storage | Cost |
-|---|---|---|---|
+|--|--|--|--|
 | Jaeger | Self-hosted, K8s | Elastic/ | Infra |
 |  |  | Cassandra | only |
 | Zipkin | Simple setups | In-memory/ | Free |
 |  |  | MySQL |  |
 | Tempo | Grafana ecosystem | Object | Low |
-|  |  | storage |  |
-| X-Ray | AWS-native | Managed | Per-trace |
-| Datadog | Full-stack APM | Managed | Per-host |
-| Honeycomb | High-cardinality | Managed | Per-event |
+  ...
 ```
 
 ### Step 5: SLO/SLI Definition
@@ -228,19 +204,13 @@ Define Service Level Objectives and Indicators:
 SLO FRAMEWORK:
   Service: <service-name>
 | SLI | Target | Window | Burn Rate |
-|---|---|---|---|
+|--|--|--|--|
 | Availability | 99.9% | 30 days | Budget: |
 | (successful requests |  |  | 43.2 min |
 | / total requests) |  |  | downtime |
 │                       │           │         │            │
-| Latency (P95) | < 200ms | 30 days | Budget: |
-|---|---|---|---|
-| (95th percentile |  |  | 0.1% of |
-| request duration) |  |  | requests |
-|  |  |  | can exceed |
-│                       │           │         │            │
+  ...
 ```
-
 #### SLO Burn Rate Alerts
 ```yaml
 # Multi-window burn rate alert (recommended by Google SRE)
@@ -258,18 +228,13 @@ Create actionable, low-noise alerts:
 ```
 ALERT RULES:
 | Alert Name | Condition | Severity |
-|---|---|---|
+|--|--|--|
 | HighErrorRate | 5xx > 1% for 5m | Critical |
 | HighLatencyP95 | P95 > 500ms for 5m | Warning |
 | HighLatencyP99 | P99 > 2s for 5m | Critical |
 | PodCrashLooping | restarts > 3 in 5m | Critical |
 | DiskSpaceLow | usage > 85% | Warning |
-| DiskSpaceCritical | usage > 95% | Critical |
-| MemoryHigh | usage > 90% for 5m | Warning |
-| CertExpiringSoon | < 7 days to expiry | Warning |
-| CertExpiring | < 1 day to expiry | Critical |
-| DatabaseConnExhausted | free conns < 5 | Critical |
-| QueueBacklog | depth > 1000 | Warning |
+  ...
 ```
 
 #### Prometheus Alert Rules
@@ -294,11 +259,8 @@ DASHBOARD LAYOUT — Service Overview:
 |  | ▁▂▃▅▆█▇▅ |  | ▁▁▁▁▂▁▁▁ |  | ▂▃▂▃▂▃▂ |  | ▃▄▅▅▄▃▄ |  |
   └─────────────┘ └─────────────┘ └────────┘ └─────────┘
   ROW 2: SLO Status
-|  | Availability SLO: 99.9% | Current: 99.95% | OK |  |
-|  | Error Budget: 85% remaining | 12.7 min consumed |  |
-|  | Latency SLO: P95 < 200ms | Current: 145ms | OK |  |
+  ...
 ```
-
 ### Step 8: Commit and Report
 ```
 1. Save observability configuration in `monitoring/` or `observability/` directory
@@ -316,15 +278,10 @@ DASHBOARD LAYOUT — Service Overview:
 2. **Structured logs only.** No `console.log("something happened")`. Format every log entry as structured JSON with consistent fields.
 3. **Make alerts actionable.** If an alert fires and the on-call cannot act on it, the alert is noise. Remove or fix it.
 4. **SLOs drive decisions.** Error budget remaining determines whether you ship features or fix reliability. Define SLOs before you need them.
-5. **Dashboards tell stories.** A dashboard is not a wall of graphs. It answers specific questions: "Is the service healthy?" "What changed?"
-6. **Cardinality matters.** Do not use high-cardinality labels (user_id, request_id) on metrics. That is what logs and traces are for.
-7. **Trace critical paths.** Not every function needs a span. Trace service boundaries, database calls, and external API calls.
-8. **Never log secrets.** Sanitize logs before emission. Mask PII, redact tokens, exclude passwords.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full observability assessment and recommendations |
 | `--metrics` | Set up metrics instrumentation only |
 | `--logging` | Set up structured logging only |
@@ -353,40 +310,6 @@ AUTO-DETECT SEQUENCE:
    - check for /metrics endpoint in routes
 
 2. Detect monitoring infrastructure:
-   - ls prometheus.yml, docker-compose*monitoring*, grafana/
-   - check for OTEL_EXPORTER_*, DD_API_KEY, NEW_RELIC_LICENSE_KEY in .env*
-   - scan Kubernetes manifests for prometheus annotations
-
-3. Detect alerting:
-   - ls monitoring/alerts*, alertmanager*, pagerduty*
-   - grep for alert rules in yaml files
-
-4. Output: OBSERVABILITY ASSESSMENT table (Step 1) auto-populated
-```
-
-## Explicit Loop Protocol
-
-Observability instrumentation is iterative -- each pillar may need multiple passes:
-
-```
-current_iteration = 0
-pillars_remaining = [metrics, logging, tracing, alerts, slos, dashboards]
-
-WHILE pillars_remaining is not empty AND current_iteration < 6:
-    current_iteration += 1
-    pillar = pillars_remaining.pop(0)
-
-    1. ASSESS current state of this pillar
-    2. IMPLEMENT instrumentation for this pillar
-    3. VERIFY instrumentation produces output (curl /metrics, check logs, trace visible)
-    4. IF verification fails:
-        pillars_remaining.append(pillar)  # retry next round
-    5. REPORT: "Pillar {pillar}: {DONE|RETRY} -- iteration {current_iteration}/6"
-
-IF pillars_remaining is not empty:
-    REPORT: "Incomplete pillars: {pillars_remaining}. Manual intervention needed."
-```
-
 ## Keep/Discard Discipline
 ```
 After EACH observability instrumentation change:
@@ -397,16 +320,7 @@ After EACH observability instrumentation change:
      - DISCARD if: instrumentation produces no output OR performance degrades >5% OR cardinality explosion detected
   4. COMMIT kept changes. Revert discarded changes before the next pillar.
 
-Never keep a metric that causes cardinality explosion (>10K time series from a single metric).
-```
-
-## Stuck Recovery
-```
-IF >3 consecutive iterations fail to produce observable output from a pillar:
-  1. Check connectivity: is the metrics/tracing/logging backend reachable from the application?
-  2. Simplify: use the simplest possible instrumentation (default metrics, basic trace export) and verify it works.
-  3. Check for library version conflicts (OpenTelemetry SDK version mismatches are common).
-  4. If still stuck → log stop_reason=stuck, mark the pillar as incomplete, move to the next pillar.
+  ...
 ```
 
 ## Stop Conditions
@@ -417,20 +331,9 @@ STOP when ANY of these are true:
   - Alert rules configured with runbook links
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Dashboards are not yet built (alerts and raw data access are more important)
-  - One non-critical service lacks tracing (instrument the critical path first)
-```
-
-## Simplicity Criterion
-```
-PREFER the simpler observability approach:
-  - RED method metrics (rate, errors, duration) before custom business metrics
-  - Prometheus with built-in client libraries before custom metric pipelines
-  - OpenTelemetry auto-instrumentation before manual span creation
-  - Fewer well-chosen alerts (5-10) over many noisy alerts (50+)
-  - SLO-based alerting (burn rate) before threshold-based alerting
-  - Single dashboard per service before multi-dashboard sprawl
+  ...
 ```
 
 ## Output Format
@@ -458,10 +361,9 @@ Columns: iteration, pillar(metrics/logging/tracing/alerts/dashboards), tool, ite
 - PII redacted from all logs and traces.
 - Error budget tracked and enforced (feature freeze when depleted).
 
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Metrics cardinality explosion | Remove high-cardinality labels (user IDs, request IDs). Use histograms instead of per-value counters. Set cardinality limits in collector. |
 | Traces missing spans | Check sampling rate. Verify context propagation across service boundaries. Check that all HTTP clients propagate trace headers. |
 | Alert fatigue (too many false alerts) | Tune thresholds using historical data. Add `for:` duration to firing conditions. Use multi-signal alerts (metric + log + trace). |

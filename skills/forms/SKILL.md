@@ -34,11 +34,8 @@ Fields: <N> total
 
 Complexity:
   Multi-step: YES/NO (<N> steps)
-  Conditional fields: YES/NO
-  Dynamic fields (add/remove): YES/NO
-  Dependent fields: YES/NO (field B depends on field A value)
+  ...
 ```
-
 ### Step 2: Form State Management
 Choose and implement the right form state management approach:
 
@@ -46,7 +43,7 @@ Choose and implement the right form state management approach:
 ```
 FORM STATE MANAGEMENT DECISION:
 | Criterion | React Hook Form | Formik | Native | Server |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Re-renders | Minimal | Frequent | Minimal | Zero |
 | Bundle size | ~9KB | ~15KB | 0KB | 0KB |
 | TypeScript | Excellent | Good | Manual | Good |
@@ -56,7 +53,7 @@ FORM STATE MANAGEMENT DECISION:
 | File uploads | Good | Good | Manual | Good |
 | Multi-step | Excellent | Good | Complex | Complex |
 | Server integration | Good | Good | Good | Native |
-| Learning curve | Medium | Low | Low | Low |
+  ...
 ```
 
 #### React Hook Form + Zod Setup
@@ -77,7 +74,6 @@ import { registrationSchema, type RegistrationFormData } from '../schemas/regist
 
 export function RegistrationForm() {
 ```
-
 ### Step 3: Multi-Step Wizard Forms
 Implement wizard-style forms with step navigation, validation per step, and state persistence:
 
@@ -86,7 +82,7 @@ Implement wizard-style forms with step navigation, validation per step, and stat
 WIZARD ARCHITECTURE:
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
 | Step 1 | ───> | Step 2 | ───> | Step 3 | ───> | Review |
-|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|---|
 | Personal |  | Address |  | Payment |  | Confirm |
 └─────────┘    └─────────┘    └─────────┘    └─────────┘
      │              │              │              │
@@ -95,8 +91,7 @@ WIZARD ARCHITECTURE:
   step 1         step 2        step 3
 
 State persistence: sessionStorage (survives refresh, clears on tab close)
-Navigation: Linear (can go back, cannot skip ahead without valid current step)
-URL sync: /signup/step/1, /signup/step/2 (supports direct linking)
+  ...
 ```
 
 #### Multi-Step Form Implementation
@@ -125,7 +120,7 @@ Implement comprehensive validation covering client-side, server-side, and async:
 #### Client-Side Validation
 ```typescript
 // schemas/checkout.ts — Comprehensive validation example
-import { z } from 'zod';
+import { z } from 'zod'; // Zod for schema-based validation
 
 export const addressSchema = z.object({
   street: z.string().min(1, 'Street address is required'),
@@ -166,9 +161,7 @@ VALIDATION ERROR DISPLAY RULES:
    - Inline: Below the field, associated via aria-describedby
    - Summary: At top of form for submit-time errors, linked to fields
    - Toast: For server/network errors only
-
-3. HOW to show errors:
-   - Text: Clear, actionable message ("Enter a valid email" not "Invalid")
+  ...
 ```
 
 ### Step 5: File Upload Handling
@@ -211,9 +204,7 @@ Labels & Instructions:
 
 Error Handling:
 - [ ] Errors are associated with fields via aria-describedby
-- [ ] Errors appear as text, not only color/icon
-- [ ] aria-invalid="true" set on fields with errors
-- [ ] Error summary at top of form on submit (linked to fields)
+  ...
 ```
 
 #### Focus Management
@@ -284,7 +275,6 @@ FORM ARCHITECTURE REPORT:
   Server-side: YES / NO
   Async validation: <N> fields
 ```
-
 ### Step 9: Commit and Transition
 1. If form components were created: `"forms: implement <form-name> with <library> + <validation>"`
 2. If wizard was built: `"forms: add multi-step wizard with <N> steps and session persistence"`
@@ -305,32 +295,10 @@ FORM ARCHITECTURE REPORT:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full form architecture — build or audit |
 | `--audit` | Audit all existing forms for completeness |
 | `--wizard` | Build a multi-step wizard form |
-
-## Explicit Loop Protocol
-
-When building or auditing multiple forms:
-
-```
-FORM BUILD/AUDIT LOOP:
-current_iteration = 0
-forms = [form_1, form_2, ...]  // discovered or requested forms
-
-WHILE current_iteration < len(forms) AND NOT user_says_stop:
-  1. ASSESS form: field count, complexity, multi-step, file uploads, async validation
-  2. IF building new form:
-       a. CREATE Zod schema (or chosen validation library)
-       b. IMPLEMENT form with chosen library (React Hook Form recommended)
-       c. ADD accessibility: labels, aria-invalid, aria-describedby, focus management
-       d. ADD server-side validation using shared schema
-       e. IF multi-step: implement wizard with session persistence
-       f. IF file upload: implement with validation, progress, preview
-  3. IF auditing existing form:
-       a. CHECK: every field has visible label (not just placeholder)
-```
 
 ## Hard Rules
 
@@ -347,7 +315,6 @@ HARD RULES — FORMS:
 9. ALWAYS use aria-invalid="true" on fields with errors and role="alert" on error messages.
 10. ALWAYS share the same schema (Zod) between client and server validation. Two schemas = two sources of bugs.
 ```
-
 ## Output Format
 
 After each forms skill invocation, emit a structured report:
@@ -355,7 +322,7 @@ After each forms skill invocation, emit a structured report:
 ```
 FORMS BUILD REPORT:
 | Forms created | <N> |
-|---|---|
+|--|--|
 | Forms updated | <N> |
 | Fields total | <N> |
 | Validation schemas | <N> (Zod/Yup) |
@@ -365,9 +332,8 @@ FORMS BUILD REPORT:
 | Error messages | <N> fields with inline errors |
 | Multi-step | <N> steps / N/A |
 | Tests | <N> passing, <N> failing |
-| Verdict | PASS | NEEDS REVISION |
+  ...
 ```
-
 ## TSV Logging
 
 Log every form creation for tracking:
@@ -377,11 +343,10 @@ timestamp	skill	form_name	fields	validation	a11y_pass	tests_pass	status
 2026-03-20T14:00:00Z	forms	signup	5	zod_client+server	yes	8/8	pass
 2026-03-20T14:10:00Z	forms	checkout_wizard	12	zod_client+server	yes	15/15	pass
 ```
-
 ## Success Criteria
 
 The forms skill is complete when ALL of the following are true:
-1. Every field has a visible `<label>` element (not just placeholder text)
+1. Every field has a visible `<label>` element (not only placeholder text)
 2. Validation schema is shared between client and server (single source of truth)
 3. Every field shows inline error messages with `aria-describedby` and `aria-invalid`
 4. Form validates on blur (first touch) and on change (after first error)
@@ -415,48 +380,10 @@ DO NOT STOP just because:
   - Error message wording scores below 7/7 on every field (5+ is acceptable for first pass)
 ```
 
-## Form UX Audit Loop
-
-Autoresearch-grade iterative audit for form user experience. Covers validation pattern correctness, error messaging quality, and submission flow robustness through measured, repeatable cycles.
-
-```
-FORM UX AUDIT PROTOCOL:
-
-Phase 1 — Validation Pattern Audit
-  FOR EACH form: map all fields, test validation timing:
-    a. Focus → blur empty optional field → NO error shown
-    b. Focus → type invalid → blur → error shown on blur
-    c. See error → type valid → error clears on change
-    d. Submit with empty required → all errors shown
-    e. Fix one field → that error clears independently
-
-  Classify patterns:
-    CORRECT: onBlur first, onChange after error
-    BAD: first keystroke | submit-only | no validation | async without loading state
-  Record: form | field | current_timing | correct_timing | status
-  TARGET: 100% correct validation timing across all forms
-```
-
-### Form UX Audit TSV Logging
-
-Append one row per finding to `.godmode/forms-audit.tsv`:
-
-```
-timestamp	project	form	phase	field	finding	before	after	status
-2024-01-15T10:30:00Z	my-app	checkout	validation	card_number	validates_on_keystroke	onChange	onBlur	fixed
-2024-01-15T10:35:00Z	my-app	checkout	error_msg	card_number	"Invalid"	"Enter valid 16-digit number"	fixed
-2024-01-15T10:40:00Z	my-app	checkout	submission	submit_btn	no_double_submit_protection	none	disable+debounce	fixed
-```
-
-### Form UX Audit Hard Rules
-
-See the main **Hard Rules** section above — all rules apply to the audit loop. Additionally: log every form UX finding in TSV format for tracking improvements across releases.
-
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Validation fires on every keystroke | Use `onBlur` validation for most fields. Only validate `onChange` for fields with instant feedback (e.g., password strength). Debounce async validation. |
 | Form state lost on navigation | Persist form state in sessionStorage or URL params. Use `beforeunload` event to warn about unsaved changes. |
-| Server validation errors not displayed | Map server error field names to form field names. Display inline next to the relevant field, not just as a toast. |
+| Server validation errors not displayed | Map server error field names to form field names. Display inline next to the relevant field, not only as a toast. |
 | Multi-step form loses progress on refresh | Save each step's data to sessionStorage on advancement. Restore on page load. Clear on successful submission. |

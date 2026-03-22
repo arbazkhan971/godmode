@@ -27,7 +27,6 @@ RFC CLASSIFICATION:
 - MIGRATION: Moving from one technology/pattern to another
 - STANDARD: Establishing a new convention or standard
 ```
-
 Each type has different review requirements:
 ```
 REVIEW REQUIREMENTS:
@@ -53,7 +52,6 @@ ls docs/rfcs/ docs/adr/ 2>/dev/null
 # Measure the problem (if applicable)
 # Performance metrics, error rates, developer friction data
 ```
-
 ```
 EVIDENCE GATHERED:
 - Current state: <description with file references>
@@ -61,7 +59,6 @@ EVIDENCE GATHERED:
 - Prior art: <what others have done, existing RFCs/ADRs>
 - Constraints: <technical limits, timeline, team capacity>
 ```
-
 ### Step 3: Write the RFC
 Create the RFC using the structured template:
 
@@ -115,7 +112,7 @@ and understand what you're proposing and why.>
 <Phased rollout plan with milestones>
 
 | Phase | Description | Duration | Deliverable |
-|-------|-------------|----------|-------------|
+|--|--|--|--|
 | 1     | <phase>     | <time>   | <output>    |
 | 2     | <phase>     | <time>   | <output>    |
 | 3     | <phase>     | <time>   | <output>    |
@@ -147,7 +144,7 @@ and understand what you're proposing and why.>
 ## Risks & Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
-|------|------------|--------|------------|
+|--|--|--|--|
 | <risk> | <H/M/L> | <H/M/L> | <strategy> |
 | <risk> | <H/M/L> | <H/M/L> | <strategy> |
 
@@ -171,7 +168,6 @@ and understand what you're proposing and why.>
 ## References
 - <Related ADRs, RFCs, external docs, benchmarks>
 ```
-
 Save to `docs/rfcs/<NNN>-<kebab-case-title>.md`.
 
 ### Step 4: Manage Review Process
@@ -182,14 +178,13 @@ REVIEW TRACKER:
   RFC-012: Migrate from REST to GraphQL
   Status: In Review    Deadline: 2024-04-15
 | Reviewer | Status | Comments |
-|---|---|---|
+|--|--|--|
 | @alice | Approved | "LGTM with minor suggestion" |
 | @bob | Concerns | "Performance risk in Phase 2" |
 | @carol | Pending | (no response yet) |
   Comments: 7 total, 2 blocking, 5 resolved
   Decision: PENDING — waiting on @carol + @bob's concern
 ```
-
 When reviewers raise concerns:
 1. Acknowledge the concern in the RFC's Open Questions
 2. Research and propose a resolution
@@ -202,7 +197,7 @@ Maintain a decision log within the RFC:
 ```markdown
 ## Decision Log
 | Date | Event | Details |
-|------|-------|---------|
+|--|--|--|
 | 2024-04-01 | RFC Created | Draft circulated to reviewers |
 | 2024-04-03 | Comment from @bob | Concern about Phase 2 performance |
 | 2024-04-05 | Updated | Added benchmarks addressing performance concern |
@@ -210,7 +205,6 @@ Maintain a decision log within the RFC:
 | 2024-04-10 | @carol approves | No concerns |
 | 2024-04-10 | ACCEPTED | All reviewers approved, proceeding to Phase 1 |
 ```
-
 ### Step 6: Finalize RFC
 When the review period ends:
 
@@ -229,7 +223,6 @@ RFC FINALIZATION:
   → Document reasons for rejection
   → Preserve for future reference
 ```
-
 ### Step 7: Commit
 ```
 git add docs/rfcs/<NNN>-<title>.md
@@ -241,55 +234,14 @@ git commit -m "rfc: RFC-<NNN> — <title> (<status>)"
 1. **"Do Nothing" is always an alternative.** Every RFC must explicitly evaluate and reject the status quo. If "do nothing" is acceptable, you do not need an RFC.
 2. **Evidence, not opinions.** The Problem Statement must include numbers, metrics, or concrete code references. "Our API is slow" is not a problem statement. "P95 latency for /api/users is 2.3s, up from 400ms in Q1" is.
 3. **The Summary is the most important section.** Most reviewers will read only the summary. Make it count.
-4. **Risks must have mitigations.** Listing risks without mitigations is just worry. Every risk should have a concrete response plan.
+4. **Risks must have mitigations.** Listing risks without mitigations is empty worry. Every risk should have a concrete response plan.
 5. **RFCs have deadlines.** A review period without a deadline will never end. Set a date and hold to it.
 6. **Accept gracefully, reject gracefully.** Both outcomes are valid. Document the reasoning for future teams who will wonder "why didn't we do X?"
-
-## Example Usage
-
-### Writing a new RFC
-```
-User: /godmode:rfc We should migrate from Express to Fastify for better performance
-
-RFC: Let me research the current state...
-
-EVIDENCE GATHERED:
-- Server: Express 4.18, src/server.ts
-- Routes: 14 endpoints in src/routes/
-- Middleware: 6 custom middleware in src/middleware/
-- Performance: No current benchmarks found
-- Dependencies: 4 Express-specific packages
-
-I'll create RFC-003: Migrate HTTP Server from Express to Fastify
-
-[Writes full RFC with problem statement, benchmarks comparison,
-migration plan (3 phases), alternatives (Koa, Hono, keep Express),
-risks (middleware compatibility, team learning curve), and timeline]
-
-Saved to docs/rfcs/003-migrate-express-to-fastify.md
-
-Next: Share with reviewers and set a 5-day comment period.
-Want me to also create a benchmark comparison to support the evidence?
-```
-
-### Checking RFC status
-```
-User: /godmode:rfc --status
-
-RFC: Scanning proposal records...
-
-ACTIVE RFCs:
-| # | Title | Status | Deadline |
-|---|---|---|---|
-| 001 | Adopt TypeScript Strict Mode | Accepted | — |
-| 002 | Monorepo Migration | In Review | Apr 20 |
-| 003 | Express to Fastify | Draft | — |
-```
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive RFC creation |
 | `--list` | List all RFCs with status |
 | `--status` | Show active RFCs and review progress |
@@ -311,7 +263,6 @@ AUTO-DETECT SEQUENCE:
 6. Detect team communication: Slack webhook, email distribution list for RFC announcements
 7. Scan for active RFCs: find drafts, in-review, accepted statuses in RFC metadata
 ```
-
 ## Iterative RFC Writing Loop
 
 ```
@@ -334,7 +285,6 @@ WHILE rfc_sections is not empty AND current_iteration < max_iterations:
 
 POST-LOOP: Verify all open questions are resolved before accepting
 ```
-
 ## HARD RULES
 
 ```
@@ -348,7 +298,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 7. EVERY RFC must include a rollback/migration plan. Irreversible decisions need extra scrutiny.
 8. NEVER skip the alternatives section. Single-option RFCs are not proposals — they are mandates.
 ```
-
 ## Output Format
 Print on completion:
 ```
@@ -404,16 +353,6 @@ IF all reviewers reject:
   → Suggest: "Revisit in {timeframe} or explore alternative approaches"
 ```
 
-## Anti-Patterns
-
-- **Do NOT write an RFC for trivial changes.** Renaming a variable doesn't need team consensus. RFCs are for decisions that are hard to reverse.
-- **Do NOT skip "Do Nothing."** If you can't articulate why the status quo is unacceptable, the status quo is fine.
-- **Do NOT write a 20-page RFC.** If it takes 20 pages to explain, your proposal is too big. Split it into smaller RFCs.
-- **Do NOT present a fait accompli.** An RFC published after the code is written is not a proposal — it's a notification. Write the RFC BEFORE implementation.
-- **Do NOT leave open questions unanswered.** Resolve every open question (answer or explicitly defer) before accepting the RFC.
-- **Do NOT ignore rejected RFCs.** A rejected RFC is valuable documentation. It explains why a path was NOT taken, saving future teams from re-exploring it.
-
-
 ## Keep/Discard Discipline
 ```
 After EACH RFC section draft:
@@ -431,9 +370,3 @@ STOP when FIRST of:
   - diminishing_returns: re-edits produce no new information
   - stuck: >5 section rewrites with no quality improvement
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run RFC tasks sequentially: evidence gathering, then RFC drafting, then review tracking.
-- Use branch isolation per task: `git checkout -b godmode-rfc-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

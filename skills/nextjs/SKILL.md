@@ -138,7 +138,7 @@ Commit: `"nextjs: <project> — App Router architecture, <N> routes, <rendering 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full architecture workflow |
 | `--audit` | Audit existing project |
 | `--migrate` | Pages Router to App Router |

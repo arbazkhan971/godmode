@@ -99,7 +99,7 @@ Transition: Run /godmode:ui for component audit, /godmode:a11y for accessibility
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--audit` | Audit existing design system maturity |
 | `--tokens` | Token architecture only |
 | `--theme` | Theme system setup |

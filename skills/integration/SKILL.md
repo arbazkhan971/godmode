@@ -28,7 +28,6 @@ Map the real external dependencies the code interacts with:
 find. -name "*integration*" -o -name "*e2e*" -o -path "*/it/*"
 
 ```
-
 ```
 INTEGRATION BOUNDARY MAP:
 Target: <module/service being tested>
@@ -42,16 +41,8 @@ External dependencies:
  - <external service name> — <what endpoints>
  Message queues:
  - <Kafka | RabbitMQ | SQS | etc.> — <what topics/queues>
- File systems:
- - <S3 | local disk | etc.> — <what files>
- Other:
- - <SMTP, LDAP, Elasticsearch, etc.>
-
-Existing integration tests: <N tests | NONE>
-Container setup: <Testcontainers | docker-compose | manual | NONE>
-Test database: <in-memory | container | shared dev instance | NONE>
+  ...
 ```
-
 ### Step 2: Set Up Test Containers
 
 Testcontainers provides disposable Docker containers for integration tests — each test run gets a fresh, isolated instance.
@@ -66,7 +57,6 @@ import { Client } from 'pg';
 describe('UserRepository (integration)', () => {
  let container: StartedPostgreSqlContainer;
 ```
-
 #### Testcontainers — Python
 
 ```python
@@ -77,7 +67,6 @@ import psycopg2
 @pytest.fixture(scope="module")
 def postgres():
 ```
-
 #### Testcontainers — Java (JUnit 5)
 
 ```java
@@ -88,7 +77,6 @@ class UserRepositoryIntegrationTest {
  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
 .withDatabaseName("testdb")
 ```
-
 ### Step 3: Database Seeding and Cleanup
 
 #### Seeding Strategies
@@ -104,7 +92,6 @@ async function setupTestDatabase(client: Client) {
  // Step 2: Seed reference data (enums, configs, lookup tables)
  await seedReferenceData(client);
 ```
-
 **2. Fixture-based seeding (for test data)**
 Create reusable fixture factories:
 
@@ -116,7 +103,6 @@ export function createUser(overrides: Partial<User> = {}): User {
  name: 'Test User',
  email: `test-${randomUUID()}@example.com`,
 ```
-
 #### Cleanup Strategies
 
 **Strategy 1: TRUNCATE between tests (fastest)**
@@ -147,7 +133,6 @@ def test_creates_user(client):
  assert response.status_code == 201
  # Database changes are automatically rolled back after this test
 ```
-
 **Strategy 3: Unique data per test (no cleanup needed)**
 ```typescript
 // Every test creates data with unique IDs — no conflicts, no cleanup
@@ -183,9 +168,7 @@ import request from 'supertest';
 import { createApp } from '../src/app';
 
 describe('POST /api/users (integration)', () => {
- let app: Express;
- let container: StartedPostgreSqlContainer;
-
+  ...
 ```
 
 #### Testing Authenticated Endpoints
@@ -298,8 +281,7 @@ Containers used:
 Seeding strategy: <fixtures | factories | SQL files>
 Cleanup strategy: <truncate | transaction rollback | unique data>
 All passing: <YES/NO>
-Average test duration: <Xms>
-Slowest test: <name> (<Xms>)
+  ...
 ```
 
 ### Step 8: Commit and Transition
@@ -368,7 +350,7 @@ AUTO-DETECT:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Assess boundaries and write integration tests |
 | `--for <file>` | Write integration tests for a specific module |
 | `--container <type>` | Specify container type (postgres, mysql, redis, kafka, mongo) |
@@ -376,8 +358,7 @@ AUTO-DETECT:
 ## Output Format
 Print on completion: `Integration: {total_tests} tests across {boundary_count} boundaries. Containers: {containers}. Pass rate: {pass_rate}%. Avg duration: {avg_ms}ms. Verdict: {verdict}.`
 
-## TSV Logging
-Log every boundary result to `.godmode/integration-results.tsv`:
+  ...
 ```
 iteration	boundary	container	tests_written	tests_passing	avg_duration_ms	status
 1	database	postgres:16	6	6	245	passing
@@ -396,9 +377,4 @@ Columns: iteration, boundary, container, tests_written, tests_passing, avg_durat
 - CI pipeline runs integration tests on every PR with container support.
 
 ## Error Recovery
-| Failure | Action |
-|---------|--------|
-| Container fails to start | Check Docker daemon is running. Verify image tag exists. Increase startup timeout. Fall back to `docker-compose` if Testcontainers unavailable. |
-| Port conflict on container | Use random port mapping (Testcontainers default). Never hardcode ports. Check for zombie containers: `docker ps -a`. |
-| Test data leaks between tests | Verify cleanup strategy: transaction rollback, TRUNCATE, or unique prefixes. Run tests in isolation to confirm. |
-| Flaky integration test (passes sometimes) | Check for race conditions, shared state, or insufficient wait times. Add explicit readiness checks before assertions. |
+  ...

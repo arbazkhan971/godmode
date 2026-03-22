@@ -73,7 +73,7 @@ GITHUB FLOW MODEL:
   main ──●────●────●────●────●────●──── (always deployable)
 │ │ │ │ │ │ │ │
 | PR ●─●──┘ |  |  |  |  |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | branch ●──●──●──┘ |  |  |
 | ●──●──●──●──┘ |  |
   ●──●──┘
@@ -102,7 +102,7 @@ Choose the right integration strategy:
 ```
 MERGE VS REBASE DECISION:
 | Criteria | Merge Commit | Squash | Rebase |
-|---|---|---|---|
+|--|--|--|--|
 | History readability | Noisy | Clean | Clean |
 | Preserves context | Full | Summarized | Full |
 | Bisect effectiveness | Good | Limited | Best |
@@ -121,7 +121,7 @@ Restructure commit history before merging:
 ```
 INTERACTIVE REBASE OPERATIONS:
 | Command | Use Case |
-|---|---|
+|--|--|
 | pick | Keep commit as-is |
 | reword | Change commit message (keep changes) |
 | edit | Stop at commit to amend (split, modify) |
@@ -156,7 +156,7 @@ Selective commit application and work-in-progress management:
 ```
 CHERRY-PICK PATTERNS:
 | Pattern | Command |
-|---|---|
+|--|--|
 | Single commit | git cherry-pick <SHA> |
 | Range of commits | git cherry-pick A..B |
 | Multiple specific | git cherry-pick A B C |
@@ -181,7 +181,7 @@ GIT WORKTREE PATTERNS:
 
 WORKTREE COMMANDS:
 | Operation | Command |
-|---|---|
+|--|--|
 | Add worktree (existing br.) | git worktree add../proj-fix |
 ```
 
@@ -232,7 +232,7 @@ TYPES:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full workflow assessment and recommendation |
 | `--strategy` | Recommend branching strategy only |
 | `--merge` | Recommend merge strategy (merge vs rebase vs squash) |
@@ -292,7 +292,7 @@ After each git skill invocation, emit a structured report:
 ```
 GIT OPERATION REPORT:
 | Operation | <branch | merge | rebase | bisect | worktree> |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | Branch | <branch name> |
 | Commits | <N> created / <N> cleaned up |
 | Conflicts resolved | <N> |

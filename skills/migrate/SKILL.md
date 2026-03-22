@@ -30,7 +30,6 @@ Current head:   <latest applied migration name/version>
 Pending:        <number of unapplied migrations, if any>
 Schema file:    <path to schema definition, if declarative>
 ```
-
 Detection rules:
 ```
 IF prisma/schema.prisma OR schema.prisma exists:
@@ -41,13 +40,7 @@ IF drizzle.config.ts OR drizzle/ exists:
   Tool = Drizzle
   Migration dir = drizzle/ OR drizzle/migrations/
 
-IF ormconfig.ts OR data-source.ts with TypeORM imports:
-  Tool = TypeORM
-  Migration dir = src/migrations/
-
-IF .sequelizerc OR config/config.json with Sequelize:
-  Tool = Sequelize
-  Migration dir = migrations/
+  ...
 ```
 
 ### Step 2: Analyze Schema Change Request
@@ -64,7 +57,6 @@ Columns:      <affected columns/fields>
 Description:  <plain-language description of the change>
 Source:        <user request | model diff | schema drift detection>
 ```
-
 If the change originates from a model file modification, diff the model against the current schema:
 ```bash
 # Prisma
@@ -89,7 +81,6 @@ Data loss risk: <NONE | POTENTIAL | CERTAIN>
 Downtime:       <ZERO | BRIEF | EXTENDED>
 Lock duration:  <NONE | ROW | TABLE — estimate in seconds>
 ```
-
 Risk rules:
 ```
 SAFE (apply freely):
@@ -100,13 +91,7 @@ SAFE (apply freely):
 
 CAUTION (review carefully):
   - ADD COLUMN NOT NULL without DEFAULT (needs backfill)
-  - ADD INDEX on large table (may lock)
-  - RENAME COLUMN (needs code deployment coordination)
-  - CHANGE COLUMN TYPE (if implicit cast safe)
-
-DANGEROUS (requires explicit plan):
-  - DROP COLUMN (data loss — is anything still reading it?)
-  - DROP TABLE (data loss — is anything still referencing it?)
+  ...
 ```
 
 #### Expand-Contract Pattern (for DANGEROUS/BREAKING changes)
@@ -122,11 +107,8 @@ PHASE 1 — EXPAND (deploy first):
 
 PHASE 2 — CONTRACT (deploy after Phase 1 is stable):
   1. Deploy code that reads from new column/table
-  2. Stop writing to old column/table
-  3. Remove old column/table
-  4. Clean up dual-write code
+  ...
 ```
-
 ### Step 4: Generate Migration
 
 Generate an idiomatic migration for the detected tool. Every migration MUST include:
@@ -293,17 +275,8 @@ PRE-APPLY CHECKLIST:
 [ ] Application code compatible with BOTH old and new schema
 [ ] Backup taken (or point-in-time recovery available)
 
-APPLY COMMAND:
-<tool-specific command>
-
-POST-APPLY VERIFICATION:
-[ ] Migration shows as applied in migration history
-[ ] Schema matches expected state
-[ ] Application starts and responds correctly
-[ ] Key queries still work (smoke test)
-[ ] No unexpected lock contention or performance degradation
+  ...
 ```
-
 ### Step 7: Report and Transition
 
 ```
@@ -315,31 +288,20 @@ POST-APPLY VERIFICATION:
 |  Files created: <list of migration files>                   |
 |  Validation:                                                |
 |  Schema valid:     YES/NO                                   |
-|  Rollback tested:  YES/NO                                   |
-|  Data preserved:   YES/NO                                   |
-|  Lock estimate:    <duration>                               |
-|  Status: <APPLIED | READY TO APPLY | NEEDS REVIEW>         |
+  ...
 ```
-
 Commit: `"migrate: <table>.<change> -- <risk level>"`
 
 ## Key Behaviors
 
-1. **Detect, don't assume.** Always scan the project to find the migration tool. Never assume Prisma just because it's a Node project.
+1. **Detect, don't assume.** Always scan the project to find the migration tool. Never assume Prisma because it is a Node project.
 2. **Backward compatibility is non-negotiable.** Check every migration for backward compatibility. A migration that breaks running code is a production outage.
 3. **Rollbacks are mandatory.** Every UP must have a matching DOWN. If a migration cannot be rolled back (e.g., DROP COLUMN with data loss), document this explicitly and require confirmation.
 4. **Data preservation is sacred.** Existing data must survive the migration. If data transformation is needed, include a data migration step with verification.
-5. **Lock awareness saves production.** Estimate lock duration for every DDL operation on tables with significant data. Suggest CONCURRENTLY or online DDL when needed.
-6. **One concern per migration.** Don't combine unrelated schema changes in a single migration. Keep each migration independently reversible.
-7. **Idempotency prevents failures.** Use IF NOT EXISTS, IF EXISTS, and conditional guards. A migration that crashes halfway through and can't be re-run is a nightmare.
-8. **Test in dev, verify in staging, apply in prod.** Never apply an untested migration to production.
-9. **Name migrations descriptively.** `add_role_to_users` not `migration_042`. Future developers need to understand the change from the filename.
-10. **Handle seeds and fixtures.** When schema changes affect seed data or test fixtures, update them in the same migration.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive migration workflow: detect, generate, validate |
 | `--generate` | Generate migration file without applying |
 | `--validate` | Validate pending migrations without applying |
@@ -355,35 +317,8 @@ ON file_change in models/ OR entities/ OR schema:
       SUGGEST "Schema change detected in {changed_file}. Run /godmode:migrate to generate migration."
 
 ON startup:
-  IF prisma/schema.prisma exists:
-    pending = run("npx prisma migrate status")
-    IF pending.has_unapplied:
-      WARN "Prisma has {N} unapplied migrations. Run /godmode:migrate --apply."
-
-  IF alembic/ exists:
-    heads = run("alembic heads")
+  ...
 ```
-
-## Iterative Migration Protocol
-
-```
-WHEN applying a batch of migrations OR multi-phase schema change:
-
-current_migration = 0
-total_migrations = len(pending_migrations)
-applied = []
-failed = []
-
-WHILE current_migration < total_migrations:
-  migration = pending_migrations[current_migration]
-
-  1. VALIDATE migration syntax (tool-specific validation)
-  2. ASSESS risk level (SAFE/CAUTION/DANGEROUS/BREAKING)
-  3. ESTIMATE lock duration for affected tables
-  4. IF risk >= DANGEROUS:
-       REQUIRE explicit user confirmation
-```
-
 ## HARD RULES
 
 ```
@@ -395,15 +330,8 @@ WHILE current_migration < total_migrations:
 
 3. NEVER combine unrelated schema changes in one migration file.
    One concern per migration. Independent rollbacks require independent files.
-
-4. NEVER apply a migration to production without testing rollback in dev/staging.
-   UP then DOWN then UP must succeed cleanly.
-
-5. ALWAYS check lock duration before applying DDL on tables > 100K rows.
-   Use CONCURRENTLY or online DDL tools for large tables.
-
+  ...
 ```
-
 ## TSV Logging
 After each workflow step, append a row to `.godmode/migrate-results.tsv`:
 ```
@@ -418,7 +346,7 @@ Print final summary: `Migration: {name}, ORM: {tool}, direction: {up}. Tables af
 ## Success Criteria
 Verify all of these before marking the task complete:
 1. Migration generated by the detected ORM tool (not hand-written SQL unless ORM is absent).
-2. UP migration applies cleanly on a database with existing data (not just empty schema).
+2. UP migration applies cleanly on a database with existing data (not only empty schema).
 3. DOWN migration fully reverses the UP (verified by: apply UP, apply DOWN, diff schema = zero changes).
 4. Application code compiles and passes tests with the new schema.
 5. No backward-incompatible changes without expand-contract pattern (renames, drops, type changes).
@@ -428,7 +356,7 @@ Verify all of these before marking the task complete:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Migration fails on existing data | Check for NOT NULL without DEFAULT, type cast errors, or constraint violations. Add DEFAULT or backfill in a separate data migration. |
 | DOWN migration fails | Fix the DOWN before proceeding. A migration without working rollback is not shippable. Test DOWN on a copy of the UP-migrated database. |
 | ORM not detected | Ask user which ORM/migration tool. Never guess. Check `package.json`, `requirements.txt`, `Gemfile`, `go.mod` for ORM dependencies. |
@@ -449,7 +377,6 @@ Stop the migrate skill when:
 3. Row counts and sample data preserved after migration (no data loss).
 4. Seed files and test fixtures updated for new columns/tables.
 5. Lock duration estimated and documented for tables > 1M rows.
-
 
 ## Output Format
 Print: `Migrate: {table}.{change} — risk: {SAFE|CAUTION|DANGEROUS|BREAKING}. Rollback: {tested|untested}. Data preserved: {yes|no}. Status: {DONE|PARTIAL}.`

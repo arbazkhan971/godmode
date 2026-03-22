@@ -33,7 +33,6 @@ Estimated rows: <approximate row counts for involved tables>
 Current timing: <execution time if known>
 Target timing:  <acceptable execution time>
 ```
-
 If the query comes from an ORM, extract the generated SQL first:
 ```bash
 # Prisma: enable query logging
@@ -58,7 +57,6 @@ EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) <query>;
 EXPLAIN (COSTS, FORMAT JSON) <query>;
 
 ```
-
 #### 2b: Interpret EXPLAIN Output
 
 Read the EXPLAIN output and extract these signals:
@@ -72,10 +70,8 @@ Estimate accuracy: <ratio of estimated to actual -- off by 10x+ is a red flag>
 Cost:             <total cost from planner>
 Actual time:      <execution time in ms>
 Buffers:          <shared hit, shared read, shared written>
-Sort method:      <quicksort in memory | external merge on disk>
-Join strategy:    <nested loop | hash join | merge join>
+  ...
 ```
-
 Key red flags:
 ```
 RED FLAGS:
@@ -86,8 +82,7 @@ RED FLAGS:
 [ ] Filter removing > 90% of scanned rows -- index needed
 [ ] Seq Scan inside a loop -- classic N+1 pattern
 [ ] High shared read / low shared hit -- data not in cache
-[ ] Hash join with huge hash table -- memory pressure
-[ ] Bitmap heap scan with many recheck conditions -- partial index opportunity
+  ...
 ```
 
 #### 2c: Analyze MongoDB Queries
@@ -100,7 +95,6 @@ db.collection.find(<query>).explain("executionStats")
 // executionStats.totalDocsExamined vs executionStats.nReturned
 //   (if ratio > 10:1, you need a better index)
 ```
-
 #### 2d: Analyze Redis Commands
 
 ```bash
@@ -111,7 +105,6 @@ SLOWLOG GET 10
 MONITOR
 
 ```
-
 ### Step 3: Diagnose Performance Issues
 
 Identify the root cause of poor performance:
@@ -201,16 +194,8 @@ Rationale:  <why this index helps>
 Trade-off:  <write overhead, storage cost>
 
 SQL:
-CREATE INDEX CONCURRENTLY idx_<table>_<columns>
-ON <table> (<columns>)
-WHERE <condition>;  -- partial index, if applicable
-
-Estimated impact:
-  Read:  <X>x faster for queries filtering on these columns
-  Write: <Y>% slower for INSERT/UPDATE on this table
-  Storage: ~<Z>MB additional
+  ...
 ```
-
 Index type selection guide:
 ```
 B-tree (default):     Equality, range, sorting, LIKE 'prefix%'
@@ -235,15 +220,8 @@ Plan: <key plan details>
 
 OPTIMIZED QUERY:
 <rewritten SQL>
-
-Time: <expected time>
-Plan: <expected plan changes>
-
-Changes:
-1. <what changed and why>
-2. <what changed and why>
+  ...
 ```
-
 Common rewrites:
 ```sql
 -- ANTI-PATTERN: Correlated subquery
@@ -264,7 +242,6 @@ for order in Order.objects.all():
 
 # AFTER (eager loading):
 ```
-
 ```typescript
 // Prisma: N+1 fix
 // BEFORE (N+1):
@@ -273,7 +250,6 @@ for (const user of users) {
   const orders = await prisma.order.findMany({ where: { userId: user.id } });
 }
 ```
-
 ```ruby
 # Rails: N+1 fix
 # BEFORE (N+1):
@@ -282,7 +258,6 @@ for (const user of users) {
 
 # AFTER (eager loading):
 ```
-
 ### Step 5: Verify Optimization
 
 After applying changes, measure the improvement:
@@ -290,15 +265,14 @@ After applying changes, measure the improvement:
 ```
 OPTIMIZATION RESULTS:
 |  Before                    |  After                            |
-|---|---|
+|--|--|
 |  Execution time: <X>ms     |  Execution time: <Y>ms           |
 |  Rows scanned:   <N>       |  Rows scanned:   <M>             |
 |  Scan type:      Seq Scan  |  Scan type:      Index Scan      |
 |  Buffers read:   <A>       |  Buffers read:   <B>             |
 |  Queries:        <P>       |  Queries:        <Q>             |
-|  Improvement: <X/Y>x faster, <N/M>x fewer rows scanned       |
+  ...
 ```
-
 Verification steps:
 ```
 1. Run EXPLAIN ANALYZE on optimized query -- confirm plan changed
@@ -320,34 +294,9 @@ Verification steps:
 |  Speedup:         <X/Y>x                                    |
 |  Changes made:                                              |
 |  1. <change description>                                    |
-|  2. <change description>                                    |
-|  Indexes added:                                             |
-|  - idx_<name> ON <table> (<columns>)                        |
+  ...
 ```
-
 Commit: `"query: optimize <description> -- <speedup>x improvement"`
-
-## Explicit Loop Protocol
-
-For iterative query optimization:
-
-```
-QUERY OPTIMIZATION LOOP:
-current_iteration = 0
-max_iterations = 5
-target_latency = user_specified OR 50ms
-
-WHILE current_iteration < max_iterations AND query_time > target_latency:
-  current_iteration += 1
-
-  1. PROFILE current state:
-     - Run EXPLAIN (ANALYZE, BUFFERS) on target query
-     - Record: execution_time, rows_scanned, scan_type, buffers
-
-  2. IDENTIFY top bottleneck:
-     - Sequential scan on large table? -> missing index
-     - Nested loop on large tables? -> wrong join strategy
-```
 
 ## HARD RULES
 
@@ -360,30 +309,18 @@ HARD RULES — NEVER VIOLATE:
 5. NEVER use OFFSET for deep pagination — use keyset/cursor pagination.
 6. NEVER apply functions to indexed columns in WHERE clauses.
 7. ALWAYS fix N+1 at the ORM/application level, not just the SQL level.
-8. ALWAYS run ANALYZE after bulk data changes to update statistics.
-9. NEVER recommend an index on a column with < 10% selectivity without justification.
-10. ALWAYS verify query correctness (test suite) after any rewrite.
-11. NEVER optimize a query that runs fewer than 10 times per day unless latency is critical.
-12. ALWAYS report the rows_scanned:rows_returned ratio — > 100:1 means a missing index.
+  ...
 ```
-
 ## Key Behaviors
 
 1. **Measure before and after.** Never claim an optimization without numbers. Run EXPLAIN ANALYZE before the change, apply the fix, run EXPLAIN ANALYZE after.
-2. **Read the EXPLAIN output line by line.** Don't just check if there's a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
+2. **Read the EXPLAIN output line by line.** Don't only check if there's a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
 3. **Prefer index-only solutions.** Adding an index is cheaper and safer than rewriting application code. Start with indexes, escalate to query rewrites only if needed.
 4. **State write trade-offs.** Every index speeds up reads but slows down writes. Always state the trade-off explicitly.
-5. **Fix N+1 at the ORM level.** Don't just optimize the SQL -- fix the application code that generates the N+1 pattern. Use eager loading, batching, or data loaders.
-6. **CONCURRENTLY for production indexes.** In PostgreSQL, always use CREATE INDEX CONCURRENTLY in production to avoid locking the table. In MySQL, use ALTER TABLE ... ADD INDEX (online DDL) or pt-online-schema-change.
-7. **Statistics matter.** Before blaming the query, check if table statistics are current. Stale statistics cause bad plans.
-8. **Pagination done right.** OFFSET-based pagination is O(N) for deep pages. Keyset (cursor) pagination is O(1). Always recommend keyset pagination for large datasets.
-9. **Don't over-index.** More indexes means slower writes and more storage. Aim for the minimum set of indexes that covers the actual query workload.
-10. **Understand the data.** Cardinality, distribution, and skew affect index effectiveness. An index on a boolean column with 99% TRUE is nearly useless for filtering TRUE but excellent for filtering FALSE.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive query optimization workflow |
 | `--explain` | Run EXPLAIN on a query and interpret the output |
 | `--indexes` | Analyze and recommend indexes for the database |
@@ -398,7 +335,7 @@ After EACH query optimization:
      - DISCARD if: query correctness changed OR write overhead exceeds read benefit OR no measurable improvement
   4. COMMIT kept changes. Revert discarded changes before the next optimization.
 
-Never keep an index that is not used by any production query pattern.
+  ...
 ```
 
 ## Stop Conditions
@@ -411,8 +348,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
 
 DO NOT STOP just because:
-  - One rarely-run query is still slow (optimize if latency-critical, skip if not)
-  - Write overhead increased slightly (document the trade-off)
+  ...
 ```
 
 ## Output Format
@@ -426,13 +362,8 @@ QUERY OPTIMIZATION COMPLETE:
   Indexes removed: <J> (unused)
   Total latency reduction: <X>% (avg across optimized queries)
 
-QUERY SUMMARY:
-|  Query / Operation   | Before (ms) | After (ms) | Change     |
-|---|---|---|---|
-|  <description>       | 1,200       | 45         | -96%       |
-
+  ...
 ```
-
 ## TSV Logging
 
 Log every query optimization session to `.godmode/query-results.tsv`:
@@ -441,7 +372,6 @@ Log every query optimization session to `.godmode/query-results.tsv`:
 Fields: timestamp\tproject\tdatabase\tqueries_analyzed\tqueries_optimized\tindexes_added\tindexes_removed\tavg_latency_reduction_pct\tcommit_sha
 Example: 2025-01-15T10:30:00Z\tmy-app\tpostgresql\t8\t5\t3\t1\t87\tabc1234
 ```
-
 Append after every completed optimization pass. One row per session. If the file does not exist, create it with a header row.
 
 ## Success Criteria
@@ -449,24 +379,15 @@ Append after every completed optimization pass. One row per session. If the file
 ```
 QUERY OPTIMIZATION SUCCESS CRITERIA:
 |  Criterion                                  | Required         |
-|---|---|
+|--|--|
 |  EXPLAIN ANALYZE run before AND after       | YES              |
 |  Every optimization measured with numbers   | YES              |
 |  No sequential scan on tables > 10K rows    | YES              |
 |  N+1 queries eliminated                     | YES              |
 |  No SELECT * in optimized queries           | YES              |
-|  Index write overhead documented            | YES              |
-|  No OFFSET-based deep pagination            | YES              |
-|  Statistics up to date (ANALYZE run)        | YES              |
-|  Regression test for critical query perf    | RECOMMENDED      |
-
-VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
-```
-
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Query returns wrong results | Check JOIN conditions and WHERE clauses. Verify NULL handling. Test with known data set. Compare against manual calculation. |
 | Query too slow (>1s) | Run EXPLAIN ANALYZE. Check for missing indexes, full table scans, or unnecessary JOINs. Use materialized views for complex aggregations. |
 | Query works in dev but fails in production | Check for data volume differences. Verify index existence in production. Check for parameter sniffing issues. Test with production-like data. |

@@ -101,7 +101,7 @@ Next: /godmode:api, /godmode:event, /godmode:k8s, /godmode:observe
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--decompose` | Propose service decomposition |
 | `--communication` | Design inter-service communication |
 | `--saga <name>` | Design a specific saga workflow |

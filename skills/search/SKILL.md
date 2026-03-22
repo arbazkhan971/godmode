@@ -141,7 +141,7 @@ Save mappings, analyzers, synonyms, relevance tests. Commit: `"search: <index> â
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full search implementation |
 | `--engine <name>` | Target engine (elasticsearch, meilisearch, algolia, postgres) |
 | `--tune` | Tune relevance on existing search |

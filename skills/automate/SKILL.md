@@ -15,15 +15,15 @@ description: |
 ## Workflow
 
 ### Step 1: Discover Context
-Detect existing: task runner (Make, Task, Just, npm scripts), CI/CD (GitHub Actions, GitLab CI), scheduler (crontab, k8s CronJob), scripts.
+Detect existing: task runner (Make, Task, Justfile, npm scripts), CI/CD (GitHub Actions, GitLab CI), scheduler (crontab, k8s CronJob), scripts.
 
 ### Step 2: Classify Type
 
 | Type | Best For | Tool |
-|------|----------|------|
+|--|--|--|
 | Cron/Schedule | Nightly builds, cleanup, reports | crontab, k8s CronJob, GH Actions schedule |
 | Event/Webhook | Deploy on push, notifications | GitHub Actions on:, webhooks |
-| Task Runner | Build, test, lint, dev setup | Make, Task, Just, npm scripts |
+| Task Runner | Build, test, lint, dev setup | Make, Task, Justfile, npm scripts |
 | Script | Data processing, migration | Bash, Python, Node.js |
 | CI/CD | Test on PR, deploy on merge | GitHub Actions, GitLab CI |
 
@@ -63,7 +63,7 @@ Trigger: <schedule | event | manual> | Error handling: <present>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive workflow |
 | `--cron <expr>` | Scheduled job |
 | `--webhook <event>` | Webhook handler |
@@ -113,7 +113,7 @@ One row per automation artifact. Never overwrite previous rows.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Task runner not detected | Check for ALL known runners before creating new. If none exist, ask user preference: Make, Task, or npm scripts. |
 | Cron syntax invalid | Validate with crontab.guru. Common mistake: `*/5` means every 5 minutes, not the 5th minute. |
 | GitHub Actions workflow fails | Check runner OS, secrets exist in repo settings, actions versions pinned (`@v4` not `@latest`), timeout set. |

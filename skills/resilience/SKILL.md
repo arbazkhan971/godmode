@@ -276,7 +276,7 @@ PREFER the simpler resilience approach:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Circuit breaker never opens | Check failure threshold configuration. Verify error counting includes timeouts. Test with forced failures. |
 | Retry storm amplifies outage | Add exponential backoff with jitter. Set max retries. Add circuit breaker before retry logic. Monitor retry rate. |
 | Fallback returns stale data too long | Set max staleness on cached fallback. Add monitoring for fallback activation. Alert when primary stays down >threshold. |

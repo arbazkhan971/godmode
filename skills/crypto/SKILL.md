@@ -83,7 +83,7 @@ Verdict: <SECURE | NEEDS IMPROVEMENT | INSECURE>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full cryptographic assessment |
 | `--passwords` | Password hashing setup |
 | `--encrypt` | Encryption at rest |
@@ -120,7 +120,7 @@ Print: `Crypto: {N} issues found, {M} fixed. Weak algorithms: {removed|none}. Ke
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Deprecated algorithm in production | Replace immediately (MD5/SHA1 -> SHA-256+, DES/3DES -> AES-256-GCM). Migrate existing hashes on next user login. |
 | Key rotation breaks decryption | Store key version with ciphertext. Support decryption with old key, encryption with new key during rotation window. |
 | CSPRNG not available | Use `crypto.randomBytes` (Node), `secrets` (Python), `crypto/rand` (Go). Never fall back to `Math.random` or `random`. |

@@ -279,6 +279,13 @@ Think: problem — in-app notification feed with unread count and mark-as-read.
 (proceeds immediately)
 ```
 
+## Hard Rules
+1. Max 3 approaches — pick one and move on. No analysis paralysis.
+2. Always scan existing code first (unless greenfield) — reuse patterns, do not reinvent.
+3. Success criteria must be a shell command or metric with threshold — never subjective prose.
+4. Spec must be under 100 lines — if longer, decompose into sub-features.
+5. Never commit a spec with invalid file paths — verify with `git ls-files` before commit.
+
 ## Keep/Discard Discipline
 ```
 After EACH approach evaluation:

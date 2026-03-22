@@ -113,7 +113,7 @@ Files: seed script, factories/, environment configs, package.json seed command
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive seed setup |
 | `--factory` | Set up factory pattern |
 | `--script` | Create idempotent seed script |

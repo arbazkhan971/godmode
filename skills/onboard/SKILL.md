@@ -27,7 +27,6 @@ ls package.json Cargo.toml go.mod pyproject.toml pom.xml Gemfile *.csproj 2>/dev
 find . -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" | grep -v node_modules | grep -v .git | head -200
 
 ```
-
 ```
 PROJECT PROFILE:
 Name: <from package.json / go.mod / etc.>
@@ -41,7 +40,6 @@ Lines of code: <approximate>
 Contributors: <from git log>
 Last activity: <from git log>
 ```
-
 ### Step 2: Architecture Walkthrough
 Generate a structured understanding of how the system is organized:
 
@@ -59,31 +57,20 @@ PROJECT ARCHITECTURE:
 │   └── config/             # Application configuration
 ├── tests/                  # Test files mirroring src/ structure
 ├── docs/                   # Documentation
-├── scripts/                # Build, deploy, and maintenance scripts
-└── infrastructure/         # IaC, Docker, CI/CD configs
+  ...
 ```
 
 #### Data Flow Diagram
 ```
 REQUEST LIFECYCLE:
-Client → [Load Balancer] → [Middleware Pipeline] → [Router]
-                                                      │
-                                    ┌─────────────────┼─────────────────┐
-                                    ▼                 ▼                 ▼
-                              [Controller A]    [Controller B]    [Controller C]
-                                    ▼                 ▼                 ▼
-                              [Service A]       [Service B]       [Service C]
-                                    ▼                 ▼                 ▼
-                              [Repository]      [Repository]      [Cache]
-                                    ▼                 ▼                 ▼
-                              [Database]        [Database]        [Redis]
+Client → [Load Balancer] → [Middleware] → [Router] → Controller → Service → Repository → Database/Cache
 ```
 
 #### Layer Responsibilities
 ```
 LAYER MAP:
 | Layer | Responsibility |
-|---|---|
+|--|--|
 | Routes | URL mapping, request parsing, response formatting |
 | Middleware | Auth, rate limiting, logging, error handling |
 | Controllers | Request validation, orchestration, response shaping |
@@ -109,15 +96,8 @@ KEY FILES (read in this order):
 
 MOST MODIFIED FILES (from git history — where active development happens):
 1. <file> — <N> commits in last 30 days — <what it does>
-2. <file> — <N> commits in last 30 days — <what it does>
-3. <file> — <N> commits in last 30 days — <what it does>
-
-LARGEST FILES (potential complexity hotspots):
-1. <file> — <N> lines — <what it does>
-2. <file> — <N> lines — <what it does>
-3. <file> — <N> lines — <what it does>
+  ...
 ```
-
 ### Step 4: Naming Convention Analysis
 Document the patterns used throughout the codebase:
 
@@ -134,11 +114,8 @@ Variables:
   - Local: camelCase (userName, isActive)
   - Constants: SCREAMING_SNAKE (MAX_RETRIES, DEFAULT_TIMEOUT)
   - Private: _prefixed or #private (_internalState)
-  - Boolean: is/has/should prefix (isReady, hasPermission)
-
-Functions:
+  ...
 ```
-
 ### Step 5: Dependency Graph
 Visualize internal and external dependencies:
 
@@ -156,29 +133,17 @@ MODULE DEPENDENCY GRAPH:
   Shared by all: utils, config, logger, types
 
 CIRCULAR DEPENDENCIES: <none | list>
-HIGH FAN-OUT (depends on many): <file> imports <N> modules
-HIGH FAN-IN (many depend on): <file> imported by <N> modules
+  ...
 ```
 
 #### External Dependencies
 ```
 EXTERNAL DEPENDENCIES:
-Critical (app won't work without):
-  - <package> v<version> — <what it's used for>
-  - <package> v<version> — <what it's used for>
-
-Important (significant functionality):
-  - <package> v<version> — <what it's used for>
-  - <package> v<version> — <what it's used for>
-
-Dev-only:
-  - <package> v<version> — <testing/building/linting>
-
-Outdated (update recommended):
-  - <package> v<current> → v<latest> — <breaking changes? Y/N>
-
-Vulnerable (security advisory):
-  - <package> v<version> — <CVE/advisory>
+Format: <package> v<version> — <purpose>
+List under each category:
+  Critical (app won't work without): e.g., express v4.18, pg v8.11
+  Important (significant functionality): e.g., redis v4.6, aws-sdk v3.4
+  Dev-only (testing/building): e.g., vitest v1.2, eslint v8.50
 ```
 
 ### Step 6: Code Tour Generation
@@ -197,11 +162,8 @@ Stop 2: Configuration (<file>)
   What: How the app reads and validates its configuration
   Key lines: <start>-<end>
   Note: <environment handling, defaults, validation>
-
-Stop 3: Routing (<file>)
-  What: How requests are mapped to handlers
+  ...
 ```
-
 ### Step 7: Generate Onboarding Report
 
 ```
@@ -217,7 +179,6 @@ Stop 3: Routing (<file>)
   2. <file> — <why>
   3. <file> — <why>
 ```
-
 ### Step 8: Commit and Transition
 1. Save onboarding report as `docs/onboarding/<project>-onboarding.md`
 2. Save code tour as `docs/onboarding/<project>-code-tour.md`
@@ -237,7 +198,7 @@ Stop 3: Routing (<file>)
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full onboarding — architecture, key files, code tour, dependencies |
 | `--quick` | Quick architecture overview only |
 | `--tour` | Generate code tour only |
@@ -270,11 +231,8 @@ AUTO-DETECT SEQUENCE:
 
 2. Framework detection:
    - grep "next" package.json → Next.js
-   - grep "express" package.json → Express
-   - grep "fastapi\|flask\|django" requirements.txt → Python web
-   - grep "gin\|echo\|fiber" go.mod → Go web
+  ...
 ```
-
 ## Explicit Loop Protocol
 
 Onboarding involves iterative exploration -- each pass deepens understanding:
@@ -292,10 +250,8 @@ WHILE onboard_steps is not empty AND current_iteration < 7:
     3. IF step produced unexpected findings (e.g., monorepo detected):
         ADJUST remaining steps (e.g., repeat architecture per workspace)
     4. REPORT: "Step {step}: DONE -- iteration {current_iteration}/7"
-
-OUTPUT: Onboarding report with all sections populated from verified data.
+  ...
 ```
-
 ## Output Format
 
 After each onboarding skill invocation, emit a structured report:
@@ -303,7 +259,7 @@ After each onboarding skill invocation, emit a structured report:
 ```
 ONBOARDING REPORT:
 | Repository | <name> |
-|---|---|
+|--|--|
 | Languages | <list> |
 | Framework | <detected framework> |
 | Architecture | <monolith | microservices | monorepo> |
@@ -313,9 +269,8 @@ ONBOARDING REPORT:
 | Test coverage | <N>% (detected) |
 | Dev setup steps | <N> steps documented |
 | Time to first run | ~<N> minutes |
-| Verdict | COMPLETE | NEEDS INVESTIGATION |
+  ...
 ```
-
 ## TSV Logging
 
 Log every onboarding analysis for tracking:
@@ -324,7 +279,6 @@ Log every onboarding analysis for tracking:
 timestamp	skill	repo	files_analyzed	entry_points	setup_steps	status
 2026-03-20T14:00:00Z	onboard	my-app	45	3	7	complete
 ```
-
 ## Success Criteria
 
 The onboard skill is complete when ALL of the following are true:
@@ -352,11 +306,8 @@ IF architecture is ambiguous:
   3. Check for infrastructure configs (Dockerfile, docker-compose, k8s manifests)
   4. Ask the user if detection is still ambiguous after code analysis
 
-IF test suite fails on clean checkout:
-  1. Check for required test databases or services (docker-compose for test deps)
-  2. Verify test environment variables are set
+  ...
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH onboarding step:
@@ -401,8 +352,5 @@ WHILE current_iteration < max_iterations:
   IF phase == "time_to_first_commit":
     1. MEASURE time-to-first-commit (TTFC) by simulating a clean onboarding:
        START_TIME = now()
-
-       a. Clone the repository (fresh, no caches):
-          git clone {repo_url} /tmp/godmode-onboard-test
+  ...
 ```
-

@@ -24,7 +24,6 @@ A11Y AUDIT SCOPE:
 Target: <page/component/entire app>
 WCAG level: <AA (default) | AAA>
 ```
-
 ### Step 2: Automated Tool Scanning
 Run automated accessibility scanners in sequence:
 
@@ -54,7 +53,6 @@ AUTOMATED SCAN RESULTS:
 Axe findings: <N> violations, <N> incomplete, <N> passes
 Pa11y findings: <N> errors, <N> warnings, <N> notices
 ```
-
 ### Step 3: WCAG 2.1 Compliance Checklist
 Systematic check against WCAG 2.1 principles:
 
@@ -93,7 +91,6 @@ Analyze every foreground/background color combination:
 COLOR CONTRAST ANALYSIS:
 | Element | FG | BG | Ratio | Result |
 ```
-
 Tools for color contrast:
 ```bash
 # Using color-contrast-checker
@@ -109,7 +106,6 @@ KEYBOARD NAVIGATION AUDIT:
 Flow: <user flow being tested>
 
 ```
-
 Test these common keyboard patterns:
 ```
 KEYBOARD PATTERNS:
@@ -124,7 +120,6 @@ SCREEN READER AUDIT:
 Screen reader: <VoiceOver (macOS) / NVDA (Windows) / JAWS / TalkBack (Android)>
 Browser: <Safari / Chrome / Firefox>
 ```
-
 ARIA live region checklist:
 ```
 - [ ] Toast notifications use aria-live="polite" or role="status"
@@ -240,7 +235,7 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 ```
 A11Y AUDIT REPORT:
 | Pages audited | <N> |
-|---|---|
+|--|--|
 | Components audited | <N> |
 | Total violations | <N> |
 | Critical | <N> (keyboard traps, no alt) |
@@ -272,9 +267,6 @@ After EACH accessibility fix:
      - DISCARD if: fix introduced new violations OR broke existing functionality
   4. COMMIT kept changes. Revert discarded changes before fixing the next issue.
 
-Never keep a fix that introduces a keyboard trap or removes screen reader access.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -288,163 +280,12 @@ DO NOT STOP just because:
   - One automated tool still shows warnings (verify manually)
 ```
 
-## Accessibility Audit Loop
-
-```
-ACCESSIBILITY AUDIT PROTOCOL:
-
-Phase 1 — WCAG Checklist Compliance Loop
-  target: zero CRITICAL, zero HIGH, all WCAG 2.1 AA criteria addressed
-  current_iteration = 0
-  max_iterations = 10
-
-  WHILE (critical_count > 0 OR high_count > 0) AND current_iteration < max_iterations:
-    1. RUN automated scan battery:
-       npx axe <url> --rules wcag2a,wcag2aa,best-practice
-       npx pa11y <url> --standard WCAG2AA --reporter json
-       npx lighthouse <url> --only-categories=accessibility --output=json
-    2. AGGREGATE findings:
-       - Deduplicate across tools (same element + same criterion = one finding)
-       - Classify: CRITICAL | HIGH | MEDIUM | LOW
-       - Map each finding to WCAG criterion (e.g., 1.4.3, 2.1.1, 4.1.2)
-    3. BUILD WCAG compliance matrix:
-
-  WCAG 2.1 AA COMPLIANCE MATRIX:
-| Criterion | Title | Auto | Manual | Status |
-|--|--|--|--|--|
-| 1.1.1 | Non-text Content | PASS | — | PASS |
-| 1.3.1 | Info and Relationships | PASS | CHECK | PENDING |
-| 1.4.3 | Contrast (Minimum) | FAIL | — | FAIL |
-| 1.4.11 | Non-text Contrast | — | CHECK | PENDING |
-| 2.1.1 | Keyboard | — | PASS | PASS |
-| 2.1.2 | No Keyboard Trap | — | FAIL | CRITICAL |
-| 2.4.3 | Focus Order | — | CHECK | PENDING |
-| 2.4.7 | Focus Visible | — | PASS | PASS |
-| 2.5.5 | Target Size | — | CHECK | PENDING |
-| 3.3.1 | Error Identification | PASS | — | PASS |
-| 3.3.2 | Labels or Instructions | FAIL | — | FAIL |
-| 4.1.2 | Name, Role, Value | FAIL | CHECK | FAIL |
-| ... | (all 50 AA criteria) | ... | ... | ... |
-
-    4. FIX findings in priority order: CRITICAL first, then HIGH
-    5. RE-RUN automated scans after each batch of fixes
-    6. VERIFY fixes did not introduce new violations
-    7. RECORD:
-       criterion | finding | severity | fix_applied | before_status | after_status
-    8. current_iteration += 1
-
-  CONVERGENCE CRITERIA:
-    - Zero CRITICAL findings
-    - Zero HIGH findings
-    - All 50 WCAG 2.1 AA criteria have status PASS or N/A
-    - Lighthouse accessibility score >= 95
-    OR max 10 iterations (report remaining gaps with remediation plan)
-
-Phase 2 — Screen Reader Testing Protocol
-  Test with real assistive technology, not just ARIA validation.
-
-  SCREEN READER TEST MATRIX:
-| Combination | Priority | Coverage |
-|---|---|---|
-| VoiceOver + Safari/macOS | PRIMARY | Most common screen reader/ |
-|  |  | browser combo on macOS |
-| NVDA + Firefox/Windows | PRIMARY | Most common free SR on Windows |
-| NVDA + Chrome/Windows | SECONDARY | Second most common on Windows |
-| JAWS + Chrome/Windows | SECONDARY | Enterprise standard |
-| TalkBack + Chrome/Android | MOBILE | Android accessibility |
-| VoiceOver + Safari/iOS | MOBILE | iOS accessibility |
-
-  FOR EACH priority combination:
-    FOR EACH critical user flow (login, signup, primary task, checkout):
-      1. NAVIGATE to the starting page using screen reader only (no mouse/trackpad)
-      2. TEST landmark navigation:
-         - VO+U (VoiceOver rotor) or NVDA+F7 (elements list)
-         - Verify: Banner, Navigation, Main, Contentinfo landmarks announced
-         - Verify: Heading hierarchy is logical (H1 → H2 → H3, no skips)
-      3. TEST form interaction:
-         - Tab to each form field
-         - Verify: label announced on focus
-         - Verify: required state announced
-         - Submit with invalid data
-         - Verify: error messages announced (via aria-live or role="alert")
-         - Verify: focus moves to first error field
-      4. TEST dynamic content:
-         - Trigger a toast/notification
-         - Verify: announced via aria-live="polite" or role="status"
-         - Open a modal dialog
-         - Verify: focus trapped inside modal, Escape closes, focus returns
-         - Expand an accordion/disclosure
-         - Verify: expanded/collapsed state announced
-      5. TEST data tables:
-         - Navigate with table commands (Ctrl+Alt+Arrow in VoiceOver)
-         - Verify: column headers announced with each cell
-         - Verify: row/column position announced
-      6. RECORD findings per combination:
-         flow | step | expected | actual | sr_combination | status
-
-  SCREEN READER TEST RESULTS:
-| Flow | VO+Safari | NVDA+FF | NVDA+Chrome | TalkBack |
-|--|--|--|--|--|
-| Login | PASS | PASS | PASS | PASS |
-| Signup | PASS | FAIL* | PASS | PENDING |
-| Dashboard | PASS | PASS | PASS | PASS |
-| Checkout | FAIL** | PASS | PASS | PENDING |
-  * Error messages not announced in NVDA+Firefox — missing aria-live region
-  ** Modal focus not trapped in VoiceOver — missing focus trap implementation
-
-Phase 3 — Automated Regression Gate
-  Set up automated accessibility testing in CI/CD:
-
-  CI ACCESSIBILITY GATE:
-  1. INSTALL: npm install --save-dev @axe-core/playwright  (or jest-axe, cypress-axe)
-  2. CONFIGURE threshold:
-     - Zero violations at "critical" and "serious" impact levels
-     - Warning-only for "moderate" and "minor" impact levels
-  3. ADD to CI pipeline (example with Playwright):
-     ```
-     test('page has no accessibility violations', async ({ page }) => {
-       await page.goto('/');
-       const results = await new AxeBuilder({ page })
-     ```
-  4. RUN on every PR — block merge if critical/serious violations found
-  5. TRACK violation count over time:
-     - If count increases between releases → investigate and fix before shipping
-     - If count decreases → log the improvement
-
-  ACCESSIBILITY METRICS OVER TIME:
-| Release | Axe Critical | Axe Serious | Lighthouse | SR Flows |
-|--|--|--|--|--|
-| v1.0.0 | 5 | 12 | 72 | not tested |
-| v1.1.0 | 0 | 4 | 88 | 4/6 pass |
-| v1.2.0 | 0 | 0 | 96 | 6/6 pass |
-
-FINAL ACCESSIBILITY AUDIT REPORT:
-| Metric | Before | After | Target |
-|---|---|---|---|
-| WCAG 2.1 AA criteria met | <N>/50 | <N>/50 | 50/50 |
-| Axe critical violations | <N> | 0 | 0 |
-| Axe serious violations | <N> | 0 | 0 |
-| Lighthouse accessibility | <N> | <N> | >= 95 |
-| Color contrast failures | <N> | 0 | 0 |
-| Keyboard traps | <N> | 0 | 0 |
-| Screen reader flows passing | <N>/<M> | <N>/<M> | 100% |
-| CI gate enabled | NO | YES | YES |
-| Touch targets >= 44px | <N>% | <N>% | 100% |
-```
-
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | axe-core reports false positive | Verify with manual inspection. If confirmed false positive, add `// eslint-disable-next-line` with justification. Do not suppress without checking. |
 | Screen reader behaves differently than expected | Test in NVDA (Windows) and VoiceOver (macOS). ARIA roles may behave differently across readers. Use native HTML elements over ARIA when possible. |
 | Color contrast fails but design team insists | Document the exception. Provide alternative: large text (18px+) has lower ratio requirement (3:1 vs 4.5:1). Suggest adjacent high-contrast alternative. |
 | Keyboard trap in modal | Ensure focus is trapped inside modal with `Tab`/`Shift+Tab`, and `Escape` closes it. Restore focus to trigger element on close. |
-
-## Keep/Discard Discipline
-```
-After EACH accessibility fix:
-  KEEP if: axe-core violations reduced AND no new violations introduced AND keyboard navigation works
-  DISCARD if: fix breaks layout OR introduces new a11y violation OR fails WCAG criteria
-  On discard: revert. Fix one violation at a time to isolate regressions.
+  ...
 ```

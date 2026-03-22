@@ -48,7 +48,7 @@ AGENT ARCHITECTURE SELECTION:
 
 Patterns:
 | Pattern | Best for |
-|---|---|
+|--|--|
 | ReAct | General-purpose tool use, step-by-step reasoning |
 | (Reason + Act) | with tool calls. Simple, effective, well-understood. |
 | Plan-and-Execute | Complex tasks needing upfront planning. Planner |
@@ -83,7 +83,7 @@ Design the tools the agent can use:
 ```
 TOOL INVENTORY:
 | Tool | Type | Risk Level | Description |
-|---|---|---|---|
+|--|--|--|--|
 | <tool_name> | Read-only | LOW | <what it does> |
 | <tool_name> | Write | MEDIUM | <what it does> |
 | <tool_name> | External API | MEDIUM | <what it does> |
@@ -104,12 +104,12 @@ MEMORY SYSTEM DESIGN:
 
 Memory types:
 | Type | Implementation |
-|---|---|
+|--|--|
 | Working memory | Current conversation context window. Limited by |
 | (short-term) | model context length. Contains current task state, |
 |  | recent tool results, and immediate reasoning. |
 | Conversation memory | Full conversation history, summarized as needed. |
-|---|---|
+|--|--|
 | (session) | Stored in session store (Redis, database). |
 |  | Summarize older turns to fit context window. |
 | Episodic memory | Past task executions and outcomes. "Last time I |
@@ -123,7 +123,7 @@ AGENT GUARDRAILS:
 
 Layer 1 — Input guardrails:
 | Check | Action |
-|---|---|
+|--|--|
 | Prompt injection detection | Reject input, log attempt |
 | PII in input | Redact before processing |
 | Off-topic request | Redirect to designated channel |
@@ -141,7 +141,7 @@ AGENT TEST SUITE:
 
 Test categories:
 | Category | Tests | Description |
-|---|---|---|
+|--|--|--|
 | Task completion | <N> | Agent successfully completes defined tasks |
 | Tool selection | <N> | Agent picks correct tool for each step |
 | Multi-step reasoning | <N> | Agent chains tools correctly for complex |
@@ -189,7 +189,7 @@ Commit: `"agent: <agent name> — <pattern>, <N> tools, completion=<val>, safety
 1. **Guardrails before capabilities.** Define what the agent must NEVER do before defining what it can do. Safety constraints are non-negotiable and non-overridable.
 2. **Tools are the agent's hands.** A well-designed tool inventory determines agent effectiveness more than the LLM choice. Invest in tool design.
 3. **Loops need escape hatches.** Every agent loop must have termination conditions: max steps, max cost, max time, error thresholds. An agent without limits will loop forever.
-4. **Test trajectories, not just outcomes.** A correct final answer reached through unsafe or inefficient steps is not acceptable. Evaluate the full reasoning trace.
+4. **Test trajectories, not only outcomes.** A correct final answer reached through unsafe or inefficient steps is not acceptable. Evaluate the full reasoning trace.
 5. **Memory is context engineering.** The agent's working memory (context window) is precious. Retrieve selectively from long-term memory, summarize aggressively, and never waste tokens on irrelevant history.
 6. **Human-in-the-loop for irreversible actions.** Any action that cannot be undone (delete, send, deploy, pay) requires explicit user confirmation. No exceptions.
 7. **Observability is mandatory.** Log every agent step. You cannot debug an agent you cannot observe. Traces are the debugging tool for agentic systems.
@@ -197,7 +197,7 @@ Commit: `"agent: <agent name> — <pattern>, <N> tools, completion=<val>, safety
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full agent development workflow |
 | `--pattern <name>` | Force architecture: `react`, `plan-execute`, `reflexion`, `multi-agent`, `state-machine`, `router` |
 | `--tools` | Design and inventory agent tools |
@@ -260,11 +260,11 @@ Verify all of these before marking the task complete:
 5. Every agent step is logged with: step number, action, tool called, result, tokens used, latency.
 6. Irreversible actions (delete, send, deploy, pay) require explicit confirmation gate.
 7. Tool errors are handled gracefully (agent retries or reports failure, does not crash).
-8. Evaluation suite exists: test trajectories (not just final output), measure success rate, cost, and safety.
+8. Evaluation suite exists: test trajectories (not only final output), measure success rate, cost, and safety.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Agent loops without progress | Check for: repeated tool calls with same args, no new information gained. Add loop detection: if same action repeated 3x, force different action or stop. |
 | Token budget exceeded | Implement token counting middleware. Set hard limit per task. When 80% consumed, switch to shorter prompts or cheaper model for remaining steps. |
 | Tool returns unexpected format | Add output validation on every tool result. If validation fails, retry with clearer instructions (max 2 retries), then report failure to user. |

@@ -33,7 +33,6 @@ Package manager: uv | Poetry | pip + venv
 Deployment: Docker + uvicorn | Kubernetes | AWS Lambda (Mangum)
 API docs: Swagger UI (default) | ReDoc | Both
 ```
-
 ```
 FASTAPI PROJECT STRUCTURE:
 app/
@@ -47,11 +46,8 @@ app/
 │   │   ├── router.py       # APIRouter aggregating all v1 routes
 │   │   ├── orders.py       # Order endpoints
 │   │   ├── customers.py    # Customer endpoints
-│   │   └── auth.py         # Authentication endpoints
-│   └── deps.py             # API-specific dependencies
-├── models/
+  ...
 ```
-
 Rules:
 - ALWAYS separate Pydantic schemas from SQLAlchemy models — they serve different purposes
 - ALWAYS use async endpoints with async database drivers for I/O-bound work
@@ -70,11 +66,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
 ```
-
 ```
 PYDANTIC PATTERNS:
-| Pattern | Usage |
-|---|---|
+| Pydantic Pattern | Usage |
+|--|--|
 | Separate Create/Update/Response | Different fields per operation |
 | field_validator | Single-field custom validation |
 | model_validator | Cross-field validation |
@@ -84,9 +79,8 @@ PYDANTIC PATTERNS:
 | Summary schemas | Lightweight nested objects |
 | Computed fields | Derived values in response |
 | Discriminated unions | Polymorphic request bodies |
-| Strict types | StrictInt, StrictStr for safety |
+  ...
 ```
-
 Rules:
 - ALWAYS separate schemas: `Create` (input), `Update` (partial input), `Response` (output)
 - Use `Field(...)` with constraints (`gt`, `le`, `max_length`) — validation at the schema level, not the endpoint
@@ -105,11 +99,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 ```
-
 ```
 DEPENDENCY INJECTION PATTERNS:
-| Pattern | Usage |
-|---|---|
+| DI Pattern | Usage |
+|--|--|
 | Annotated[T, Depends(fn)] | Type-safe DI (Python 3.9+) |
 | yield dependencies | Resource lifecycle (DB, files) |
 | Nested dependencies | Service -> Repository -> DB |
@@ -119,7 +112,6 @@ DEPENDENCY INJECTION PATTERNS:
 | Request-scoped | Default — one per request |
 | App-scoped (lifespan) | DB pool, HTTP clients |
 ```
-
 Rules:
 - Use `Annotated` type aliases for commonly used dependencies — cleaner function signatures
 - Use `yield` in dependencies for resource cleanup (database sessions, file handles)
@@ -138,11 +130,10 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 ```
-
 ```
 ASYNC DATABASE PATTERNS:
-| Pattern | Usage |
-|---|---|
+| DB Pattern | Usage |
+|--|--|
 | asyncpg driver | PostgreSQL async driver |
 | expire_on_commit=False | Access attributes after commit |
 | selectin loading | Async-safe eager loading |
@@ -152,9 +143,8 @@ ASYNC DATABASE PATTERNS:
 | session.flush() | Get ID before commit |
 | Mapped[] annotations | Type-safe column definitions |
 | TimestampMixin | Reusable audit fields |
-| Composite indexes | Multi-column query optimization |
+  ...
 ```
-
 Rules:
 - ALWAYS use `asyncpg` driver for PostgreSQL (`postgresql+asyncpg://`)
 - ALWAYS set `expire_on_commit=False` — avoids lazy loading errors in async context
@@ -174,11 +164,10 @@ from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
 async def create_order(
     data: OrderCreate,
 ```
-
 ```
 ASYNC TASK STRATEGY:
 | Approach | When to Use |
-|---|---|
+|--|--|
 | BackgroundTasks | Simple fire-and-forget (email) |
 | Celery | Complex workflows, scheduling |
 | ARQ | Async-native, lightweight |
@@ -188,11 +177,8 @@ ASYNC TASK STRATEGY:
 WEBSOCKET PATTERNS:
 - ConnectionManager: Track active connections per channel
 - Authentication: Verify JWT in WebSocket handshake query params
-- Heartbeat: Ping/pong every 30s to detect stale connections
-- Reconnection: Client-side exponential backoff on disconnect
-- Scaling: Use Redis Pub/Sub for multi-process broadcasting
+  ...
 ```
-
 Rules:
 - Use `BackgroundTasks` for simple, quick tasks that don't need retry logic
 - Use Celery or ARQ for tasks that need retries, scheduling, or monitoring
@@ -211,11 +197,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from app.main import create_app
 ```
-
 ```
 TESTING STRATEGY:
 | Layer | Approach |
-|---|---|
+|--|--|
 | Endpoints (HTTP) | pytest + HTTPX AsyncClient |
 | Services (business logic) | pytest + async fixtures |
 | Schemas (validation) | pytest + Pydantic validation |
@@ -225,9 +210,8 @@ TESTING STRATEGY:
 | Background tasks | Mock or capture tasks |
 | Auth (JWT/OAuth2) | Auth header fixtures |
 
-TEST TOOLING:
+  ...
 ```
-
 Rules:
 - Use `HTTPX AsyncClient` with `ASGITransport` — no need to start a server for testing
 - Use `dependency_overrides` to swap database sessions and external services in tests
@@ -242,7 +226,7 @@ Verify the FastAPI application:
 ```
 FASTAPI VALIDATION:
 | Check | Status | Notes |
-|---|---|---|
+|--|--|--|
 | Async endpoints throughout | PASS | No sync blocking |
 | Pydantic schemas for all I/O | PASS | Create/Update/Resp |
 | Dependency injection (no globals) | PASS | Depends() everywhere |
@@ -252,10 +236,8 @@ FASTAPI VALIDATION:
 | Input validation with constraints | PASS | Field validators |
 | Error handling centralized | PASS | Exception handlers |
 | Alembic migrations present | PASS | Version-controlled |
-| Tests pass with HTTPX | PASS | Async test suite |
-| Config via pydantic-settings | PASS | Typed env vars |
+  ...
 ```
-
 ```
 FASTAPI DELIVERY:
 
@@ -269,14 +251,8 @@ Artifacts:
 - OpenAPI spec: Auto-generated at /docs and /redoc
 - Validation: <PASS | NEEDS REVISION>
 
-Next steps:
--> /godmode:test — Add more test coverage
--> /godmode:secure — Security hardening audit
--> /godmode:deploy — Deploy with Docker + uvicorn
--> /godmode:loadtest — Performance testing (async throughput)
--> /godmode:observe — Set up structured logging and metrics
+  ...
 ```
-
 Commit: `"fastapi: <service> — <N> async endpoints, Pydantic schemas, pytest"`
 
 ## Key Behaviors
@@ -292,7 +268,7 @@ Commit: `"fastapi: <service> — <N> async endpoints, Pydantic schemas, pytest"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full FastAPI setup workflow |
 | `--schemas` | Design Pydantic models with validation |
 | `--auth jwt` | Configure JWT authentication |
@@ -314,34 +290,6 @@ AUTO-DETECT SEQUENCE:
 9. Detect test framework: pytest, httpx, pytest-asyncio, anyio
 10. Check for existing project structure (monolith vs modular, feature-based vs layer-based)
 ```
-
-## Explicit Loop Protocol
-
-When building multiple API resources iteratively:
-
-```
-FASTAPI RESOURCE BUILD LOOP:
-current_iteration = 0
-resources = [resource_1, resource_2, ...]  // from project assessment
-
-WHILE current_iteration < len(resources) AND NOT user_says_stop:
-  1. SELECT next resource from priority list
-  2. CREATE Pydantic schemas: <Resource>Create, <Resource>Update, <Resource>Response
-  3. CREATE SQLAlchemy model with Mapped[] annotations and relationships
-  4. CREATE repository with async queries (list_paginated, get_by_id, create, update)
-  5. CREATE service class with business logic and DI
-  6. CREATE router with async endpoints and dependency injection
-  7. CREATE Alembic migration for new model
-  8. WRITE tests: endpoint tests (HTTPX), service tests, schema validation tests
-  9. RUN tests — if failures, fix before proceeding
-  10. current_iteration += 1
-  11. REPORT: "Resource <N>/<total> complete: <name> — <X> endpoints, <Y> tests passing"
-
-ON COMPLETION:
-  RUN full validation checklist (Step 7)
-  REPORT: "<N> resources, <M> endpoints, <K> tests, all async, validation PASS/FAIL"
-```
-
 ## Hard Rules
 
 ```
@@ -357,7 +305,6 @@ HARD RULES — FASTAPI:
 9. NEVER block the event loop with CPU-intensive work. Use run_in_executor or a separate worker process.
 10. ALWAYS use pydantic-settings for configuration. Hardcoded config values are deployment bugs waiting to happen.
 ```
-
 ## Output Format
 
 End every FastAPI skill invocation with this summary block:
@@ -374,7 +321,6 @@ Build status: <passing | failing | not-checked>
 Issues fixed: <N>
 Notes: <one-line summary>
 ```
-
 ## TSV Logging
 
 Log every invocation to `.godmode/` as TSV. Create on first run.
@@ -382,7 +328,6 @@ Log every invocation to `.godmode/` as TSV. Create on first run.
 ```
 timestamp	project	action	files_count	endpoints_count	models_count	migrations_count	tests_status	notes
 ```
-
 ## Success Criteria
 
 Every FastAPI skill invocation must pass ALL of these checks before reporting success:
@@ -428,11 +373,8 @@ Pass 1 — Async Audit:
 Pass 2 — Dependency Injection Audit:
   1. Catalog all Depends() — verify scope (request vs app), caching, cleanup
   2. Fix: pool connections instead of creating per-request, cache I/O results
-  3. Flatten deeply nested Depends() chains
-  4. Add try/finally cleanup to all yield dependencies
-
+  ...
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH implementation or optimization change:
@@ -455,4 +397,3 @@ DO NOT STOP just because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
-

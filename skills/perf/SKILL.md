@@ -25,16 +25,8 @@ PROFILING PLAN:
 Target: <application/service/function>
 Symptom: <what the user observed — slow response, high CPU, OOM, etc.>
 ```
-
 ### Step 2: CPU Profiling & Flame Graph Analysis
 Identify where CPU time is spent:
-
-#### Profiling Tools by Language
-```
-CPU PROFILING TOOLS:
-Node.js:
-  - Built-in: node --prof / --cpu-prof
-```
 
 #### Flame Graph Interpretation
 ```
@@ -62,79 +54,15 @@ Expected improvement: <percentage reduction in CPU for this path>
 ```
 
 ### Step 3: Memory Leak Detection & Allocation Tracking
-Find memory leaks and excessive allocations:
-```
-MEMORY PROFILING TOOLS:
-Node.js:
-  - --inspect + Chrome DevTools Memory tab (heap snapshots)
-  - node --heap-prof (V8 heap profiler)
-  - clinic heapprofiler -- node app.js
+Find memory leaks and excessive allocations. Use language-native tools: Node.js (--heap-prof, Chrome DevTools), Python (tracemalloc), Go (pprof), Rust (DHAT), Java (JFR+JMC), C/C++ (Valgrind, ASan).
 
-Python:
-  - tracemalloc: built-in memory tracking
-  - memory_profiler: @profile decorator, line-by-line memory
-  - objgraph: object reference graph visualization
-
-Go:
-  - pprof: go tool pprof http://localhost:6060/debug/pprof/heap
-  - GODEBUG=gctrace=1 (GC activity tracing)
-  - runtime.ReadMemStats() (programmatic monitoring)
-
-Rust:
-  - DHAT: valgrind --tool=dhat ./target/release/app
-  - jemalloc + jeprof: allocation profiling
-  - Memory is statically managed — leaks are rare but possible with Rc/Arc cycles
-
-Java/Kotlin:
-  - JFR + JMC: Flight Recorder memory events
-  - Eclipse MAT: heap dump analysis
-  - jmap -dump:format=b,file=heap.bin <pid>
-
-Swift/iOS:
-  - Instruments: Leaks + Allocations templates
-  - Xcode Memory Graph Debugger (Debug → Debug Workflow → View Memory Graph)
-  - MallocStackLogging for allocation tracking
-
-C/C++:
-  - Valgrind (memcheck): valgrind --leak-check=full ./app
-  - AddressSanitizer: -fsanitize=address
-  - Heaptrack: heaptrack ./app && heaptrack_gui heaptrack.*.zst
-```
-
-#### Leak Detection Methodology
-```
-MEMORY LEAK DETECTION:
-
-Step 1: Establish baseline memory usage
-  - Start application, let it stabilize (GC runs, caches warm)
-  - Record: RSS, heap used, object count
-
-Step 2: Apply load
-  - Run representative workload for N iterations/minutes
-  - Record memory at regular intervals
-
-Step 3: Analyze growth pattern
-  - Constant memory: no leak
-  - Linear growth: leak proportional to activity (classic leak)
-  - Stepped growth: leak per N operations (periodic leak)
-  - Logarithmic growth: cache growing without eviction (bounded but wasteful)
-
-Step 4: Identify leak source
-  - Take heap snapshot BEFORE load
-  - Take heap snapshot AFTER load
-  - Diff snapshots: objects that grew in count/size = candidates
-  - For each candidate: trace allocation site and reference chain
-
-Step 5: Verify fix
-  - Apply fix, repeat steps 1-3
-  - Memory should stabilize after warmup
-```
+Leak detection: baseline memory -> apply load -> analyze growth pattern (constant=ok, linear=leak, stepped=periodic leak) -> diff heap snapshots -> trace allocation site -> fix -> verify stable.
 
 For each memory finding:
 ```
 MEMORY FINDING <N>:
 Type: LEAK | EXCESSIVE ALLOCATION | FRAGMENTATION | CACHE UNBOUNDED
-Location: <file>:<line>
+Source: <file>:<line>
 Object type: <the allocated/leaked object type>
 Growth rate: <MB per hour / per request / per iteration>
 
@@ -176,7 +104,7 @@ Dynamic detection tools:
   C/C++: -fsanitize=thread (ThreadSanitizer)
   Java: -XX:+UseThreadSanitizer, FindBugs/SpotBugs concurrency checks
   Python: threading debug mode, sys.settrace for lock ordering
-  Node.js: typically single-threaded, but worker_threads + SharedArrayBuffer can race
+  Node.js: single-threaded by default, but worker_threads + SharedArrayBuffer can race
 
 Common race condition patterns:
   1. Counter without atomic increment
@@ -187,41 +115,14 @@ Common race condition patterns:
 ```
 
 #### Deadlock Detection
-```
-DEADLOCK DETECTION:
-
-Static analysis:
-  - Lock ordering violations: Thread A locks [M1, M2], Thread B locks [M2, M1]
-  - Channel/pipe operations that can block indefinitely
-  - Unbounded waits without timeout
-
-Dynamic detection:
-  Go: goroutine dump (SIGQUIT / runtime.Stack)
-  Java: jstack <pid> / Thread dump in JMC
-  Python: faulthandler.dump_traceback()
-  C/C++: gdb → thread apply all bt
-
-Common deadlock patterns:
-  1. Lock ordering inconsistency (A→B vs B→A)
-  2. Lock held while calling external function that acquires same lock
-  3. Channel send blocking because receiver already exited
-  4. Database row-level locks in conflicting order
-  5. Connection pool exhaustion (all connections held, new request waits)
-
-Prevention strategies:
-  - Always acquire locks in consistent global order
-  - Use try-lock with timeout instead of blocking lock
-  - Prefer lock-free data structures where possible
-  - Use channels/message passing instead of shared memory
-  - Set timeouts on all blocking operations
-```
+Detect via: lock ordering violations, unbounded waits, channel deadlocks. Tools: Go (goroutine dump), Java (jstack), Python (faulthandler), C/C++ (gdb). Prevent with: consistent lock ordering, try-lock with timeout, channels over shared memory, timeouts on all blocking ops.
 
 For each concurrency finding:
 ```
 CONCURRENCY FINDING <N>:
 Type: RACE CONDITION | DEADLOCK | LIVELOCK | STARVATION
 Severity: CRITICAL | HIGH | MEDIUM
-Location: <file>:<line>
+Code path: <file>:<line>
 
 Scenario:
   Thread/goroutine 1: <sequence of operations>
@@ -249,113 +150,17 @@ Concurrency mechanism used: <mutex | atomic | channel | transaction | lock-free>
 Measure performance with statistical rigor:
 ```
 BENCHMARKING PROTOCOL:
-
-1. Environment preparation:
-   - Disable CPU frequency scaling (governor = performance)
-   - Close non-essential processes
-   - Pin process to specific CPU core(s) if possible
-   - Warm up JIT/caches before measuring
-   - Use dedicated hardware (not shared CI/CD runner for final benchmarks)
-
-2. Measurement methodology:
-   - Minimum iterations: enough to achieve target confidence
-   - Warm-up iterations: discard first N runs (JIT compilation, cache warming)
-   - Measurement iterations: collect M data points after warm-up
-   - Cool-down: optional pause between iterations to prevent thermal throttling
-
-3. Statistical analysis:
-   - Report: mean, median, standard deviation, min, max
-   - Compute 95% confidence interval for the mean
-   - Minimum sample size for 95% CI with 5% margin:
-     n = (Z * s / E)^2 where Z=1.96, s=sample std dev, E=margin
-   - Check for outliers: values > 3 standard deviations from mean
-   - Report coefficient of variation (CV = stddev/mean) — if CV > 10%, results are unstable
-
-4. Comparison protocol (A vs B):
-   - Run A and B interleaved (not sequentially) to control for drift
-   - Use paired measurements where possible
-   - Apply Welch's t-test (or Mann-Whitney U for non-normal distributions)
-   - Report p-value: p < 0.05 = statistically significant
-   - Report effect size: "B is X% faster (95% CI: [lower, upper])"
-   - If p >= 0.05: "No statistically significant difference detected"
+1. Environment: dedicated hardware, disable frequency scaling, warm up JIT/caches
+2. Measurement: warm-up iterations + measurement iterations, discard outliers
+3. Statistics: report mean, median, p95, p99, stddev, 95% CI. CV > 10% = unstable.
+4. Comparison (A vs B): interleaved runs, Welch's t-test, p < 0.05 = significant
 ```
 
-#### Benchmarking Tools
+For each benchmark:
 ```
-BENCHMARKING TOOLS BY LANGUAGE:
-
-Node.js:
-  - Benchmark.js: robust statistical benchmarks
-  - autocannon: HTTP load testing with latency percentiles
-  - hyperfine: command-line benchmarking with warmup and statistical analysis
-
-Python:
-  - timeit: built-in micro-benchmarking (handles warmup)
-  - pytest-benchmark: integration with pytest, comparison, histograms
-  - locust: load testing with user simulation
-
-Go:
-  - testing.B: built-in benchmarks (go test -bench=.)
-  - benchstat: statistical comparison of benchmark results
-  - pprof integration: profile during benchmark
-
-Rust:
-  - criterion: statistical benchmarking with confidence intervals
-  - divan: fast iteration benchmarks
-  - cargo bench: built-in benchmark support
-
-Java/Kotlin:
-  - JMH: Java Microbenchmark Harness (the gold standard)
-  - Manages JIT warmup, dead code elimination, loop unrolling
-  - Reports mean, error, confidence intervals
-
-General:
-  - hyperfine: language-agnostic CLI benchmark tool
-  - wrk / wrk2: HTTP benchmarking with latency correction
-  - k6: modern load testing with scripting
-```
-
-For each benchmark result:
-```
-BENCHMARK: <name>
-Target: <the benchmarked function/operation>
-Environment: <hardware, OS, runtime version>
-
-Results:
-  Iterations: <N> (after <M> warm-up)
-  Mean: <value> +/- <std dev>
-  Median: <value>
-  P95: <value>
-  P99: <value>
-  Min: <value>
-  Max: <value>
-  CV: <value>% (<STABLE if <5% | MODERATE if 5-10% | UNSTABLE if >10%>)
-
-95% confidence interval: [<lower>, <upper>]
-Throughput: <ops/sec or requests/sec>
-```
-
-For comparison benchmarks:
-```
-BENCHMARK COMPARISON: <A> vs <B>
-Hypothesis: <B> is faster than <A>
-
-         |    Mean    |  Median  |   P95    |   P99
----------|------------|----------|----------|----------
-  A      | <value>    | <value>  | <value>  | <value>
-  B      | <value>    | <value>  | <value>  | <value>
-  Delta   | <value>    | <value>  | <value>  | <value>
-  Change  | <+/-N%>    | <+/-N%>  | <+/-N%>  | <+/-N%>
-
-Statistical test: Welch's t-test
-  t-statistic: <value>
-  p-value: <value>
-  Significant: <YES (p < 0.05) | NO (p >= 0.05)>
-  Effect size: <value>% (95% CI: [<lower>%, <upper>%])
-
-Verdict: <B is X% faster (statistically significant) |
-          No significant difference detected |
-          A is X% faster (B is a regression)>
+BENCHMARK: <name> | Target: <function> | Env: <hardware, runtime>
+Mean: <value> +/- <std dev> | Median: <value> | P95/P99: <value>/<value>
+95% CI: [<lower>, <upper>] | Throughput: <ops/sec>
 ```
 
 ### Step 6: Profiling Report
@@ -394,30 +199,7 @@ Verdict: <B is X% faster (statistically significant) |
 
 ### Step 7: Commit and Transition
 1. Save flame graphs and profiles: `docs/perf/<target>-profile/`
-```
-AUTO-DETECT SEQUENCE:
-1. Runtime detection:
-   - ls package.json → Node.js (check for "type": "module")
-   - ls go.mod → Go
-   - ls Cargo.toml → Rust
-   - ls pyproject.toml / setup.py → Python
-   - ls pom.xml / build.gradle → Java/Kotlin
-   - ls *.xcodeproj / Package.swift → Swift
-
-2. Profiling tools already available:
-   - grep for "clinic\|0x\|pprof\|flamegraph\|criterion\|jmh" in dependencies
-   - Check for existing profiles: ls *.cpuprofile *.heapprofile *.prof *.jfr
-
-3. Build configuration:
-   - Detect release/debug mode from build scripts
-   - Check for optimization flags (-O2, --release, NODE_ENV=production)
-
-4. Existing benchmarks:
-   - ls **/*bench* **/*benchmark* tests/perf/
-   - Detect benchmark framework from imports
-
-5. Output: PROFILING PLAN auto-populated with detected tools and targets.
-```
+2. Auto-detect runtime from manifest files, existing profiling tools, build config, and benchmarks.
 
 ## HARD RULES
 
@@ -426,12 +208,7 @@ AUTO-DETECT SEQUENCE:
 3. **NEVER benchmark on noisy/shared systems for final results.** CI runners with other jobs produce unreliable data. Control the environment.
 4. **NEVER skip warm-up iterations.** JIT-compiled languages (Java, Node.js, .NET) perform dramatically differently after warm-up. Discard initial runs.
 5. **NEVER profile debug/development builds.** Always profile release/production builds. Debug builds have different performance characteristics.
-6. **NEVER claim "no memory leak" from a test shorter than the expected runtime.** Some leaks only manifest over hours or days.
-7. **NEVER dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
-8. **ALWAYS generate a flame graph for CPU profiling.** No exceptions. It communicates more than pages of profiler output.
-9. **ALWAYS measure the fix.** Every remediation must include before/after measurements. Without measurement, you do not know if you helped or hurt.
-
-## Keep/Discard Discipline
+  ...
 ```
 After EACH performance fix:
   1. MEASURE: Re-run the profiler or benchmark (minimum 5 runs for statistical confidence).
@@ -453,7 +230,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Optimization plateau: 3 consecutive fixes produce < 5% improvement
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Minor hotspots (< 5% CPU) remain (diminishing returns)
   - Benchmarks show unstable variance (fix the environment, not the code)
 ```
@@ -468,24 +245,9 @@ iteration	module	finding_type	location	severity	metric_before	metric_after	statu
 ```
 Columns: iteration, module(cpu/memory/concurrency/benchmark), finding_type, location, severity, metric_before, metric_after, status(fixed/open/wontfix).
 
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Profiler shows no clear hotspot | Check sampling rate is sufficient. Profile under realistic load, not idle. Try a different profiler (CPU vs memory vs I/O). |
 | Optimization regresses another metric | Measure all key metrics before and after. Use A/B testing for production changes. Revert if tradeoff is unacceptable. |
 | Benchmark results are noisy | Increase iterations. Pin CPU frequency. Disable turbo boost. Run on dedicated hardware. Warm up JIT before measuring. |
-| Memory optimization increases latency | Profile both metrics together. Check if GC pressure shifted rather than reduced. Use memory pooling or arena allocation. |
-
-## Success Criteria
-1. Target metric improved with statistical confidence (median of 3+ runs, <5% variance).
-2. No regression in other key metrics (latency, throughput, memory).
-3. All guard checks pass (build, lint, test).
-4. Profiling evidence documents the optimization (before/after flamegraphs or metrics).
-
-## TSV Logging
-Append to `.godmode/perf-results.tsv`:
-```
-iteration	module	finding_type	location	severity	metric_before	metric_after	status
-```
-One row per finding or optimization. Status: fixed, open, wontfix.

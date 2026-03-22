@@ -35,7 +35,6 @@ Latency:        <real-time | near-real-time | batch>
 Compliance:     <GDPR | HIPAA | PCI-DSS | SOX | none>
 Database:       <PostgreSQL | MySQL | MongoDB | DynamoDB | Neo4j | Redis | not decided>
 ```
-
 Key questions to answer before schema design:
 ```
 1. What are the core entities? (nouns in the domain)
@@ -55,20 +54,19 @@ Key questions to answer before schema design:
 ```
 ENTITY CATALOG:
 | Entity            | Key Attributes                             | Expected Volume  |
-|---|---|---|
+|--|--|--|
 | User              | id, email, name, role, created_at          | 100K             |
 | Organization      | id, name, plan, billing_email              | 10K              |
 | Project           | id, name, description, org_id              | 500K             |
 | Task              | id, title, status, assignee_id, project_id | 5M               |
 | Comment           | id, body, author_id, task_id, created_at   | 20M              |
 ```
-
 #### 2b: Define Relationships
 
 ```
 RELATIONSHIP MAP:
 | From              | Relationship   | To                | Cardinality       |
-|---|---|---|---|
+|--|--|--|--|
 | Organization      | has many       | User              | 1:N               |
 | Organization      | has many       | Project           | 1:N               |
 | User              | belongs to     | Organization      | N:1               |
@@ -78,7 +76,6 @@ RELATIONSHIP MAP:
 | User              | has many       | Comment           | 1:N               |
 | Task              | has many       | Tag (through)     | M:N               |
 ```
-
 #### 2c: ER Diagram (Text)
 
 ```
@@ -86,7 +83,7 @@ RELATIONSHIP MAP:
 | Organization | ────────────> | Project | ────────────> | Task |
 │              │             │              │             │              │
 | id (PK) |  | id (PK) |  | id (PK) |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | name |  | name |  | title |
 | plan |  | description |  | status |
 | billing_email |  | org_id (FK) |  | priority |
@@ -99,7 +96,6 @@ RELATIONSHIP MAP:
 │    User      │                                                  ▼
 │              │                                           ┌──────────────┐
 ```
-
 ### Step 3: Relational Schema Design
 
 #### 3a: Normalization Levels
@@ -107,7 +103,7 @@ RELATIONSHIP MAP:
 ```
 NORMALIZATION GUIDE:
 | Form   | Rule                       | What It Eliminates                     |
-|---|---|---|
+|--|--|--|
 | 1NF    | Atomic values, no          | Repeating groups, multi-valued         |
 |        | repeating groups            | columns (tags as CSV string)           |
 | 2NF    | 1NF + no partial           | Columns dependent on part of a         |
@@ -117,7 +113,6 @@ NORMALIZATION GUIDE:
 | BCNF   | Every determinant is a     | Anomalies in tables with overlapping   |
 |        | candidate key              | candidate keys                         |
 ```
-
 **Practical rule:** Start at 3NF. Denormalize only when you can prove (with query profiling) that joins are a bottleneck.
 
 #### 3b: When to Denormalize
@@ -125,7 +120,7 @@ NORMALIZATION GUIDE:
 ```
 DENORMALIZATION DECISION:
 | Denormalize WHEN           | Example                                   |
-|---|---|
+|--|--|
 | Read frequency >> write    | Product listing with category name        |
 | frequency for the data     | (read 1000x/sec, category changes 1x/day)|
 | Join is consistently the   | Dashboard query joining 5 tables;         |
@@ -135,7 +130,6 @@ DENORMALIZATION DECISION:
 | Aggregation is expensive   | Counter cache: comment_count on Task      |
 | and frequently needed      | instead of COUNT(*) on every page load    |
 ```
-
 #### 3c: SQL Schema Generation
 
 ```sql
@@ -146,7 +140,6 @@ CREATE TABLE organizations (
     plan        VARCHAR(50) NOT NULL DEFAULT 'free'
                 CHECK (plan IN ('free', 'pro', 'enterprise')),
 ```
-
 ### Step 4: NoSQL Data Modeling
 
 #### 4a: Document Store (MongoDB/DynamoDB)
@@ -160,13 +153,12 @@ DOCUMENT MODEL DESIGN PRINCIPLES:
 
 EMBED vs REFERENCE DECISION:
 | EMBED when                | REFERENCE when            |
-|---|---|
+|--|--|
 | Data is always read       | Data is shared across     |
 | together (1:few)          | many documents            |
 | Child rarely changes      | Child changes frequently  |
 | independently             | and independently         |
 ```
-
 ```javascript
 // MongoDB document model: e-commerce order
 // GOOD: Embed items (bounded, always read with order, point-in-time snapshot)
@@ -175,7 +167,6 @@ EMBED vs REFERENCE DECISION:
   orderNumber: "ORD-2025-001",
   customer: {
 ```
-
 #### 4b: Key-Value Store (Redis/DynamoDB)
 
 ```
@@ -188,7 +179,7 @@ KEY-VALUE DESIGN PATTERNS:
 ```
 SAFE SCHEMA CHANGES (no downtime, no coordination):
 | Change                     | Why It's Safe                                |
-|---|---|
+|--|--|
 | Add nullable column        | Existing rows get NULL, old code ignores it  |
 | Add column with default    | Existing rows get default, old code ignores  |
 | Add new table              | No existing code references it               |
@@ -226,7 +217,7 @@ Timeline: Days to weeks between phases (never same deployment)
 ```
 SCHEMA VERSIONING STRATEGIES:
 | Strategy          | How It Works                              | Best For            |
-|---|---|---|
+|--|--|--|
 | Sequential        | 001_create_users.sql, 002_add_email.sql   | Relational DBs      |
 | migrations        | Applied in order, tracked in table         | (most common)       |
 | Schema registry   | Central registry stores schema versions   | Event streaming     |
@@ -265,7 +256,7 @@ export const userSchema = z.object({
 ```
 MULTI-TENANCY STRATEGIES:
 | Strategy          | Isolation          | Complexity        | Best For          |
-|---|---|---|---|
+|--|--|--|--|
 | Shared schema     | Row-level (WHERE   | Low               | SaaS with many    |
 | (tenant_id col)   | tenant_id = ?)    |                   | small tenants     |
 | Schema per tenant | Schema-level       | Medium            | Medium tenants    |
@@ -314,27 +305,11 @@ Commit: `"schema: design <description> data model"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive schema design workflow |
 | `--er` | Generate entity-relationship diagram |
 | `--normalize` | Analyze and normalize an existing schema |
 
-## Iterative Schema Design Loop
-
-```
-current_iteration = 0
-max_iterations = 10
-entities_remaining = [list of entities/tables to design or evolve]
-
-WHILE entities_remaining is not empty AND current_iteration < max_iterations:
-    entity = entities_remaining.pop(0)
-    1. Define access patterns: list all queries this entity participates in
-    2. Design columns/fields with correct types (no VARCHAR(255) by default)
-    3. Add constraints: NOT NULL, UNIQUE, CHECK, foreign keys
-    4. Add indexes for query patterns identified in step 1
-    5. Generate migration file (up + down)
-    6. Run migration against dev database
-    7. Validate: run the expected queries, check EXPLAIN for index usage
 ## HARD RULES
 
 ```
@@ -350,7 +325,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 9. EVERY enum-like field must have a CHECK constraint or DB enum type. No unconstrained strings.
 10. NEVER embed unbounded arrays in documents (NoSQL). Use references for unbounded collections.
 ```
-
 ## Output Format
 Print on completion:
 ```
@@ -382,48 +356,6 @@ Append one row per session. Create the file with headers on first run.
 8. Validation schema (Zod/JSON Schema/Protobuf) derives from a single source of truth.
 9. Primary keys are surrogate (UUID or auto-increment), never natural keys.
 
-## Schema Migration Safety Loop
-
-Autonomous loop that validates migrations, applies them, verifies correctness, and tests rollback. Every migration is proven safe before committing.
-
-```
-SCHEMA MIGRATION SAFETY LOOP:
-current_iteration = 0
-max_iterations = 10
-migrations = detect_pending_migrations()  // from migration tool output
-
-FOR each migration in migrations:
-  current_iteration += 1
-  IF current_iteration > max_iterations: BREAK
-
-  // Phase 1: Static Validation
-  static_checks = {
-    has_up_and_down:        migration_has_both_up_and_down_script(),
-    no_table_lock_risk:     no_alter_column_type_or_not_null_on_large_table(),
-    // Large = > 1M rows. These lock the table on older PG versions.
-    concurrent_indexes:     all_create_index_use_concurrently(),
-    no_drop_column:         no_drop_column_without_expand_contract(),
-    // Drop only allowed in CONTRACT phase after EXPAND+MIGRATE
-    fk_has_index:           every_new_foreign_key_column_has_index(),
-    timestamptz_not_ts:     all_new_timestamp_columns_use_timestamptz(),
-    no_float_for_money:     no_float_or_double_for_monetary_fields(),
-    enum_has_constraint:    all_new_enum_fields_have_check_or_db_enum(),
-    default_safe:           add_column_default_is_safe_for_pg_version()
-    // PG 11+ can add column with default without table lock
-  }
-
-  FOR each check in static_checks:
-    IF check.status == FAIL:
-      FIX the migration
-      LOG: "STATIC fix: {check.name} in migration {migration.name}"
-
-  // Phase 2: Apply to Test Database
-  apply_result = run_migration_up(migration, target="test_db")
-  IF apply_result.failed:
-    DIAGNOSE error (constraint violation, syntax, lock timeout)
-    FIX the migration
-    RETRY up to 3 times
-
 ## Keep/Discard Discipline
 ```
 After EACH schema entity or migration:
@@ -445,14 +377,14 @@ STOP when ANY of these are true:
   - Validation schema matches database schema (single source of truth)
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One entity has a complex migration (finish it)
   - Query performance is "good enough" without checking EXPLAIN
 ```
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
-| Schema validation rejects valid data | Check for overly strict constraints. Verify nullable fields. Test with real-world data samples, not just idealized test data. |
+|--|--|
+| Schema validation rejects valid data | Check for overly strict constraints. Verify nullable fields. Test with real-world data samples, not only idealized test data. |
 | Schema migration breaks consumers | Use additive-only changes (new fields with defaults). Never remove or rename fields without deprecation period. Version the schema. |
 | Circular references in schema | Break cycle with lazy references or ID-based relationships. Document the relationship direction. |
 | Generated types drift from schema | Automate type generation in CI. Run codegen on every schema change. Never edit generated types manually. |

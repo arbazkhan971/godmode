@@ -115,7 +115,7 @@ Commit: "ci: <description> — GitHub Actions (<N> jobs, <estimated time>)"
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--create` | Generate new workflow from scratch |
 | `--deploy` | Add deployment with environments |
 | `--matrix` | Set up matrix builds |

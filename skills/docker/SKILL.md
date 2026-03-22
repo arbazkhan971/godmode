@@ -44,19 +44,13 @@ Create or optimize the Dockerfile using production-grade patterns:
 
 #### Multi-Stage Build Pattern
 ```dockerfile
-# ============================================================
-# Stage 1: Dependencies (cached separately from source code)
-# ============================================================
+# --- Stage 1: Dependencies (cached separately from source code)
 FROM node:20-alpine AS deps
 WORKDIR /app
-
-# Copy only dependency files first (layer caching)
 COPY package.json package-lock.json ./
 RUN npm ci --only=production
 
-# ============================================================
-# Stage 2: Build (compile/transpile source code)
-# ============================================================
+# --- Stage 2: Build (compile/transpile source code)
 FROM node:20-alpine AS build
 WORKDIR /app
 ```
@@ -65,7 +59,7 @@ WORKDIR /app
 ```
 LAYER CACHING RULES:
 | Rule | Why |
-|---|---|
+|--|--|
 | COPY dependency files first | Dependencies change less |
 |  | often than source code |
 | RUN install BEFORE COPY src | Bust cache only when deps |
@@ -83,7 +77,7 @@ LAYER CACHING RULES:
 ```
 MULTI-STAGE BUILD BY LANGUAGE:
 | Language | Build Image | Runtime Image | Size |
-|---|---|---|---|
+|--|--|--|--|
 | Node.js | node:20-alpine | node:20-alpine | ~120MB |
 | Python | python:3.12-slim | python:3.12-slim | ~150MB |
 | Go | golang:1.22-alpine | scratch/distroless | ~10MB |
@@ -111,7 +105,7 @@ services:
 ```
 DOCKER COMPOSE PATTERNS:
 | Pattern | Purpose |
-|---|---|
+|--|--|
 | depends_on + health | Start order with readiness check |
 | target: development | Use dev stage of multi-stage build |
 | bind mount + anon vol | Hot reload without overwriting deps |
@@ -133,7 +127,7 @@ Reduce image size systematically:
 ```
 IMAGE SIZE OPTIMIZATION CHECKLIST:
 | Technique | Typical Savings |
-|---|---|
+|--|--|
 | Multi-stage build | 50-90% reduction |
 | Alpine/distroless base | 60-80% vs debian/ubuntu |
 | .dockerignore (exclude .git, | 10-50% build context |
@@ -153,7 +147,7 @@ Scan images for vulnerabilities and apply security best practices:
 ```
 SECURITY SCANNING TOOLS:
 | Tool | Command |
-|---|---|
+|--|--|
 | Trivy | trivy image <image:tag> |
 | Snyk | snyk container test <image:tag> |
 | Docker Scout | docker scout cves <image:tag> |
@@ -172,7 +166,7 @@ Configure networking and persistent storage:
 ```
 DOCKER NETWORKING:
 | Network Type | Use Case |
-|---|---|
+|--|--|
 | bridge (default) | Containers on same host communicate |
 | host | Container shares host network (no isolation) |
 | overlay | Multi-host communication (Swarm/K8s) |
@@ -191,7 +185,7 @@ Leverage advanced build capabilities:
 ```
 BUILDKIT FEATURES:
 | Feature | Syntax / Usage |
-|---|---|
+|--|--|
 | Enable BuildKit | DOCKER_BUILDKIT=1 docker build . |
 | Cache mounts | RUN --mount=type=cache,target=/root |
 |  | /.cache/pip pip install -r req.txt |
@@ -239,7 +233,7 @@ BUILDKIT FEATURES:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Docker assessment and optimization |
 | `--init` | Create Dockerfile and Compose from scratch |
 | `--optimize` | Optimize existing Docker configuration |

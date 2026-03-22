@@ -106,7 +106,7 @@ Check all: HMAC signatures, constant-time comparison, replay prevention, idempot
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--inbound` | Inbound handling only |
 | `--outbound` | Outbound delivery only |
 | `--provider <name>` | Configure for specific provider (stripe, github, etc.) |

@@ -163,56 +163,12 @@ Example row:
 - **If post-merge tests fail on main**: Immediately `git revert HEAD --no-edit`. Print `ROLLBACK: Merge broke main. Reverted. Branch work was correct but integration failed. Debug the conflict.`
 - **If branch has already been merged**: Detect via `git branch --merged main | grep {branch}`. Print `Branch {branch} already merged to main. Deleting stale branch.` Then `git branch -d {branch}`.
 
-## Anti-Patterns
-1. **Never merge with failing tests.** "Tests are flaky" is not an excuse. Fix or skip the flaky test explicitly before merging.
-2. **Never force-push main.** Use `git revert`, never `git reset --hard` on main after a bad merge.
-3. **Never create merge commits.** Always `--squash`. One clean commit per feature on main.
-4. **Never skip the post-merge verify.** A merge that breaks main is worse than no merge at all.
-5. **Never delete a branch without confirmation for DISCARD.** MERGE and PR can auto-delete because the work is preserved. DISCARD is destructive.
-
-## Examples
-
-### Example 1: Clean PR creation
-```
-> /godmode:finish
-
-[finish:snapshot]  Branch: feature/user-search | 4 commits ahead of main | 6 files changed
-[finish:worktree]  Clean worktree confirmed
-[finish:guard]     Build: PASS (0.9s) | Lint: PASS (0.4s) | Tests: 112/112 PASS (4.2s)
-[finish:preflight] No merge conflicts with main
-[finish:outcome]   Outcome: PR (default)
-[finish:execute]   PR created: https://github.com/acme/app/pull/87
-[finish:log]       Logged to .godmode/finish-results.tsv
-
-Branch feature/user-search: PR. 4 commits squashed. Tests: 112/112. Guard: ALL PASS.
-```
-
-### Example 2: Squash merge with post-verify
-```
-> /godmode:finish merge
-
-[finish:snapshot]  Branch: fix/null-pointer | 2 commits ahead of main | 3 files changed
-[finish:worktree]  Clean worktree confirmed
-[finish:guard]     Build: PASS | Lint: PASS | Tests: 89/89 PASS
-[finish:preflight] No merge conflicts with main
-[finish:outcome]   Outcome: MERGE (user requested)
-[finish:execute]   MERGED: fix/null-pointer → main (squash). 2 commits → 1. Branch deleted.
-[finish:verify]    Post-merge: Build PASS | Tests 89/89 PASS
-[finish:log]       Logged to .godmode/finish-results.tsv
-
-Branch fix/null-pointer: MERGE. 2 commits squashed. Tests: 89/89. Guard: ALL PASS.
-```
-
-### Example 3: Guard failure blocks finish
-```
-> /godmode:finish
-
-[finish:snapshot]  Branch: feature/payments | 11 commits ahead of main | 22 files changed
-[finish:worktree]  Clean worktree confirmed
-[finish:guard]     Build: PASS | Lint: FAIL (3 errors) | Tests: SKIPPED (lint failed)
-
-Guard failed: lint. Run /godmode:fix first.
-```
+## Hard Rules
+1. Never merge with failing tests — "tests are flaky" is not an excuse.
+2. Never force-push main — use `git revert`, never `git reset --hard` on main.
+3. Always `--squash` merge — one clean commit per feature on main.
+4. Never skip post-merge verify — a merge that breaks main is worse than no merge.
+5. Never delete a branch on DISCARD without explicit user confirmation.
 
 ## Completion Verification Protocol
 
@@ -360,7 +316,7 @@ WHILE current_iteration < max_iterations:
     4. GENERATE PR readiness summary:
        PR READINESS:
 | Check | Status |
-|---|---|
+|--|--|
 | Branch naming convention | OK/FAIL |
 | Clean commit history | OK/FAIL |
 | Commit message convention | OK/FAIL |
@@ -394,7 +350,7 @@ WHILE current_iteration < max_iterations:
 FINAL COMPLETION VERIFICATION:
   COMPLETION VERIFICATION SUMMARY
 | Dimension | Status | Details |
-|---|---|---|
+|--|--|--|
 | Test suite | PASS | 112/112 pass, +8 new |
 | Coverage threshold | PASS | 84% (+2% vs main) |
 | Docs updated | WARN | API docs need update |
@@ -409,7 +365,6 @@ DECISION:
   IF any FAIL: → BLOCK. Fix failures first, re-run verification.
   IF only WARN: → proceed with acknowledgment. Warnings logged.
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH finalization attempt:
@@ -427,9 +382,3 @@ STOP when FIRST of:
   - diminishing_returns: same guard failure persists after /godmode:fix
   - stuck: >5 failed finalization attempts
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-This skill does not dispatch parallel agents, so no sequential translation is needed.
-All commands (`git`, `gh`, `build_cmd`, `test_cmd`) run in the current session.
-If `gh` CLI is unavailable: skip PR creation and print the PR body to stdout for manual creation.
-See `adapters/shared/sequential-dispatch.md` for the general protocol.

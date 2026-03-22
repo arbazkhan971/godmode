@@ -33,7 +33,6 @@ Auth: <JWT, session, OAuth2, API keys>
 Deployment: <Docker, serverless, PM2, Kubernetes>
 Constraints: <latency SLAs, memory limits, CPU-bound tasks>
 ```
-
 If the user hasn't specified, ask: "What kind of backend are you building? What's your expected scale and deployment target?"
 
 ### Step 2: Framework Selection
@@ -43,7 +42,7 @@ Choose the right framework based on project needs:
 FRAMEWORK SELECTION GUIDE:
 
 | Framework | Best For | Perf | Ecosystem | Opinion |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Express | Rapid prototyping, APIs | Moderate | Massive | Low |
 |  | with many npm integrations | ~15K RPS | 80K+ pkgs |  |
 | Fastify | High-performance APIs | High | Growing | Medium |
@@ -53,7 +52,6 @@ FRAMEWORK SELECTION GUIDE:
 |  | Multi-runtime (Node, Bun, | ~80K RPS | 100+ mid |  |
 |  | Deno, Cloudflare Workers) |  |  |  |
 ```
-
 ### Step 3: Application Architecture
 Design the application structure:
 
@@ -74,7 +72,6 @@ src/
 │   ├── rateLimit.ts       # Rate limiting middleware
 │   ├── errorHandler.ts    # Global error handler
 ```
-
 ### Step 4: Middleware Design Patterns
 Design the middleware pipeline:
 
@@ -95,7 +92,6 @@ Pattern 1 — Request Pipeline (Express/Fastify):
   app.use(errorHandler)          // 9. Global error handler (ALWAYS place last)
 
 ```
-
 ### Step 5: Stream Processing
 Design stream-based data processing:
 
@@ -116,7 +112,6 @@ Pattern 1 — File upload with streams (no memory buffering):
     )
     res.json({ status: 'uploaded' })
 ```
-
 ### Step 6: Worker Threads & Cluster Mode
 Design CPU-bound task handling:
 
@@ -137,7 +132,6 @@ import { cpus } from 'os'
 class WorkerPool {
   private workers: Worker[] = []
 ```
-
 ### Step 7: Memory Management & Event Loop Optimization
 Optimize Node.js runtime performance:
 
@@ -158,14 +152,13 @@ MEMORY MANAGEMENT:
   // Monitor memory in production:
   setInterval(() => {
 ```
-
 ### Step 8: Production Hardening
 Prepare the Node.js application for production:
 
 ```
 PRODUCTION CHECKLIST:
 | Check | Status |
-|---|---|
+|--|--|
 | Graceful shutdown (SIGTERM handler) | PASS | FAIL |
 | Health check endpoint (/health, /ready) | PASS | FAIL |
 | Structured logging (pino, not console.log) | PASS | FAIL |
@@ -178,7 +171,6 @@ PRODUCTION CHECKLIST:
 | Request body size limits | PASS | FAIL |
 | Connection pooling (database, HTTP clients) | PASS | FAIL |
 ```
-
 ### Step 9: Deliverables
 Generate the project artifacts:
 
@@ -200,7 +192,6 @@ Next steps:
 -> /godmode:deploy — Deploy with Docker, PM2, or Kubernetes
 -> /godmode:observe — Set up logging, metrics, and tracing
 ```
-
 Commit: `"node: <project> — <framework>, <N> routes, <architecture pattern>"`
 
 ## Key Behaviors
@@ -216,7 +207,7 @@ Commit: `"node: <project> — <framework>, <N> routes, <architecture pattern>"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Node.js backend workflow |
 | `--audit` | Audit existing Node.js project |
 | `--framework <name>` | Start with specific framework (express, fastify, hono, nestjs) |
@@ -245,27 +236,6 @@ IF directory contains src/routes/ OR src/controllers/ OR src/middleware/:
 ON performance issue (event loop lag > 100ms OR memory > 85% heap):
   SUGGEST "Node.js performance issue detected. Run /godmode:node --perf?"
 ```
-
-## Iterative API Build Protocol
-
-```
-WHEN building a Node.js API with multiple resources:
-
-current_resource = 0
-total_resources = len(api_resources)  # e.g., ["users", "posts", "comments"]
-built_resources = []
-production_checks = []
-
-WHILE current_resource < total_resources:
-  resource = api_resources[current_resource]
-
-  1. CREATE route file (routes/{resource}.ts)
-  2. CREATE controller ({resource}Controller.ts)
-  3. CREATE service ({resource}Service.ts)
-  4. CREATE repository ({resource}Repository.ts)
-  5. CREATE validation schemas (Zod/Joi for request validation)
-```
-
 ## HARD RULES
 
 ```
@@ -285,7 +255,6 @@ WHILE current_resource < total_resources:
 5. EVERY Map used as a cache MUST have a max size and TTL.
    Unbounded caches grow linearly with traffic until OOM.
 ```
-
 ## Output Format
 
 End every Node skill invocation with this summary block:
@@ -301,7 +270,6 @@ Build status: <passing | failing | not-checked>
 Issues fixed: <N>
 Notes: <one-line summary>
 ```
-
 ## TSV Logging
 
 Append one TSV row to `.godmode/node.tsv` after each invocation:
@@ -309,7 +277,6 @@ Append one TSV row to `.godmode/node.tsv` after each invocation:
 ```
 timestamp	project	action	files_count	endpoints_count	framework	tests_status	build_status	notes
 ```
-
 Field definitions:
 - `timestamp`: ISO-8601 UTC
 - `project`: directory name from `basename $(pwd)`
@@ -364,122 +331,9 @@ DO NOT STOP just because:
   - Dependency audit has unresolved low-severity advisories
 ```
 
-## Node.js Optimization Loop
-
-When optimizing an existing Node.js application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
-
-### Pass 1: Event Loop Lag Audit
-
-```
-EVENT LOOP LAG AUDIT:
-  Step 1: Measure with monitorEventLoopDelay (node:perf_hooks).
-    Log p50, p99, max every 10s. Alert if p99 > 100ms.
-
-  Step 2: Identify blockers
-    JSON.parse (large)     → streaming JSON parser
-    JSON.stringify (large) → fast-json-stringify
-    Regex on long strings  → re2 or bounded input
-    Crypto (bcrypt)        → worker_threads
-    Image/PDF processing   → worker_threads or queue
-    Synchronous file I/O   → fs/promises
-    DNS (first call)       → warm up on startup
-    require() at runtime   → import at module top
-    Large array sort       → stream-process or paginate
-
-```
-
-### Pass 2: Memory Leak Detection
-
-```
-MEMORY LEAK DETECTION:
-  Step 1: Monitor process.memoryUsage() every 30s (rss, heapUsed, heapTotal, external).
-
-  Step 2: Common leak patterns and fixes
-    Growing Map/Set (unbounded)   → maxSize + LRU eviction
-    Event listener accumulation    → removeListener in cleanup
-    Closure over request objects   → nullify refs after use
-    Global cache without TTL       → TTL + size limit
-    Unresolved promises           → timeout on all promises
-    Stream not consumed/destroyed → always pipeline() streams
-    setInterval never cleared     → clearInterval on shutdown
-    Database connection leak       → pool with max + idle timeout
-
-  Step 3: Heap snapshot — trigger with SIGUSR2, load in Chrome DevTools Memory tab.
-    Compare 2 snapshots taken 5min apart to find growing objects.
-
-  Step 4: Cap memory with --max-old-space-size=512. Alert at 80% of limit.
-
-  TARGETS: heap stable over 24h | no unbounded caches | all listeners cleaned up
-```
-
-### Pass 3: Cluster Mode & Process Tuning
-
-```
-CLUSTER/PROCESS TUNING:
-  Scaling strategy:
-    Kubernetes/ECS: single process per container, scale via replicas
-    PM2 on VM: cluster mode (instances: 'max', max_memory_restart: '500M')
-    Serverless: platform manages scaling
-
-  V8 flags:
-    --max-old-space-size=512    (cap heap; set to container limit - 128MB)
-    --max-semi-space-size=64    (young gen; helps GC pauses)
-
-  Connection pools:
-    PostgreSQL: max=20, idleTimeout=30s, connectionTimeout=5s
-    Redis: maxRetriesPerRequest=3, connectTimeout=5s, lazyConnect=true
-
-  CHECKLIST:
-  [ ] --max-old-space-size matches container memory limit
-  [ ] Connection pools sized for worker count * max connections
-  [ ] Graceful shutdown drains connections before exit
-  [ ] /ready returns 503 during shutdown drain
-  [ ] Process restarts automatically on OOM
-```
-
-### Pass 4: Dependency & Bundle Audit
-
-```
-DEPENDENCY AUDIT:
-  Step 1: npx cost-of-modules (install size + load time per dependency)
-
-  Step 2: Replace heavy packages
-    moment.js (300KB)     → date-fns / dayjs (2-10KB)
-    lodash (full, 70KB)   → lodash-es (tree-shakable)
-    axios (30KB)          → undici / built-in fetch
-    uuid (10KB)           → crypto.randomUUID() (0KB)
-    validator.js (50KB)   → zod (12KB)
-    winston (100KB)       → pino (15KB, 5x faster)
-    body-parser           → built into Express 4.16+
-    dotenv + manual parse → @t3-oss/env or zod schema
-
-  Step 3: npm audit --production (zero high/critical in prod deps)
-
-  Step 4: Startup time
-    Measure: node --eval "const t=Date.now(); require('./dist/server'); console.log(Date.now()-t+'ms')"
-    Lazy-import heavy modules. Precompile TS — never run ts-node in production.
-```
-
-### Optimization Loop Summary
-
-```
-NODE.JS OPTIMIZATION REPORT:
-  Metric                       │  Before  │  After   │  Target
-  Event loop lag p99 (ms)     │  <N>     │  <N>     │  < 50ms
-  Heap usage trend (24h)      │  growing │  stable  │  Stable
-  Unbounded caches             │  <N>     │  0       │  Zero
-  Sync I/O in request path    │  <N>     │  0       │  Zero
-  CPU work on main thread      │  <N>     │  0       │  Offloaded
-  p95 response time (ms)      │  <N>     │  <N>     │  Improved
-  npm audit vulnerabilities    │  <N>     │  0       │  Zero
-
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
-```
-
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Memory leak in production | Use `--inspect` and Chrome DevTools heap snapshots. Check for uncleared event listeners, growing caches, and closures holding references. |
 | Event loop blocked (high latency) | Profile with `clinic doctor`. Move CPU-intensive work to worker threads. Add async boundaries in hot loops. |
 | Unhandled promise rejection crashes process | Add global `process.on('unhandledRejection')` handler. Find and fix the unhandled promise. Always `await` or `.catch()` promises. |

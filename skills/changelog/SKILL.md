@@ -196,7 +196,7 @@ npx @<package>/codemods v2-client-init
 
 ### 3. Update deprecated method calls
 | v1.x Method | v2.0 Replacement |
-|-------------|-----------------|
+|--|--|
 | `client.get(path)` | `client.request('GET', path)` |
 | `client.headers` | `client.getHeaders()` |
 | `client.onError` | `client.on('error', handler)` |
@@ -339,7 +339,7 @@ STOP when ANY of these are true:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Commit messages do not follow conventional format | Parse what exists. Use PR titles as fallback. Flag non-conforming commits for manual categorization. |
 | Duplicate entries from merge commits | Filter merge commits (`--no-merges`). Deduplicate by PR number or commit hash. |
 | Breaking change not flagged | Scan for `BREAKING CHANGE:` in commit body and `!` after type. Also check for API removals in diff. |

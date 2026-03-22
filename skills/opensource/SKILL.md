@@ -365,7 +365,7 @@ current_area = 0
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | License incompatibility discovered | Audit all dependencies with `license-checker` or `licensee`. Replace incompatible deps or change project license. Document in NOTICE file. |
 | CI fails for external contributors | Check that CI does not require secrets for PR checks. Use `pull_request_target` carefully. Provide clear contributing guide. |
 | Spam PRs or issues | Add issue/PR templates. Enable GitHub Actions for auto-labeling. Use `stale` bot for inactive issues. |

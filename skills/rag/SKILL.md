@@ -48,7 +48,7 @@ EMBEDDING MODEL SELECTION:
 
 Candidates:
 | Model | Dims | MTEB Avg | Latency | Cost | Context |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | OpenAI text-embedding-3 | 3072 | 64.6 | ~80ms | $0.13/1M | 8191 |
 | -large |  |  |  |  |  |
 | OpenAI text-embedding-3 | 1536 | 62.3 | ~50ms | $0.02/1M | 8191 |
@@ -68,7 +68,7 @@ CHUNKING STRATEGY:
 
 Strategy candidates:
 | Strategy | Best for |
-|---|---|
+|--|--|
 | Fixed-size (token) | Uniform docs, simple implementation, baseline |
 | Recursive character | General-purpose, respects paragraph/section breaks |
 | Semantic chunking | Documents with varying topic density |
@@ -88,7 +88,7 @@ VECTOR STORE SELECTION:
 
 Candidates:
 | Store | Type | Scale | Filtering | Cost | Best for |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | Pinecone | Managed | Billions | Advanced | $70+/mo | Production, |
 |  |  |  |  |  | serverless |
 | Weaviate | Managed/ | Millions | Advanced | Free-$ | Hybrid search |
@@ -108,7 +108,7 @@ INGESTION PIPELINE:
 
 ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
 | Document | -> | Parse/ | -> | Clean/ | -> | Chunk | -> | Embed |
-|---|---|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|--|--|--|
 | Sources |  | Extract |  | Transform |  |  |  | & Index |
 └──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
 
@@ -177,7 +177,7 @@ Evaluation dataset:
 
 Retrieval metrics:
 | Metric | Score | Description |
-|---|---|---|
+|--|--|--|
 | Hit rate @ K | <val> | % of queries where answer is in top-K |
 | MRR (Mean Reciprocal | <val> | Average 1/rank of first relevant result |
 | Rank) |  |  |
@@ -266,7 +266,7 @@ HARD RULES — NEVER VIOLATE:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full RAG pipeline design workflow |
 | `--ingest <source>` | Run document ingestion pipeline |
 | `--chunk <strategy>` | Force chunking strategy: `fixed`, `recursive`, `semantic`, `sentence`, `code`, `markdown` |
@@ -278,7 +278,7 @@ After each RAG skill invocation, emit a structured report:
 ```
 RAG PIPELINE REPORT:
 | Corpus | <N> documents / <N> chunks |
-|---|---|
+|--|--|
 | Embedding model | <model name> (<N> dimensions) |
 | Vector store | <store name> |
 | Chunk strategy | <method> (<N> tokens, <N>% overlap) |
@@ -371,7 +371,7 @@ Golden set: <N evaluation queries with ground-truth relevant passages>
 
 RETRIEVAL PRECISION/RECALL TUNING:
 | Metric | Current | Target | Gap | Priority |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Precision @ 5 | <val> | <val> | <delta> | <H/M/L> |
 | Recall @ 10 | <val> | <val> | <delta> | <H/M/L> |
 | MRR | <val> | <val> | <delta> | <H/M/L> |

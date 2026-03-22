@@ -29,12 +29,8 @@ STORAGE REQUIREMENTS:
   Audio: <mp3, wav>
   Other: <csv, json, zip>
   Upload Constraints:
-  Max file size: <size>
-  Max files per request: <N>
-  Allowed MIME types: <list>
-  Authentication: <required | public>
+  ...
 ```
-
 ### Step 2: Object Storage Configuration
 Set up the storage backend:
 
@@ -48,50 +44,38 @@ S3 BUCKET ARCHITECTURE:
   Folder Structure:
   /<tenant-id>/
   /originals/<uuid>.<ext>     — Original uploads
-  /processed/<uuid>/
-  /thumb_200x200.<ext>      — Thumbnails
-  /medium_800x600.<ext>     — Medium size
-  /large_1920x1080.<ext>    — Large size
-  /documents/<uuid>.<ext>     — Documents
+  ...
 ```
 
 #### Cross-Provider Comparison
 ```
 OBJECT STORAGE COMPARISON:
 | Feature | S3 | GCS | Azure Blob |
-|---|---|---|---|
+|--|--|--|--|
 | Max object size | 5 TB | 5 TB | 190.7 TB |
 | Multipart min | 5 MB | 5 MB | N/A (blocks) |
 | Consistency | Strong | Strong | Strong |
 | Versioning | Yes | Yes | Yes |
 | Lifecycle rules | Yes | Yes | Yes |
-| Replication | CRR/SRR | Dual/Multi | GRS/RA-GRS |
-| CDN integration | CloudFront | Cloud CDN | Azure CDN |
-| Presigned URLs | Yes | Yes | SAS tokens |
-| Event triggers | Lambda | Functions | Functions |
-| Storage classes | 6 tiers | 4 tiers | 4 tiers |
-### Step 3: File Upload Architecture
-Design secure, scalable upload flows:
-
-#### Presigned URL Upload (Recommended for Direct-to-Storage)
+  ...
 ```
 PRESIGNED URL FLOW:
 ┌────────┐     ┌──────────┐     ┌────────┐
 | Client |  | API |  | S3/GCS |
 └───┬────┘     └────┬─────┘     └───┬────┘
 | 1. Request |  |
-|---|---|
+|--|--|
 | upload URL |  |
     ├──────────────>│               │
 |  | 2. Generate |
 |  | presigned |
 |  | URL |
 | 3. Return |  |
-|---|---|
+|--|--|
 | presigned |  |
   <──────────────┤
 | 4. Upload |  |
-|---|---|
+|--|--|
 | directly |  |
 | to storage |  |
     ├───────────────────────────────>
@@ -103,7 +87,7 @@ PRESIGNED URL FLOW:
 |  | resize, |
 |  | scan) |
 | 7. Confirm |  |
-|---|---|
+|--|--|
 | upload done |  |
   <──────────────┤
     └───────────────┘               │
@@ -116,13 +100,7 @@ async function generateUploadUrl(req: Request): Promise<UploadUrlResponse> {
 
   // Validate file type and size
   if (!ALLOWED_MIME_TYPES.includes(contentType)) {
-    throw new BadRequestError(`File type ${contentType} not allowed`);
-  }
-  if (fileSize > MAX_FILE_SIZE) {
-    throw new BadRequestError(`File exceeds max size of ${MAX_FILE_SIZE}`);
-  }
-
-  const fileId = crypto.randomUUID();
+  ...
 ```
 
 #### Multipart Upload (Large Files)
@@ -135,10 +113,7 @@ MULTIPART UPLOAD FLOW:
   Phase 2: UPLOAD PARTS
   - Client splits file into 5-100 MB chunks
   - Client uploads each chunk in parallel (3-5 concurrent)
-  - Client retries failed chunks individually
-  - Client reports progress per chunk
-  Phase 3: COMPLETE
-  - Client sends list of part ETags to server
+  ...
 ```
 
 #### Resumable Upload (Unstable Connections)
@@ -151,9 +126,7 @@ RESUMABLE UPLOAD (tus protocol):
   -> 201 Created, Location: /uploads/<id>
   2. PATCH /uploads/<id>
   Upload-Offset: <current-offset>
-  Content-Type: application/offset+octet-stream
-  [binary chunk data]
-  -> 204 No Content, Upload-Offset: <new-offset>
+  ...
 ```
 
 ### Step 4: Image and Video Processing Pipeline
@@ -164,19 +137,12 @@ Design media processing workflows:
 IMAGE PROCESSING PIPELINE:
 ┌────────┐    ┌────────┐    ┌──────────┐    ┌─────────┐
 | Upload | ───> | Validate | ───> | Process | ───> | Store |
-|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|---|
 | (S3) |  | & Scan |  | & Resize |  | Variants |
 └────────┘    └────────┘    └──────────┘    └─────────┘
      │              │              │               │
   S3 Event     Virus scan    Sharp/ImageMagick   S3 + CDN
-  trigger      MIME check    Generate variants    serve
-
-PROCESSING STEPS:
-  1. VALIDATE
-     - Verify MIME type matches file header (not just extension)
-     - Scan for malware (ClamAV or commercial scanner)
-     - Check dimensions and file size
-     - Strip EXIF data (privacy — GPS coordinates, camera info)
+  ...
 ```
 
 ```typescript
@@ -198,9 +164,7 @@ VIDEO PROCESSING PIPELINE:
   - Check codec (H.264, H.265, VP9, AV1)
   - Verify duration < max allowed
   - Scan for malware
-  3. TRANSCODE (AWS MediaConvert / FFmpeg)
-|  | Preset | Resolution | Bitrate | Format |  |
-|  | ────────────────────────────────────────────── |  |
+  ...
 ```
 STORAGE COST ANALYSIS:
   Current Monthly Cost: $<amount>
@@ -235,13 +199,7 @@ STORAGE COST ANALYSIS:
     {
       "ID": "transition-to-ia",
       "Status": "Enabled",
-      "Filter": { "Prefix": "" },
-      "Transitions": [
-        {
-          "Days": 90,
-          "StorageClass": "STANDARD_IA"
-        },
-        {
+  ...
 ```
 
 ### Step 6: Backup and Replication Strategies
@@ -256,12 +214,8 @@ BACKUP AND REPLICATION STRATEGY:
   Tier 2: CROSS-REGION REPLICATION
   Primary: <region-1>
   Replica: <region-2>
-  Mode: Async replication (seconds of lag)
-  Scope: Entire bucket or prefix-filtered
-  Purpose: Disaster recovery, regional compliance
-  Tier 3: CROSS-ACCOUNT BACKUP
+  ...
 ```
-
 #### Replication Configuration
 ```yaml
 # S3 Cross-Region Replication (Terraform)
@@ -290,15 +244,10 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
 2. **Validate on the server side, not the client.** Client-side validation is for UX. Server-side validation (MIME type sniffing, file header inspection, virus scanning) is for security.
 3. **Strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps. Serving user photos with EXIF data is a privacy violation.
 4. **Use content-addressable storage when possible.** Hash the file content for the key. This gives you automatic deduplication and cache-friendly immutable URLs.
-5. **Set lifecycle policies from day one.** Storage costs grow silently. Transition to IA after 90 days, Glacier after a year. Auto-delete incomplete multipart uploads after 24 hours.
-6. **Serve through CDN, not directly from the bucket.** CDN reduces egress costs, improves latency, and adds a caching layer. Never expose your bucket URL publicly.
-7. **Generate image variants at upload time, not at request time.** On-demand resizing adds latency and compute cost to every request. Pre-generate standard sizes and cache them.
-8. **Test backup restores regularly.** A backup you have never tested restoring is not a backup. Run monthly restore tests on random file samples.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full storage architecture design and audit |
 | `--upload` | File upload architecture design only |
 | `--process` | Media processing pipeline design only |
@@ -326,18 +275,6 @@ grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage\|@azure/storage-blob" package.
 # Detect existing storage configuration
 grep -rl "S3Client\|S3\|getSignedUrl\|presignedUrl\|Storage\|BlobServiceClient" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
 ```
-
-## Iteration Protocol
-```
-WHILE storage implementation is incomplete:
-  1. REVIEW — check current state: which components exist (client, presigned URLs, CDN, lifecycle), which are missing
-  2. IMPLEMENT — pick next component from the plan, implement with tests
-  3. TEST — upload a test file end-to-end: presigned URL generation → upload → CDN serving → cleanup
-  4. VERIFY — check: file accessible via CDN, original not publicly accessible, lifecycle rules active
-  IF tests pass AND component works: commit, move to next component
-  IF tests fail: check IAM permissions, bucket policy, CORS config. Fix and re-test (max 3 attempts)
-STOP: all components implemented, end-to-end upload works, CDN serving verified, lifecycle rules active
-```
 ## TSV Logging
 After each workflow step, append a row to `.godmode/storage-results.tsv`:
 ```
@@ -363,7 +300,7 @@ Verify all of these before marking the task complete:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Access denied (403) | Check IAM policy: does the role/user have `s3:PutObject`, `s3:GetObject` on the correct bucket ARN? Check bucket policy for explicit denies. Check VPC endpoint policy if applicable. |
 | CORS error on upload | Verify bucket CORS config allows the origin, method (PUT), and headers (Content-Type, x-amz-*). CORS rules are cached by browsers — test in incognito. |
 | Presigned URL fails | Check clock skew between server and AWS (<15min). Verify signing credentials match the bucket region. Check that the URL hasn't expired. |
@@ -380,12 +317,7 @@ Total storage: <size>
 Monthly cost: <amount>
 
 ACCESS PATTERN ANALYSIS:
-| Time Window | Objects Accessed | % of Total | Storage Class |
-|---|---|---|---|
-| Last 7 days | <N> | <pct>% | Use STD |
-| 8-30 days | <N> | <pct>% | Use STD |
-| 31-90 days | <N> | <pct>% | Use IA |
-| 91-365 days | <N> | <pct>% | Use IA |
+  ...
 ```
 After EACH storage configuration change:
   1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.
@@ -406,7 +338,7 @@ STOP when ANY of these are true:
   - All credentials from environment variables or IAM roles
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Cost optimization is incomplete (lifecycle rules are a start)
   - Video processing is not yet implemented (if not requested)
 ```

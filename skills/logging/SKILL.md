@@ -24,7 +24,7 @@ Evaluate the current state of logging:
 ```
 LOGGING ASSESSMENT:
 | Aspect | Status | Current State |
-|---|---|---|
+|--|--|--|
 | Format | POOR | Unstructured console.log |
 | Log Levels | PARTIAL | info/error only |
 | Context | NONE | No request IDs or user IDs |
@@ -34,16 +34,15 @@ LOGGING ASSESSMENT:
 | Retention Policy | NONE | No rotation or archival |
 | Performance | UNKNOWN | Synchronous logging |
   Overall Score: 1/10 — INSUFFICIENT
-  Priority: Structured format + correlation IDs
+  ...
 ```
-
 ### Step 2: Log Level Strategy
 Define when to use each log level:
 
 ```
 LOG LEVEL STRATEGY:
 | Level | When to Use | Examples |
-|---|---|---|
+|--|--|--|
 | FATAL | Process cannot continue. | Startup failure |
 |  | Requires immediate human | Out of memory |
 |  | intervention. Process exits. | Uncaught exception |
@@ -54,7 +53,6 @@ LOG LEVEL STRATEGY:
 |  | completed, but the process | File write failed |
 |  | continues serving others. | Auth token invalid |
 ```
-
 ### Step 3: Structured Logging Implementation
 Replace unstructured string logs with structured JSON:
 
@@ -72,9 +70,7 @@ Problems:
 
 STRUCTURED (GOOD):
   {
-    "timestamp": "2024-01-15T10:23:45.123Z",
-    "level": "error",
-    "message": "Payment failed",
+  ...
 ```
 
 #### Implementation — Node.js (pino)
@@ -124,10 +120,7 @@ Flow:
   Client → API Gateway → Service A → Service B → Database
     │          │             │            │           │
 | Generate: |  |  |
-|---|---|---|
-| requestId=req_001 |  |  |
-| traceId=trace_xyz |  |  |
-    │          │             │            │           │
+  ...
 ```
 
 #### Implementation — Propagation Middleware
@@ -156,7 +149,7 @@ const sdk = new NodeSDK({
 ```
 PII REDACTION POLICY:
 | Data Type | Action | Technique |
-|---|---|---|
+|--|--|--|
 | Email address | MASK | j***@example.com |
 | Phone number | MASK | +1-***-***-5678 |
 | Credit card number | REDACT | [REDACTED] |
@@ -166,8 +159,7 @@ PII REDACTION POLICY:
 | IP address | ANONYMIZE | 192.168.1.0/24 |
 | Full name | MASK | J*** D*** |
 | Date of birth | MASK | ****-**-15 |
-| Home address | REDACT | [REDACTED] |
-| Auth token / JWT | TRUNCATE | eyJhb....[TRUNCATED] |
+  ...
 ```
 
 #### Implementation — Redaction Utilities
@@ -185,37 +177,16 @@ const redactor = {
 #### ELK Stack (Elasticsearch, Logstash, Kibana)
 ```
 ELK STACK PIPELINE:
-
-Application → stdout (JSON) → Filebeat → Logstash → Elasticsearch → Kibana
-                                  │
-                            ┌─────┴──────┐
-  Filebeat
-  - Tails
-  log files
-  - Adds
-  metadata
-  - Buffers
-  & ships
-                            └─────┬──────┘
-                                  ↓
+  Application → stdout (JSON) → Filebeat → Logstash → Elasticsearch → Kibana
+  Filebeat: tails log files, adds metadata (host, container), buffers and ships to Logstash
 ```
 
 #### Grafana Loki (Lightweight Alternative)
 ```
 LOKI PIPELINE:
-
-Application → stdout (JSON) → Promtail → Loki → Grafana
-                                  │
-                            ┌─────┴──────┐
-  Promtail
-  - Discovers
-  targets
-  - Extracts
-  labels
-  - Ships
-                            └─────┬──────┘
-                                  ↓
-  Loki
+  Application → stdout (JSON) → Promtail → Loki → Grafana
+  Promtail: discovers targets, extracts labels from log lines, ships to Loki
+  ...
 ```
 
 #### AWS CloudWatch Logs
@@ -232,9 +203,7 @@ CloudWatch Insights query examples:
   | filter level = "error"
   | sort @timestamp desc
   | limit 100
-
-  # Error rate by service
-  stats count(*) as errorCount by service
+  ...
 ```
 
 ### Step 7: Log Retention and Rotation
@@ -242,7 +211,7 @@ CloudWatch Insights query examples:
 ```
 LOG RETENTION POLICY:
 | Environment | Log Level | Retention | Storage Tier |
-|---|---|---|---|
+|--|--|--|--|
 | Production | ERROR | 365 days | Hot (30d) → Warm (90d) |
 |  |  |  | → Cold (365d) |
 | Production | WARN | 90 days | Hot (30d) → Warm (90d) |
@@ -253,13 +222,12 @@ LOG RETENTION POLICY:
 | Development | All | 3 days | Hot (3d) |
 | Compliance | Audit logs | 7 years | Hot (90d) → Archive |
 ```
-
 ### Step 8: Logging Performance
 
 ```
 LOGGING PERFORMANCE GUIDELINES:
 | Concern | Solution |
-|---|---|
+|--|--|
 | Synchronous I/O | Use async loggers (pino, slog) |
 | blocks event loop | Buffer and flush periodically |
 | High-volume logging | Sample DEBUG logs (1 in 100) |
@@ -269,13 +237,12 @@ LOGGING PERFORMANCE GUIDELINES:
 |  | Truncate request/response bodies |
 | Disk fill from logs | Rotation + retention policy |
 ```
-
 ### Step 9: Logging Checklist
 
 ```
 LOGGING VERIFICATION CHECKLIST:
 | Category | Check | Pass? |
-|---|---|---|
+|--|--|--|
 | Format |  |  |
 | [ ] All logs are structured JSON in production |  |
 | [ ] ISO 8601 timestamps with timezone |  |
@@ -285,9 +252,8 @@ LOGGING VERIFICATION CHECKLIST:
 | [ ] Log level strategy documented and followed |  |
 | [ ] No ERROR logs for expected conditions (404) |  |
 | [ ] DEBUG disabled in production by default |  |
-| [ ] Log level configurable at runtime |  |
+  ...
 ```
-
 ## Output
 - Logging design at `docs/logging/<service>-logging.md`
 - Logger configuration in service source directory
@@ -320,9 +286,7 @@ AUTO-DETECT:
    - package.json → pino, winston, bunyan
    - go.mod → log/slog, rs/zerolog, uber-go/zap
    - pyproject.toml → structlog, loguru, python-json-logger
-3. Check for correlation IDs:
-   - grep for requestId, traceId, correlationId, X-Request-ID
-4. Check for PII in logs:
+  ...
 ```
 
 ## Iterative Logging Implementation Protocol
@@ -340,9 +304,7 @@ WHILE current_service < len(services):
      c. Add PII redaction rules
   3. ADD request logging middleware:
      a. Generate/propagate requestId and traceId
-     b. Log request start + completion with duration
-     c. Auto-classify log level by status code (5xx=ERROR, 4xx=WARN)
-  4. REPLACE unstructured logs:
+  ...
 ```
 
 ## Keep/Discard Discipline
@@ -358,15 +320,6 @@ After EACH logging configuration change:
 Never migrate a service to structured logging without verifying the output is parseable.
 ```
 
-## Stuck Recovery
-```
-IF >3 consecutive iterations fail to produce valid structured logs:
-  1. Check the logger library documentation — configuration syntax varies between pino, winston, slog, structlog.
-  2. Simplify: start with a minimal logger config (just JSON format + level), then add fields incrementally.
-  3. Check for middleware ordering issues — correlation ID middleware must run before handlers that log.
-  4. If still stuck → log stop_reason=stuck, keep the current logging state, move to the next service.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -379,17 +332,6 @@ STOP when ANY of these are true:
 DO NOT STOP just because:
   - One service has complex legacy logging (migrate the simpler services first)
   - Log aggregation pipeline is not yet set up (structured logs to stdout is still an improvement)
-```
-
-## Simplicity Criterion
-```
-PREFER the simpler logging approach:
-  - pino (Node.js) or slog (Go) or structlog (Python) — fast, structured, minimal config
-  - Loki over ELK for small teams (lower operational overhead)
-  - stdout JSON logs over file-based logging (let the container runtime handle rotation)
-  - Auto-detection PII redaction (by field name pattern) before manual allowlists
-  - Single shared logger config imported by all services before per-service custom configs
-  - Fewer log levels in practice: ERROR + WARN + INFO covers 95% of production needs
 ```
 
 ## Chaining
@@ -413,7 +355,6 @@ iteration	task	services_configured	format	correlation_ids	pii_redacted	retention
 3	correlation	4	structured_json	verified	yes	30	verified
 4	pipeline	1	aggregator	n/a	n/a	90	configured
 ```
-
 ## Success Criteria
 - All services use structured JSON logging (no `console.log` or `print` statements).
 - Log levels correctly configured (ERROR for failures, WARN for degradation, INFO for business events, DEBUG disabled in production).
@@ -432,4 +373,3 @@ iteration	task	services_configured	format	correlation_ids	pii_redacted	retention
 - **PII found in logs**: Add redaction middleware/filters. Audit all log statements for email, phone, SSN, token, password fields. Use allowlists (log only known-safe fields) instead of denylists.
 - **Logs not appearing in aggregator**: Check the log shipping agent (Fluentd, Filebeat, CloudWatch agent). Verify network connectivity to the aggregator. Check log file rotation — the agent may be tailing a rotated file.
 - **Different services use different log formats**: Standardize on a single schema. Create a shared logging library/wrapper that all services import. Enforce the schema in code review.
-

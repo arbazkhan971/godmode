@@ -43,7 +43,7 @@ Choose the right platform for the team's needs:
 ```
 PLATFORM SELECTION:
 | Platform | Best For | Key Capabilities |
-|---|---|---|
+|--|--|--|
 | Statsig | High-velocity teams, | Warehouse-native, auto |
 |  | product-led growth, | sample size, pulse checks, |
 |  | warehouse-native analytics | Bayesian + frequentist, |
@@ -68,7 +68,7 @@ Hypothesis: If we <change>, then <metric> will <improve/decrease> by <magnitude>
 
 METRICS:
 | Type | Metric | Baseline | Target |
-|---|---|---|---|
+|--|--|--|--|
 | Primary (OEC) | <Overall Evaluation | <current | <target |
 |  | Criterion — the single | value> | value or |
 |  | metric that decides ship |  | MDE> |
@@ -163,7 +163,7 @@ WHEN TO USE BANDITS INSTEAD OF A/B TESTS:
 
 ALGORITHMS:
 | Algorithm | Description & When to Use |
-|---|---|
+|--|--|
 | Epsilon-Greedy | Explore randomly epsilon% of time. Simple. Good |
 |  | baseline. Set epsilon = 0.1 (10% explore). |
 ```
@@ -215,7 +215,7 @@ EXPERIMENT LIFECYCLE:
 
 EXPERIMENT BACKLOG:
 | # | Experiment | Status | Surface | Expected Impact |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | 1 | <name> | LIVE | <page> | +<X%> <metric> |
 | 2 | <name> | QUEUED | <page> | +<X%> <metric> |
 | 3 | <name> | DESIGN | <page> | +<X%> <metric> |
@@ -232,7 +232,7 @@ Validate the experiment setup before launching:
 ```
 EXPERIMENT VALIDATION:
 | Check | Status |
-|---|---|
+|--|--|
 | Hypothesis is specific and falsifiable | PASS | FAIL |
 | Primary metric (OEC) is defined | PASS | FAIL |
 | Guardrail metrics are defined | PASS | FAIL |
@@ -280,7 +280,7 @@ Commit: `"experiment: <name> — <N> variants, <primary metric>, <statistical me
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full experiment design workflow |
 | `--platform <name>` | Force platform: `statsig`, `optimizely`, `growthbook`, `vwo`, `launchdarkly`, `posthog`, `custom` |
 | `--design` | Design experiment only (hypothesis, metrics, sample size) — no implementation |
@@ -348,7 +348,7 @@ Print: `Experiment: {name} — {status}. Split: {control}%/{treatment}%. Sample:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | SRM detected (uneven split) | Halt analysis immediately. Check assignment logic, bot filtering, and exposure logging. Do not interpret results until SRM resolved. |
 | Feature flag leaking between variants | Verify flag evaluation is deterministic per user ID. Check for caching issues. Re-instrument and restart experiment. |
 | Sample size not reached after planned duration | Extend duration or increase traffic allocation. Never peek at frequentist results early — use sequential testing if early stopping needed. |

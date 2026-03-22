@@ -28,13 +28,12 @@ ls -la .eslintrc* .prettierrc* biome.json .editorconfig .stylelintrc* \
 
 # Check for pre-commit hooks
 ```
-
 ```
 LINT ASSESSMENT:
   Project: <name>
   Language(s): <detected>
 | Linter | <current tool or NONE> |
-|---|---|
+|--|--|
 | Formatter | <current tool or NONE> |
 | Pre-commit hooks | <YES/NO> |
 | Editor config | <YES/NO> |
@@ -42,14 +41,13 @@ LINT ASSESSMENT:
 | CI integration | <YES/NO> |
   Status: <CONFIGURED | PARTIAL | NONE>
 ```
-
 ### Step 2: Tool Selection
 Choose the right linting and formatting stack:
 
 ```
 TOOL SELECTION BY LANGUAGE:
 | Language | Linter | Formatter | Type Checker |
-|---|---|---|---|
+|--|--|--|--|
 | TypeScript | ESLint | Prettier | tsc |
 | TypeScript | Biome (all-in-one) | Biome | tsc |
 | JavaScript | ESLint | Prettier | — |
@@ -59,10 +57,8 @@ TOOL SELECTION BY LANGUAGE:
 | Ruby | RuboCop | RuboCop | Sorbet |
 | Java/Kotlin | checkstyle/ktlint | google-java-format | — |
 | CSS/SCSS | Stylelint | Prettier | — |
-| HTML | HTMLHint | Prettier | — |
-| Markdown | markdownlint | Prettier | — |
+  ...
 ```
-
 ### Step 3: Configuration
 
 #### ESLint + Prettier (TypeScript/JavaScript)
@@ -75,7 +71,6 @@ import prettier from 'eslint-config-prettier';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 ```
-
 ```json
 // .prettierrc
 {
@@ -84,7 +79,6 @@ import reactHooks from 'eslint-plugin-react-hooks';
   "trailingComma": "all",
   "printWidth": 100,
 ```
-
 ```
 // .prettierignore
 dist/
@@ -95,7 +89,6 @@ coverage/
 pnpm-lock.yaml
 package-lock.json
 ```
-
 #### Biome (All-in-One Alternative)
 
 ```json
@@ -106,7 +99,6 @@ package-lock.json
     "enabled": true
   },
 ```
-
 #### golangci-lint (Go)
 
 ```yaml
@@ -117,7 +109,6 @@ run:
 
 linters:
 ```
-
 ### Step 4: Custom Rule Creation
 Write project-specific lint rules:
 
@@ -142,7 +133,7 @@ AUTO-FIX STRATEGY:
   - Runs on staged files only (fast)
   Level 4: CI Enforcement (pipeline)
   - Final gate: fails PR if any violations remain
-  - No auto-fix — just enforcement
+  - No auto-fix — enforcement only
 ```
 
 #### Editor Integration (VS Code)
@@ -156,9 +147,7 @@ AUTO-FIX STRATEGY:
 # TypeScript/JavaScript
 npx eslint . --fix
 npx prettier --write "**/*.{ts,tsx,js,jsx,json,css,md}"
-
-# Python
-ruff check --fix .
+  ...
 ```
 
 ```
@@ -174,7 +163,7 @@ BATCH FIX REPORT:
   Trailing whitespace: <N>
   Manual review needed:
   <file>:<line> — <rule>: <description>
-  <file>:<line> — <rule>: <description>
+  ...
 ```
 
 ### Step 6: Pre-Commit Hooks Setup
@@ -200,9 +189,7 @@ npx husky init
       "prettier --write"
     ],
     "*.{json,css,scss,md}": [
-      "prettier --write"
-    ],
-    "*.py": [
+  ...
 ```
 
 ```bash
@@ -234,7 +221,7 @@ Define and enforce team coding standards:
 ```
 CODING STANDARDS:
 | Area | Standard | Enforced |
-|---|---|---|
+|--|--|--|
 | Indentation | 2 spaces (no tabs) | Prettier |
 | Line length | 100 characters max | Prettier |
 | Quotes | Single quotes (JS/TS) | Prettier |
@@ -244,8 +231,7 @@ CODING STANDARDS:
 | Naming: variables | camelCase | ESLint |
 | Naming: functions | camelCase | ESLint |
 | Naming: classes | PascalCase | ESLint |
-| Naming: constants | UPPER_SNAKE_CASE | ESLint |
-| Naming: files | kebab-case.ts | ESLint |
+  ...
 ```
 
 #### .editorconfig (Universal)
@@ -284,9 +270,7 @@ indent_style = tab
 
 1. **Format on save, lint on commit, enforce in CI.** Three layers of defense. If any layer is missing, violations will accumulate.
 2. **Auto-fix everything possible.** Developers should not spend time on formatting. Machines handle formatting; humans handle logic.
-3. **Zero warnings in CI.** Warnings are future errors. Set `--max-warnings=0` in CI to prevent warning accumulation.
-4. **Lint only staged files in pre-commit.** Running the linter on the entire codebase in a pre-commit hook makes commits painful. Use lint-staged.
-5. **Agree on rules as a team, then automate enforcement.** Style debates happen once during configuration. After that, the tools enforce the decision.
+  ...
 ```
 AUTO-DETECT:
 1. Detect language(s):
@@ -320,30 +304,6 @@ AUTO-DETECT:
    - Run linter in check mode, count errors + warnings
 ```
 
-## Iterative Lint Fix Protocol
-Lint adoption on existing codebases is iterative — enable, fix, commit, repeat:
-```
-current_rule_group = 0
-rule_groups = [sorted by auto-fix ratio: highest first]
-
-WHILE current_rule_group < len(rule_groups):
-  group = rule_groups[current_rule_group]
-  1. ENABLE rule group: {group} (e.g., "import ordering", "unused variables")
-  2. RUN linter in check mode — count violations
-  3. RUN auto-fix: eslint --fix / ruff check --fix / biome check --write
-  4. COUNT remaining (manual) violations
-  5. IF manual violations > 0:
-     - REPORT: "{N} violations require manual review"
-     - LIST each with file:line and suggested fix
-     - FIX manually or flag for user
-  6. RUN full test suite — verify no regressions from auto-fix
-  7. IF tests fail → revert auto-fix, investigate
-  8. COMMIT: "lint: enable {group} — auto-fixed {N}, manual {M}"
-  9. current_rule_group += 1
-
-EXIT when all rule groups enabled and violations resolved
-```
-
 ## HARD RULES
 1. NEVER debate formatting in code reviews — configure the formatter, automate it, and never discuss it again.
 2. NEVER enable all lint rules at once on an existing codebase — start with recommended, add rules incrementally.
@@ -355,8 +315,7 @@ EXIT when all rule groups enabled and violations resolved
 8. ALWAYS configure linting with team agreement — the team will circumvent rules imposed without consensus.
 9. ALWAYS set `--max-warnings=0` in CI — prevent warning accumulation over time.
 10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
-
-## Keep/Discard Discipline
+  ...
 ```
 After EACH rule group is enabled and auto-fixed:
   1. MEASURE: Run the full test suite — do all tests pass?
@@ -367,15 +326,6 @@ After EACH rule group is enabled and auto-fixed:
   4. COMMIT kept changes. Revert discarded changes and reconsider the rule before retrying.
 
 Never keep a rule that produces >20% false positives — developers circumvent it with disable comments.
-```
-
-## Stuck Recovery
-```
-IF >3 consecutive rule groups cause test failures after auto-fix:
-  1. Stop auto-fixing. Run the linter in check-only mode to understand violations before fixing.
-  2. Apply fixes manually for the first 5 violations to verify the fix pattern is safe.
-  3. Check for ESLint/Prettier conflicts: run `npx eslint-config-prettier path/to/file.ts`.
-  4. If still stuck → enable the rule as warning (not error), log stop_reason=needs_manual_review.
 ```
 
 ## Stop Conditions
@@ -391,21 +341,10 @@ DO NOT STOP just because:
   - One rule group is contentious (flag it for team discussion)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler linting approach:
-  - Biome (single tool) over ESLint + Prettier (two tools) for new projects without heavy plugin needs
-  - Recommended preset over custom rule set (customize only when the team has a specific need)
-  - Auto-fix for formatting rules over manual enforcement
-  - Single .editorconfig over per-editor settings for cross-editor basics
-  - lint-staged (staged files only) over full-codebase linting in pre-commit
-  - Fewer strict rules correctly enforced over many loose rules that produce warnings
-```
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full lint setup (linter + formatter + hooks + CI) |
 | `--tool <name>` | Use specific tool (eslint, biome, ruff, golangci-lint) |
 | `--fix` | Auto-fix all existing violations |
@@ -427,20 +366,7 @@ Columns: iteration, rule_group, violations_before, auto_fixed, manual_remaining,
 - All auto-fixable violations resolved. Manual violations listed with file:line.
 - Full test suite passes after auto-fix (no regressions).
 
-## Error Recovery
-- **ESLint and Prettier conflict**: Install `eslint-config-prettier` to disable conflicting ESLint rules. Run Prettier last in lint-staged. Verify with `npx eslint-config-prettier path/to/file.ts`.
-- **Auto-fix introduces bugs**: Run the full test suite after auto-fix. If tests fail, revert the auto-fix (`git checkout .`), identify the breaking rule, and exclude it from auto-fix. Fix those violations manually.
-- **Pre-commit hook too slow**: Ensure lint-staged is configured to lint only staged files, not the entire codebase. Check that the linter is not type-checking during pre-commit (remove `--project` flag from eslint in hooks).
-- **Rule produces false positives**: Add a targeted `eslint-disable-next-line` with a comment explaining why. If the rule generates many false positives, reconsider whether it is appropriate for the project.
-- **Migration breaks existing CI**: Run the linter in warning mode first (`--max-warnings=999`), fix violations incrementally, then tighten to `--max-warnings=0`.
-- **Team disagrees on rules**: Use the recommended preset as the baseline. Only discuss additions or overrides. Document the decision in a team ADR. Automate enforcement so the debate only happens once.
-
-
-## Output Format
-Print: `Lint: {violations_before} -> {violations_after} violations. Auto-fixed: {N}. Rules: {total}. Status: {DONE|PARTIAL}.`
-
-## TSV Logging
-Append to `.godmode/lint-results.tsv`:
+  ...
 ```
 timestamp	tool	violations_before	violations_after	auto_fixed	rules_added	status
 ```

@@ -29,18 +29,8 @@ Storybook: <yes (version)/no>
 Design tokens: <yes (format)/no>
 Component count: <N>
 
-Directory structure:
-  src/
-    components/     <N> components
-    styles/         <global styles>
-    hooks/          <UI-specific hooks>
-    utils/          <UI utilities>
-    tokens/         <design tokens>
-
-Consistency score: <HIGH/MEDIUM/LOW>
-Issues detected: <N>
+  ...
 ```
-
 ### Step 2: Component Composition Audit
 Evaluate how components are structured and composed:
 
@@ -48,20 +38,13 @@ Evaluate how components are structured and composed:
 ```
 COMPONENT HIERARCHY:
 | Level | Components | Examples |
-|---|---|---|
+|--|--|--|
 | Atoms | <N> | Button, Input, Label, Icon |
 | Molecules | <N> | FormField, SearchBar, Card |
 | Organisms | <N> | Header, Sidebar, DataTable |
 | Templates | <N> | DashboardLayout, AuthLayout |
 | Pages | <N> | HomePage, SettingsPage |
-
-Composition patterns detected:
-- [ ] Compound components (Menu + Menu.Item)
-- [ ] Render props
-- [ ] Slots / children composition
-- [ ] Higher-order components
-- [ ] Custom hooks for UI logic
-- [ ] Context providers for theming
+  ...
 ```
 
 #### Component Quality Checklist
@@ -75,12 +58,7 @@ COMPONENT: <Name>
 - [ ] Accepts className/style for customization
 - [ ] Has display name for dev tools
 - [ ] Memoized appropriately (React.memo, useMemo)
-- [ ] Error boundary for complex components
-- [ ] Loading/empty/error states handled
-- [ ] Accessible (keyboard, ARIA, contrast)
-- [ ] Responsive across breakpoints
-- [ ] Documented with Storybook stories
-- [ ] Has unit/visual tests
+  ...
 ```
 
 ### Step 3: CSS Architecture Decision
@@ -90,18 +68,13 @@ Evaluate and recommend the right CSS strategy:
 ```
 CSS ARCHITECTURE DECISION MATRIX:
 | Criterion | CSS Modules | Tailwind | CSS-in-JS | SCSS |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Scoping | Automatic | Utility | Automatic | Manual |
 | Bundle size | Small | Small* | Variable | Small |
 | Runtime cost | None | None | Yes | None |
 | Type safety | With plugin | With plugin | Native | No |
 | DX/Speed | Good | Fast | Good | Good |
-| Theming | CSS vars | Config | Native | Variables |
-| SSR friendly | Yes | Yes | Depends | Yes |
-| Learning curve | Low | Medium | Medium | Low |
-| Design tokens | CSS vars | Config | Theme obj | Variables |
-| Team scalability | Good | Good | Moderate | Moderate |
-* Tailwind with purge/JIT
+  ...
 ```
 
 #### Recommendation Logic
@@ -121,20 +94,13 @@ Audit adherence to the design system:
 ```
 DESIGN TOKEN AUDIT:
 | Token Category | Defined | Used | Hardcoded | Violations |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Colors | 24 | 22 | 7 | 7 hardcoded |
 | Typography | 8 | 6 | 3 | 2 missing, 3 hc |
 | Spacing | 12 | 10 | 5 | 5 hardcoded |
 | Border radius | 4 | 4 | 1 | 1 hardcoded |
 | Shadows | 3 | 2 | 2 | 1 missing, 2 hc |
-| Z-index | 5 | 3 | 4 | 4 hardcoded |
-| Breakpoints | 5 | 5 | 0 | 0 |
-| Transitions | 3 | 1 | 2 | 2 missing, 2 hc |
-
-hc = hardcoded (using raw values instead of tokens)
-
-Total violations: <N>
-Priority fixes: <list of highest-impact violations>
+  ...
 ```
 
 #### Hardcoded Value Detection
@@ -160,13 +126,7 @@ src/
       Button.test.tsx         # Unit tests
       Button.stories.tsx      # Storybook stories
       Button.types.ts         # TypeScript interfaces
-      index.ts                # Public export
-    DataTable/
-      DataTable.tsx
-      DataTable.module.css
-      DataTable.test.tsx
-      DataTable.stories.tsx
-      DataTable.types.ts
+  ...
 ```
 
 #### Component File Template
@@ -187,7 +147,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /** Size of the button */
   size?: 'small' | 'medium' | 'large';
 ```
-
 ### Step 6: Storybook Integration
 Set up or audit Storybook configuration:
 
@@ -214,18 +173,13 @@ const meta: Meta<typeof Button> = {
 ```
 STORYBOOK AUDIT:
 | Component | Stories | Docs | Controls | A11y addon | Status |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | Button | 5 | Yes | Yes | Passing | GOOD |
 | Input | 3 | Yes | Yes | 1 warning | OK |
 | DataTable | 1 | No | No | Not tested | POOR |
 | Modal | 0 | No | No | Not tested | NONE |
 | Card | 2 | Yes | Partial | Passing | OK |
-
-Coverage:
-  Components with stories: <N>/<total> (<X>%)
-  Components with docs: <N>/<total> (<X>%)
-  Components with controls: <N>/<total> (<X>%)
-  Components with a11y checks: <N>/<total> (<X>%)
+  ...
 ```
 
 ### Step 7: Component Documentation
@@ -266,7 +220,7 @@ Stories: ComponentName.stories.tsx (Button.stories.tsx)
 Tests: ComponentName.test.tsx (Button.test.tsx)
 Types: ComponentName.types.ts (Button.types.ts)
 Hooks: use<Purpose> (useMediaQuery, useFocusTrap)
-Tokens: kebab-case with category prefix (--color-primary, --spacing-md)
+  ...
 ```
 
 #### Component API Conventions
@@ -279,23 +233,20 @@ API CONVENTIONS:
 - Event handlers follow on<Event> convention (onClick, onChange)
 - Boolean props are positive (isOpen, not isClosed)
 - Ref forwarding for all components wrapping native elements
-- className accepted for style customization
-- No inline styles in component implementations
-- Destructure known props, spread rest onto root element
+  ...
 ```
 
 #### Violations Report
 ```
 PATTERN VIOLATIONS:
 | Violation | Count | Files |
-|---|---|---|
+|--|--|--|
 | Hardcoded colors | 7 | Card.css, Modal.css, ... |
 | Missing TypeScript types | 3 | Tooltip.tsx, Badge.tsx, ... |
 | No ref forwarding | 5 | Input.tsx, Select.tsx, ... |
 | Inconsistent prop naming | 2 | Tabs (kind vs variant) |
 | Missing Storybook stories | 4 | Modal, Toast, Drawer, ... |
-| No display name | 6 | Various forwardRef comps |
-| Missing loading states | 3 | DataTable, Form, Image |
+  ...
 ```
 
 ### Step 9: Recommendations Report
@@ -309,7 +260,6 @@ PATTERN VIOLATIONS:
 |  Well-structured:  <N> components                           |
 |  Needs improvement: <N> components                          |
 ```
-
 ### Step 10: Commit and Transition
 1. If auto-fixes were applied (token replacement, ref forwarding, display names):
    - Commit: `"ui: fix <N> component architecture violations"`
@@ -325,14 +275,10 @@ PATTERN VIOLATIONS:
 2. **Design tokens are mandatory.** Every color, spacing value, font size, shadow, and z-index should come from a token. Hardcoded values are bugs waiting to cause inconsistency.
 3. **Storybook is the component catalog.** Every component needs stories. Stories serve as documentation, visual testing targets, and a development sandbox. No exceptions for "simple" components.
 4. **Consistency over cleverness.** Every component should follow the same patterns: same prop naming, same file structure, same composition approach. Predictability is a feature.
-5. **CSS architecture is a team decision.** Pick one approach and use it everywhere. Mixing CSS Modules with styled-components with Tailwind creates cognitive overhead and maintenance burden.
-6. **Composition over configuration.** Prefer `<Card><Card.Header>Title</Card.Header></Card>` over `<Card title="Title" headerVariant="bold">`. Composition is more flexible and easier to type.
-7. **Document the "why" not the "what."** Component docs should explain when to use a component and when NOT to. "Use Button for actions, use Link for navigation" prevents misuse.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full UI architecture audit |
 | `--component <name>` | Audit a specific component |
 | `--tokens` | Design token audit only |
@@ -360,7 +306,6 @@ grep -r "react\|vue\|svelte\|@angular/core" package.json 2>/dev/null
 grep -r "tailwindcss\|styled-components\|@emotion\|css-modules\|sass\|less" package.json 2>/dev/null
 
 ```
-
 ## Output Format
 
 After each UI skill invocation, emit a summary table:
@@ -368,16 +313,14 @@ After each UI skill invocation, emit a summary table:
 ```
 UI BUILD REPORT:
 | Components built | <N> |
-|---|---|
+|--|--|
 | Components updated | <N> |
 | Storybook stories | <N> created / <N> updated |
 | Tests | <N> passing, <N> failing |
 | Tokens used | <N> design tokens referenced |
 | A11y checks | <N> passing, <N> violations |
-| Bundle impact | +<N> KB (gzipped) |
-| Verdict | PASS | NEEDS REVISION |
+  ...
 ```
-
 ## TSV Logging
 
 Log every UI skill run for tracking:
@@ -387,7 +330,6 @@ timestamp	skill	component	action	tests_pass	a11y_pass	bundle_kb	status
 2026-03-20T14:00:00Z	ui	Button	create	12/12	0 violations	2.1	pass
 2026-03-20T14:05:00Z	ui	DataTable	update	8/8	1 violation	4.3	needs_fix
 ```
-
 ## Success Criteria
 
 The UI skill is complete when ALL of the following are true:
@@ -408,48 +350,6 @@ IF component fails to render in Storybook:
   3. Check for circular imports in component tree
   4. Revert last change and re-test
 
-IF accessibility violations are found:
-  1. Fix all CRITICAL violations immediately (keyboard traps, missing labels)
-  2. Fix HIGH violations before commit (contrast, ARIA roles)
-  3. Log MEDIUM violations as follow-up tasks
-  4. Re-run axe-core after each fix to confirm resolution
-
-IF bundle size exceeds budget:
-  1. Check for accidentally imported full library (e.g., all of lodash)
-  2. Verify tree-shaking is working (named imports, sideEffects: false)
-```
-
-## Component Library Audit Loop
-
-Autoresearch-grade iterative audit for UI component library quality. Measures consistency scoring, design token coverage, and component completeness through structured, metrics-driven cycles.
-
-```
-COMPONENT LIBRARY AUDIT PROTOCOL:
-
-Phase 1 — Consistency Scoring
-  Score every component against a unified quality rubric (0-100 per component).
-
-  COMPONENT QUALITY RUBRIC (per component, max 100 points):
-| Criterion | Points | How to Verify |
-|---|---|---|
-| TypeScript props with descriptions | 10 | Check .types.ts |
-| Default values for optional props | 5 | Check defaults |
-| Ref forwarding (if wraps native elem) | 5 | Check forwardRef |
-| className/style override accepted | 5 | Check props |
-| Consistent prop naming (variant/size) | 10 | Compare to std |
-| All design tokens used (no hardcoded) | 15 | Grep for raw |
-```
-After EACH component fix or token replacement:
-  1. MEASURE: Run visual regression test — does the component look the same?
-  2. VERIFY: Storybook renders without errors, axe-core shows zero violations.
-  3. DECIDE:
-     - KEEP if: visual output unchanged AND no accessibility regressions AND tests pass
-     - DISCARD if: visual regression detected OR new a11y violation OR build breaks
-  4. COMMIT kept changes. Revert discarded changes before next component.
-
-Never keep a token replacement that changes visual output without explicit approval.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -458,9 +358,9 @@ STOP when ANY of these are true:
   - Zero accessibility violations from axe-core
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One component has a low consistency score (fix it)
-  - Storybook docs are incomplete for low-priority components
+  ...
 ```
 ## Keep/Discard Discipline
 ```

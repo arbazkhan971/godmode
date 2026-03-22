@@ -124,7 +124,7 @@ Artifacts: Lua scripts, middleware, tier config, monitoring dashboard
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full rate limiting strategy design |
 | `--algorithm` | Select and implement algorithm |
 | `--tiers` | Design user tier configuration |

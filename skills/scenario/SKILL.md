@@ -42,7 +42,7 @@ Print: `[scenario:scope] {N} entry points | {N} dependencies | {N} data shapes`
 For EACH dimension, generate 2-5 specific scenarios. Every scenario MUST reference a code path (file:line) or spec section.
 
 | # | Dimension | What to explore |
-|---|-----------|-----------------|
+|--|--|--|
 | 1 | **Invalid Input** | Malformed JSON, wrong types, SQL injection, XSS, oversized strings (>64KB), unicode (ZWJ, RTL, null bytes), negative IDs, NaN |
 | 2 | **Boundary** | 0, 1, -1, MAX_INT, MAX_INT+1, empty string/array, null, undefined, exactly-at-limit |
 | 3 | **Concurrency** | Race conditions, deadlocks, double-submit, read-your-writes, lost updates |
@@ -170,6 +170,13 @@ Status values: `TEST_PASS` (edge case is handled), `TEST_FAIL` (bug found), `NO_
 - **If a generated test has syntax errors**: Fix the syntax error in-place. If the error persists after 2 attempts, write the test as a comment block with `TODO: fix syntax` and flag it in the output.
 - **If a dimension genuinely does not apply**: State why in one sentence in the scenario table. Example: "Time & Timezone: N/A — feature has no date/time logic, no scheduled jobs, no TTLs." This is acceptable. Leaving the dimension blank or writing only "N/A" is not.
 - **If the feature is too large (>20 files)**: Break it into sub-features. Run scenario analysis per sub-feature. Merge results into one table and one TSV log.
+
+## Hard Rules
+1. All 12 dimensions must be explored — skipping requires a one-sentence justification.
+2. Every scenario must have a code reference (file:line) or spec section heading.
+3. Every scenario must be scored: L(1-5) x I(1-5). No zero scores, no unscored rows.
+4. All CRITICAL and HIGH scenarios must have runnable tests — not stubs, not TODOs.
+5. Generated tests must use the project's actual test framework and real code paths.
 
 ## Anti-Patterns
 1. **Never skip a dimension without justification.** All 12 dimensions apply to most features. "Not relevant" requires a one-sentence explanation of why.

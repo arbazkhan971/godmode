@@ -134,7 +134,7 @@ Root scripts: `build`, `test`, `lint`, `typecheck`, `clean`, `format`, `check-bo
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full assessment and optimization |
 | `--init <tool>` | Initialize new monorepo |
 | `--audit` | Audit existing health |

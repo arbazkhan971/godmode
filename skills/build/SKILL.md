@@ -64,6 +64,20 @@ STOP when FIRST of:
   - stuck: >5 consecutive discards across rounds
 ```
 
+## Hard Rules
+1. One task per agent — never batch multiple tasks. One commit per task.
+2. Agent may only modify files listed in task.files. Touching other files = immediate discard.
+3. After every merge: `build_cmd && lint_cmd && test_cmd`. Any non-zero exit = stop round, fix before next merge.
+4. Max 5 agents per round. Dependency order always. No unplanned refactoring, no TODOs, no stubs.
+5. Every new function gets a test. Every merge gets a TSV row. No exceptions.
+
+## Workflow
+1. Load plan from `.godmode/plan.yaml` — missing plan means run `/godmode:plan` first.
+2. Pick up to 5 tasks with no unmet dependencies, dispatch each as a parallel agent in a worktree.
+3. Merge completed agents in dispatch order — conflict or test failure triggers discard and re-queue.
+4. Run `build_cmd && lint_cmd && test_cmd` after every merge — pass to keep, fail to revert.
+5. Repeat rounds until all tasks complete or stop conditions trigger.
+
 ## Rules
 1. One task per agent. Commit message: `feat({module}): {task.title}`. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = discard.
@@ -84,7 +98,7 @@ If your platform lacks `Agent()` or worktree isolation:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Merge conflict between agents | Discard conflicting agent's work. Re-queue task in next round with narrower file scope. Never manually resolve conflicts. |
 | Test failure after merge | Run `/godmode:fix` with specific test failure. Max 2 retries, then `git revert HEAD` and re-queue with broader context. |
 | Agent touches files outside scope | Discard agent output entirely. Log scope violation. Re-dispatch with explicit file list. |

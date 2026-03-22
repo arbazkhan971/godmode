@@ -278,7 +278,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
@@ -286,7 +286,7 @@ DO NOT STOP just because:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Query performance degrades with data growth | Check index usage with `explain()`. Add compound indexes matching query patterns. Use sharding for horizontal scale. |
 | Data inconsistency across replicas | Check write concern settings. Use `majority` write concern for critical data. Add application-level reconciliation. |
 | Schema migration breaks existing documents | Add default values for new fields at application layer. Use lazy migration: update documents on read. Never drop fields without checking all consumers. |

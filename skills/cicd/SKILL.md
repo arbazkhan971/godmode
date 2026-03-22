@@ -45,7 +45,7 @@ PIPELINE ARCHITECTURE:
 | Lint | -> | Test | -> | Build | -> | Security | -> | Deploy |
 │         │    │         │    │         │    │         │    │         │
 | Format |  | Unit |  | Docker |  | SAST |  | Staging |
-|---|---|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|--|--|--|
 | Lint |  | Integ. |  | Assets |  | Deps |  | Prod |
 | Types |  | E2E |  | Publish |  | Secrets |  | Verify |
 └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘
@@ -78,20 +78,20 @@ stages:
 ```
 CACHING STRATEGY:
 | Cache Type | Key | Savings |
-|---|---|---|
+|--|--|--|
 | Dependencies | lockfile hash | 30-90s |
 | (node_modules, | (package-lock.json |  |
 | .venv, vendor) | Pipfile.lock) |  |
 | Build cache | source hash | 60-180s |
-|---|---|---|
+|--|--|--|
 | (Docker layers, | (Dockerfile + |  |
 | compiled assets) | source files) |  |
 | Test cache | test file hash | 10-30s |
-|---|---|---|
+|--|--|--|
 | (jest cache, |  |  |
 | pytest cache) |  |  |
 | Tool cache | version string | 20-60s |
-|---|---|---|
+|--|--|--|
 | (Go, Node, Python |  |  |
 | runtime install) |  |  |
 
@@ -120,7 +120,7 @@ Analyze and improve pipeline performance:
 ```
 PIPELINE PERFORMANCE ANALYSIS:
 | Stage | Current | Optimized | Savings |
-|---|---|---|---|
+|--|--|--|--|
 | Checkout | 15s | 8s | Shallow clone |
 | Install deps | 90s | 5s | Cache hit |
 | Lint | 30s | 30s | — |
@@ -166,7 +166,7 @@ strategy:
 ```
 MATRIX EXECUTION:
 | Combination | Status | Duration | Result |
-|---|---|---|---|
+|--|--|--|--|
 | ubuntu / node-18 | PASS | 2m 15s | 42/42 |
 | ubuntu / node-20 | PASS | 2m 08s | 42/42 |
 | ubuntu / node-22 | PASS | 2m 22s | 42/42 |
@@ -204,7 +204,7 @@ Handle build outputs, test results, and deployment packages:
 ```
 ARTIFACT STRATEGY:
 | Artifact | Retention | Size Limit | Purpose |
-|---|---|---|---|
+|--|--|--|--|
 | Test results (JUnit) | 30 days | 10 MB | PR checks |
 | Coverage reports | 30 days | 50 MB | Tracking |
 | Docker images | 90 days | — | Deployment |
@@ -238,7 +238,7 @@ ARTIFACT STRATEGY:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Analyze existing pipeline and suggest improvements |
 | `--create` | Generate new pipeline from scratch |
 | `--optimize` | Focus on performance optimization |
@@ -364,7 +364,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations (15) reached
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One stage cannot be optimized further (other stages can still improve)
   - Cache hit rate is already >90% (there may be non-cache optimizations)
 ```

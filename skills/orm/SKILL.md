@@ -109,7 +109,7 @@ Commit: "orm: optimize <description> data access layer"
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--select` | ORM selection guide |
 | `--n-plus-one` | Scan for N+1 patterns |
 | `--pool` | Configure connection pooling |

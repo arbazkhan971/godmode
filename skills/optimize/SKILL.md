@@ -97,6 +97,20 @@ STOP when FIRST of:
 ## Output Format
 Print: `Skill: {metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} discarded. Status: {DONE|PARTIAL}.`
 
+## Hard Rules
+1. Metric must be a shell command outputting a single number — no subjective assessment.
+2. One change per agent per round. Max 3 agents. Only the winner is kept.
+3. Never modify test files. Never trade readability for <1% gain. Profile before guessing.
+4. Guard (build+lint+test) must pass for every kept change — guard failure = terminal discard.
+5. Diminishing returns: 3 consecutive <1% keeps triggers radical approach, then compound, then stop.
+
+## Workflow
+1. Establish baseline: run metric_cmd 3 times, take median. Commit as iteration 0.
+2. Review in-scope files + profiling data. Hypothesize 3 independent changes (algorithmic > caching > structural).
+3. Dispatch 3 agents in parallel worktrees — each makes ONE change, commits, runs guard, measures metric 3x.
+4. Pick the winner (largest improvement + guard pass). Cherry-pick to main, update baseline.
+5. Log round to `.godmode/optimize-results.tsv`. Repeat until target, budget, or diminishing returns.
+
 ## Rules
 1. Define the metric as a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.
@@ -117,7 +131,7 @@ If your platform lacks `Agent()` or worktree isolation:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Metric command returns non-numeric output | Verify `metric_cmd` outputs exactly one number. Pipe through `tail -1` or `awk` to extract. Re-baseline after fixing. |
 | Guard passes but metric measurement is noisy (>5% variance) | Increase to 10 runs, trim outliers, take median of middle 8. If still noisy, profile to find non-deterministic code paths. |
 | All 3 agents produce regressions | Trigger stuck recovery: re-read all in-scope files, try opposite approach. If 2 stuck rounds in a row, try radical rewrite. |

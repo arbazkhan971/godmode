@@ -35,11 +35,8 @@ Evaluation trigger:
   - Prompt change: modified system prompt or few-shot examples
   - Pipeline change: new retrieval strategy, chunking, reranking
   - Regression check: periodic quality verification
-  - Comparison: evaluating multiple candidates
-
-What to evaluate:
+  ...
 ```
-
 If the user hasn't specified, ask: "What AI system should I evaluate, and what quality dimensions matter most?"
 
 ### Step 2: Evaluation Dataset Design
@@ -50,7 +47,7 @@ EVALUATION DATASET DESIGN:
 
 Dataset sources:
 | Source | Examples | Description |
-|---|---|---|
+|--|--|--|
 | Hand-curated golden | <N> | Expert-written input/output pairs |
 | set |  | (highest quality, expensive to create) |
 | Production logs | <N> | Real user queries with human ratings |
@@ -58,10 +55,8 @@ Dataset sources:
 | Synthetic generation | <N> | LLM-generated test cases |
 |  |  | (scalable, may miss real patterns) |
 | Adversarial set | <N> | Deliberately tricky or edge-case inputs |
-|  |  | (tests robustness) |
-| Domain benchmark | <N> | Standard benchmark for the domain |
+  ...
 ```
-
 ### Step 3: Evaluation Framework Selection
 Choose or build the evaluation framework:
 
@@ -70,7 +65,7 @@ EVALUATION FRAMEWORK:
 
 Framework options:
 | Framework | Best for |
-|---|---|
+|--|--|
 | RAGAS | RAG evaluation: faithfulness, relevance, context metrics |
 | DeepEval | General LLM evaluation: 14+ metrics, CI integration |
 | Promptfoo | Prompt testing: comparison, assertions, CI/CD |
@@ -78,9 +73,8 @@ Framework options:
 | Braintrust | Production evals: scoring, experiments, logging |
 | Arize Phoenix | Observability + evaluation: traces, spans, evals |
 | Humanloop | Prompt management + evaluation: versioning, A/B tests |
-| Custom framework | Domain-specific needs not covered by existing tools |
+  ...
 ```
-
 ### Step 4: Automated Evaluation — LLM-as-Judge
 Design automated scoring using LLM judges:
 
@@ -93,14 +87,12 @@ Judge model: <strong model — e.g., Claude 3.5 Sonnet, GPT-4>
 
 Scoring rubrics:
 | Dimension | Scale | Rubric |
-|---|---|---|
+|--|--|--|
 | Correctness | 1-5 | 1: Completely wrong |
 |  |  | 2: Partially correct, major errors |
 |  |  | 3: Mostly correct, minor errors |
-|  |  | 4: Correct with minor omissions |
-|  |  | 5: Fully correct and complete |
+  ...
 ```
-
 ### Step 5: Human Evaluation Protocol
 Design the human evaluation process for high-stakes evaluation:
 
@@ -117,9 +109,7 @@ When to use human evaluation:
 Evaluator selection:
   - Pool size: <N evaluators> (minimum 3 for inter-annotator agreement)
   - Expertise: <domain experts | trained annotators | target users>
-  - Training: <evaluation guidelines document, calibration examples>
-
-Evaluation interface:
+  ...
 ```
 BENCHMARK DESIGN:
 
@@ -129,28 +119,9 @@ Purpose: <what this benchmark measures>
 
 Structure:
   BENCHMARK: <name> v<version>
-  Categories:
-  ┌──────────────────┬──────────┬──────────┬──────────────────────┐
-|  | Category | Examples | Weight | Description |  |
-  ├──────────────────┼──────────┼──────────┼──────────────────────┤
-|  | <category 1> | <N> | <pct> | <what it tests> |  |
-|  | <category 2> | <N> | <pct> | <what it tests> |  |
-|  | <category 3> | <N> | <pct> | <what it tests> |  |
-|  | <adversarial> | <N> | <pct> | Robustness/safety |  |
-|  | <regression> | <N> | <pct> | Previously-fixed bugs |  |
-  └──────────────────┴──────────┴──────────┴──────────────────────┘
-  Total examples: <N>
-  Scoring:
-  Primary metric: <metric name> (weighted average across categories)
-  Threshold: <minimum score to pass>
-  Breakdown: per-category scores reported
-  Baseline scores:
-  ┌──────────────────┬──────────┬──────────┬──────────┬──────────┐
-|  | System | Overall | Cat 1 | Cat 2 | Cat 3 |  |
-  ├──────────────────┼──────────┼──────────┼──────────┼──────────┤
-|  | Baseline v1.0 | <score> | <score> | <score> | <score> |  |
-|  | Current v<N> | <score> | <score> | <score> | <score> |  |
-  └──────────────────┴──────────┴──────────┴──────────┴──────────┘
+  Categories: | Category | Examples | Weight | Description |
+  Scoring: primary metric (weighted avg), threshold, per-category breakdown
+  Baseline: | System | Overall | Cat 1 | Cat 2 | Cat 3 |
 
 Benchmark maintenance:
   - Add new examples quarterly (at least <N> per quarter)
@@ -174,11 +145,7 @@ Regression test set:
 Regression pipeline:
   Trigger: <on every prompt change | model update | deployment | nightly>
 
-  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-| Load | -> | Run | -> | Compare | -> | Alert |
-|---|---|---|---|---|---|---|
-| Reg. Set |  | System |  | vs Gold |  | on Fail |
-  └──────────┘    └──────────┘    └──────────┘    └──────────┘
+  Load Reg. Set → Run System → Compare vs Gold → Alert on Fail
 
 Comparison strategies:
   Exact match: output must exactly match reference (for structured/JSON outputs)
@@ -197,10 +164,8 @@ Regression dashboard:
   New failures: <N> (introduced since last run)
   Fixed: <N> (previously failing, now passing)
   Failing tests:
-  ┌──────────┬─────────────────────────────┬────────────┬────────────┐
-|  | ID | Description | Since | Severity |  |
-  ├──────────┼─────────────────────────────┼────────────┼────────────┤
-|  | REG-042 | Misclassifies refund query | 2025-03-10 | HIGH |  |
+  | ID | Description | Since | Severity |
+  | REG-042 | Misclassifies refund query | 2025-03-10 | HIGH |
 |  | REG-087 | Wrong date format in output | 2025-03-15 | MEDIUM |  |
   └──────────┴─────────────────────────────┴────────────┴────────────┘
   VERDICT: <PASS — all tests pass | BLOCK — regressions detected>
@@ -222,7 +187,7 @@ Comparison: <System A> vs <System B>
 
 Per-metric comparison:
 | Metric | System A | System B | Diff | p-value | Sig? |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | Correctness | <val> | <val> | <delta> | <p> | YES | NO |
 | Relevance | <val> | <val> | <delta> | <p> | YES | NO |
 | Faithfulness | <val> | <val> | <delta> | <p> | YES | NO |
@@ -278,7 +243,7 @@ Methods: <automated (LLM judge) | human | hybrid>
 
 Results summary:
 | Metric | Score | Target | Status |
-|---|---|---|---|
+|--|--|--|--|
 | Correctness | <val> | <val> | PASS|FAIL |
 | Relevance | <val> | <val> | PASS|FAIL |
 | Faithfulness | <val> | <val> | PASS|FAIL |
@@ -317,36 +282,6 @@ Commit: `"eval: <system> — v<version>, <N> examples, correctness=<val>, faithf
 3. **Separate retrieval from generation.** In RAG systems, evaluate retrieval quality and generation quality independently. A bad answer from good retrieval is a different problem than a bad answer from bad retrieval.
 4. **LLM judges need calibration.** An uncalibrated LLM judge performs worse than no evaluation. Calibrate against human judgments. Measure agreement. Refine rubrics.
 5. **Statistical significance is not optional.** A 2% improvement is often noise. Run significance tests. Report confidence intervals. Do not deploy based on noise.
-6. **Regression tests only grow.** Every production bug becomes a regression test. The regression set never shrinks. It is the immune system of your AI system.
-7. **Evaluation datasets are living artifacts.** They need versioning, maintenance, and periodic expansion. A stale benchmark produces false confidence.
-
-## Flags & Options
-
-```
-eval_dimension_queue = [correctness, relevance, faithfulness, safety, format, latency, cost]
-current_iteration = 0
-
-WHILE eval_dimension_queue is not empty:
-  batch = eval_dimension_queue.take(3)
-  current_iteration += 1
-
-  FOR each dimension in batch:
-    1. Load evaluation dataset (versioned, immutable)
-    2. Run system under test on all examples
-    3. Score outputs using LLM judge (calibrated) or automated metric
-    4. Compute aggregate metric with confidence interval
-    5. Compare against baseline — flag regressions
-    6. IF dimension fails threshold → add to remediation list
-
-  Log: "Iteration {current_iteration}: evaluated {batch.length} dimensions, {eval_dimension_queue.remaining} remaining"
-
-  IF eval_dimension_queue is empty:
-    Run statistical significance tests (paired bootstrap)
-    Run full regression test suite
-    Generate evaluation report with PASS/FAIL verdict
-    BREAK
-```
-
 ## HARD RULES
 
 1. **Never evaluate without a baseline.** "Our model scores 4.2/5" is meaningless without comparison. Always report relative to a previous version, a naive baseline, or a published benchmark.
@@ -358,11 +293,11 @@ WHILE eval_dimension_queue is not empty:
 ## Output Format
 
 After each eval skill invocation, emit a structured report:
-
+  ...
 ```
 EVALUATION REPORT:
 | System evaluated | <name and version> |
-|---|---|
+|--|--|
 | Eval framework | <DeepEval | RAGAS | Promptfoo | custom> |
 | Test cases | <N> total (<N> golden, <N> regression) |
 | Primary metric | <metric>: <value> (baseline: <value>) |
@@ -395,48 +330,7 @@ The eval skill is complete when ALL of the following are true:
 6. Results are relative to baseline (never report absolute scores alone)
 7. Evaluation runs in CI and blocks merges on regression
 8. All evaluation artifacts (datasets, judge prompts, results) are versioned
-
-## Evaluation Framework Audit
-
-Comprehensive audit of the evaluation framework itself to ensure metrics are meaningful, benchmarks are comprehensive, and regressions are detectable:
-
-```
-EVALUATION FRAMEWORK AUDIT:
-System: <system under evaluation>
-Framework: <DeepEval | RAGAS | Promptfoo | custom>
-Audit date: <date>
-
-METRIC SELECTION AUDIT:
-| Check | Status | Evidence |
-|---|---|---|
-| Primary metric aligns with biz goal | PASS|FAIL | <metric->goal> |
-| Multiple dimensions covered (not | PASS|FAIL | <dimension list> |
-| just accuracy) |  |  |
-| Metrics are actionable (failure | PASS|FAIL | <diagnosis path> |
-| points to a fixable component) |  |  |
-| No metric gaming (metric improves | PASS|FAIL | <sanity checks> |
-| but actual quality does not) |  |  |
-| Metrics are stable across runs | PASS|FAIL | <variance test> |
-| (low variance on same input) |  |  |
-| Human-automated metric correlation | PASS|FAIL | <correlation r> |
-| verified (r > 0.7) |  |  |
-| Cost-aware metrics included | PASS|FAIL | <cost tracking> |
-| Latency metrics included | PASS|FAIL | <latency track> |
-| Safety metrics included | PASS|FAIL | <safety evals> |
-| Per-segment metrics available | PASS|FAIL | <slice evals> |
-| (by category, difficulty, source) |  |  |
-
-  Metric health check:
-    FOR each metric:
-      1. Compute metric on golden set 5 times (different random seeds if applicable)
-      2. IF std_dev > 5% of mean: UNSTABLE — metric has too much variance
-      3. IF metric == 100% for all examples: SATURATED — metric is too easy
-      4. IF metric shows no difference between good and bad systems: UNDISCRIMINATING
-      5. IF metric correlates < 0.5 with human judgment: MISCALIBRATED
-
-BENCHMARK COVERAGE AUDIT:
-
-## Keep/Discard Discipline
+  ...
 ```
 After EACH evaluation dimension scored:
   1. MEASURE: Compare metric to baseline with confidence interval.
@@ -457,13 +351,13 @@ STOP when ANY of these are true:
   - Statistical significance computed for all comparisons
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One dimension shows no significant difference (report it as-is)
   - Human evaluation budget is exhausted (use automated judges for remaining)
 ```
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Evaluation scores are noisy/inconsistent | Increase sample size. Use multiple judges and take median. Add calibration examples to the prompt. |
 | LLM judge disagrees with human ratings | Calibrate judge prompt with labeled examples. Check for position bias (swap A/B order). Use structured rubrics. |
 | Test set too small for significance | Calculate minimum sample size for desired confidence interval. Expand test set or reduce dimensions evaluated. |

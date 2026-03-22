@@ -27,7 +27,6 @@ cat package.json 2>/dev/null | grep -E '"svelte"|"@sveltejs/kit"'
 ls svelte.config.js svelte.config.ts 2>/dev/null
 
 ```
-
 ## Workflow
 
 ### Step 1: Project Discovery & Assessment
@@ -42,15 +41,8 @@ State management: <Svelte stores / Runes ($state) / external (Zustand) / none>
 Routing: <SvelteKit file-based / custom / none>
 UI library: <Skeleton / DaisyUI / Melt UI / Bits UI / custom / none>
 CSS approach: <Tailwind / UnoCSS / SCSS / scoped styles>
-Testing: <Vitest / Playwright / none>
-TypeScript: <yes / no>
-Adapter: <auto / node / static / vercel / cloudflare / netlify>
-Component count: <N>
-Route count: <N>
-
-Directory structure:
+  ...
 ```
-
 If starting fresh, ask: "What are you building? Do you need SSR (SvelteKit) or a client-only app?"
 
 ### Step 2: Svelte Reactivity Model
@@ -66,30 +58,20 @@ Guide the appropriate reactivity approach:
 
  // $derived — computed values (replaces $: reactive statements)
  let doubled = $derived(count * 2);
- let fullName = $derived(user ? `${user.firstName} ${user.lastName}` : '');
- let itemCount = $derived(items.length);
-
- // $derived.by — complex derived values
- let summary = $derived.by(() => {
- if (items.length === 0) return 'No items';
- if (items.length === 1) return '1 item';
+  ...
 ```
 
 Decision guide:
 ```
 REACTIVITY MODEL DECISION:
 | Factor | Runes (Svelte 5) | Legacy (Svelte 4) |
-|---|---|---|
+|--|--|--|
 | Explicitness | Explicit ($state) | Implicit (let) |
 | Computed values | $derived (clear) | $: (ambiguous) |
 | Side effects | $effect (dedicated) | $: (overloaded) |
 | Props | $props() (typed) | export let (basic) |
 | Fine-grained | Yes (signal-based) | Component-level |
-| .svelte.ts files | Reactive outside comps | Components only |
-| Migration | Incremental (per file) | N/A |
-
-RECOMMENDATION: Svelte 5 runes for new projects. Migrate existing Svelte 4
-projects incrementally — runes and legacy syntax can coexist.
+  ...
 ```
 
 ### Step 3: Svelte Stores
@@ -125,15 +107,8 @@ src/routes/
 ├── +page.server.ts Home page data loader
 ├── +error.svelte Error page
 ├── auth/
-│ ├── login/
-│ │ ├── +page.svelte Login form
-│ │ └── +page.server.ts Login form action + load
-│ └── register/
-│ ├── +page.svelte Register form
-│ └── +page.server.ts Register form action
-├── dashboard/
+  ...
 ```
-
 #### Load Functions
 ```typescript
 // routes/blog/[slug]/+page.server.ts
@@ -152,7 +127,6 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async ({ locals }) => {
  if (!locals.user) {
 ```
-
 #### Form Actions
 ```typescript
 // routes/blog/[slug]/+page.server.ts
@@ -177,15 +151,14 @@ Configure rendering strategies per route:
 ```
 RENDERING STRATEGY:
 | Route | Strategy | Reason |
-|---|---|---|
+|--|--|--|
 | / | Prerender | Static content, fast load |
 | /about, /pricing | Prerender | Marketing pages, SEO |
 | /blog/[slug] | SSR + cache | Dynamic, SEO-critical |
 | /dashboard/** | CSR (ssr:false) | Auth-gated, no SEO need |
 | /api/** | Server-only | API endpoints |
-| /products/[id] | SSR | Dynamic, SEO-critical |
+  ...
 ```
-
 #### Per-Route Configuration
 ```typescript
 // routes/(marketing)/about/+page.ts
@@ -202,16 +175,14 @@ Configure the deployment adapter:
 ```
 ADAPTER SELECTION:
 | Platform | Adapter | Notes |
-|---|---|---|
+|--|--|--|
 | Vercel | @sveltejs/adapter-vercel | Edge/Serverless |
 | Cloudflare | @sveltejs/adapter-cloudflare | Workers/Pages |
 | Netlify | @sveltejs/adapter-netlify | Functions + CDN |
 | Node.js | @sveltejs/adapter-node | Express/Fastify host |
 | Static (SPA) | @sveltejs/adapter-static | GitHub Pages, S3 |
-| Auto-detect | @sveltejs/adapter-auto | Detects platform |
-| Bun | svelte-adapter-bun | Bun runtime |
+  ...
 ```
-
 ### Step 7: Component Patterns
 Establish reusable component patterns:
 
@@ -225,13 +196,7 @@ Establish reusable component patterns:
  title: string;
  header?: Snippet;
  children: Snippet;
- footer?: Snippet;
- }
-
- let { title, header, children, footer }: Props = $props();
-</script>
-
-<div class="card">
+  ...
 ```
 
 ### Step 8: Testing
@@ -243,7 +208,6 @@ Unit/Component: Vitest + @testing-library/svelte
 E2E: Playwright
 Coverage target: > 80% statements, > 70% branches
 ```
-
 #### Component Testing
 ```typescript
 // lib/components/Counter.test.ts
@@ -260,20 +224,14 @@ Validate the Svelte application against best practices:
 ```
 SVELTE APPLICATION AUDIT:
 | Check | Status |
-|---|---|
+|--|--|
 | Svelte 5 runes used (if applicable) | PASS | FAIL | N/A |
 | TypeScript enabled and strict | PASS | FAIL |
 | Server load functions for data fetching | PASS | FAIL |
 | Form actions for mutations | PASS | FAIL |
 | Progressive enhancement (use:enhance) | PASS | FAIL |
-| Rendering strategy per route | PASS | FAIL |
-| Adapter configured for target platform | PASS | FAIL |
-| Error pages defined (+error.svelte) | PASS | FAIL |
-| Hooks for auth/logging | PASS | FAIL |
-| Stores/state well-organized | PASS | FAIL |
-| No $effect for derived state (use $derived) | PASS | FAIL |
+  ...
 ```
-
 ### Step 10: Deliverables & Handoff
 Generate the project artifacts:
 
@@ -286,20 +244,8 @@ Artifacts:
 - Components: <N> components
 - Routes: <N> routes (<N> prerendered, <N> SSR, <N> CSR)
 - Stores: <N> stores
-- Form actions: <N> actions
-- Load functions: <N> server loaders
-- Adapter: <platform>
-- Tests: <N> test files, <M>% coverage
-- Validation: <PASS | NEEDS REVISION>
-
-Next steps:
--> /godmode:tailwind — Set up Tailwind CSS styling
--> /godmode:a11y — Accessibility audit
--> /godmode:e2e — End-to-end testing with Playwright
--> /godmode:build — Implement features
--> /godmode:ship — Deploy the application
+  ...
 ```
-
 Commit: `"svelte: <project> — <N> routes, <N> components, <SvelteKit | Svelte>, <adapter>"`
 
 ## Key Behaviors
@@ -308,14 +254,10 @@ Commit: `"svelte: <project> — <N> routes, <N> components, <SvelteKit | Svelte>
 2. **Runes for Svelte 5.** New Svelte 5 projects use runes (`$state`, `$derived`, `$effect`). They are more explicit, more powerful, and the future of Svelte.
 3. **Load functions, not fetch-in-component.** Data fetching belongs in `+page.server.ts` load functions, not in `onMount`. Load functions run on the server, are type-safe, and handle errors properly.
 4. **Form actions over API routes.** For mutations (create, update, delete), use form actions with `use:enhance`. They work without JavaScript and are progressively enhanced.
-5. **Progressive enhancement is free.** SvelteKit forms work without JavaScript by default. Adding `use:enhance` makes them better with JavaScript. Do not break this.
-6. **Prerender what you can.** Prerender static pages at build time. SSR dynamic pages with cache headers. Only client-render what truly cannot run on the server.
-7. **Choose the right adapter.** Match the adapter to your deployment target. `adapter-auto` works for CI detection, but explicit adapters give you platform-specific features.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Svelte/SvelteKit project assessment and setup |
 | `--audit` | Audit existing Svelte project against best practices |
 | `--migrate` | Migrate Svelte 4 to Svelte 5 runes |
@@ -358,10 +300,8 @@ Svelte version: <4 | 5>
 Reactivity model: <runes | legacy | mixed>
 Tests passing: <yes | no | skipped>
 Build status: <passing | failing | not-checked>
-Issues fixed: <N>
-Notes: <one-line summary>
+  ...
 ```
-
 ## TSV Logging
 
 Append one TSV row to `.godmode/svelte.tsv` after each invocation:
@@ -369,7 +309,6 @@ Append one TSV row to `.godmode/svelte.tsv` after each invocation:
 ```
 timestamp	project	action	components_count	routes_count	stores_count	tests_status	build_status	notes
 ```
-
 Field definitions:
 - `timestamp`: ISO-8601 UTC
 - `project`: directory name from `basename $(pwd)`
@@ -394,48 +333,11 @@ Every Svelte skill invocation must pass ALL of these checks before reporting suc
 5. No `document` or `window` access without `browser` guard or `onMount`
 6. No secrets in `+page.ts` files (only in `+page.server.ts` or `+server.ts`)
 7. All form elements use `use:enhance` for progressive enhancement
-8. Tests pass if test suite exists (`npx vitest run`)
-9. No module-level mutable state in server-rendered pages
-10. All load functions return typed data (TypeScript projects)
-
-If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
-IF svelte-check fails:
- 1. Read the error output line by line
- 2. Fix type errors: add missing types, fix prop type mismatches
- 3. Fix a11y warnings: add aria labels, alt text, role attributes
- 4. Re-run svelte-check after each batch of fixes
- 5. IF error is in a dependency → check that dependency version is compatible with Svelte version
-
-IF vite build fails:
- 1. Check for missing imports or circular dependencies
- 2. Verify adapter configuration in svelte.config.js matches deployment target
- 3. Check that server-only imports are not used in client code
- 4. Verify all environment variables use $env/static or $env/dynamic correctly
- 5. Run `vite build 2>&1 | head -50` and fix the first error
-
-IF hydration mismatch occurs:
- 1. Check for browser-only code running during SSR
- 2. Wrap client-only code in `{#if browser}` blocks or `onMount`
- 3. Verify no random/date values are generated during SSR without consistent seeding
- 4. Check that stores are not shared across requests (use context instead)
-
-IF load function errors:
- 1. Verify +page.server.ts vs +page.ts placement (keep server secrets in .server)
- 2. Check that error() and redirect() are thrown, not returned
- 3. Verify parent() calls are awaited in nested layouts
- 4. Check that invalidateAll() or invalidate() is called after mutations
-
-IF test failures:
- 1. Verify @testing-library/svelte version matches Svelte version
- 2. Check that component props match expected types
- 3. Verify async state changes are wrapped in act() or waitFor()
- 4. Check that mocked stores use the correct writable/readable interface
-```
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | `svelte-check` type errors | Read errors line by line. Fix prop type mismatches and missing types first. Re-run after each batch of fixes. |
 | Hydration mismatch | Wrap browser-only code in `{#if browser}` or `onMount`. Check for `Date.now()` or `Math.random()` in SSR. |
 | Load function errors | Verify `+page.server.ts` vs `+page.ts` placement. Ensure `error()` and `redirect()` are thrown, not returned. Await `parent()` calls. |
 | `$:` reactive statements in Svelte 5 | Replace with runes: `$state` for state, `$derived` for computed, `$effect` for side effects. |
+  ...

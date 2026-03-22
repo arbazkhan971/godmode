@@ -103,7 +103,7 @@ Components: extractor, transformer, loader, quality checks, orchestrator config,
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--design` | Design pipeline architecture without implementing |
 | `--implement` | Implement from existing design |
 | `--test` | Run unit + integration tests |

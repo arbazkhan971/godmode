@@ -34,7 +34,6 @@ Dependencies: <critical upstream and downstream services>
 Traffic Pattern: <steady | diurnal | spiky | seasonal>
 Request Volume: <approximate requests per second or per day>
 ```
-
 If the user has not provided context, ask: "What does this service do and who are its users? The answers determine which SLIs matter and how aggressively to set SLO targets."
 
 ### Step 2: SLA vs SLO vs SLI -- Establish the Hierarchy
@@ -50,7 +49,6 @@ SERVICE LEVEL HIERARCHY:
 |    Internal target, stricter than the SLA.                      |
 |    Drives engineering priorities via error budgets.              |
 ```
-
 ### Step 3: SLI Selection
 Choose the right indicators based on service type:
 
@@ -59,7 +57,7 @@ SLI SELECTION BY SERVICE TYPE:
 
 USER-FACING API / WEB SERVICE:
 |  SLI Category  | Definition                | Measurement       |
-|---|---|---|
+|--|--|--|
 |  Availability  | Successful requests /     | HTTP 5xx excluded, |
 |                | total requests            | measured at LB     |
 |  Latency       | Requests below threshold  | p50, p99 at server |
@@ -69,12 +67,11 @@ USER-FACING API / WEB SERVICE:
 
 DATA PIPELINE / BATCH JOB:
 ```
-
 #### What Counts as an Error
 ```
 ERROR CLASSIFICATION:
 |  Response           | Counts as Error? | Rationale             |
-|---|---|---|
+|--|--|--|
 |  HTTP 5xx           | YES              | Server failure         |
 |  Timeout            | YES              | Server too slow        |
 |  Circuit breaker    | YES              | Shed load = user hurt  |
@@ -91,7 +88,7 @@ Set concrete SLO targets for each SLI:
 ```
 SLO DEFINITION TABLE:
 |  SLI              | SLO Target | Window      | SLA (if any)   |
-|---|---|---|---|
+|--|--|--|--|
 |  Availability     | <target>%  | <window>    | <target>%      |
 |  Latency (p50)    | < <N>ms    | <window>    | < <N>ms        |
 |  Latency (p99)    | < <N>ms    | <window>    | < <N>ms        |
@@ -102,7 +99,6 @@ SLO DEFINITION TABLE:
 SLO WINDOW OPTIONS:
 |  Window Type       | When to Use              | Trade-offs     |
 ```
-
 ### Step 5: Error Budget Calculation & Tracking
 Calculate the error budget and establish tracking:
 
@@ -117,12 +113,11 @@ ERROR BUDGET FORMULA:
 
 ERROR BUDGET REFERENCE TABLE:
 |  SLO      | Error Budget | Minutes/month | Seconds/day       |
-|---|---|---|---|
+|--|--|--|--|
 |  99%      | 1%           | 432 min       | 864 sec (14.4 min)|
 |  99.5%    | 0.5%         | 216 min       | 432 sec (7.2 min) |
 |  99.9%    | 0.1%         | 43.2 min      | 86.4 sec          |
 ```
-
 ### Step 6: Burn Rate Alerts -- Multi-Window, Multi-Burn-Rate
 Configure alerting based on how fast errors consume the budget:
 
@@ -141,14 +136,13 @@ MULTI-WINDOW MULTI-BURN-RATE ALERT TABLE:
 (Google SRE Workbook recommended configuration)
 |  Severity  | Burn Rate | Long Window | Short Window | Action  |
 ```
-
 ### Step 7: Error Budget Policy
 Define what happens at each level of budget consumption:
 
 ```
 ERROR BUDGET POLICY:
 |  Budget Remaining | Development Policy                         |
-|---|---|
+|--|--|
 |  > 75%            | Full velocity. Ship features, experiment.  |
 |                   | Error budget is healthy.                   |
 |  50-75%           | Normal velocity with caution. Review risky |
@@ -161,14 +155,13 @@ ERROR BUDGET POLICY:
 |                   | that improve reliability.                   |
 |  < 10%            | Full freeze. All engineering effort goes to |
 ```
-
 ### Step 8: SLO-Based Release Gating
 Use error budgets to gate deployments:
 
 ```
 RELEASE GATE POLICY:
 |  Gate                        | Threshold   | Block Action      |
-|---|---|---|
+|--|--|--|
 |  Pre-deploy budget check     | Budget < 10%| Block deployment   |
 |  Canary error rate check     | > 2x baseline| Auto-rollback     |
 |  Post-deploy budget check    | Budget dropped| Alert + investigate|
@@ -180,7 +173,6 @@ CI/CD INTEGRATION EXAMPLE:
   # In deployment pipeline
   check_error_budget:
 ```
-
 ### Step 9: Composite SLOs
 Define SLOs that span multiple services:
 
@@ -201,7 +193,6 @@ COMPOSITE AVAILABILITY (sequential):
     = 0.999 * 0.999 * 0.9995 * 0.9999 * 0.995
     = 0.9924 (99.24%)
 ```
-
 ### Step 10: SLO Dashboards
 Configure dashboards for SLO visibility:
 
@@ -210,7 +201,7 @@ SLO DASHBOARD LAYOUT:
 
 PANEL 1: SLO Summary (top of dashboard)
 |  SLI              | Target | Current | Budget Used | Status   |
-|---|---|---|---|---|
+|--|--|--|--|--|
 |  Availability     | 99.9%  | 99.95%  | 30%         | HEALTHY  |
 |  Latency (p50)    | <100ms | 45ms    | 15%         | HEALTHY  |
 |  Latency (p99)    | <500ms | 380ms   | 60%         | WARNING  |
@@ -220,14 +211,13 @@ PANEL 2: Error Budget Remaining (time series, 30-day window)
   - Line chart showing budget remaining over time
   - Horizontal lines at 75%, 50%, 25%, 10% thresholds
 ```
-
 ### Step 11: SLO Review Cadence
 Establish regular SLO reviews:
 
 ```
 SLO REVIEW CADENCE:
 |  Review Type  | Frequency | Attendees        | Focus           |
-|---|---|---|---|
+|--|--|--|--|
 |  Weekly SLO   | Weekly    | Service team     | Budget status,  |
 |  check        |           |                  | burn rate, any  |
 |               |           |                  | incidents        |
@@ -239,7 +229,6 @@ SLO REVIEW CADENCE:
 |               |           |                  | investment, SLA |
 |               |           |                  | alignment       |
 ```
-
 ### Step 12: Artifacts & Completion
 
 ```
@@ -251,7 +240,6 @@ SLO IMPLEMENTATION ARTIFACTS:
 - infra/dashboards/<service>-slo-dashboard.json (dashboard)
 - ci/<service>-slo-release-gate.yaml (release gate)
 ```
-
 Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
 
 ## Key Behaviors
@@ -268,7 +256,7 @@ Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full SLO definition, error budget, alerts, dashboard, policy |
 | `--sli` | SLI selection and measurement guidance only |
 | `--target` | SLO target setting guidance only |
@@ -291,7 +279,7 @@ After each SLO skill invocation, emit a structured report:
 ```
 SLO REPORT:
 | Service | <name> |
-|---|---|
+|--|--|
 | SLIs defined | <N> indicators |
 | SLOs defined | <N> objectives |
 | Window | <rolling 7d | 30d | 90d> |
@@ -304,7 +292,6 @@ SLO REPORT:
 | Review cadence | Weekly / Monthly / Quarterly |
 | Verdict | SLO READY | NEEDS WORK |
 ```
-
 ## TSV Logging
 
 Log every SLO action for tracking:
@@ -314,7 +301,6 @@ timestamp	skill	service	action	slis	slos	budget_remaining_pct	status
 2026-03-20T14:00:00Z	slo	payment-api	define	4	4	100	ready
 2026-03-20T14:30:00Z	slo	checkout	budget_check	3	3	44	warning
 ```
-
 ## Success Criteria
 
 The SLO skill is complete when ALL of the following are true:
@@ -347,7 +333,6 @@ IF burn rate alerts are noisy (too many false positives):
   1. Verify both long AND short windows are configured (not just one)
   2. Check that the SLI calculation excludes client errors (4xx)
 ```
-
 ## Auto-Detection
 
 ```
@@ -359,7 +344,6 @@ AUTO-DETECT SEQUENCE:
 5. Detect alerting: check for PagerDuty, OpsGenie, Slack webhook configs
 6. Auto-configure: match SLI selection to detected service type
 ```
-
 ## Iterative SLO Implementation Loop
 
 ```
@@ -378,7 +362,6 @@ WHILE slo_tasks is not empty AND current_iteration < max_iterations:
 
 POST-LOOP: Run full validation checklist and simulate a budget consumption scenario
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH SLO configuration change:

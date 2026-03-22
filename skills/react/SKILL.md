@@ -36,7 +36,7 @@ Rules: One thing per component. Small props interface. Composition > configurati
 ### Step 3: State Management
 
 | State Type | Solution |
-|-----------|---------|
+|--|--|
 | Server/async (API) | TanStack Query / SWR |
 | URL (params, filters) | useSearchParams / nuqs |
 | Form | React Hook Form + Zod |
@@ -90,7 +90,7 @@ VERDICT: <PASS | NEEDS REVISION>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full architecture workflow |
 | `--audit` | Audit existing project |
 | `--state` | State management strategy |
@@ -135,7 +135,7 @@ Run tasks sequentially with branch isolation if Agent() unavailable.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Infinite re-render loop | Check `useEffect` dependency arrays. Look for objects/arrays created inline as deps. Use `useMemo`/`useCallback` to stabilize references. |
 | State update on unmounted component | Use cleanup function in `useEffect`. Check for async operations that complete after unmount. Use `AbortController` for fetch. |
 | Hydration mismatch (SSR) | Ensure server and client render identical output. Avoid `Date.now()`, `Math.random()`, or `window` during SSR. Use `useEffect` for client-only code. |

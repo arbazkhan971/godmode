@@ -57,7 +57,7 @@ IF any check FAILED:
 # 3-6. DETERMINE TARGET, DRY-RUN, SHIP, VERIFY — per ship_type:
 #
 # | Phase     | pr                                | release                           | deploy                              |
-# |-----------|-----------------------------------|-----------------------------------|-------------------------------------|
+# |--|--|--|--|
 # | Target    | title from commits, body=summary  | version from manifest, tag=v{ver} | config from Dockerfile/fly/vercel/k8s|
 # | Rollback  | gh pr close {number}              | git tag -d {tag} && push :tag     | fly releases rollback / kubectl undo|
 # | Ship cmds | git push -u; gh pr create         | git tag; git push tag; gh release | fly deploy / vercel --prod / kubectl|
@@ -105,93 +105,6 @@ timestamp	ship_type	commit_sha	branch	outcome	url	rollback_cmd
 - **If CI fails after PR creation:** Run `gh pr checks {number}` to get failing check names. Delegate to `/godmode:fix` for fixable errors. Push fixes to same branch. CI will re-run.
 - **If health check fails after deploy:** Execute rollback command immediately. Log outcome as "rolled-back". Print the rollback command that was run. Do not retry deploy — user must investigate.
 - **If `gh` CLI is not installed or not authenticated:** Print: "Install GitHub CLI: `brew install gh && gh auth login`". Fall back to `git push` only and print manual PR creation URL: `https://github.com/{org}/{repo}/compare/main...{branch}`.
-
-## Anti-Patterns
-1. **Shipping with failing checks.** Never bypass the checklist. If checks fail, fix them first. The only non-blocking check is TODOs/FIXMEs.
-2. **Skipping dry-run.** Always show the user exactly what commands will run and the rollback plan before executing. No silent deploys.
-3. **Shipping multiple things at once.** One ship per invocation: one PR, one release, or one deploy. Never combine (e.g., PR + deploy in same run).
-4. **Deploying without a rollback plan.** Every ship action must have a known rollback command printed in the dry-run. If no rollback is possible, warn the user explicitly.
-5. **Ignoring post-ship verification.** Always verify after shipping. A shipped PR needs CI to pass. A deploy needs a health check. A release needs `gh release view` confirmation.
-
-## Examples
-
-### Example 1: Ship as PR
-```
-$ /godmode:ship
-Ship inventory: 4 commits, 7 files changed. Type: pr.
-  [PASS] build
-  [PASS] lint
-  [PASS] test
-  [PASS] secrets
-  [PASS] todos
-  [PASS] conflict
-Checklist: 6/6 passed.
---- DRY RUN ---
-Action: pr
-Commands:
-  $ git push -u origin HEAD
-  $ gh pr create --title "feat(auth): add JWT refresh token rotation" --body "## Summary..."
-Rollback: gh pr close {pr_number}
-Type 'yes' to proceed.
-> yes
-PR created: https://github.com/org/repo/pull/42
-CI: all checks passed
-Ship: pr completed. shipped. URL: https://github.com/org/repo/pull/42.
-```
-
-### Example 2: Ship as release with version detection
-```
-$ /godmode:ship release
-Ship inventory: 12 commits, 23 files changed. Type: release.
-  [PASS] build
-  [PASS] lint
-  [PASS] test
-  [PASS] secrets
-  [WARN] todos — 2 found (non-blocking)
-    src/api/handler.ts:42: TODO: add rate limiting
-    src/utils/cache.ts:18: FIXME: TTL not configurable
-  [PASS] conflict
-Checklist: 5/6 passed (1 warning).
-Detected version: 1.3.0 from package.json
---- DRY RUN ---
-Action: release
-Commands:
-  $ git tag v1.3.0
-  $ git push origin v1.3.0
-  $ gh release create v1.3.0 --generate-notes
-Rollback: git tag -d v1.3.0 && git push origin :refs/tags/v1.3.0
-Type 'yes' to proceed.
-> yes
-Release created: https://github.com/org/repo/releases/tag/v1.3.0
-Release verified: v1.3.0
-Ship: release completed. shipped. URL: https://github.com/org/repo/releases/tag/v1.3.0.
-```
-
-### Example 3: Ship as deploy with failed health check
-```
-$ /godmode:ship deploy
-Ship inventory: 3 commits, 5 files changed. Type: deploy.
-  [PASS] build
-  [PASS] lint
-  [PASS] test
-  [PASS] secrets
-  [PASS] todos
-  [PASS] conflict
-Checklist: 6/6 passed.
-Detected: fly.toml (Fly.io)
---- DRY RUN ---
-Action: deploy
-Commands:
-  $ fly deploy
-Rollback: fly releases rollback
-Type 'yes' to proceed.
-> yes
-Deployed: https://myapp.fly.dev
-Health check: curl -sf https://myapp.fly.dev/health ... FAILED (HTTP 502)
-VERIFY FAILED. Rolling back: fly releases rollback
-Rollback complete.
-Ship: deploy completed. rolled-back. URL: https://myapp.fly.dev.
-```
 
 ## Shipping Checklist Loop
 
@@ -245,7 +158,7 @@ WHILE current_iteration < max_iterations:
     REPORT:
     PRE-FLIGHT CHECKLIST:
 | Gate | Status | Details |
-|---|---|---|
+|--|--|--|
 | Code quality | PASS | 4/4 checks passed |
 | Security | PASS | 5/5 checks passed |
 | Completeness | WARN | 3/5 — docs missing |
@@ -374,7 +287,7 @@ WHILE current_iteration < max_iterations:
 FINAL SHIPPING READINESS:
   SHIP READINESS SUMMARY
 | Phase | Status | Details |
-|---|---|---|
+|--|--|--|
 | Pre-flight checks | PASS | 16/17 checks (1 warning) |
 | Rollback plan | READY | Command documented |
 | Ship execution | DONE | Shipped at {timestamp} |
@@ -382,6 +295,12 @@ FINAL SHIPPING READINESS:
 | Incident readiness | PASS | Runbook + on-call ready |
 | Overall | SHIPPED | Stable in production |
 ```
+## Hard Rules
+1. Never ship with failing build, lint, or test checks — fix first, ship second.
+2. Always show dry-run with exact commands and rollback plan before executing.
+3. One ship per invocation: one PR, one release, or one deploy — never combine.
+4. Every ship action must have a known rollback command printed in the dry-run.
+5. Always verify after shipping — CI for PRs, health check for deploys, `gh release view` for releases.
 
 ## Keep/Discard Discipline
 ```
@@ -400,11 +319,3 @@ STOP when FIRST of:
   - diminishing_returns: same check keeps failing after fix attempts
   - stuck: >5 pre-ship checklist failures with no progress
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or worktree isolation:
-- The ship skill is inherently sequential (checklist → dry-run → ship → verify), so no parallel dispatch is needed.
-- If `gh` CLI is unavailable, use `git push` and construct the PR URL manually: `https://github.com/{org}/{repo}/compare/main...{branch}`.
-- For releases without `gh`: `git tag {tag} && git push origin {tag}`. Add release notes manually on GitHub.
-- TSV logging, checklist logic, and dry-run printing remain identical.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

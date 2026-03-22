@@ -28,47 +28,17 @@ Stage: <greenfield | evolving | rewrite | migration>
 ### Step 2: Architecture Pattern Evaluation
 Evaluate candidate patterns against the requirements. Always evaluate at least 3 patterns:
 
-#### Pattern 1: Monolith (Modular)
+#### Pattern Evaluation Template
+For each candidate (evaluate at least 3), fill:
 ```
-PATTERN: Modular Monolith
-├── Structure: Single deployable unit with well-defined internal module boundaries
-├── Best when:
-```
-
-#### Pattern 2: Microservices
-```
-PATTERN: Microservices
-├── Structure: Independent services communicating via APIs/messaging
-├── Best when:
+PATTERN: <Name>
+├── Structure: <one-line architecture summary>
+├── Strengths: <key advantages for this system>
+├── Weaknesses: <key disadvantages and operational cost>
+└── Best when: <conditions where this pattern wins>
 ```
 
-#### Pattern 3: Serverless / FaaS
-```
-PATTERN: Serverless
-├── Structure: Functions triggered by events, managed infrastructure
-├── Best when:
-```
-
-#### Pattern 4: Event-Driven
-```
-PATTERN: Event-Driven Architecture
-├── Structure: Components communicate through events via message broker
-├── Best when:
-```
-
-#### Pattern 5: CQRS (Command Query Responsibility Segregation)
-```
-PATTERN: CQRS
-├── Structure: Separate models for read and write operations
-├── Best when:
-```
-
-#### Pattern 6: Hexagonal (Ports & Adapters)
-```
-PATTERN: Hexagonal Architecture
-├── Structure: Business logic at center, external concerns at edges via ports/adapters
-├── Best when:
-```
+Candidate patterns: Modular Monolith, Microservices, Serverless/FaaS, Event-Driven, CQRS, Hexagonal (Ports & Adapters). Evaluate the most relevant 3-6 for the system.
 
 ### Step 3: Architecture Comparison Matrix
 Present a structured comparison:
@@ -149,7 +119,7 @@ Document the decision formally:
 2. **Always compare at least 3 options.** Even if the answer seems obvious, the comparison matrix forces rigorous thinking and documents why alternatives were rejected.
 3. **C4 diagrams are mandatory.** At minimum produce Level 1 (Context) and Level 2 (Container) diagrams. Level 3 and 4 are produced when the user asks for detail.
 4. **Trade-offs are honest.** Every pattern has real downsides. Never present an architecture as having no weaknesses.
-5. **ADRs capture the "why."** The Architecture Decision Record explains the reasoning, not just the decision. Future developers will thank you.
+5. **ADRs capture the "why."** The Architecture Decision Record explains the reasoning, not only the decision. Future developers will thank you.
 6. **Bounded contexts before microservices.** If recommending microservices, the bounded context map must come first. Services without clear domain boundaries become a distributed monolith.
 7. **Validate against the team.** The best architecture is one the team can actually build and operate. Factor in team experience and operational maturity.
 
@@ -232,7 +202,7 @@ ARCHITECTURE HEALTH SCORECARD:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Architecture decision contested by team | Document tradeoffs in an ADR (Architecture Decision Record). Present alternatives with pros/cons. Let data decide — prototype competing approaches if needed. |
 | Chosen pattern does not fit after implementation starts | Revisit constraints. If <30% implemented, pivot early. If >30%, adapt the pattern rather than restarting. Document the pivot in the ADR. |
 | Dependency creates vendor lock-in | Introduce an adapter/port layer. Abstract the dependency behind an interface so you swap it easily. |

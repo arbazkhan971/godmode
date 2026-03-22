@@ -117,7 +117,7 @@ Identify and eliminate N+1 query problems:
 ```
 N+1 DETECTION CHECKLIST:
 | Pattern | Status |
-|---|---|
+|--|--|
 | List query with nested relations | CHECK for N+1 |
 | Field resolver with DB call | MUST use DataLoader |
 | Nested connection within list | CHECK batch strategy |
@@ -235,13 +235,13 @@ Commit: `"graphql: <service> — <N> types, <M> operations, DataLoaders, subscri
 3. **Mutations return payloads, not raw types.** Every mutation returns a payload with the entity and an errors array. Never throw for user-facing errors.
 4. **Performance defenses are not optional.** Every production GraphQL API must have depth limiting, complexity analysis, and either persisted queries or an allowlist.
 5. **Federation is an architecture decision.** Do not federate prematurely. Start monolithic and extract subgraphs when team boundaries or scaling demands require it.
-6. **Test the schema, not just the resolvers.** Schema snapshot tests catch accidental breaking changes. Query count tests catch N+1 regressions. Both run in CI.
+6. **Test the schema, not only the resolvers.** Schema snapshot tests catch accidental breaking changes. Query count tests catch N+1 regressions. Both run in CI.
 7. **Subscriptions need infrastructure.** In-memory pub/sub works for development. Production requires Redis, Kafka, or NATS — and connection limits.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full GraphQL design workflow |
 | `--sdl` | SDL-first schema design |
 | `--code-first` | Code-first schema design (Pothos, Nexus, TypeGraphQL) |
@@ -303,7 +303,7 @@ GRAPHQL DESIGN COMPLETE:
 
 SCHEMA SUMMARY:
 |  Domain        | Types | Queries | Mutations | DataLoaders    |
-|---|---|---|---|---|
+|--|--|--|--|--|
 |  <domain>      | N     | N       | N         | N              |
 ```
 
@@ -323,7 +323,7 @@ Append after every completed design or extension pass. One row per session. If t
 ```
 GRAPHQL SUCCESS CRITERIA:
 |  Criterion                                  | Required         |
-|---|---|
+|--|--|
 |  Schema compiles without errors             | YES              |
 |  All list fields use Relay connections       | YES              |
 |  All relation fields have DataLoaders       | YES              |

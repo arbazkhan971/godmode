@@ -302,7 +302,7 @@ Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation c
 
 1. **Every field gets a description and an example.** An undocumented field is an undocumented bug. Consumers should never have to guess what a field means.
 2. **$ref everything shared.** Pagination parameters, error responses, auth schemes — extract once, reference everywhere. A duplicated schema is a schema that will drift.
-3. **Validate in CI, not just locally.** Specs break silently. Spectral catches lint issues, Optic catches breaking changes, Redocly catches structural problems. Run all three.
+3. **Validate in CI, not only locally.** Specs break silently. Spectral catches lint issues, Optic catches breaking changes, Redocly catches structural problems. Run all three.
 4. **Use realistic examples.** `"string"` as an example for an email field is useless. Use `"jane.doe@example.com"`. Consumers copy-paste examples.
 5. **Generate, don't handwrite, when code exists.** If you have a NestJS app with decorators, generate the spec from code. If you have a greenfield project, write the spec first.
 6. **Publish docs automatically.** Docs that live in a YAML file nobody reads are not docs. Render them with Swagger UI, Redoc, or Stoplight and deploy on every merge.
@@ -365,7 +365,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
@@ -373,7 +373,7 @@ DO NOT STOP just because:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | OpenAPI spec validation fails | Run `swagger-cli validate` to get specific errors. Fix schema references, missing required fields, and invalid types. |
 | Generated docs drift from implementation | Add CI check: compare spec against route handlers. Use spec-first or code-first consistently, never mix. |
 | Examples fail validation against schema | Ensure example values match declared types, enums, and patterns. Auto-generate examples from schema as fallback. |

@@ -146,7 +146,7 @@ Diagnose and fix flaky E2E tests:
 ```
 FLAKINESS DIAGNOSIS:
 | Symptom | Root Cause → Fix |
-|---|---|
+|--|--|
 | Element not found | Race condition → Use auto-waiting locators |
 |  | (Playwright: getByRole, Cypress: .should) |
 | Timeout on navigation | Slow page load → Increase timeout, check |
@@ -178,7 +178,7 @@ Configure and run tests across browser matrix:
 ```
 BROWSER MATRIX:
 | Browser | Engine | Test Status | Known Issues |
-|---|---|---|---|
+|--|--|--|--|
 | Chrome | Chromium | <PASS/FAIL> | <issues or none> |
 | Firefox | Gecko | <PASS/FAIL> | <issues or none> |
 | Safari | WebKit | <PASS/FAIL> | <issues or none> |
@@ -227,7 +227,7 @@ CROSS-BROWSER ISSUES FOUND:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Assess current E2E state and generate missing tests |
 | `--setup` | Set up E2E framework from scratch |
 | `--for <feature>` | Generate E2E tests for a specific feature |

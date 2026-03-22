@@ -158,13 +158,13 @@ Save queue config, workers, retry/DLQ policy, schedules. Commit: `"queue: <name>
 4. **Retry with backoff, not forever.** Exponential + jitter, cap at 3-5, then DLQ.
 5. **Separate priority queues need separate workers.** Bulk backlogs must not starve critical.
 6. **Graceful shutdown required.** Finish current job on SIGTERM.
-7. **Monitor queue depth, not just throughput.** Growing depth is the leading indicator.
+7. **Monitor queue depth, not only throughput.** Growing depth is the leading indicator.
 8. **Rate limit external API calls.** Respect third-party limits or get banned.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full queue architecture |
 | `--tech <name>` | Target technology |
 | `--diagnose` | Diagnose health issues |

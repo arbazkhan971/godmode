@@ -33,11 +33,10 @@ Asset pipeline: Propshaft + Import Maps | esbuild | Vite
 CSS: Tailwind | Bootstrap | Vanilla
 Deployment: Docker | Kamal | Heroku | AWS/GCP
 ```
-
 ```
 RAILS SETUP DECISIONS:
 | Decision | Choice & Justification |
-|---|---|
+|--|--|
 | Full-stack vs API-only | Full-stack: Hotwire for interactivity |
 |  | API-only: --api flag, JSON responses |
 | Database | PostgreSQL for production ALWAYS |
@@ -47,11 +46,8 @@ RAILS SETUP DECISIONS:
 | Authentication | Rails 8: built-in auth generator |
 |  | Rails 7: Devise or custom |
 | JavaScript | Import Maps (simple, no build) |
-|  | esbuild (if heavy JS needed) |
-| CSS | Tailwind (Rails default) |
-| Testing | RSpec + FactoryBot + Capybara |
+  ...
 ```
-
 Rules:
 - ALWAYS use PostgreSQL in production — SQLite is for development and testing only
 - For Rails 8, prefer built-in generators for auth, sessions, and background jobs
@@ -64,7 +60,7 @@ Follow the Rails Way rigorously:
 ```
 RAILS CONVENTIONS:
 | Convention | Rule |
-|---|---|
+|--|--|
 | Model naming | Singular, CamelCase (Order) |
 | Table naming | Plural, snake_case (orders) |
 | Controller naming | Plural, CamelCase (OrdersController) |
@@ -74,10 +70,8 @@ RAILS CONVENTIONS:
 | Primary keys | id (auto-increment or UUID) |
 | Timestamps | created_at, updated_at (auto) |
 | Boolean columns | Adjective (active, published) |
-| Routes | RESTful resources |
-| Partials | _prefix (e.g., _form.html.erb) |
+  ...
 ```
-
 Rules:
 - Follow Rails conventions religiously — "convention over configuration" is the framework's superpower
 - Fat models are an anti-pattern too — extract to service objects, query objects, and concerns
@@ -96,11 +90,10 @@ class Order < ApplicationRecord
  has_many :order_items, dependent: :destroy
  has_many :products, through: :order_items
 ```
-
 ```
 ACTIVERECORD PERFORMANCE PATTERNS:
 | Pattern | When to Use |
-|---|---|
+|--|--|
 | includes(:assoc) | Default N+1 prevention |
 | preload(:assoc) | Separate queries (large joins) |
 | eager_load(:assoc) | Need WHERE on association |
@@ -110,12 +103,8 @@ ACTIVERECORD PERFORMANCE PATTERNS:
 | in_batches(of: 1000) | Batch updates/deletes |
 | .count /.sum /.average | Database-level aggregation |
 | counter_cache: true | Avoid COUNT queries |
-| strict_loading! | Detect N+1 in development |
-| explain | Analyze query execution plan |
-| add_index | Every FK + frequent WHERE cols |
-| database views | Complex reporting queries |
+  ...
 ```
-
 Rules:
 - ALWAYS use `includes` to eager load associations displayed in views/serializers
 - Enable `strict_loading` in development/test to catch N+1 queries early
@@ -134,7 +123,6 @@ HOTWIRE ARCHITECTURE:
   Turbo Streams — Real-time updates via WebSocket or HTTP
   Stimulus — Sprinkle JavaScript behavior on HTML
 ```
-
 ```erb
 <!-- Turbo Frame — Independent page section -->
 <%= turbo_frame_tag "order_#{@order.id}" do %>
@@ -148,15 +136,12 @@ HOTWIRE ARCHITECTURE:
 <!-- Turbo Stream — Real-time update from controller -->
 <!-- orders_controller.rb -->
 def update
- @order.update!(order_params)
- respond_to do |format|
- format.turbo_stream # renders update.turbo_stream.erb
+  ...
 ```
-
 ```
 HOTWIRE DECISION GUIDE:
 | Need | Use |
-|---|---|
+|--|--|
 | SPA-like page transitions | Turbo Drive (automatic) |
 | Update one section on click | Turbo Frames |
 | Real-time updates to all viewers | Turbo Streams (broadcast) |
@@ -166,7 +151,6 @@ HOTWIRE DECISION GUIDE:
 | Complex interactive widget | Stimulus + Turbo Frames |
 | Full SPA (React/Vue needed) | Rails API-only + separate SPA |
 ```
-
 Rules:
 - Start with Turbo Drive (it is automatic) — it makes navigation instant with zero code
 - Use Turbo Frames before reaching for Stimulus — frames handle most "update this section" needs
@@ -185,11 +169,10 @@ class OrderConfirmationJob < ApplicationJob
  discard_on ActiveJob::DeserializationError
 
 ```
-
 ```
 BACKGROUND JOB STRATEGY:
 | Processor | When to Use |
-|---|---|
+|--|--|
 | Solid Queue (Rails 8) | Default for Rails 8 — DB-backed |
 |  | No Redis dependency, simple |
 | Sidekiq | High throughput, Redis-backed |
@@ -199,9 +182,8 @@ BACKGROUND JOB STRATEGY:
 
 JOB DESIGN RULES:
 - Jobs MUST stay idempotent — safe to retry
-- Jobs MUST accept simple arguments (IDs, not objects) for serialization
+  ...
 ```
-
 ### Step 6: Testing with RSpec & FactoryBot
 Comprehensive testing strategy:
 
@@ -213,11 +195,10 @@ RSpec.configure do |config|
  config.include Devise::Test::IntegrationHelpers, type: :request
  config.include ActiveJob::TestHelper
 ```
-
 ```
 TESTING STRATEGY:
 | Layer | Approach |
-|---|---|
+|--|--|
 | Models | RSpec + FactoryBot + Shoulda |
 | Controllers/Requests | RSpec request specs |
 | System/Integration | Capybara + Selenium |
@@ -227,9 +208,8 @@ TESTING STRATEGY:
 | API | Request specs + JSON assertions |
 | Turbo Streams | assert_turbo_stream in requests |
 
-TEST HELPERS:
+  ...
 ```
-
 Rules:
 - Use `build` over `create` when you don't need database persistence — faster tests
 - Use traits in factories for common variations (`:confirmed`, `:with_items`)
@@ -244,7 +224,7 @@ Verify the Rails application:
 ```
 RAILS VALIDATION:
 | Check | Status | Notes |
-|---|---|---|
+|--|--|--|
 | Follows Rails conventions | PASS | Naming, structure |
 | N+1 queries eliminated | PASS | includes/preload |
 | strict_loading in dev | PASS | Catches lazy loads |
@@ -254,10 +234,8 @@ RAILS VALIDATION:
 | Tests pass (RSpec green) | PASS | Models + requests |
 | FactoryBot factories valid | PASS | No orphan factories |
 | Credentials managed properly | PASS | Rails credentials |
-| Database migrations reversible | PASS | All have down() |
-| Strong parameters enforced | PASS | No mass assignment |
+  ...
 ```
-
 ```
 RAILS DELIVERY:
 
@@ -271,14 +249,8 @@ Artifacts:
 - Migrations: <N> database migrations
 - Validation: <PASS | NEEDS REVISION>
 
-Next steps:
--> /godmode:test — Increase test coverage
--> /godmode:secure — Security hardening audit
--> /godmode:deploy — Deploy with Kamal or Docker
--> /godmode:optimize — Performance tuning
--> /godmode:observe — Set up monitoring
+  ...
 ```
-
 Commit: `"rails: <app> — <N> models, <M> controllers, Hotwire, RSpec"`
 
 ## Auto-Detection
@@ -298,11 +270,8 @@ AUTO-DETECT SEQUENCE:
  - config/database.yml: adapter field (postgresql, mysql2, sqlite3)
  - DATABASE_URL environment variable
 4. Detect architecture choices:
- - config/application.rb: config.api_only? -> API mode
- - app/views/ presence -> full-stack
- - app/javascript/controllers/ -> Stimulus installed
+  ...
 ```
-
 ## Keep/Discard Discipline
 Each change either advances the branch or gets reverted.
 - **KEEP**: `bin/rails test` (or `rspec`) passes, no new N+1 queries, migrations reversible.
@@ -332,9 +301,8 @@ HARD RULES — NEVER VIOLATE:
 9. ALWAYS use strong parameters — no mass assignment vulnerabilities.
 10. NEVER use.all.each for large datasets — use find_each or in_batches.
 11. ALWAYS use build over create in factories when DB persistence is not needed.
-12. ALWAYS use request specs over controller specs (Rails recommendation).
+  ...
 ```
-
 ## Key Behaviors
 
 1. **Convention over configuration.** Follow the Rails Way. If you are fighting the framework, you are doing it wrong.
@@ -348,7 +316,7 @@ HARD RULES — NEVER VIOLATE:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Rails setup workflow |
 | `--api` | API-only Rails application |
 | `--hotwire` | Configure Hotwire (Turbo + Stimulus) |
@@ -369,7 +337,6 @@ Build status: <passing | failing | not-checked>
 Issues fixed: <N>
 Notes: <one-line summary>
 ```
-
 ## TSV Logging
 
 Append one TSV row to `.godmode/rails.tsv` after each invocation:
@@ -377,7 +344,6 @@ Append one TSV row to `.godmode/rails.tsv` after each invocation:
 ```
 timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
 ```
-
 Field definitions:
 - `timestamp`: ISO-8601 UTC
 - `project`: directory name from `basename $(pwd)`
@@ -425,7 +391,5 @@ IF migration fails:
  3. Check for lock timeout on large tables (use strong_migrations gem)
  4. For failed production migration → write a corrective migration, never edit existing ones
 
-IF N+1 queries detected:
- 1. Add includes() or eager_load() to the query
- 2. Use strict_loading! on associations to catch new N+1s
+  ...
 ```

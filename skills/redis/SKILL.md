@@ -349,7 +349,7 @@ STOP when ANY of these are true:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Redis connection refused | Check if Redis is running. Verify host/port configuration. Check firewall rules. Test with `redis-cli ping`. |
 | Cache stampede (thundering herd) | Use lock-based cache refresh. Add jitter to TTLs. Implement stale-while-revalidate pattern. |
 | Memory limit reached (OOM) | Check `maxmemory-policy`. Use LRU/LFU eviction. Audit key sizes with `redis-cli --bigkeys`. Set TTLs on all cache keys. |

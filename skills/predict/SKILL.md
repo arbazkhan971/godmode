@@ -124,7 +124,7 @@ Each stage prints structured output:
 - **Synthesis (meta-expert):**
   ```
 | Persona | Verdict | Confidence | Risks |
-|---|---|---|---|
+|--|--|--|--|
 | Technical Architect | YES | 8 | 2 |
 | Security Researcher | YES | 8 | 1 |
 | Release Lead | REVISE | 6 | 3 |
@@ -160,6 +160,13 @@ timestamp	feature	persona	verdict	confidence	risk_count	top_risk	mitigation	gate
 - **If all personas agree (3 YES or 3 NO):** Flag as potential groupthink. Print: "WARNING: unanimous verdict. Evaluate: is the proposal obviously good/bad, or are we missing edge cases?" Still proceed with the gate result.
 - **If the codebase is new (no existing files referenced in spec):** Personas evaluate against the proposed architecture only. Technical Architect focuses on design patterns. Security Researcher focuses on planned auth/data flow. Release Lead focuses on deployment strategy. Note in output: "greenfield evaluation — risks are architectural, not code-specific."
 - **If confidence scores vary widely (stddev > 2.5):** Print: "HIGH VARIANCE: personas disagree significantly. Review individual assessments carefully." Report each persona's reasoning.
+
+## Hard Rules
+1. Every risk must have file:line + concrete mitigation — vague risks get 2 retries then marked incomplete.
+2. Gate is pure voting: PROCEED = 3 YES, REVISE = 1-2 REVISE + 0 NO, RETHINK = any NO.
+3. Never gate on incomplete findings — exclude from gate calculation, log separately.
+4. Each persona evaluates from their domain only — no cross-talk between persona outputs.
+5. Praise must be non-obvious and specific — "looks clean" is rejected.
 
 ## Anti-Patterns
 1. **Vague risks without file:line references.** "Add error handling" is rejected without specifics. "Missing null check on `user.id` at `src/auth/login.ts:42` causes crash when user is deleted mid-session" is accepted. Vague findings get 2 retries then marked incomplete.
@@ -204,7 +211,7 @@ Predict: Gate: PROCEED. Verdicts: 3Y 0R 0N. Validated risks: 4. Incomplete: 0.
 
 ### Example 2: RETHINK gate — Release Lead says NO
 ```
-$ /godmode:predict
+$ /godmode:predict websocket-notifications
 Evaluating: real-time WebSocket notifications (67 lines)
 
 [Technical Architect] VERDICT: YES | CONFIDENCE: 7/10
@@ -235,7 +242,7 @@ Predict: Gate: RETHINK. Verdicts: 1Y 1R 1N. Validated risks: 4. Incomplete: 1.
 
 ### Example 3: Greenfield evaluation (no existing codebase)
 ```
-$ /godmode:predict
+$ /godmode:predict db-migration-cli
 Evaluating: new CLI tool for database migrations (85 lines)
 Note: greenfield evaluation — risks are architectural, not code-specific.
 

@@ -46,7 +46,7 @@ Choose the right package manager for the project:
 ```
 PACKAGE MANAGER COMPARISON:
 | Feature | npm | yarn | pnpm | bun |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Speed | Moderate | Fast | Fastest | Fastest |
 | Disk usage | High | High | Low | Low |
 | node_modules | Flat | Flat/PnP | Symlinked | Flat |
@@ -101,7 +101,7 @@ Publish libraries to npm or private registries:
 ```
 PUBLISHING CHECKLIST:
 | Step | Status |
-|---|---|
+|--|--|
 | 1. package.json fields complete | name, version, desc, |
 |  | main, types, exports, |
 |  | files, license, repo |
@@ -121,7 +121,7 @@ Scan and fix dependency vulnerabilities:
 ```
 SECURITY AUDIT WORKFLOW:
 | Step | Command |
-|---|---|
+|--|--|
 | 1. Run audit | npm audit |
 |  | pnpm audit |
 |  | yarn audit |
@@ -140,7 +140,7 @@ Resolve dependency conflicts and version mismatches:
 ```
 VERSION RESOLUTION:
 | Problem | Solution |
-|---|---|
+|--|--|
 | Conflicting peer deps | --legacy-peer-deps or update |
 |  | parent package |
 | Duplicate packages | npm dedupe / pnpm dedupe |
@@ -187,7 +187,7 @@ PEER DEPENDENCY CONFLICTS:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full package management assessment |
 | `--audit` | Run security audit with remediation |
 | `--outdated` | Check for outdated dependencies |
@@ -250,7 +250,7 @@ After each npm skill invocation, emit a structured report:
 ```
 PACKAGE MANAGEMENT REPORT:
 | Package manager | <npm | pnpm | yarn | bun> |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Lock file | COMMITTED / MISSING |
 | Dependencies | <N> prod / <N> dev |
 | Total (transitive) | <N> |

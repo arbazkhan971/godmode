@@ -168,7 +168,7 @@ Commit: `"grpc: <service> — <N> RPCs, streaming + health checks configured"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full gRPC design workflow |
 | `--proto` | Proto files only |
 | `--generate` | Code generation from existing protos |

@@ -62,6 +62,13 @@ STOP when FIRST of:
   - stuck: >5 vague findings discarded without actionable replacements
 ```
 
+## Hard Rules
+1. Every finding must include file:line + suggested fix (code snippet) — no vague feedback.
+2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Never auto-fix logic, APIs, or security code.
+3. Review against spec + tests, not personal style — no bikeshedding.
+4. Score is median of all 4 agents. Score < 8 triggers re-review (max 3 iterations).
+5. Deduplicate same file:line across agents — keep highest severity, first agent's fix.
+
 ## Rules
 1. Every finding: file:line + suggested fix (code). No vague feedback like 'improve' or 'could be better'.
 2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Review against spec + tests, not personal style. No bikeshedding.
@@ -78,7 +85,7 @@ If your platform lacks parallel agent dispatch:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Diff too large (>500 lines) | Split into per-directory reviews. Review each directory independently, then merge findings. |
 | Agent produces vague findings without file:line | Discard finding. Re-run agent with explicit instruction: "Every finding must include file:line and a code snippet fix." |
 | Auto-fix introduces test failure | Revert the auto-fix commit. Reclassify the NIT as SHOULD-FIX for human review. |

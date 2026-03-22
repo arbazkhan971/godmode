@@ -38,7 +38,7 @@ Establish the shared vocabulary between developers and domain experts:
 ```
 UBIQUITOUS LANGUAGE — <Domain Name>:
 | Term | Definition |
-|---|---|
+|--|--|
 | <Term 1> | <Precise definition as understood by domain experts |
 |  | AND developers. No ambiguity.> |
 | <Term 2> | <Definition. Note: "Order" in the Sales context |
@@ -92,7 +92,7 @@ Identify what triggers each event:
 ```
 COMMANDS AND TRIGGERS:
 | Command | Actor | Produces Event |
-|---|---|---|
+|--|--|--|
 | PlaceOrder | Customer | OrderPlaced |
 | ProcessPayment | Payment Gateway | PaymentReceived |
 | ReserveInventory | System (auto) | InventoryReserved |
@@ -121,18 +121,13 @@ AGGREGATES:
 #### Phase 5: Bounded Context Discovery
 Draw boundaries around aggregates that share a ubiquitous language:
 ```
-BOUNDED CONTEXTS:
-  ┌─────────────────────────┐  ┌──────────────────────────────┐
-|  | ORDERING CONTEXT |  | FULFILLMENT CONTEXT |  |
-│  │                         │  │                              │  │
-|  | Aggregates: |  | Aggregates: |  |
-|  | - Order |  | - Shipment |  |
-|  | - Cart |  | - Inventory |  |
-│  │                         │  │                              │  │
-|  | "Order" = items a |  | "Order" = items to pick |  |
-|  | customer wants to buy |  | and ship from warehouse |  |
-  └─────────────────────────┘  └──────────────────────────────┘
-  ┌─────────────────────────┐  ┌──────────────────────────────┐
+BOUNDED CONTEXTS (list each with its aggregates and ubiquitous language):
+  [ORDERING CONTEXT]
+    Aggregates: Order, Cart
+    "Order" here means: items a customer wants to buy
+  [FULFILLMENT CONTEXT]
+    Aggregates: Shipment, Inventory
+    "Order" here means: items to pick and ship from warehouse
 ```
 
 ### Step 4: Context Mapping
@@ -245,16 +240,16 @@ src/
 1. **Start with events, not entities.** Events reveal the real behavior of the domain. Entities emerge from grouping events. Starting with entities leads to CRUD thinking.
 2. **Ubiquitous language is non-negotiable.** If developers use different terms than domain experts, the model is wrong. Code must speak the domain language.
 3. **Bounded contexts are social, not technical.** Context boundaries follow team boundaries and linguistic boundaries, not technology or deployment boundaries.
-4. **Aggregates are small.** If an aggregate contains more than 3-4 entities, it is probably too large. Small aggregates enable better concurrency and simpler code.
+4. **Aggregates are small.** If an aggregate contains more than 3-4 entities, it is too large. Small aggregates enable better concurrency and simpler code.
 5. **Reference by ID across aggregates.** Never hold direct object references to entities in other aggregates. Use IDs and resolve them when needed.
-6. **Eventual consistency between contexts.** Do not try to make cross-context operations immediately consistent. Use domain events and accept eventual consistency.
+6. **Eventual consistency between contexts.** Never force immediate consistency across contexts. Use domain events and accept eventual consistency.
 7. **Not everything needs DDD.** CRUD operations, reports, and generic domains do not benefit from tactical DDD patterns. Reserve the investment for the core domain.
 8. **Event storming is collaborative.** Even in a solo coding session, walk through the event storming phases. The structured thinking process catches model errors early.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full DDD session: discovery, event storming, contexts, tactical design |
 | `--strategic` | Strategic design only (bounded contexts, context map, ubiquitous language) |
 | `--tactical` | Tactical design only (aggregates, entities, value objects, events) |

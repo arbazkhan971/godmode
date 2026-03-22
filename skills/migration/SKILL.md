@@ -34,9 +34,8 @@ MIGRATION ASSESSMENT:
 |  Target State:                                           |
 |    Language/Framework: <target tech stack>                |
 |    Architecture:       <target architecture>              |
-|    Rationale:          <why migrate>                      |
+  ...
 ```
-
 Classification of migration types:
 ```
 MIGRATION TYPE CLASSIFICATION:
@@ -57,13 +56,13 @@ BIG BANG MIGRATION:
 |           downtime, clean break needed                    |
 |  Risk:    HIGH — all-or-nothing, no gradual rollback     |
 |  Timeline: Short but concentrated                        |
-|  Steps:                                                  |
+|  Migration Steps:                                                  |
 |  1. Build new system in parallel                         |
 |  2. Freeze feature development on old system             |
 |  3. Migrate all data in a maintenance window             |
 |  4. Switch DNS/routing to new system                     |
 |  5. Verify and monitor                                   |
-|  6. Decommission old system after stability period       |
+  ...
 ```
 
 #### Strategy: Strangler Fig
@@ -90,15 +89,12 @@ PARALLEL RUN:
 |           correctness before switching                   |
 |  Risk:    MEDIUM — double infrastructure cost, but       |
 |           high confidence in correctness                 |
-|  Steps:                                                  |
+|  Parallel Run Steps:                                                  |
 |  1. Build new system alongside old                       |
 |  2. Send traffic to BOTH systems (shadow traffic or      |
 |     dual-write)                                          |
 |  3. Compare outputs/results automatically                |
-|  4. Fix discrepancies until match rate > 99.9%           |
-|  5. Switch primary to new system                         |
-|  6. Keep old system as fallback for N days               |
-|  7. Decommission old system                              |
+  ...
 ```
 
 #### Strategy: Branch by Abstraction
@@ -109,13 +105,13 @@ BRANCH BY ABSTRACTION:
 |  When:    Internal component replacement, same API       |
 |           contract, feature-flag controlled               |
 |  Risk:    LOW — abstraction isolates change              |
-|  Steps:                                                  |
+|  Strangler Steps:                                                  |
 |  1. Create abstraction layer (interface/adapter)         |
 |  2. Route existing code through abstraction              |
 |  3. Build new implementation behind same abstraction     |
 |  4. Feature flag between old and new implementation      |
 |  5. Gradually roll out new implementation                |
-|  6. Remove old implementation and abstraction layer      |
+  ...
 ```
 
 ### Step 3: Language/Framework Migration Planning
@@ -168,7 +164,7 @@ MONOLITH -> MICROSERVICES PLAN:
 |  - Create service with its own repo, CI/CD, database     |
 |  - Implement API (REST/gRPC) matching module interface   |
 |  - Deploy behind feature flag                            |
-|  - Parallel run: monolith module + new service           |
+  ...
 ```
 
 ### Step 4: Data Migration with Zero Downtime
@@ -189,7 +185,6 @@ ZERO-DOWNTIME DATA MIGRATION:
 |  Backfill script pattern:                                |
 |  ```                                                     |
 ```
-
 ### Step 5: Parallel Run Verification
 
 For validating correctness before full cutover:
@@ -208,7 +203,6 @@ PARALLEL RUN SETUP:
 |                  +-----------+     +------------+         |
 |                                         |                |
 ```
-
 #### Comparison Script Template
 ```python
 import json
@@ -237,7 +231,6 @@ ROLLBACK PLAN:
 |  4. Notify stakeholders of rollback                      |
 |  5. Post-mortem: why did the migration fail?             |
 ```
-
 ### Step 7: Migration Tracking and Reporting
 
 ```
@@ -254,7 +247,6 @@ MIGRATION PROGRESS:
 |    Parallel run match:   <percentage>                    |
 |  Timeline:                                               |
 ```
-
 Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 
 ### Step 8: Commit and Report
@@ -265,7 +257,6 @@ Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 3. Commit: "migration: <source> -> <target> -- <phase> (<strategy>)"
 4. Report progress and next steps
 ```
-
 ## Key Behaviors
 
 1. **Assess before migrating.** Never start a migration without understanding the full scope: code size, dependencies, data volume, team capacity, and timeline. Underestimating scope is the number one cause of failed migrations.
@@ -280,7 +271,7 @@ Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive migration assessment and planning |
 | `--assess` | Assessment only — analyze scope without planning |
 | `--plan` | Generate detailed migration plan |
@@ -300,12 +291,8 @@ ON project scan:
     SUGGEST "Pages Router -> App Router migration detected. Activate /godmode:migration?"
 
   IF package.json has framework version < latest_major:
-    SUGGEST "Framework upgrade available ({current} -> {latest}). Activate /godmode:migration?"
-
-  IF docker-compose.yml has single large service AND code has module boundaries:
-    SUGGEST "Monolith with module boundaries detected. Activate /godmode:migration for microservice extraction?"
+  ...
 ```
-
 ## Iterative Migration Protocol
 
 ```
@@ -318,7 +305,6 @@ FOR each component (fewest dependencies first):
   6. IF match_rate >= 99.9%: ramp 5% -> 25% -> 50% -> 100%
   7. REMOVE old implementation after 2-week stability period
 ```
-
 ## HARD RULES
 
 ```
@@ -334,11 +320,8 @@ FOR each component (fewest dependencies first):
 4. NEVER remove the old system until the new system runs stable
    in production for at least 2 weeks.
 
-5. ALWAYS use feature flags for cutover. Never switch traffic via deployment.
-   Flags flip in seconds; deployments take minutes.
-
+  ...
 ```
-
 ## Output Format
 Print on completion:
 ```
@@ -386,9 +369,7 @@ IF migration breaks a feature in production:
   → If feature flag not in place: revert deployment, then add feature flag before retrying
   → Investigate: was this a test coverage gap or a parallel run blind spot?
   → Add test case covering the broken scenario before retrying migration
-
-IF data migration loses records:
-  → Stop dual-write immediately
+  ...
 ```
 
 ## Keep/Discard Discipline
@@ -407,4 +388,3 @@ Stop the migration skill when:
 3. Parallel run match rate exceeds 99.9% for data-critical migrations.
 4. Data integrity verified: row count match, checksum match, spot-check sample, referential integrity.
 5. Old system kept running for at least 2 weeks after full cutover.
-

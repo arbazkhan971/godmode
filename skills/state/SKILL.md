@@ -32,10 +32,8 @@ State machines:     <XState | Robot | Custom | None>
 Routing state:      <URL params | search params | hash | none>
 Form state:         <React Hook Form | Formik | Vuelidate | Custom | Unmanaged>
 Persistence:        <localStorage | sessionStorage | IndexedDB | cookies | none>
-SSR hydration:      <yes | no | partial>
-Pain points:        <prop drilling | stale data | race conditions | over-rendering | complexity>
+  ...
 ```
-
 Scan the codebase for state patterns:
 ```bash
 # Detect state management libraries
@@ -53,17 +51,14 @@ All application state falls into one of these categories. Correct classification
 ```
 STATE CLASSIFICATION:
 | Category          | Lifetime         | Examples                         | Recommended Tool           |
-|---|---|---|---|
+|--|--|--|--|
 | Server state      | Cache lifetime   | API data, user profiles,         | React Query, SWR,          |
 |                   |                  | product listings, search results | Apollo Client, RTK Query   |
 | Client state      | Session/tab      | UI toggles, sidebar open/close,  | Zustand, Jotai, Signals,   |
 | (UI)              |                  | active tab, modal visibility     | useState, Pinia            |
 | Client state      | Session/tab      | Shopping cart, form wizard,       | Zustand, Redux, MobX,      |
-| (Domain)          |                  | multi-step workflow, selections  | Pinia                      |
-| Form state        | Component mount  | Input values, validation errors, | React Hook Form, Formik,   |
-|                   |                  | dirty/touched tracking           | Vuelidate, native          |
+  ...
 ```
-
 **Key rule:** If data comes from a server, it is server state. Do NOT put it in Redux/Zustand/Pinia. Use a server-state tool (React Query, SWR, Apollo). This single distinction eliminates 80% of state management complexity.
 
 ### Step 3: Select State Management Solution
@@ -73,37 +68,27 @@ STATE CLASSIFICATION:
 ```
 FRONTEND STATE DECISION MATRIX:
 | Criteria      | Redux TK | Zustand| Jotai    | MobX   | Pinia   | Signals  |
-|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|---|
 | Bundle size   | ~11KB    | ~1KB   | ~2KB     | ~16KB  | ~2KB    | ~1KB     |
 | Boilerplate   | Medium   | Low    | Low      | Low    | Low     | Low      |
 | DevTools      | Excellent| Good   | Good     | Good   | Excellent| Minimal |
 | TypeScript    | Excellent| Excellent| Excellent| Good  | Excellent| Excellent|
 | SSR support   | Good     | Good   | Good     | Fair   | Excellent| Good    |
-| Learning curve| Steep    | Gentle | Gentle   | Medium | Gentle  | Gentle   |
-| Best for      | Large    | Medium | Atomic   | Complex| Vue     | Fine-    |
-|               | teams    | apps   | state    | domain | apps    | grained  |
-
-RECOMMENDATION:
+  ...
 ```
-
 #### 3b: Server State Library Selection
 
 ```
 SERVER STATE DECISION MATRIX:
 | Criteria         | React Query | SWR    | Apollo Client| RTK Query|
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Protocol         | Any (REST,  | Any    | GraphQL      | Any      |
 |                  | GraphQL)    |        | (primary)    |          |
 | Cache control    | Fine-grained| Basic  | Normalized   | Tag-based|
 | Devtools         | Excellent   | None   | Excellent    | Good     |
 | Optimistic UI    | Built-in    | Manual | Built-in     | Built-in |
-| Offline support  | Plugin      | Manual | Built-in     | Manual   |
-| SSR/SSG          | Excellent   | Good   | Excellent    | Good     |
-| Bundle size      | ~12KB       | ~4KB   | ~33KB        | ~11KB    |
-| Best for         | REST APIs   | Simple | GraphQL      | Redux    |
-|                  |             | fetch  | APIs         | users    |
+  ...
 ```
-
 ### Step 4: Design State Architecture
 
 #### 4a: Store Structure Design
@@ -119,15 +104,8 @@ Root:
 │   ├── ['orders', { page, limit }] # Paginated order cache
 │   └── ['notifications']          # Notification feed cache
 │
-├── client state (Zustand / Redux / Jotai)
-│   ├── ui/
-│   │   ├── sidebar: { isOpen, width }
-│   │   ├── modal: { activeModal, props }
-│   │   └── theme: { mode, accent }
-│   ├── domain/
-│   │   ├── cart: { items, appliedCoupon }
+  ...
 ```
-
 #### 4b: Zustand Store Example
 
 ```typescript
@@ -138,7 +116,6 @@ import { immer } from 'zustand/middleware/immer';
 
 interface CartItem {
 ```
-
 #### 4c: Redux Toolkit Slice Example
 
 ```typescript
@@ -146,10 +123,10 @@ interface CartItem {
 import { createSlice, createSelector, PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../store';
 
-interface CartItem {
+// Reuse shared CartItem interface from types/
+interface CartItem { // same shape as Zustand example
   productId: string;
 ```
-
 #### 4d: Jotai Atoms Example
 
 ```typescript
@@ -157,10 +134,9 @@ interface CartItem {
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-interface CartItem {
+type CartItem = { // same shape, using type alias for Jotai convention
   productId: string;
 ```
-
 ### Step 5: Server State with React Query
 
 #### 5a: Query Key Factory
@@ -184,8 +160,7 @@ QUERY HOOKS:
 MUTATION HOOKS:
   - onSuccess: update specific cache with setQueryData + invalidate lists
   - For optimistic updates: onMutate → cancel queries, snapshot previous, update cache
-  - onError → rollback to snapshot
-  - onSettled → invalidate to re-sync with server
+  ...
 ```
 
 ### Step 6: State Machine Design
@@ -201,13 +176,8 @@ Use a state machine when:
 [x] The flow has branching logic (checkout: shipping -> payment -> review -> confirm)
 [x] Complex async workflows (file upload: selecting -> uploading -> processing -> done)
 [x] WebSocket/real-time lifecycle management (connecting -> connected -> disconnected -> reconnecting)
-
-Do NOT use a state machine when:
-[ ] Simple boolean toggle (isOpen, isDarkMode)
-[ ] CRUD operations (React Query handles this better)
-[ ] Form state (form libraries handle this better)
+  ...
 ```
-
 #### 6b: XState Machine Pattern
 
 ```typescript
@@ -218,7 +188,6 @@ Do NOT use a state machine when:
 //   - Type context and events explicitly
 //   - Use assign() for context mutations
 ```
-
 ### Step 7: State Persistence and Hydration
 
 #### 7a: Persistence Strategy
@@ -226,19 +195,14 @@ Do NOT use a state machine when:
 ```
 PERSISTENCE STRATEGY:
 | Storage           | Capacity          | Speed         | Use Case          |
-|---|---|---|---|
+|--|--|--|--|
 | localStorage      | ~5-10 MB          | Synchronous   | Theme, prefs,     |
 |                   |                   |               | small state       |
 | sessionStorage    | ~5-10 MB          | Synchronous   | Tab-specific,     |
 |                   |                   |               | form drafts       |
 | IndexedDB         | ~50MB-unlimited   | Async         | Large datasets,   |
-|                   |                   |               | offline data      |
-| cookies           | ~4 KB             | Synchronous   | Auth tokens,      |
-|                   |                   |               | SSR-accessible    |
-| URL params        | ~2 KB practical   | Synchronous   | Shareable state   |
-|                   |                   |               | (filters, pages)  |
+  ...
 ```
-
 #### 7b: SSR Hydration Pattern
 
 ```
@@ -249,7 +213,6 @@ SSR HYDRATION RULES:
 4. Never read persisted state during SSR — restore in useEffect only
 5. Add hasHydrated flag to prevent flash of default content
 ```
-
 #### 7c: Cache Synchronization
 
 ```
@@ -262,7 +225,6 @@ REALTIME CACHE SYNC PATTERN (WebSocket + React Query):
 3. Clean up WebSocket on unmount
 4. Use query key factory for consistent key references
 ```
-
 ### Step 8: Report and Transition
 
 ```
@@ -274,12 +236,8 @@ REALTIME CACHE SYNC PATTERN (WebSocket + React Query):
 |  State categories identified:                                 |
 |  - Server state:   <N> query keys                             |
 |  - Client (UI):    <N> stores/atoms                           |
-|  - Client (domain):<N> stores/atoms                           |
-|  - URL state:      <N> parameters                             |
-|  - Persisted:      <N> items                                  |
-|  - State machines: <N> machines                               |
+  ...
 ```
-
 Commit: `"state: design <description> state architecture"`
 
 ## Key Behaviors
@@ -288,17 +246,10 @@ Commit: `"state: design <description> state architecture"`
 2. **Minimize state.** If you compute it from other state, it is derived state -- use selectors, not stored values. If it fits in the URL, put it in the URL. Less state means fewer bugs.
 3. **Colocate state.** State should live as close to where it is used as possible. useState > Zustand store > Redux global. Only lift state when two distant components genuinely need it.
 4. **Server state is a cache, not a store.** You do not own server data. You cache it. It can become stale. React Query/SWR handle staleness, refetching, and garbage collection. Redux does not.
-5. **Optimistic updates need rollback.** Every optimistic update must have an onError rollback path. Snapshot previous state before mutating. Invalidate after settling.
-6. **State machines prevent impossible states.** If you find yourself writing `isLoading && !isError && !isSuccess`, you need a state machine. A machine can only be in one state at a time.
-7. **Persistence is not free.** localStorage is synchronous and blocks the main thread. IndexedDB is async but complex. Choose based on data size and access pattern.
-8. **Selectors prevent re-renders.** Always access store state through selectors that pick only what the component needs. Never subscribe to the entire store.
-9. **URL state is shareable state.** Put filters, pagination, sort order, and selected items in the URL so users can share and bookmark.
-10. **Keep hydration idempotent.** SSR hydration produces the same result whether it runs once or twice. No side effects in hydration logic.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive state management design workflow |
 | `--audit` | Audit current state architecture and identify issues |
 | `--classify` | Classify all state in the codebase by category |
@@ -321,18 +272,14 @@ After each state management skill invocation, emit a structured report:
 ```
 STATE ARCHITECTURE REPORT:
 | Framework | <React | Vue | Svelte | etc> |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Server state tool | <React Query | SWR | Apollo> |
 | Client state tool | <Zustand | Jotai | Pinia> |
 | Stores created | <N> |
 | Selectors | <N> |
 | Derived state | <N> computed values |
-| Persistence | <localStorage | sessionStorage | none> |
-| Tests | <N> passing, <N> failing |
-| Re-render issues | <N> found / <N> fixed |
-| Verdict | PASS | NEEDS REVISION |
+  ...
 ```
-
 ## TSV Logging
 
 Log every state architecture decision for tracking:
@@ -342,7 +289,6 @@ timestamp	skill	store	type	tool	selectors	tests_pass	status
 2026-03-20T14:00:00Z	state	authStore	client	zustand	4	6/6	pass
 2026-03-20T14:05:00Z	state	productsQuery	server	react-query	2	3/3	pass
 ```
-
 ## Success Criteria
 
 The state skill is complete when ALL of the following are true:
@@ -354,7 +300,6 @@ The state skill is complete when ALL of the following are true:
 6. Persistence (if any) excludes sensitive data (no auth tokens in localStorage)
 7. Optimistic updates have rollback handlers for error cases
 8. State architecture is documented with a state flow diagram
-
 ## Error Recovery
 
 ```
@@ -363,17 +308,6 @@ IF component re-renders excessively:
   2. Check for new object/array references created on every render
   3. Use React DevTools Profiler (or equivalent) to identify the trigger
   4. Add React.memo or useMemo only after identifying the specific cause
-
-IF optimistic update causes stale UI:
-  1. Verify the onError rollback restores the exact pre-mutation snapshot
-  2. Check that the cache invalidation after mutation re-fetches fresh data
-  3. Test the rollback path explicitly (simulate server error)
-  4. If rollback fails, fall back to pessimistic update (wait for server confirmation)
-
-IF hydration mismatch occurs with persisted state:
-  1. Ensure persisted state is only restored in useEffect (not during SSR)
-  2. Use a hydration-safe pattern: render server default first, then apply persisted state
-```
 
 ## Auto-Detection
 
@@ -386,31 +320,8 @@ AUTO-DETECT SEQUENCE:
    - grep for '@tanstack/react-query', 'swr', '@apollo/client', 'urql' in package.json
 4. Detect form libraries:
    - grep for 'react-hook-form', 'formik', 'vee-validate' in package.json
-5. Detect persistence:
-   - grep for 'localStorage', 'sessionStorage', 'zustand/middleware' in src/
-6. Auto-configure: match state tool recommendations to detected framework
+  ...
 ```
-
-## Iterative State Architecture Loop
-
-```
-current_iteration = 0
-max_iterations = 10
-state_tasks = [classify_state, setup_server_state, setup_client_state, add_selectors, add_persistence, add_tests]
-
-WHILE state_tasks is not empty AND current_iteration < max_iterations:
-    task = state_tasks.pop(0)
-    1. Assess current state architecture for this task
-    2. Implement the change (new store, selector, test, persistence)
-    3. Verify: no TypeScript errors, no re-render regressions
-    4. Run tests: all passing
-    5. IF tests fail → revert and investigate
-    6. IF passing → commit: "state: <action> for <store/feature>"
-    7. current_iteration += 1
-
-POST-LOOP: Run full test suite + re-render profiling to verify no regressions
-```
-
 ## Keep/Discard Discipline
 ```
 After EACH state architecture change:
@@ -421,8 +332,7 @@ After EACH state architecture change:
      - DISCARD if tests fail OR re-render count increased OR new derived state stored.
   4. COMMIT kept changes. Revert discarded changes before the next iteration.
 
-Never keep a state change that introduces full-store subscriptions.
-Never keep an optimistic update without a tested rollback path.
+  ...
 ```
 
 ## Stop Conditions

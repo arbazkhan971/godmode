@@ -37,7 +37,6 @@ Resource categories:
 Total monthly spend: $<amount>
 Month-over-month trend: <increasing/stable/decreasing> (<percentage>)
 ```
-
 ### Step 2: Utilization Analysis
 Measure actual usage versus provisioned capacity:
 
@@ -62,7 +61,7 @@ Thresholds:
 ```
 STORAGE UTILIZATION:
 | Bucket/Volume | Size | Access | Last Hit | Verdict |
-|--|--|--|--|--|
+|--|--:|--|--|--|
 | <bucket-1> | 2.3 TB | Frequent | Today | OK |
 | <bucket-2> | 500 GB | None | 90d ago | ARCHIVE |
 | <volume-1> | 1 TB | None | Never | DELETE |
@@ -73,7 +72,7 @@ STORAGE UTILIZATION:
 ```
 DATABASE UTILIZATION:
 | Instance | Type | Avg CPU | Storage | Verdict |
-|--|--|--|--|--|
+|--|--|--:|--:|--|
 | <rds-prod> | db.r5.xl | 35% | 40% | OK |
 | <rds-staging> | db.r5.xl | 5% | 10% | OVERSIZE |
 | <rds-dev> | db.m5.lg | 2% | 5% | SCHEDULE |
@@ -85,7 +84,7 @@ Identify resources that cost money but provide no value:
 ```
 WASTE DETECTION:
 | Category | Count | Monthly Cost | Action |
-|---|---|---|---|
+|--|--|--|--|
 | Unattached EBS vols | 12 | $340 | DELETE |
 | Old snapshots (>90d) | 45 | $180 | DELETE |
 | Idle load balancers | 3 | $75 | DELETE |
@@ -97,14 +96,13 @@ WASTE DETECTION:
 
 Total identifiable waste: $4,224/month ($50,688/year)
 ```
-
 ### Step 4: Right-Sizing Recommendations
 For each oversized or undersized resource, recommend the optimal size:
 
 ```
 RIGHT-SIZING RECOMMENDATIONS:
 | Resource | Current | Recommended | Monthly Savings |
-|---|---|---|---|
+|--|--|--|--|
 | <instance-1> | m5.2xlarge | m5.large | $180 (65% less) |
 | <rds-staging> | db.r5.xl | db.t3.medium | $420 (78% less) |
 | <cache-prod> | r6g.xlarge | r6g.large | $95 (50% less) |
@@ -113,7 +111,6 @@ RIGHT-SIZING RECOMMENDATIONS:
 Basis: 14-day P95 utilization data.
 Risk: LOW — all recommendations leave 40%+ headroom above P95.
 ```
-
 ### Step 5: Pricing Optimization
 Recommend pricing model changes for stable workloads:
 
@@ -121,7 +118,7 @@ Recommend pricing model changes for stable workloads:
 ```
 RESERVATION RECOMMENDATIONS:
 | Resource | On-Demand | Reserved(1y) | Savings |
-|---|---|---|---|
+|--|--|--|--|
 | Prod compute (6x) | $2,400/mo | $1,560/mo | $840/mo (35%) |
 | Prod database (2x) | $1,200/mo | $780/mo | $420/mo (35%) |
 | Prod cache (2x) | $380/mo | $247/mo | $133/mo (35%) |
@@ -146,7 +143,7 @@ Ensure all resources are properly tagged for cost attribution:
 ```
 TAGGING AUDIT:
 | Required Tag | Coverage | Missing | Action |
-|---|---|---|---|
+|--|--|--|--|
 | team | 72% | 45 res | TAG |
 | environment | 85% | 24 res | TAG |
 | project | 60% | 64 res | TAG |
@@ -158,14 +155,13 @@ Recommended tagging policy:
   RECOMMENDED: owner, created-by, expiry-date
   ENFORCED VIA: AWS Config rules / GCP Organization Policy / Azure Policy
 ```
-
 ### Step 7: Budget Alerts
 Set up proactive cost monitoring:
 
 ```
 BUDGET ALERT CONFIGURATION:
 | Budget | Monthly Limit | Alert at | Notify |
-|---|---|---|---|
+|--|--|--|--|
 | Total account | $15,000 | 50/80/100% | #finops, PagerDuty |
 | Production | $10,000 | 80/100% | #infra |
 | Development | $3,000 | 80/100% | #dev-team |
@@ -176,7 +172,6 @@ Anomaly detection:
   - Alert if any single resource exceeds $500/day
   - Weekly cost digest to #finops channel
 ```
-
 ### Step 8: Cost Optimization Report
 
 ```
@@ -197,7 +192,6 @@ Anomaly detection:
   Risk: LOW — all changes are reversible
   Confidence: HIGH — based on 14+ days of usage data
 ```
-
 ### Step 9: Commit and Transition
 1. Save report as `docs/cost/<date>-cost-optimization.md`
 2. Commit: `"cost: <scope> — $<savings>/month identified (<N> recommendations)"`
@@ -216,7 +210,7 @@ Anomaly detection:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full cost analysis and optimization report |
 | `--provider <aws\|gcp\|azure>` | Target specific cloud provider |
 | `--scope <account\|project\|service>` | Narrow analysis scope |
@@ -281,7 +275,6 @@ sort_by_savings(all_recommendations)
 generate_report(all_recommendations)
 git commit report
 ```
-
 ## Auto-Detection
 
 On activation, automatically detect cloud context:
@@ -313,7 +306,6 @@ AUTO-DETECT:
 -> Auto-detect account/project scope.
 -> Only ask user about time period if not obvious.
 ```
-
 ## Output Format
 Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%). Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict: {verdict}.`
 
@@ -379,15 +371,6 @@ After EACH cost optimization recommendation is applied:
 Never batch multiple optimizations without measuring between them — you cannot attribute savings if you change 5 things at once.
 ```
 
-## Stuck Recovery
-```
-IF >3 consecutive recommendations produce no measurable savings:
-  1. Re-read ALL resource utilization data — cached data may be stale.
-  2. Widen scope: look at data transfer costs, NAT gateway, DNS queries — hidden cost drivers.
-  3. Try a different category: if compute is already optimized, switch to storage or network.
-  4. If still stuck → log stop_reason=optimization_plateau, report total savings so far, move on.
-```
-
 ## Stop Conditions
 ```
 STOP the loop when ANY of these are true:
@@ -401,14 +384,3 @@ DO NOT STOP just because:
   - One category has no savings (other categories can)
   - Reserved instance analysis is complex (still do the analysis)
 ```
-
-## Simplicity Criterion
-```
-PREFER the simpler cost optimization:
-  - Terminate idle resources before rightsizing active ones
-  - Delete unattached storage before optimizing attached storage
-  - Use on-demand pricing with right-sizing before committing to reservations
-  - Fix tagging before building complex cost allocation dashboards
-  - Use built-in cloud provider tools (AWS Cost Explorer) before third-party solutions
-```
-

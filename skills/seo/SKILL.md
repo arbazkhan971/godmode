@@ -124,13 +124,13 @@ Commit: `"seo: <target> — fix <N> issues"` or `"seo: <target> — <verdict> (L
 3. **Structured data earns rich results.** JSON-LD dramatically improves CTR.
 4. **Meta tags are the sales pitch.** Write for humans with natural keywords.
 5. **Open Graph is not optional.** Missing OG = ugly social cards nobody clicks.
-6. **Measure with field data, not just lab.** CrUX + web-vitals for real user experience.
+6. **Measure with field data, not only lab.** CrUX + web-vitals for real user experience.
 7. **SEO is ongoing.** Audit every deploy, track rankings over time.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full SEO audit |
 | `--meta-only` | Meta tags only |
 | `--schema-only` | Structured data only |

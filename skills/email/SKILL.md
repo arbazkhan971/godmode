@@ -32,7 +32,7 @@ Compliance: CAN-SPAM, GDPR, CASL, one-click unsubscribe
 ```
 EMAIL SERVICE COMPARISON:
 | Feature | SendGrid | SES | Postmark | Resend |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Best for | Full-feat | Volume | Transact | Dev-DX |
 | Free tier | 100/day | 62K/mo* | 100/mo | 3K/mo |
 | Deliver. | Good | Good | Excellent | Good |
@@ -131,7 +131,7 @@ Save email service, templates, notification service, webhook handler, preference
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full notification system design and implementation |
 | `--email` | Email service integration only |
 | `--templates` | Email template design only |
@@ -204,7 +204,7 @@ Append to `.godmode/email-results.tsv`: `STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETA
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | API key missing | Print env var name, link to dashboard, verify with curl |
 | Template render error | Validate with preview API, fix syntax |
 | Webhook signature fails | Check signing secret, test with provider's test event |

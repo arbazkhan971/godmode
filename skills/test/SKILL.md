@@ -28,6 +28,20 @@ Print: "Coverage: {start}% → {coverage}% in {N} iterations"
 ## Output Format
 Print: `Test: coverage {start}% → {final}% (target: {target}%). {N} tests added in {iters} iterations. Status: {DONE|PARTIAL}.`
 
+## Hard Rules
+1. RED first — test must fail before implementation. Passes immediately = wrong test, delete and rewrite.
+2. One test per iteration — atomic, revertable. Assert return values, errors, or side effects.
+3. No mocking unless external I/O. Test names: `should_{verb}_when_{condition}`.
+4. Min 1 assertion per test; 3+ recommended. Priority: happy_path > error_path > edge_case.
+5. Never keep a test that does not increase coverage or breaks existing tests.
+
+## Workflow
+1. Measure current coverage with `coverage_cmd`. Set target (user-provided or default 80%).
+2. Find untested lines from the coverage report — prioritize happy path, then errors, then edge cases.
+3. Write ONE test for the identified path — it must FAIL first (RED phase).
+4. Write minimum code to make it pass (GREEN), then refactor test code to remove duplication.
+5. Commit, re-measure coverage, log to `.godmode/test-results.tsv`. Repeat until target met.
+
 ## Rules
 1. RED first — test must fail before implementation. If test passes immediately → the test is wrong, delete and rewrite.
 2. One test per iteration (atomic, revertable). Assert return values, thrown errors, or side effects — never mock internals.
@@ -62,7 +76,7 @@ Stop when FIRST of:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Test passes immediately (no RED phase) | Delete the test — it is not testing what you think. Rewrite to assert the specific untested behavior. |
 | Coverage does not increase after adding test | Verify the test exercises the uncovered lines (check coverage report line-by-line). The test may be hitting already-covered paths. |
 | Unrelated test breaks after new test | Revert new test. Investigate shared state or import side effects. Fix isolation, then re-add. |

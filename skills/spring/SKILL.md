@@ -30,13 +30,12 @@ Database: PostgreSQL | MySQL | MongoDB | Redis | H2 (dev)
 Auth model: JWT | OAuth2 | OIDC | Session-based | API key
 Deployment: Docker | Kubernetes | AWS/GCP/Azure | Traditional
 ```
-
 Select starters based on requirements:
 
 ```
 STARTER SELECTION:
 | Starter | Purpose |
-|---|---|
+|--|--|
 | spring-boot-starter-web | REST API with embedded Tomcat |
 | spring-boot-starter-webflux | Reactive/non-blocking API |
 | spring-boot-starter-data-jpa | JPA + Hibernate ORM |
@@ -49,7 +48,6 @@ STARTER SELECTION:
 | spring-boot-starter-validation | Bean validation (Jakarta) |
 | spring-boot-starter-cache | Caching abstraction |
 ```
-
 Rules:
 - Always use the Spring Boot BOM for version management — never pin individual Spring dependency versions
 - Prefer `spring-boot-starter-webflux` only when the entire stack is reactive (R2DBC, reactive MongoDB)
@@ -67,11 +65,10 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
 ```
-
 ```
 AUTO-CONFIGURATION AUDIT:
 | Setting | Status | Notes |
-|---|---|---|
+|--|--|--|
 | open-in-view: false | SET | Prevents lazy-load |
 | ddl-auto: validate | SET | Flyway/Liquibase |
 | graceful shutdown | SET | Drain connections |
@@ -81,7 +78,6 @@ AUTO-CONFIGURATION AUDIT:
 | external config via env vars | SET | 12-factor app |
 | OSIV disabled | SET | No lazy surprises |
 ```
-
 Rules:
 - ALWAYS set `spring.jpa.open-in-view: false` — Open Session In View is an anti-pattern that hides N+1 queries
 - ALWAYS use `ddl-auto: validate` in production — use Flyway or Liquibase for schema migrations
@@ -100,11 +96,10 @@ public class SecurityConfig {
 
     @Bean
 ```
-
 ```
 SECURITY CONFIGURATION:
 | Layer | Configuration |
-|---|---|
+|--|--|
 | Authentication | JWT / OAuth2 / Basic / Form |
 | Authorization | URL-based + Method-level |
 | CSRF | Disabled (stateless API) |
@@ -115,7 +110,6 @@ SECURITY CONFIGURATION:
 | Security headers | X-Frame, X-Content-Type, HSTS |
 | Audit logging | Spring Security events |
 ```
-
 Rules:
 - NEVER use the deprecated `WebSecurityConfigurerAdapter` — use component-based `SecurityFilterChain` beans
 - ALWAYS use the new lambda DSL (`.csrf(csrf -> ...)`) not the chained builder
@@ -134,11 +128,10 @@ Design the data layer:
     @Index(name = "idx_orders_status", columnList = "status")
 })
 ```
-
 ```
 DATA LAYER PATTERNS:
 | Pattern | Usage |
-|---|---|
+|--|--|
 | Derived queries | Simple lookups by fields |
 | JPQL with JOIN FETCH | Avoid N+1 on associations |
 | Native queries | Complex reporting/analytics |
@@ -150,7 +143,6 @@ DATA LAYER PATTERNS:
 | Flyway/Liquibase migrations | Schema version control |
 | QueryDSL (optional) | Type-safe dynamic queries |
 ```
-
 Rules:
 - ALWAYS use `FetchType.LAZY` for `@ManyToOne` and `@OneToMany` — eager fetching causes performance disasters
 - ALWAYS use `JOIN FETCH` in queries when you need associated data — never rely on lazy loading in the view
@@ -165,7 +157,7 @@ Configure observability:
 ```
 ACTUATOR CONFIGURATION:
 | Endpoint | Purpose |
-|---|---|
+|--|--|
 | /actuator/health | Liveness probe (K8s) |
 | /actuator/health/readiness | Readiness probe (K8s) |
 | /actuator/health/liveness | Liveness probe (K8s) |
@@ -177,7 +169,6 @@ ACTUATOR CONFIGURATION:
 | /actuator/beans | DISABLED in prod |
 | /actuator/heapdump | DISABLED in prod |
 ```
-
 ```java
 // Custom health indicator
 @Component
@@ -186,7 +177,6 @@ public class PaymentGatewayHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
 ```
-
 ### Step 6: Spring Cloud Microservices
 Design microservice architecture when needed:
 
@@ -199,13 +189,12 @@ MICROSERVICES ARCHITECTURE:
 └──────────────────┬──────────────────────────────────┬────────────┘
          ┌─────────▼─────────┐              ┌────────▼──────────┐
 | Service A |  | Service B |
-|---|---|---|
+|--|--|--|
 | (Spring Boot) | ◄────────────► | (Spring Boot) |
 | - REST/gRPC | OpenFeign | - REST/gRPC |
 | - Own database | or gRPC | - Own database |
          └─────────┬─────────┘              └────────┬──────────┘
 ```
-
 ### Step 7: Testing Strategy
 Test at every layer:
 
@@ -217,11 +206,10 @@ class OrderServiceTest {
     @Mock private OrderRepository orderRepository;
     @Mock private PaymentClient paymentClient;
 ```
-
 ```
 TESTING STRATEGY:
 | Layer | Approach |
-|---|---|
+|--|--|
 | Unit (service logic) | JUnit 5 + Mockito |
 | Controller (HTTP layer) | @WebMvcTest + MockMvc |
 | Repository (data layer) | @DataJpaTest + H2/TestContainers |
@@ -237,7 +225,6 @@ TEST SLICES:
 - @RestClientTest — RestTemplate/WebClient testing
 - @SpringBootTest — Full application context
 ```
-
 Rules:
 - ALWAYS use test slices (`@WebMvcTest`, `@DataJpaTest`) over `@SpringBootTest` when possible — faster feedback
 - Use TestContainers for integration tests — never test against H2 and deploy to PostgreSQL
@@ -251,7 +238,7 @@ Verify the Spring Boot application:
 ```
 SPRING BOOT VALIDATION:
 | Check | Status | Notes |
-|---|---|---|
+|--|--|--|
 | OSIV disabled | PASS | open-in-view: false |
 | ddl-auto: validate | PASS | Flyway manages DDL |
 | Graceful shutdown configured | PASS | Drains connections |
@@ -264,7 +251,6 @@ SPRING BOOT VALIDATION:
 | Config externalized (env vars) | PASS | 12-factor compliant |
 | Tests pass with TestContainers | PASS | Real DB in tests |
 ```
-
 ```
 SPRING BOOT DELIVERY:
 
@@ -283,7 +269,6 @@ Next steps:
 -> /godmode:observe — Set up monitoring and alerting
 -> /godmode:loadtest — Performance testing
 ```
-
 Commit: `"spring: <service> — <N> endpoints, Spring Boot <version>, <starters>"`
 
 ## Key Behaviors
@@ -299,7 +284,7 @@ Commit: `"spring: <service> — <N> endpoints, Spring Boot <version>, <starters>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Spring Boot setup workflow |
 | `--starter <name>` | Add specific starter and configure it |
 | `--security jwt` | Configure JWT-based security |
@@ -331,7 +316,6 @@ Build status: <passing | failing | not-checked>
 Issues fixed: <N>
 Notes: <one-line summary>
 ```
-
 ## TSV Logging
 
 Append one TSV row to `.godmode/spring.tsv` after each invocation:
@@ -339,7 +323,6 @@ Append one TSV row to `.godmode/spring.tsv` after each invocation:
 ```
 timestamp	project	action	files_count	entities_count	controllers_count	migrations_count	tests_status	build_status	notes
 ```
-
 ## Success Criteria
 
 Every Spring skill invocation must pass ALL of these checks before reporting success:
@@ -378,7 +361,6 @@ IF JPA/Hibernate errors:
   1. LazyInitializationException → use @EntityGraph or JOIN FETCH, never OSIV
   2. N+1 queries → add @BatchSize or use JOIN FETCH in repository queries
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH Spring Boot configuration or code change:
@@ -404,4 +386,3 @@ DO NOT STOP just because:
   - Test coverage is below target (log it, address separately)
   - One non-critical deprecation warning remains (document it)
 ```
-

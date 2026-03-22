@@ -208,7 +208,7 @@ TOKEN LIFECYCLE:
 
 Token storage by client type:
 | Client Type | Access Token | Refresh Token |
-|---|---|---|
+|--|--|--|
 | SPA | In-memory only | HttpOnly cookie (Secure) |
 | SSR (Next.js) | Server memory | HttpOnly cookie (Secure) |
 | Mobile app | Secure keychain | Secure keychain |
@@ -221,7 +221,7 @@ Design social authentication if required:
 ```
 SOCIAL LOGIN DESIGN:
 | Provider | Protocol | Scopes | User Data |
-|---|---|---|---|
+|--|--|--|--|
 | Google | OIDC | openid email profile | email, name |
 | GitHub | OAuth2 | user:email | email, name |
 | Apple | OIDC | openid email name | email, name |
@@ -341,13 +341,13 @@ STOP when ANY of these are true:
   - MFA available for production applications
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Social login is not yet configured (if not requested)
   - One auth flow has a known limitation documented with mitigation
 ```
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | JWT verification fails after key rotation | Ensure both old and new keys are accepted during rotation window. Check `kid` header in token matches available keys. |
 | OAuth callback returns error | Verify redirect URI matches exactly (including trailing slash). Check client secret is current. Inspect error parameter in callback URL. |
 | Password hash migration fails | Keep old hash algorithm as fallback. Re-hash on successful login with old algorithm. Never lock out users during migration. |

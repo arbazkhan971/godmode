@@ -85,6 +85,20 @@ STOP when FIRST of:
   - stuck: >5 skipped bugs (skipped >= 3 already triggers stop)
 ```
 
+## Hard Rules
+1. Reproduce before investigating — no reproduce = no bug. Run the code, read stdout+stderr.
+2. Evidence required: file:line + actual vs expected values + reproduce command.
+3. One bug at a time. If stuck 3 iterations on same bug, skip it and move on.
+4. Max 5 min per technique. All techniques exhausted on a bug = discard it.
+5. Hand off specific root causes to `/godmode:fix`, not vague descriptions.
+
+## Workflow
+1. Run `test_cmd`, count failures — this is the starting bug count.
+2. Pick highest-severity bug, reproduce it 3x to confirm it is real (not flaky).
+3. Select investigation technique: stack trace, git bisect, state inspection, or binary search.
+4. Prove root cause with "5 whys" chain — minimum 3 levels. State file:line, actual vs expected.
+5. Hand off to `/godmode:fix` or apply one-line fix. Verify by re-running failing test + full suite.
+
 ## Rules
 1. Reproduce before investigating. No reproduce = no bug. Run the code, read stdout+stderr, paste the output.
 2. Evidence: file:line + actual vs expected values + reproduce command. Found root cause → `/godmode:fix`.
@@ -94,10 +108,10 @@ STOP when FIRST of:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Cannot reproduce the bug | Run failing command 3x. If intermittent, add to flaky list with timestamp and environment details. Move to next bug. |
 | `git bisect` fails (no good commit) | Fall back to `git log -20` manual inspection. Check for config or environment drift rather than code changes. |
-| Debug logs produce no useful output | Increase log granularity — log variable values, not just "reached here". Add caller info and stack depth. |
+| Debug logs produce no useful output | Increase log granularity — log variable values, not only "reached here". Add caller info and stack depth. |
 | Root cause spans multiple files | Use the "5 whys" chain. Trace data flow from symptom backward. Document each hop in the chain. |
 
 ## Success Criteria

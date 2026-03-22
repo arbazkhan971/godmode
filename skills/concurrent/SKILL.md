@@ -29,9 +29,8 @@ Current Issues: <race conditions, deadlocks, performance bottlenecks, none>
 Shared State: <what mutable state is shared across concurrent units>
 I/O Profile: CPU-bound | I/O-bound | Mixed
 Scale: <concurrent connections/operations expected>
-Existing Primitives: <mutexes, channels, atomics, locks currently in use>
+  ...
 ```
-
 If the user has not provided context, ask: "What language/runtime are you using, and is the workload primarily CPU-bound or I/O-bound? This determines the right concurrency model."
 
 ### Step 2: Thread Safety Analysis
@@ -40,18 +39,14 @@ Identify shared mutable state and classify access patterns:
 ```
 SHARED STATE INVENTORY:
 | State | Access Pattern | Protection | Risk |
-|---|---|---|---|
+|--|--|--|--|
 | <variable/resource> | Read-Write | <mutex/none> | HIGH |
 | <variable/resource> | Read-Only | None needed | LOW |
 | <variable/resource> | Write-Only | <channel> | MED |
 
 CRITICAL SECTIONS:
-1. <description of code region> -- <what shared state it touches>
-2. <description of code region> -- <what shared state it touches>
-
-THREAD SAFETY VERDICT: SAFE | UNSAFE | NEEDS REVIEW
+  ...
 ```
-
 Rules:
 - Identify every piece of shared mutable state before writing any concurrent code
 - Prefer immutable data and message passing over shared mutable state
@@ -64,19 +59,14 @@ Systematically check for race conditions:
 ```
 RACE CONDITION ANALYSIS:
 | Pattern | Found | Location | Fix |
-|---|---|---|---|
+|--|--|--|--|
 | Check-then-act | Y/N | <file:line> | |
 | Read-modify-write | Y/N | <file:line> | |
 | Compound actions | Y/N | <file:line> | |
 | Lazy initialization | Y/N | <file:line> | |
 | Iterator invalidation | Y/N | <file:line> | |
-| Double-checked locking | Y/N | <file:line> | |
-| Publication escape | Y/N | <file:line> | |
-| Time-of-check-time-of-use | Y/N | <file:line> | |
-
-DETECTION TOOLS:
+  ...
 ```
-
 #### Common Race Condition Patterns and Fixes
 
 **Check-then-act (TOCTOU)**
@@ -89,15 +79,7 @@ UNSAFE:
 SAFE (atomic operation):
  return map.getOrDefault(key, fallback); // Single atomic operation
 
-SAFE (lock):
- lock.acquire();
- try {
- if (map.has(key)) {
- return map.get(key);
- }
- } finally {
- lock.release();
- }
+  ...
 ```
 
 **Read-modify-write**
@@ -110,10 +92,7 @@ SAFE (atomic):
  counter.fetch_add(1, Ordering::SeqCst); // Rust AtomicUsize
  atomic.AddInt64(&counter, 1); // Go sync/atomic
 
-SAFE (lock):
- mu.Lock()
- counter++
- mu.Unlock()
+  ...
 ```
 
 ### Step 4: Async/Await Patterns
@@ -129,13 +108,7 @@ PATTERNS:
 2. Concurrent async -- Promise.all (when independent)
  const [user, products, config] = await Promise.all([
  getUser(id),
- getProducts(),
- getConfig()
- ]);
-
-3. Controlled concurrency -- p-limit, p-map (when too many concurrent ops)
- import pLimit from 'p-limit';
- const limit = pLimit(10); // Max 10 concurrent
+  ...
 ```
 
 #### Python (asyncio)
@@ -148,13 +121,7 @@ PATTERNS:
  fetch_preferences(user_id)
  )
 
-2. Controlled concurrency -- asyncio.Semaphore
- sem = asyncio.Semaphore(10)
- async def limited_fetch(url):
- async with sem:
- return await fetch(url)
-
-3. Task groups (Python 3.11+) -- structured concurrency
+  ...
 ```
 
 #### Go (Goroutines + Channels)
@@ -167,13 +134,7 @@ PATTERNS:
  results <- process(j)
  }(job)
  }
- for range jobs {
- result := <-results
- // handle result
- }
-
-2. Worker pool
- jobs := make(chan Job, 100)
+  ...
 ```
 
 #### Rust (Tokio / async-std)
@@ -186,13 +147,7 @@ PATTERNS:
  );
 
 2. Spawned tasks with handles
- let handle = tokio::spawn(async move {
- expensive_computation().await
- });
- let result = handle.await?;
-
-3. Bounded concurrency -- tokio::sync::Semaphore
- let sem = Arc::new(Semaphore::new(10));
+  ...
 ```
 
 ### Step 5: Lock-Free Data Structures
@@ -201,19 +156,14 @@ Design or select lock-free alternatives when locks are a bottleneck:
 ```
 LOCK-FREE DATA STRUCTURES:
 | Structure | Use Case | Implementation |
-|---|---|---|
+|--|--|--|
 | Atomic counter | Counters, flags | AtomicI64, atomic|
 | CAS loop | Compare-and-swap ops | compare_exchange |
 | Lock-free queue | Producer-consumer | crossbeam, ConcurrentLinkedQueue |
 | Lock-free stack | LIFO work stealing | Treiber stack |
 | Lock-free hash map | Concurrent KV | dashmap (Rust), ConcurrentHashMap (Java) |
-| Read-copy-update | Read-heavy workloads | RCU, arc-swap |
-| Immutable data | Shared state | Persistent data structures |
-
-WHEN TO USE LOCK-FREE:
-- High contention on a specific data structure
+  ...
 ```
-
 ### Step 6: Actor Model Design
 Design actor-based systems for message-driven concurrency:
 
@@ -226,48 +176,7 @@ ACTOR MODEL PRINCIPLES:
 
 ACTOR SYSTEM DESIGN:
 | Actor | Messages Received | State | Children|
-|---|---|---|---|
-| <ActorName> | <message types> | <fields> | <list> |
-
-SUPERVISION STRATEGY:
-```
-
-#### Erlang/OTP Patterns
-```
-SUPERVISION TREES:
- [Application Supervisor]
- / | \
- [Worker Pool] [Event Manager] [State Server]
- / | \
- [W1] [W2] [W3]
-
-RESTART STRATEGIES:
-- one_for_one: Restart only the failed child
-- one_for_all: Restart all children when one fails
-- rest_for_one: Restart failed child and all started after it
-- simple_one_for_one: Dynamic worker pool (all children same type)
-
-OTP BEHAVIORS:
-- gen_server: Request-response server (most common)
-```
-
-#### Akka/Pekko Patterns
-```
-ACTOR HIERARCHY:
- /user (guardian)
- /order-manager
- /order-1
- /order-2
- /payment-processor
- /payment-worker-1
- /payment-worker-2
-
-PATTERNS:
-1. Ask pattern (request-response with timeout)
- implicit val timeout: Timeout = 3.seconds
- val future: Future[Response] = actor ? Request(data)
-
-2. Tell pattern (fire-and-forget)
+  ...
 ```
 
 ### Step 7: Deadlock Detection and Prevention
@@ -282,72 +191,50 @@ DEADLOCK CONDITIONS (all four must hold):
 
 PREVENTION STRATEGIES:
 | Strategy | Breaks Condition | How |
-|---|---|---|
-| Lock ordering | Circular wait | Always acquire in |
-| | | consistent global order|
-| Lock timeout | Hold and wait | Give up after timeout |
-| Try-lock | Hold and wait | Non-blocking attempt |
-| Single lock | Hold and wait | One coarse lock |
+  ...
 ```
-
 ### Step 8: Concurrent Testing Strategies
 Verify correctness of concurrent code:
 
 ```
 CONCURRENT TESTING APPROACH:
 | Technique | What It Catches | Tools |
-|---|---|---|
+|--|--|--|
 | Race detector | Data races | go -race, TSan |
 | Stress testing | Intermittent bugs | Run N times |
 | Loom (Rust) | All interleavings | loom crate |
 | Property testing | Invariant violations | QuickCheck, Hypothesis |
 | Linearizability | Correctness of | Jepsen, elle |
-| testing | concurrent operations | |
-| Chaos injection | Timing dependencies | tokio-test, manual|
-| Deterministic sim | Full replay | Hermit, FoundationDB |
-
-TESTING CHECKLIST:
+  ...
 ```
-
 ### Step 9: Concurrency Model Selection
 Choose the right concurrency model for the workload:
 
 ```
 CONCURRENCY MODEL DECISION:
 | Workload | Recommended Model | Language/Runtime |
-|---|---|---|
+|--|--|--|
 | High I/O, many | Event loop / async | Node.js, Python |
 | connections | | asyncio |
 | CPU-bound parallel | Thread pool / rayon | Rust, Go, Java |
 | Message-driven | Actor model | Erlang, Akka |
 | distributed | | |
-| Mixed I/O + CPU | Async + spawn_blocking| Rust tokio, Go |
-| Real-time, low-lat | Lock-free + busy wait | C/C++, Rust |
-| Simple shared state| Mutex/RwLock | Any language |
-| Pipeline processing| Channels / CSP | Go, Rust, Elixir |
-
-SELECTED MODEL: <model> -- <justification>
+  ...
 ```
-
 ### Step 10: Validation & Artifacts
 Validate the concurrency design:
 
 ```
 CONCURRENCY VALIDATION:
 | Check | Status |
-|---|---|
+|--|--|
 | All shared mutable state identified | PASS | FAIL |
 | Protection strategy for each shared state| PASS | FAIL |
 | Race condition analysis complete | PASS | FAIL |
 | Deadlock prevention strategy in place | PASS | FAIL |
 | Cancellation/shutdown paths verified | PASS | FAIL |
-| Concurrent tests written | PASS | FAIL |
-| Race detector passes cleanly | PASS | FAIL |
-| Performance under concurrency measured | PASS | FAIL |
-
-VERDICT: <SAFE | NEEDS WORK>
+  ...
 ```
-
 Generate deliverables:
 
 ```
@@ -359,13 +246,8 @@ Artifacts:
 - Concurrency tests: tests/concurrent/<feature>-concurrent.test.<ext>
 - Validation: <SAFE | NEEDS WORK>
 
-Next steps:
--> /godmode:test -- Run concurrent test suite
--> /godmode:perf -- Profile under concurrent load
--> /godmode:review -- Review concurrent code for correctness
--> /godmode:loadtest -- Verify behavior at scale
+  ...
 ```
-
 Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdict>"`
 
 ## Key Behaviors
@@ -374,15 +256,10 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 2. **Prefer message passing over shared state.** Channels, actors, and events are safer than mutexes. Use shared mutable state only when message passing adds unacceptable overhead.
 3. **Always use the race detector.** If your language has a race detector, run it on every test. No exceptions. A clean race detector run is a minimum, not a guarantee.
 4. **Lock ordering prevents deadlocks.** If you must use multiple locks, define and enforce a global acquisition order. Document it.
-5. **Test concurrency with stress and chaos.** Running a test once proves nothing about concurrent correctness. Run it 1000 times. Inject delays. Simulate failures.
-6. **Cancellation is not optional.** Every concurrent operation must support cancellation. Leaked goroutines, orphaned tasks, and zombie threads are resource leaks.
-7. **Start with the simplest correct solution.** A mutex that works is better than a lock-free structure that could fail subtly. Optimize only with profiling evidence.
-8. **Document the concurrency model.** Future developers need to understand why a particular approach was chosen and what invariants to maintain.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full concurrency analysis and design |
 | `--analyze` | Thread safety analysis of existing code |
 | `--race` | Race condition detection and fixes |
@@ -400,15 +277,6 @@ AUTO-DETECT SEQUENCE:
  - Python: asyncio, threading, multiprocessing. Check: imports in *.py
  - Java/Kotlin: threads, virtual threads, coroutines. Check: pom.xml, build.gradle
  - Erlang/Elixir: actor model (OTP). Check: mix.exs, rebar.config
-
-2. Detect existing concurrency primitives:
- - grep for: sync.Mutex, sync.RWMutex, sync.WaitGroup (Go)
- - grep for: Arc<Mutex>, Arc<RwLock>, tokio::spawn (Rust)
- - grep for: Promise.all, Promise.allSettled, Worker (Node.js)
- - grep for: asyncio.gather, threading.Lock, multiprocessing (Python)
- - grep for: synchronized, ReentrantLock, ExecutorService (Java)
-```
-
 ## Keep/Discard Discipline
 Each concurrency fix either passes the race detector or gets reverted.
 - **KEEP**: Race detector clean, stress test (1000 iterations) passes, no new deadlock risk introduced.
@@ -467,10 +335,9 @@ Append one row per session. Create the file with headers on first run.
 7. At least one stress test written: run 1000 iterations with maximum parallelism.
 8. Every mutex has a comment documenting what shared state it protects.
 
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Deadlock detected | Use consistent lock ordering. Add lock timeout. Use `NOWAIT` or `SKIP LOCKED` in SQL. Log lock acquisition order for debugging. |
 | Race condition in tests (flaky) | Run stress test 1000x to reproduce reliably. Add explicit synchronization or use deterministic scheduling in test harness. |
 | Thread pool exhaustion | Check for blocking calls in async code. Add backpressure. Monitor active thread count. Switch to a work-stealing scheduler. |

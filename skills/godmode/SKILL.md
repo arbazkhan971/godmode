@@ -25,7 +25,7 @@ No match → ask user for test/lint/build commands. Cache those.
 
 ## Step 2: Match Skill
 | Trigger | Skill |
-|---------|-------|
+|--|--|
 | "make faster", "optimize", "improve" | optimize |
 | "fix", "broken", "error" | fix |
 | "debug", "why is this" | debug |
@@ -61,6 +61,13 @@ Read `skills/{skill}/SKILL.md`. Follow it literally. Pass: `stack`, `test_cmd`, 
 ## Output Format
 Print: `Godmode: stack={stack}, skill={skill}, phase={phase}. Dispatching.`
 After skill completes, print: `Godmode: {skill} complete. Next: {next_skill_or_done}.`
+
+## Hard Rules
+1. Detect stack FIRST — cache result. Never guess test/lint/build commands.
+2. One skill at a time — read its SKILL.md, follow it literally. No improvisation.
+3. Commit BEFORE verify — revert on failure with `git reset --hard HEAD~1`.
+4. Log every skill invocation to `.godmode/session-log.tsv` — append, never overwrite.
+5. Stuck recovery: >5 consecutive discards triggers opposite approach, then re-plan, then stop.
 
 ## Rules
 1. Detect stack FIRST. Cache result. One skill at a time — read its SKILL.md, follow it.
@@ -109,7 +116,7 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Stack detection finds no match | Ask user for `test_cmd`, `lint_cmd`, `build_cmd`. Cache the answers. Do not guess. |
 | Skill SKILL.md not found | List available skills with `ls skills/`. Suggest closest match. Never fabricate skill instructions. |
 | Stuck in phase loop (>5 discards) | Escalate to previous phase (BUILD stuck -> re-PLAN). Log `stuck_reason` in session-log.tsv. |

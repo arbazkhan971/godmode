@@ -24,7 +24,6 @@ I18N AUDIT:
 Project: <project name>
 Framework: <React/Vue/Angular/iOS/Android/etc.>
 ```
-
 ### Step 2: Select i18n Framework
 Based on the project stack, recommend and configure the appropriate i18n framework:
 
@@ -33,11 +32,10 @@ FRAMEWORK SELECTION:
 Stack: <detected stack>
 Recommended library: <library>
 ```
-
 #### Framework matrix:
 
 | Stack | Library | Key Features |
-|-------|---------|--------------|
+|--|--|--|
 | React | react-intl / react-i18next | Component-based, ICU MessageFormat, hooks API |
 | Vue | vue-i18n | Directive-based, SFC support, composition API |
 | Angular | @angular/localize / ngx-translate | Built-in i18n, AOT compilation, lazy loading |
@@ -50,7 +48,6 @@ STRING EXTRACTION PLAN:
 Source files: <list of files with hardcoded strings>
 Target format: <JSON | YAML | .properties | .strings | .xml | ARB>
 ```
-
 For each file, perform extraction:
 ```
 FILE: <path>
@@ -296,7 +293,6 @@ I18N TEST PLAN:
   Next: /godmode:test — Run i18n test suite
   /godmode:build — Implement remaining extractions
 ```
-
 ### Step 11: Commit and Transition
 1. Commit extracted strings: `"i18n: extract <N> strings to resource files"`
 ```
@@ -314,26 +310,6 @@ AUTO-DETECT:
 6. Check Intl API usage: grep for Intl.DateTimeFormat, Intl.NumberFormat
 ```
 
-## Iterative Extraction Protocol
-String extraction is iterative — process files in batches, not all at once:
-```
-current_iteration = 0
-total_batches = ceil(files_with_strings / BATCH_SIZE)
-BATCH_SIZE = 10  # files per iteration
-
-WHILE current_iteration < total_batches:
-  1. SELECT next 10 files with highest hardcoded string count
-  2. EXTRACT strings to resource files (base locale)
-  3. REPLACE hardcoded strings with i18n function calls
-  4. VALIDATE: run build + pseudo-localization on changed files
-  5. IF validation fails → fix before proceeding
-  6. COMMIT batch: "i18n: extract strings from batch {current_iteration+1}/{total_batches}"
-  7. current_iteration += 1
-  8. REPORT progress: "{extracted}/{total} strings, {current_iteration}/{total_batches} batches"
-
-EXIT when all strings extracted OR user requests stop
-```
-
 ## HARD RULES
 1. NEVER concatenate translated strings — use ICU MessageFormat with placeholders. No exceptions.
 2. NEVER use binary plural logic (`count === 1 ? ... : ...`) — use CLDR plural rules via the i18n library.
@@ -345,9 +321,7 @@ EXIT when all strings extracted OR user requests stop
 8. ALWAYS add translator context/notes for ambiguous strings ("Save" can mean save-to-disk or save-money).
 9. ALWAYS run pseudo-localization before real translation — it catches 90% of i18n bugs instantly.
 10. ALWAYS use UTF-8 (utf8mb4 for MySQL) for all storage — never truncate multi-byte characters.
-
-## Output Format
-Print after each workflow step:
+  ...
 ```
 [i18n] Step {N}: {description} — {status}
   Files: {list of created/modified files}
@@ -390,10 +364,9 @@ WHILE current_pass < max_passes:
 
   Coverage thresholds: <80% CRITICAL (do not ship), 80-95% WARNING, >95% PASS.
 ```
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Missing translation key at runtime | Add fallback chain: requested locale -> default locale -> key name. Log missing keys for translator backlog. |
 | Pluralization rules incorrect | Use ICU MessageFormat, not manual if/else. Verify locale-specific plural categories (some languages have 6 plural forms). |
 | Date/number formatting wrong for locale | Use `Intl.DateTimeFormat` and `Intl.NumberFormat` with explicit locale parameter. Never format manually. |
@@ -403,9 +376,7 @@ WHILE current_pass < max_passes:
 1. All user-visible strings extracted to translation files (zero hardcoded strings).
 2. Fallback locale configured and tested (missing key shows default, not blank or key name).
 3. Pluralization uses ICU MessageFormat for all locales.
-4. Date, number, and currency formatting uses `Intl` APIs with correct locale.
-
-## Keep/Discard Discipline
+  ...
 ```
 After EACH i18n change:
   KEEP if: all locales render correctly AND no missing key warnings AND fallback works

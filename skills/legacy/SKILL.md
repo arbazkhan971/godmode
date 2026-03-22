@@ -99,7 +99,7 @@ Commit: `"legacy: <action> -- <target> (<impact>)"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--assess` | Full codebase health assessment |
 | `--characterize <path>` | Add characterization tests to module |
 | `--golden-master <path>` | Create golden master tests |

@@ -115,7 +115,7 @@ Next: /godmode:loadtest, /godmode:observe, /godmode:cost
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--assess` | Current capacity assessment |
 | `--autoscale` | Auto-scaling configuration |
 | `--database` | DB scaling (replicas, pooling) |

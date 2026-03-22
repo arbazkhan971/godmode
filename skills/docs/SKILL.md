@@ -45,7 +45,7 @@ Present inventory:
 DOCUMENTATION INVENTORY:
   Documentation Status
 | Category | Count | Coverage |
-|---|---|---|
+|--|--|--|
 | README files | 3 | root, api, shared |
 | API docs | 1 | OpenAPI 3.0 (partial) |
 | Code docs | 47/120 | 39% of public exports |
@@ -173,7 +173,7 @@ Check all existing documentation for issues:
 QUALITY AUDIT:
   Documentation Health Report
 | # | Issue | Severity | File |
-|---|---|---|---|
+|--|--|--|--|
 | 1 | Stale: references removed API | HIGH | api.md:42 |
 | 2 | Missing: no docs for /users | HIGH | (none) |
 | 3 | Broken link: ./setup.md | MEDIUM | README:15 |
@@ -214,7 +214,7 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive documentation generation |
 | `--api` | Generate API documentation only (OpenAPI/Swagger) |
 | `--code` | Generate code documentation only (JSDoc/docstrings) |
@@ -280,7 +280,7 @@ After each docs skill invocation, emit a structured report:
 ```
 DOCUMENTATION REPORT:
 | Doc type | <API | code | runbook | README> |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Files documented | <N> |
 | Functions/endpoints | <N> documented / <N> total |
 | Coverage | <N>% of public API documented |

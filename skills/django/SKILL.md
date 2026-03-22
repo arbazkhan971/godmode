@@ -168,7 +168,7 @@ Validate the Python web project:
 ```
 PYTHON WEB PROJECT AUDIT:
 | Check | Status |
-|---|---|
+|--|--|
 | Business logic in services (not views) | PASS | FAIL |
 | Serializers validate all input | PASS | FAIL |
 | No N+1 queries (select/prefetch_related) | PASS | FAIL |
@@ -219,7 +219,7 @@ Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/asy
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Django/FastAPI workflow |
 | `--audit` | Audit existing Django or FastAPI project |
 | `--django` | Django-specific guidance only |

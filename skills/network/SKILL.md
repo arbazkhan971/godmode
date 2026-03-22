@@ -23,7 +23,7 @@ Identify current networking topology and requirements:
 ```
 NETWORK INVENTORY:
 | Component | Provider | Status |
-|---|---|---|
+|--|--|--|
 | DNS | <provider> | <configured/missing> |
 | SSL/TLS | <issuer> | <valid/expired/none> |
 | CDN | <provider> | <active/none> |
@@ -33,9 +33,8 @@ NETWORK INVENTORY:
 | WAF | <provider> | <active/none> |
   Domains: <list of domains>
   Certificates: <N valid, M expiring, P expired>
-  Endpoints: <N public, M internal>
+  ...
 ```
-
 ```bash
 # DNS discovery
 dig +short <domain> A
@@ -44,7 +43,6 @@ dig +short <domain> MX
 dig +short <domain> TXT
 nslookup <domain>
 ```
-
 If no networking is configured: "No networking infrastructure detected. Shall I design a network architecture (VPC + DNS + SSL + LB) or address a specific component?"
 
 ### Step 2: DNS Configuration and Troubleshooting
@@ -54,7 +52,7 @@ Set up and validate DNS records:
 ```
 DNS RECORD PLAN:
 | Record | Type | Value | TTL | Proxy |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | @ | A | <LB IP> | 300 | Yes |
 | www | CNAME | @ | 300 | Yes |
 | api | A | <API LB IP> | 60 | Yes |
@@ -69,7 +67,7 @@ DNS RECORD PLAN:
 ```
 DNS TROUBLESHOOTING:
 | Symptom | Check |
-|---|---|
+|--|--|
 | Domain not resolving | NS records pointing to |
 |  | correct nameservers? |
 | SERVFAIL | DNSSEC validation? |
@@ -79,9 +77,7 @@ DNS TROUBLESHOOTING:
 | Slow resolution | TTL too low? NS latency? |
 | Email not delivered | MX, SPF, DKIM, DMARC? |
 | Subdomain not working | CNAME vs A record? |
-|  | Wildcard record present? |
-| Propagation delay | TTL of old record? |
-|  | Check multiple resolvers |
+  ...
 ```
 
 ```bash
@@ -92,7 +88,6 @@ dig @208.67.222.222 <domain> A +short # OpenDNS
 
 # DNSSEC validation
 ```
-
 ### Step 3: SSL/TLS Certificate Management
 Configure and manage certificates:
 
@@ -120,7 +115,7 @@ spec:
 ```
 CERTIFICATE STATUS:
 | Domain | Issuer | Expires | Status |
-|---|---|---|---|
+|--|--|--|--|
 | example.com | Let's Encrypt | 2026-06-15 | VALID |
 | *.example.com | Let's Encrypt | 2026-06-15 | VALID |
 | api.example.com | Let's Encrypt | 2026-04-01 | RENEWING |
@@ -130,11 +125,7 @@ CERTIFICATE STATUS:
   Alert threshold: 14 days before expiry
 
 TLS CONFIGURATION:
-  Min version: TLS 1.2
-  Cipher suites: ECDHE-RSA-AES256-GCM-SHA384, ECDHE-RSA-AES128-GCM-SHA256
-  HSTS: Enabled (max-age=31536000; includeSubDomains; preload)
-  OCSP Stapling: Enabled
-  Certificate Transparency: Required
+  ...
 ```
 
 ### Step 4: CDN Configuration
@@ -149,7 +140,7 @@ CLOUDFRONT DISTRIBUTION:
   Origin: <ALB DNS or S3 bucket>
   Cache Behaviors:
 | Path Pattern | Origin | TTL | Compress | CORS |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | /api/* | ALB | 0 (none) | Yes | Yes |
 | /static/* | S3 | 86400 | Yes | No |
 | /images/* | S3 | 604800 | Yes | No |
@@ -176,7 +167,7 @@ CLOUDFLARE ZONE:
 ```
 CACHE STRATEGY:
 | Asset Type | Cache-Control Header | CDN TTL |
-|---|---|---|
+|--|--|--|
 | HTML pages | no-cache, must-revalidate | 0 |
 | JS/CSS (hashed) | public, max-age=31536000, | 1 year |
 |  | immutable |  |
@@ -186,11 +177,7 @@ CACHE STRATEGY:
 | Public API | public, max-age=60, s-maxage= | 5 min |
 |  | 300, stale-while-revalidate=60 |  |
 
-Cache Invalidation:
-  Strategy: Deploy-time purge of changed paths
-  Purge method: API call to CDN provider
-  Fallback: Versioned filenames (app.[hash].js) for static assets
-  Warning: Never rely on TTL expiration for urgent updates
+  ...
 ```
 
 ### Step 5: Load Balancer Setup
@@ -208,7 +195,7 @@ APPLICATION LOAD BALANCER:
   Port 443 -> Forward to target group (TLS termination)
   Target Groups:
 | Name | Port | Health Check | Targets |
-|---|---|---|---|
+|--|--|--|--|
 | api-targets | 3000 | /healthz (5s) | 3 instances |
 ```
 
@@ -226,9 +213,7 @@ upstream api_backend {
 
 server {
     listen 443 ssl http2;
-    server_name api.example.com;
-
-    # TLS configuration
+  ...
 ```
 
 #### HAProxy Configuration
@@ -240,12 +225,12 @@ HAProxy CONFIGURATION:
   Backend: web-servers (2 servers, roundrobin)
   Health Checks:
 | Interval: 5s | Rise: 2 | Fall: 3 | Timeout: 2s |
-|---|---|---|---|
+|--|--|--|--|
 | Method: HTTP GET /healthz | Expected: 200 |
   Connection Limits:
   Max connections per server: 1000
   Queue timeout: 5s
-  Connection timeout: 5s
+  ...
 ```
 
 ### Step 6: Network Security
@@ -283,7 +268,7 @@ SECURITY GROUP DESIGN:
 ```
 NETWORK SECURITY RULES:
 | Layer | Tool | Purpose |
-|---|---|---|
+|--|--|--|
 | Edge | CloudFront/CF WAF | DDoS, bot protect |
 | DNS | Route53/CF | DNS filtering |
 | Perimeter | NACL | Subnet-level deny |
@@ -293,7 +278,7 @@ NETWORK SECURITY RULES:
 | Application | App middleware | Auth, CORS, CSP |
 
 Defense in Depth Checklist:
-  [x] WAF rules block SQL injection, XSS, known bad bots
+  ...
 ```
 
 ### Step 7: Commit and Report
@@ -323,30 +308,10 @@ Defense in Depth Checklist:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full network audit and topology report |
 | `--dns` | DNS configuration and troubleshooting only |
 | `--ssl` | SSL/TLS certificate management only |
-
-## Iterative Network Setup Protocol
-
-```
-WHEN configuring a complete networking stack (DNS + SSL + CDN + LB + VPC):
-
-components = ["vpc_design", "security_groups", "load_balancer", "ssl_certs", "cdn", "dns"]
-current_component = 0
-total_components = len(components)
-configured = []
-validation_failures = []
-
-WHILE current_component < total_components:
-  component = components[current_component]
-
-  1. ASSESS current state of {component}
-  2. DESIGN configuration based on requirements
-  3. APPLY configuration
-  4. VALIDATE:
-```
 
 ## HARD RULES
 
@@ -363,11 +328,8 @@ WHILE current_component < total_components:
 4. CONFIGURE certificate auto-renewal. Manual certificate
    management leads to outages. Use Let's Encrypt + certbot or cert-manager.
 
-5. Load balancers MUST have health checks configured.
-   Without health checks, traffic goes to dead backends.
-
+  ...
 ```
-
 ## Output Format
 Print on completion: `Network: {resource_count} resources configured. TLS: {tls_status}. DNS: {domain_count} domains. LB: {lb_type}. CDN: {cdn_status}. Security groups: {sg_count}. Verdict: {verdict}.`
 
@@ -415,15 +377,6 @@ After EACH network configuration change:
 Never proceed to the next networking component if the current one is broken — components depend on each other.
 ```
 
-## Stuck Recovery
-```
-IF >3 consecutive iterations fail to correctly configure a network component:
-  1. Check DNS propagation: use multiple resolvers (8.8.8.8, 1.1.1.1, authoritative NS) to rule out caching.
-  2. Check certificate chain: `openssl s_client -showcerts` to verify the full chain is served.
-  3. Simplify: test connectivity at each layer independently (DNS, then TLS, then LB, then app).
-  4. If still stuck → log stop_reason=stuck, document the failing component with diagnostic output.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -436,15 +389,3 @@ DO NOT STOP just because:
   - CDN is not yet configured (LB + SSL is functional without CDN)
   - WAF rules are not yet tuned (basic networking must work first)
 ```
-
-## Simplicity Criterion
-```
-PREFER the simpler networking approach:
-  - ACM/Let's Encrypt auto-renewing certs before manual certificate management
-  - ALB before NLB (unless you need TCP/UDP or extreme performance)
-  - Cloudflare DNS before self-managed DNS (for most teams)
-  - Security group references (sg-xxx) before CIDR blocks (more maintainable)
-  - Two-AZ deployment before three-AZ (unless compliance or SLA requires three)
-  - Fewer security group rules with broader service groups before many narrow rules
-```
-

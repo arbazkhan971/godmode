@@ -34,20 +34,26 @@ PIPELINE SECURITY ASSESSMENT:
   ├────────────────────┼──────────┼───────────────────────┤
 |  | SAST | YES/NO | <tool or none> |  |
 |  | DAST | YES/NO | <tool or none> |  |
-|  | SCA | YES/NO | <tool or none> |  |
+  ...
 ```
-
 ### Step 2: SAST Integration (Static Application Security Testing)
-Configure static code analysis for security vulnerabilities:
+Configure static code analysis for security vulnerabilities.
+
+All security workflows share a common trigger (adjust per org policy):
+```yaml
+# Common trigger pattern for all security scanning workflows
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+```
 
 #### Semgrep
 ```yaml
-#.github/workflows/sast-semgrep.yml (GitHub Actions)
+#.github/workflows/sast-semgrep.yml
 name: SAST — Semgrep
-on:
- pull_request:
- branches: [main]
- push:
+# trigger: on pull_request + push to main (see common trigger pattern)
 ```
 
 ```
@@ -63,19 +69,13 @@ Custom rules directory:.semgrep/
  Create custom rules for project-specific patterns:
  - Banned functions (eval, exec, unsafe APIs)
  - Required patterns (input validation on routes)
- - Architecture rules (no direct DB access from controllers)
-
-Severity thresholds:
+  ...
 ```
-
 #### CodeQL
 ```yaml
 #.github/workflows/sast-codeql.yml
 name: SAST — CodeQL
-on:
- pull_request:
- branches: [main]
- push:
+# trigger: same as Semgrep (PR + push to main)
 ```
 
 ```
@@ -91,9 +91,8 @@ Advantages over pattern-matching:
  - Type-aware analysis (understands object types and inheritance)
  - Inter-procedural analysis (follows data across function boundaries)
 
-Languages supported: C/C++, C#, Go, Java/Kotlin, JavaScript/TypeScript, Python, Ruby, Swift
+  ...
 ```
-
 ### Step 3: DAST Integration (Dynamic Application Security Testing)
 Configure runtime security testing against running applications:
 
@@ -101,10 +100,7 @@ Configure runtime security testing against running applications:
 ```yaml
 #.github/workflows/dast-zap.yml
 name: DAST — OWASP ZAP
-on:
- pull_request:
- branches: [main]
- workflow_dispatch:
+# uses common trigger above (add workflow_dispatch for manual full scans)
 ```
 
 ```
@@ -120,33 +116,21 @@ Rules file (.zap/rules.tsv):
  10021 FAIL (X-Content-Type-Options Header Missing)
  10038 FAIL (Content Security Policy Header Not Set)
  40012 FAIL (Cross Site Scripting - Reflected)
- 40014 FAIL (Cross Site Scripting - Persistent)
- 90022 WARN (Application Error Disclosure)
- 90033 FAIL (Loosely Scoped Cookie)
-
-Authentication for ZAP:
- Context file:.zap/context.xml
- Authentication: Form-based / JSON / Token-based
- Users: Test accounts for authenticated scanning
+  ...
 ```
-
 ### Step 4: SCA (Software Composition Analysis)
 Scan dependencies for known vulnerabilities and license issues:
 
 ```yaml
 #.github/workflows/sca.yml
 name: SCA — Dependency Security
-on:
- pull_request:
- branches: [main]
- push:
+# trigger: PR + push to main
 ```
-
 ```
 SCA CONFIGURATION:
   Dependency Scanning Strategy
 | Tool | Purpose | When |
-|---|---|---|
+|--|--|--|
 | Dependabot/Renovate | Auto-update PRs | Daily |
 | Snyk | Deep vuln analysis | Every PR + daily |
 | npm/pip/cargo audit | Native scanning | Every PR |
@@ -156,7 +140,6 @@ SCA CONFIGURATION:
   CRITICAL: Block merge + alert security team immediately
   HIGH: Block merge + create ticket
 ```
-
 ### Step 5: Container Scanning
 Scan container images for vulnerabilities:
 
@@ -164,10 +147,7 @@ Scan container images for vulnerabilities:
 ```yaml
 #.github/workflows/container-scan-trivy.yml
 name: Container Scan — Trivy
-on:
- push:
- branches: [main]
- pull_request:
+# trigger: push to main (scan built images)
 ```
 
 ```
@@ -183,29 +163,20 @@ CONTAINER HARDENING CHECKS:
  - [ ] Base image tag is pinned (not :latest)
  - [ ] Multi-stage build (build deps not in final image)
  - [ ] Non-root user (USER directive in Dockerfile)
- - [ ] No secrets in image layers (use build args or runtime env)
- - [ ] Read-only filesystem where possible
- - [ ] No unnecessary packages installed
- - [ ] Health check defined
- - [ ].dockerignore excludes sensitive files
+  ...
 ```
-
 ### Step 6: Secret Scanning in CI/CD
 Prevent secrets from reaching the repository:
 
 ```yaml
 #.github/workflows/secret-scan.yml
 name: Secret Scanning
-on:
- pull_request:
- branches: [main]
- push:
+# trigger: on all PRs and pushes (catch secrets before merge)
 ```
-
 ```
 SECRET SCANNING LAYERS:
 | Layer | Tool | When |
-|---|---|---|
+|--|--|--|
 | Pre-commit (local) | gitleaks hook | Before every commit |
 | PR check (CI) | gitleaks action | Every pull request |
 | Push protection | GitHub/GitLab | Every push |
@@ -215,16 +186,15 @@ SECRET SCANNING LAYERS:
   .gitleaks.toml:
   [[rules]]
   id = "internal-api-key"
-  description = "Internal API key pattern"
+  ...
 ```
-
 ### Step 7: Security Gates in Deployment Pipelines
 Define blocking security checks that prevent insecure deployments:
 
 ```
 SECURITY GATE CONFIGURATION:
 | Gate | Stage | Action | Override |
-|---|---|---|---|
+|--|--|--|--|
 | SAST findings | PR check | BLOCK | Security team |
 | SCA critical CVE | PR check | BLOCK | Security team |
 | Secret detected | PR check | BLOCK | No override |
@@ -234,16 +204,15 @@ SECURITY GATE CONFIGURATION:
 | License violation | PR check | WARN | Legal team |
 | IaC misconfig | PR check | BLOCK | Platform team |
 | Unsigned artifact | Pre-deploy | BLOCK | No override |
-| SonarQube gate | PR check | BLOCK | Security team |
+  ...
 ```
-
 ### Step 8: Infrastructure as Code (IaC) Security
 Scan infrastructure definitions for misconfigurations:
 
 ```
 IAC SECURITY CHECKS:
 | Category | Examples |
-|---|---|
+|--|--|
 | Cloud misconfig | Public S3 buckets, open SGs |
 | Kubernetes security | Privileged containers, no limits |
 | Docker hardening | Root user, missing healthcheck |
@@ -253,7 +222,6 @@ IAC SECURITY CHECKS:
 | Logging | Missing audit trails |
 | IAM | Overly permissive policies |
 ```
-
 SECURITY METRICS DASHBOARD:
   SECURITY POSTURE — <project>
   Open vulnerabilities:
@@ -295,37 +263,6 @@ SECURITY METRICS DASHBOARD:
 3. **No secrets pass the gate.** Secret scanning has zero exceptions. A leaked secret is an incident, not a finding to triage.
 4. **SBOM is a requirement, not optional.** Every release must have a Software Bill of Materials. This is increasingly a legal requirement, not just a best practice.
 5. **Scan at every layer.** Source code (SAST), dependencies (SCA), running app (DAST), containers (Trivy), infrastructure (Checkov), secrets (gitleaks). Vulnerabilities hide at every layer.
-6. **False positives erode trust.** Tune rules aggressively. A security gate that cries wolf gets disabled. Maintain exception lists with expiry dates.
-7. **Sign everything.** Commits, container images, release artifacts. Supply chain security requires provenance at every step.
-8. **Measure and improve.** Track mean time to remediation, gate override rates, and vulnerability trends. You cannot improve what you do not measure.
-
-## Flags & Options
-
-| Flag | Description |
-```
-current_iteration = 0
-scan_queue = [SAST, SCA, secret_scan, container_scan, IaC_scan, DAST]
-max_iterations = len(scan_queue) + 4 # buffer for discovered scan types
-
-WHILE scan_queue is not empty AND current_iteration < max_iterations:
- current_iteration += 1
- scan_type = scan_queue.pop(next)
- configure and run scan_type
- collect findings (CRITICAL, HIGH, MEDIUM, LOW)
- FOR each CRITICAL/HIGH finding:
- triage: true positive or false positive
- if true positive: create fix or exception with expiry
- if false positive: add to allowlist with justification
- IF new scan type dependencies discovered (e.g., IaC scan reveals missing container scan):
- add to scan_queue
- report: "Iteration {current_iteration}: {scan_type} — {N} findings, {M} fixed, {remaining} scans queued"
-
-STOP CONDITIONS:
- - scan_queue is empty (all scan types processed)
- - OR max_iterations reached
- - OR all CRITICAL/HIGH findings triaged and have remediation plan
-```
-
 ## HARD RULES
 
 - NEVER allow secrets to pass the security gate — secret scanning has ZERO exceptions and NO override process
@@ -337,27 +274,7 @@ STOP CONDITIONS:
 - ALL security gate overrides MUST have documented justification, an expiry date (max 30 days), and a reviewing team
 - ALL releases MUST include an SBOM in SPDX or CycloneDX format
 SAST INTEGRATION VALIDATION:
- FOR each SAST tool (Semgrep, CodeQL, SonarQube):
- CHECK 1: Runs on every PR (not just main branch)
- CHECK 2: Severity thresholds set (CRITICAL/HIGH block, MEDIUM warn)
- CHECK 3: Baseline mode enabled (only new findings on PRs, full scan on schedule)
- CHECK 4: SARIF output uploaded to code scanning dashboard
- CHECK 5: Custom rules directory exists for project-specific patterns
- CHECK 6: Scanner version pinned (not :latest)
- RESULT: PASS (6/6) | PARTIAL (4-5/6) | FAIL (<4/6)
-
-DAST INTEGRATION VALIDATION:
- FOR each DAST tool (ZAP, Burp):
- CHECK 1: Baseline scan runs on every PR (fast, passive only)
- CHECK 2: Full scan runs on schedule (weekly minimum) or pre-deploy
- CHECK 3: Authentication context configured (tests authenticated endpoints)
- CHECK 4: Rules file defines FAIL/WARN thresholds per finding type
- CHECK 5: Report uploaded as artifact for review
- CHECK 6: Application starts and is reachable before scan begins (health check)
- RESULT: PASS (6/6) | PARTIAL (4-5/6) | FAIL (<4/6)
-
-LOG to.godmode/devsecops-integration-checks.tsv:
- timestamp	tool_type	tool_name	check_1	check_2	check_3	check_4	check_5	check_6	result
+  ...
 ```
 
 ## Keep/Discard Discipline
@@ -375,12 +292,10 @@ FOR each security scanner finding:
  EXCEPTION process for MEDIUM/LOW findings:
  - File exception with: CVE/rule ID, justification, expiry (max 30 days), reviewer
  - Track in.godmode/devsecops-exceptions.tsv:
- timestamp	rule_id	justification	expiry_date	reviewer	status
- EVERY discard/exception recorded — no silent suppression
+  ...
 ```
-
 ## Stop Conditions
-- All controls for the target maturity level are ACTIVE (not just configured).
+- All controls for the target maturity level are ACTIVE (not only configured).
 - CRITICAL and HIGH severity findings block merge (verified with a test PR).
 - Secret scanning active on pre-commit, CI, and push protection (3 layers minimum).
 - Scanner versions pinned, tokens stored in CI/CD secret management.
@@ -401,10 +316,8 @@ FOR each security scanner finding:
  - Check for dependabot.yml or renovate.json (dependency updates)
 3. Check for container and IaC:
  - Scan for Dockerfile*, docker-compose*, kubernetes/, terraform/, cloudformation/
-4. Assess maturity level (0-5) based on controls found
-5. Identify gaps and set scan_queue for the hardening loop
+  ...
 ```
-
 ## Output Format
 
 Every devsecops invocation must produce a structured report:
@@ -418,7 +331,6 @@ Every devsecops invocation must produce a structured report:
   Open findings: <N>C <N>H <N>M <N>L
   Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED>
 ```
-
 ## TSV Logging
 
 Log every pipeline security assessment to `.godmode/devsecops-audit.tsv`:
@@ -426,7 +338,6 @@ Log every pipeline security assessment to `.godmode/devsecops-audit.tsv`:
 ```
 timestamp	ci_platform	controls_configured	controls_total	maturity_before	maturity_after	blocking_gates	open_critical	open_high	verdict
 ```
-
 Append one row per invocation. Never overwrite previous rows.
 
 ## Success Criteria
@@ -444,24 +355,12 @@ PASS (Maturity Level 3+) if ALL of the following:
 
 PASS (Maturity Level 5) additionally requires:
  - DAST running against staging on every deploy
- - IaC scanning for Terraform/Kubernetes/Dockerfile
- - Artifact signing with cosign/notation and verification before deploy
- - Policy-as-code for all security gates (not just CI config)
- - Security metrics dashboard with SLA tracking
-
-FAIL if ANY of the following:
- - No security scanning in the CI pipeline at all
- - Secrets can pass the pipeline without detection
- - CRITICAL findings do not block merge
- - Container images deployed without scanning
- - :latest used for scanner images
+  ...
 ```
-
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Scanner times out in CI | Pin scanner version, reduce scan scope to changed files only on PRs. Full scan on weekly schedule. Increase CI timeout for security jobs. |
 | False positives blocking PRs | Add to `.semgrepignore` or inline `# nosec` with justification comment. Never blanket-suppress a rule — suppress per-line only. |
 | Secret detected in git history | Rotate the secret immediately. Use `git filter-repo` or BFG to remove from history. Enable push protection to prevent recurrence. |
 | Container scan finds OS-level CVE | Rebuild image from latest base. If no fix available, document accepted risk with expiry date and monitor for upstream patch. |
-

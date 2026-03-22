@@ -29,10 +29,8 @@ Throughput: <events per second — current and projected>
 Consumer Count: <number of services consuming events>
 Ordering Requirement: None | Per-entity | Global
 Retention: <how long to store events>
-Replay Requirement: Yes (audit/rebuild) | No
-Compliance: <GDPR, HIPAA, SOX requirements affecting event data>
+  ...
 ```
-
 If the user has not specified context, ask: "What is driving the move to events? Do you need event sourcing (full history rebuild) or async messaging (fire-and-forget notifications)?"
 
 ### Step 2: Event Sourcing Design
@@ -48,10 +46,7 @@ EVENT STORE SCHEMA:
 | aggregate_id UUID NOT NULL |
 | event_type VARCHAR(200) NOT NULL |
 | event_version INTEGER NOT NULL |
-| data JSONB NOT NULL |
-| metadata JSONB NOT NULL |
-| created_at TIMESTAMP NOT NULL |
-| UNIQUE (aggregate_id, event_version) |
+  ...
 ```
 
 #### Event Sourcing Example
@@ -64,15 +59,7 @@ Events in order:
  3. OrderConfirmed { confirmed_at }
  4. ItemShipped { shipment_id, tracking_number }
  5. OrderDelivered { delivered_at, signature }
-
-State reconstruction:
- OrderCreated -> status: PENDING, items: [...], total: 99.99
- PaymentReceived -> status: PAID, payment: { id, amount }
- OrderConfirmed -> status: CONFIRMED, confirmed_at:...
- ItemShipped -> status: SHIPPED, tracking: ABC123
- OrderDelivered -> status: DELIVERED, delivered_at:...
-
-Current state = fold(events, initialState)
+  ...
 ```
 
 ### Step 3: CQRS Implementation
@@ -87,29 +74,19 @@ WRITE SIDE (Commands):
 | | | (validates, | | (append-only) |
 | CreateOrder | | applies rules) | | |
 | CancelOrder | +-------------------+ +-------------------+
-| UpdateAddress | |
-+-------------------+ | publish
- v
- | Event Bus |
- | (Kafka/RabbitMQ) |
+  ...
 ```
-
 #### Projection Design
 ```
 PROJECTIONS:
 | Projection | Source Events | Read Model |
-|---|---|---|
+|--|--|--|
 | OrderSummary | OrderCreated, | orders_summary |
 | | OrderConfirmed, | (denormalized) |
 | | OrderDelivered | |
 | CustomerDashboard | OrderCreated, | customer_orders |
 | | PaymentReceived, | (per-customer) |
-| | OrderDelivered | |
-| InventoryView | StockReserved, | inventory_levels |
-| | StockReleased, | (per-product) |
-| | StockReceived | |
-| RevenueReport | PaymentReceived, | revenue_daily |
-| | RefundProcessed | (aggregated) |
+  ...
 ```
 
 ### Step 4: Message Broker Design
@@ -122,14 +99,10 @@ KAFKA TOPOLOGY:
 Cluster: <N> brokers, <replication factor>
 Topics:
 | Topic | Partitions | Retention | Key |
-|---|---|---|---|
+|--|--|--|--|
 | order.events | 12 | 30 days | order_id |
 | payment.events | 6 | 30 days | payment_id |
-| inventory.events | 6 | 7 days | product_id |
-| notification.commands | 3 | 1 day | user_id |
-| dead-letter | 3 | 90 days | original_ |
-| | | | topic |
-
+  ...
 ```
 
 #### RabbitMQ Configuration
@@ -138,15 +111,11 @@ RABBITMQ TOPOLOGY:
 
 Exchanges:
 | Exchange | Type | Durable | Routing |
-|---|---|---|---|
+|--|--|--|--|
 | order.events | topic | yes | order.created |
 | | | | order.confirmed |
 | | | | order.shipped |
-| payment.events | topic | yes | payment.completed |
-| | | | payment.failed |
-| notifications.direct | direct | yes | email, sms, push |
-| dead-letter.exchange | fanout | yes | (all DLQ traffic) |
-
+  ...
 ```
 
 #### SQS/SNS Configuration
@@ -155,31 +124,24 @@ AWS EVENT ARCHITECTURE:
 
 SNS Topics (Fan-out):
 | Topic | Subscriptions | Filter |
-|---|---|---|
+|--|--|--|
 | order-events | payment-queue | type=order |
 | | inventory-queue | type=order |
 | | analytics-firehose | (all) |
-| payment-events | notification-queue | type=pay |
-| | order-update-queue | type=pay |
-
-SQS Queues:
+  ...
 ```
 
 #### Broker Comparison
 ```
 MESSAGE BROKER SELECTION:
 | Feature | Kafka | RabbitMQ | SQS/SNS | NATS |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Throughput | Very High | High | High | V.High|
 | Latency | ~5ms | ~1ms | ~50ms | ~0.1ms|
 | Ordering | Per-part. | Per-queue | FIFO opt | Per-sub|
 | Replay | Yes | No | No | Yes* |
 | Persistence | Yes | Yes | Yes | Yes* |
-| Exactly-once | Yes | No (ack) | No (ack) | Yes* |
-| Ops complexity | High | Medium | None | Low |
-| Best for | Streaming | Routing | AWS | Speed |
-| | High vol. | Complex | Managed | Simple|
-* With JetStream enabled
+  ...
 ```
 
 ### Step 5: Event Schema Design & Versioning
@@ -195,13 +157,7 @@ EVENT ENVELOPE:
  "source": "order-service",
  "timestamp": "2025-01-15T10:30:45.123Z",
  "correlation_id": "req-660e8400-e29b-41d4-a716-446655440000",
- "causation_id": "evt-440e8400-e29b-41d4-a716-446655440000",
- "metadata": {
- "user_id": "usr-123",
- "tenant_id": "tenant-456",
- "trace_id": "abc123def456",
- "schema_registry_url": "https://schema.example.com/order.placed/v1.2"
- },
+  ...
 ```
 
 #### Schema Registry & Versioning
@@ -210,15 +166,11 @@ SCHEMA VERSIONING STRATEGY:
 
 COMPATIBILITY MODES:
 | Mode | Rule | Use When |
-|---|---|---|
+|--|--|--|
 | Backward compatible | New schema reads old | Adding fields |
 | | data | |
 | Forward compatible | Old schema reads new | Deprecating |
-| | data | fields |
-| Full compatible | Both directions | Default |
-| Breaking | Neither direction | Major version |
-
-SAFE CHANGES (backward + forward compatible):
+  ...
 ```
 
 #### Schema Examples
@@ -231,13 +183,7 @@ AVRO SCHEMA (order.placed v1):
  "fields": [
  {"name": "order_id", "type": "string"},
  {"name": "customer_id", "type": "string"},
- {"name": "total_amount", "type": "double"},
- {"name": "currency", "type": "string", "default": "USD"},
- {"name": "items", "type": {"type": "array", "items": {
- "type": "record",
- "name": "OrderItem",
- "fields": [
- {"name": "product_id", "type": "string"},
+  ...
 ```
 
 ### Step 6: Dead Letter Queues & Retry Policies
@@ -248,56 +194,40 @@ RETRY AND DLQ STRATEGY:
 
 RETRY POLICY:
 | Attempt | Delay | Action |
-|---|---|---|
+|--|--|--|
 | 1 | Immediate | Process message |
 | 2 | 1 second | Retry (transient failure) |
 | 3 | 5 seconds | Retry (backoff) |
-| 4 | 30 seconds | Retry (extended backoff) |
-| 5 | 5 minutes | Final retry |
-| Failed | -- | Move to Dead Letter Queue |
-
-DEAD LETTER QUEUE DESIGN:
+  ...
 ```
-
 ### Step 7: Idempotency Patterns
 Ensure safe message reprocessing when duplicates occur:
 
 ```
 IDEMPOTENCY PATTERNS:
 | Pattern | How it works | Best for |
-|---|---|---|
+|--|--|--|
 | Idempotency key | Store processed keys | Commands |
 | | in a set/table | |
 | Natural idempotency | Operation is | Upserts, sets |
 | | inherently safe | |
 | Optimistic locking | Version check before | Updates |
-| | write | |
-| Deduplication table | Event ID lookup | Event consumers|
-| | before processing | |
-
-DEDUPLICATION TABLE:
+  ...
 ```
-
 ### Step 8: Validation
 Validate the event-driven architecture against best practices:
 
 ```
 EVENT ARCHITECTURE VALIDATION:
 | Check | Status |
-|---|---|
+|--|--|
 | Event envelope follows standard format | PASS | FAIL |
 | All events have correlation IDs | PASS | FAIL |
 | Schema versioning strategy defined | PASS | FAIL |
 | Schema registry configured | PASS | FAIL |
 | Dead letter queues on all consumers | PASS | FAIL |
-| Retry policy with exponential backoff | PASS | FAIL |
-| Idempotent consumers | PASS | FAIL |
-| Event ordering guaranteed where needed | PASS | FAIL |
-| Consumer groups properly configured | PASS | FAIL |
-| Broker replication and durability set | PASS | FAIL |
-| Monitoring on consumer lag | PASS | FAIL |
+  ...
 ```
-
 ### Step 9: Artifacts & Commit
 Generate the deliverables:
 
@@ -310,15 +240,8 @@ Artifacts:
 - Broker topology: docs/events/<system>-broker-topology.md
 - CQRS design: docs/events/<system>-cqrs.md
 - DLQ/Retry config: infra/messaging/ or k8s/messaging/
-- Validation: <PASS | NEEDS REVISION>
-
-Next steps:
--> /godmode:micro -- Design the services that produce/consume events
--> /godmode:contract -- Define event contracts between producers and consumers
--> /godmode:observe -- Monitor consumer lag, DLQ depth, event throughput
--> /godmode:build -- Implement event handlers and projections
+  ...
 ```
-
 Commit: `"event: <system> -- <N> event types, <broker>, <pattern (ES/CQRS/pub-sub)>"`
 
 ## Key Behaviors
@@ -327,15 +250,10 @@ Commit: `"event: <system> -- <N> event types, <broker>, <pattern (ES/CQRS/pub-su
 2. **Events are immutable.** Once published, an event cannot be changed. If the data was wrong, publish a corrective event (e.g., OrderAmountCorrected). Never mutate event history.
 3. **Schema evolution is mandatory.** Events will change. Design for backward and forward compatibility from day one. Use a schema registry to enforce compatibility.
 4. **Keep every consumer idempotent.** The broker delivers messages more than once. Processing the same event twice produces the same result.
-5. **Dead letter queues are not optional.** Every consumer needs a DLQ for messages that cannot be processed. Monitor DLQ depth and alert on non-zero.
-6. **Correlation IDs trace the full flow.** Every event in a business flow shares the same correlation_id. Without it, debugging distributed event chains is impossible.
-7. **Consumer lag is the most important metric.** If consumers fall behind, the system is degrading. Alert on growing lag before it becomes a crisis.
-8. **Projections are disposable.** Delete and rebuild read models from the event store at any time. Design projections with this in mind.
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full event-driven architecture design |
 | `--sourcing` | Design event sourcing with event store |
 | `--cqrs` | Design CQRS with read/write model separation |
@@ -373,16 +291,8 @@ AUTO-DETECT event-driven architecture context:
  4. Detect event sourcing: event_store table, EventStore library, axon framework
  5. Detect CQRS: separate read/write models, projection services
  6. Check for DLQ config: dead-letter-queue, DLX (RabbitMQ), maxReceiveCount (SQS)
- 7. Grep for consumer groups: group.id (Kafka), queue bindings (RabbitMQ)
- 8. Check for idempotency: processed_events table, deduplication logic
-
- USE detected context to:
- - Target the correct broker (don't suggest Kafka if already on RabbitMQ)
- - Extend existing event schemas rather than redesigning
- - Identify gaps: missing DLQ, missing idempotency, no schema registry
- - Match existing event naming conventions
+  ...
 ```
-
 ## Output Format
 
 ```
@@ -394,15 +304,8 @@ EVENT ARCHITECTURE COMPLETE:
  Schema format: <Avro | Protobuf | JSON Schema>
  Topics/Exchanges: <N> configured
  DLQ: <configured per consumer | not configured>
- Idempotency: <deduplication table | idempotency key | not implemented>
- Projections: <N> read models (CQRS)
-
-DOMAIN EVENT SUMMARY:
-| Domain | Events | Topics | Consumers | DLQ | Schema |
-|---|---|---|---|---|---|
-| <domain> | N | N | N | yes | avro |
+  ...
 ```
-
 ## TSV Logging
 
 Log every event architecture session to `.godmode/event-results.tsv`:
@@ -411,7 +314,6 @@ Log every event architecture session to `.godmode/event-results.tsv`:
 Fields: timestamp\tproject\tbroker\tevent_types\tdomains\tschema_format\tdlq_configured\tidempotency\tprojections_count\tcommit_sha
 Example: 2025-01-15T10:30:00Z\tmy-app\tkafka\t18\t4\tavro\tyes\tyes\t6\tabc1234
 ```
-
 Append after every completed event design pass. One row per session. If the file does not exist, create it with a header row.
 
 ## Success Criteria
@@ -419,21 +321,12 @@ Append after every completed event design pass. One row per session. If the file
 ```
 EVENT ARCHITECTURE SUCCESS CRITERIA:
 | Criterion | Required |
-|---|---|
+|--|--|
 | All events have schema definitions | YES |
 | Schema registry with compatibility checks | YES |
 | Event envelope has required fields | YES |
 | (event_id, correlation_id, timestamp, type, version) |
 | DLQ configured for every consumer | YES |
-| Idempotent consumers (deduplication) | YES |
-| Correlation ID propagated across services | YES |
-| Consumer lag monitoring configured | YES |
-| No sensitive data in events without encrypt| YES |
-| Domain-specific topics (no mega-topic) | YES |
-
-VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
-```
-
 ## Error Recovery
 
 ```
@@ -443,11 +336,3 @@ ERROR RECOVERY — EVENT:
 2. Consumer lag growing (falling behind):
  → Check consumer processing time. Scale consumer instances (add partitions if Kafka). Check for blocking I/O in handler. Add consumer lag alerting.
 3. DLQ growing (events failing after retries):
- → Inspect DLQ messages for common error pattern. Fix root cause (schema mismatch, missing handler, dependency down). Replay DLQ after fix with idempotency check.
-4. Duplicate events processed:
- → Verify idempotency check runs BEFORE processing. Check deduplication table TTL (must exceed max retry window). Add event_id to deduplication key.
-5. Missing correlation IDs in downstream events:
- → Trace event flow. Ensure correlation_id from incoming event is copied to all outgoing events in the handler. Add middleware/interceptor to propagate automatically.
-6. Event store growing unboundedly:
- → Implement snapshot strategy (snapshot every N events). Archive old events to cold storage. Set retention policy on topics/tables.
-```

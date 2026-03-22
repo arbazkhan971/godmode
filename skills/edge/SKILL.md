@@ -33,7 +33,6 @@ Data location: <where is the origin data — region, provider>
 Budget: <cost ceiling per million requests>
 Existing infra: <current deployment, migration or greenfield>
 ```
-
 If the user hasn't specified, ask: "Which platform are you targeting? What latency requirements do you have?"
 
 ### Step 2: Edge Function Design
@@ -41,19 +40,11 @@ Design functions for edge runtime constraints:
 
 ```
 EDGE FUNCTION ARCHITECTURE:
-  ┌──────┐   ┌───────────────┐   ┌──────────────┐
-|  | Client | ──> | Edge Location | ──> | Origin |  |
-|  |  | <── | (CDN PoP) | <── | (if needed) |  |
-| └──────┘ |  | └──────────────┘ |
-|  | ┌───────────┐ |  |
-|  |  | Edge Func |  | Runs in ~300 locations |
-|  |  | (V8 isolate) |  | Sub-ms cold start |
-|  | └───────────┘ | Limited CPU time |
-|  | ┌───────────┐ |  |
-|  |  | KV / Cache |  | Distributed state |
-|  | └───────────┘ |  |
+  Client → Edge Location (CDN PoP, ~300 locations) → Origin (if cache miss)
+  Components at edge:
+    Edge Function (V8 isolate): sub-ms cold start, limited CPU time
+    KV / Cache: distributed state across PoPs
 ```
-
 Edge function patterns:
 ```typescript
 // PATTERN: Cloudflare Worker
@@ -69,18 +60,9 @@ Design serverless applications on traditional FaaS platforms:
 
 ```
 SERVERLESS ARCHITECTURE:
-  ┌──────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-|  | Client | ──> | API Gateway | ──> | Lambda | ──> | Database |  |
-|  |  | <── | (route,auth | <── | Function | <── | / Service |  |
-| └──────┘ | throttle) | └──────────┘   └──────────┘ |
-  EVENT-DRIVEN:
-  ┌──────────┐   ┌──────────┐   ┌──────────┐
-|  | Event | ──> | Lambda | ──> | Output |  |
-|  | Source |  | Function |  | Target |  |
-|  | (S3, SQS, | └──────────┘ | (DB, S3, |  |
-|  | DynamoDB, |  | SNS, SQS) |  |
+  Request path: Client → API Gateway (route, auth, throttle) → Lambda Function → Database/Service
+  Event-driven: Event Source (S3, SQS, DynamoDB) → Lambda Function → Output Target (DB, S3, SNS)
 ```
-
 ### Step 4: Cold Start Optimization
 Minimize function startup latency:
 
@@ -97,7 +79,6 @@ COLD START ANALYSIS:
   COLD START DURATIONS:
   ┌──────────────┬──────────┬───────────────────────┐
 ```
-
 ### Step 5: Edge Caching Strategies
 Design caching for edge and serverless:
 
@@ -113,14 +94,13 @@ EDGE CACHING ARCHITECTURE:
 
 CACHING STRATEGIES:
 ```
-
 ### Step 6: Distributed State at the Edge
 Manage state in a globally distributed environment:
 
 ```
 EDGE STATE SOLUTIONS:
 | Solution | Consistency | Latency | Use Case |
-|---|---|---|---|
+|--|--|--|--|
 | KV Store | Eventually | <10ms read | Config, flags |
 | (CF KV, | consistent | ~500ms write | sessions, |
 | Vercel KV) |  |  | feature gates |
@@ -130,10 +110,8 @@ EDGE STATE SOLUTIONS:
 | D1/Turso | Strongly | <10ms read | Relational |
 | (edge SQL) | consistent | (replicas) | data at edge |
 | R2/S3 | Eventually | Varies | Large objects |
-| (edge blob) | consistent |  | media, files |
-| DynamoDB | Tunable | <10ms (DAX) | High-scale |
+  ...
 ```
-
 ### Step 7: Serverless Infrastructure as Code
 Define serverless infrastructure with IaC:
 
@@ -150,11 +128,8 @@ AWS SAM (Serverless Application Model):
       Timeout: 30
       MemorySize: 256
       Runtime: nodejs20.x
-      Architectures: [arm64]  # Graviton — 20% cheaper, faster cold start
-      Tracing: Active
-      Environment:
+  ...
 ```
-
 ### Step 8: Observability for Edge and Serverless
 Monitor distributed edge functions:
 
@@ -171,18 +146,15 @@ LOGGING:
       level,
       message,
       timestamp: new Date().toISOString(),
-      requestId: crypto.randomUUID(),
-      ...data,
-    }));
+  ...
 ```
-
 ### Step 9: Testing Edge and Serverless
 Comprehensive testing strategy:
 
 ```
 EDGE/SERVERLESS TESTING:
 | Layer | What to Test | Tool |
-|---|---|---|
+|--|--|--|
 | Unit | Handler logic with | Vitest / |
 |  | mocked env/context | Jest |
 | Integration | Full request/response | Miniflare / |
@@ -192,10 +164,8 @@ EDGE/SERVERLESS TESTING:
 | E2E | Deployed function with | Playwright |
 |  | real infrastructure |  |
 | Performance | Cold start, latency, | k6 / wrk |
-|  | throughput |  |
-| Chaos | Origin failure, KV | Custom |
+  ...
 ```
-
 ### Step 10: Artifacts & Completion
 Generate the deliverables:
 
@@ -212,11 +182,8 @@ Artifacts:
 
 Metrics:
 - Functions: <N> edge functions, <M> serverless functions
-- Latency: p50 <X>ms, p99 <Y>ms (cold start: <Z>ms)
-- Cache hit rate: <N>%
-- Cost estimate: $<X>/million requests
+  ...
 ```
-
 Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching configured"`
 
 ## Key Behaviors
@@ -233,7 +200,7 @@ Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching conf
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full edge/serverless design workflow |
 | `--cloudflare` | Target Cloudflare Workers |
 | `--vercel` | Target Vercel Edge Functions |
@@ -261,15 +228,8 @@ WHILE function_queue is not empty:
     2. Implement or optimize the function (tree-shake, lazy init, cache headers)
     3. Test locally with platform emulator (miniflare, sam local, vercel dev)
     4. Measure: cold start ms, p99 latency, bundle size KB
-    5. IF cold start > budget → apply optimization (reduce bundle, lazy init, provisioned concurrency)
-
-  Log: "Iteration {current_iteration}: processed {batch.length} functions, {function_queue.remaining} remaining, avg cold start: {ms}ms"
-
-  IF function_queue is empty:
-    Run deployment checklist (secrets, IAM, monitoring)
-    BREAK
+  ...
 ```
-
 ## Auto-Detection
 
 ```
@@ -285,11 +245,8 @@ AUTO-DETECT edge/serverless context:
 
   USE detected context to:
     - Target the correct platform and runtime
-    - Reuse existing infrastructure bindings
-    - Prioritize cold start optimization if bundle > 5MB
-    - Match existing deployment patterns
+  ...
 ```
-
 ## Output Format
 
 ```
@@ -305,11 +262,8 @@ EDGE/SERVERLESS DEPLOYMENT COMPLETE:
   Timeout: <N>ms (limit: <M>ms)
 
 FUNCTION SUMMARY:
-|  Function          | Route      | Cold Start | Bundle | State |
-|---|---|---|---|---|
-|  <function>        | /api/...   | <N>ms      | <K>KB  | KV    |
+  ...
 ```
-
 ## TSV Logging
 
 Log every invocation to `.godmode/` as TSV. Create on first run.
@@ -318,13 +272,12 @@ Log every invocation to `.godmode/` as TSV. Create on first run.
 Fields: timestamp\tproject\tplatform\tfunctions_count\tcold_start_before_ms\tcold_start_after_ms\tbundle_size_kb\tregions\tcommit_sha
 Example: 2025-01-15T10:30:00Z\tmy-api\tcloudflare-workers\t6\t450\t120\t85\tglobal\tabc1234
 ```
-
 ## Success Criteria
 
 ```
 EDGE/SERVERLESS SUCCESS CRITERIA:
 |  Criterion                                  | Required         |
-|---|---|
+|--|--|
 |  Bundle size within platform limits         | YES              |
 |  Cold start < 200ms (or platform target)    | YES              |
 |  No Node.js-only APIs in edge runtime       | YES (edge)       |
@@ -334,11 +287,8 @@ EDGE/SERVERLESS SUCCESS CRITERIA:
 |  Caching strategy for repeated requests     | YES              |
 |  Observability (logs, traces, metrics)      | YES              |
 |  No long-running connections in serverless  | YES              |
-|  Graceful degradation on dependency failure | YES              |
-
-VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
+  ...
 ```
-
 ## Error Recovery
 
 ```
@@ -354,9 +304,7 @@ ERROR RECOVERY — EDGE:
 5. State inconsistency across regions:
    → Use eventually-consistent KV with conflict resolution. Or use Durable Objects / DynamoDB for strong consistency on specific operations. Document consistency model.
 6. Deployment fails silently (old version still serving):
-
-## Edge Computing Optimization Loop
-
+  ...
 ```
 EDGE OPTIMIZATION PASSES:
 
@@ -388,7 +336,7 @@ Pass 4 — Cost & Efficiency:
 
 OPTIMIZATION REPORT:
 | Metric | Before | After | Δ |
-|---|---|---|---|
+|--|--|--|--|
 | Cold start p99 (ms) | <N> | <N> | -<N>% |
 | Bundle size (KB) | <N> | <N> | -<N>% |
 | CDN cache hit rate (%) | <N>% | <N>% | +<N>% |
@@ -414,8 +362,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
-

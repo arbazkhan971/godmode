@@ -44,7 +44,7 @@ If personal data of EU residents is processed:
 ```
 GDPR — LAWFUL BASIS ASSESSMENT:
 | Data Processing Activity | Lawful Basis | Status |
-|---|---|---|
+|--|--|--|
 | User registration | Consent | COMPLIANT |
 | Order processing | Contract | COMPLIANT |
 | Marketing emails | Consent | MISSING |
@@ -56,7 +56,7 @@ GDPR — LAWFUL BASIS ASSESSMENT:
 ```
 GDPR — DATA SUBJECT RIGHTS:
 | Right | Implemented | Location |
-|---|---|---|
+|--|--|--|
 | Right to access | YES/NO | <endpoint/UI> |
 | Right to rectification | YES/NO | <endpoint/UI> |
 | Right to erasure | YES/NO | <endpoint/UI> |
@@ -86,14 +86,14 @@ HIPAA — SAFEGUARDS ASSESSMENT:
 | Safeguard | Status | Evidence |
   ADMINISTRATIVE SAFEGUARDS
 | Risk analysis conducted | YES/NO | <ref> |
-|---|---|---|
+|--|--|--|
 | Workforce access controls | YES/NO | <ref> |
 | Security awareness training | YES/NO | <ref> |
 | Incident response procedures | YES/NO | <ref> |
 | Business associate agreements | YES/NO | <ref> |
   PHYSICAL SAFEGUARDS
 | Facility access controls | YES/NO | <ref> |
-|---|---|---|
+|--|--|--|
 | Workstation security | YES/NO | <ref> |
 | Device and media controls | YES/NO | <ref> |
 ```
@@ -104,7 +104,7 @@ If operating as a service organization:
 ```
 SOC2 — TRUST SERVICES CRITERIA:
 | Category | Controls | Implemented | Gaps |
-|---|---|---|---|
+|--|--|--|--|
 | Security | 12 | <N> | <N> |
 | Availability | 8 | <N> | <N> |
 | Processing Integr. | 6 | <N> | <N> |
@@ -128,7 +128,7 @@ If payment card data is processed:
 ```
 PCI-DSS — REQUIREMENTS CHECK:
 | Requirement | Status |
-|---|---|
+|--|--|
 | 1. Network security controls | PASS/FAIL |
 | 2. Secure configuration | PASS/FAIL |
 | 3. Protect stored account data | PASS/FAIL |
@@ -148,7 +148,7 @@ Verify that all security-relevant and compliance-relevant events are logged:
 ```
 AUDIT TRAIL ASSESSMENT:
 | Event Category | Logged | Fields |
-|---|---|---|
+|--|--|--|
 | Authentication | YES/NO | who, when, IP, result |
 | Authorization changes | YES/NO | who, what, when, by-whom |
 | Data access (read) | YES/NO | who, what, when |
@@ -167,7 +167,7 @@ Verify data lifecycle management:
 ```
 DATA RETENTION POLICY:
 | Data Category | Retention | Auto-delete | Method |
-|---|---|---|---|
+|--|--|--|--|
 | User accounts | Active+2y | YES/NO | <method> |
 | Transaction logs | 7 years | YES/NO | <method> |
 | Session data | 30 days | YES/NO | <method> |
@@ -190,7 +190,7 @@ Audit open-source and third-party license obligations:
 ```
 LICENSE COMPLIANCE:
 | License Type | Count | Commercial OK | Action |
-|---|---|---|---|
+|--|--|--|--|
 | MIT | <N> | YES | NONE |
 | Apache 2.0 | <N> | YES | NOTICE file |
 | BSD | <N> | YES | NONE |
@@ -231,18 +231,18 @@ Actions required:
 
 ## Key Behaviors
 
-1. **Regulation-specific, not generic.** Each finding must reference the specific regulation article or requirement it violates (e.g., "GDPR Article 17" not just "deletion missing").
+1. **Regulation-specific, not generic.** Each finding must reference the specific regulation article or requirement it violates (e.g., "GDPR Article 17" not only "deletion missing").
 2. **Evidence from code.** Every finding must point to actual code — files, functions, database schemas, API endpoints. No theoretical assessments.
 3. **Risk-rated findings.** CRITICAL means regulatory penalty or data breach risk. HIGH means audit finding. MEDIUM means best practice gap. LOW means improvement opportunity.
 4. **Remediation is concrete.** "Implement consent management" is not remediation. Show the database schema for consent records, the API endpoints for consent capture, and the UI flow.
-5. **Privacy by design.** Don't just check boxes — evaluate whether the architecture minimizes data collection, limits data sharing, and defaults to privacy-protective settings.
+5. **Privacy by design.** Don't only check boxes — evaluate whether the architecture minimizes data collection, limits data sharing, and defaults to privacy-protective settings.
 6. **License compliance is non-negotiable.** A single GPL dependency in a proprietary SaaS product can create legal exposure. Always check.
 7. **Audit trails are infrastructure.** Logging is not optional for regulated systems. Verify it exists, verify it captures the right events, verify it is tamper-resistant.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full compliance audit across all applicable regulations |
 | `--gdpr` | GDPR compliance check only |
 | `--hipaa` | HIPAA compliance check only |

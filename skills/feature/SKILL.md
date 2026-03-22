@@ -86,7 +86,7 @@ Check: types categorized, naming enforced, owner assigned, cleanup dates set, ki
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--rollout` | Design gradual rollout plan |
 | `--experiment` | Set up A/B test |
 | `--killswitch` | Design kill switches |
@@ -142,7 +142,7 @@ Log to `.godmode/feature-results.tsv`: `STEP\tFLAG_NAME\tFLAG_TYPE\tPLATFORM\tST
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | SDK init fails | Check API/SDK key, verify network, implement fallback defaults. |
 | Flag not evaluating | Check evaluation context (user.id passed?), use provider debugger. |
 | Rollout causing errors | Set to 0% immediately, check error logs for flag=on cohort, fix, resume from 1%. |

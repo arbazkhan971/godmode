@@ -32,14 +32,12 @@ Existing Workloads:
 Helm Releases: <list of deployed charts>
 Container Registry: <registry URL>
 ```
-
 ```bash
 # Gather cluster info
 kubectl cluster-info
 kubectl get deployments,services,ingresses -n <namespace>
 helm list -n <namespace>
 ```
-
 If no Kubernetes context is found: "No Kubernetes cluster configured. Shall I generate manifests for local development (minikube/kind) or production deployment?"
 
 ### Step 2: Generate or Validate Manifests
@@ -72,7 +70,6 @@ kubeval:      PASS (schema-compliant)
 kubesec:      Score 8/10 (2 advisories)
 kube-linter:  3 warnings, 0 errors
 ```
-
 ### Step 3: Helm Chart Generation
 When a reusable, parameterized deployment is needed:
 
@@ -98,7 +95,6 @@ HELM CHART STRUCTURE:
   tests/
     test-connection.yaml — Helm test for connectivity
 ```
-
 ```bash
 # Validate chart
 helm lint <chart-dir>
@@ -107,7 +103,6 @@ helm lint <chart-dir>
 helm template <release-name> <chart-dir> -f values-prod.yaml
 
 ```
-
 ### Step 4: Deployment Strategy Selection
 Choose and configure the appropriate deployment strategy:
 
@@ -137,7 +132,7 @@ SAFETY:
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: <service-name>
+  name: <service-name>-rollout
 spec:
 ```
 ```
@@ -159,7 +154,7 @@ SAFETY:
 apiVersion: v1
 kind: Service
 metadata:
-  name: <service-name>
+  name: <service-name>-svc
 ```
 ```
 USE WHEN:
@@ -181,7 +176,7 @@ Configure health checks, resource limits, and disruption budgets:
 RESOURCE SIZING:
   Service: <service-name>
 | Metric | Current | P95 | Recommended |
-|---|---|---|---|
+|--|--|--|--|
 | CPU usage | 120m | 280m | req: 200m lim: 500m |
 | Memory usage | 256Mi | 384Mi | req: 300Mi lim: 512Mi |
 | Pod count | 3 | 3 | min: 2 max: 10 |
@@ -200,7 +195,7 @@ Rules:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: <service-name>
+  name: <service-name>-hpa
 spec:
   scaleTargetRef:
 ```
@@ -210,7 +205,7 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: <service-name>
+  name: <service-name>-pdb
 spec:
   minAvailable: 1    # Or use maxUnavailable: 1
 ```
@@ -221,7 +216,7 @@ Diagnose common Kubernetes issues:
 ```
 TROUBLESHOOTING CHECKLIST:
 | Symptom | Check |
-|---|---|
+|--|--|
 | CrashLoopBackOff | kubectl logs <pod> |
 |  | Check startup/liveness probe |
 |  | Check resource limits |
@@ -238,7 +233,6 @@ TROUBLESHOOTING CHECKLIST:
 | Ingress 502/503 | Check readiness probe |
 |  | Check backend service |
 ```
-
 ```bash
 # Quick diagnostics
 kubectl describe pod <pod-name> -n <namespace>
@@ -246,7 +240,6 @@ kubectl logs <pod-name> -n <namespace> --previous
 kubectl top pods -n <namespace>
 kubectl get events -n <namespace> --sort-by='.lastTimestamp'
 ```
-
 ### Step 7: Deploy and Verify
 Execute the deployment with verification:
 
@@ -258,7 +251,6 @@ helm upgrade --install <release> <chart> \
   --wait \
   --timeout 5m
 ```
-
 ```
 DEPLOYMENT RESULT:
   Deployment: <service-name>
@@ -274,7 +266,6 @@ DEPLOYMENT RESULT:
   [x] Service endpoint returning 200
   [x] No error logs in last 60 seconds
 ```
-
 ### Step 8: Commit and Report
 ```
 1. Save Kubernetes manifests in `k8s/` or `charts/` directory
@@ -327,26 +318,6 @@ AUTO-DETECT:
    - .github/workflows/ with kubectl/helm steps → GitHub Actions
 ```
 
-## Iterative Deployment Protocol
-Kubernetes deployments are validated iteratively:
-```
-current_step = 0
-steps = ["validate", "lint", "security", "dry-run", "deploy-dev", "deploy-staging", "deploy-prod"]
-
-WHILE current_step < len(steps):
-  step = steps[current_step]
-  1. EXECUTE step:
-     - validate: kubectl apply --dry-run=client
-     - lint: helm lint / kubeval / kube-linter
-     - security: kubesec scan, check securityContext
-     - dry-run: kubectl apply --dry-run=server
-     - deploy-*: helm upgrade --install --wait
-  2. VERIFY step passed:
-     - IF errors → REPORT and HALT (do not proceed)
-     - IF warnings → REPORT, continue if non-critical
-  3. POST-DEPLOY verification (for deploy-* steps):
-```
-
 ## Keep/Discard Discipline
 ```
 After EACH manifest change or deployment:
@@ -358,15 +329,6 @@ After EACH manifest change or deployment:
   4. COMMIT kept changes. Rollback discarded changes (helm rollback / kubectl rollout undo).
 
 Never promote a deployment stage if the current stage is unhealthy.
-```
-
-## Stuck Recovery
-```
-IF >3 consecutive iterations fail to get pods healthy:
-  1. Check previous pod logs: `kubectl logs <pod> --previous` — crash reason is often in the last log line.
-  2. Check events: `kubectl get events --sort-by=.lastTimestamp` — scheduling and image pull issues surface here.
-  3. Simplify: remove resource limits temporarily to rule out OOMKill, then add them back with higher values.
-  4. If still stuck → log stop_reason=stuck, capture pod describe output, escalate to user.
 ```
 
 ## Stop Conditions
@@ -382,21 +344,10 @@ DO NOT STOP just because:
   - Network policies are not yet applied (apply after core deployment is stable)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler Kubernetes configuration:
-  - Deployment before StatefulSet (unless you genuinely need stable pod identity)
-  - ClusterIP service before LoadBalancer (use Ingress for external access)
-  - Helm values overrides before custom Helm templates
-  - Namespace-level RBAC before pod-level service accounts (until fine-grained access is needed)
-  - Fewer replicas with right-sized resources before many tiny replicas
-  - Rolling update before canary (unless the change is high-risk)
-```
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Validate manifests and show deployment plan |
 | `--generate` | Generate new Kubernetes manifests or Helm chart |
 | `--deploy` | Deploy to the target cluster |
@@ -432,4 +383,3 @@ Columns: iteration, task, namespace, resources_created, resources_modified, heal
 - **Service returns 503**: Check if endpoints exist (`kubectl get endpoints <service>`). Verify readiness probe is passing. Check if the pod labels match the service selector.
 - **HPA not scaling**: Verify metrics-server is running. Check `kubectl describe hpa` for conditions. Verify resource requests are set (HPA needs requests to calculate utilization).
 - **ConfigMap/Secret changes not picked up**: Restart pods to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
-

@@ -252,7 +252,7 @@ Homebrew (macOS/Linux):
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full CLI project assessment and setup |
 | `--interactive` | Focus on interactive prompts and TUI |
 | `--completion` | Shell completion generation only |
@@ -355,7 +355,7 @@ Verify all of these before marking the task complete:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Parser library not detected | Check `package.json` for `commander`/`yargs`/`meow`, `Cargo.toml` for `clap`, `go.mod` for `cobra`/`urfave/cli`, `pyproject.toml` for `click`/`typer`/`argparse`. If none, ask user for preference. |
 | Command fails silently | Ensure all error paths write to stderr and set non-zero exit code. Add `process.exitCode = 1` (Node), `std::process::exit(1)` (Rust), `os.Exit(1)` (Go), `sys.exit(1)` (Python). |
 | Output encoding issues | Force UTF-8 output. Node: set `process.stdout` encoding. Python: set `PYTHONIOENCODING=utf-8`. Test with pipe: `tool list | cat` must not break. |

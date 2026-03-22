@@ -83,7 +83,7 @@ Apply the pass condition from step 1:
 - Non-zero exit code = FAIL unless the claim is specifically about a non-zero exit.
 - Any error in output that contradicts the claim = FAIL even if exit code is 0.
 
-Verdict: **PASS** or **FAIL**. No "PARTIAL", no "MAYBE", no "LIKELY".
+Verdict: **PASS** or **FAIL**. No "PARTIAL", no "UNCERTAIN", no "LIKELY".
 
 Print: `[verify:judge] Expected: {expected} | Actual: {actual} | Verdict: {PASS|FAIL}`
 
@@ -91,7 +91,7 @@ Print: `[verify:judge] Expected: {expected} | Actual: {actual} | Verdict: {PASS|
 Print a single formatted table:
 ```
 | Field    | Value                                         |
-|----------|-----------------------------------------------|
+|--|--|
 | Claim    | {claim}                                       |
 | Command  | {command}                                     |
 | Expected | {pass_condition}                              |
@@ -138,7 +138,7 @@ Example row:
 - [ ] Full stdout+stderr captured to a file — no truncation
 - [ ] Output was read completely — error/warning counts reported
 - [ ] Numeric claims used 3 runs with median; boolean claims used 1 run
-- [ ] Verdict is exactly PASS or FAIL — no partial, no maybe
+- [ ] Verdict is exactly PASS or FAIL — no partial, no uncertain
 - [ ] Evidence table printed with all fields populated
 - [ ] TSV row appended with timestamp, claim, command, expected, actual, verdict, evidence file
 
@@ -168,7 +168,7 @@ Example row:
 [verify:judge]  Expected: exit 0 | Actual: exit 0 | Verdict: PASS
 
 | Claim    | All tests pass                            |
-|---|---|
+|--|--|
 | Command  | npm test 2>&1                             |
 | Expected | exit_code == 0                            |
 | Actual   | exit 0, "47 passing, 0 failing"           |
@@ -185,7 +185,7 @@ Example row:
 [verify:judge]  Expected: < 0.200 | Actual: 0.156 (median of 3) | Verdict: PASS
 
 | Claim    | Response time is under 200ms              |
-|---|---|
+|--|--|
 | Command  | curl -o /dev/null -s -w '%{time_total}'.. |
 | Expected | < 0.200s                                  |
 | Actual   | 0.156s (median of 3 runs)                 |
@@ -205,7 +205,7 @@ Example row:
 REASON: 3 lint errors found: unused-vars (src/auth.ts:12), no-console (src/logger.ts:5), prefer-const (src/config.ts:22)
 
 | Claim    | No lint errors                            |
-|---|---|
+|--|--|
 | Command  | npm run lint 2>&1                         |
 | Expected | exit_code == 0                            |
 | Actual   | exit 1, 3 errors                          |
@@ -307,6 +307,13 @@ EVIDENCE STANDARDS (for auditable verification):
    - Report flaky tests separately: .godmode/flaky-tests.tsv
    - Fix or quarantine flaky tests before claiming verification
 ```
+
+## Hard Rules
+1. Never verify in your head — run the command, read the output, report what happened.
+2. Never trust cached results — if any file changed since last verify, re-run everything.
+3. Never filter or truncate output — read all of stdout and stderr completely.
+4. Partial pass = FAIL. 99/100 passing when claim is "all tests pass" = FAIL.
+5. Each claim gets its own command, run, and verdict — never combine multiple claims.
 
 ## Keep/Discard Discipline
 ```

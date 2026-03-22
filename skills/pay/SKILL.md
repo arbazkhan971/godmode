@@ -109,7 +109,7 @@ Commit: "pay: <description> — <components implemented>"
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | `--checkout` | One-time payment checkout flow only |
 | `--subscription` | Subscription billing design only |
 | `--tax` | Tax calculation setup only |
@@ -162,7 +162,7 @@ Log to `.godmode/pay-results.tsv`: `STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS`
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Stripe API key missing | Print env var names, link to Stripe dashboard. |
 | Webhook signature fails | Verify STRIPE_WEBHOOK_SECRET matches endpoint secret. Use `stripe listen` for local dev. |
 | Payment intent fails | Map Stripe error codes to user-facing messages. |

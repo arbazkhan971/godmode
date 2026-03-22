@@ -283,7 +283,7 @@ REALTIME OPTIMIZATION REPORT:
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | WebSocket connections drop frequently | Implement automatic reconnection with exponential backoff. Check for idle timeouts on load balancers. Send heartbeat/ping frames. |
 | Messages delivered out of order | Add sequence numbers. Buffer and reorder on client. Use ordered channels/topics where available. |
 | Server memory grows with connected clients | Check for event listener leaks. Limit per-connection buffer size. Implement connection limits. Use pub/sub pattern to avoid per-connection state. |

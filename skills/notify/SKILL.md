@@ -133,7 +133,7 @@ Files: service.ts, channels/ (push, sms, in-app, webhook), preferences.ts, diges
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full multi-channel notification system |
 | `--push` | Push notification setup only (FCM, APNs, OneSignal) |
 | `--sms` | SMS notification setup only (Twilio, OTP) |

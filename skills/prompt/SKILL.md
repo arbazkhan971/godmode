@@ -27,7 +27,7 @@ Budget: max tokens, latency, cost per call
 ### Step 2: Pattern Selection
 
 | Pattern | Best for |
-|---------|----------|
+|--|--|
 | Zero-shot | Simple tasks the model handles well |
 | Few-shot | Tasks needing examples for format/style |
 | Chain-of-thought | Reasoning, math, multi-step analysis |
@@ -92,7 +92,7 @@ WHILE iteration < 5 AND accuracy < target:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full workflow |
 | `--pattern <name>` | Force pattern |
 | `--optimize` | Improve existing prompt |
@@ -129,7 +129,7 @@ Run sequentially: design, test suite, evaluation, security hardening.
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Prompt produces inconsistent output | Add structured output format (JSON mode). Increase temperature to 0 for deterministic tasks. Add few-shot examples. |
 | Prompt injection bypasses guardrails | Add input sanitization. Use system prompt isolation. Test with known injection payloads. Add output validation. |
 | Model refuses valid requests | Rephrase to avoid false-positive safety triggers. Use explicit context setting. Test with alternative phrasing. |

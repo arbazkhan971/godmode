@@ -133,6 +133,13 @@ iteration	error_type	file	line	fix_description	lines_changed	status
 - **If a fix requires modifying a test file:** The test is wrong, not the code, only if the spec explicitly changed. In that case, commit the test change separately with `test({module}): update test for {spec_change}`. Otherwise, fix the source code to match the test.
 - **If all errors are in skipped_list and error_count > 0:** Stop the loop. Print the full skipped list with file:line and error messages. Recommend `/godmode:debug` to investigate root causes.
 
+## Hard Rules
+1. Fix ONE error per iteration — commit before verify, revert if regression.
+2. Never suppress errors (`@ts-ignore`, `eslint-disable`, `any` cast, empty catch) — fix the root cause.
+3. Max 3 attempts per unique error — after 3 failed reverts, skip and move on.
+4. Priority order: build errors > type errors > lint errors > test failures.
+5. Read the FULL error output before fixing — truncated stack traces lead to wrong fixes.
+
 ## Anti-Patterns
 1. **Suppressing errors instead of fixing them.** Never add `// @ts-ignore`, `# type: ignore`, `eslint-disable`, `@SuppressWarnings`, `try/catch` around broken code, or cast to `any`. These hide the bug.
 2. **Fixing multiple errors in one commit.** Each commit must fix exactly one error. This ensures clean reverts and makes the TSV log accurate.
@@ -185,11 +192,11 @@ $ /godmode:fix   # called by /godmode:build after merge
 Fix triage: test failing with 2 errors
 Fixing [1/2]: FAIL src/auth/login.test.ts — "should reject expired tokens"
   Root cause: token expiry check uses `<` instead of `<=` at src/auth/login.ts:97
-  Added regression test: src/auth/login.edge.test.ts — "should reject token at exact expiry time"
-  KEPT: error count 2 → 1
+  Added regression test: src/auth/login.edge.test.ts
+  KEPT: errors 2 → 1
 Fixing [2/2]: FAIL src/api/users.test.ts — "should return 404 for missing user"
-  Root cause: handler returns 500 because findUser throws instead of returning null at src/models/user.ts:34
-  KEPT: error count 1 → 0
+  Root cause: findUser throws instead of returning null at src/models/user.ts:34
+  KEPT: errors 1 → 0
 Fixed: 2 → 0 in 2 iters. Skipped: [].
 ```
 

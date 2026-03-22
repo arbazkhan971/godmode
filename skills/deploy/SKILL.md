@@ -42,17 +42,9 @@ Two identical environments, instant switchover:
 
 ```
 BLUE-GREEN DEPLOYMENT PLAN:
-  LOAD BALANCER
-  ┌────┴────┐
-│   │         │                                               │
-  ▼         ▼
-  ┌──────┐  ┌──────┐
-|  | BLUE |  | GREEN |  |
-|  | (live) |  | (idle) |  |
-|  | v1.0 |  | v1.1 |  |
-  └──┬───┘  └──┬───┘
-│    │         │                                               │
-  └────┬────┘
+  LOAD BALANCER → routes 100% to active environment
+    [BLUE env: v1.0 (live)] ←── current traffic
+    [GREEN env: v1.1 (idle)] ←── deploy here, then switch
 ```
 
 ### Step 3: Canary Release
@@ -61,14 +53,9 @@ Route a small percentage of traffic to the new version:
 ```
 CANARY RELEASE PLAN:
   LOAD BALANCER (traffic splitting)
-  ┌────┴──────────────┐
-|  | 95% | 5% |
-  ▼                   ▼
-  ┌──────────┐  ┌──────────┐
-|  | STABLE |  | CANARY |  |
-|  | (N inst) |  | (1 inst) |  |
-|  | v1.0 |  | v1.1 |  |
-  └──────────┘  └──────────┘
+    95% → [STABLE: v1.0, N instances]
+     5% → [CANARY: v1.1, 1 instance]
+  Gradually shift: 5% → 25% → 50% → 100% based on metrics
 
 ```
 
@@ -78,7 +65,7 @@ Percentage-based traffic shifting with automated gates:
 ```
 PROGRESSIVE ROLLOUT PLAN:
 | Stage | Traffic | Duration | Gate | Rollback |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | 1. Smoke | 0% (int) | 5 min | Auto | Auto |
 | 2. Seed | 1% | 10 min | Auto | Auto |
 | 3. Low | 5% | 15 min | Auto | Auto |
@@ -98,7 +85,7 @@ Define rollback criteria and execution plan:
 ROLLBACK PLAN:
   AUTOMATIC ROLLBACK TRIGGERS
 | Trigger | Threshold | Window |
-|---|---|---|
+|--|--|--|
 | HTTP 5xx rate | > 1% | 2 min |
 | P99 latency | > 2x baseline | 5 min |
 | Error log rate | > 3x baseline | 5 min |
@@ -115,7 +102,7 @@ Coordinate feature flags with deployment stages:
 ```
 FEATURE FLAG ROLLOUT PLAN:
 | Flag | Stage 1 | Stage 2 | Stage 3 | Full |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | new-checkout-ui | internal | 5% users | 50% | 100% |
 | payment-v2-api | internal | internal | 5% | 100% |
 | new-recommendation | OFF | OFF | 25% | 100% |
@@ -208,7 +195,7 @@ Phase 3: CUTOVER
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full deployment planning and strategy recommendation |
 | `--strategy <type>` | Use specific strategy: blue-green, canary, progressive, rolling |
 | `--canary` | Canary release with automated gates |
@@ -340,7 +327,7 @@ Columns: step, environment, strategy, canary_pct, error_rate, latency_p99, rollb
 - Deployment strategy selected based on risk assessment (canary for high-risk, rolling for low-risk).
 - Rollback plan documented and tested before deploying.
 - Health checks pass at every canary stage before promotion.
-- Error rate stays below threshold at each stage (typically < 1%).
+- Error rate stays below threshold at each stage (target: < 1%).
 - Latency P99 stays within baseline + 10% at each stage.
 - Database migrations are backward-compatible (expand-contract pattern).
 - Feature flags configured for risky changes.

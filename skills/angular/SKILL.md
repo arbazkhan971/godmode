@@ -146,7 +146,7 @@ Commit: `"angular: <project> — <N> components, <architecture>, <state manageme
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full project assessment and setup |
 | `--audit` | Audit against best practices |
 | `--standalone` | Migrate to standalone |

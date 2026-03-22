@@ -47,7 +47,7 @@ Choose the right analytics stack:
 ```
 PLATFORM SELECTION:
 | Platform | Best For | Privacy Model |
-|---|---|---|
+|--|--|--|
 | Segment | Data routing hub, | Third-party, consent needed |
 |  | multi-destination CDP | GDPR tools available |
 | Amplitude | Product analytics, | Third-party, consent needed |
@@ -150,7 +150,7 @@ Goal: <what conversion means — e.g., "User completes onboarding">
 
 FUNNEL STEPS:
 | Step | Name | Event | Expected % |
-|---|---|---|---|
+|--|--|--|--|
 | 1 | Visit landing page | Page Viewed | 100% |
 | 2 | Click sign up | CTA Clicked | 30-40% |
 | 3 | Complete registration | User Signed Up | 60-70% |
@@ -212,7 +212,7 @@ Implement privacy-compliant analytics:
 ```
 PRIVACY IMPLEMENTATION:
 | Requirement | Implementation |
-|---|---|
+|--|--|
 | Consent management | Cookie banner with granular |
 |  | opt-in/opt-out per category |
 | No tracking before consent | Analytics SDK loads only after |
@@ -229,7 +229,7 @@ Validate the analytics implementation:
 ```
 ANALYTICS VALIDATION:
 | Check | Status |
-|---|---|
+|--|--|
 | All events in taxonomy are instrumented | PASS | FAIL |
 | Event names follow naming convention | PASS | FAIL |
 | Properties match documented schema | PASS | FAIL |
@@ -267,7 +267,7 @@ Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 
 1. **Taxonomy first, tracking second.** Design the event catalog before writing any tracking code. Ad-hoc event naming creates an unmaintainable mess.
 2. **Privacy by default.** No tracking before consent. No PII in events. Respect DNT. Implement data deletion. These are not optional.
-3. **Measure what matters.** Track events that answer business questions. Do not track everything just because you can. More events means more noise.
+3. **Measure what matters.** Track events that answer business questions. Do not track everything because you can. More events means more noise.
 4. **Consistent naming saves hours.** A well-designed event taxonomy prevents the "we have 47 different events that all mean page view" problem.
 5. **A/B tests need rigor.** Calculate sample size before launching. Define success metrics before seeing results. Run to completion, do not peek and stop early.
 6. **Abstraction layer over vendor lock-in.** Use a unified analytics interface so you can swap providers without touching every component.
@@ -276,7 +276,7 @@ Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full analytics design and implementation workflow |
 | `--platform <name>` | Force platform: `segment`, `amplitude`, `mixpanel`, `posthog`, `plausible`, `umami`, `ga4` |
 | `--taxonomy` | Design event taxonomy only (no implementation) |

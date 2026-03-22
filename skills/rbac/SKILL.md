@@ -29,15 +29,8 @@ Authorization complexity:
   - [ ] Resource relationships (owner, member, shared-with) — use ReBAC
   - [ ] Combination of the above — use Hybrid
 
-Resources to protect:
-  - <resource-1>: <description, sensitivity level>
-  - <resource-2>: <description, sensitivity level>
-  - ...
-
-User populations:
-  - End users: <roles and typical permissions>
+  ...
 ```
-
 ### Step 2: Permission Model Selection
 Select and design the appropriate authorization model:
 
@@ -53,11 +46,8 @@ RBAC DESIGN:
 |  |  | ├── member |
 |  |  |  | └── viewer |
 |  |  | └── contributor |
-|  |  | └── viewer |
-|  | └── billing_admin |
-  └── support_admin
+  ...
 ```
-
 #### Model: ABAC (Attribute-Based Access Control)
 For systems requiring dynamic, context-aware authorization:
 
@@ -70,15 +60,8 @@ Subject attributes (who):
   - user.tenant_id, user.org_id, user.team_ids
   - user.mfa_verified, user.email_verified
   - user.ip_address, user.location
-
-Resource attributes (what):
-  - resource.type, resource.id, resource.owner_id
-  - resource.tenant_id, resource.sensitivity
-  - resource.classification (public | internal | confidential | restricted)
-  - resource.created_at, resource.tags
-
+  ...
 ```
-
 #### Model: ReBAC (Relationship-Based Access Control)
 For systems where access depends on resource relationships (Google Zanzibar model):
 
@@ -91,15 +74,8 @@ Relationship tuples:
   Examples:
     user:alice  has  owner    on  document:doc1
     user:bob    has  editor   on  document:doc1
-    team:eng    has  viewer   on  folder:specs
-    user:alice  has  member   on  team:eng     (transitive: alice can view folder:specs)
-
-Type definitions (schema):
-  type user {}
-
-  type document {
+  ...
 ```
-
 ### Step 3: Role Hierarchy Design
 Define the complete role hierarchy with inheritance rules:
 
@@ -112,8 +88,7 @@ ROLE HIERARCHY DESIGN:
   Use when: Simple organizational structure.
   2. LATTICE HIERARCHY (DAG structure)
   Roles can have multiple parents.
-  Permissions are the UNION of all ancestor permissions.
-  Use when: Cross-functional roles needed.
+  ...
 ```
 RESOURCE-BASED ACCESS CONTROL:
 
@@ -149,9 +124,7 @@ PERMISSION INHERITANCE:
   Team admin has admin on team's projects and resources
   Project admin has admin on project's resources
   FOLDER/CONTAINER INHERITANCE:
-  Folder permissions cascade to all documents within
-  Subfolder permissions can RESTRICT but not EXPAND parent
-  Breaking inheritance: Mark resource as "custom permissions"
+  ...
 ```
 POLICY ENGINE:
   REQUEST                POLICY ENGINE             DECISION
@@ -191,17 +164,11 @@ Audit log schema:
     id: "<uuid>",
     timestamp: "<ISO-8601 UTC>",
     event_type: "authorization_decision",
-    decision: "ALLOW" | "DENY",
-    subject: {
-      user_id: "<user-id>",
-      role: "<effective-role>",
-      ip_address: "<client-ip>",
-      user_agent: "<browser/client>",
-      session_id: "<session-id>"
+  ...
 ```
 IMPLEMENTATION ARTIFACTS:
 | File | Purpose |
-|---|---|
+|--|--|
 | src/auth/models/role | Role definitions + hierarchy |
 | src/auth/models/permission | Permission definitions |
 | src/auth/models/resource-grant | Resource-level grants |
@@ -221,9 +188,7 @@ IMPLEMENTATION ARTIFACTS:
   Policies configured: <N>
   Hierarchy:
   Type: <strict | lattice | scoped>
-  Depth: <N levels>
-  Inheritance: <enabled/disabled>
-  Delegation:
+  ...
 ```
 resources = list_all_protected_resources()
 roles = list_all_defined_roles()
@@ -247,40 +212,6 @@ WHILE current_resource < len(resources) AND iteration < max_iterations:
             IF unused for 90+ days AND not a break-glass permission:
               FLAG as EXCESSIVE — recommend revocation
 
-## Least-Privilege Verification Protocol
-
-```
-FOR each user/service account:
-  1. COLLECT effective permissions (resolve role hierarchy + direct grants + delegation)
-  2. COMPARE against actual usage (from audit logs, last 90 days):
-     - Permissions used: KEEP
-     - Permissions never used: FLAG as candidate for revocation
-     - Permissions used once (emergency): FLAG as candidate for just-in-time elevation
-  3. GENERATE least-privilege recommendation:
-     current_permissions - unused_permissions = recommended_permissions
-  4. VERIFY no critical workflow breaks under recommended set:
-     - Map each role's workflows to required permissions
-     - Confirm recommended set covers all documented workflows
-     - IF gap found: add back the specific missing permission (not the entire role)
-  5. LOG to .godmode/rbac-least-privilege.tsv:
-     timestamp	subject_type	subject_id	current_perms_count	used_perms_count	recommended_perms_count	excessive_count	verdict
-
-```
-FOR each permission audit finding:
-  KEEP if:
-    - Permission is excessive (unused 90+ days with audit log evidence)
-    - Role violates separation of duties constraint
-    - Delegation exceeds max depth or lacks expiry
-    - tenant_id scoping is missing on any query
-  DISCARD if:
-    - Permission is used regularly (audit log confirms active use)
-    - Permission is a documented break-glass/emergency access
-    - Finding is in a non-production environment with no prod data access
-    - Already remediated in previous audit cycle (check .godmode/rbac-decisions.tsv)
-  RECORD: Every discard logged with justification to .godmode/rbac-discards.tsv:
-    timestamp	finding_type	subject	resource	discard_reason
-```
-
 ## Auto-Detection
 
 Before prompting the user, automatically detect existing auth and access control:
@@ -294,24 +225,6 @@ AUTO-DETECT SEQUENCE:
    - Managed: Auth0, Clerk, Firebase Auth, Supabase Auth SDK
 2. Detect existing authorization:
    - RBAC models: roles table, user_roles table in migrations/schema
-   - Policy libraries: pundit (Ruby), casbin, casl (JS), django-guardian
-   - Middleware: authorize, requireRole, @Roles decorator patterns
-   - External: SpiceDB, Ory Keto, Auth0 FGA, AWS Verified Permissions
-3. Detect multi-tenancy:
-   - tenant_id columns in database schema
-   - Row-level security policies in PostgreSQL
-   - Subdomain-based routing
-   - Organization/workspace models
-4. Detect audit logging:
-   - audit_logs or access_logs tables
-   - PaperTrail (Rails), django-auditlog, audit packages
-   - SIEM integration config (Datadog, Splunk, ELK)
-5. Detect permission patterns in code:
-   - Grep for: isAdmin, hasRole, canAccess, authorize, permit
-   - Check middleware chains for auth checks
-   - Identify unprotected routes (no auth middleware)
-```
-
 ## HARD RULES
 
 ```
@@ -323,11 +236,7 @@ HARD RULES — NEVER VIOLATE:
 5. NEVER allow permission escalation through delegation — validate against delegator's perms.
 6. NEVER grant permanent admin access — use time-limited elevation with auto-expiry.
 7. ALWAYS log BOTH allow and deny decisions with full context.
-8. ALWAYS scope all queries by tenant_id in multi-tenant systems.
-9. ALWAYS use immutable, append-only storage for audit logs.
-10. NEVER use string matching for permission checks (e.g., includes("admin") matches "billing_admin").
-11. ALWAYS separate authentication from authorization — they are different concerns.
-12. ALWAYS test that users CANNOT access what they should not — not just that they CAN access what they should.
+  ...
 ```
 
 ## Key Behaviors
@@ -336,14 +245,8 @@ HARD RULES — NEVER VIOLATE:
 2. **Least privilege.** Every role should have the minimum permissions needed to perform its function. Start with zero permissions and add only what is required. It is easier to grant additional permissions than to revoke excessive ones.
 3. **Separation of duties.** Critical operations should require multiple roles. The person who creates an invoice should not be the person who approves payment. Encode these constraints in the role model.
 4. **Audit everything.** Log every authorization decision — ALLOW and DENY — with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
-5. **Roles are not permissions.** Roles are collections of permissions assigned to users. Permissions are fine-grained actions on resources. Check permissions in code, not roles. `if (can(user, "delete", project))` is correct. `if (user.role === "admin")` is fragile.
-6. **Resource ownership matters.** The owner of a resource should always have full control. Ownership is a relationship, not a role. Combine RBAC (role-based) with resource ownership (relationship-based) for practical systems.
-7. **Test authorization, not authentication.** Write tests that verify: users CAN access what they should, users CANNOT access what they should not, permission changes take effect, and audit logs are generated.
-
 ## Flags & Options
-
-| Flag | Description |
-|------|-------------|
+  ...
 ```
   RBAC RESULT
   Model: <RBAC | ABAC | ReBAC | Hybrid>
@@ -351,9 +254,6 @@ HARD RULES — NEVER VIOLATE:
   Permissions: <N defined>
   Resources protected: <N>
   Audit logging: <YES | PARTIAL | NO>
-  Verdict: <PRODUCTION READY | NEEDS WORK | INCOMPLETE>
-```
-
 ## TSV Logging
 
 Log every RBAC design or audit to `.godmode/rbac-decisions.tsv`:
@@ -375,18 +275,6 @@ PASS if ALL of the following:
   - Audit logs are immutable (append-only or write-once storage)
   - Multi-tenant queries are scoped by tenant_id
   - No permanent admin grants exist (all elevated access has expiry)
-  - Delegation cannot escalate beyond the delegator's own permissions
-
-FAIL if ANY of the following:
-  - Default allow is used anywhere
-  - Roles are checked in application code instead of permissions
-  - Any API endpoint lacks server-side authorization
-  - Authorization decisions are not logged
-  - super_admin bypasses the policy engine entirely
-  - String matching is used for permission checks (e.g., includes("admin"))
-  - tenant_id filtering is missing in a multi-tenant system
-```
-
 ## Error Recovery
 
 ```
@@ -396,21 +284,6 @@ IF policy engine denies a legitimate request:
   3. Add or adjust the specific permission — do not create a bypass
   4. Test both the fixed access AND ensure other restrictions still hold
   5. Log the policy change with who, what, when, and why
-
-IF role hierarchy produces unexpected inheritance:
-  1. Print the full resolved permission set for the problematic role
-  2. Trace the inheritance path from the role to each inherited permission
-  3. Fix at the correct hierarchy level — do not patch at the leaf
-  4. Re-run authorization tests for all roles affected by the change
-
-IF audit logging fails or loses events:
-  1. Switch to synchronous logging until the async pipeline is fixed
-  2. Check for full disks, network partitions, or SIEM ingestion failures
-  3. Replay any buffered events after the pipeline is restored
-  4. Verify no authorization decisions occurred during the gap without logging
-  5. File an incident report — unlogged authorization is a compliance violation
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -421,7 +294,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP just because:
   - One role has complex inheritance (resolve it)
-  - Audit logging works for denials only (must log allows too)
+  ...
 ```
 ## Output Format
 Print: `RBAC: {roles} roles, {permissions} permissions. Audit log: {active|missing}. Tests: {pass|fail}. Status: {DONE|PARTIAL}.`

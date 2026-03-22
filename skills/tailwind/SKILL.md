@@ -117,7 +117,7 @@ VERDICT: <PASS | NEEDS REVISION>
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full Tailwind assessment and setup |
 | `--audit` | Audit existing Tailwind configuration |
 | `--config` | Generate or optimize tailwind.config |
@@ -169,7 +169,7 @@ Run the task inline. Use `git stash` instead of `EnterWorktree`. All conventions
 
 ## Error Recovery
 | Failure | Action |
-|---------|--------|
+|--|--|
 | Tailwind classes not applying | Check `content` paths in config include all template file extensions. Verify PostCSS config loads Tailwind plugin. Run `npx tailwindcss --help` to confirm installation. |
 | PurgeCSS removes needed classes | Add dynamic class patterns to `safelist` in config. For conditional classes, use complete strings (not concatenation). |
 | Design token conflicts with UI library | Extend (don't replace) the default theme. Use `theme.extend` to add tokens alongside library defaults. |
@@ -178,7 +178,7 @@ Run the task inline. Use `git stash` instead of `EnterWorktree`. All conventions
 ## Success Criteria
 1. `vite build` (or equivalent) completes without CSS-related errors.
 2. No Tailwind classes missing from production build (visual spot-check on 3 key pages).
-3. CSS bundle size within budget (typically <50KB gzipped for Tailwind).
+3. CSS bundle size within budget (target: <50KB gzipped for Tailwind).
 4. Design tokens defined in config, not as arbitrary values in markup.
 
 ## TSV Logging

@@ -179,6 +179,13 @@ STOP when FIRST of:
 ## Output Format
 Print: `Skill: OWASP {tested}/10, STRIDE {tested}/6. {before} findings → {after} confirmed ({delta}%). {kept} kept, {discarded} discarded. Status: {DONE|PARTIAL}.`
 
+## Hard Rules
+1. Every finding requires file:line + exploit steps + proof (curl, test case, or code path).
+2. Cover all OWASP Top 10 x 4 personas = 40 test cases minimum. Real payloads only.
+3. Never approve with Critical findings open. Critical+High count in final verdict.
+4. Findings without code evidence from any persona = DISCARD with justification.
+5. Auto-fix (if `--fix`) must run full test suite after each fix — revert if ANY test breaks.
+
 ## Rules
 1. Every finding: file:line + exploit steps + proof (curl command, test case, or code path). No theoretical risks.
 2. Cover all OWASP Top 10 × 4 personas = 40 test cases minimum. Use real payloads. Critical/High before Med/Low.

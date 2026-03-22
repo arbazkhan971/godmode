@@ -118,12 +118,12 @@ Files: upload service, image processor worker, video processor worker, file vali
 7. **Scan every upload for malware.** ClamAV free. Never serve unscanned files.
 8. **Run cleanup from day one.** Stale uploads accumulate silently.
 9. **Serve through CDN with immutable caching.** Content-addressed, max-age=1year.
-10. **Track every upload in the database.** DB is source of truth; S3 is just storage.
+10. **Track every upload in the database.** DB is source of truth; S3 is the storage layer.
 
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full upload architecture |
 | `--presign` | Presigned URL flow only |
 | `--multipart` | Multipart/chunked upload only |

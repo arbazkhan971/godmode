@@ -22,10 +22,9 @@ Understand what to test and what success looks like:
 ```
 LOAD TEST SCOPE:
 Target system: <API | web app | database | message queue | full stack>
-Target endpoints/operations:
-  - <endpoint/operation> — <expected traffic pattern>
-  - <endpoint/operation> — <expected traffic pattern>
-  - <endpoint/operation> — <expected traffic pattern>
+Target endpoints/operations (list each):
+  - e.g., GET /api/users — 500 req/s steady state
+  - e.g., POST /api/orders — 50 req/s with burst to 200
 
 Current known metrics:
   Avg response time: <Xms | unknown>
@@ -36,7 +35,6 @@ Current known metrics:
   Concurrent users: <N | unknown>
 
 ```
-
 ### Step 2: Select Test Type
 Choose the appropriate load test pattern:
 
@@ -169,7 +167,7 @@ System specs: <CPU, memory, disk, network>
 Database: <type, size, connection pool>
 
 | Metric | P50 | P95 | P99 | Max |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | Response time (ms) | <val> | <val> | <val> | <val> |
 | Throughput (rps) | <val> | — | — | <val> |
 | Error rate (%) | <val> | — | — | <val> |
@@ -177,14 +175,13 @@ Database: <type, size, connection pool>
 | Memory usage (MB) | <val> | <val> | <val> | <val> |
 | DB connections | <val> | <val> | <val> | <val> |
 ```
-
 ### Step 5: Bottleneck Analysis
 Identify where performance breaks down:
 
 ```
 BOTTLENECK ANALYSIS:
 | Technique | Finding |
-|---|---|
+|--|--|
 | Response time | P99 spikes at <N> concurrent users |
 | distribution | Bimodal distribution suggests caching |
 |  | miss vs hit pattern |
@@ -195,7 +192,6 @@ BOTTLENECK ANALYSIS:
 |  | Error type: <timeout | 5xx | conn |
 |  | refused | OOM> |
 ```
-
 ### Step 6: Statistical Significance
 Validate that performance changes are real, not noise:
 
@@ -206,7 +202,7 @@ Test runs: <N> (minimum 5 per variant for reliable results)
 Confidence level: 95% (p < 0.05)
 
 | Metric | Before | After | Change | Sig? |
-|---|---|---|---|---|
+|--|--|--|--|--|
 | P50 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
 | P95 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
 | P99 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
@@ -219,7 +215,6 @@ Statistical method: Welch's t-test (unequal variance assumed)
 Effect size: Cohen's d = <value> (<small | medium | large>)
 Verdict: <IMPROVEMENT CONFIRMED | NO SIGNIFICANT CHANGE | REGRESSION DETECTED>
 ```
-
 #### Significance Rules
 ```
 RULES FOR VALID COMPARISON:
@@ -247,7 +242,6 @@ RULES FOR VALID COMPARISON:
   CAPACITY:
   Max stable load: <N> concurrent users / <N> rps
 ```
-
 ### Step 8: Commit and Transition
 1. Save test scripts to `loadtest/` directory
 2. Save results to `loadtest/results/`
@@ -331,15 +325,6 @@ After EACH optimization applied between load test runs:
 Never declare an improvement based on a single run — variance matters.
 ```
 
-## Stuck Recovery
-```
-IF >5 consecutive optimizations produce no statistically significant improvement:
-  1. Re-examine the bottleneck analysis — the real bottleneck may have shifted.
-  2. Check the load test itself: is the test machine the bottleneck? (CPU/network saturation on the generator)
-  3. Look for architectural bottlenecks that require systemic changes (read replicas, caching layers, CDN).
-  4. If still stuck → log stop_reason=optimization_plateau, report current metrics and bottleneck analysis.
-```
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -353,21 +338,10 @@ DO NOT STOP just because:
   - The load test tool reports warnings (investigate but do not abandon the test)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler load testing approach:
-  - k6 or Artillery before JMeter (lower complexity, better developer experience)
-  - Baseline test before stress test (establish normal before finding limits)
-  - Single-endpoint tests before multi-endpoint scenarios (isolate bottlenecks first)
-  - Think time between requests (realistic) over maximum-throughput hammering
-  - Fewer runs with longer duration over many short runs (steady-state matters more than burst)
-  - Local load testing before distributed load generation (unless target throughput exceeds one machine)
-```
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Baseline load test with standard ramp pattern |
 | `--stress` | Find the breaking point with increasing load |
 | `--spike` | Test sudden traffic surge behavior |
@@ -387,9 +361,9 @@ Columns: iteration, test_type, target_rps, actual_rps, p50_ms, p95_ms, p99_ms, e
 
 ## Success Criteria
 - Baseline established with at least 5 runs and statistical confidence (CV < 10%).
-- P95 response time meets defined SLO (typically < 500ms).
-- P99 response time meets defined SLO (typically < 1000ms).
-- Error rate under target threshold (typically < 1%).
+- P95 response time meets defined SLO (default target: < 500ms).
+- P99 response time meets defined SLO (default target: < 1000ms).
+- Error rate under target threshold (default target: < 1%).
 - Breaking point identified and documented (stress test).
 - Headroom above current production traffic is at least 2x.
 - Bottlenecks ranked by impact with specific fix recommendations.
@@ -401,5 +375,4 @@ Columns: iteration, test_type, target_rps, actual_rps, p50_ms, p95_ms, p99_ms, e
 - **Results show unrealistic numbers**: Verify think time is included between requests. Check that the test machine is not the bottleneck (CPU/network saturation on the load generator). Use distributed load generation for high concurrency.
 - **High variance between runs (CV > 15%)**: Eliminate noise sources — close other applications, pin CPU governor to performance mode, run on dedicated hardware. Increase run duration. Increase warm-up phase.
 - **Test crashes at high concurrency**: Increase file descriptor limits (`ulimit -n 65535`). Check connection pool sizes on both client and server. Use connection keep-alive.
-- **Cannot reproduce production performance**: Match data volume (seed with production-scale data). Match hardware specs. Match network latency (test from same region as users). Include realistic user scenarios, not just single-endpoint hammering.
-
+- **Cannot reproduce production performance**: Match data volume (seed with production-scale data). Match hardware specs. Match network latency (test from same region as users). Include realistic user scenarios, not only single-endpoint hammering.

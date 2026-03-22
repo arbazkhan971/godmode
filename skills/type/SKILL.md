@@ -35,7 +35,7 @@ TYPE SAFETY AUDIT:
   Project: <name>
   Language: TypeScript <version>
 | Strict mode | <ON/OFF/PARTIAL> |
-|---|---|
+|--|--|
 | `any` count | <N> explicit + <N> `as any` casts |
 | @ts-ignore | <N> suppressed type errors |
 | Untyped params | <N> function parameters without types |
@@ -104,7 +104,7 @@ Choose and configure runtime validation:
 ```
 SCHEMA VALIDATION COMPARISON:
 | Library | Characteristics |
-|---|---|
+|--|--|
 | Zod | TypeScript-first, infers types from schemas |
 |  | Bundle: ~13KB min+gzip |
 |  | Best for: TypeScript projects, API validation |
@@ -174,7 +174,7 @@ Design the data model before writing business logic:
 SCHEMA-FIRST WORKFLOW:
 ┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
 | 1. Define | ────▶ | 2. Infer | ────▶ | 3. Build | ────▶ | 4. Test |
-|---|---|---|---|---|---|---|
+|--|--|--|--|--|--|---|
 | Schemas |  | Types |  | Logic |  | Against |
 | (Zod) |  | (z.infer) |  | (typed) |  | Schema |
 └──────────┘     └──────────┘     └──────────┘     └──────────┘
@@ -305,7 +305,7 @@ STOP when ANY of these are true:
   - Type safety score >= 80/100
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Some `any` types are in third-party type definitions (those are not your code)
   - `@ts-expect-error` is used for genuine compiler limitations (document each one)
 ```

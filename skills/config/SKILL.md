@@ -49,7 +49,7 @@ Compare configurations across environments to detect drift:
 ```
 PARITY CHECK:
 | Config Key | Dev | Staging | Prod |
-|---|---|---|---|
+|--|--|--|--|
 | DATABASE_URL | ✓ | ✓ | ✓ |
 | REDIS_URL | ✓ | ✓ | ✓ |
 │ LOG_LEVEL           │ debug│ info    │ warn │  ← EXPECTED DIFF
@@ -205,7 +205,7 @@ Ensure secrets are handled safely across all environments:
 ```
 SECRET AUDIT:
 | Check | Status | Finding |
-|---|---|---|
+|--|--|--|
 | .env in .gitignore | PASS/FAIL | <detail> |
 | No secrets in code | PASS/FAIL | <files with hardcoded> |
 | No secrets in logs | PASS/FAIL | <log statements to fix> |
@@ -251,7 +251,7 @@ SECRET AUDIT:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Full config audit — parity, validation, secrets, flags |
 | `--parity` | Environment parity check only |
 | `--validate` | Config validation schema check only |
@@ -322,7 +322,7 @@ Columns: iteration, task, environment, keys_total, secrets_count, drift_detected
 - **Config drift between environments**: Run the drift detection tool to identify which keys differ. Determine if the drift is intentional (environment-specific) or accidental (missed update). Document intentional drift.
 - **Feature flag stuck at 100% for months**: Flag has become tech debt. Schedule cleanup: remove the flag check, delete the flag, remove the old code path. Set a recurring reminder for flag cleanup.
 - **Startup validation too strict (blocks deployment)**: Separate required and optional config. Use sensible defaults for non-critical config. Allow graceful degradation for optional features.
-- **Environment variable injection fails in containers**: Verify the env vars are set in the container runtime config (not just the Dockerfile). Check for quoting issues in YAML/JSON config. Use `printenv` in the container to debug.
+- **Environment variable injection fails in containers**: Verify the env vars are set in the container runtime config (not only the Dockerfile). Check for quoting issues in YAML/JSON config. Use `printenv` in the container to debug.
 
 ## Iterative Loop Protocol
 ```

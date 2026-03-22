@@ -27,12 +27,11 @@ find . -name "*.ts" -o -name "*.js" -o -name "*.py" | xargs wc -l | sort -rn | h
 grep -rn "<pattern>" --include="*.ts" --include="*.js"
 
 ```
-
 ```
 REFACTORING ASSESSMENT:
   Target: <file or module>
 | Lines of code | <N> |
-|---|---|
+|--|--|
 | Complexity | <cyclomatic complexity if avail> |
 | Test coverage | <N%> |
 | Dependents | <N files import this> |
@@ -40,7 +39,6 @@ REFACTORING ASSESSMENT:
 | Last modified | <date and by whom> |
 | Risk level | <LOW | MEDIUM | HIGH | CRITICAL> |
 ```
-
 Risk assessment:
 ```
 LOW:     <10 dependents, >80% test coverage, isolated module
@@ -65,11 +63,8 @@ EXTRACT PATTERNS:
 
 INLINE PATTERNS:
 ├── Inline Function     — Replace function with its body (too simple to be useful)
-├── Inline Variable     — Replace variable with expression (unnecessary indirection)
-└── Inline Class        — Merge class that does too little
-
+  ...
 ```
-
 ### Step 3: Impact Analysis
 Before making any changes, analyze the blast radius:
 
@@ -81,7 +76,6 @@ grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
 # For each affected file, check what ELSE depends on it
 
 ```
-
 ```
 IMPACT ANALYSIS:
   Refactoring: Extract UserService from UserController
@@ -95,10 +89,8 @@ IMPACT ANALYSIS:
   ✎ src/middleware/auth.ts     — uses UserController method
   NOT AFFECTED:
   - src/controllers/product.controller.ts (no shared code)
-  - src/models/ (no interface changes)
-  TOTAL: 4 files modified, 2 files created, 2 files unchanged
+  ...
 ```
-
 ### Step 4: Ensure Safety Net
 Verify tests exist and pass BEFORE refactoring:
 
@@ -110,18 +102,16 @@ npm test 2>&1 | tail -10
 npx jest --testPathPattern="<target>" 2>&1
 
 ```
-
 ```
 SAFETY NET:
   Pre-Refactoring Test Status
 | Total tests | 147 passing, 0 failing |
-|---|---|
+|--|--|
 | Target coverage | 78% (src/controllers/user.*) |
 | Gaps identified | No test for error path line 89 |
   RECOMMENDATION: Write 1 characterization test for
   the error path before proceeding
 ```
-
 If coverage is below 60% for the target code:
 1. STOP refactoring
 2. Write characterization tests that capture current behavior
@@ -142,25 +132,12 @@ For each step:
 ```
 EXECUTION LOG:
 Step 1: Extract getUserById, createUser, updateUser into UserService
-  → Tests: 147 passing ✓
-  → Commit: "refactor: extract UserService from UserController"
-
+  Tests: 147/147 pass | Commit: "refactor: extract UserService from UserController"
 Step 2: Update UserController to inject UserService
-  → Tests: 147 passing ✓
-  → Commit: "refactor: inject UserService into UserController"
-
+  Tests: 147/147 pass | Commit: "refactor: inject UserService into UserController"
 Step 3: Update auth middleware to use UserService directly
-  → Tests: 147 passing ✓
-  → Commit: "refactor: update auth middleware to use UserService"
-
-Step 4: Move user validation to UserService
-  → Tests: 145 passing, 2 failing ✗
-  → REVERT — validation depends on request context
-  → Revised approach: keep validation in controller, pass clean data to service
-  → Tests: 147 passing ✓
-  → Commit: "refactor: clarify validation boundary between controller and service"
+  Tests: 147/147 pass | Commit: "refactor: update auth middleware to use UserService"
 ```
-
 ### Step 6: Migration Strategy (for large refactors)
 For refactoring that affects many dependents, use a phased migration:
 
@@ -177,11 +154,8 @@ Phase 2: MIGRATE dependents one at a time
   - Update admin routes to use UserService
   - Each migration is a separate commit
   - Tests pass after each migration
-
-Phase 3: REMOVE old code paths
-  - Delete extracted methods from UserController
+  ...
 ```
-
 ### Step 7: Post-Refactoring Verification
 After all transformations are complete:
 
@@ -193,12 +167,11 @@ npm test
 # Compare test count: expect same or higher
 # Compare coverage: expect same or higher
 ```
-
 ```
 POST-REFACTORING REPORT:
   Refactoring Complete
 | Pattern used | Extract Service |
-|---|---|
+|--|--|
 | Commits | 5 (all atomic, all green) |
 | Tests before | 147 passing |
 | Tests after | 152 passing (+5 new) |
@@ -207,10 +180,8 @@ POST-REFACTORING REPORT:
 | Files modified | 4 |
 | Files created | 2 |
 | Files deleted | 0 |
-| Dead code | None detected |
-| Behavior change | None (refactor only) |
+  ...
 ```
-
 ## Key Behaviors
 
 1. **Tests MUST pass after every step.** Refactoring means changing structure without changing behavior. If tests fail, the behavior changed. Revert.
@@ -223,7 +194,7 @@ POST-REFACTORING REPORT:
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
+|--|--|
 | (none) | Interactive refactoring with full analysis |
 | `--extract <type>` | Extract function/class/module/interface |
 | `--inline <target>` | Inline function/variable/class |
@@ -240,7 +211,6 @@ AUTO-DETECT SEQUENCE:
 6. Detect monorepo structure: lerna.json, pnpm-workspace.yaml, nx.json, turborepo
 7. Estimate codebase size: count files by extension, identify largest modules
 ```
-
 ## Iterative Refactoring Loop
 
 ```
@@ -256,13 +226,8 @@ WHILE refactor_targets is not empty AND current_iteration < max_iterations:
     4. Apply transformation — ONE pattern per iteration
     5. Run type check (if applicable): tsc --noEmit / mypy / go vet
     6. Run tests: full suite if < 60s, else affected tests only
-    7. IF tests fail → revert immediately, diagnose, try smaller step
-    8. IF tests pass → commit: "refactor: <pattern> in <target>"
-    9. current_iteration += 1
-
-POST-LOOP: Run full test suite + coverage comparison (must not decrease)
+  ...
 ```
-
 ## HARD RULES
 
 ```
@@ -278,7 +243,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 9. Coverage MUST NOT decrease after refactoring. If it does, add tests before proceeding.
 10. EVERY renamed symbol requires updates in comments, docs, and error messages — not just code.
 ```
-
 ## Output Format
 
 After each refactoring skill invocation, emit a structured report:
@@ -286,7 +250,7 @@ After each refactoring skill invocation, emit a structured report:
 ```
 REFACTORING REPORT:
 | Pattern used | <Extract | Inline | Move | Rename | Simplify> |
-|---|---|---|---|---|---|
+|--|--|--|--|--|--|
 | Target | <file or module> |
 | Commits | <N> (all atomic, all green) |
 | Tests before | <N> passing |
@@ -296,11 +260,8 @@ REFACTORING REPORT:
 | Files modified | <N> |
 | Files created | <N> |
 | Files deleted | <N> |
-| Dead code | <N> unused exports detected |
-| Behavior change | NONE (refactor only) |
-| Verdict | PASS | REVERTED |
+  ...
 ```
-
 ## TSV Logging
 
 Log every refactoring step for tracking:
@@ -310,7 +271,6 @@ timestamp	skill	target	pattern	tests_before	tests_after	coverage_before	coverage
 2026-03-20T14:00:00Z	refactor	UserController	extract_service	147	152	78	82	pass
 2026-03-20T14:30:00Z	refactor	auth.ts	rename_symbol	152	152	82	82	pass
 ```
-
 ## Success Criteria
 
 The refactor skill is complete when ALL of the following are true:
@@ -338,11 +298,8 @@ IF coverage decreases after refactoring:
   3. Commit the new tests separately: "test: add coverage for <target>"
   4. Resume refactoring only after coverage is restored
 
-IF dead code is detected after refactoring:
-  1. Verify zero references with grep AND type checker
-  2. Check for dynamic references (reflection, string-based imports)
+  ...
 ```
-
 ## Keep/Discard Discipline
 ```
 After EACH refactoring transformation:
@@ -386,17 +343,14 @@ WHILE complexity_targets is not empty AND current_iteration < max_iterations:
     current_iteration += 1
     target = complexity_targets.pop(0)
 
-    # Measure BEFORE
-    cyclomatic_before = measure_cyclomatic(target)
-    cognitive_before = measure_cognitive(target)
+  ...
 ```
-
 ### Complexity Metrics
 
 ```
 COMPLEXITY MEASUREMENT:
 | Metric | Threshold | Tool |
-|---|---|---|
+|--|--|--|
 | Cyclomatic complexity | ≤ 10 per | eslint complexity rule |
 | (decision paths | function | radon (Python) |
 | through a function) |  | gocyclo (Go) |
@@ -407,13 +361,12 @@ COMPLEXITY MEASUREMENT:
 | the control flow) |  | (Python) |
 | Lines of code (LOC) | ≤ 50 per | wc -l (raw) |
 ```
-
 ### Keep/Discard Decision Matrix
 
 ```
 KEEP/DISCARD CRITERIA:
 | Condition | Decision |
-|---|---|
+|--|--|
 | Tests fail after transformation | DISCARD (always) |
 | Cyclomatic AND cognitive both reduced | KEEP |
 | Cyclomatic reduced, cognitive neutral | KEEP |
@@ -421,7 +374,6 @@ KEEP/DISCARD CRITERIA:
 | Both metrics unchanged or increased | DISCARD |
 | LOC increased > 30% without complexity | DISCARD |
 ```
-
 ### Complexity Reduction Report
 
 ```
@@ -437,4 +389,3 @@ COMPLEXITY REDUCTION REPORT:
   Transformations kept: <N>
   Transformations discarded: <N>
 ```
-
