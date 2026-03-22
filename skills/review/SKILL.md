@@ -75,3 +75,17 @@ If your platform lacks parallel agent dispatch:
 - Auto-fix NITs and produce verdict using the same scoring.
 - ~4x slower but identical quality and output format.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Diff too large (>500 lines) | Split into per-directory reviews. Review each directory independently, then merge findings. |
+| Agent produces vague findings without file:line | Discard finding. Re-run agent with explicit instruction: "Every finding must include file:line and a code snippet fix." |
+| Auto-fix introduces test failure | Revert the auto-fix commit. Reclassify the NIT as SHOULD-FIX for human review. |
+| Conflicting findings from multiple agents | Escalate to highest severity. Use first agent's fix. Log all reporters in TSV. |
+
+## Success Criteria
+1. Every MUST-FIX and SHOULD-FIX has file:line, description, and concrete code fix.
+2. All auto-fixed NITs pass the full test suite.
+3. Verdict score computed from all 4 agents (Correctness, Security, Performance, Style).
+4. Re-review completed if score < 8 (max 3 iterations).

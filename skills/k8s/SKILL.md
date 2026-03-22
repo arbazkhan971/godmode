@@ -53,66 +53,7 @@ metadata:
   name: <service-name>
   namespace: <namespace>
   labels:
-    app: <service-name>
-    version: <version>
-    team: <team>
-spec:
-  replicas: <N>
-  selector:
-    matchLabels:
-      app: <service-name>
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 0
-  template:
-    metadata:
-      labels:
-        app: <service-name>
-        version: <version>
-    spec:
-      containers:
-        - name: <service-name>
-          image: <registry>/<image>:<tag>
-          ports:
-            - containerPort: <port>
-          resources:
-            requests:
-              cpu: <cpu-request>
-              memory: <mem-request>
-            limits:
-              cpu: <cpu-limit>
-              memory: <mem-limit>
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: <port>
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: <port>
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
-          startupProbe:
-            httpGet:
-              path: /healthz
-              port: <port>
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            failureThreshold: 30
-          env:
-            - name: NODE_ENV
-              value: "production"
-          envFrom:
-            - secretRef:
-                name: <service-name>-secrets
-            - configMapRef:
-                name: <service-name>-config
+# ... (condensed)
 ```
 
 #### Manifest Validation
@@ -123,11 +64,7 @@ kubectl apply --dry-run=server -f manifests/
 # Lint with kubeval
 kubeval manifests/*.yaml --strict
 
-# Security scan with kubesec
-kubesec scan manifests/deployment.yaml
-
-# Policy check with kube-linter
-kube-linter lint manifests/
+# ... (condensed)
 ```
 
 ```
@@ -171,8 +108,7 @@ helm lint <chart-dir>
 # Template rendering (dry-run)
 helm template <release-name> <chart-dir> -f values-prod.yaml
 
-# Diff against deployed release
-helm diff upgrade <release-name> <chart-dir> -f values-prod.yaml
+# ... (condensed)
 ```
 
 ### Step 4: Deployment Strategy Selection
@@ -206,27 +142,7 @@ kind: Rollout
 metadata:
   name: <service-name>
 spec:
-  strategy:
-    canary:
-      steps:
-        - setWeight: 5
-        - pause: {duration: 5m}
-        - setWeight: 20
-        - pause: {duration: 5m}
-        - setWeight: 50
-        - pause: {duration: 10m}
-        - setWeight: 80
-        - pause: {duration: 5m}
-      canaryMetadata:
-        labels:
-          deployment: canary
-      analysis:
-        templates:
-          - templateName: success-rate
-        startingStep: 2
-        args:
-          - name: service-name
-            value: <service-name>
+# ... (condensed)
 ```
 ```
 USE WHEN:
@@ -248,10 +164,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: <service-name>
-spec:
-  selector:
-    app: <service-name>
-    slot: green    # Switch to "blue" to rollback instantly
+# ... (condensed)
 ```
 ```
 USE WHEN:
@@ -298,37 +211,7 @@ metadata:
   name: <service-name>
 spec:
   scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: <service-name>
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 60
-      policies:
-        - type: Pods
-          value: 2
-          periodSeconds: 60
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-        - type: Pods
-          value: 1
-          periodSeconds: 120
+# ... (condensed)
 ```
 
 #### PodDisruptionBudget
@@ -339,9 +222,7 @@ metadata:
   name: <service-name>
 spec:
   minAvailable: 1    # Or use maxUnavailable: 1
-  selector:
-    matchLabels:
-      app: <service-name>
+# ... (condensed)
 ```
 
 ### Step 6: Troubleshooting
@@ -388,13 +269,7 @@ helm upgrade --install <release> <chart> \
   -n <namespace> \
   --wait \
   --timeout 5m
-
-# Verify rollout
-kubectl rollout status deployment/<service-name> -n <namespace>
-
-# Post-deployment verification
-kubectl get pods -n <namespace> -l app=<service-name>
-kubectl logs -l app=<service-name> -n <namespace> --tail=50
+# ... (condensed)
 ```
 
 ```
@@ -437,58 +312,6 @@ DEPLOYMENT RESULT:
 7. **Test manifests before deploying.** `kubectl apply --dry-run=server` catches issues before they hit the cluster.
 8. **Canary before yolo.** For high-risk changes, use canary deployments with automated analysis. Do not push straight to 100% traffic.
 
-## Example Usage
-
-### Creating a Helm chart for a new service
-```
-User: /godmode:k8s Create a Helm chart for our API service
-
-K8s: Analyzing application...
-
-Detected: Node.js application (port 3000)
-Container: Dockerfile found, multi-stage build
-
-Generating Helm chart...
-
-Created: charts/api-service/
-  Chart.yaml — api-service v0.1.0
-  values.yaml — 3 replicas, 200m CPU, 256Mi memory
-  templates/
-    deployment.yaml — Rolling update, all three probes
-    service.yaml — ClusterIP on port 80 -> 3000
-    ingress.yaml — nginx class, TLS enabled
-    hpa.yaml — 2-10 replicas, 70% CPU target
-    pdb.yaml — minAvailable: 1
-
-Validation:
-  helm lint: PASS
-  kubeval: PASS
-  kubesec: Score 9/10
-
-Ready to deploy: helm install api-service charts/api-service -f values-dev.yaml
-```
-
-### Troubleshooting a CrashLoopBackOff
-```
-User: /godmode:k8s My pods keep crashing
-
-K8s: Investigating CrashLoopBackOff...
-
-kubectl logs api-server-7d4f8b6c5-x9k2m --previous:
-  Error: ECONNREFUSED 10.0.3.45:5432
-  Database connection failed after 3 retries
-  Process exited with code 1
-
-Root cause: Pod cannot reach PostgreSQL database.
-
-Checks:
-  [x] Database pod running: YES (postgresql-0 is Ready)
-  [x] Database service exists: YES (postgresql.default.svc)
-  [ ] Network policy allows traffic: NO — NetworkPolicy blocks egress
-
-Fix: Update NetworkPolicy to allow egress to postgresql service on port 5432.
-```
-
 ## HARD RULES
 1. NEVER deploy without resource requests AND limits on every container — unbounded pods starve other workloads.
 2. NEVER skip health probes (liveness, readiness, startup) — without them, K8s sends traffic to broken pods.
@@ -519,14 +342,6 @@ AUTO-DETECT:
    - Parse Dockerfile for EXPOSE ports, CMD/ENTRYPOINT
 5. Detect deployment tooling:
    - .github/workflows/ with kubectl/helm steps → GitHub Actions
-   - argocd-*.yaml → ArgoCD
-   - flux-system/ → Flux CD
-6. Detect existing workloads (if cluster accessible):
-   - kubectl get deployments,services,ingresses -A
-   - Check for existing HPA, PDB, NetworkPolicy
-7. Detect container registry:
-   - imagePullSecrets in existing manifests
-   - ECR, GCR, ACR, Docker Hub references
 ```
 
 ## Iterative Deployment Protocol
@@ -547,17 +362,6 @@ WHILE current_step < len(steps):
      - IF errors → REPORT and HALT (do not proceed)
      - IF warnings → REPORT, continue if non-critical
   3. POST-DEPLOY verification (for deploy-* steps):
-     - kubectl rollout status deployment/{name}
-     - Check all pods Ready and passing probes
-     - Check service endpoints responding
-     - Check no error logs in last 60 seconds
-  4. IF verification fails:
-     - ROLLBACK: helm rollback / kubectl rollout undo
-     - REPORT failure details
-     - HALT
-  5. current_step += 1
-
-EXIT when all steps pass OR user halts on failure
 ```
 
 ## Keep/Discard Discipline
@@ -606,35 +410,6 @@ PREFER the simpler Kubernetes configuration:
   - Rolling update before canary (unless the change is high-risk)
 ```
 
-## Multi-Agent Dispatch
-For multi-service Kubernetes deployments:
-```
-DISPATCH parallel agents (one per concern):
-
-Agent 1 (worktree: k8s-manifests):
-  - Generate/update deployment manifests and Helm charts
-  - Scope: charts/, k8s/ directories
-  - Output: Validated Helm charts with values per environment
-
-Agent 2 (worktree: k8s-security):
-  - Security audit: RBAC, NetworkPolicies, SecurityContexts
-  - Scope: all manifest files
-  - Output: Hardened manifests with least-privilege settings
-
-Agent 3 (worktree: k8s-scaling):
-  - HPA, PDB, resource sizing based on metrics
-  - Scope: autoscaling and resource configs
-  - Output: Right-sized resource requests/limits, HPA configs
-
-Agent 4 (worktree: k8s-observability):
-  - Service monitors, log collection, dashboard configs
-  - Scope: monitoring/, observability/ configs
-  - Output: Prometheus ServiceMonitor + Grafana dashboards
-
-MERGE ORDER: manifests → security → scaling → observability
-CONFLICT RESOLUTION: manifests branch is source of truth for base templates
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -642,25 +417,6 @@ CONFLICT RESOLUTION: manifests branch is source of truth for base templates
 | (none) | Validate manifests and show deployment plan |
 | `--generate` | Generate new Kubernetes manifests or Helm chart |
 | `--deploy` | Deploy to the target cluster |
-| `--rollback` | Rollback to previous revision |
-| `--status` | Show current deployment status |
-| `--troubleshoot` | Diagnose pod/deployment issues |
-| `--scale <N>` | Scale deployment to N replicas |
-| `--strategy <type>` | Set deployment strategy (rolling, canary, blue-green) |
-| `--env <name>` | Target environment (dev, staging, prod) |
-| `--dry-run` | Render and validate without applying |
-
-## Anti-Patterns
-
-- **Do NOT deploy without resource limits.** Unbounded pods starve other workloads.
-- **Do NOT skip health probes.** Without probes, K8s sends traffic to broken pods.
-- **Do NOT use `latest` image tag.** You cannot rollback to `latest`. Pin versions.
-- **Do NOT put secrets in plain manifests.** Use Kubernetes Secrets or external-secrets-operator.
-- **Do NOT set CPU limits equal to requests.** This causes throttling with spare node capacity. Set limits at 2-3x requests.
-- **Do NOT ignore pod evictions.** Evictions mean resource pressure. Investigate the root cause.
-- **Do NOT run as root in containers.** Use `runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
-- **Do NOT deploy straight to production.** Validate in dev/staging first.
-
 
 ## Output Format
 Print on completion: `K8s: {resource_count} resources across {namespace_count} namespaces. Health: {health_status}. Security: {security_score}. Scaling: {min_replicas}-{max_replicas}. Verdict: {verdict}.`
@@ -694,8 +450,3 @@ Columns: iteration, task, namespace, resources_created, resources_modified, heal
 - **HPA not scaling**: Verify metrics-server is running. Check `kubectl describe hpa` for conditions. Verify resource requests are set (HPA needs requests to calculate utilization).
 - **ConfigMap/Secret changes not picked up**: Pods must be restarted to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run Kubernetes tasks sequentially: manifests, then security, then scaling, then observability.
-- Use branch isolation per task: `git checkout -b godmode-k8s-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -42,21 +42,7 @@ If the query comes from an ORM, extract the generated SQL first:
 
 # Django: use django.db.connection.queries or django-debug-toolbar
 python -c "
-from django.db import connection
-# run query...
-print(connection.queries[-1]['sql'])
-"
-
-# Rails: check log/development.log or use .to_sql
-Model.where(conditions).to_sql
-
-# SQLAlchemy: compile query
-str(query.statement.compile(compile_kwargs={"literal_binds": True}))
-
-# TypeORM: enable logging in data source config
-# logging: true, or use .getQuery()
-
-# Sequelize: use logging: console.log option
+# ... (condensed)
 ```
 
 ### Step 2: Analyze Current Query Performance
@@ -72,20 +58,7 @@ EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) <query>;
 -- PostgreSQL: without executing (safe for destructive queries)
 EXPLAIN (COSTS, FORMAT JSON) <query>;
 
--- MySQL
-EXPLAIN FORMAT=JSON <query>;
--- or for execution stats:
-EXPLAIN ANALYZE <query>;  -- MySQL 8.0.18+
-
--- SQLite
-EXPLAIN QUERY PLAN <query>;
-
--- SQL Server
-SET STATISTICS IO ON;
-SET STATISTICS TIME ON;
-<query>;
--- or for estimated plan:
-SET SHOWPLAN_XML ON;
+# ... (condensed)
 ```
 
 #### 2b: Interpret EXPLAIN Output
@@ -128,11 +101,7 @@ db.collection.find(<query>).explain("executionStats")
 // Key fields to check:
 // executionStats.totalDocsExamined vs executionStats.nReturned
 //   (if ratio > 10:1, you need a better index)
-// executionStats.executionTimeMillis
-// queryPlanner.winningPlan.stage
-//   COLLSCAN = full collection scan (bad)
-//   IXSCAN = index scan (good)
-//   FETCH + IXSCAN = index scan + document fetch (check if covered index possible)
+# ... (condensed)
 ```
 
 #### 2d: Analyze Redis Commands
@@ -144,13 +113,7 @@ SLOWLOG GET 10
 # Monitor commands in real-time (use briefly -- impacts performance)
 MONITOR
 
-# Check key patterns and memory
-MEMORY USAGE <key>
-DEBUG OBJECT <key>  # encoding, refcount, serializedlength
-
-# Check if O(N) commands are used on large datasets
-# Dangerous: KEYS *, SMEMBERS on large sets, LRANGE 0 -1 on large lists
-# Safe alternatives: SCAN, SSCAN, LRANGE with pagination
+# ... (condensed)
 ```
 
 ### Step 3: Diagnose Performance Issues
@@ -293,42 +256,7 @@ FROM users u;
 
 -- OPTIMIZED: JOIN with aggregation
 SELECT u.*, COALESCE(o.order_count, 0) AS order_count
-FROM users u
-LEFT JOIN (SELECT user_id, COUNT(*) AS order_count FROM orders GROUP BY user_id) o
-ON u.id = o.user_id;
-
--- ANTI-PATTERN: DISTINCT to fix a bad join
-SELECT DISTINCT u.* FROM users u JOIN orders o ON u.id = o.user_id;
-
--- OPTIMIZED: EXISTS instead of JOIN + DISTINCT
-SELECT u.* FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
-
--- ANTI-PATTERN: OR on different columns (prevents index use)
-SELECT * FROM products WHERE name = 'Widget' OR category = 'Tools';
-
--- OPTIMIZED: UNION ALL with separate index scans
-SELECT * FROM products WHERE name = 'Widget'
-UNION ALL
-SELECT * FROM products WHERE category = 'Tools' AND name != 'Widget';
-
--- ANTI-PATTERN: Function on indexed column (prevents index use)
-SELECT * FROM events WHERE YEAR(created_at) = 2025;
-
--- OPTIMIZED: Range condition (uses index)
-SELECT * FROM events WHERE created_at >= '2025-01-01' AND created_at < '2026-01-01';
-
--- ANTI-PATTERN: Large IN list
-SELECT * FROM users WHERE id IN (1, 2, 3, ..., 10000);
-
--- OPTIMIZED: JOIN with VALUES or temp table
-SELECT u.* FROM users u
-JOIN (VALUES (1),(2),(3),...) AS v(id) ON u.id = v.id;
-
--- ANTI-PATTERN: OFFSET for pagination (scans and discards rows)
-SELECT * FROM products ORDER BY id LIMIT 20 OFFSET 10000;
-
--- OPTIMIZED: Keyset pagination (seeks directly)
-SELECT * FROM products WHERE id > <last_seen_id> ORDER BY id LIMIT 20;
+# ... (condensed)
 ```
 
 #### 4c: ORM-Level Optimizations
@@ -340,14 +268,7 @@ for order in Order.objects.all():
     print(order.customer.name)  # Hits DB for each customer
 
 # AFTER (eager loading):
-for order in Order.objects.select_related('customer').all():
-    print(order.customer.name)  # Single JOIN query
-
-# Django: defer unused fields
-User.objects.defer('bio', 'avatar_url').filter(active=True)
-
-# Django: use values/values_list for read-only data
-User.objects.values_list('id', 'email', flat=False).filter(active=True)
+# ... (condensed)
 ```
 
 ```typescript
@@ -357,16 +278,7 @@ const users = await prisma.user.findMany();
 for (const user of users) {
   const orders = await prisma.order.findMany({ where: { userId: user.id } });
 }
-
-// AFTER (eager loading):
-const users = await prisma.user.findMany({
-  include: { orders: true }
-});
-
-// Prisma: select only needed fields
-const users = await prisma.user.findMany({
-  select: { id: true, email: true }
-});
+# ... (condensed)
 ```
 
 ```ruby
@@ -376,11 +288,7 @@ const users = await prisma.user.findMany({
 @orders.each { |o| puts o.customer.name }
 
 # AFTER (eager loading):
-@orders = Order.includes(:customer).all
-@orders.each { |o| puts o.customer.name }
-
-# Rails: select only needed columns
-User.select(:id, :email).where(active: true)
+# ... (condensed)
 ```
 
 ### Step 5: Verify Optimization
@@ -430,50 +338,9 @@ Verification steps:
 |                                                             |
 |  Indexes added:                                             |
 |  - idx_<name> ON <table> (<columns>)                        |
-|                                                             |
-|  Queries rewritten:    <N>                                  |
-|  N+1 problems fixed:  <N>                                   |
-+------------------------------------------------------------+
-|  Write overhead:  <estimated impact on INSERT/UPDATE>       |
-|  Storage added:   <estimated index size>                    |
-+------------------------------------------------------------+
 ```
 
 Commit: `"query: optimize <description> -- <speedup>x improvement"`
-
-## Auto-Detection
-
-Before prompting the user, automatically detect database and query context:
-
-```
-AUTO-DETECT SEQUENCE:
-1. Detect database engine:
-   - DATABASE_URL env var: postgres://, mysql://, mongodb://
-   - docker-compose.yml: postgres, mysql, mariadb, mongodb images
-   - prisma/schema.prisma: provider = "postgresql" | "mysql" | "sqlite"
-   - database.yml: adapter field
-   - settings.py: DATABASES ENGINE field
-2. Detect ORM/query layer:
-   - Prisma: prisma/ directory, @prisma/client in package.json
-   - Sequelize: sequelize in package.json
-   - TypeORM: typeorm in package.json, ormconfig.*
-   - Django ORM: django in requirements.txt + models.py files
-   - ActiveRecord: Gemfile with rails or activerecord
-   - SQLAlchemy: sqlalchemy in requirements.txt
-   - GORM: gorm.io in go.mod
-   - Drizzle: drizzle-orm in package.json
-3. Detect slow query sources:
-   - PostgreSQL: pg_stat_statements (if enabled)
-   - MySQL: slow_query_log
-   - Application logs: query timing annotations
-   - APM tools: Datadog, New Relic, Sentry query traces
-4. Detect N+1 patterns:
-   - Scan controller/resolver files for loops containing ORM queries
-   - Check for missing includes/preload/select_related
-5. Detect existing indexes:
-   - Parse migration files for add_index / CREATE INDEX statements
-   - Query information_schema or pg_indexes
-```
 
 ## Explicit Loop Protocol
 
@@ -495,28 +362,6 @@ WHILE current_iteration < max_iterations AND query_time > target_latency:
   2. IDENTIFY top bottleneck:
      - Sequential scan on large table? -> missing index
      - Nested loop on large tables? -> wrong join strategy
-     - Rows estimated vs actual off by 10x? -> stale statistics
-     - Sort on disk? -> insufficient work_mem or missing index
-
-  3. APPLY single fix:
-     - Add index / rewrite query / update statistics / adjust ORM
-     - ONE change per iteration to isolate impact
-
-  4. VERIFY:
-     - Re-run EXPLAIN (ANALYZE, BUFFERS)
-     - Record: { iteration, change, time_before, time_after, speedup }
-     - Run test suite to confirm correctness preserved
-
-  5. EVALUATE:
-     - IF query_time <= target_latency: STOP — target met
-     - IF improvement < 10%: STOP — diminishing returns
-     - ELSE: continue to next bottleneck
-
-  OUTPUT:
-  Iteration | Change | Time Before | Time After | Speedup
-  1         | +index | 3200ms      | 45ms       | 71x
-  2         | rewrite| 45ms        | 12ms       | 3.75x
-  ...
 ```
 
 ## HARD RULES
@@ -550,86 +395,6 @@ HARD RULES — NEVER VIOLATE:
 9. **Don't over-index.** More indexes means slower writes and more storage. Aim for the minimum set of indexes that covers the actual query workload.
 10. **Understand the data.** Cardinality, distribution, and skew affect index effectiveness. An index on a boolean column with 99% TRUE is nearly useless for filtering TRUE but excellent for filtering FALSE.
 
-## Example Usage
-
-### Optimizing a slow query
-```
-User: /godmode:query This query takes 3 seconds:
-      SELECT * FROM orders WHERE customer_id = 42 ORDER BY created_at DESC LIMIT 20;
-
-Query: Analyzing...
-
-QUERY CONTEXT:
-Database:       PostgreSQL 15
-Table:          orders (2.4M rows)
-Current timing: 3,200ms
-
-Running EXPLAIN ANALYZE...
-
-QUERY ANALYSIS:
-Scan type:     Seq Scan on orders
-Filter:        customer_id = 42
-Rows scanned:  2,400,000
-Rows returned: 847
-Sort:          external merge (on disk)
-
-RED FLAGS:
-[x] Sequential scan on 2.4M row table
-[x] Scanning 2.4M rows to find 847 (2,831:1 ratio)
-[x] Sort on disk -- data doesn't fit in work_mem
-
-DIAGNOSIS: Missing index on (customer_id, created_at)
-
-INDEX RECOMMENDATION:
-CREATE INDEX CONCURRENTLY idx_orders_customer_created
-ON orders (customer_id, created_at DESC);
-
-Rationale:
-- Composite index covers both the WHERE and ORDER BY
-- DESC on created_at matches the query's ORDER BY DESC
-- Eliminates both the Seq Scan AND the Sort step
-
-After adding index:
-  Scan type: Index Scan Backward using idx_orders_customer_created
-  Rows scanned: 20 (LIMIT satisfied directly from index)
-  Sort: none (index provides order)
-  Time: 0.4ms
-
-Speedup: 8,000x (3,200ms -> 0.4ms)
-```
-
-### Fixing an N+1 problem
-```
-User: /godmode:query My API endpoint is making 500 database queries per request
-
-Query: Let me trace the query pattern...
-
-Found in src/controllers/orders.ts:
-  const orders = await prisma.order.findMany({ where: { status: 'active' } });
-  for (const order of orders) {
-    const customer = await prisma.customer.findUnique({ where: { id: order.customerId } });
-    const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
-  }
-
-DIAGNOSIS: N+1 query (actually N+1+N -- two nested queries)
-  1 query for orders (returns 250 orders)
-  250 queries for customers (one per order)
-  250 queries for order items (one per order)
-  Total: 501 queries
-
-FIX:
-  const orders = await prisma.order.findMany({
-    where: { status: 'active' },
-    include: {
-      customer: true,
-      items: true,
-    },
-  });
-
-  Total queries after fix: 1 (with JOINs)
-  Speedup: ~100x (501 queries -> 1 query)
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -637,28 +402,6 @@ FIX:
 | (none) | Interactive query optimization workflow |
 | `--explain` | Run EXPLAIN on a query and interpret the output |
 | `--indexes` | Analyze and recommend indexes for the database |
-| `--n-plus-one` | Scan application code for N+1 query patterns |
-| `--slow-log` | Analyze the database slow query log |
-| `--rewrite` | Rewrite a query for better performance |
-| `--profile` | Profile all queries from a specific endpoint or operation |
-| `--compare` | Compare performance of two query variants |
-| `--orm` | Focus on ORM-level optimizations |
-| `--redis` | Analyze Redis command patterns |
-| `--mongo` | Analyze MongoDB queries and indexes |
-| `--unused-indexes` | Find indexes that are never used (waste of write overhead) |
-| `--missing-indexes` | Detect queries that would benefit from indexes |
-| `--report` | Generate a full database performance report |
-
-## Anti-Patterns
-
-- **Do NOT optimize without measuring.** Run EXPLAIN ANALYZE before and after to prove improvement.
-- **Do NOT add indexes blindly.** Every index has a write cost. Justify the overhead.
-- **Do NOT ignore the ORM layer.** Fix N+1 patterns at the application level.
-- **Do NOT use SELECT * in production queries.** Fetch only needed columns.
-- **Do NOT use OFFSET for deep pagination.** Use keyset/cursor pagination.
-- **Do NOT apply functions to indexed columns in WHERE clauses.** Use range conditions.
-- **Do NOT create single-column indexes for every column.** Design composite indexes for query patterns.
-- **Do NOT skip the write-side impact.** Report INSERT/UPDATE/DELETE overhead of every new index.
 
 ## Keep/Discard Discipline
 ```
@@ -705,12 +448,6 @@ QUERY SUMMARY:
 |  <description>       | 1,200       | 45         | -96%       |
 +--------------------------------------------------------------+
 
-INDEX CHANGES:
-+--------------------------------------------------------------+
-|  Table       | Index                    | Action   | Reason   |
-+--------------------------------------------------------------+
-|  <table>     | idx_<columns>            | ADD      | <reason> |
-+--------------------------------------------------------------+
 ```
 
 ## TSV Logging
@@ -745,24 +482,11 @@ QUERY OPTIMIZATION SUCCESS CRITERIA:
 VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```
 
+
 ## Error Recovery
-
-```
-ERROR RECOVERY — QUERY:
-1. Index creation fails (lock timeout, disk space):
-   → Use CREATE INDEX CONCURRENTLY (PostgreSQL) to avoid table locks. Check available disk. For large tables, create during low-traffic window.
-2. Query plan regresses after optimization:
-   → Run EXPLAIN ANALYZE again. Check if statistics are stale (run ANALYZE). Verify the planner is using the new index. Add pg_hint_plan hint if needed.
-3. N+1 persists after ORM-level fix:
-   → Instrument query logging. Verify eager loading is applied at the call site, not just the model definition. Check for lazy access in serialization layer.
-4. Migration adding index causes downtime:
-   → Use non-blocking index creation (CONCURRENTLY). Split large migrations. Schedule during maintenance window if unavoidable.
-5. Composite index not used by query:
-   → Verify column order matches query predicates (leftmost prefix rule). Check that statistics reflect column correlation. Consider covering index.
-6. Query still slow despite correct index:
-   → Check for low selectivity (index scan reads most of the table). Consider partial index. Check for implicit type casting preventing index use.
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run query optimization tasks sequentially: analysis, then index changes, then query rewrites.
-Use branch isolation per task: `git checkout -b godmode-query-{task}`, implement, commit, merge back.
+| Failure | Action |
+|---------|--------|
+| Query returns wrong results | Check JOIN conditions and WHERE clauses. Verify NULL handling. Test with known data set. Compare against manual calculation. |
+| Query too slow (>1s) | Run EXPLAIN ANALYZE. Check for missing indexes, full table scans, or unnecessary JOINs. Consider materialized views for complex aggregations. |
+| Query works in dev but fails in production | Check for data volume differences. Verify index existence in production. Check for parameter sniffing issues. Test with production-like data. |
+| ORM-generated query is inefficient | Use raw SQL for complex queries. Check for N+1 patterns. Use query builder for dynamic conditions. Profile ORM query output. |

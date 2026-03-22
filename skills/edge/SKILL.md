@@ -55,20 +55,6 @@ EDGE FUNCTION ARCHITECTURE:
 │             │  │ KV / Cache ││  Distributed state            │
 │             │  └───────────┘│                               │
 │             └───────────────┘                               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-
-EDGE PLATFORM COMPARISON:
-┌────────────────┬──────────────┬────────────────┬────────────┐
-│  Platform      │  Runtime     │  CPU Limit     │  Cold Start│
-├────────────────┼──────────────┼────────────────┼────────────┤
-│  Cloudflare    │  V8 isolate  │  10-50ms CPU   │  <1ms      │
-│  Workers       │              │  (adjustable)  │            │
-    # ... (additional patterns follow same structure)
-3. Use streaming responses for large payloads (ReadableStream)
-4. Cache aggressively — edge is closest to the user
-5. Fail open — if edge function errors, fall through to origin
-6. Use early returns — reject invalid requests before doing work
 ```
 
 Edge function patterns:
@@ -79,29 +65,7 @@ export default {
     const url = new URL(request.url);
 
     // Early rejection
-    if (!isValidRequest(request)) {
-      return new Response('Bad Request', { status: 400 });
-    }
-
-    // Check cache first
-    const cacheKey = new Request(url.toString(), request);
-    const cache = caches.default;
-    let response = await cache.match(cacheKey);
-    if (response) return response;
-
-    // Process at edge
-    response = await handleRequest(request, env);
-
-    // Cache the response
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
-
-    return response;
-  },
-    # ... (additional patterns follow same structure)
-  return new Response(html, {
-    headers: { 'Content-Type': 'text/html', 'Cache-Control': 'public, max-age=300' },
-  });
-});
+# ... (condensed)
 ```
 
 ### Step 3: Serverless Architecture
@@ -123,20 +87,6 @@ SERVERLESS ARCHITECTURE:
 │  │  Source   │   │ Function  │   │  Target   │               │
 │  │(S3, SQS, │   └──────────┘   │(DB, S3,   │               │
 │  │ DynamoDB, │                  │ SNS, SQS) │               │
-│  │ EventBridge)│                └──────────┘               │
-│  └──────────┘                                               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-
-SERVERLESS PLATFORM COMPARISON:
-┌────────────────┬──────────────┬────────────────┬────────────┐
-│  Platform      │  Max Runtime │  Memory        │  Cold Start│
-├────────────────┼──────────────┼────────────────┼────────────┤
-    # ... (additional patterns follow same structure)
-3. Functions are single-purpose — one function, one job
-4. Functions time out — set appropriate timeouts, handle gracefully
-5. Functions scale to zero — no cost when idle
-6. Events are the glue — SQS, EventBridge, pub/sub connect functions
 ```
 
 ### Step 4: Cold Start Optimization
@@ -158,20 +108,6 @@ COLD START ANALYSIS:
 │                                                              │
 │  COLD START DURATIONS:                                       │
 │  ┌──────────────┬──────────┬───────────────────────┐        │
-│  │  Runtime      │  Typical │  Worst Case           │        │
-│  ├──────────────┼──────────┼───────────────────────┤        │
-│  │  V8 isolate  │  <5ms    │  <10ms                │        │
-│  │  (Edge)      │          │                       │        │
-│  │  Node.js     │  100-300ms│ 1-3s (large bundles) │        │
-│  │  Python      │  100-500ms│ 1-5s (heavy imports) │        │
-│  │  Go          │  <100ms  │  <500ms               │        │
-│  │  Java        │  500ms-3s│  5-15s (JVM + Spring) │        │
-│  │  .NET        │  200ms-1s│  3-10s (full framework)│        │
-    # ... (additional patterns follow same structure)
-│  No unnecessary middleware/frameworks  │  MEDIUM   │ CHECK   │
-│  Connection reuse across invocations   │  MEDIUM   │ CHECK   │
-│  SnapStart enabled (Java only)         │  HIGH     │ CHECK   │
-└────────────────────────────────────────┴───────────┴─────────┘
 ```
 
 ### Step 5: Edge Caching Strategies
@@ -193,20 +129,6 @@ EDGE CACHING ARCHITECTURE:
 └─────────────────────────────────────────────────────────────┘
 
 CACHING STRATEGIES:
-
-1. CACHE-FIRST (stale-while-revalidate):
-   ──────────────────────────────────────
-   Serve stale content immediately, revalidate in background.
-
-   Cache-Control: public, s-maxage=60, stale-while-revalidate=300
-
-   User experience: Always fast (cached response).
-   Freshness: Up to 5 minutes stale during revalidation.
-    # ... (additional patterns follow same structure)
-  const cacheKey = new URL(request.url);
-  cacheKey.searchParams.delete('utm_source');
-  cacheKey.searchParams.delete('fbclid');
-  const cached = await caches.default.match(new Request(cacheKey.toString()));
 ```
 
 ### Step 6: Distributed State at the Edge
@@ -228,20 +150,6 @@ EDGE STATE SOLUTIONS:
 │  R2/S3       │  Eventually  │  Varies      │  Large objects│
 │  (edge blob) │  consistent  │              │  media, files │
 │  DynamoDB    │  Tunable     │  <10ms (DAX) │  High-scale   │
-│  Global Tbl  │  (eventual   │  ~50ms       │  global data  │
-│              │  or strong)  │  (cross-reg) │              │
-└──────────────┴──────────────┴──────────────┴───────────────┘
-
-KV STORE PATTERNS:
-
-  // Cloudflare KV — eventually consistent key-value
-  export default {
-    async fetch(request, env) {
-    # ... (additional patterns follow same structure)
-
-  Is it large binary data (images, files)?
-    YES -> R2 / S3 with CDN caching
-    NO  -> KV or Durable Objects based on consistency needs
 ```
 
 ### Step 7: Serverless Infrastructure as Code
@@ -263,85 +171,6 @@ AWS SAM (Serverless Application Model):
       Architectures: [arm64]  # Graviton — 20% cheaper, faster cold start
       Tracing: Active
       Environment:
-        Variables:
-          TABLE_NAME: !Ref DataTable
-
-  Resources:
-    ApiFunction:
-      Type: AWS::Serverless::Function
-      Properties:
-        Handler: dist/handler.main
-        Events:
-          Api:
-            Type: HttpApi
-            Properties:
-              Path: /api/{proxy+}
-              Method: ANY
-        Policies:
-          - DynamoDBCrudPolicy:
-              TableName: !Ref DataTable
-        ProvisionedConcurrencyConfig:
-          ProvisionedConcurrentExecutions: 5
-
-    DataTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - { AttributeName: pk, AttributeType: S }
-          - { AttributeName: sk, AttributeType: S }
-        KeySchema:
-          - { AttributeName: pk, KeyType: HASH }
-          - { AttributeName: sk, KeyType: RANGE }
-
-Serverless Framework:
-  # serverless.yml
-  service: my-api
-  provider:
-    name: aws
-    runtime: nodejs20.x
-    architecture: arm64
-    memorySize: 256
-    timeout: 30
-  functions:
-    api:
-      handler: dist/handler.main
-      events:
-        - httpApi:
-            path: /api/{proxy+}
-            method: ANY
-
-Cloudflare Workers (wrangler.toml):
-  name = "my-worker"
-  main = "src/index.ts"
-  compatibility_date = "2024-01-01"
-
-  [[kv_namespaces]]
-  binding = "CONFIG_KV"
-  id = "abc123"
-
-  [[durable_objects.bindings]]
-  name = "RATE_LIMITER"
-  class_name = "RateLimiter"
-
-  [vars]
-  ENVIRONMENT = "production"
-
-DEPLOYMENT CHECKLIST:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                                │  Status               │
-├───────────────────────────────────────┼───────────────────────┤
-│  Bundle size optimized                │  PASS | FAIL          │
-│  Environment variables configured     │  PASS | FAIL          │
-│  Secrets in secret manager (not env)  │  PASS | FAIL          │
-│  IAM permissions least-privilege      │  PASS | FAIL          │
-│  Timeout set appropriately            │  PASS | FAIL          │
-│  Memory sized for workload            │  PASS | FAIL          │
-│  Cold start within latency budget     │  PASS | FAIL          │
-│  Error handling and retries           │  PASS | FAIL          │
-│  Monitoring and alerting configured   │  PASS | FAIL          │
-│  Cost estimate reviewed               │  PASS | FAIL          │
-└───────────────────────────────────────┴───────────────────────┘
 ```
 
 ### Step 8: Observability for Edge and Serverless
@@ -363,40 +192,6 @@ LOGGING:
       requestId: crypto.randomUUID(),
       ...data,
     }));
-  }
-
-  // Cloudflare Workers: Logpush or Tail Workers
-  // Vercel: Built-in log drain to Datadog, Axiom, etc.
-  // AWS Lambda: CloudWatch Logs (automatic)
-
-METRICS:
-  Key metrics for edge/serverless:
-  ┌──────────────────────────────────────────────────────────┐
-  │  Metric                   │  Alert Threshold             │
-  ├───────────────────────────┼──────────────────────────────┤
-  │  Invocation count         │  Spike >2x baseline          │
-  │  Error rate (4xx, 5xx)    │  >1% of requests             │
-  │  Duration (p50, p95, p99) │  p99 > latency budget        │
-  │  Cold start rate          │  >5% of invocations          │
-  │  Cold start duration      │  p99 > 1s                    │
-  │  Throttle count           │  Any (indicates scaling issue)│
-  │  Concurrent executions    │  >80% of limit               │
-  │  Cache hit rate           │  <80% (investigate misses)   │
-  │  Cost per invocation      │  >budget / expected volume   │
-  └───────────────────────────┴──────────────────────────────┘
-
-DISTRIBUTED TRACING:
-  Edge functions run in hundreds of locations. Tracing is essential
-  to debug request flows across edge -> origin -> database.
-
-  // Propagate trace ID through the request chain
-  const traceId = request.headers.get('x-trace-id') ?? crypto.randomUUID();
-  const originResponse = await fetch(originUrl, {
-    headers: { 'x-trace-id': traceId },
-  });
-
-  Tools: Datadog, Honeycomb, Axiom, Grafana Tempo
-  Protocol: W3C Trace Context (traceparent header)
 ```
 
 ### Step 9: Testing Edge and Serverless
@@ -418,36 +213,6 @@ EDGE/SERVERLESS TESTING:
 │  Performance        │  Cold start, latency,    │  k6 / wrk   │
 │                     │  throughput              │             │
 │  Chaos              │  Origin failure, KV      │  Custom     │
-│                     │  unavailability, timeout │             │
-│  Cost               │  Estimate cost at scale  │  Calculator │
-└─────────────────────┴──────────────────────────┴─────────────┘
-
-LOCAL DEVELOPMENT:
-  Cloudflare: wrangler dev (local Miniflare simulation)
-  Vercel: vercel dev (local edge runtime simulation)
-  AWS Lambda: sam local invoke / sam local start-api
-  Deno Deploy: deno serve (native local execution)
-
-TESTING PATTERNS:
-
-  // Unit test (handler in isolation)
-  describe('handler', () => {
-    it('returns cached response', async () => {
-      const env = createMockEnv({ KV: mockKV({ key: 'value' }) });
-      const request = new Request('https://example.com/api/key');
-      const response = await handler(request, env);
-      expect(response.status).toBe(200);
-      expect(await response.text()).toBe('value');
-    });
-
-    it('falls back to origin on cache miss', async () => {
-      const env = createMockEnv({ KV: mockKV({}) });
-      const request = new Request('https://example.com/api/missing');
-      const response = await handler(request, env);
-      expect(response.status).toBe(200);
-      // Verify origin was called
-    });
-  });
 ```
 
 ### Step 10: Artifacts & Completion
@@ -469,12 +234,6 @@ Metrics:
 - Latency: p50 <X>ms, p99 <Y>ms (cold start: <Z>ms)
 - Cache hit rate: <N>%
 - Cost estimate: $<X>/million requests
-
-Next steps:
--> /godmode:observe — Set up monitoring and alerting
--> /godmode:perf — Load test and optimize cold starts
--> /godmode:deploy — Deploy to production with gradual rollout
--> /godmode:cache — Optimize caching strategy
 ```
 
 Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching configured"`
@@ -490,72 +249,6 @@ Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching conf
 7. **Keep functions small and focused.** One function per concern. Edge functions have CPU limits. Serverless functions have cold start penalties proportional to code size.
 8. **Fail gracefully.** Edge and serverless are distributed systems. Origin may be down, KV may be slow, function may time out. Design fallbacks at every step.
 
-## Example Usage
-
-### Building an Edge API
-```
-User: /godmode:edge Build an API gateway on Cloudflare Workers with KV caching
-
-Edge: Starting discovery...
-
-EDGE DISCOVERY:
-Project: API Gateway
-Platform: Cloudflare Workers
-Runtime: V8 isolate
-Use case: API routing, caching, rate limiting, auth
-Latency target: p99 < 50ms
-
-Designed:
-- Router: Path-based routing to origin services
-- Cache: stale-while-revalidate with KV fallback
-- Rate limiting: Durable Objects per-user counter
-- Auth: JWT validation at edge (no origin round-trip)
-
-Latency: p50 3ms, p99 28ms (cache hit), p99 120ms (cache miss)
-Cold start: <1ms (V8 isolate)
-```
-
-### Optimizing Lambda Cold Starts
-```
-User: /godmode:edge Our Lambda functions have 3-second cold starts
-
-Edge: Analyzing cold start contributors...
-
-COLD START ANALYSIS:
-Current: 3,200ms cold start
-  - Runtime init (Node.js): 200ms
-  - Bundle download: 800ms (bundle: 45MB)
-  - Module initialization: 1,400ms (heavy imports)
-  - DB connection: 800ms (cold connection pool)
-
-Optimizations applied:
-  1. Tree-shook AWS SDK imports: 45MB -> 4MB (-91%)
-  2. Lazy DB initialization: moved to first request
-  3. Switched to ARM64 (Graviton): 20% faster init
-  4. Added provisioned concurrency: 5 instances for critical path
-
-After: 180ms cold start (94% improvement)
-Provisioned paths: 0ms cold start
-```
-
-### Setting Up Durable Objects
-```
-User: /godmode:edge Implement distributed rate limiting with Durable Objects
-
-Edge: Designing rate limiter...
-
-Architecture:
-- One Durable Object per user (strongly consistent counter)
-- Sliding window algorithm: 100 requests per 60 seconds
-- Worker routes to user-specific DO instance
-- Alarm-based cleanup for stale state
-
-Performance:
-- Rate check latency: 2ms (co-located with user traffic)
-- Zero false positives (strong consistency)
-- Scales to millions of users (one DO per user)
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -563,15 +256,6 @@ Performance:
 | (none) | Full edge/serverless design workflow |
 | `--cloudflare` | Target Cloudflare Workers |
 | `--vercel` | Target Vercel Edge Functions |
-| `--lambda` | Target AWS Lambda |
-| `--gcp` | Target GCP Cloud Functions |
-| `--deno` | Target Deno Deploy |
-| `--cold-start` | Analyze and optimize cold starts |
-| `--cache` | Design edge caching strategy |
-| `--state` | Design distributed state (KV, Durable Objects) |
-| `--cost` | Estimate and optimize costs |
-| `--migrate` | Migrate from server to edge/serverless |
-| `--test` | Generate test suite with local emulators |
 
 ## HARD RULES
 
@@ -603,37 +287,6 @@ WHILE function_queue is not empty:
   IF function_queue is empty:
     Run deployment checklist (secrets, IAM, monitoring)
     BREAK
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENTS (3 worktrees):
-
-Agent 1 — "edge-functions":
-  EnterWorktree("edge-functions")
-  Implement edge function handlers (routing, caching, auth)
-  Configure wrangler.toml / vercel.json / serverless.yml
-  Set up KV bindings, Durable Objects, or environment variables
-  ExitWorktree()
-
-Agent 2 — "cold-start-optimization":
-  EnterWorktree("cold-start-optimization")
-  Analyze bundle sizes with esbuild/webpack bundle analyzer
-  Tree-shake imports (modular SDK imports, remove unused deps)
-  Implement lazy initialization for DB/cache connections
-  Configure provisioned concurrency where needed
-  ExitWorktree()
-
-Agent 3 — "caching-and-observability":
-  EnterWorktree("caching-and-observability")
-  Design cache key strategy (include geo, exclude tracking params)
-  Set Cache-Control / Surrogate-Control headers per route
-  Add structured logging with trace IDs
-  Configure dashboards for latency, error rate, cache hit rate
-  ExitWorktree()
-
-MERGE: Combine all branches, run full deployment checklist, measure end-to-end latency.
 ```
 
 ## Auto-Detection
@@ -779,7 +432,6 @@ After EACH implementation or optimization change:
   4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
 ```
 
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -792,9 +444,3 @@ DO NOT STOP just because:
   - A non-critical check is pending (that can be a follow-up pass)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run edge tasks sequentially: edge functions, then cold-start optimization, then caching/observability.
-- Use branch isolation per task: `git checkout -b godmode-edge-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
-```

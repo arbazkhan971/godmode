@@ -79,27 +79,6 @@ RAILS CONVENTIONS:
 │ Boolean columns │ Adjective (active, published) │
 │ Routes │ RESTful resources │
 │ Partials │ _prefix (e.g., _form.html.erb) │
-│ Helpers │ Named after controller │
-│ Concerns │ Shared behavior modules │
-└──────────────────────────────────────┴──────────────────────────────────┘
-
-PROJECT STRUCTURE (standard Rails):
-app/
-├── controllers/ # Request handling
-│ ├── concerns/ # Shared controller behavior
-│ └── api/v1/ # API versioned controllers
-├── models/ # Domain logic + persistence
-│ └── concerns/ # Shared model behavior
-├── views/ # Templates (ERB/Slim/Haml)
-│ └── layouts/ # Application layouts
-├── jobs/ # Background jobs
-├── mailers/ # Email sending
-├── channels/ # Action Cable channels
-├── services/ # Service objects (app/services/)
-├── queries/ # Query objects (app/queries/)
-├── policies/ # Authorization policies (Pundit)
-├── serializers/ # API serializers (app/serializers/)
-└── components/ # ViewComponents (optional)
 ```
 
 Rules:
@@ -119,85 +98,7 @@ class Order < ApplicationRecord
  belongs_to :customer
  has_many :order_items, dependent: :destroy
  has_many :products, through: :order_items
- has_one :shipping_address, dependent: :destroy
-
- # Validations
- validates :status, presence: true, inclusion: { in: %w[pending confirmed shipped delivered cancelled] }
- validates :total_cents, numericality: { greater_than_or_equal_to: 0 }
-
- # Enums (Rails 7+ syntax)
- enum :status, {
- pending: "pending",
- confirmed: "confirmed",
- shipped: "shipped",
- delivered: "delivered",
- cancelled: "cancelled"
- }
-
- # Scopes — composable, reusable queries
- scope :recent, -> { order(created_at: :desc) }
- scope :active, -> { where.not(status: :cancelled) }
- scope :for_customer, ->(customer_id) { where(customer_id: customer_id) }
- scope :created_between, ->(start_date, end_date) { where(created_at: start_date..end_date) }
-
- # Callbacks (use sparingly)
- after_create_commit :send_confirmation_email
- after_update_commit :broadcast_status_change, if: :saved_change_to_status?
-
- # Custom methods
- def cancelable?
- pending? || confirmed?
- end
-end
-
-# QUERY OPTIMIZATION — Avoiding N+1 queries
-class OrdersController < ApplicationController
- # BAD: N+1 — loads customer and items separately for each order
- # def index
- # @orders = Order.all
- # end
-
- # GOOD: Eager loading with includes
- def index
- @orders = Order
-.includes(:customer, :order_items) # Prevents N+1
-.where(customer: current_user)
-.recent
-.page(params[:page])
-.per(25)
- end
-
- # GOOD: Preload vs Includes vs Eager Load
- # includes — smart: uses preload or eager_load depending on conditions
- # preload — separate queries (2 queries: orders + customers)
- # eager_load — single LEFT OUTER JOIN (1 query, wider result set)
-
- # For counting without loading records
- def stats
- @total = Order.active.count
- @revenue = Order.active.sum(:total_cents)
- # Use pluck for single-column extraction
- @statuses = Order.distinct.pluck(:status)
- end
-end
-
-# Query object for complex searches
-class OrderSearchQuery
- def initialize(scope = Order.all)
- @scope = scope
- end
-
- def call(params)
- @scope
-.then { |s| params[:status] ? s.where(status: params[:status]) : s }
-.then { |s| params[:customer_id] ? s.for_customer(params[:customer_id]) : s }
-.then { |s| params[:min_total] ? s.where("total_cents >= ?", params[:min_total]) : s }
-.then { |s| params[:since] ? s.where("created_at >= ?", params[:since]) : s }
-.includes(:customer)
-.recent
-.page(params[:page])
- end
-end
+# ... (condensed)
 ```
 
 ```
@@ -258,38 +159,6 @@ def update
  @order.update!(order_params)
  respond_to do |format|
  format.turbo_stream # renders update.turbo_stream.erb
- format.html { redirect_to @order }
- end
-end
-
-<!-- update.turbo_stream.erb -->
-<%= turbo_stream.replace "order_#{@order.id}" do %>
- <%= render partial: "orders/order", locals: { order: @order } %>
-<% end %>
-
-<!-- Turbo Stream — Broadcast from model (real-time to all viewers) -->
-<!-- order.rb -->
-after_update_commit -> { broadcast_replace_to "orders",
- partial: "orders/order", locals: { order: self } }
-
-<!-- Stimulus controller — Sprinkle JS behavior -->
-<!-- app/javascript/controllers/search_controller.js -->
-import { Controller } from "@hotwired/stimulus"
-
-export default class extends Controller {
- static targets = ["input", "results"]
- static values = { url: String }
-
- search() {
- clearTimeout(this.timeout)
- this.timeout = setTimeout(() => {
- fetch(`${this.urlValue}?q=${this.inputTarget.value}`,
- { headers: { "Accept": "text/vnd.turbo-stream.html" } })
-.then(r => r.text())
-.then(html => Turbo.renderStreamMessage(html))
- }, 300)
- }
-}
 ```
 
 ```
@@ -325,16 +194,7 @@ class OrderConfirmationJob < ApplicationJob
  retry_on ActiveRecord::Deadlocked, wait: 5.seconds, attempts: 3
  discard_on ActiveJob::DeserializationError
 
- def perform(order)
- OrderConfirmationMailer.with(order: order).confirmation.deliver_now
- order.update!(confirmation_sent_at: Time.current)
- end
-end
-
-# Enqueue
-OrderConfirmationJob.perform_later(order) # Async
-OrderConfirmationJob.set(wait: 5.minutes).perform_later(order) # Delayed
-OrderConfirmationJob.set(queue: :high).perform_later(order) # Priority
+# ... (condensed)
 ```
 
 ```
@@ -353,19 +213,6 @@ BACKGROUND JOB STRATEGY:
 JOB DESIGN RULES:
 - Jobs MUST be idempotent — safe to retry
 - Jobs MUST accept simple arguments (IDs, not objects) for serialization
-- Jobs SHOULD be small and focused — one responsibility per job
-- Jobs MUST have error handling and retry policies
-- Jobs SHOULD log their start, completion, and failure
-- Monitor queue depth — growing queues indicate processing problems
-
-QUEUE PRIORITY:
-┌──────────┬──────────────┬──────────────────────────────────┐
-│ Queue │ Priority │ Examples │
-├──────────┼──────────────┼──────────────────────────────────┤
-│ critical│ Highest │ Payment processing, alerts │
-│ default │ Normal │ Email sending, notifications │
-│ low │ Lowest │ Reports, data exports, cleanup │
-└──────────┴──────────────┴──────────────────────────────────┘
 ```
 
 ### Step 6: Testing with RSpec & FactoryBot
@@ -378,112 +225,7 @@ RSpec.configure do |config|
  config.include FactoryBot::Syntax::Methods
  config.include Devise::Test::IntegrationHelpers, type: :request
  config.include ActiveJob::TestHelper
-
- config.before(:each, type: :system) do
- driven_by :rack_test
- end
-
- config.before(:each, :js, type: :system) do
- driven_by :selenium_chrome_headless
- end
-end
-
-# spec/factories/orders.rb
-FactoryBot.define do
- factory :order do
- association :customer
- status { :pending }
- total_cents { Faker::Number.between(from: 1000, to: 100_000) }
-
- trait :confirmed do
- status { :confirmed }
- confirmed_at { Time.current }
- end
-
- trait :with_items do
- transient do
- items_count { 3 }
- end
-
- after(:create) do |order, evaluator|
- create_list(:order_item, evaluator.items_count, order: order)
- end
- end
- end
-end
-
-# spec/models/order_spec.rb
-RSpec.describe Order, type: :model do
- describe "validations" do
- it { is_expected.to validate_presence_of(:status) }
- it { is_expected.to belong_to(:customer) }
- it { is_expected.to have_many(:order_items).dependent(:destroy) }
- end
-
- describe "#cancelable?" do
- it "returns true for pending orders" do
- order = build(:order, status: :pending)
- expect(order).to be_cancelable
- end
-
- it "returns false for shipped orders" do
- order = build(:order, status: :shipped)
- expect(order).not_to be_cancelable
- end
- end
-
- describe "scopes" do
- it ".active excludes cancelled orders" do
- active = create(:order, status: :confirmed)
- cancelled = create(:order, status: :cancelled)
-
- expect(Order.active).to include(active)
- expect(Order.active).not_to include(cancelled)
- end
- end
-end
-
-# spec/requests/orders_spec.rb
-RSpec.describe "Orders", type: :request do
- let(:user) { create(:user) }
- before { sign_in user }
-
- describe "GET /orders" do
- it "returns paginated orders" do
- create_list(:order, 30, customer: user.customer)
- get orders_path
- expect(response).to have_http_status(:ok)
- end
- end
-
- describe "POST /orders" do
- let(:valid_params) { { order: { product_ids: [create(:product).id] } } }
-
- it "creates an order and enqueues confirmation" do
- expect {
- post orders_path, params: valid_params
- }.to change(Order, :count).by(1)
-.and have_enqueued_job(OrderConfirmationJob)
-
- expect(response).to redirect_to(Order.last)
- end
- end
-end
-
-# spec/system/orders_spec.rb (Capybara)
-RSpec.describe "Order management", type: :system do
- let(:user) { create(:user) }
- before { sign_in user }
-
- it "creates an order with Turbo" do
- visit new_order_path
- fill_in "Product", with: "Widget"
- click_button "Create Order"
-
- expect(page).to have_content("Order created successfully")
- expect(page).to have_css("[data-turbo-frame='orders']")
- end
-end
+# ... (condensed)
 ```
 
 ```
@@ -502,12 +244,6 @@ TESTING STRATEGY:
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 TEST HELPERS:
-- FactoryBot: Build test data with traits and transients
-- Faker: Generate realistic fake data
-- Shoulda Matchers: One-liner validations/associations
-- DatabaseCleaner: Transaction-based cleanup (if needed)
-- VCR / WebMock: HTTP stubbing for external APIs
-- SimpleCov: Code coverage reporting
 ```
 
 Rules:
@@ -537,13 +273,6 @@ RAILS VALIDATION:
 │ Credentials managed properly │ PASS │ Rails credentials │
 │ Database migrations reversible │ PASS │ All have down() │
 │ Strong parameters enforced │ PASS │ No mass assignment │
-│ CSRF protection enabled │ PASS │ Turbo compatible │
-│ Content Security Policy set │ PASS │ CSP headers │
-│ Production config hardened │ PASS │ Force SSL, log tags │
-│ Ruby/Rails versions current │ PASS │ No EOL versions │
-└──────────────────────────────────────┴──────────┴──────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ```
@@ -589,24 +318,6 @@ AUTO-DETECT SEQUENCE:
  - config/application.rb: config.api_only? -> API mode
  - app/views/ presence -> full-stack
  - app/javascript/controllers/ -> Stimulus installed
- - Gemfile: turbo-rails, stimulus-rails -> Hotwire
-5. Detect background job processor:
- - Gemfile: sidekiq, good_job, solid_queue, delayed_job
- - config/sidekiq.yml, config/queue.yml presence
-6. Detect testing framework:
- - Gemfile: rspec-rails -> RSpec
- - test/ directory -> Minitest (default)
- - spec/ directory -> RSpec
- - Gemfile: factory_bot_rails, shoulda-matchers, capybara
-7. Detect auth strategy:
- - Gemfile: devise, rodauth-rails, or custom auth
- - app/models/user.rb: has_secure_password
- - Rails 8 generated auth: app/controllers/sessions_controller.rb
-8. Detect deployment:
- - config/deploy.yml -> Kamal
- - Procfile -> Heroku
- - Dockerfile -> Docker-based
- -.platform/ -> AWS Elastic Beanstalk
 ```
 
 ## Keep/Discard Discipline
@@ -651,32 +362,6 @@ HARD RULES — NEVER VIOLATE:
 6. **Test behavior, not implementation.** RSpec request specs test the HTTP interface. Model specs test business rules. System specs test critical user flows.
 7. **Migrations are forever.** Every migration must be reversible. Never edit a migration that has been committed — write a new one.
 
-## Example Usage
-
-### Building a Rails Application
-```
-User: /godmode:rails Build a project management app
-
-Rails: Assessing requirements...
-
-RAILS ASSESSMENT:
-Project: Project Management App
-Rails: 8.0.x
-Ruby: 3.3.x
-Architecture: Full-stack (Hotwire)
-Database: PostgreSQL
-Jobs: Solid Queue
-Auth: Rails 8 built-in auth generator
-
-Creating models: Project, Task, User, Comment...
-Configuring Hotwire: Turbo Frames for inline editing, Streams for real-time...
-Setting up background jobs: NotificationJob, ReportGenerationJob...
-Writing specs: 45 model specs, 30 request specs, 8 system specs...
-
-All 15 checks PASS.
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -684,15 +369,6 @@ All 15 checks PASS.
 | (none) | Full Rails setup workflow |
 | `--api` | API-only Rails application |
 | `--hotwire` | Configure Hotwire (Turbo + Stimulus) |
-| `--auth` | Set up authentication (Devise or built-in) |
-| `--jobs sidekiq` | Configure Sidekiq for background jobs |
-| `--jobs solid_queue` | Configure Solid Queue (Rails 8) |
-| `--model <name>` | Generate model with best practices |
-| `--optimize` | Find and fix N+1 queries and slow queries |
-| `--test` | Generate RSpec + FactoryBot test suite |
-| `--upgrade <version>` | Upgrade Rails version with migration guide |
-| `--audit` | Audit existing Rails app for anti-patterns |
-| `--deploy kamal` | Configure Kamal deployment |
 
 ## Output Format
 
@@ -769,17 +445,4 @@ IF migration fails:
 IF N+1 queries detected:
  1. Add includes() or eager_load() to the query
  2. Use strict_loading! on associations to catch new N+1s
- 3. Verify with Bullet gem in development
- 4. For complex cases, use preloader or custom SQL
-
-IF Rails upgrade fails:
- 1. Read the upgrade guide for each minor version step
- 2. Fix deprecation warnings one at a time
- 3. Run bin/rails app:update and review each file change
- 4. Update gems one at a time, running tests after each
-
-IF security vulnerability (bundle audit):
- 1. Update the affected gem to patched version
- 2. If no patch exists, check for workarounds in the advisory
- 3. Add to ignore list only with documented justification and expiry date
 ```

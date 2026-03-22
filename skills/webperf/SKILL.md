@@ -36,15 +36,6 @@ Lighthouse scores (median of 3 runs):
 Core Web Vitals:
   LCP: <value> (target: < 2.5s)
   INP: <value> (target: < 200ms)
-  CLS: <value> (target: < 0.1)
-  FCP: <value> (target: < 1.8s)
-  TTFB: <value> (target: < 200ms)
-
-Bundle analysis:
-  Total JS: <size> (gzipped: <size>)
-  Total CSS: <size> (gzipped: <size>)
-  Largest chunks: <list with sizes>
-  Third-party JS: <size> (<percentage> of total)
 ```
 
 ```bash
@@ -54,10 +45,7 @@ npx lighthouse https://example.com --only-categories=performance --output=json -
 # Analyze bundle size
 npx webpack-bundle-analyzer stats.json    # Webpack
 npx vite-bundle-visualizer                # Vite
-npx source-map-explorer dist/**/*.js      # Any bundler with source maps
-
-# Measure real bundle sizes
-npx bundlesize --files "dist/**/*.js" --max-size 100kB
+# ... (condensed)
 ```
 
 ### Step 2: Lighthouse Performance Audit
@@ -79,12 +67,6 @@ LIGHTHOUSE DIAGNOSTICS:
 └──────────────────────────────────────────────────────────────────┘
 
 Diagnostics:
-  DOM size: <N> elements (target: < 1,500)
-  Main thread work: <N>ms (target: < 2,000ms)
-  JavaScript execution: <N>ms
-  Style & Layout: <N>ms
-  Render-blocking resources: <N> files, <N>ms blocking time
-  Third-party code impact: <N>ms main thread, <size> transfer
 ```
 
 ### Step 3: Bundle Analysis & Code Splitting
@@ -116,16 +98,7 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 
 // Component-based code splitting
 const ChartWidget = React.lazy(() => import('./components/ChartWidget'));
-const MarkdownEditor = React.lazy(() => import('./components/MarkdownEditor'));
-
-// Dynamic import with loading states
-function DashboardPage() {
-  return (
-    <Suspense fallback={<ChartSkeleton />}>
-      <ChartWidget />
-    </Suspense>
-  );
-}
+# ... (condensed)
 ```
 
 ```javascript
@@ -135,7 +108,7 @@ import dynamic from 'next/dynamic';
 const HeavyComponent = dynamic(() => import('../components/HeavyComponent'), {
   loading: () => <Skeleton />,
   ssr: false, // Skip SSR for client-only components
-});
+# ... (condensed)
 ```
 
 #### Tree Shaking Verification
@@ -146,11 +119,7 @@ npx webpack --stats-modules-space 999 | grep "unused"
 # Check for side effects preventing tree shaking
 # package.json should declare: "sideEffects": false
 # or list specific files: "sideEffects": ["*.css", "./src/polyfills.js"]
-
-# Replace heavy libraries with lighter alternatives
-# moment.js (67KB) → date-fns (tree-shakeable) or dayjs (2KB)
-# lodash (72KB) → lodash-es (tree-shakeable) or native methods
-# axios (14KB) → fetch API (built-in) or ky (3KB)
+# ... (condensed)
 ```
 
 ### Step 4: Image Optimization
@@ -180,11 +149,7 @@ Potential savings: <N> MB (<N>% reduction)
   <source srcset="hero.webp" type="image/webp">
   <img src="hero.jpg" alt="Hero image" width="1200" height="600"
        loading="lazy" decoding="async">
-</picture>
-
-<!-- LCP image: eager loading with high priority -->
-<img src="hero.webp" alt="Hero" width="1200" height="600"
-     loading="eager" fetchpriority="high" decoding="async">
+# ... (condensed)
 ```
 
 #### Responsive Images
@@ -195,17 +160,7 @@ Potential savings: <N> MB (<N>% reduction)
     hero-400.webp 400w,
     hero-800.webp 800w,
     hero-1200.webp 1200w,
-    hero-1600.webp 1600w"
-  sizes="(max-width: 640px) 100vw,
-         (max-width: 1024px) 80vw,
-         1200px"
-  src="hero-1200.webp"
-  alt="Hero image"
-  width="1200"
-  height="600"
-  loading="lazy"
-  decoding="async"
->
+# ... (condensed)
 ```
 
 #### Build Pipeline Image Optimization
@@ -216,12 +171,7 @@ npm install sharp
 # Next.js: built-in image optimization (next/image)
 # Astro: built-in image optimization (astro:assets)
 # Vite: vite-imagetools plugin
-
-# CLI optimization
-npx sharp-cli --input "src/images/*.{jpg,png}" --output dist/images/ --webp --avif --resize 1200
-
-# Squoosh CLI for batch optimization
-npx @squoosh/cli --webp auto --avif auto -d dist/images/ src/images/*.jpg
+# ... (condensed)
 ```
 
 ### Step 5: Critical CSS Extraction
@@ -248,10 +198,7 @@ npx critical https://example.com --inline --minify --base dist/
 
 # Extract with critters (Webpack/Vite plugin)
 npm install critters-webpack-plugin  # Webpack
-npm install critters                  # Vite/generic
-
-# Remove unused CSS with PurgeCSS
-npx purgecss --css dist/styles.css --content "dist/**/*.html" --output dist/styles.purged.css
+# ... (condensed)
 ```
 
 ```html
@@ -261,12 +208,7 @@ npx purgecss --css dist/styles.css --content "dist/**/*.html" --output dist/styl
     /* Critical (above-the-fold) CSS inlined here */
     .header { ... }
     .hero { ... }
-    .nav { ... }
-  </style>
-  <!-- Async load full stylesheet -->
-  <link rel="preload" href="/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="/styles.css"></noscript>
-</head>
+# ... (condensed)
 ```
 
 ### Step 6: Font Optimization
@@ -300,22 +242,7 @@ Issues:
   src: url('/fonts/inter-var.woff2') format('woff2');
   font-weight: 100 900;  /* Variable font — one file for all weights */
   font-display: swap;     /* Show fallback immediately, swap when loaded */
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153; /* Latin subset only */
-}
-
-/* Size-adjust to reduce layout shift during font swap */
-@font-face {
-  font-family: 'Inter Fallback';
-  src: local('Arial');
-  ascent-override: 90.20%;
-  descent-override: 22.48%;
-  line-gap-override: 0.00%;
-  size-adjust: 107.40%;
-}
-
-body {
-  font-family: 'Inter', 'Inter Fallback', system-ui, sans-serif;
-}
+# ... (condensed)
 ```
 
 ```html
@@ -330,9 +257,7 @@ npx glyphhanger https://example.com --subset=fonts/inter.woff2 --formats=woff2
 # Convert TTF/OTF to WOFF2
 npx woff2-cli compress fonts/fancy.ttf
 
-# Generate font-display fallback metrics
-npx @next/font/local  # Next.js automatic optimization
-npx fontaine          # Generate fallback font metrics
+# ... (condensed)
 ```
 
 ### Step 7: Service Worker Caching Strategies
@@ -362,33 +287,7 @@ module.exports = {
   globPatterns: ['**/*.{html,js,css,png,jpg,webp,avif,woff2,svg}'],
   swDest: 'dist/sw.js',
   runtimeCaching: [
-    {
-      urlPattern: /\.(?:js|css)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-resources',
-        expiration: { maxEntries: 60, maxAgeSeconds: 365 * 24 * 60 * 60 },
-      },
-    },
-    {
-      urlPattern: /\.(?:png|jpg|jpeg|webp|avif|svg|gif)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'images',
-        expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 },
-      },
-    },
-    {
-      urlPattern: /\/api\//,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'api-responses',
-        networkTimeoutSeconds: 3,
-        expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
-      },
-    },
-  ],
-};
+# ... (condensed)
 ```
 
 ```bash
@@ -449,33 +348,7 @@ Cache-Control: public, max-age=2592000
 |  Core Web Vitals:                                           |
 |  LCP: <before> → <after> (target: < 2.5s)                  |
 |  INP: <before> → <after> (target: < 200ms)                 |
-|  CLS: <before> → <after> (target: < 0.1)                   |
-|  FCP: <before> → <after> (target: < 1.8s)                  |
-|  TTFB: <before> → <after> (target: < 200ms)                |
 |                                                             |
-|  Bundle Size:                                               |
-|  JS: <before> → <after> (-<savings>)                        |
-|  CSS: <before> → <after> (-<savings>)                       |
-|  Images: <before> → <after> (-<savings>)                    |
-|  Fonts: <before> → <after> (-<savings>)                     |
-|  Total transfer: <before> → <after>                         |
-|                                                             |
-|  Optimizations Applied:                                     |
-|  1. <optimization> — saved <amount>                         |
-|  2. <optimization> — saved <amount>                         |
-|  3. <optimization> — saved <amount>                         |
-|                                                             |
-|  Caching:                                                   |
-|  Service worker: <installed/not installed>                   |
-|  Cache headers: <optimal/needs work/missing>                |
-|  CDN: <configured/not configured>                           |
-|                                                             |
-|  Remaining opportunities:                                   |
-|  1. <opportunity> — estimated savings <amount>              |
-|  2. <opportunity> — estimated savings <amount>              |
-|                                                             |
-|  Verdict: <FAST | ACCEPTABLE | SLOW>                       |
-+------------------------------------------------------------+
 ```
 
 Verdicts:
@@ -500,57 +373,6 @@ Verdicts:
 6. **Cache everything possible.** Hashed assets should be cached for a year. Service workers provide offline caching. CDN edge caches reduce latency. Every cache miss is wasted time.
 7. **Third-party scripts are performance debt.** Every analytics tag, chat widget, and ad script runs on the main thread. Audit third-party impact and defer or remove what is not essential.
 
-## Example Usage
-
-### Full performance audit
-```
-User: /godmode:webperf
-
-Webperf: Establishing performance baseline...
-
-PERFORMANCE BASELINE:
-Target: https://example.com
-Framework: Next.js (SSR)
-Lighthouse Performance: 62/100
-
-Bundle analysis:
-  Total JS: 487 KiB (gzipped)
-  Largest: vendor.js (245 KiB) — includes moment.js, lodash
-  Third-party: 180 KiB (37% of total)
-
-Optimizations applied:
-  1. Replace moment.js with dayjs — saved 65 KiB
-  2. Route-based code splitting — saved 120 KiB initial load
-  3. Convert images to WebP with srcset — saved 1.2 MB
-  4. Inline critical CSS — eliminated 1.1s render blocking
-  5. Preload LCP image — improved LCP by 800ms
-  6. Add font-display: swap — eliminated FOIT
-
-Results:
-  Lighthouse: 62 → 91 (+29)
-  LCP: 4.2s → 2.1s
-  Total JS: 487 KiB → 302 KiB (-38%)
-  Total transfer: 3.8 MB → 1.9 MB (-50%)
-
-Verdict: FAST
-```
-
-### Bundle analysis only
-```
-User: /godmode:webperf --bundle
-
-Webperf: Analyzing bundles...
-
-vendor.js (245 KiB):
-  moment.js: 67 KiB → Replace with dayjs (2 KiB)
-  lodash: 72 KiB → Import individual functions or use lodash-es
-  axios: 14 KiB → Use native fetch
-
-Recommended code splits:
-  ChartWidget (180 KiB) — lazy load, only used on /dashboard
-  MarkdownEditor (120 KiB) — lazy load, only used on /editor
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -558,15 +380,6 @@ Recommended code splits:
 | (none) | Full performance audit and optimization |
 | `--lighthouse` | Lighthouse audit only (no optimization) |
 | `--bundle` | Bundle analysis and code splitting recommendations |
-| `--images` | Image optimization only (WebP/AVIF, srcset, lazy) |
-| `--css` | Critical CSS extraction and unused CSS removal |
-| `--fonts` | Font optimization (subsetting, font-display, preload) |
-| `--cache` | Service worker and HTTP caching audit |
-| `--cdn` | CDN and edge caching configuration |
-| `--page <url>` | Audit a specific page |
-| `--budget <file>` | Check against a performance budget file |
-| `--fix` | Auto-apply optimizations after audit |
-| `--ci` | CI-friendly output (exit code 1 if below thresholds) |
 
 ## HARD RULES
 
@@ -590,48 +403,8 @@ ls webpack.config.* vite.config.* next.config.* nuxt.config.* 2>/dev/null
 # Detect bundle analysis tools
 grep -r "webpack-bundle-analyzer\|source-map-explorer\|@next/bundle-analyzer" package.json 2>/dev/null
 
-# Detect image optimization
-grep -r "next/image\|sharp\|imagemin\|@sveltejs/enhanced-img" package.json src/ 2>/dev/null | head -5
-
-# Detect service worker
-find . -name "sw.*" -o -name "service-worker.*" -o -name "workbox-config.*" 2>/dev/null
-
-# Detect performance budget
-ls .lighthouserc.* budget.json performance-budget.* 2>/dev/null
+# ... (condensed)
 ```
-
-## Iteration Protocol
-
-For iterative performance optimization:
-
-```
-current_iteration = 0
-max_iterations = 10
-
-WHILE current_iteration < max_iterations AND performance_budget_not_met:
-  1. Measure: Run Lighthouse audit, capture Core Web Vitals (LCP, FID, CLS)
-  2. Identify: Find the single largest bottleneck (bundle, images, fonts, 3rd party)
-  3. Optimize: Apply the targeted fix for that bottleneck
-  4. Verify: Re-measure to confirm improvement and no regressions
-  current_iteration += 1
-  Report: "Perf iteration {current_iteration}: {optimization_applied} -- LCP: {lcp}ms, CLS: {cls}, bundle: {size}KB"
-
-STOP when:
-  - All Core Web Vitals are in "Good" range (LCP < 2.5s, FID < 100ms, CLS < 0.1)
-  - OR performance budget thresholds are met
-  - OR no further optimizations yield meaningful improvement
-```
-
-## Anti-Patterns
-
-- **Do NOT optimize without measuring.** Run Lighthouse, analyze the bundle, measure Core Web Vitals first.
-- **Do NOT lazy-load the LCP element.** It must load eagerly with `fetchpriority="high"`.
-- **Do NOT serve uncompressed assets.** Enable gzip or Brotli compression.
-- **Do NOT load all JavaScript upfront.** Code split by route and lazy load off-screen components.
-- **Do NOT use hero images without srcset.** A 4000px image on a 375px screen wastes 90% of bytes.
-- **Do NOT add font weights you do not use.** Each unused weight is 20-30KB wasted.
-- **Do NOT set Cache-Control: no-store on hashed static assets.** Cache them for a year.
-- **Do NOT ignore third-party script impact.** Measure and load non-essential scripts with async/defer.
 
 ## Output Format
 Print on completion: `Webperf: Lighthouse {before_score} → {after_score} (+{delta}). LCP: {lcp}s, INP: {inp}ms, CLS: {cls}. JS: {js_before} → {js_after} (-{js_savings}). Total transfer: {transfer_before} → {transfer_after}. Verdict: {verdict}.`
@@ -656,14 +429,6 @@ Columns: iteration, optimization, lighthouse_before, lighthouse_after, lcp_ms, i
 - Font loading optimized with `font-display: swap` and preload.
 - Cache headers set correctly (immutable for hashed assets, revalidate for HTML).
 - Performance budget defined and enforced in CI.
-
-## Error Recovery
-- **Lighthouse score does not improve after optimization**: Clear all caches and re-run. Verify the optimization was actually deployed (check network tab). Run Lighthouse in incognito mode to avoid extension interference.
-- **Code splitting increases total bundle size**: Check for duplicated modules across chunks. Use `webpack-bundle-analyzer` to identify shared dependencies. Extract common code into a shared chunk.
-- **Critical CSS extraction misses above-the-fold styles**: Adjust the viewport dimensions used for critical CSS extraction. Test on multiple viewport sizes (mobile and desktop). Manually verify the above-the-fold rendering.
-- **Font loading causes layout shift (CLS increase)**: Add `size-adjust` properties to the fallback font. Use `fontaine` or `@next/font` for automatic fallback metrics. Set explicit `width` and `height` on font-dependent containers.
-- **Service worker caches stale content**: Implement a cache-busting strategy for the service worker itself. Use `skipWaiting()` and `clients.claim()` for immediate activation. Version your cache names.
-- **Third-party script blocks main thread**: Load with `async` or `defer` attribute. Use a facade pattern (load on interaction, not on page load). Consider removing non-essential third-party scripts entirely.
 
 ## Keep/Discard Discipline
 ```
@@ -712,6 +477,11 @@ PREFER the simpler performance optimization:
   - Fewer large impactful optimizations (images, code splitting, critical CSS) over many micro-optimizations
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run webperf tasks sequentially: bundle optimization, then assets, then rendering, then caching.
-Use branch isolation per task: `git checkout -b godmode-webperf-{task}`, implement, commit, merge back.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| LCP regression after code change | Check for render-blocking resources added. Verify critical CSS is inlined. Check image loading strategy (preload hero image). |
+| CLS spike on specific pages | Find the shifting element with DevTools Performance panel. Set explicit dimensions on images, ads, and embeds. |
+| Bundle size increased unexpectedly | Run bundle analyzer. Check for new dependencies. Verify tree-shaking works. Check for duplicate dependencies in lockfile. |
+| Performance gains disappear in production | Check CDN cache hit rate. Verify compression (brotli/gzip) is active. Check for A/B test or feature flag overhead. |

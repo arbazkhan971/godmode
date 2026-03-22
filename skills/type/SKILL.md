@@ -28,12 +28,7 @@ grep -rn "as any" --include="*.ts" --include="*.tsx" | wc -l
 
 # Check tsconfig strictness
 grep -A20 '"compilerOptions"' tsconfig.json | grep -E "strict|noImplicit|noUnchecked"
-
-# Find untyped function parameters
-grep -rn "function.*([a-zA-Z_][a-zA-Z0-9_]*)" --include="*.ts" | grep -v ":"
-
-# Check for @ts-ignore / @ts-expect-error
-grep -rn "@ts-ignore\|@ts-expect-error" --include="*.ts" --include="*.tsx" | wc -l
+# ... (condensed)
 ```
 
 ```
@@ -52,13 +47,6 @@ TYPE SAFETY AUDIT:
 ├──────────────────┴───────────────────────────────────────────┤
 │  Type Safety Score: <N>/100                                   │
 │  Grade: <A | B | C | D | F>                                   │
-│                                                               │
-│  A (90-100): Strict mode, zero any, runtime validation        │
-│  B (70-89):  Mostly strict, few any, some validation          │
-│  C (50-69):  Partial strict, moderate any, no validation      │
-│  D (30-49):  No strict, widespread any, no validation         │
-│  F (0-29):   Effectively untyped TypeScript                   │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 2: TypeScript Strict Mode Configuration
@@ -81,33 +69,6 @@ Enable full strict mode or adopt it gradually:
     //   "useUnknownInCatchVariables": true,
     //   "alwaysStrict": true,
 
-    // Additional strict checks (not included in "strict")
-    "noUncheckedIndexedAccess": true,      // arr[0] is T | undefined
-    "noImplicitReturns": true,             // all code paths must return
-    "noFallthroughCasesInSwitch": true,    // switch cases must break
-    "noImplicitOverride": true,            // override keyword required
-    "exactOptionalPropertyTypes": true,    // undefined !== optional
-    "noPropertyAccessFromIndexSignature": true, // bracket notation for index sigs
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-
-    // Module resolution
-    "moduleResolution": "bundler",
-    "module": "ESNext",
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-
-    // Output
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
-  }
-}
 ```
 
 #### Gradual Typing Strategy (Existing Projects)
@@ -129,24 +90,6 @@ Phase 2: Functions (Week 3-4)
   │  "strictFunctionTypes": true      — contravariant params  │
   │  "strictBindCallApply": true      — correct bind/call     │
   │  "noFallthroughCasesInSwitch": true                       │
-  └──────────────────────────────────────────────────────────┘
-
-Phase 3: Full Strict (Week 5-6)
-  ┌──────────────────────────────────────────────────────────┐
-  │  Replace all individual flags with:                       │
-  │  "strict": true                                           │
-  │                                                           │
-  │  Then add extra strictness:                               │
-  │  "noUncheckedIndexedAccess": true                         │
-  │  "exactOptionalPropertyTypes": true                       │
-  └──────────────────────────────────────────────────────────┘
-
-Phase 4: Zero Any (Ongoing)
-  ┌──────────────────────────────────────────────────────────┐
-  │  ESLint: "@typescript-eslint/no-explicit-any": "error"    │
-  │  Track: any count should decrease every sprint            │
-  │  Goal: 0 explicit any, 0 as any casts                     │
-  └──────────────────────────────────────────────────────────┘
 ```
 
 #### Eliminating `any`
@@ -159,45 +102,7 @@ const data: any = await fetch('/api/users').then(r => r.json());
 
 // GOOD — validate at the boundary
 const data = await fetch('/api/users').then(r => r.json());
-const users = UserArraySchema.parse(data); // Zod validation
-
-// PATTERN 2: Generic event handlers
-// BAD
-function handleEvent(event: any) { ... }
-
-// GOOD — use the correct event type
-function handleEvent(event: React.ChangeEvent<HTMLInputElement>) { ... }
-
-// PATTERN 3: Dynamic object keys
-// BAD
-const config: any = {};
-
-// GOOD — use Record or index signature
-const config: Record<string, string> = {};
-// or more specific:
-const config: { [K in ConfigKey]: string } = {};
-
-// PATTERN 4: Third-party library without types
-// BAD
-const result: any = legacyLib.doSomething();
-
-// GOOD — create a declaration file
-// src/types/legacy-lib.d.ts
-declare module 'legacy-lib' {
-  export function doSomething(): Result;
-  interface Result {
-    value: string;
-    status: number;
-  }
-}
-
-// PATTERN 5: JSON.parse
-// BAD
-const parsed: any = JSON.parse(rawString);
-
-// GOOD — validate after parsing
-const parsed: unknown = JSON.parse(rawString);
-const validated = MySchema.parse(parsed);
+# ... (condensed)
 ```
 
 ### Step 3: Schema Validation Library Selection
@@ -219,67 +124,6 @@ SCHEMA VALIDATION COMPARISON:
 │               │ Best for: Formik/React forms, existing Yup codebases  │
 │               │ Strengths: Conditional validation, localization       │
 ├──────────────┼───────────────────────────────────────────────────────┤
-│  Joi          │ Feature-rich, Hapi ecosystem                          │
-│               │ Bundle: ~30KB min+gzip (heavy)                        │
-│               │ Best for: Node.js backends, complex validation        │
-│               │ Strengths: Most validation rules, detailed errors     │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Valibot      │ Modular, tree-shakeable, tiny bundle                  │
-│               │ Bundle: ~1-5KB (only what you use)                    │
-│               │ Best for: Bundle-sensitive apps, Zod alternative      │
-│               │ Strengths: Smallest bundle, Zod-compatible API        │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  ArkType      │ Runtime-optimized, TypeScript syntax                  │
-│               │ Bundle: ~20KB min+gzip                                │
-### Step 4: Schema-First Development with Zod
-Define schemas that serve as both runtime validators and TypeScript types:
-
-#### Core Schema Patterns
-```typescript
-import { z } from 'zod';
-
-// ─── Primitive Schemas ───────────────────────────────────────
-const Email = z.string().email().toLowerCase().brand<'Email'>();
-const UserId = z.string().uuid().brand<'UserId'>();
-const NonEmptyString = z.string().min(1).max(1000);
-const PositiveInt = z.number().int().positive();
-const DateString = z.string().datetime();
-
-// ─── Domain Schemas ──────────────────────────────────────────
-const UserSchema = z.object({
-  id: UserId,
-  email: Email,
-  name: NonEmptyString,
-  role: z.enum(['admin', 'member', 'viewer']),
-  createdAt: DateString,
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-// Infer the TypeScript type FROM the schema
-type User = z.infer<typeof UserSchema>;
-// Result:
-// type User = {
-//   id: string & BRAND<"UserId">;
-//   email: string & BRAND<"Email">;
-//   name: string;
-//   role: "admin" | "member" | "viewer";
-//   createdAt: string;
-//   metadata?: Record<string, unknown> | undefined;
-// }
-
-// ─── Request/Response Schemas ────────────────────────────────
-const CreateUserRequest = UserSchema.omit({ id: true, createdAt: true });
-const UpdateUserRequest = UserSchema.partial().omit({ id: true, createdAt: true });
-const UserResponse = UserSchema.extend({
-  _links: z.object({
-    self: z.string().url(),
-    posts: z.string().url(),
-  }),
-});
-
-type CreateUserRequest = z.infer<typeof CreateUserRequest>;
-type UpdateUserRequest = z.infer<typeof UpdateUserRequest>;
-type UserResponse = z.infer<typeof UserResponse>;
 ```
 
 #### Validation at API Boundaries
@@ -290,28 +134,7 @@ import { Request, Response, NextFunction } from 'express';
 
 export function validate<T>(schema: ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: 'Request body validation failed',
-        details: result.error.issues.map(issue => ({
-          path: issue.path.join('.'),
-          message: issue.message,
-          code: issue.code,
-          expected: 'expected' in issue ? issue.expected : undefined,
-          received: 'received' in issue ? issue.received : undefined,
-        })),
-      });
-    }
-    req.body = result.data; // Replace with validated + transformed data
-    next();
-  };
-}
-
-// Usage in routes
-router.post('/users', validate(CreateUserRequest), createUserHandler);
-router.patch('/users/:id', validate(UpdateUserRequest), updateUserHandler);
+# ... (condensed)
 ```
 
 #### Environment Variable Validation
@@ -322,30 +145,7 @@ import { z } from 'zod';
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  DATABASE_URL: z.string().url().startsWith('postgres://'),
-  REDIS_URL: z.string().url().startsWith('redis://'),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  API_KEY: z.string().min(1),
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  CORS_ORIGINS: z.string().transform(s => s.split(',')).pipe(z.array(z.string().url())),
-});
-
-export type Env = z.infer<typeof EnvSchema>;
-
-function validateEnv(): Env {
-  const result = EnvSchema.safeParse(process.env);
-  if (!result.success) {
-    console.error('Environment validation failed:');
-    for (const issue of result.error.issues) {
-      console.error(`  ${issue.path.join('.')}: ${issue.message}`);
-    }
-    console.error('\nCheck .env.example for required variables.');
-    process.exit(1);
-  }
-  return result.data;
-}
-
-export const env = validateEnv();
+# ... (condensed)
 ```
 
 ### Step 5: Type Narrowing & Discriminated Unions
@@ -359,40 +159,7 @@ interface Order {
   id: string;
   status: string;
   items: Item[];
-  shippingAddress?: Address;
-  trackingNumber?: string;
-  cancelReason?: string;
-  deliveredAt?: Date;
-}
-
-// GOOD: Each state explicitly declares its fields
-type Order =
-  | { status: 'draft'; id: string; items: Item[] }
-  | { status: 'placed'; id: string; items: Item[]; shippingAddress: Address }
-  | { status: 'shipped'; id: string; items: Item[]; shippingAddress: Address; trackingNumber: string }
-  | { status: 'delivered'; id: string; items: Item[]; shippingAddress: Address; trackingNumber: string; deliveredAt: Date }
-  | { status: 'cancelled'; id: string; items: Item[]; cancelReason: string };
-
-// TypeScript narrows the type based on status check
-function processOrder(order: Order) {
-  switch (order.status) {
-    case 'draft':
-      // TypeScript knows: no shippingAddress, no trackingNumber
-      return { canEdit: true, canShip: false };
-    case 'placed':
-      // TypeScript knows: shippingAddress exists
-      return { canEdit: false, canShip: true, address: order.shippingAddress };
-    case 'shipped':
-      // TypeScript knows: trackingNumber exists
-      return { canTrack: true, tracking: order.trackingNumber };
-    case 'delivered':
-      // TypeScript knows: deliveredAt exists
-      return { complete: true, deliveredAt: order.deliveredAt };
-    case 'cancelled':
-      // TypeScript knows: cancelReason exists
-      return { cancelled: true, reason: order.cancelReason };
-  }
-}
+# ... (condensed)
 ```
 
 #### Result Types (Error Handling Without Exceptions)
@@ -444,103 +211,7 @@ import { z } from 'zod';
 export const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-  name: z.string().min(1).max(100),
-  role: z.enum(['admin', 'member', 'viewer']),
-### Step 8: Commit and Transition
-1. Commit tsconfig changes: `"type: <project> — enable TypeScript strict mode (<phase>)"`
-2. Commit schema library: `"type: <project> — add Zod schemas for <domain>"`
-3. Commit any elimination: `"type: <project> — replace <N> any types with proper types"`
-4. Commit validation middleware: `"type: <project> — add runtime validation at API boundaries"`
-5. Commit branded types: `"type: <project> — add branded types for domain identifiers"`
-
-## Key Behaviors
-
-1. **Schema is the single source of truth.** Never write TypeScript types manually when you can infer them from a Zod schema. One schema generates the type, the validator, and the test factory.
-2. **Validate at boundaries, trust within.** Every piece of external data (API requests, database reads, third-party responses) gets validated. Internal function calls trust the type system.
-3. **Strict mode is non-negotiable for new projects.** The only reason to not use strict mode is migrating an existing codebase gradually.
-4. **Any is a bug.** Every `any` type is a hole in your type safety. Track `any` count as a metric. Drive it to zero.
-5. **Make illegal states unrepresentable.** Use discriminated unions to ensure that invalid combinations of data cannot exist at the type level.
-6. **Types prevent bugs, schemas prevent crashes.** TypeScript catches bugs at compile time. Zod catches invalid data at runtime. You need both.
-
-## Example Usage
-
-### Enabling strict TypeScript on an existing project
-```
-User: /godmode:type Our TypeScript project has 340 any types and no strict mode
-
-Type: Running type safety audit...
-
-TYPE SAFETY AUDIT:
-  Strict mode: OFF (only noImplicitAny partially enabled)
-  any count: 287 explicit + 53 as any = 340 total
-  @ts-ignore: 23 suppressed errors
-  Runtime validation: NONE
-  Type Safety Score: 22/100 (Grade: F)
-
-GRADUAL STRICTNESS PLAN:
-Phase 1 (Week 1): Enable noImplicitAny + strictNullChecks
-  → Fixed 89 type errors, replaced 62 any types
-  → Commit: "type: enable noImplicitAny and strictNullChecks"
-
-Phase 2 (Week 2): Enable strictFunctionTypes + strictBindCallApply
-  → Fixed 34 type errors
-  → Commit: "type: enable function type strictness"
-
-Phase 3 (Week 3): Enable full strict mode
-  → Fixed 28 remaining type errors
-  → Commit: "type: enable full strict mode"
-
-Phase 4 (Ongoing): Eliminate remaining 216 any types
-  → Priority: API handlers (67 any), utils (45 any), services (34 any)
-
-AFTER Phase 1:
-  Type Safety Score: 22 → 48/100 (Grade: D → C)
-  any count: 340 → 278 (-18%)
-```
-
-### Setting up Zod for an API
-```
-User: /godmode:type Set up runtime validation for our Express API
-
-Type: Analyzing API endpoints...
-
-ANALYSIS:
-  Endpoints: 24
-  With validation: 0
-  Request bodies: 18 (all unvalidated — any data accepted)
-  Vulnerability: HIGH (any JSON payload is trusted)
-
-SETUP:
-  1. Created Zod schemas for all 12 domain entities
-  2. Derived request/response schemas from entity schemas
-  3. Created validate() middleware
-  4. Applied to all 18 endpoints with request bodies
-  5. Added env validation for startup
-
-RESULT:
-  Validated endpoints: 0 → 24
-  Type-inferred request types: 0 → 18
-  Invalid requests now return structured 400 errors
-  Runtime safety: NONE → FULL
-```
-
-## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Full type safety audit and improvement plan |
-| `--audit` | Audit type safety score without making changes |
-| `--strict` | Enable TypeScript strict mode (gradual if existing project) |
-| `--schemas` | Generate Zod schemas for domain entities |
-| `--validate` | Add runtime validation at API boundaries |
-| `--eliminate-any` | Remove any types with proper replacements |
-| `--branded` | Add branded types for domain identifiers |
-| `--migrate <lib>` | Migrate between validation libraries |
-| `--env` | Add environment variable validation |
-| `--factory` | Generate test data factories from schemas |
-
-## Auto-Detection
-On activation, detect type safety context automatically:
+# ... (condensed)
 ```
 AUTO-DETECT:
 1. Check for TypeScript config:
@@ -670,22 +341,3 @@ PREFER the simpler type approach:
   - Validate once at the boundary, trust types internally — do not over-validate
 ```
 
-## Multi-Agent Dispatch
-For large-scale type safety improvements across a codebase:
-```
-DISPATCH parallel agents (one per phase):
-
-Agent 1 (worktree: type-strict):
-  - Enable strict mode flags incrementally
-  - Fix all resulting type errors
-  - Scope: tsconfig.json + all .ts/.tsx files
-  - Output: Strict tsconfig + fixed type errors
-
-Agent 2 (worktree: type-schemas):
-  - Create Zod schemas for all domain entities
-  - Derive types from schemas (z.infer)
-  - Scope: src/schemas/, src/types/
-  - Output: Schema library + inferred types
-
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.

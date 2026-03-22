@@ -1,789 +1,161 @@
 ---
 name: reliability
 description: |
-  Site reliability engineering skill. Activates when user needs SLO/SLI/SLA definition and tracking, error budgets and burn rate alerts, toil identification and elimination, on-call rotation design, runbook automation, or incident management process design. Triggers on: /godmode:reliability, "SRE", "SLO", "SLI", "SLA", "error budget", "toil", "on-call", "runbook", "site reliability", or when the orchestrator detects reliability engineering work.
+  Site reliability engineering skill. Activates when user needs SLO/SLI/SLA definition, error budgets and burn rate alerts, toil identification, on-call rotation, runbook automation, or incident management. Triggers on: /godmode:reliability, "SRE", "SLO", "error budget", "toil", "on-call", "runbook", or when the orchestrator detects reliability work.
 ---
 
 # Reliability -- Site Reliability Engineering
 
 ## When to Activate
 - User invokes `/godmode:reliability`
-- User says "SRE", "SLO", "SLI", "SLA", "error budget"
-- User says "toil", "on-call", "runbook", "site reliability"
-- User says "availability target", "burn rate", "reliability"
-- User says "incident process", "production readiness", "operational maturity"
+- User says "SRE", "SLO", "SLI", "SLA", "error budget", "toil", "on-call", "runbook"
 - When establishing production operations for a new service
-- When `/godmode:observe` identifies missing SLOs or alerting gaps
-- When `/godmode:incident` reveals systemic reliability issues
 
 ## Workflow
 
-### Step 1: Service Reliability Context
-Understand the service and its reliability requirements:
-
+### Step 1: Service Context
 ```
-RELIABILITY CONTEXT:
-Service: <name and purpose>
-Users: <who uses this service, internal/external>
-Business Criticality: Tier 1 (revenue) | Tier 2 (important) | Tier 3 (internal)
-Current Reliability: <observed uptime, error rate, latency>
-Current Monitoring: <what is monitored today>
-Current Alerting: <what alerts exist, who receives them>
-Current On-Call: <is there an on-call rotation, how does it work>
-Current Runbooks: <do runbooks exist, are they up to date>
-Pain Points: <what reliability problems exist today>
-Dependencies: <critical upstream and downstream services>
+Service: <name> | Criticality: Tier 1/2/3
+Current: reliability, monitoring, alerting, on-call, runbooks
+Dependencies: <upstream and downstream>
 ```
 
-If context is missing, ask: "Is downtime measured in lost revenue, user frustration, or internal inconvenience?"
+### Step 2: SLO/SLI/SLA
+Hierarchy: SLA (external) -> SLO (internal, stricter) -> SLI (measured metric).
 
-### Step 2: SLO/SLI/SLA Definition
-Define the service level objectives that drive reliability decisions:
+SLI categories: Availability (success/total), Latency (requests < threshold / total), Throughput, Correctness, Freshness, Durability.
 
+Error budget = 1 - SLO. 99.9% = 43.2 min/month. 99.99% = 4.3 min/month.
+
+Errors: HTTP 5xx, timeouts, circuit breaker rejections. NOT 4xx or 429.
+
+### Step 3: Error Budgets & Burn Rate Alerts
+**Policy:** >50% = normal. 25-50% = slow risky deploys. 10-25% = freeze non-critical. <10% = all hands. 0% = only reliability work.
+
+**Multi-window burn rate alerts:**
+- Critical: 14.4x, 1h+5m -> Page
+- High: 6x, 6h+30m -> Page
+- Medium: 3x, 1d+2h -> Ticket
+- Low: 1x, 3d+6h -> Log
+
+Both windows must trigger (reduces false positives).
+
+### Step 4: Toil
+Toil = manual, repetitive, automatable, tactical, no enduring value.
+Inventory tasks with frequency and monthly hours. Target <50% of team capacity. Automate top 3.
+
+### Step 5: On-Call
+Min 5 engineers. Primary + secondary. Escalation: L1(0m) -> L2(15m) -> L3(30m) -> L4(60m).
+Health: <5 pages/shift, <1 during sleep, MTTA <5min, MTTR <30min, false positive <20%.
+Sustainability: max 1 week in 5, day off after off-hours SEV1.
+
+### Step 6: Runbooks
+Every pageable alert: what is happening, user impact, diagnostic steps (commands), mitigation options (commands), escalation, post-incident actions.
+Levels: L0 Manual -> L1 Assisted -> L2 Semi-auto -> L3 Full auto.
+
+### Step 7: Incident Management
+Lifecycle: Detection -> Triage -> Mitigation -> Resolution -> Post-mortem -> Prevention.
+Severity: SEV1 (<15min), SEV2 (<30min), SEV3 (<2h), SEV4 (next day).
+Roles: IC, Tech Lead, Comms, Scribe.
+
+### Step 8: Production Readiness
+SLOs, error budget alerts, dashboards, logging, tracing, alerts, runbooks, on-call, circuit breakers, timeouts, auto-scaling, canary deploy, rollback, security, docs.
+
+### Step 9: Validation
 ```
-SERVICE LEVEL HIERARCHY:
-+---------------------------------------------------------------+
-|  SLA (Agreement)     -- External promise to customers           |
-|    |                                                             |
-|    v                                                             |
-|  SLO (Objective)     -- Internal target (stricter than SLA)     |
-|    |                                                             |
-|    v                                                             |
-|  SLI (Indicator)     -- Measured metric that tracks the SLO     |
-+---------------------------------------------------------------+
-
-SLI DEFINITIONS:
-+--------------------------------------------------------------+
-|  Category    | SLI                    | Measurement            |
-+--------------------------------------------------------------+
-|  Availability| Successful requests /  | HTTP 5xx excluded,     |
-|              | total requests         | measured at LB         |
-|  Latency     | Requests faster than   | p50, p99 at server     |
-|              | threshold / total      | side (not client)      |
-|  Throughput  | Requests processed /   | Measured per second    |
-|              | second                 | at application         |
-|  Correctness | Correct responses /    | Validation checks      |
-|              | total responses        | on output              |
-|  Freshness   | Data updated within    | Lag measurement on     |
-|              | threshold / total      | data pipeline          |
-|  Durability  | Data retained /        | Measured over quarter  |
-|              | data stored            |                        |
-+--------------------------------------------------------------+
-
-SLO TABLE:
-+--------------------------------------------------------------+
-|  SLI              | SLO Target | Window   | SLA (if external) |
-+--------------------------------------------------------------+
-|  Availability     | 99.9%      | 30 days  | 99.5%             |
-|  Latency (p50)    | < 100ms    | 30 days  | < 500ms           |
-|  Latency (p99)    | < 500ms    | 30 days  | < 2000ms          |
-|  Error rate       | < 0.1%     | 30 days  | < 1%              |
-|  Throughput       | > 1000 RPS | 30 days  | N/A               |
-+--------------------------------------------------------------+
-
-SLO WINDOW:
-- Rolling 30-day window (most common, smooth)
-- Calendar month (aligned with billing, spiky)
-- Rolling 7-day window (faster feedback, more volatile)
-
-ERROR BUDGET = 1 - SLO
-  99.9% SLO -> 0.1% error budget -> 43.2 minutes/month
-  99.95% SLO -> 0.05% error budget -> 21.6 minutes/month
-  99.99% SLO -> 0.01% error budget -> 4.3 minutes/month
-```
-
-#### SLO Calculation
-```
-AVAILABILITY SLI CALCULATION:
-  SLI = (total_requests - error_requests) / total_requests * 100
-
-  What counts as an error:
-  - HTTP 5xx responses (server errors)
-  - Timeouts (request exceeded deadline)
-  - Circuit breaker rejections (shed load)
-
-  What does NOT count as an error:
-  - HTTP 4xx responses (client errors)
-  - Rate-limited requests (429) -- debatable, document your choice
-  - Planned maintenance (if communicated and excluded by agreement)
-
-LATENCY SLI CALCULATION:
-  SLI = requests_below_threshold / total_requests * 100
-
-  Threshold selection:
-  - p50 threshold: median user experience
-  - p99 threshold: tail latency (worst 1%)
-  - Both should have separate SLOs
-
-  Where to measure:
-  - At the load balancer (includes network, most accurate for user)
-  - At the application (excludes network, easier to action)
-  - NOT at the client (too many variables)
-```
-
-### Step 3: Error Budgets and Burn Rate Alerts
-Configure error budget tracking and alerting:
-
-```
-ERROR BUDGET CALCULATION:
-  SLO: 99.9% availability over 30 days
-  Total minutes in 30 days: 43,200
-  Error budget: 43,200 * 0.001 = 43.2 minutes of downtime
-
-  Budget consumed: (actual_errors / total_requests) / (1 - SLO) * 100
-  Example: 0.05% error rate -> 0.05% / 0.1% = 50% budget consumed
-
-ERROR BUDGET POLICY:
-+--------------------------------------------------------------+
-|  Budget Remaining | Action                                     |
-+--------------------------------------------------------------+
-|  > 50%            | Normal development velocity                |
-|  25-50%           | Increase testing, slow risky deploys        |
-|  10-25%           | Freeze non-critical changes, focus on       |
-|                   | reliability improvements                    |
-|  < 10%            | All hands on reliability, freeze deploys    |
-|  0% (exhausted)   | Only reliability work until budget restores |
-+--------------------------------------------------------------+
-```
-
-#### Multi-Window Burn Rate Alerts
-```
-BURN RATE ALERTING:
-  Burn rate = (error rate observed / error rate allowed by SLO)
-
-  If burn rate = 1: budget consumed exactly at SLO rate
-  If burn rate = 10: budget consumed 10x faster (exhausts in 3 days)
-  If burn rate = 100: budget consumed in ~7 hours
-
-MULTI-WINDOW BURN RATE ALERT CONFIGURATION:
-+--------------------------------------------------------------+
-|  Severity  | Burn Rate | Long Window | Short Window | Action  |
-+--------------------------------------------------------------+
-|  Critical  | 14.4x     | 1 hour      | 5 minutes    | Page    |
-|  High      | 6x        | 6 hours     | 30 minutes   | Page    |
-|  Medium    | 3x        | 1 day       | 2 hours      | Ticket  |
-|  Low       | 1x        | 3 days      | 6 hours      | Log     |
-+--------------------------------------------------------------+
-
-WHY MULTI-WINDOW:
-- Long window: Catches sustained error rates (not just blips)
-- Short window: Ensures the problem is current (not just historical)
-- Both must trigger: Reduces false positives dramatically
-
-PROMETHEUS ALERTING RULES:
-groups:
-  - name: slo-burn-rate
-    rules:
-      # Critical: 14.4x burn rate over 1h AND 5m
-      - alert: SLOBurnRateCritical
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[1h]))
-            /
-            sum(rate(http_requests_total[1h]))
-          ) > (14.4 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[5m]))
-            /
-            sum(rate(http_requests_total[5m]))
-          ) > (14.4 * 0.001)
-        for: 2m
-        labels:
-          severity: critical
-        annotations:
-          summary: "SLO burn rate critical: {{ $value | humanizePercentage }}"
-          runbook_url: "https://runbooks.example.com/slo-burn-rate"
-
-      # High: 6x burn rate over 6h AND 30m
-      - alert: SLOBurnRateHigh
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[6h]))
-            /
-            sum(rate(http_requests_total[6h]))
-          ) > (6 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[30m]))
-            /
-            sum(rate(http_requests_total[30m]))
-          ) > (6 * 0.001)
-        for: 5m
-        labels:
-          severity: high
-        annotations:
-          summary: "SLO burn rate high: {{ $value | humanizePercentage }}"
-          runbook_url: "https://runbooks.example.com/slo-burn-rate"
-
-      # Medium: 3x burn rate over 1d AND 2h
-      - alert: SLOBurnRateMedium
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[1d]))
-            /
-            sum(rate(http_requests_total[1d]))
-          ) > (3 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[2h]))
-            /
-            sum(rate(http_requests_total[2h]))
-          ) > (3 * 0.001)
-        for: 15m
-        labels:
-          severity: medium
-        annotations:
-          summary: "SLO burn rate elevated: {{ $value | humanizePercentage }}"
-```
-
-### Step 4: Toil Identification and Elimination
-Find and eliminate repetitive operational work:
-
-```
-TOIL DEFINITION:
-Toil is work that is:
-- Manual: Requires a human to do it
-- Repetitive: Done more than once
-- Automatable: Could be done by a machine
-- Tactical: Reactive, not strategic
-- No enduring value: Does not improve the system permanently
-- Scales with service growth: More users = more toil
-
-TOIL INVENTORY:
-+--------------------------------------------------------------+
-|  Task                | Frequency | Time/Occ | Monthly Hours   |
-+--------------------------------------------------------------+
-|  <manual deploy>     | <N>/week  | <M> min  | <total hours>   |
-|  <restart service>   | <N>/week  | <M> min  | <total hours>   |
-|  <manual scaling>    | <N>/month | <M> min  | <total hours>   |
-|  <cert rotation>     | <N>/qtr   | <M> min  | <total hours>   |
-|  <log investigation> | <N>/week  | <M> min  | <total hours>   |
-|  <data cleanup>      | <N>/month | <M> min  | <total hours>   |
-+--------------------------------------------------------------+
-TOTAL TOIL: <N> hours/month (<N>% of team capacity)
-
-TOIL TARGET: < 50% of SRE team time (Google SRE book recommendation)
-CURRENT: <N>% -> <ACCEPTABLE | EXCESSIVE>
-
-TOIL ELIMINATION PRIORITY:
-+--------------------------------------------------------------+
-|  Priority | Task              | Automation Approach  | Effort  |
-+--------------------------------------------------------------+
-|  1        | <highest toil>    | <how to automate>    | <S/M/L> |
-|  2        | <second highest>  | <how to automate>    | <S/M/L> |
-|  3        | <third highest>   | <how to automate>    | <S/M/L> |
-+--------------------------------------------------------------+
-
-TOIL REDUCTION TARGETS:
-  This quarter: Reduce toil from <N>% to <M>% (-<X> hours/month)
-  Next quarter: Reduce to <M>% (-<X> hours/month)
-  6 months: Reach <50% target
-```
-
-### Step 5: On-Call Rotation Design
-Design sustainable on-call practices:
-
-```
-ON-CALL ROTATION:
-+--------------------------------------------------------------+
-|  Parameter          | Configuration                            |
-+--------------------------------------------------------------+
-|  Rotation type      | Weekly | Bi-weekly | Follow-the-sun     |
-|  Team size          | <N> engineers (minimum 5 for weekly)     |
-|  Primary on-call    | 1 engineer                               |
-|  Secondary on-call  | 1 engineer (escalation backup)           |
-|  Handoff time       | <day> <time> <timezone>                  |
-|  Handoff process    | <sync meeting, async doc, both>          |
-|  Compensation       | <time off, pay differential, both>       |
-+--------------------------------------------------------------+
-
-ON-CALL SCHEDULE:
-+--------------------------------------------------------------+
-|  Week    | Primary        | Secondary       | Notes            |
-+--------------------------------------------------------------+
-|  Week 1  | <engineer>     | <engineer>      |                  |
-|  Week 2  | <engineer>     | <engineer>      |                  |
-|  Week 3  | <engineer>     | <engineer>      |                  |
-|  Week 4  | <engineer>     | <engineer>      |                  |
-|  Week 5  | <engineer>     | <engineer>      |                  |
-+--------------------------------------------------------------+
-
-ESCALATION POLICY:
-+--------------------------------------------------------------+
-|  Level   | Who              | Timeout    | Method             |
-+--------------------------------------------------------------+
-|  L1      | Primary on-call  | 0 min      | PagerDuty/phone    |
-|  L2      | Secondary on-call| 15 min     | PagerDuty/phone    |
-|  L3      | Engineering lead | 30 min     | Phone call         |
-|  L4      | VP Engineering   | 60 min     | Phone call         |
-+--------------------------------------------------------------+
-
-ON-CALL HEALTH METRICS:
-+--------------------------------------------------------------+
-|  Metric                    | Target    | Current              |
-+--------------------------------------------------------------+
-|  Pages per on-call shift   | < 5       | <N>                  |
-|  Pages during sleep hours  | < 1       | <N>                  |
-|  Mean time to acknowledge  | < 5 min   | <N> min              |
-|  Mean time to resolve      | < 30 min  | <N> min              |
-|  False positive rate       | < 20%     | <N>%                 |
-|  On-call satisfaction      | > 7/10    | <N>/10               |
-+--------------------------------------------------------------+
-
-ON-CALL SUSTAINABILITY:
-- Max 1 week in 5, max 2 pages per night, day off after off-hours SEV1
-- 50% sprint capacity for on-call, every page generates an action item
-```
-
-### Step 6: Runbook Design and Automation
-Create actionable runbooks for common operational scenarios:
-
-```
-RUNBOOK TEMPLATE:
-+---------------------------------------------------------------+
-|  RUNBOOK: <Alert Name>                                          |
-+---------------------------------------------------------------+
-|  Alert:       <alert name and severity>                         |
-|  Service:     <service name>                                    |
-|  Owner:       <team/individual>                                 |
-|  Last updated: <date>                                           |
-|  Last used:    <date>                                           |
-+---------------------------------------------------------------+
-|                                                                 |
-|  WHAT IS HAPPENING:                                             |
-|  <1-2 sentence description of what this alert means>            |
-|                                                                 |
-|  USER IMPACT:                                                   |
-|  <what users are experiencing right now>                        |
-|                                                                 |
-|  DIAGNOSTIC STEPS:                                              |
-|  1. Check <dashboard-url> for <metric>                          |
-|  2. Run: <diagnostic command>                                   |
-|  3. Check <log query> for errors                                |
-|  4. Verify <dependency> is healthy: <health check command>      |
-|                                                                 |
-|  MITIGATION STEPS:                                              |
-|  Option A: <quick fix, e.g., restart service>                   |
-|    Command: <exact command to run>                              |
-|    Expected result: <what you should see>                       |
-|    Time to effect: <how long until recovery>                    |
-|                                                                 |
-|  Option B: <rollback if Option A fails>                         |
-|    Command: <exact rollback command>                            |
-|    Expected result: <what you should see>                       |
-|                                                                 |
-|  ESCALATION:                                                    |
-|  If not resolved in <N> minutes:                                |
-|  - Escalate to <team/person>                                    |
-|  - Include: <what information to provide>                       |
-|                                                                 |
-|  POST-INCIDENT:                                                 |
-|  - Create incident ticket: <link to template>                   |
-|  - Schedule post-mortem if SEV1/SEV2                            |
-+---------------------------------------------------------------+
-
-RUNBOOK INVENTORY:
-+--------------------------------------------------------------+
-|  Alert                 | Runbook Exists | Automated | Tested  |
-+--------------------------------------------------------------+
-|  High error rate       | YES / NO       | YES / NO  | <date>  |
-|  High latency          | YES / NO       | YES / NO  | <date>  |
-|  Database connection   | YES / NO       | YES / NO  | <date>  |
-|  Disk space low        | YES / NO       | YES / NO  | <date>  |
-|  Memory pressure       | YES / NO       | YES / NO  | <date>  |
-|  Certificate expiring  | YES / NO       | YES / NO  | <date>  |
-|  Dependency down       | YES / NO       | YES / NO  | <date>  |
-+--------------------------------------------------------------+
-
-RUNBOOK COVERAGE: <N>/<M> alerts have runbooks (<percentage>%)
-TARGET: 100% of pageable alerts have runbooks
-```
-
-#### Runbook Automation
-```
-AUTOMATION LEVELS:
-+--------------------------------------------------------------+
-|  Level            | Description              | Example         |
-+--------------------------------------------------------------+
-|  L0: Manual       | Human follows runbook    | SSH, run cmds   |
-|  L1: Assisted     | Script gathers info      | Diagnostic script|
-|  L2: Semi-auto    | Script fixes, human      | Auto-restart    |
-|                   | confirms                  | with approval   |
-|  L3: Full auto    | System self-heals        | Auto-scale,     |
-|                   |                           | auto-restart    |
-+--------------------------------------------------------------+
-
-AUTOMATION PRIORITY:
-  Automate first:
-  1. Alerts that fire most frequently (reduce toil)
-  2. Alerts with well-known, safe remediation (low risk)
-  3. Alerts that fire during sleep hours (improve quality of life)
-
-  Automate last:
-  1. Rare alerts (low ROI)
-  2. Alerts requiring judgment (high risk of wrong action)
-  3. Alerts with data loss potential (needs human confirmation)
-
-SELF-HEALING EXAMPLE:
-  Alert: Pod OOMKilled
-  Auto-remediation:
-    1. Capture heap dump (for analysis)
-    2. Restart pod (Kubernetes does this automatically)
-    3. If > 3 OOMKills in 1 hour:
-       a. Increase memory limit by 25%
-       b. Alert on-call (something is leaking)
-    4. If increased limit > threshold:
-       a. Roll back to previous version
-       b. Page on-call as SEV2
-```
-
-### Step 7: Incident Management Process
-Define the incident lifecycle:
-
-```
-INCIDENT LIFECYCLE:
-  Detection -> Triage -> Mitigation -> Resolution -> Post-mortem -> Prevention
-
-INCIDENT SEVERITY DEFINITIONS:
-+--------------------------------------------------------------+
-|  Severity | Definition                 | Response | Comms      |
-+--------------------------------------------------------------+
-|  SEV1     | Total outage, data loss,   | < 15 min | Exec + all|
-|           | security breach             |          | customers |
-|  SEV2     | Major degradation, critical| < 30 min | Eng lead + |
-|           | feature broken              |          | affected   |
-|  SEV3     | Partial degradation,       | < 2 hrs  | Team only  |
-|           | workaround available        |          |            |
-|  SEV4     | Cosmetic, minimal impact   | Next day | Ticket     |
-+--------------------------------------------------------------+
-
-INCIDENT ROLES:
-+--------------------------------------------------------------+
-|  Role                | Responsibility                          |
-+--------------------------------------------------------------+
-|  Incident Commander  | Coordinates response, makes decisions   |
-|  (IC)                | Delegates tasks, manages communication  |
-|  Tech Lead           | Drives technical investigation and fix  |
-|  Communications Lead | Updates stakeholders, status page        |
-|  Scribe              | Documents timeline, decisions, actions   |
-+--------------------------------------------------------------+
-
-INCIDENT COMMS: [SEV<N>] <Service> - <Description> | Status | Impact | Current action | Next update
-TIMELINE: T+0 alert, T+5 triage, T+15 first update, updates every 30min (SEV1) / 1h (SEV2), T+48h post-mortem draft, T+7d action items
-```
-
-### Step 8: Production Readiness Review
-Assess whether a service is ready for production:
-
-```
-PRODUCTION READINESS CHECKLIST:
-+--------------------------------------------------------------+
-|  Category        | Check                         | Status     |
-+--------------------------------------------------------------+
-|  SLOs            | SLOs defined and measured     | PASS | FAIL|
-|                  | Error budget alerts configured| PASS | FAIL|
-|  Monitoring      | Dashboards for golden signals | PASS | FAIL|
-|                  | Structured logging enabled    | PASS | FAIL|
-|                  | Distributed tracing enabled   | PASS | FAIL|
-|  Alerting        | Alerts for all failure modes  | PASS | FAIL|
-|                  | Runbooks for all alerts       | PASS | FAIL|
-|                  | On-call rotation configured   | PASS | FAIL|
-|  Resilience      | Circuit breakers on deps      | PASS | FAIL|
-|                  | Timeouts on all external calls| PASS | FAIL|
-|                  | Graceful degradation defined  | PASS | FAIL|
-|                  | Chaos tested                  | PASS | FAIL|
-|  Scalability     | Auto-scaling configured       | PASS | FAIL|
-|                  | Load tested at 2x peak        | PASS | FAIL|
-|                  | Rate limiting enabled         | PASS | FAIL|
-|  Deployment      | Canary or blue-green deploy   | PASS | FAIL|
-|                  | Rollback tested               | PASS | FAIL|
-|                  | Feature flags for new code    | PASS | FAIL|
-|  Security        | Security audit passed         | PASS | FAIL|
-|                  | Secrets management configured | PASS | FAIL|
-|  Documentation   | Architecture documented       | PASS | FAIL|
-|                  | API contracts defined         | PASS | FAIL|
-|                  | Operational runbook complete  | PASS | FAIL|
-+--------------------------------------------------------------+
-
-VERDICT: <PRODUCTION READY | NOT READY (<N> items to fix)>
-```
-
-### Step 9: Operational Maturity Assessment
-Assess overall operational maturity:
-
-```
-OPERATIONAL MATURITY MODEL:
-+--------------------------------------------------------------+
-|  Dimension         | L1 Reactive | L2 Proactive | L3 Advanced |
-+--------------------------------------------------------------+
-|  SLOs              | None        | Defined      | Error budget|
-|                    |             |               | driven      |
-|  Monitoring        | Basic uptime| Golden signals| Full        |
-|                    |             |               | observability|
-|  Alerting          | Noisy, many | Actionable   | Burn rate   |
-|                    | false pos   |               | multi-window|
-|  Incident mgmt    | Ad hoc      | Defined roles | Automated   |
-|                    |             | and process   | + blameless |
-|  On-call           | Hero culture| Rotation with | Sustainable |
-|                    |             | escalation    | + metrics   |
-|  Toil              | > 80%       | 50-80%       | < 50%       |
-|  Runbooks          | None        | Some alerts   | 100% + auto |
-|  Capacity plan     | None        | Quarterly     | Continuous  |
-|  Chaos testing     | None        | Ad hoc       | Regular     |
-|  Post-mortems      | None        | After SEV1   | All SEVs,   |
-|                    |             |               | action track|
-+--------------------------------------------------------------+
-
-CURRENT MATURITY: <L1 | L2 | L3> per dimension
-TARGET MATURITY: <L2 | L3> per dimension
-GAP ANALYSIS: <list of improvements needed>
-```
-
-### Step 10: Validation & Artifacts
-Validate the SRE implementation:
-
-```
-SRE VALIDATION:
-+--------------------------------------------------------------+
-|  Check                                    | Status            |
-+--------------------------------------------------------------+
-|  SLOs defined for all critical services   | PASS | FAIL       |
-|  Error budgets calculated and tracked     | PASS | FAIL       |
-|  Burn rate alerts configured              | PASS | FAIL       |
-|  On-call rotation is sustainable          | PASS | FAIL       |
-|  Runbooks exist for all pageable alerts   | PASS | FAIL       |
-|  Toil identified and reduction plan exists| PASS | FAIL       |
-|  Incident management process defined      | PASS | FAIL       |
-|  Production readiness review complete     | PASS | FAIL       |
-|  Operational maturity assessed            | PASS | FAIL       |
-|  Post-mortem process established          | PASS | FAIL       |
-+--------------------------------------------------------------+
-
+- SLOs defined: PASS | FAIL
+- Error budgets tracked: PASS | FAIL
+- Burn rate alerts: PASS | FAIL
+- On-call sustainable: PASS | FAIL
+- Runbooks for all alerts: PASS | FAIL
+- Toil reduction plan: PASS | FAIL
+- Incident process defined: PASS | FAIL
 VERDICT: <RELIABLE | NEEDS WORK>
 ```
 
-Generate deliverables:
-
-```
-SRE IMPLEMENTATION COMPLETE:
-
-Artifacts:
-- SLO definitions: docs/sre/<service>-slos.md
-- Error budget policy: docs/sre/error-budget-policy.md
-- On-call rotation: docs/sre/<team>-oncall-rotation.md
-- Runbooks: docs/sre/runbooks/<alert-name>.md
-- Alert configuration: infra/alerts/<service>-burn-rate.yaml
-- Production readiness: docs/sre/<service>-production-readiness.md
-- Toil inventory: docs/sre/<team>-toil-inventory.md
-- Validation: <RELIABLE | NEEDS WORK>
-
-Next steps:
--> /godmode:observe -- Implement monitoring for SLIs
--> /godmode:incident -- Set up incident management process
--> /godmode:chaos -- Validate resilience with chaos experiments
--> /godmode:automate -- Automate runbook procedures
-```
-
-Commit: `"reliability: <service> -- <SLO targets>, <error budget policy>, <verdict>"`
-
 ## Key Behaviors
 
-1. **SLOs drive every reliability decision.** Define SLOs first, derive monitoring, alerting, and operational investment from them.
-2. **Error budgets balance velocity and reliability.** Healthy budget = ship fast. Exhausted budget = stop and fix reliability.
-3. **Toil is the enemy of engineering.** Track toil monthly, eliminate systematically, never exceed 50% of team capacity.
-4. **On-call must be sustainable.** Measure health, fix noisy alerts, compensate fairly.
-5. **Runbooks are mandatory for every pageable alert.** Every alert links to a runbook.
-6. **Incidents are learning opportunities.** Blameless post-mortems with tracked action items.
-7. **Production readiness is a gate.** Make the review mandatory before launch.
-8. **Measure operational maturity quarterly.** Set targets, invest in the biggest gaps.
-
-## Example Usage
-
-### Defining SLOs for a new service
-```
-User: /godmode:reliability Define SLOs for our payment API
-
-Reliability: Assessing service context...
-
-SERVICE: Payment API (Tier 1 -- revenue-critical)
-
-SLO DEFINITIONS:
-  Availability: 99.99% (4.3 min downtime/month)
-    SLI: successful_requests / total_requests (exclude 4xx)
-  Latency (p50): < 200ms (99% of requests)
-    SLI: requests < 200ms / total_requests
-  Latency (p99): < 1000ms (99.9% of requests)
-    SLI: requests < 1000ms / total_requests
-  Correctness: 100% (no incorrect charges)
-    SLI: verified_transactions / total_transactions
-
-ERROR BUDGET: 4.3 minutes/month
-BURN RATE ALERTS: Critical (14.4x/1h), High (6x/6h), Medium (3x/1d)
-
-POLICY: Freeze non-critical deploys when budget < 25%
-```
-
-### Reducing operational toil
-```
-User: /godmode:reliability Our team spends too much time on manual ops
-
-Reliability: TOIL INVENTORY: 26h/month (32% of capacity)
-ELIMINATION PLAN (priority order): auto-cert rotation, auto-scaling,
-self-healing restart, automated DB cleanup, better logging.
-After automation: 4h/month (5% of capacity).
-```
+1. **SLOs drive decisions.** Define first.
+2. **Error budgets balance velocity and reliability.**
+3. **Toil is the enemy.** Track monthly, never exceed 50%.
+4. **On-call must be sustainable.**
+5. **Every alert needs a runbook.**
+6. **Incidents are learning.** Blameless post-mortems.
+7. **Production readiness is a gate.**
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full SRE assessment and implementation |
-| `--slo` | SLO/SLI/SLA definition only |
-| `--budget` | Error budget calculation and policy |
-| `--alerts` | Burn rate alert configuration |
-| `--toil` | Toil identification and elimination plan |
-| `--oncall` | On-call rotation design |
-| `--runbook` | Runbook creation for specific alert |
-| `--incident` | Incident management process design |
+| (none) | Full SRE assessment |
+| `--slo` | SLO/SLI/SLA definition |
+| `--budget` | Error budget policy |
+| `--alerts` | Burn rate alerts |
+| `--toil` | Toil elimination |
+| `--oncall` | On-call rotation |
+| `--runbook` | Runbook creation |
 | `--readiness` | Production readiness review |
-| `--maturity` | Operational maturity assessment |
-| `--validate` | Validate SRE practices against checklist |
-
-## Auto-Detection
-
-```
-1. Monitoring: grep for prometheus, datadog, grafana, newrelic
-2. Alerting: PagerDuty, OpsGenie, Slack webhooks
-3. SLOs: docs/slo*, slo.yaml, service-level-*.md
-4. Health endpoints: /health, /healthz, /ready, /livez
-5. Error tracking: Sentry, Bugsnag, Rollbar SDK
-```
-
-## Iterative SRE Implementation Loop
-
-```
-FOR each sre_task in [SLO definition, SLI instrumentation, error budget, alerts, runbooks, toil]:
-  1. Assess current state, define target with measurable criteria
-  2. Implement (SLO doc, alert rule, runbook, automation script)
-  3. Validate: SLO measurable, alert fires correctly, runbook executable
-  4. Test: simulate failure to verify detection + response
-  5. COMMIT: "reliability: <task> for <service>"
-POST-LOOP: Run full incident simulation drill
-```
-
-## Multi-Agent Dispatch
-
-```
-Agent 1 (reliability-slo): SLO/SLI definitions, error budget policies, dashboards
-Agent 2 (reliability-alerts): burn rate alerts, routing, escalation policies
-Agent 3 (reliability-runbooks): runbooks, toil automation, incident templates
-MERGE ORDER: slo -> alerts -> runbooks
-```
 
 ## HARD RULES
 
-```
-MECHANICAL CONSTRAINTS — NEVER VIOLATE:
-1. NEVER set an SLO at 100%. It is mathematically impossible and blocks all deployments.
-2. EVERY alert must have a corresponding runbook. No alert without a response procedure.
-3. NEVER alert on raw metrics. Alert on SLO burn rate (multi-window, multi-burn-rate).
-4. SLO MUST be stricter than SLA. Internal target > external promise.
-5. EVERY SLI must be measurable from real user traffic, not synthetic probes alone.
-6. NEVER skip post-mortems for SEV1/SEV2. Blameless, with tracked action items.
-7. Error budget policy MUST define what happens when budget is exhausted (freeze deploys).
-8. On-call rotation MUST have minimum 5 people. Single-person on-call is a bus factor.
-9. NEVER use liveness probes that check external dependencies. Liveness = "process is alive."
-10. Toil MUST be measured monthly. If toil > 50% of team time, stop features and automate.
-```
+1. NEVER set SLO at 100%.
+2. EVERY alert must have a runbook.
+3. NEVER alert on raw metrics — use burn rate.
+4. SLO MUST be stricter than SLA.
+5. SLIs from real user traffic.
+6. NEVER skip SEV1/SEV2 post-mortems.
+7. Budget policy MUST define exhaustion response.
+8. On-call minimum 5 people.
+9. Toil measured monthly; >50% = stop features.
 
 ## Output Format
 
 ```
 RELIABILITY REPORT:
-  Service: <name> | Tier: <1|2|3>
-  SLOs: <N> defined | Error budget: <N> min/month (<N>% remaining)
-  Burn rate alerts: <N> configured | Runbook coverage: <N>/<M>
-  On-call: <N> engineers | Toil: <N> hours/month
-  Verdict: RELIABLE | NEEDS WORK
+Service: <name> | Tier: <1|2|3>
+SLOs: <N> | Error budget: <N> min/month
+Alerts: <N> | Runbooks: <N>/<M>
+On-call: <N> engineers | Toil: <N> hrs/month
+Verdict: RELIABLE | NEEDS WORK
 ```
 
-## TSV Logging
-
-```
-timestamp	skill	service	action	slos_defined	runbook_coverage	toil_hours	status
-```
-
-## Success Criteria
-
-The reliability skill is complete when ALL of the following are true:
-1. SLOs are defined for all SLI categories relevant to the service type
-2. Error budgets are calculated and error budget policy is documented
-3. Multi-window burn rate alerts are configured for all SLOs
-4. Every pageable alert has a corresponding runbook
-5. On-call rotation has minimum 5 people and sustainable schedule
-6. Toil is measured and below 50% of team capacity
-7. Incident management process is documented with severity definitions and roles
-8. Production readiness checklist passes all critical items
+## Platform Fallback
+Run sequentially: SLOs, then alerts, then runbooks.
 
 ## Error Recovery
+| Failure | Action |
+|---------|--------|
+| SLO too aggressive (always breached) | Review historical data. Set SLO at current p95 performance. Improve gradually. An SLO nobody can meet erodes trust. |
+| Alert fires too often (alert fatigue) | Increase threshold or `for:` duration. Use multi-signal alerts. Route low-severity to tickets, not pages. |
+| Runbook outdated (does not match current system) | Add runbook review to deploy checklist. Auto-link runbooks to alerts. Test runbooks in game days. |
+| Error budget depleted too fast | Freeze non-critical deployments. Focus on reliability fixes. Investigate top error sources. Add canary deployments. |
 
+## Success Criteria
+1. SLOs defined for all tier-1 services with measurable SLIs.
+2. Error budget calculated and tracked with burn rate alerts.
+3. On-call rotation configured with escalation paths.
+4. Runbooks exist for all critical alerts and are tested quarterly.
+
+## TSV Logging
+Append to `.godmode/reliability-results.tsv`:
 ```
-IF SLO is constantly violated (budget always exhausted):
-  1. Check if the SLO target is realistic — compare to actual measured reliability
-  2. If target is realistic: invest in reliability improvements (the system is unreliable)
-  3. If target is too aggressive: loosen the SLO to match achievable reliability
-  4. Start from current measured reliability minus a small margin
-
-IF burn rate alerts fire too frequently (false positives):
-  1. Verify the multi-window configuration — both long AND short windows must trigger
-  2. Check for noisy metrics (spikes in non-user-facing traffic)
-  3. Adjust burn rate thresholds (increase to reduce sensitivity)
-  4. Exclude known-benign traffic patterns from the SLI calculation
-
-IF toil exceeds 50% of team capacity:
-  1. Inventory all toil tasks with frequency and time per occurrence
-  2. Prioritize by highest monthly hours first
-  3. Automate the top 3 tasks (highest ROI)
-  4. Freeze feature work until toil is below 50%
-
-IF on-call engineer is overloaded (> 5 pages per shift):
-  1. Analyze the alerts: are they actionable or noisy?
-  2. Tune or eliminate noisy alerts (false positives)
-  3. Automate self-healing for the most common alerts
-  4. If pages are all legitimate: the system needs reliability investment, not more on-call
+timestamp	service	slo_count	error_budget_remaining_pct	alerts_configured	runbooks_count	status
 ```
-
-## Anti-Patterns
-
-- **Do NOT set SLOs at 100%.** Zero error budget stops all deployments. 99.9% is generous for most services.
-- **Do NOT alert on SLOs without error budgets.** The budget policy tells you what to do.
-- **Do NOT let toil grow unchecked.** Track monthly and allocate time for elimination.
-- **Do NOT design on-call for heroes.** Rotate, cross-train, ensure at least 5 responders.
-- **Do NOT write runbooks after incidents.** Write them when creating alerts.
-- **Do NOT skip post-mortems.** Every SEV1/SEV2 gets a blameless post-mortem with tracked action items.
-- **Do NOT confuse SLAs with SLOs.** SLOs must be stricter than SLAs.
-- **Do NOT alert on everything.** Alert on SLO burn rate, not individual metrics.
+One row per service assessed. Never overwrite previous rows.
 
 ## Keep/Discard Discipline
-
-After each reliability implementation pass, evaluate:
-- **KEEP** if: SLO is measurable from real user traffic, burn rate alert fires correctly on simulated failure, runbook is executable by on-call engineer within 5 minutes, error budget policy has documented deploy-freeze trigger.
-- **DISCARD** if: SLO set at 100% (impossible target), alert fires on raw metrics instead of burn rate, runbook contains only "investigate" without concrete commands, or on-call rotation has fewer than 5 people.
-- Every alert must link to a tested runbook before marking as complete.
-- Revert SLO definitions that cannot be measured from real traffic — synthetic-only SLIs are insufficient.
+```
+After EACH reliability change:
+  KEEP if: SLO measurement works AND alerts fire correctly AND runbook is actionable
+  DISCARD if: alert produces false positives OR SLO measurement broken OR runbook is vague
+  On discard: revert. Fix measurement or threshold before retrying.
+```
 
 ## Stop Conditions
-
-Stop the reliability skill when:
-1. SLOs are defined for all SLI categories relevant to the service type.
-2. Multi-window burn rate alerts are configured and tested for all SLOs.
-3. Every pageable alert has a corresponding runbook with executable commands.
-4. On-call rotation has minimum 5 people and sustainable schedule (max 1 week in 5).
-5. Error budget policy documents what happens when budget is exhausted.
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run reliability tasks sequentially: SLO/SLI definitions, then burn-rate alerts, then runbooks.
-- Use branch isolation per task: `git checkout -b godmode-reliability-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+```
+STOP when ALL of:
+  - SLOs defined and measurable for all tier-1 services
+  - Burn rate alerts configured and tested
+  - On-call rotation active with escalation
+  - Runbooks exist for all critical alerts
+```

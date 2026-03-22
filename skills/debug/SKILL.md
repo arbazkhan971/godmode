@@ -91,3 +91,24 @@ STOP when FIRST of:
 3. One bug at a time. Don't fix during debug (one-line fixes excepted). If stuck 3 iterations on same bug, skip it.
 4. Max 5 min per technique. No progress → abandon technique, try next. All techniques exhausted → discard bug.
 5. Hand off specific root causes, not vague descriptions. Include file:line, variable state, and reproduce steps.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Cannot reproduce the bug | Run failing command 3x. If intermittent, add to flaky list with timestamp and environment details. Move to next bug. |
+| `git bisect` fails (no good commit) | Fall back to `git log -20` manual inspection. Check for config or environment drift rather than code changes. |
+| Debug logs produce no useful output | Increase log granularity — log variable values, not just "reached here". Add caller info and stack depth. |
+| Root cause spans multiple files | Use the "5 whys" chain. Trace data flow from symptom backward. Document each hop in the chain. |
+
+## Success Criteria
+1. Every reported bug has a proven root cause with file:line and actual-vs-expected values.
+2. Fix verified by re-running the originally failing test/command.
+3. Full test suite passes after all fixes (no regressions introduced).
+4. Skipped bugs documented with reason_stuck and root_cause_unknown.
+
+## TSV Logging
+Append to `.godmode/debug-findings.tsv`:
+```
+iteration	bug_id	symptom	root_cause	file_line	fix_commit	status	reason_stuck
+```
+One row per bug investigated. Status: fixed, skipped, handed_off.

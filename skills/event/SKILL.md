@@ -55,31 +55,6 @@ EVENT STORE SCHEMA:
 | created_at TIMESTAMP NOT NULL |
 +---------------------------------------------------------+
 | UNIQUE (aggregate_id, event_version) |
-| INDEX ON (aggregate_type, aggregate_id) |
-| INDEX ON (event_type) |
-| INDEX ON (created_at) |
-+---------------------------------------------------------+
-
-AGGREGATE RECONSTRUCTION:
- 1. Load all events for aggregate_id, ordered by event_version
- 2. Apply each event to build current state
- 3. Cache current state (snapshot) for performance
-
-SNAPSHOT OPTIMIZATION:
-+---------------------------------------------------------+
-| Table: snapshots |
-+---------------------------------------------------------+
-| aggregate_id UUID PRIMARY KEY |
-| aggregate_type VARCHAR(100) NOT NULL |
-| state JSONB NOT NULL |
-| version INTEGER NOT NULL |
-| created_at TIMESTAMP NOT NULL |
-+---------------------------------------------------------+
-
-Snapshot strategy:
- - Take snapshot every N events (e.g., every 100)
- - Rebuild: Load snapshot + events after snapshot version
- - Reduces load time from O(all events) to O(events since snapshot)
 ```
 
 #### Event Sourcing Example
@@ -122,27 +97,6 @@ WRITE SIDE (Commands):
  | Event Bus |
  | (Kafka/RabbitMQ) |
  +-------------------+
- |
- | project
- v
-READ SIDE (Queries): +-------------------+
-+-------------------+ +-------------------+ | Projection |
-| API / Client | --> | Query Handler | <-- | (builds read |
-| | | (fast reads) | | models) |
-| GetOrder | +-------------------+ +-------------------+
-| ListOrders | |
-| SearchOrders | v
-+-------------------+ +-------------------+
- | Read Database |
- | (optimized for |
- | queries) |
- +-------------------+
-
-SEPARATION:
-- Write model: Normalized, event-sourced, enforces business rules
-- Read model: Denormalized, optimized for specific query patterns
-- Projection: Asynchronous process that transforms events into read models
-- Eventual consistency: Read model is milliseconds to seconds behind write model
 ```
 
 #### Projection Design
@@ -162,14 +116,6 @@ PROJECTIONS:
 | | StockReceived | |
 | RevenueReport | PaymentReceived, | revenue_daily |
 | | RefundProcessed | (aggregated) |
-+--------------------------------------------------------------+
-
-PROJECTION RULES:
-1. Projections are disposable -- delete and rebuild from events
-2. Each projection handles events idempotently (reprocessing is safe)
-3. Track last processed event position per projection
-4. Multiple projections can consume the same events
-5. New projections can be added and backfilled from event history
 ```
 
 ### Step 4: Message Broker Design
@@ -192,33 +138,6 @@ Topics:
 | | | | topic |
 +--------------------------------------------------------------+
 
-PRODUCER CONFIG:
-acks: all # Wait for all replicas
-retries: 3 # Retry transient failures
-enable.idempotence: true # Exactly-once semantics
-max.in.flight.requests: 5 # With idempotence enabled
-compression.type: lz4 # Compress for throughput
-linger.ms: 5 # Batch for 5ms
-batch.size: 16384 # 16KB batch size
-
-CONSUMER CONFIG:
-group.id: <service-name> # Consumer group per service
-auto.offset.reset: earliest # Start from beginning on new group
-enable.auto.commit: false # Manual commit after processing
-max.poll.records: 500 # Process 500 records per poll
-session.timeout.ms: 30000 # 30s heartbeat timeout
-max.poll.interval.ms: 300000 # 5m max processing time
-
-PARTITIONING STRATEGY:
-- Key-based: Same entity always goes to same partition (ordering)
-- Round-robin: Even distribution when ordering is not needed
-- Custom: Hash on composite key (tenant_id + entity_id)
-
-PARTITION COUNT FORMULA:
- partitions = max(
- ceil(target_throughput / partition_throughput),
- number_of_consumers_in_largest_group
- )
 ```
 
 #### RabbitMQ Configuration
@@ -238,27 +157,6 @@ Exchanges:
 | dead-letter.exchange | fanout | yes | (all DLQ traffic) |
 +--------------------------------------------------------------+
 
-Queues:
-+--------------------------------------------------------------+
-| Queue | Durable | TTL | DLX |
-+--------------------------------------------------------------+
-| payment.process-orders | yes | 30s | dead-letter.exc |
-| inventory.reserve-stock | yes | 30s | dead-letter.exc |
-| notification.send-email | yes | 60s | dead-letter.exc |
-| dead-letter.queue | yes | 90d | none |
-+--------------------------------------------------------------+
-
-Bindings:
- order.events [order.created] -> payment.process-orders
- order.events [order.created] -> inventory.reserve-stock
- payment.events [payment.completed] -> notification.send-email
-
-RABBITMQ BEST PRACTICES:
-- Publisher confirms: Enable for guaranteed delivery
-- Consumer prefetch: Set to 10-50 (not unlimited)
-- Message TTL: Set per-queue, not per-message
-- Lazy queues: For queues with large backlogs
-- Quorum queues: For high-availability (replaces mirrored queues)
 ```
 
 #### SQS/SNS Configuration
@@ -278,19 +176,6 @@ SNS Topics (Fan-out):
 
 SQS Queues:
 +--------------------------------------------------------------+
-| Queue | Visibility | Retention | DLQ |
-+--------------------------------------------------------------+
-| payment-processing | 30s | 14 days | payment-dlq|
-| inventory-reservations | 30s | 14 days | inv-dlq |
-| notification-sending | 60s | 4 days | notif-dlq |
-| payment-dlq | 30s | 14 days | none |
-+--------------------------------------------------------------+
-
-SQS CONFIGURATION:
- VisibilityTimeout: 6x average processing time
- ReceiveWaitTimeSeconds: 20 (long polling)
- MaxReceiveCount: 3 (before DLQ)
- MessageRetentionPeriod: 1209600 (14 days)
 ```
 
 #### Broker Comparison
@@ -332,20 +217,6 @@ EVENT ENVELOPE:
  "trace_id": "abc123def456",
  "schema_registry_url": "https://schema.example.com/order.placed/v1.2"
  },
- "data": {
- // Event-specific payload
- }
-}
-
-ENVELOPE RULES:
-- event_id: Globally unique, used for deduplication
-- event_type: Dot-separated namespace (domain.event_name)
-- event_version: Semantic version of the event schema
-- source: Service that produced the event
-- correlation_id: Links all events in a business flow
-- causation_id: The event that caused this event
-- metadata: Operational data (not business data)
-- data: Business payload (the actual event content)
 ```
 
 #### Schema Registry & Versioning
@@ -365,26 +236,6 @@ COMPATIBILITY MODES:
 +--------------------------------------------------------------+
 
 SAFE CHANGES (backward + forward compatible):
- + Add optional field with default value
- + Add new event type
- + Deprecate field (keep in schema, stop populating)
-
-UNSAFE CHANGES (breaking -- requires new version):
- - Remove required field
- - Rename field
- - Change field type
- - Change field semantics
-
-VERSIONING APPROACH:
- v1.0 -> v1.1: Add optional field (backward compatible)
- v1.1 -> v1.2: Deprecate field (forward compatible)
- v1.2 -> v2.0: Remove deprecated field (breaking change)
-
-SCHEMA REGISTRY:
- Tool: Confluent Schema Registry | AWS Glue | Apicurio
- Format: Avro (recommended) | JSON Schema | Protobuf
- Validation: Producer validates schema before publishing
- Evolution: Registry rejects incompatible schema changes
 ```
 
 #### Schema Examples
@@ -404,22 +255,6 @@ AVRO SCHEMA (order.placed v1):
  "name": "OrderItem",
  "fields": [
  {"name": "product_id", "type": "string"},
- {"name": "quantity", "type": "int"},
- {"name": "unit_price", "type": "double"}
- ]
- }}},
- {"name": "placed_at", "type": "string"}
- ]
-}
-
-EVOLUTION (v1 -> v1.1): Add optional discount field
-{
-...
- "fields": [
-... existing fields...,
- {"name": "discount_amount", "type": ["null", "double"], "default": null}
- ]
-}
 ```
 
 ### Step 6: Dead Letter Queues & Retry Policies
@@ -441,46 +276,6 @@ RETRY POLICY:
 +--------------------------------------------------------------+
 
 DEAD LETTER QUEUE DESIGN:
-+--------------------------------------------------------------+
-| DLQ: <service>-dead-letter |
-| Retention: 90 days |
-| Alert: On new message arrival |
-| Monitoring: Queue depth dashboard |
-+--------------------------------------------------------------+
-| |
-| DLQ Message Format: |
-| { |
-| "original_message": {... }, |
-| "original_topic": "order.events", |
-| "original_partition": 3, |
-| "original_offset": 12345, |
-| "failure_reason": "PaymentGatewayTimeout", |
-| "failure_count": 5, |
-| "first_failure_at": "2025-01-15T10:30:45Z", |
-| "last_failure_at": "2025-01-15T10:35:12Z", |
-| "stack_trace": "...", |
-| "consumer_group": "payment-processor", |
-| "consumer_instance": "payment-svc-7d4f8b-x9k2m" |
-| } |
-+--------------------------------------------------------------+
-
-DLQ PROCESSING:
-1. Alert on-call when DLQ depth > 0
-2. Investigate root cause (not just reprocess blindly)
-3. Fix the issue in the consumer
-4. Replay DLQ messages back to the original topic
-5. Monitor for re-failures
-
-DLQ REPLAY TOOL:
- # Replay all DLQ messages back to original topic
- kafka-console-consumer --topic dead-letter --from-beginning |
- kafka-console-producer --topic order.events
-
- # Or use a dedicated replay service with filtering
- dlq-replay --source dead-letter \
- --target order.events \
- --filter "failure_reason=PaymentGatewayTimeout" \
- --rate-limit 100/s
 ```
 
 ### Step 7: Idempotency Patterns
@@ -502,42 +297,6 @@ IDEMPOTENCY PATTERNS:
 +--------------------------------------------------------------+
 
 DEDUPLICATION TABLE:
-CREATE TABLE processed_events (
- event_id UUID PRIMARY KEY,
- event_type VARCHAR(200) NOT NULL,
- consumer_group VARCHAR(100) NOT NULL,
- processed_at TIMESTAMP NOT NULL,
- result JSONB
-);
-
--- Index for cleanup (remove entries older than retention)
-CREATE INDEX idx_processed_events_time ON processed_events(processed_at);
-
--- Cleanup: DELETE FROM processed_events WHERE processed_at < NOW() - INTERVAL '7 days';
-
-CONSUMER PSEUDOCODE:
-function handleEvent(event):
- // 1. Check if already processed
- if (await isProcessed(event.event_id, consumerGroup)):
- log.info("Duplicate event, skipping", { event_id: event.event_id })
- return ACK
-
- // 2. Process within a transaction
- try:
- await db.transaction(async (tx) => {
- // Process the business logic
- await processBusinessLogic(tx, event.data)
-
- // Mark as processed (same transaction)
- await markProcessed(tx, event.event_id, consumerGroup)
- })
-
- return ACK
- catch (error):
- if (isTransient(error)):
- return NACK // Retry
- else:
- return DEAD_LETTER // Unrecoverable
 ```
 
 ### Step 8: Validation
@@ -559,12 +318,6 @@ EVENT ARCHITECTURE VALIDATION:
 | Consumer groups properly configured | PASS | FAIL |
 | Broker replication and durability set | PASS | FAIL |
 | Monitoring on consumer lag | PASS | FAIL |
-| DLQ alerting configured | PASS | FAIL |
-| Events do not contain sensitive PII | PASS | FAIL |
-| Projections are rebuildable from events | PASS | FAIL |
-+--------------------------------------------------------------+
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ### Step 9: Artifacts & Commit
@@ -601,48 +354,6 @@ Commit: `"event: <system> -- <N> event types, <broker>, <pattern (ES/CQRS/pub-su
 7. **Consumer lag is the most important metric.** If consumers fall behind, the system is degrading. Alert on growing lag before it becomes a crisis.
 8. **Projections are disposable.** Read models can be deleted and rebuilt from the event store. Design projections with this in mind.
 
-## Example Usage
-
-### Designing an event-driven order system
-```
-User: /godmode:event Design event sourcing for our order management system
-
-Event: Assessing architecture requirements...
-
-EVENT ARCHITECTURE CONTEXT:
- Current: PostgreSQL CRUD, no events
- Throughput: ~500 orders/min peak
- Consumers: 4 services (payment, inventory, shipping, notifications)
- Ordering: Per-order (same order events in sequence)
- Retention: 2 years (audit requirement)
-
-DESIGN:
- Pattern: Event Sourcing + CQRS
- Broker: Kafka (3 brokers, replication factor 3)
- Schema: Avro with Confluent Schema Registry
-
-EVENT CATALOG:
- order.created (v1.0)
- order.payment_received (v1.0)
- order.confirmed (v1.0)
- order.item_shipped (v1.0)
- order.delivered (v1.0)
- order.cancelled (v1.0)
- order.refunded (v1.0)
-
-PROJECTIONS:
- OrderSummary -> orders_summary (customer dashboard)
- OrderAnalytics -> orders_daily_stats (reporting)
- InventoryView -> inventory_levels (stock management)
-
-DLQ: payment-dlq, inventory-dlq, shipping-dlq, notification-dlq
-Retry: 5 attempts, exponential backoff (1s -> 5m)
-Idempotency: Deduplication table per consumer
-
-Validation: 14/14 checks PASS
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -650,15 +361,6 @@ Validation: 14/14 checks PASS
 | (none) | Full event-driven architecture design |
 | `--sourcing` | Design event sourcing with event store |
 | `--cqrs` | Design CQRS with read/write model separation |
-| `--broker kafka` | Design Kafka topic topology |
-| `--broker rabbitmq` | Design RabbitMQ exchange/queue topology |
-| `--broker sqs` | Design SQS/SNS topic and queue topology |
-| `--broker nats` | Design NATS subject and stream topology |
-| `--schema` | Design event schemas with versioning |
-| `--dlq` | Design dead letter queues and retry policies |
-| `--idempotency` | Design idempotency patterns for consumers |
-| `--catalog` | Generate event catalog documentation |
-| `--validate` | Validate existing event architecture |
 
 ## Keep/Discard Discipline
 Each event domain design either passes validation or gets revised.
@@ -702,8 +404,6 @@ AUTO-DETECT event-driven architecture context:
  - Identify gaps: missing DLQ, missing idempotency, no schema registry
  - Match existing event naming conventions
 ```
-
-
 
 ## Output Format
 

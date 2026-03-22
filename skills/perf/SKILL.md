@@ -24,18 +24,6 @@ Determine what to profile and how:
 PROFILING PLAN:
 Target: <application/service/function>
 Symptom: <what the user observed — slow response, high CPU, OOM, etc.>
-Language/Runtime: <Node.js | Python | Go | Rust | Java/Kotlin | Swift | C/C++>
-
-Profiling modules:
-  [ ] CPU profiling — where is time being spent?
-  [ ] Memory profiling — where is memory being allocated/leaked?
-  [ ] Concurrency analysis — are there race conditions or deadlocks?
-  [ ] Benchmarking — how fast is this compared to alternatives?
-
-Profiling approach:
-  - Sampling profiler (low overhead, statistical): <for production use>
-  - Instrumentation profiler (exact, high overhead): <for development use>
-  - Tracing (request-level): <for distributed systems>
 ```
 
 ### Step 2: CPU Profiling & Flame Graph Analysis
@@ -46,38 +34,6 @@ Identify where CPU time is spent:
 CPU PROFILING TOOLS:
 Node.js:
   - Built-in: node --prof / --cpu-prof
-  - Clinic.js: clinic flame -- node app.js
-  - 0x: 0x app.js (generates flame graphs)
-
-Python:
-  - cProfile: python -m cProfile -o output.prof script.py
-  - py-spy: py-spy record -o profile.svg -- python script.py (sampling, low overhead)
-  - Scalene: scalene script.py (CPU + memory + GPU)
-
-Go:
-  - pprof: import _ "net/http/pprof" (built-in)
-  - go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
-  - go tool trace (execution tracer)
-
-Rust:
-  - perf: perf record --call-graph dwarf ./target/release/app
-  - flamegraph: cargo flamegraph
-  - criterion: benchmarking with statistical analysis
-
-Java/Kotlin:
-  - JFR: -XX:StartFlightRecording=duration=30s,filename=rec.jfr
-  - async-profiler: ./profiler.sh -d 30 -f profile.html <pid>
-  - VisualVM: GUI-based profiling
-
-Swift/iOS:
-  - Instruments: Time Profiler template
-  - Xcode: Debug Navigator → CPU gauge
-  - os_signpost: custom instrumentation
-
-C/C++:
-  - perf: perf record -g ./app && perf report
-  - Valgrind (callgrind): valgrind --tool=callgrind ./app
-  - Intel VTune: vtune -collect hotspots -- ./app
 ```
 
 #### Flame Graph Interpretation
@@ -85,36 +41,6 @@ C/C++:
 FLAME GRAPH ANALYSIS:
 
 Reading a flame graph:
-  - X-axis: sample population (NOT time — wider = more samples = more CPU time)
-  - Y-axis: stack depth (bottom = entry point, top = leaf functions)
-  - Color: arbitrary (used for visual distinction, not meaning)
-
-What to look for:
-  1. PLATEAUS: Wide flat tops indicate functions consuming significant CPU
-     → These are your optimization targets
-
-  2. TOWERS: Tall narrow stacks indicate deep call chains
-     → May indicate excessive abstraction or recursion
-
-  3. GAPS: Functions you expect to see but don't appear
-     → May be inlined or below sampling threshold
-
-Common bottleneck patterns:
-  Pattern: JSON serialization/deserialization plateau
-  Cause: Large objects being serialized on hot path
-  Fix: Stream serialization, reduce object size, cache serialized form
-
-  Pattern: Regex compilation in hot loop
-  Cause: Regex compiled on every iteration instead of once
-  Fix: Compile regex outside loop, use compiled/static regex
-
-  Pattern: GC/memory allocation plateau
-  Cause: Excessive allocations triggering garbage collection
-  Fix: Object pooling, reduce allocations, pre-allocate buffers
-
-  Pattern: Lock contention plateau (futex/mutex wait)
-  Cause: Threads waiting on shared lock
-  Fix: Reduce critical section size, use lock-free structures, partition data
 ```
 
 For each CPU bottleneck found:
@@ -122,12 +48,6 @@ For each CPU bottleneck found:
 CPU FINDING <N>:
 Function: <name>
 Location: <file>:<line>
-CPU share: <percentage of total samples>
-Call path: <caller → ... → this function>
-
-Evidence:
-```<language>
-<the hot code path>
 ```
 
 Root cause: <why this code is slow>
@@ -143,8 +63,6 @@ Expected improvement: <percentage reduction in CPU for this path>
 
 ### Step 3: Memory Leak Detection & Allocation Tracking
 Find memory leaks and excessive allocations:
-
-#### Memory Profiling Tools
 ```
 MEMORY PROFILING TOOLS:
 Node.js:
@@ -243,8 +161,6 @@ Verification:
 
 ### Step 4: Concurrency Bug Detection
 Find race conditions, deadlocks, and data corruption:
-
-#### Race Condition Detection
 ```
 RACE CONDITION DETECTION:
 
@@ -331,7 +247,6 @@ Concurrency mechanism used: <mutex | atomic | channel | transaction | lock-free>
 
 ### Step 5: Benchmarking Methodology
 Measure performance with statistical rigor:
-
 ```
 BENCHMARKING PROTOCOL:
 
@@ -488,84 +403,6 @@ Verdict: <B is X% faster (statistically significant) |
 
 ### Step 7: Commit and Transition
 1. Save flame graphs and profiles: `docs/perf/<target>-profile/`
-2. Save report: `docs/perf/<target>-perf-report.md`
-3. Commit: `"perf: <target> — <N> findings (<top finding summary>)"`
-4. If critical findings: "Performance issues found. Run `/godmode:fix` for quick fixes or `/godmode:optimize` for systematic improvement."
-5. If benchmarks needed: "Profiling complete. Run benchmarks with `/godmode:perf --bench` to establish baselines."
-
-## Key Behaviors
-
-1. **Profile before optimizing.** Never guess where the bottleneck is. Profile first, then optimize the proven hotspot. Developers' intuition about performance is wrong more often than right.
-2. **Statistical rigor in benchmarks.** A single run is not a benchmark. Report confidence intervals, check for significance, control for noise. Otherwise you're measuring randomness.
-3. **Flame graphs are mandatory.** For CPU profiling, always generate a flame graph. It communicates more information in one image than pages of profiler output.
-4. **Memory leaks need proof.** "Memory grows" is not proof of a leak. Show the retention chain — what is holding the reference that prevents collection?
-5. **Concurrency bugs need reproduction scenarios.** Describe the exact interleaving that causes the bug. "It sometimes crashes under load" is not a finding. Show which threads, which operations, which ordering.
-6. **Measure the fix.** Every performance remediation must include before/after measurements. Without measurement, you don't know if you helped or hurt.
-
-## Example Usage
-
-### Profiling a slow API endpoint
-```
-User: /godmode:perf The /api/reports endpoint takes 8 seconds
-
-Perf: Setting up profiling...
-
-PROFILING PLAN:
-Target: GET /api/reports
-Symptom: 8 second response time
-Language: Node.js (Express)
-
-CPU Profile (30 seconds under load):
-  1. generateReport() — 62% CPU
-     └── formatCurrency() — 41% CPU (called 50,000 times per request)
-         └── new Intl.NumberFormat() — 38% CPU (constructed inside loop)
-  2. JSON.stringify(report) — 18% CPU (large response object)
-  3. Database query — 12% CPU
-
-Top finding:
-  Intl.NumberFormat constructed 50,000 times per request.
-  Constructor is expensive (~0.15ms each = 7.5 seconds total).
-
-  Fix: Cache the formatter instance.
-
-  Before: 8,247ms mean (n=10, CI: [7,891, 8,603])
-  After:    423ms mean (n=10, CI: [398, 448])
-
-  Improvement: 94.9% (p < 0.001, statistically significant)
-
-Next: /godmode:optimize for further improvements
-```
-
-## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Full profiling (CPU + memory + concurrency scan) |
-| `--cpu` | CPU profiling and flame graph only |
-| `--memory` | Memory profiling and leak detection only |
-| `--concurrency` | Race condition and deadlock detection only |
-| `--bench` | Run benchmarks with statistical analysis |
-| `--compare` | Compare two implementations (A/B benchmark) |
-| `--duration <N>` | Profiling duration in seconds (default: 30) |
-| `--flamegraph` | Generate flame graph from existing profile data |
-| `--leak-check` | Extended memory leak detection (longer observation) |
-
-## HARD RULES
-
-1. **NEVER optimize without profiling first.** Developers' intuition about performance is wrong more often than right. Profile, then optimize.
-2. **NEVER report benchmark results without confidence intervals.** "150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
-3. **NEVER benchmark on noisy/shared systems for final results.** CI runners with other jobs produce unreliable data. Control the environment.
-4. **NEVER skip warm-up iterations.** JIT-compiled languages (Java, Node.js, .NET) perform dramatically differently after warm-up. Discard initial runs.
-5. **NEVER profile debug/development builds.** Always profile release/production builds. Debug builds have different performance characteristics.
-6. **NEVER claim "no memory leak" from a test shorter than the expected runtime.** Some leaks only manifest over hours or days.
-7. **NEVER dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
-8. **ALWAYS generate a flame graph for CPU profiling.** No exceptions. It communicates more than pages of profiler output.
-9. **ALWAYS measure the fix.** Every remediation must include before/after measurements. Without measurement, you do not know if you helped or hurt.
-
-## Auto-Detection
-
-Before profiling, detect the runtime environment and existing instrumentation:
-
 ```
 AUTO-DETECT SEQUENCE:
 1. Runtime detection:
@@ -590,6 +427,18 @@ AUTO-DETECT SEQUENCE:
 
 5. Output: PROFILING PLAN auto-populated with detected tools and targets.
 ```
+
+## HARD RULES
+
+1. **NEVER optimize without profiling first.** Developers' intuition about performance is wrong more often than right. Profile, then optimize.
+2. **NEVER report benchmark results without confidence intervals.** "150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
+3. **NEVER benchmark on noisy/shared systems for final results.** CI runners with other jobs produce unreliable data. Control the environment.
+4. **NEVER skip warm-up iterations.** JIT-compiled languages (Java, Node.js, .NET) perform dramatically differently after warm-up. Discard initial runs.
+5. **NEVER profile debug/development builds.** Always profile release/production builds. Debug builds have different performance characteristics.
+6. **NEVER claim "no memory leak" from a test shorter than the expected runtime.** Some leaks only manifest over hours or days.
+7. **NEVER dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
+8. **ALWAYS generate a flame graph for CPU profiling.** No exceptions. It communicates more than pages of profiler output.
+9. **ALWAYS measure the fix.** Every remediation must include before/after measurements. Without measurement, you do not know if you helped or hurt.
 
 ## Keep/Discard Discipline
 ```
@@ -618,87 +467,8 @@ DO NOT STOP just because:
   - Benchmarks show unstable variance (fix the environment, not the code)
 ```
 
-## Explicit Loop Protocol
-
-Performance optimization is iterative -- profile, fix, measure, repeat:
-
-```
-current_iteration = 0
-modules = [cpu_profiling, memory_profiling, concurrency_analysis, benchmarking]
-findings = []
-
-WHILE modules is not empty AND current_iteration < 12:
-    current_iteration += 1
-    module = modules.pop(0)
-
-    1. PROFILE: run the appropriate profiler for this module
-    2. ANALYZE: interpret flame graph / heap snapshot / thread dump
-    3. FOR each hotspot/leak/race found:
-       a. DIAGNOSE root cause with evidence
-       b. IMPLEMENT fix
-       c. RE-PROFILE to measure improvement
-       d. RECORD: before/after metrics with confidence intervals
-    4. IF fix introduces regression in another area:
-        modules.append(regressed_module)
-    5. IF improvement < 5% AND more hotspots exist:
-        CONTINUE to next hotspot
-    6. REPORT: "Module {module}: {N} findings, {total_improvement}% improvement -- iteration {current_iteration}"
-
-OUTPUT: Performance profile report with all findings and measured remediations.
-```
-
-## Multi-Agent Dispatch
-
-For comprehensive performance analysis, dispatch parallel agents:
-
-```
-MULTI-AGENT PERFORMANCE ANALYSIS:
-Dispatch 3-4 agents in parallel worktrees.
-
-Agent 1 (worktree: perf-cpu):
-  - Run CPU profiler under representative load
-  - Generate flame graph
-  - Identify top 5 hotspots with evidence
-  - Implement and measure fixes for each
-
-Agent 2 (worktree: perf-memory):
-  - Take heap snapshots before/after load
-  - Identify memory leaks via snapshot diffing
-  - Trace retention chains for leaked objects
-  - Fix leaks and verify memory stabilizes
-
-Agent 3 (worktree: perf-concurrency):
-  - Run with race detector enabled (Go -race, TSan, etc.)
-  - Identify data races and deadlock risks
-  - Verify lock ordering consistency
-  - Fix races and verify under concurrent load
-
-Agent 4 (worktree: perf-benchmarks):
-  - Establish baseline benchmarks with statistical rigor
-  - Run comparison benchmarks for proposed optimizations
-  - Report with confidence intervals and p-values
-  - Create regression benchmark suite for CI
-
-MERGE ORDER: cpu -> memory -> concurrency -> benchmarks
-CONFLICT ZONES: Hot path code changes, lock/synchronization changes
-```
-
-## Anti-Patterns
-
-- **Do NOT optimize without profiling.** The bottleneck is almost never where you think it is. Profile first.
-- **Do NOT report benchmarks without confidence intervals.** "150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
-- **Do NOT benchmark on noisy systems.** Shared CI runners produce unreliable results. Control the environment.
-- **Do NOT use wall-clock time for micro-benchmarks.** Use high-resolution timers (performance.now(), time.monotonic_ns(), std::time::Instant).
-- **Do NOT claim "no memory leak" from a 30-second test.** Some leaks manifest over hours. Match test duration to expected runtime.
-- **Do NOT dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
-- **Do NOT profile debug builds.** Debug builds have extra instrumentation and disabled optimizations. Always profile release builds.
-
-
 ## Output Format
 Print on completion: `Perf: {finding_count} findings ({critical} critical, {high} high). CPU hotspot: {top_hotspot} ({cpu_pct}%). Memory: {leak_status}. Concurrency: {race_count} races, {deadlock_count} deadlocks. Top fix: {top_fix} ({improvement}% improvement).`
-
-## TSV Logging
-Log every profiling finding to `.godmode/perf-results.tsv`:
 ```
 iteration	module	finding_type	location	severity	metric_before	metric_after	status
 1	cpu	hotspot	formatCurrency:45	critical	8247ms	423ms	fixed
@@ -707,25 +477,24 @@ iteration	module	finding_type	location	severity	metric_before	metric_after	statu
 ```
 Columns: iteration, module(cpu/memory/concurrency/benchmark), finding_type, location, severity, metric_before, metric_after, status(fixed/open/wontfix).
 
-## Success Criteria
-- All CPU hotspots consuming > 10% of total CPU identified with flame graph evidence.
-- All memory leaks identified with retention chain evidence and verified fix (memory stabilizes).
-- All race conditions identified with reproduction scenario and fix verified under concurrent load.
-- All benchmarks report with confidence intervals (95% CI) and sufficient sample size (n >= 10).
-- Before/after measurements provided for every fix with statistical significance (p < 0.05).
-- Flame graph generated and saved for CPU profiling sessions.
-- No regressions introduced by performance fixes (full test suite passes).
 
 ## Error Recovery
-- **Profiler produces empty or corrupted output**: Verify the application ran long enough to collect samples (minimum 10 seconds). Check that the profiler is compatible with the runtime version. Try a different profiler tool.
-- **Flame graph is flat (no clear hotspot)**: The bottleneck may be I/O, not CPU. Switch to an off-CPU flame graph or trace I/O operations. Check if the workload is I/O-bound (database, network, disk).
-- **Memory leak not reproducible in dev**: Increase load duration and volume. Some leaks only manifest under sustained traffic. Use a soak test pattern (moderate load for hours, not minutes).
-- **Race condition not reproducible**: Increase concurrency level. Add deliberate delays (`time.Sleep` / `await delay()`) at suspected race points to widen the race window. Use ThreadSanitizer or `-race` flag for deterministic detection.
-- **Benchmark results are unstable (CV > 10%)**: Control the environment — disable CPU frequency scaling, close background processes, pin to CPU core. Increase warm-up iterations. Run more samples.
-- **Fix improves one metric but regresses another**: Profile again after the fix. If the regression is in a different module, dispatch a separate fix. Do not ship a net-negative change.
+| Failure | Action |
+|---------|--------|
+| Profiler shows no clear hotspot | Check sampling rate is sufficient. Profile under realistic load, not idle. Try a different profiler (CPU vs memory vs I/O). |
+| Optimization regresses another metric | Measure all key metrics before and after. Use A/B testing for production changes. Revert if tradeoff is unacceptable. |
+| Benchmark results are noisy | Increase iterations. Pin CPU frequency. Disable turbo boost. Run on dedicated hardware. Warm up JIT before measuring. |
+| Memory optimization increases latency | Profile both metrics together. Check if GC pressure shifted rather than reduced. Consider memory pooling or arena allocation. |
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run performance tasks sequentially: CPU profiling, then memory profiling, then concurrency, then benchmarks.
-- Use branch isolation per task: `git checkout -b godmode-perf-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Success Criteria
+1. Target metric improved with statistical confidence (median of 3+ runs, <5% variance).
+2. No regression in other key metrics (latency, throughput, memory).
+3. All guard checks pass (build, lint, test).
+4. Profiling evidence documents the optimization (before/after flamegraphs or metrics).
+
+## TSV Logging
+Append to `.godmode/perf-results.tsv`:
+```
+iteration	module	finding_type	location	severity	metric_before	metric_after	status
+```
+One row per finding or optimization. Status: fixed, open, wontfix.

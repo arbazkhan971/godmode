@@ -55,98 +55,6 @@ enum <EntityStatus> {
   ACTIVE
   INACTIVE
   ARCHIVED
-}
-
-# --- Input Types ---
-input Create<Entity>Input {
-  <field>: <Type>!
-  <field>: <Type>
-}
-
-input Update<Entity>Input {
-  <field>: <Type>
-  <field>: <Type>
-}
-
-input <Entity>Filter {
-  status: <EntityStatus>
-  search: String
-  createdAfter: DateTime
-  createdBefore: DateTime
-}
-
-input PaginationInput {
-  first: Int
-  after: String
-  last: Int
-  before: String
-}
-
-# --- Object Types ---
-type <Entity> {
-  id: ID!
-  <field>: <Type>!
-  <field>: <Type>
-  <relation>: <RelatedEntity>!
-  <relations>: <RelatedEntityConnection>!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-# --- Connections (Relay-style pagination) ---
-type <Entity>Connection {
-  edges: [<Entity>Edge!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type <Entity>Edge {
-  cursor: String!
-  node: <Entity>!
-}
-
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
-# --- Queries ---
-type Query {
-  <entity>(id: ID!): <Entity>
-  <entities>(
-    filter: <Entity>Filter
-    pagination: PaginationInput
-    orderBy: <Entity>OrderBy
-  ): <Entity>Connection!
-}
-
-# --- Mutations ---
-type Mutation {
-  create<Entity>(input: Create<Entity>Input!): Create<Entity>Payload!
-  update<Entity>(id: ID!, input: Update<Entity>Input!): Update<Entity>Payload!
-  delete<Entity>(id: ID!): Delete<Entity>Payload!
-}
-
-# --- Mutation Payloads ---
-type Create<Entity>Payload {
-  <entity>: <Entity>
-  errors: [UserError!]!
-}
-
-type UserError {
-  field: [String!]
-  message: String!
-  code: ErrorCode!
-}
-
-# --- Subscriptions ---
-type Subscription {
-  <entity>Created: <Entity>!
-  <entity>Updated(id: ID): <Entity>!
-  <entity>Deleted: ID!
-}
 ```
 
 Rules:
@@ -175,19 +83,6 @@ Architecture:
         <entity>.resolver.ts  # Resolvers per domain entity
       inputs/
         <entity>.input.ts   # Input type definitions
-      scalars/
-        datetime.ts         # Custom scalar implementations
-      context.ts            # Context type definition
-      plugins/
-        complexity.ts       # Query complexity plugin
-        depth-limit.ts      # Depth limiting plugin
-        auth.ts             # Auth directive/plugin
-
-Design principles:
-  - Types co-located with their resolvers
-  - Shared types (PageInfo, UserError) in common module
-  - Context carries auth, dataloaders, and DB connection
-  - Plugins handle cross-cutting concerns
 ```
 
 ### Step 4: Resolver Architecture
@@ -209,27 +104,6 @@ RESOLVER ARCHITECTURE:
 │  └──────┬───────┘                                            │
 │         ▼                                                    │
 │  ┌──────────────┐                                            │
-│  │  Service      │  Business logic, validation, rules        │
-│  │  Layer        │  Framework-agnostic, testable in isolation│
-│  └──────┬───────┘                                            │
-│         ▼                                                    │
-│  ┌──────────────┐                                            │
-│  │  DataLoader   │  Batched, cached data fetching            │
-│  │  Layer        │  One DataLoader per entity per request    │
-│  └──────┬───────┘                                            │
-│         ▼                                                    │
-│  ┌──────────────┐                                            │
-│  │  Data Source  │  Database, REST API, gRPC, cache          │
-│  └──────────────┘                                            │
-└─────────────────────────────────────────────────────────────┘
-
-RESOLVER RULES:
-1. Resolvers are THIN — they map GraphQL to service calls, nothing else
-2. Business logic lives in the service layer, never in resolvers
-3. Data fetching goes through DataLoaders, never direct DB calls from resolvers
-4. Context is created per-request and carries auth, loaders, and services
-5. Field resolvers are lazy — only called when the field is requested
-6. Error handling uses union types or payload patterns, not exceptions
 ```
 
 Resolver implementation pattern:
@@ -240,24 +114,7 @@ const resolvers = {
     // Delegate to service layer
     entity: (_, { id }, ctx) => ctx.services.entity.findById(id),
     entities: (_, { filter, pagination }, ctx) =>
-      ctx.services.entity.findMany(filter, pagination),
-  },
-  Mutation: {
-    createEntity: async (_, { input }, ctx) => {
-      // Auth check via context
-      ctx.auth.requirePermission('entity:create');
-      // Delegate to service — returns { entity, errors }
-      return ctx.services.entity.create(input);
-    },
-  },
-  // Field resolvers use DataLoaders
-  Entity: {
-    relatedItems: (parent, _, ctx) =>
-      ctx.loaders.relatedItem.loadMany(parent.relatedItemIds),
-    author: (parent, _, ctx) =>
-      ctx.loaders.user.load(parent.authorId),
-  },
-};
+# ... (condensed)
 ```
 
 ### Step 5: N+1 Detection and DataLoader Patterns
@@ -279,34 +136,6 @@ DATALOADER IMPLEMENTATION:
 ┌─────────────────────────────────────────────────────────────┐
 │                                                              │
 │  WITHOUT DataLoader (N+1):                                   │
-│  ────────────────────────                                    │
-│  Query: posts { author { name } }                            │
-│                                                              │
-│  SELECT * FROM posts;           -- 1 query                   │
-│  SELECT * FROM users WHERE id = 1;  -- N queries             │
-│  SELECT * FROM users WHERE id = 2;  --   (one per post)     │
-│  SELECT * FROM users WHERE id = 3;                           │
-│  ...                                                         │
-│                                                              │
-│  WITH DataLoader (batched):                                  │
-│  ──────────────────────────                                  │
-│  SELECT * FROM posts;           -- 1 query                   │
-│  SELECT * FROM users WHERE id IN (1, 2, 3, ...);  -- 1 query│
-│                                                              │
-│  Total: 2 queries instead of N+1                             │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-
-DATALOADER RULES:
-1. One DataLoader instance per entity per request (never shared across requests)
-2. DataLoaders are created in context factory, passed via context
-3. Keys must be returned in the SAME ORDER as requested
-4. Handle missing records: return null (not error) for optional relations
-5. Batch function signature: (keys: K[]) => Promise<(V | Error)[]>
-6. Cache is request-scoped — no cross-request pollution
-7. For has-many relations, use a grouping loader:
-   - Keys: parent IDs
-   - Returns: arrays of children, grouped by parent ID
 ```
 
 DataLoader factory pattern:
@@ -317,19 +146,7 @@ function createLoaders(db: Database) {
     user: new DataLoader<string, User>(async (ids) => {
       const users = await db.user.findMany({ where: { id: { in: [...ids] } } });
       const userMap = new Map(users.map(u => [u.id, u]));
-      return ids.map(id => userMap.get(id) ?? new Error(`User ${id} not found`));
-    }),
-
-    // Grouped loader for has-many relations
-    postsByAuthor: new DataLoader<string, Post[]>(async (authorIds) => {
-      const posts = await db.post.findMany({
-        where: { authorId: { in: [...authorIds] } },
-      });
-      const grouped = groupBy(posts, 'authorId');
-      return authorIds.map(id => grouped[id] ?? []);
-    }),
-  };
-}
+# ... (condensed)
 ```
 
 ### Step 6: Subscription Implementation
@@ -351,40 +168,6 @@ SUBSCRIPTION ARCHITECTURE:
 │                                       │                      │
 │                               ┌───────┴───────┐             │
 │                               │   Mutation     │             │
-│                               │   Resolver     │             │
-│                               │  (publishes)   │             │
-│                               └───────────────┘             │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-
-SUBSCRIPTION PATTERNS:
-
-Pattern 1: Event-driven (simple)
-  subscription { orderCreated { id status total } }
-  - Mutation publishes event after write
-  - Subscription filters by topic
-  - Good for: notifications, activity feeds
-
-Pattern 2: Live query (filtered)
-  subscription { orderUpdated(orderId: "123") { id status } }
-  - Client subscribes with filter arguments
-  - Server publishes only matching events
-  - Good for: detail views, dashboards
-
-Pattern 3: Presence / typing indicators
-  subscription { userTyping(channelId: "abc") { userId timestamp } }
-  - High-frequency, ephemeral events
-  - Use TTL-based expiration, not DB persistence
-  - Good for: chat, collaboration
-
-SUBSCRIPTION RULES:
-1. Always authenticate subscriptions on connection_init
-2. Authorize each subscription topic — users only see their data
-3. Use Redis/Kafka pub/sub in production — in-memory does not scale horizontally
-4. Set connection limits per user to prevent resource exhaustion
-5. Implement heartbeat/keepalive to detect stale connections
-6. Filter events server-side, not client-side — minimize data sent over wire
-7. Handle reconnection gracefully — client should re-subscribe and catch up
 ```
 
 ### Step 7: Schema Federation for Microservices
@@ -423,75 +206,6 @@ PERFORMANCE DEFENSES:
    }
 
    Max complexity: 1000 per query
-   Reject with: { "errors": [{ "message": "Query complexity 1247 exceeds maximum 1000" }] }
-
-   Implementation:
-   - graphql-query-complexity (Node.js)
-   - graphql-ruby complexity (Ruby)
-   - Custom visitor on the AST
-
-2. DEPTH LIMITING:
-   ──────────────
-   Reject deeply nested queries that could cause exponential work:
-
-   # REJECTED (depth 7):
-   { users { posts { comments { author { posts { comments { text } } } } } } }
-
-   Max depth: 5 (configurable per operation type)
-   Implementation: graphql-depth-limit middleware
-
-3. PERSISTED QUERIES:
-   ──────────────────
-   Replace arbitrary query strings with pre-registered hashes:
-
-   # Client sends hash instead of full query:
-   POST /graphql
-   { "extensions": { "persistedQuery": { "sha256Hash": "abc123..." } } }
-
-   Benefits:
-   - Eliminates arbitrary query injection
-   - Reduces bandwidth (no query string in request)
-   - Enables CDN caching of GET requests
-   - Whitelist mode: only registered queries allowed in production
-
-   Modes:
-   - Automatic Persisted Queries (APQ): client sends hash, server caches
-   - Build-time extraction: queries extracted at compile time, deployed as allowlist
-   - RECOMMENDED: Build-time extraction for production, APQ for development
-
-4. RATE LIMITING:
-   ──────────────
-   Rate limit by operation type, complexity, and user tier:
-
-   ┌──────────────┬──────────┬──────────────┬─────────────┐
-   │  Tier        │  Queries │  Mutations   │  Subscriptions│
-   ├──────────────┼──────────┼──────────────┼─────────────┤
-   │  Free        │  100/min │  20/min      │  2 active    │
-   │  Standard    │  1000/min│  200/min     │  10 active   │
-   │  Premium     │  10000/min│ 2000/min    │  100 active  │
-   └──────────────┴──────────┴──────────────┴─────────────┘
-
-5. RESPONSE CACHING:
-   ─────────────────
-   Cache at multiple layers:
-   - CDN: GET requests with persisted queries (cache by query hash)
-   - Application: @cacheControl directive per field
-   - DataLoader: request-scoped deduplication (built-in)
-
-   type Product @cacheControl(maxAge: 300) {
-     id: ID!
-     name: String!
-     price: Float! @cacheControl(maxAge: 60)
-     inventory: Int! @cacheControl(maxAge: 0)
-   }
-
-6. QUERY ALLOWLISTING (production hardening):
-   ──────────────────────────────────────────
-   In production, reject any query not in the allowlist:
-   - Extract all queries from client code at build time
-   - Register them with SHA256 hashes
-   - Server rejects unregistered queries with 400
-   - Eliminates entire classes of injection attacks
 ```
 
 ### Step 9: Testing GraphQL APIs
@@ -525,12 +239,6 @@ Metrics:
 - Operations: <N> queries, <M> mutations, <K> subscriptions
 - N+1 protection: DataLoaders for all relation fields
 - Performance: complexity limit <X>, depth limit <Y>
-
-Next steps:
--> /godmode:test — Write comprehensive tests for resolvers and queries
--> /godmode:perf — Load test the GraphQL API
--> /godmode:deploy — Deploy with subscription support
--> /godmode:api — Generate companion REST endpoints if needed
 ```
 
 Commit: `"graphql: <service> — <N> types, <M> operations, DataLoaders, subscriptions configured"`
@@ -545,57 +253,6 @@ Commit: `"graphql: <service> — <N> types, <M> operations, DataLoaders, subscri
 6. **Test the schema, not just the resolvers.** Schema snapshot tests catch accidental breaking changes. Query count tests catch N+1 regressions. Both run in CI.
 7. **Subscriptions need infrastructure.** In-memory pub/sub works for development. Production requires Redis, Kafka, or NATS — and connection limits.
 
-## Example Usage
-
-### Designing a GraphQL API
-```
-User: /godmode:graphql Design a GraphQL API for a blog platform
-
-GraphQL: Starting discovery...
-
-GRAPHQL DISCOVERY:
-Project: Blog Platform API
-Approach: SDL-first
-Framework: Apollo Server 4
-Language: TypeScript
-Consumers: Next.js frontend, React Native mobile app
-Auth: JWT bearer tokens
-Real-time: Subscriptions for new comments
-
-Schema designed:
-- 6 types: User, Post, Comment, Tag, PostConnection, CommentConnection
-- 8 queries: post, posts, user, users, tags, postsByTag, commentsByPost, me
-- 5 mutations: createPost, updatePost, deletePost, createComment, deleteComment
-- 2 subscriptions: commentAdded, postPublished
-
-DataLoaders configured for: User, Post, Comment, Tag (4 loaders)
-Performance: complexity limit 500, depth limit 6, APQ enabled
-```
-
-### Fixing N+1 Queries
-```
-User: /godmode:graphql My posts query is making hundreds of DB calls
-
-GraphQL: Analyzing query patterns...
-
-N+1 DETECTED:
-Query: { posts(first: 50) { edges { node { author { name } comments { totalCount } } } } }
-
-Current behavior:
-  1 query for posts
-  50 queries for authors (one per post)
-  50 queries for comment counts (one per post)
-  Total: 101 queries
-
-Fix applied:
-  1 query for posts
-  1 batched query for authors (DataLoader)
-  1 batched query for comment counts (DataLoader)
-  Total: 3 queries
-
-Performance improvement: 97% fewer database queries
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -603,14 +260,6 @@ Performance improvement: 97% fewer database queries
 | (none) | Full GraphQL design workflow |
 | `--sdl` | SDL-first schema design |
 | `--code-first` | Code-first schema design (Pothos, Nexus, TypeGraphQL) |
-| `--federation` | Design federated schema with subgraphs |
-| `--subscriptions` | Add subscription support |
-| `--n+1` | Detect and fix N+1 query problems |
-| `--perf` | Add performance defenses (complexity, depth, persisted queries) |
-| `--test` | Generate test suite for schema and resolvers |
-| `--validate` | Validate existing schema for best practices |
-| `--diff <old> <new>` | Detect breaking changes between schema versions |
-| `--allowlist` | Extract and register persisted queries |
 
 ## Auto-Detection
 
@@ -636,15 +285,6 @@ FOR each entity (dependency order, leaf entities first):
 ON COMPLETION: Add complexity/depth limits, run schema validation
 ```
 
-## Multi-Agent Dispatch
-
-```
-Agent 1 (gql-schema): types, inputs, shared types, performance plugins, snapshot tests
-Agent 2 (gql-resolvers): resolvers, DataLoader factory, context factory, subscriptions
-Agent 3 (gql-tests): integration tests, N+1 regression, breaking change detection, load tests
-MERGE: schema -> resolvers -> tests. Run full test suite and verify schema snapshot.
-```
-
 ## Hard Rules
 
 ```
@@ -660,17 +300,6 @@ HARD RULES — GRAPHQL:
 9. ALWAYS run schema snapshot tests and breaking change detection in CI. Accidental breaking changes break clients.
 10. NEVER federate prematurely. Start monolithic. Extract subgraphs only when team boundaries or scaling demands it.
 ```
-
-## Anti-Patterns
-
-- **Do NOT expose database columns directly as GraphQL fields.** Design for consumers, not the database.
-- **Do NOT skip DataLoaders.** Every relation field gets a DataLoader. No exceptions.
-- **Do NOT throw exceptions for user-facing errors.** Use mutation payload patterns with error arrays.
-- **Do NOT allow arbitrary queries in production.** Use persisted queries or an allowlist.
-- **Do NOT federate prematurely.** Start monolithic, extract when team boundaries demand it.
-- **Do NOT use subscriptions for infrequently changing data.** Polling is simpler.
-- **Do NOT design input types that mirror output types.** They have different shapes and validation rules.
-- **Do NOT ignore schema evolution.** Use graphql-inspector or schema snapshot tests in CI.
 
 ## Output Format
 
@@ -763,8 +392,3 @@ Stop the graphql skill when:
 4. Depth limit and complexity limit are configured for production.
 5. No breaking changes detected vs previous schema version.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run GraphQL tasks sequentially: schema, then resolvers, then tests.
-- Use branch isolation per task: `git checkout -b godmode-graphql-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

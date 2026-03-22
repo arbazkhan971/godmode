@@ -12,1154 +12,183 @@ description: |
 - User says "subscription billing", "recurring charges", "metered billing"
 - User says "generate invoices", "tax calculation", "VAT handling"
 - User says "PCI compliance", "payment security", "tokenize cards"
-- User says "payment webhooks", "charge failed", "subscription canceled"
 - Building e-commerce checkout, SaaS billing, or marketplace payments
 
 ## Workflow
 
 ### Step 1: Payment Requirements Discovery
-Identify the billing model and compliance requirements:
+Identify billing model and compliance requirements:
 
 ```
 PAYMENT REQUIREMENTS:
-┌──────────────────────────────────────────────────────────┐
-│  Business Model:                                          │
-│    Type: <one-time | subscription | metered | marketplace>│
-│    Currency: <primary currency, multi-currency?>          │
-│    Price range: <min to max transaction>                   │
-│    Volume: <transactions/month>                           │
-│                                                           │
-│  Payment Methods:                                         │
-│    Credit/Debit cards: <Visa, MC, Amex>                   │
-│    Digital wallets: <Apple Pay, Google Pay>                │
-│    Bank transfers: <ACH, SEPA, wire>                      │
-│    Buy-now-pay-later: <Klarna, Affirm, Afterpay>          │
-│    Regional: <iDEAL, Bancontact, PIX, UPI>                │
-│                                                           │
-│  Subscription Details (if applicable):                    │
-│    Plans: <list of plan names and prices>                  │
-│    Billing cycle: <monthly | annual | both>                │
-│    Trial period: <N days>                                  │
-│    Proration: <on upgrade/downgrade>                       │
-│    Metered components: <usage-based items>                 │
-│                                                           │
-│  Tax Requirements:                                        │
-│    US sales tax: <states with nexus>                       │
-│    EU VAT: <B2C reverse charge, MOSS/OSS>                  │
-│    Tax-exempt customers: <supported?>                      │
-│    Tax IDs: <collection required?>                         │
-│                                                           │
-│  Compliance:                                              │
-│    PCI-DSS level: <1 | 2 | 3 | 4>                         │
-│    Data residency: <regions>                               │
-│    Refund policy: <full | partial | time-limited>          │
-│    Dispute handling: <process>                             │
-└──────────────────────────────────────────────────────────┘
+  Business Model: <one-time | subscription | metered | marketplace>
+  Currency: <primary currency, multi-currency?>
+  Payment Methods: <cards, wallets, bank transfers, BNPL, regional>
+  Subscription Details: <plans, billing cycle, trial, proration, metered>
+  Tax: <US sales tax nexus states, EU VAT B2C/B2B, tax provider>
+  Compliance: <PCI-DSS level, data residency, refund policy>
 ```
 
 ### Step 2: Payment Gateway Integration
-Set up the payment processor:
 
 #### Stripe Integration (Recommended)
 ```typescript
 // Server-side: Create payment intent
-import Stripe from 'stripe';
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
-  typescript: true,
 });
 
-// One-time payment
-async function createPaymentIntent(
-  amount: number,          // Amount in smallest currency unit (cents)
-  currency: string,
-  customerId: string,
-  metadata: Record<string, string>,
-): Promise<Stripe.PaymentIntent> {
+async function createPaymentIntent(amount: number, currency: string, customerId: string, metadata: Record<string, string>) {
   return stripe.paymentIntents.create({
-    amount,
-    currency,
-    customer: customerId,
+    amount, currency, customer: customerId,
     automatic_payment_methods: { enabled: true },
-    metadata: {
-      ...metadata,
-      internal_order_id: metadata.orderId,
-    },
-    idempotency_key: `pi_${metadata.orderId}`,  // Prevent duplicate charges
+    metadata, idempotency_key: `pi_${metadata.orderId}`,
   });
 }
-
-// Client-side: Confirm payment
-// Uses Stripe.js Elements for PCI-compliant card collection
-// Card numbers NEVER touch your server
+// Client uses Stripe.js Elements — card data NEVER touches your server
 ```
 
-```
-PAYMENT FLOW (Stripe):
-┌────────┐     ┌──────────┐     ┌──────────┐
-│ Client │     │ Server   │     │ Stripe   │
-└───┬────┘     └────┬─────┘     └────┬─────┘
-    │               │                │
-    │ 1. Checkout   │                │
-    │   initiated   │                │
-    ├──────────────>│                │
-    │               │                │
-    │               │ 2. Create      │
-    │               │  PaymentIntent │
-    │               ├───────────────>│
-    │               │                │
-    │               │ 3. Return      │
-    │               │  client_secret │
-    │               │<───────────────┤
-    │               │                │
-    │ 4. Return     │                │
-    │  client_secret│                │
-    │<──────────────┤                │
-    │               │                │
-    │ 5. Collect card│               │
-    │  via Elements  │               │
-    │  (PCI-safe)    │               │
-    │               │                │
-    │ 6. Confirm     │               │
-    │  payment       │               │
-    ├────────────────────────────────>
-    │               │                │
-    │               │ 7. Webhook:    │
-    │               │  payment_intent│
-    │               │  .succeeded    │
-    │               │<───────────────┤
-    │               │                │
-    │               │ 8. Fulfill     │
-    │               │  order         │
-    │               │                │
-    │ 9. Confirmation                │
-    │<──────────────┤                │
-    └───────────────┘                │
-```
+Flow: Client initiates checkout -> Server creates PaymentIntent -> Returns client_secret -> Client collects card via Elements (PCI-safe) -> Confirms payment -> Webhook: payment_intent.succeeded -> Fulfill order.
 
 #### PayPal Integration
+Use Orders API v2: Create Order -> Client approves via PayPal JS SDK -> Capture server-side. Always capture server-side, verify webhook signatures, handle pending e-check payments.
+
+### Step 3: Subscription Billing
 ```
-PAYPAL INTEGRATION:
-┌──────────────────────────────────────────────────────────┐
-│  Mode: Server-side (Orders API v2)                        │
-│                                                           │
-│  1. Create Order                                          │
-│     POST /v2/checkout/orders                              │
-│     -> Returns order ID                                   │
-│                                                           │
-│  2. Client approves via PayPal JS SDK                     │
-│     paypal.Buttons({ createOrder, onApprove })            │
-│     -> User authorizes in PayPal popup                    │
-│                                                           │
-│  3. Capture Payment                                       │
-│     POST /v2/checkout/orders/{id}/capture                 │
-│     -> Returns capture details                            │
-│                                                           │
-│  Webhook events:                                          │
-│     PAYMENT.CAPTURE.COMPLETED                             │
-│     PAYMENT.CAPTURE.DENIED                                │
-│     PAYMENT.CAPTURE.REFUNDED                              │
-│                                                           │
-│  Important:                                               │
-│  - Always capture server-side (never trust client)        │
-│  - Verify webhook signatures                              │
-│  - Handle pending payments (e-check can take days)        │
-└──────────────────────────────────────────────────────────┘
+BILLING EVENTS & ACTIONS:
+  Subscription created  -> Provision features
+  Payment succeeded     -> Extend access, send receipt
+  Payment failed        -> Retry 3x with dunning (day 0/3/7/14/21)
+  Subscription updated  -> Prorate, adjust features
+  Subscription canceled -> Access until period end, then downgrade
+
+DUNNING SCHEDULE:
+  Day 0: Retry immediately | Day 3: Email "Update payment"
+  Day 7: Email "Account at risk" | Day 14: "Last chance"
+  Day 21: Cancel, downgrade to free
 ```
 
-### Step 3: Subscription Billing Design
-Implement recurring billing with plan management:
+Use `proration_behavior: 'always_invoice'` for plan changes. Report metered usage with `createUsageRecord` using idempotency keys.
 
-```
-SUBSCRIPTION ARCHITECTURE:
-┌──────────────────────────────────────────────────────────┐
-│  Plans:                                                   │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Plan      │ Monthly │ Annual   │ Features          │  │
-│  │  ────────────────────────────────────────────────  │  │
-│  │  Free      │ $0      │ $0       │ 1 user, 1 GB     │  │
-│  │  Starter   │ $19     │ $190     │ 5 users, 10 GB   │  │
-│  │  Pro       │ $49     │ $490     │ 25 users, 100 GB │  │
-│  │  Enterprise│ Custom  │ Custom   │ Unlimited         │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Billing Events:                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Event                │ Action                      │  │
-│  │  ────────────────────────────────────────────────  │  │
-│  │  Subscription created │ Provision features           │  │
-│  │  Payment succeeded    │ Extend access, send receipt  │  │
-│  │  Payment failed       │ Retry (3x), notify customer  │  │
-│  │  Subscription updated │ Prorate, adjust features     │  │
-│  │  Trial ending         │ Notify 3 days before         │  │
-│  │  Subscription canceled│ Access until period end       │  │
-│  │  Subscription expired │ Downgrade to free tier       │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Dunning (Failed Payment Recovery):                       │
-│  Day 0: Payment fails -> Retry immediately                │
-│  Day 3: Second retry -> Email: "Update payment method"    │
-│  Day 7: Third retry -> Email: "Account at risk"           │
-│  Day 14: Final notice -> Email: "Last chance"             │
-│  Day 21: Subscription canceled -> Downgrade to free       │
-└──────────────────────────────────────────────────────────┘
-```
-
-```typescript
-// Stripe subscription management
-async function createSubscription(
-  customerId: string,
-  priceId: string,
-  options: {
-    trialDays?: number;
-    couponId?: string;
-    metadata?: Record<string, string>;
-  },
-): Promise<Stripe.Subscription> {
-  const params: Stripe.SubscriptionCreateParams = {
-    customer: customerId,
-    items: [{ price: priceId }],
-    payment_behavior: 'default_incomplete',
-    payment_settings: {
-      save_default_payment_method: 'on_subscription',
-    },
-    expand: ['latest_invoice.payment_intent'],
-    metadata: options.metadata,
-  };
-
-  if (options.trialDays) {
-    params.trial_period_days = options.trialDays;
-  }
-  if (options.couponId) {
-    params.coupon = options.couponId;
-  }
-
-  return stripe.subscriptions.create(params);
-}
-
-// Plan change with proration
-async function changeSubscriptionPlan(
-  subscriptionId: string,
-  newPriceId: string,
-): Promise<Stripe.Subscription> {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-  return stripe.subscriptions.update(subscriptionId, {
-    items: [{
-      id: subscription.items.data[0].id,
-      price: newPriceId,
-    }],
-    proration_behavior: 'always_invoice',  // Charge/credit immediately
-  });
-}
-
-// Metered usage reporting
-async function reportUsage(
-  subscriptionItemId: string,
-  quantity: number,
-  timestamp: number,
-): Promise<Stripe.UsageRecord> {
-  return stripe.subscriptionItems.createUsageRecord(
-    subscriptionItemId,
-    {
-      quantity,
-      timestamp,
-      action: 'increment',  // Add to current period total
-    },
-    { idempotencyKey: `usage_${subscriptionItemId}_${timestamp}` },
-  );
-}
-```
-
-### Step 4: Invoice Generation
-Design the invoicing system:
-
-```
-INVOICE SYSTEM:
-┌──────────────────────────────────────────────────────────┐
-│  Invoice Lifecycle:                                       │
-│  DRAFT -> OPEN -> PAID | VOID | UNCOLLECTIBLE            │
-│                                                           │
-│  Invoice Contents:                                        │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  INVOICE #INV-2026-001234                           │  │
-│  │                                                      │  │
-│  │  From: <company name, address, tax ID>               │  │
-│  │  To: <customer name, address, tax ID>                │  │
-│  │  Date: <issue date>                                  │  │
-│  │  Due: <due date>                                     │  │
-│  │                                                      │  │
-│  │  Line Items:                                         │  │
-│  │  Description          │ Qty │ Unit Price │ Amount    │  │
-│  │  ──────────────────────────────────────────────────  │  │
-│  │  Pro Plan (Mar 2026)  │ 1   │ $49.00     │ $49.00   │  │
-│  │  Extra storage (50GB) │ 50  │ $0.10      │ $5.00    │  │
-│  │  API calls (overage)  │ 12K │ $0.001     │ $12.00   │  │
-│  │                                                      │  │
-│  │  Subtotal:                           $66.00          │  │
-│  │  Tax (VAT 20%):                      $13.20          │  │
-│  │  Discount (annual -17%):            -$11.22          │  │
-│  │  Total:                              $67.98          │  │
-│  │                                                      │  │
-│  │  Payment: Visa ending 4242                           │  │
-│  │  Status: PAID on 2026-03-01                          │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Storage:                                                 │
-│  - Invoice data in database (structured)                  │
-│  - PDF generated on demand or at finalization             │
-│  - Stored in S3 for permanent record                      │
-│  - Accessible via customer portal                         │
-│                                                           │
-│  Numbering:                                               │
-│  Format: INV-{YYYY}-{sequential 6-digit}                  │
-│  Sequential, never reused, no gaps (audit requirement)    │
-│  Region prefix for multi-entity: US-INV, EU-INV           │
-└──────────────────────────────────────────────────────────┘
-```
+### Step 4: Invoice System
+Lifecycle: DRAFT -> OPEN -> PAID | VOID | UNCOLLECTIBLE. Format: INV-{YYYY}-{sequential}. Store in DB + PDF in S3. Include line items, subtotal, tax, discounts, total.
 
 ### Step 5: Tax Calculation
-Handle sales tax and VAT:
-
-```
-TAX CALCULATION:
-┌──────────────────────────────────────────────────────────┐
-│  US Sales Tax:                                            │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Nexus states: <list of states where you have nexus>│  │
-│  │  Tax provider: Stripe Tax | TaxJar | Avalara        │  │
-│  │                                                      │  │
-│  │  Rules:                                              │  │
-│  │  - Physical nexus: office, employees, warehouse      │  │
-│  │  - Economic nexus: $100K revenue or 200 transactions │  │
-│  │    in a state                                        │  │
-│  │  - SaaS taxability varies by state                   │  │
-│  │  - Some states exempt digital goods                  │  │
-│  │  - Tax-exempt customers: require W-9 or exemption    │  │
-│  │    certificate                                       │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  EU VAT:                                                  │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  B2C (business to consumer):                         │  │
-│  │  - Charge VAT at customer's country rate             │  │
-│  │  - Use OSS (One Stop Shop) for EU-wide filing        │  │
-│  │  - Rates: 17-27% depending on country                │  │
-│  │                                                      │  │
-│  │  B2B (business to business):                         │  │
-│  │  - Collect and validate VAT ID (VIES check)          │  │
-│  │  - Reverse charge: 0% VAT, customer self-assesses    │  │
-│  │  - Invoice must state "Reverse charge applies"       │  │
-│  │                                                      │  │
-│  │  Digital services:                                   │  │
-│  │  - Always taxable in EU                              │  │
-│  │  - Customer location determines rate                 │  │
-│  │  - Two pieces of evidence for location (IP, billing) │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Implementation:                                          │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  // Stripe Tax (recommended for Stripe users)        │  │
-│  │  const session = await stripe.checkout.sessions      │  │
-│  │    .create({                                         │  │
-│  │      automatic_tax: { enabled: true },               │  │
-│  │      customer_update: {                              │  │
-│  │        address: 'auto',                              │  │
-│  │      },                                              │  │
-│  │      // ... other params                             │  │
-│  │    });                                               │  │
-│  │                                                      │  │
-│  │  // Tax ID collection                                │  │
-│  │  await stripe.customers.createTaxId(customerId, {    │  │
-│  │    type: 'eu_vat',                                   │  │
-│  │    value: 'DE123456789',                             │  │
-│  │  });                                                 │  │
-│  └────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────┘
-```
+Use Stripe Tax, TaxJar, or Avalara — never calculate tax yourself. US: economic nexus ($100K/200 txns). EU VAT: B2C charge customer-country rate via OSS; B2B reverse charge with VIES-validated VAT ID. Enable `automatic_tax: { enabled: true }` on checkout sessions.
 
 ### Step 6: PCI-DSS Compliance
-Ensure payment handling meets security standards:
-
-```
-PCI-DSS COMPLIANCE:
-┌──────────────────────────────────────────────────────────┐
-│  Level: SAQ-A (recommended — card data never touches      │
-│         your server)                                      │
-│                                                           │
-│  Architecture (SAQ-A Eligible):                           │
-│  ┌────────────────────────────────────────────────────┐  │
-│  │  Client (browser)                                    │  │
-│  │    │                                                 │  │
-│  │    ├── Stripe.js / Elements (card input iframe)      │  │
-│  │    │     Card data goes directly to Stripe           │  │
-│  │    │     Your server NEVER sees card numbers          │  │
-│  │    │                                                 │  │
-│  │    ├── Your Server                                   │  │
-│  │    │     Receives: token / PaymentMethod ID           │  │
-│  │    │     Receives: PaymentIntent client_secret        │  │
-│  │    │     NEVER receives: card number, CVC, expiry    │  │
-│  │    │                                                 │  │
-│  │    └── Stripe API                                    │  │
-│  │          Handles: card storage, tokenization          │  │
-│  │          Handles: 3D Secure authentication            │  │
-│  │          Handles: PCI-compliant vault                 │  │
-│  └────────────────────────────────────────────────────┘  │
-│                                                           │
-│  Security Checklist:                                      │
-│  [x] Card data collected via Stripe.js iframe (never      │
-│      touches your DOM)                                    │
-│  [x] API keys stored in secrets manager (not in code)     │
-│  [x] Webhook signatures verified on every event           │
-│  [x] HTTPS on all pages (not just checkout)               │
-│  [x] Stripe secret key restricted to server-side only     │
-│  [x] Publishable key restricted by domain                 │
-│  [x] No card data in logs, error messages, or analytics   │
-│  [x] Idempotency keys on all write operations             │
-│  [x] 3D Secure enabled for SCA compliance (EU)            │
-│  [x] Customer portal for self-service card updates        │
-│                                                           │
-│  What NOT to do:                                          │
-│  [!] NEVER log request bodies on payment endpoints        │
-│  [!] NEVER store raw card numbers anywhere                │
-│  [!] NEVER transmit card data to your server              │
-│  [!] NEVER disable Stripe.js CSP requirements             │
-│  [!] NEVER use test API keys in production                │
-└──────────────────────────────────────────────────────────┘
-```
+Target SAQ-A: card data collected via Stripe.js iframe, never touches your server/DOM. Security checklist: API keys in secrets manager, webhook signatures verified, HTTPS everywhere, no card data in logs, idempotency keys on all writes, 3D Secure for SCA compliance.
 
 ### Step 7: Webhook Handling
-Process payment events reliably:
-
 ```typescript
-// Webhook handler with signature verification
-import { Request, Response } from 'express';
-
 async function handleStripeWebhook(req: Request, res: Response) {
-  const sig = req.headers['stripe-signature'] as string;
-  let event: Stripe.Event;
-
-  // CRITICAL: Verify webhook signature before processing
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,                          // Raw body (not parsed JSON)
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET,
-    );
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send('Invalid signature');
-  }
-
-  // Idempotency: check if we already processed this event
-  const processed = await db.webhookEvents.findByEventId(event.id);
-  if (processed) {
-    return res.status(200).json({ received: true, duplicate: true });
-  }
-
-  // Process event in a transaction
-  try {
-    await db.transaction(async (tx) => {
-      // Record the event before processing
-      await tx.webhookEvents.create({
-        eventId: event.id,
-        type: event.type,
-        data: event.data,
-        processedAt: new Date(),
-      });
-
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          await handlePaymentSucceeded(tx, event.data.object);
-          break;
-        case 'payment_intent.payment_failed':
-          await handlePaymentFailed(tx, event.data.object);
-          break;
-        case 'customer.subscription.created':
-          await handleSubscriptionCreated(tx, event.data.object);
-          break;
-        case 'customer.subscription.updated':
-          await handleSubscriptionUpdated(tx, event.data.object);
-          break;
-        case 'customer.subscription.deleted':
-          await handleSubscriptionCanceled(tx, event.data.object);
-          break;
-        case 'invoice.payment_succeeded':
-          await handleInvoicePaid(tx, event.data.object);
-          break;
-        case 'invoice.payment_failed':
-          await handleInvoicePaymentFailed(tx, event.data.object);
-          break;
-        case 'customer.tax_id.created':
-          await handleTaxIdCreated(tx, event.data.object);
-          break;
-        case 'charge.dispute.created':
-          await handleDisputeCreated(tx, event.data.object);
-          break;
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
-      }
-    });
-
-    res.status(200).json({ received: true });
-  } catch (err) {
-    console.error(`Error processing webhook ${event.id}:`, err);
-    // Return 500 so Stripe retries the webhook
-    res.status(500).json({ error: 'Processing failed' });
-  }
+  const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
+  // Check idempotency by event.id, process in DB transaction
+  // Handle: payment_intent.succeeded/failed, subscription.created/updated/deleted,
+  //         invoice.payment_succeeded/failed, charge.dispute.created
+  res.status(200).json({ received: true });
 }
 ```
 
-```
-WEBHOOK RELIABILITY:
-┌──────────────────────────────────────────────────────────┐
-│  Stripe Webhook Retry Schedule:                           │
-│  Attempt 1: Immediate                                     │
-│  Attempt 2: 1 hour                                        │
-│  Attempt 3: 2 hours                                       │
-│  Attempt 4: 4 hours                                       │
-│  Attempt 5: 8 hours                                       │
-│  ... up to 3 days, then disabled                          │
-│                                                           │
-│  Your Responsibilities:                                   │
-│  1. Return 200 within 30 seconds (process async if slow)  │
-│  2. Handle duplicate events (idempotency)                 │
-│  3. Handle out-of-order events (check timestamps)         │
-│  4. Store raw events for debugging and replay             │
-│  5. Alert on consistent failures (> 3 retries)            │
-│  6. Reconcile daily: compare Stripe records with your DB  │
-│                                                           │
-│  Event Processing Pattern:                                │
-│  1. Verify signature                                      │
-│  2. Check idempotency (skip if already processed)         │
-│  3. Process in database transaction                       │
-│  4. Return 200 (even if business logic fails — log error) │
-│  5. Heavy work goes to async queue (email, PDF gen, etc.) │
-└──────────────────────────────────────────────────────────┘
-```
+Return 200 within 30s, process async if slow. Store raw events. Reconcile daily. Stripe retries up to 3 days.
 
 ### Step 8: Commit and Report
 ```
-1. Save payment integration files:
-   - Payment service: `src/services/payment/` or `src/lib/billing/`
-   - Webhook handler: `src/api/webhooks/stripe.ts`
-   - Subscription logic: `src/services/subscription/`
-   - Invoice templates: `src/templates/invoice/`
-   - Tax configuration: `src/config/tax.ts`
-2. Commit: "pay: <description> — <components implemented>"
-3. If Stripe integration: "pay: Stripe integration — checkout, subscriptions, webhooks"
-4. If tax setup: "pay: tax calculation — US sales tax + EU VAT via Stripe Tax"
+Files: src/services/payment/, src/api/webhooks/stripe.ts, src/config/tax.ts
+Commit: "pay: <description> — <components implemented>"
 ```
 
 ## Key Behaviors
-
-1. **Card data never touches your server.** Use Stripe.js Elements, PayPal JS SDK, or equivalent client-side tokenization. This keeps you at PCI SAQ-A level, the simplest compliance tier.
-2. **Webhooks are the source of truth.** Never rely on client-side confirmation for payment success. The webhook tells you definitively whether money moved. Fulfill orders from webhooks, not from redirect callbacks.
-3. **Idempotency on every write.** Payment APIs must handle retries safely. Use idempotency keys on all Stripe API calls. Check for duplicate webhook events before processing.
-4. **Test with real scenarios.** Use Stripe test mode with specific card numbers to simulate declines, 3D Secure, disputes, and failures. Test the unhappy paths, not just the happy path.
-5. **Handle failed payments gracefully.** Implement dunning with escalating notifications. Give customers time and easy ways to update their payment method before canceling.
-6. **Tax is not optional.** If you sell to customers in taxable jurisdictions, you must collect and remit tax. Use Stripe Tax, TaxJar, or Avalara — do not try to calculate tax yourself.
-7. **Reconcile daily.** Compare your database records with the payment provider's records daily. Discrepancies indicate bugs, missed webhooks, or fraud.
-8. **Log payment events, not payment data.** Log event IDs, amounts, and outcomes. Never log card numbers, CVCs, or full bank account numbers.
-
-## Example Usage
-
-### Setting up Stripe for a SaaS product
-```
-User: /godmode:pay Set up Stripe billing for our SaaS with monthly/annual plans
-
-Pay: Analyzing requirements...
-
-Product: SaaS application
-Plans: Free, Starter ($19/mo), Pro ($49/mo), Enterprise (custom)
-Annual discount: ~17% (2 months free)
-Trial: 14 days on Starter and Pro
-
-Implementation plan:
-  1. Stripe Products & Prices (4 products, 6 prices)
-  2. Customer creation with billing address
-  3. Checkout Session for new subscriptions
-  4. Customer portal for self-service management
-  5. Webhook handler for 9 event types
-  6. Dunning flow for failed payments
-  7. Usage metering for overage billing
-
-Files created:
-  src/services/billing/stripe-client.ts — Stripe SDK setup
-  src/services/billing/subscriptions.ts — Subscription CRUD
-  src/services/billing/webhooks.ts — Webhook handler
-  src/services/billing/dunning.ts — Failed payment recovery
-  src/api/routes/billing.ts — API routes
-  src/api/webhooks/stripe.ts — Webhook endpoint
-
-Tax: Stripe Tax enabled (automatic US + EU calculation)
-PCI: SAQ-A compliant (Stripe.js Elements, no card data on server)
-
-Next: `/godmode:test` to write billing integration tests
-```
-
-### Handling a payment dispute
-```
-User: /godmode:pay We received a chargeback, how do we handle it?
-
-Pay: Investigating dispute...
-
-Dispute details:
-  Charge: ch_1234567890
-  Amount: $49.00
-  Reason: fraudulent
-  Evidence due: 2026-04-02
-
-Response plan:
-  1. Gather evidence:
-     - Customer email address and IP at time of purchase
-     - Delivery proof (access logs showing usage)
-     - Customer service correspondence
-     - Refund policy the customer agreed to
-     - Invoice and receipt
-
-  2. Submit via Stripe Dashboard or API:
-     stripe.disputes.update('dp_123', {
-       evidence: {
-         customer_email_address: 'user@example.com',
-         product_description: 'SaaS Pro Plan subscription',
-         access_activity_log: accessLogUrl,
-         customer_communication: emailThreadUrl,
-         refund_policy: refundPolicyUrl,
-       },
-     });
-
-  3. Prevention measures:
-     - Enable 3D Secure for high-risk transactions
-     - Implement Radar fraud detection rules
-     - Add receipt emails immediately after charge
-     - Log IP and device fingerprint at checkout
-```
+1. **Card data never touches your server.** Use client-side tokenization (Stripe.js Elements). This keeps you at PCI SAQ-A.
+2. **Webhooks are the source of truth.** Never rely on client-side confirmation. Fulfill orders from webhooks only.
+3. **Idempotency on every write.** Use idempotency keys on all Stripe API calls and deduplicate webhook events by event.id.
+4. **Tax is not optional.** Use a tax service — never calculate tax yourself.
+5. **Reconcile daily.** Compare your DB with the payment provider's records.
+6. **Log payment events, not payment data.** Never log card numbers, CVCs, or bank account numbers.
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full payment system design and implementation |
 | `--checkout` | One-time payment checkout flow only |
 | `--subscription` | Subscription billing design only |
-| `--invoice` | Invoice generation system only |
 | `--tax` | Tax calculation setup only |
 | `--webhooks` | Webhook handler implementation only |
-| `--pci` | PCI compliance audit and recommendations |
-| `--migrate` | Migrate between payment providers |
+| `--pci` | PCI compliance audit |
 | `--provider <name>` | Use specific provider (stripe, paypal, braintree) |
-| `--dunning` | Failed payment recovery flow only |
-| `--reconcile` | Payment reconciliation check |
 
 ## HARD RULES
-
-1. **NEVER process card numbers on your server.** Use client-side tokenization (Stripe.js Elements, PayPal JS SDK). This is PCI SAQ-A. Violating this moves you to SAQ-D.
-2. **NEVER fulfill orders from client-side redirects.** Redirects can be faked. Always fulfill from webhook events, which are cryptographically signed.
-3. **NEVER skip idempotency keys on payment write operations.** Every `create`, `capture`, `refund`, and `charge` call must include an idempotency key.
-4. **NEVER calculate tax yourself.** Use Stripe Tax, TaxJar, or Avalara. Tax rules change constantly across thousands of jurisdictions.
-5. **NEVER store API keys in code or environment files committed to git.** Use a secrets manager. Rotate immediately if exposed.
-6. **NEVER send payment amounts as client-side parameters.** The price must come from your server-side product catalog.
-7. **NEVER log card numbers, CVCs, or full bank account numbers.** Log event IDs, amounts, and outcomes only.
-8. **ALWAYS verify webhook signatures before processing any event.** An unverified webhook is an attack vector.
-9. **ALWAYS test with provider test mode.** Use Stripe test card numbers (4242..., 4000000000000002 for decline) to verify all paths.
+1. **NEVER process card numbers on your server.** Use client-side tokenization.
+2. **NEVER fulfill orders from client-side redirects.** Always fulfill from signed webhook events.
+3. **NEVER skip idempotency keys** on payment write operations.
+4. **NEVER calculate tax yourself.** Use Stripe Tax, TaxJar, or Avalara.
+5. **NEVER store API keys in code.** Use a secrets manager.
+6. **NEVER send payment amounts as client-side parameters.** Price from server-side catalog only.
+7. **ALWAYS verify webhook signatures** before processing any event.
 
 ## Auto-Detection
-
-Before implementing payment integration, detect existing setup:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect payment provider:
-   - grep for "stripe" in package.json / requirements.txt / go.mod → Stripe
-   - grep for "paypal" / "braintree" / "adyen" similarly
-   - ls .env* and grep for STRIPE_SECRET_KEY, PAYPAL_CLIENT_ID, etc.
-
-2. Detect existing integration:
-   - grep for "PaymentIntent\|checkout.sessions\|subscriptions" → Stripe API usage
-   - grep for "webhook\|stripe-signature" → webhook handler exists
-   - grep for "createCustomer\|createSubscription" → subscription billing
-
-3. Detect billing model:
-   - ls src/services/billing* src/services/payment* src/lib/stripe* → existing billing code
-   - grep for "subscription\|recurring\|plan\|tier" → subscription model
-   - grep for "invoice\|receipt\|charge" → one-time or invoicing model
-
-4. Detect tax configuration:
-   - grep for "automatic_tax\|tax_id\|TaxJar\|Avalara" → tax handling
-   - grep for "vat\|VAT\|sales_tax" → tax awareness
-
-5. Output: PAYMENT REQUIREMENTS table auto-populated from detection.
+1. Detect provider: grep package.json for stripe/paypal/braintree/adyen
+2. Detect integration: grep for PaymentIntent, checkout.sessions, webhook, stripe-signature
+3. Detect billing model: grep for subscription/recurring/plan/tier or invoice/charge
+4. Detect tax: grep for automatic_tax, tax_id, TaxJar, Avalara
+5. Output: auto-populated PAYMENT REQUIREMENTS table
 ```
 
 ## Explicit Loop Protocol
-
-Payment integration involves iterative setup and verification:
-
 ```
-current_iteration = 0
-components = [gateway_setup, checkout_flow, webhook_handler,
-              subscription_billing, tax_config, pci_audit, reconciliation]
-
-WHILE components is not empty AND current_iteration < 10:
-    current_iteration += 1
-    component = components.pop(0)
-
-    1. IMPLEMENT component (create service, route, webhook handler)
-    2. TEST with provider's test mode:
-       - Successful payment (test card 4242...)
-       - Declined payment (test card 4000000000000002)
-       - 3D Secure flow (test card 4000000000003220)
-       - Webhook delivery (stripe listen --forward-to localhost)
-    3. VERIFY idempotency: duplicate request produces same result
-    4. VERIFY security: no card data in logs, signatures checked
-    5. IF test fails:
-        components.append(component)  # retry
-    6. REPORT: "Component {component}: {DONE|RETRY} -- iteration {current_iteration}"
-
-OUTPUT: Full payment integration with all components tested.
+components = [gateway_setup, checkout_flow, webhook_handler, subscription_billing, tax_config, reconciliation]
+FOR EACH component: IMPLEMENT -> TEST with provider test mode -> VERIFY idempotency + security -> REPORT status
 ```
 
 ## Multi-Agent Dispatch
-
-For full billing system implementation, dispatch parallel agents:
-
 ```
-MULTI-AGENT PAYMENT SETUP:
-Dispatch 3 agents in parallel worktrees.
-
-Agent 1 (worktree: pay-core):
-  - Set up Stripe client and customer management
-  - Implement PaymentIntent creation for one-time charges
-  - Build checkout session flow with Elements
-  - Implement refund handling
-
-Agent 2 (worktree: pay-subscriptions):
-  - Create subscription plans and prices in Stripe
-  - Implement subscription CRUD (create, update, cancel)
-  - Build plan change with proration
-  - Implement dunning flow for failed payments
-
-Agent 3 (worktree: pay-webhooks):
-  - Build webhook endpoint with signature verification
-  - Implement idempotent event processing
-  - Handle all subscription lifecycle events
-  - Set up daily reconciliation job
-
+Agent 1 (pay-core): Stripe client, PaymentIntent, checkout, refunds
+Agent 2 (pay-subscriptions): Plans, subscription CRUD, proration, dunning
+Agent 3 (pay-webhooks): Webhook endpoint, idempotent processing, reconciliation
 MERGE ORDER: core -> subscriptions -> webhooks
-CONFLICT ZONES: Stripe client initialization, customer model, billing routes
 ```
 
 ## TSV Logging
-After each workflow step, append a row to `.godmode/pay-results.tsv`:
-```
-STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
-1\tpayment-core\tstripe\tcreated\tcheckout session + payment intent flow
-2\twebhook\tstripe\tcreated\t/api/webhooks/stripe with signature verification
-3\tsubscription\tstripe\tcreated\tplan CRUD + proration + dunning
-4\treconciliation\tcron\tcreated\tdaily job comparing Stripe events vs local DB
-```
-Print final summary: `Payment system: {provider}, {N} payment methods, webhooks: {yes/no}. Subscriptions: {yes/no}. Tax: {tax_provider}. Reconciliation: {frequency}.`
+Log to `.godmode/pay-results.tsv`: `STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS`
 
 ## Success Criteria
-All of these must be true before marking the task complete:
-1. Test-mode payment completes end-to-end (checkout → payment_intent.succeeded webhook → order fulfilled).
-2. Webhook endpoint verifies signatures and processes events idempotently (replay same event, no duplicate side effects).
-3. Subscription lifecycle works: create, upgrade with proration, cancel (immediate and end-of-period).
-4. Failed payment triggers dunning flow (retry schedule + customer notification).
-5. Idempotency keys are present on every payment write operation.
-6. No raw card data touches the server (client-side tokenization only).
-7. All API keys come from environment variables, not code.
-8. Reconciliation job detects at least one known discrepancy in test data.
+1. Test-mode payment completes end-to-end (checkout -> webhook -> fulfillment).
+2. Webhook endpoint verifies signatures and processes idempotently.
+3. Subscription lifecycle works: create, upgrade with proration, cancel.
+4. Failed payment triggers dunning flow.
+5. No raw card data touches the server.
+6. All API keys from environment variables.
 
 ## Error Recovery
 | Failure | Action |
 |---------|--------|
-| Stripe API key missing/invalid | Print exact env var names (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`). Link to Stripe dashboard > Developers > API keys. |
-| Webhook signature verification fails | Verify `STRIPE_WEBHOOK_SECRET` matches the endpoint secret (not the API key). Use `stripe listen --forward-to` for local dev. |
-| Payment intent fails | Check error code from Stripe. Common: `card_declined`, `insufficient_funds`, `expired_card`. Map each to user-facing message. |
-| Subscription proration incorrect | Verify `proration_behavior` parameter. Test with Stripe test clock for deterministic billing cycle simulation. |
-| Duplicate charges detected | Check idempotency key implementation. Verify webhook handler uses `event.id` as dedup key. Refund duplicates via API. |
-| Tax calculation fails | Verify tax provider credentials. Check that product tax codes are set. Fall back to no-tax with alert, never block checkout silently. |
-
-## Anti-Patterns
-
-- **Do NOT process card numbers on your server.** Use client-side tokenization (Stripe.js, PayPal JS SDK). Handling raw card data moves you from SAQ-A to SAQ-D, a dramatically harder compliance burden.
-- **Do NOT fulfill orders from client-side redirects.** The redirect URL can be faked. Always fulfill from webhook events, which are cryptographically signed by the payment provider.
-- **Do NOT skip idempotency keys.** Without idempotency keys, retried API calls can create duplicate charges. Every payment write operation must include an idempotency key.
-- **Do NOT calculate tax yourself.** Tax rules change constantly and vary by jurisdiction, product type, and customer type. Use a tax service (Stripe Tax, TaxJar, Avalara).
-- **Do NOT store payment provider API keys in code.** Use a secrets manager. Rotate keys if they are ever exposed. Restrict test keys to test environments and live keys to production.
-- **Do NOT ignore failed webhooks.** Set up alerts for webhook delivery failures. Implement daily reconciliation to catch missed events. Stripe's retry schedule is not infinite.
-- **Do NOT allow subscription downgrades without checking usage.** If the customer is using 50 GB on the Pro plan, do not let them downgrade to Starter (10 GB) without resolving the overage.
-- **Do NOT send payment amounts as client-side parameters.** The price must be determined server-side from your product catalog. Client-supplied amounts can be manipulated.
-
-
-## Payment Integration Optimization Loop
-
-When auditing and optimizing a payment integration, run this systematic loop. Each pass targets a specific compliance, reliability, or correctness dimension with measurable before/after metrics.
-
-### Pass 1: PCI Compliance Audit
-
-```
-PCI COMPLIANCE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Determine PCI-DSS scope and SAQ level                  │
-│                                                                   │
-│  ┌──────────────────────────────┬────────────────────────────┐  │
-│  │  Integration Method          │  PCI Level / SAQ           │  │
-│  ├──────────────────────────────┼────────────────────────────┤  │
-│  │  Stripe.js Elements (client) │  SAQ-A (simplest)          │  │
-│  │  PayPal JS SDK (hosted)      │  SAQ-A                     │  │
-│  │  Hosted checkout page        │  SAQ-A                     │  │
-│  │  Redirect to provider        │  SAQ-A                     │  │
-│  │  Direct API (card data)      │  SAQ-D (hardest — AVOID)   │  │
-│  │  Card-on-file (token stored) │  SAQ-A-EP                  │  │
-│  └──────────────────────────────┴────────────────────────────┘  │
-│                                                                   │
-│  RULE: NEVER handle raw card data on your server.               │
-│  Use client-side tokenization (Stripe.js, PayPal JS SDK).       │
-│  This keeps you at SAQ-A — dramatically simpler compliance.     │
-│                                                                   │
-│  Step 2: Server-side security audit                              │
-│  [ ] HTTPS enforced on all payment-related endpoints             │
-│  [ ] TLS 1.2+ required (no TLS 1.0/1.1)                         │
-│  [ ] No card numbers in logs (PAN masking or exclusion)          │
-│  [ ] No card numbers in error messages or stack traces           │
-│  [ ] No card numbers in database (use provider tokens/IDs)       │
-│  [ ] No card numbers in URLs or query parameters                 │
-│  [ ] API keys stored in environment variables / secrets manager  │
-│  [ ] API keys rotated at least annually                          │
-│  [ ] Test keys restricted to test environments                   │
-│  [ ] Live keys restricted to production environment              │
-│  [ ] Payment endpoints require authentication                    │
-│  [ ] Rate limiting on payment endpoints (prevent card testing)   │
-│                                                                   │
-│  Step 3: Client-side security audit                              │
-│  [ ] Stripe.js / PayPal JS loaded from provider CDN (not self-hosted) │
-│  [ ] Card input rendered by provider iframe (Elements)           │
-│  [ ] No JavaScript accessing card input values                   │
-│  [ ] CSP headers allow provider domains only                     │
-│  [ ] No card data in browser localStorage/sessionStorage         │
-│  [ ] Payment form served over HTTPS only                         │
-│                                                                   │
-│  Step 4: Data retention audit                                    │
-│  [ ] No raw card numbers stored anywhere in system               │
-│  [ ] Payment method tokens stored (not card details)             │
-│  [ ] Transaction logs retain only last-4 and card brand          │
-│  [ ] Audit logs for payment access are retained 1+ year          │
-│  [ ] Customer data deletion includes payment tokens              │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - SAQ-A compliance (client-side tokenization only)              │
-│  - Zero card numbers in any log, database, or error output       │
-│  - All payment endpoints authenticated and rate-limited          │
-│  - API key rotation schedule documented and automated            │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 2: Webhook Handling Audit
-
-```
-WEBHOOK HANDLING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Webhook security verification                           │
-│                                                                   │
-│  // Stripe webhook signature verification:                       │
-│  app.post('/webhooks/stripe', express.raw({type: 'application/json'}), │
-│    (req, res) => {                                               │
-│      const sig = req.headers['stripe-signature'];                │
-│      let event: Stripe.Event;                                    │
-│      try {                                                       │
-│        event = stripe.webhooks.constructEvent(                    │
-│          req.body, sig, process.env.STRIPE_WEBHOOK_SECRET        │
-│        );                                                         │
-│      } catch (err) {                                             │
-│        logger.error('Webhook signature verification failed', err);│
-│        return res.status(400).send('Invalid signature');          │
-│      }                                                            │
-│      // Process event...                                         │
-│      res.json({ received: true });                               │
-│  });                                                              │
-│                                                                   │
-│  Audit checklist:                                                │
-│  [ ] Signature verification on every webhook endpoint            │
-│  [ ] Raw body preserved for signature verification (not parsed)  │
-│  [ ] Webhook secret stored in environment variable               │
-│  [ ] 200 response returned quickly (process async if slow)       │
-│  [ ] Failed verification logged with alert                       │
-│                                                                   │
-│  Step 2: Event processing reliability                            │
-│                                                                   │
-│  // Idempotent event handler pattern:                            │
-│  async function handleWebhookEvent(event: Stripe.Event) {       │
-│    // 1. Check if already processed (idempotency)                │
-│    const existing = await db.webhookEvents.findUnique({          │
-│      where: { eventId: event.id }                                │
-│    });                                                            │
-│    if (existing?.processedAt) {                                  │
-│      logger.info('Webhook event already processed', { id: event.id }); │
-│      return; // Skip — already handled                           │
-│    }                                                              │
-│                                                                   │
-│    // 2. Record event receipt                                    │
-│    await db.webhookEvents.upsert({                               │
-│      where: { eventId: event.id },                               │
-│      create: { eventId: event.id, type: event.type,             │
-│                payload: event, receivedAt: new Date() },         │
-│      update: {},                                                  │
-│    });                                                            │
-│                                                                   │
-│    // 3. Process event in transaction                            │
-│    await db.$transaction(async (tx) => {                         │
-│      await processEvent(tx, event);                              │
-│      await tx.webhookEvents.update({                             │
-│        where: { eventId: event.id },                             │
-│        data: { processedAt: new Date() },                        │
-│      });                                                          │
-│    });                                                            │
-│  }                                                               │
-│                                                                   │
-│  Step 3: Critical events to handle                               │
-│  ┌──────────────────────────────────┬──────────────────────────┐│
-│  │  Stripe Event                    │  Required Action          ││
-│  ├──────────────────────────────────┼──────────────────────────┤│
-│  │  payment_intent.succeeded        │  Fulfill order            ││
-│  │  payment_intent.payment_failed   │  Notify customer, retry? ││
-│  │  charge.refunded                 │  Reverse fulfillment      ││
-│  │  charge.dispute.created          │  Alert team, gather evidence│
-│  │  customer.subscription.created   │  Provision features       ││
-│  │  customer.subscription.updated   │  Adjust features/limits   ││
-│  │  customer.subscription.deleted   │  Deprovision features     ││
-│  │  invoice.payment_succeeded       │  Record payment, receipt  ││
-│  │  invoice.payment_failed          │  Dunning flow             ││
-│  │  checkout.session.completed      │  Complete order            ││
-│  └──────────────────────────────────┴──────────────────────────┘│
-│                                                                   │
-│  Step 4: Webhook monitoring and alerting                         │
-│  [ ] Dashboard shows webhook delivery success rate               │
-│  [ ] Alert if webhook failures exceed threshold (>5% in 1 hour) │
-│  [ ] Dead letter queue for failed webhook processing             │
-│  [ ] Daily reconciliation job to catch missed webhooks           │
-│  [ ] Stripe CLI used for local testing: stripe listen --forward-to │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - 100% signature verification (no unverified event processing) │
-│  - Event replay produces no duplicate side effects (idempotent)  │
-│  - All critical events handled (see table above)                 │
-│  - Webhook failure rate < 0.1%                                   │
-│  - Reconciliation catches discrepancies within 24 hours          │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 3: Idempotency Audit
-
-```
-IDEMPOTENCY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Identify all payment write operations                   │
-│  ┌──────────────────────────────────┬──────────┬───────────────┐│
-│  │  Operation                       │  Idempotency Key│  Status││
-│  ├──────────────────────────────────┼──────────┼───────────────┤│
-│  │  Create PaymentIntent            │  order_id│  check        ││
-│  │  Capture payment                 │  pi_id   │  check        ││
-│  │  Create refund                   │  ref_id  │  check        ││
-│  │  Create subscription             │  sub_req_id│ check       ││
-│  │  Update subscription             │  change_id│  check       ││
-│  │  Create invoice                  │  inv_req_id│  check      ││
-│  │  Webhook event processing        │  event_id│  check        ││
-│  └──────────────────────────────────┴──────────┴───────────────┘│
-│                                                                   │
-│  Step 2: Implement idempotency keys for Stripe API calls         │
-│                                                                   │
-│  // Every payment write operation MUST include an idempotency key│
-│  const paymentIntent = await stripe.paymentIntents.create({      │
-│    amount: order.totalCents,                                     │
-│    currency: 'usd',                                              │
-│    customer: order.stripeCustomerId,                             │
-│    metadata: { orderId: order.id },                              │
-│  }, {                                                             │
-│    idempotencyKey: `create_pi_${order.id}`,                     │
-│  });                                                              │
-│                                                                   │
-│  const refund = await stripe.refunds.create({                    │
-│    payment_intent: paymentIntent.id,                             │
-│    amount: refundAmountCents,                                    │
-│  }, {                                                             │
-│    idempotencyKey: `refund_${order.id}_${refundRequestId}`,     │
-│  });                                                              │
-│                                                                   │
-│  Step 3: Server-side idempotency for your own API                │
-│                                                                   │
-│  // Idempotency middleware for payment endpoints:                │
-│  async function idempotencyMiddleware(req, res, next) {          │
-│    const key = req.headers['idempotency-key'];                  │
-│    if (!key) return next(); // Optional for non-payment          │
-│                                                                   │
-│    const cached = await redis.get(`idempotency:${key}`);        │
-│    if (cached) {                                                  │
-│      const { status, body } = JSON.parse(cached);               │
-│      return res.status(status).json(body);                       │
-│    }                                                              │
-│                                                                   │
-│    // Capture response to cache it                               │
-│    const originalJson = res.json.bind(res);                      │
-│    res.json = (body) => {                                        │
-│      redis.setex(`idempotency:${key}`, 86400, // 24h TTL        │
-│        JSON.stringify({ status: res.statusCode, body }));        │
-│      return originalJson(body);                                  │
-│    };                                                             │
-│    next();                                                        │
-│  }                                                               │
-│                                                                   │
-│  Step 4: Test idempotency                                        │
-│  Test scenario for each operation:                               │
-│  1. Send request with idempotency key → success                 │
-│  2. Replay EXACT same request with same key → same response     │
-│  3. Verify no duplicate charges/refunds/subscriptions created    │
-│  4. Verify database state is identical after replay              │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - Every Stripe API write call includes an idempotency key       │
-│  - Webhook handler deduplicates by event.id                      │
-│  - Replaying any payment operation produces no duplicate effects │
-│  - Client retry with same idempotency key returns cached response│
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 4: Reconciliation & Monitoring Audit
-
-```
-RECONCILIATION & MONITORING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Implement daily reconciliation job                      │
-│                                                                   │
-│  // Reconciliation: compare Stripe state with local database     │
-│  async function dailyReconciliation() {                          │
-│    const yesterday = subDays(new Date(), 1);                     │
-│    const today = new Date();                                     │
-│                                                                   │
-│    // 1. Fetch all Stripe charges for yesterday                  │
-│    const stripeCharges = await fetchAllStripeCharges(yesterday, today); │
-│                                                                   │
-│    // 2. Fetch all local payment records for yesterday           │
-│    const localPayments = await db.payments.findMany({            │
-│      where: { createdAt: { gte: yesterday, lt: today } },       │
-│    });                                                            │
-│                                                                   │
-│    // 3. Compare and find discrepancies                          │
-│    const discrepancies = [];                                     │
-│                                                                   │
-│    for (const charge of stripeCharges) {                         │
-│      const local = localPayments.find(p => p.stripeChargeId === charge.id); │
-│      if (!local) {                                               │
-│        discrepancies.push({                                      │
-│          type: 'MISSING_LOCAL',                                  │
-│          stripeId: charge.id,                                    │
-│          amount: charge.amount,                                  │
-│        });                                                        │
-│      } else if (local.amountCents !== charge.amount) {           │
-│        discrepancies.push({                                      │
-│          type: 'AMOUNT_MISMATCH',                                │
-│          stripeId: charge.id,                                    │
-│          stripeAmount: charge.amount,                            │
-│          localAmount: local.amountCents,                         │
-│        });                                                        │
-│      }                                                            │
-│    }                                                              │
-│                                                                   │
-│    // 4. Alert on discrepancies                                  │
-│    if (discrepancies.length > 0) {                               │
-│      await alertTeam('Payment reconciliation discrepancies', {  │
-│        count: discrepancies.length,                              │
-│        details: discrepancies,                                   │
-│      });                                                         │
-│    }                                                              │
-│                                                                   │
-│    // 5. Log reconciliation result                               │
-│    logger.info('Reconciliation complete', {                      │
-│      stripeCount: stripeCharges.length,                          │
-│      localCount: localPayments.length,                           │
-│      discrepancies: discrepancies.length,                        │
-│    });                                                            │
-│  }                                                               │
-│                                                                   │
-│  Step 2: Payment monitoring dashboard metrics                    │
-│  ┌──────────────────────────────────┬────────────────────────┐  │
-│  │  Metric                          │  Alert Threshold        │  │
-│  ├──────────────────────────────────┼────────────────────────┤  │
-│  │  Payment success rate            │  < 95% in 1 hour       │  │
-│  │  Payment failure rate            │  > 10% in 1 hour       │  │
-│  │  Avg payment processing time     │  > 5 seconds           │  │
-│  │  Webhook delivery failure rate   │  > 5% in 1 hour        │  │
-│  │  Refund volume (daily)           │  > 2x normal           │  │
-│  │  Dispute/chargeback rate         │  > 0.5% of charges     │  │
-│  │  Reconciliation discrepancies    │  > 0 (any mismatch)    │  │
-│  │  Failed subscription renewals    │  > 5% in one cycle     │  │
-│  └──────────────────────────────────┴────────────────────────┘  │
-│                                                                   │
-│  Step 3: Dispute management process                              │
-│  // When charge.dispute.created webhook fires:                   │
-│  1. Alert payment team immediately (PagerDuty/Slack)             │
-│  2. Gather evidence: order details, delivery proof, customer     │
-│     communication, server logs with timestamps                   │
-│  3. Submit evidence via Stripe API within 7 days                 │
-│  4. Track dispute outcome: won, lost, withdrawn                  │
-│  5. Review for patterns (specific product, customer segment)     │
-│                                                                   │
-│  Step 4: Financial reporting accuracy                            │
-│  [ ] Revenue recognized matches Stripe dashboard                 │
-│  [ ] Refunds properly reduce recognized revenue                  │
-│  [ ] Currency conversion handled correctly                       │
-│  [ ] Tax amounts match tax provider records                      │
-│  [ ] Subscription MRR/ARR calculations verified                  │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - Reconciliation runs daily with zero discrepancies             │
-│  - Payment success rate > 95%                                    │
-│  - Dispute rate < 0.5%                                           │
-│  - All disputes responded to within 72 hours                     │
-│  - Revenue figures match Stripe dashboard (zero drift)           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-PAYMENT INTEGRATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  PCI compliance level        │  unknown  │  SAQ-A    │  VERIFIED │
-│  Card data on server         │  check    │  NONE     │  VERIFIED │
-│  Webhook signature verified  │  NO       │  YES      │  FIXED    │
-│  Idempotency keys on writes  │  partial  │  100%     │  FIXED    │
-│  Event replay safe           │  NO       │  YES      │  FIXED    │
-│  Webhook events handled      │  <N>/<M>  │  <M>/<M>  │  COMPLETE │
-│  Reconciliation enabled      │  NO       │  DAILY    │  FIXED    │
-│  Payment success rate (%)   │  <N>%     │  <N>%     │  +<N>%    │
-│  Dispute rate (%)           │  <N>%     │  <N>%     │  -<N>%    │
-│  Webhook failure rate (%)   │  <N>%     │  <N>%     │  -<N>%    │
-│  API keys in env vars        │  partial  │  100%     │  FIXED    │
-│  Rate limiting on pay APIs   │  NO       │  YES      │  FIXED    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- SAQ-A compliance verified (no card data touches server)
-- All webhook endpoints verify cryptographic signatures
-- Every payment write operation has an idempotency key
-- Webhook event replay produces no duplicate side effects
-- All critical Stripe events have handlers (see event table)
-- Daily reconciliation runs and alerts on discrepancies
-- Payment success rate > 95%
-- Dispute rate < 0.5%
-- All API keys in environment variables, rotated annually
-
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
-```
+| Stripe API key missing | Print env var names, link to Stripe dashboard. |
+| Webhook signature fails | Verify STRIPE_WEBHOOK_SECRET matches endpoint secret. Use `stripe listen` for local dev. |
+| Payment intent fails | Map Stripe error codes to user-facing messages. |
+| Duplicate charges | Check idempotency key implementation. Refund duplicates via API. |
+| Tax calculation fails | Verify provider credentials and product tax codes. Fall back with alert. |
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run payment tasks sequentially: core payment processing, then subscriptions, then webhooks.
-- Use branch isolation per task: `git checkout -b godmode-pay-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run payment tasks sequentially. Branch per task: `git checkout -b godmode-pay-{task}`. See `adapters/shared/sequential-dispatch.md`.
+
+## Output Format
+Print: `Pay: {provider} integrated. Webhooks: {N}/{M} handled. Idempotency: {yes|no}. SAQ-A: {compliant|gaps}. Status: {DONE|PARTIAL}.`
+
+## Keep/Discard Discipline
+```
+After EACH payment integration change:
+  KEEP if: webhook signature verification passes AND idempotency key on all writes AND no card data touches server
+  DISCARD if: webhook verification missing OR duplicate charges possible OR PCI scope expanded
+  On discard: revert immediately. Payment bugs are money bugs.
+```
+
+## Stop Conditions
+```
+STOP when ALL of:
+  - Webhook signature verification on all endpoints
+  - Idempotency keys on all payment write operations
+  - Event replay produces zero duplicate side effects
+  - SAQ-A compliance verified (no card data on server)
+  - Daily reconciliation configured
+```

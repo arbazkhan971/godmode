@@ -36,21 +36,6 @@ Functional readiness:
 
 Operational readiness:
   [ ] Model serialized in serving format (SavedModel, ONNX, TorchScript, etc.)
-  [ ] Preprocessing pipeline packaged with model
-  [ ] Health check endpoint defined
-  [ ] Input validation logic defined
-  [ ] Error handling for malformed inputs
-  [ ] Graceful degradation / fallback strategy defined
-  [ ] Logging and monitoring instrumented
-  [ ] Load testing completed
-
-Compliance:
-  [ ] Model card written (purpose, limitations, ethical considerations)
-  [ ] Data provenance documented
-  [ ] License compliance for training data and model weights
-  [ ] Privacy review complete (no PII memorization, GDPR compliance)
-
-Verdict: <READY | NOT READY — list blockers>
 ```
 
 ### Step 2: Model Serving Infrastructure
@@ -65,17 +50,7 @@ model_config_list:
     - name: "<model_name>"
       base_path: "/models/<model_name>"
       model_platform: "tensorflow"
-      model_version_policy:
-        specific:
-          versions: [1, 2]  # serve multiple versions for A/B
-
-# Deployment
-docker run -p 8501:8501 \
-  --mount type=bind,source=/models,target=/models \
-  -t tensorflow/serving \
-  --model_config_file=/config/models.config \
-  --enable_batching=true \
-  --batching_parameters_file=/config/batching.config
+# ... (condensed)
 ```
 
 #### Option B: NVIDIA Triton Inference Server
@@ -95,18 +70,6 @@ platform: "onnxruntime_onnx"
 max_batch_size: 64
 input [
   { name: "input_ids"      dims: [-1] data_type: TYPE_INT64 }
-  { name: "attention_mask"  dims: [-1] data_type: TYPE_INT64 }
-]
-output [
-  { name: "logits"          dims: [-1] data_type: TYPE_FP32 }
-]
-instance_group [
-  { count: 2  kind: KIND_GPU  gpus: [0] }
-]
-dynamic_batching {
-  preferred_batch_size: [8, 16, 32]
-  max_queue_delay_microseconds: 100
-}
 ```
 
 #### Option C: AWS SageMaker
@@ -117,24 +80,7 @@ from sagemaker.model import Model
 
 model = Model(
     image_uri=sagemaker.image_uris.retrieve("pytorch", region, version="2.0"),
-    model_data="s3://bucket/models/model.tar.gz",
-    role=role,
-    env={
-        "MODEL_NAME": "<model_name>",
-        "MODEL_VERSION": "<version>",
-    }
-)
-
-predictor = model.deploy(
-    initial_instance_count=2,
-    instance_type="ml.g5.xlarge",
-    endpoint_name="<endpoint_name>",
-    data_capture_config=DataCaptureConfig(
-        enable_capture=True,
-        sampling_percentage=10,
-        destination_s3_uri="s3://bucket/data-capture"
-    )
-)
+# ... (condensed)
 ```
 
 #### Option D: Custom Serving (FastAPI / Ray Serve)
@@ -145,23 +91,7 @@ import torch
 
 app = FastAPI()
 model = None
-
-@app.on_event("startup")
-async def load_model():
-    global model
-    model = torch.jit.load("model.pt")
-    model.eval()
-
-@app.post("/predict")
-async def predict(request: PredictRequest):
-    with torch.no_grad():
-        inputs = preprocess(request.data)
-        outputs = model(inputs)
-        return {"predictions": postprocess(outputs)}
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy", "model_version": MODEL_VERSION}
+# ... (condensed)
 ```
 
 ### Step 3: Inference Optimization
@@ -203,17 +133,6 @@ Dynamic batching:
 
 Adaptive batching:
   min_batch_size: <N>
-  max_batch_size: <N>
-  target_latency_ms: <N>
-  scale_factor: <N>
-  Use when: highly variable traffic, SLA-driven
-
-Benchmark results:
-  Batch size 1:   latency=<ms>, throughput=<req/s>
-  Batch size 8:   latency=<ms>, throughput=<req/s>
-  Batch size 32:  latency=<ms>, throughput=<req/s>
-  Batch size 128: latency=<ms>, throughput=<req/s>
-  Optimal: batch_size=<N> (best throughput within latency SLA)
 ```
 
 ### Step 4: Model Versioning
@@ -306,16 +225,6 @@ Data drift (input features):
 └────────────────┴────────────┴──────────┴──────────┴──────────┘
 
 Concept drift (model performance):
-  Accuracy (rolling 7d): <current> vs <baseline> (delta: <change>)
-  Prediction distribution shift: <PSI value> (<status>)
-  Confidence calibration drift: <ECE change>
-
-Drift severity:
-  NONE:     All features stable, performance nominal
-  LOW:      Minor feature drift, performance within SLA
-  MODERATE: Significant feature drift OR minor performance drop
-  HIGH:     Major feature drift AND performance degradation
-  CRITICAL: Model predictions unreliable, immediate action required
 ```
 
 #### Drift Alert Thresholds
@@ -357,19 +266,6 @@ Drift-based retraining:
 
 Performance-based retraining:
   metric: <monitored metric>
-  threshold: <minimum acceptable value>
-  evaluation_window: <rolling window size>
-  min_samples: <minimum samples before evaluating>
-
-Retraining pipeline:
-  1. Fetch latest labeled data from <data source>
-  2. Validate dataset (schema, quality, bias)
-  3. Train with best known hyperparameters from EXP-<ID>
-  4. Evaluate on held-out test set
-  5. Compare against current champion
-  6. If improved: stage as canary, run A/B test
-  7. If not improved: log results, alert team
-  8. Retain artifacts for <retention period>
 ```
 
 #### Retraining Pipeline Status
@@ -402,20 +298,6 @@ MODEL MONITORING DASHBOARD:
 │  Model Performance:                                        │
 │  Primary metric (7d rolling): <value> (baseline: <value>) │
 │  Drift status:               <NONE | LOW | MODERATE | HIGH>│
-│  Data quality:               <HEALTHY | DEGRADED>         │
-│                                                            │
-│  Infrastructure:                                           │
-│  CPU utilization:  <percentage>                            │
-│  GPU utilization:  <percentage>                            │
-│  Memory usage:     <used>/<total>                          │
-│  Replicas:         <current>/<desired>                     │
-│  Autoscaler:       <status>                                │
-│                                                            │
-│  A/B Test:                                                 │
-│  Active: <YES/NO>                                          │
-│  Champion: v<N> (<traffic%>) | Challenger: v<N> (<traffic%>)│
-│  Result: <pending | significant | not significant>        │
-└────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 9: Commit and Transition
@@ -435,59 +317,6 @@ MODEL MONITORING DASHBOARD:
 5. **Automate retraining, but gate deployment.** Retraining can be automated. Deployment should require validation gate (A/B test or human review).
 6. **Keep rollback instant.** Always maintain the previous champion model ready to serve. Rollback should take seconds, not minutes.
 
-## Example Usage
-
-### Deploying a Model
-```
-User: /godmode:mlops Deploy the ticket classifier from EXP-047
-
-MLOps: Running readiness assessment...
-
-MODEL READINESS:
-Model: ticket-classifier v3.2 (EXP-047)
-Evaluation: F1=0.903, AUC=0.961 — PASS
-Bias check: PASS
-Latency: 23ms p99 (target: <50ms) — PASS
-Model size: 85MB (ONNX optimized) — PASS
-Input validation: defined — PASS
-Fallback strategy: return "uncategorized" + queue for human review — PASS
-
-Verdict: READY
-
-Deploying to Triton Inference Server...
-  Model uploaded to repository
-  Config generated (dynamic batching, max_batch=32)
-  Health check: PASSING
-  Traffic routing: CANARY (5%)
-
-Monitoring dashboard active.
-Champion (v3.1): 95% traffic | Challenger (v3.2): 5% traffic
-A/B test running — minimum 48 hours, need 10,000 samples per variant.
-
-Run /godmode:mlops --status to monitor.
-```
-
-### Checking for Drift
-```
-User: /godmode:mlops --drift
-
-MLOps: Running drift detection...
-
-DRIFT DETECTION:
-Model: ticket-classifier v3.1
-Window: last 7 days vs training data
-
-Data drift: MODERATE
-  - "ticket_length" feature: PSI=0.18 (shifted toward longer tickets)
-  - "category_distribution": chi-sq p=0.02 (new category emerging)
-
-Performance: STABLE
-  - F1 (7d rolling): 0.887 vs baseline 0.891 (delta: -0.4%)
-
-Recommendation: Monitor for 1 more week. If ticket_length drift continues,
-schedule retraining with recent data. No immediate action required.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -495,14 +324,6 @@ schedule retraining with recent data. No immediate action required.
 | (none) | Interactive model deployment workflow |
 | `--status` | Show production monitoring dashboard |
 | `--deploy <model>` | Deploy a specific model version |
-| `--promote` | Promote canary/challenger to champion |
-| `--rollback` | Rollback to previous champion |
-| `--drift` | Run drift detection analysis |
-| `--retrain` | Trigger retraining pipeline |
-| `--ab-test` | Configure or check A/B test |
-| `--optimize` | Run inference optimization benchmarks |
-| `--scale <replicas>` | Scale serving infrastructure |
-| `--versions` | Show model version registry |
 
 ## Auto-Detection
 
@@ -545,62 +366,7 @@ WHILE current_phase != "complete":
       current_phase = "shadow"
     ELSE:
       HALT "Model not ready: {failing_checks}"
-
-  IF current_phase == "shadow":
-    DEPLOY model in shadow mode (receives traffic, responses not returned)
-    COMPARE shadow predictions vs champion predictions
-    IF match_rate > 99% AND latency_ok:
-      current_phase = "canary"
-    ELSE:
-      INVESTIGATE discrepancies
-      CONTINUE
-
-  IF current_phase == "canary":
-    traffic_pct = 5
-    ROUTE {traffic_pct}% traffic to new model
-    MONITOR for {monitoring_window_hours} hours:
-      - Error rate vs champion
-      - Latency p50/p95/p99
-      - Primary metric (if labeled data available)
-
-    IF error_rate > champion_error_rate * 1.1 OR latency_p99 > SLA:
-      ROLLBACK to champion
-      current_phase = "rolled_back"
-    ELSE:
-      RAMP traffic: 5% -> 25% -> 50% -> 100%
-      AT each ramp step: monitor for 4 hours before next ramp
-
-    IF traffic_pct == 100 AND stable_for(24h):
-      current_phase = "promote"
-
-  IF current_phase == "promote":
-    PROMOTE new model to champion
-    ARCHIVE old champion (keep for rollback)
-    current_phase = "complete"
-
-  IF current_phase == "rolled_back":
-    REPORT "Deployment failed. Reason: {failure_reason}"
-    BREAK
-
-FINAL: Report deployment outcome and monitoring dashboard link
 ```
-
-## Multi-Agent Dispatch
-
-```
-WHEN deploying a model AND setting up monitoring:
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (serving-setup):
-    - Configure serving infrastructure (Triton/TF-Serving/SageMaker)
-    - Optimize inference (quantization, batching)
-    - Output: serving configs + Dockerfile
-
-  Agent 2 (monitoring-setup):
-    - Configure drift detection pipeline
-    - Set up alerting thresholds
-    - Output: monitoring configs + dashboards
 
 ## HARD RULES
 
@@ -620,14 +386,6 @@ DISPATCH parallel agents in worktrees:
 5. EVERY model in production MUST have drift monitoring with alerting.
    Check feature drift (PSI) and performance degradation continuously.
 
-6. NEVER serve a model without a fallback strategy.
-   When the model fails: simpler model, rules-based fallback, or graceful degradation.
-
-7. Model version and serving code version MUST be tracked independently.
-   A model update and a serving code update are separate deployments.
-
-8. EVERY A/B test MUST run for minimum sample size before making decisions.
-   Peeking at results early inflates false positive rate.
 ```
 
 ## Output Format
@@ -672,35 +430,6 @@ The MLOps skill is complete when ALL of the following are true:
 7. A/B test (if applicable) has sufficient sample size before making decisions
 8. All deployment artifacts are versioned and reproducible
 
-## Error Recovery
-
-```
-IF model latency exceeds SLA during canary:
-  1. Halt canary rollout immediately (do not proceed to higher traffic)
-  2. Profile the model serving pipeline to identify the bottleneck
-  3. Try: reduce batch size, enable model quantization, optimize preprocessing
-  4. If latency cannot be reduced, roll back to previous model version
-
-IF drift detection fires:
-  1. Check if the drift is in input features or prediction distribution
-  2. Compare recent data distribution with training data distribution
-  3. If input drift: investigate upstream data pipeline changes
-  4. If prediction drift: trigger retraining pipeline with recent data
-  5. Do NOT auto-promote retrained model — validate first
-
-IF canary shows degraded metrics vs baseline:
-  1. Compare canary error rate to baseline error rate with statistical test
-  2. If statistically significant degradation: roll back immediately
-  3. Investigate: data drift, feature pipeline changes, or model regression
-  4. Retrain or fix the issue before attempting another deployment
-
-IF model serving crashes under load:
-  1. Check memory usage — models may OOM under concurrent requests
-  2. Verify autoscaling is configured and responding to load
-  3. Add request queuing or rate limiting to prevent cascading failure
-  4. Fall back to the fallback strategy (simpler model or rules-based system)
-```
-
 ## MLOps Audit
 
 Comprehensive audit of model serving, experimentation, and monitoring infrastructure:
@@ -721,31 +450,6 @@ MODEL SERVING AUDIT:
 │  Health check endpoint operational  │ PASS|FAIL│ <endpoint URL>  │
 │  Graceful degradation / fallback    │ PASS|FAIL│ <fallback model>│
 │  Autoscaling configured and tested  │ PASS|FAIL│ <min/max/metric>│
-│  Load tested at 2x peak traffic     │ PASS|FAIL│ <test results>  │
-│  Cold start latency acceptable      │ PASS|FAIL│ <latency ms>    │
-│  Model warm-up on startup           │ PASS|FAIL│ <warm-up config>│
-│  Request batching optimized         │ PASS|FAIL│ <batch config>  │
-│  Model version pinned per endpoint  │ PASS|FAIL│ <versioning>    │
-│  Rollback tested and < 5 min        │ PASS|FAIL│ <rollback time> │
-│  Resource limits set (CPU/GPU/mem)  │ PASS|FAIL│ <limits>        │
-│  Request/response logging enabled   │ PASS|FAIL│ <logging config>│
-└──────────────────────────────────────────────────────────────────┘
-
-A/B TESTING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Traffic splitting is deterministic │ PASS|FAIL│ <hash method>   │
-│  Assignment is sticky per user      │ PASS|FAIL│ <persistence>   │
-│  Minimum sample size calculated     │ PASS|FAIL│ <N per variant> │
-│  Guardrail metrics defined          │ PASS|FAIL│ <metric list>   │
-│  Early stopping criteria set        │ PASS|FAIL│ <criteria>      │
-│  No peeking before sample size met  │ PASS|FAIL│ <policy>        │
-│  Statistical test pre-registered    │ PASS|FAIL│ <test type>     │
-
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
-## Keep/Discard Discipline
 ```
 After EACH deployment phase (shadow, canary, ramp):
   1. MEASURE: Compare error rate and latency against champion baseline.
@@ -769,4 +473,19 @@ STOP when ANY of these are true:
 DO NOT STOP just because:
   - A/B test is still running (wait for minimum sample size)
   - Retraining pipeline is not yet automated (manual retraining is acceptable initially)
+```
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Model training fails midway | Check GPU memory (OOM). Verify data pipeline integrity. Resume from last checkpoint if available. Reduce batch size. |
+| Model performance degrades in production | Check for data drift using statistical tests. Compare feature distributions. Trigger retraining if drift exceeds threshold. |
+| Feature store returns stale features | Verify feature freshness SLAs. Check pipeline scheduling. Add monitoring for feature age. |
+| A/B test shows no significant difference | Verify sample size was sufficient. Check for implementation bugs. Document null result. Do not extend test indefinitely. |
+
+## Keep/Discard Discipline
+```
+After EACH model or pipeline change:
+  KEEP if: evaluation metrics improve AND no regression on guardrail metrics AND pipeline runs end-to-end
+  DISCARD if: metrics regress OR pipeline fails OR data quality checks fail
+  On discard: revert model artifact and pipeline config. Log reason in experiment tracker.
 ```

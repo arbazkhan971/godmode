@@ -26,11 +26,7 @@ find . -name "*.ts" -o -name "*.js" -o -name "*.py" | xargs wc -l | sort -rn | h
 # Find the target code
 grep -rn "<pattern>" --include="*.ts" --include="*.js"
 
-# Check test coverage for target code
-npx jest --coverage --collectCoverageFrom="<target-path>" 2>&1 | tail -20
-
-# Check how many files import/depend on target
-grep -rl "<target-module>" --include="*.ts" --include="*.js" | wc -l
+# ... (condensed)
 ```
 
 ```
@@ -75,39 +71,6 @@ INLINE PATTERNS:
 ├── Inline Variable     — Replace variable with expression (unnecessary indirection)
 └── Inline Class        — Merge class that does too little
 
-MOVE PATTERNS:
-├── Move Function       — Relocate to more appropriate module
-├── Move Field          — Relocate data to better owner
-├── Move Module         — Reorganize file/directory structure
-└── Move to Parameter   — Replace dependency with injection
-
-RENAME PATTERNS:
-├── Rename Variable     — Improve clarity
-├── Rename Function     — Better describe behavior
-├── Rename File         — Match naming conventions
-└── Rename Module       — Restructure namespace
-
-SIMPLIFY PATTERNS:
-├── Replace Conditional with Polymorphism
-├── Replace Nested Conditional with Guard Clauses
-├── Replace Loop with Pipeline (map/filter/reduce)
-├── Replace Temp with Query
-├── Replace Magic Number with Named Constant
-└── Consolidate Duplicate Conditional Fragments
-
-COMPOSITION PATTERNS:
-├── Compose Method      — Break long method into steps
-├── Replace Inheritance with Composition
-├── Introduce Parameter Object — Group related params
-├── Replace Constructor with Factory
-└── Introduce Null Object — Eliminate null checks
-
-ARCHITECTURE PATTERNS:
-├── Split Monolith Module — Break god-module into focused modules
-├── Introduce Repository Pattern — Separate data access
-├── Introduce Service Layer — Separate business logic
-├── Extract Middleware — Separate cross-cutting concerns
-└── Introduce Facade — Simplify complex subsystem interface
 ```
 
 ### Step 3: Impact Analysis
@@ -120,9 +83,7 @@ grep -rl "<symbol-being-changed>" --include="*.ts" --include="*.js"
 # Map the dependency graph
 # For each affected file, check what ELSE depends on it
 
-# Check for dynamic references (string-based imports, reflection)
-grep -rn "require.*<module>" --include="*.ts" --include="*.js"
-grep -rn "import.*<module>" --include="*.ts" --include="*.js"
+# ... (condensed)
 ```
 
 ```
@@ -158,7 +119,7 @@ npm test 2>&1 | tail -10
 # Run tests specific to the target
 npx jest --testPathPattern="<target>" 2>&1
 
-# If coverage is low, write characterization tests first
+# ... (condensed)
 ```
 
 ```
@@ -233,14 +194,6 @@ Phase 2: MIGRATE dependents one at a time
 
 Phase 3: REMOVE old code paths
   - Delete extracted methods from UserController
-  - Remove unused imports
-  - Final cleanup commit
-
-TIMELINE:
-Phase 1: 1 commit  (foundation)
-Phase 2: 3 commits (one per dependent)
-Phase 3: 1 commit  (cleanup)
-Total:   5 commits, fully bisectable
 ```
 
 ### Step 7: Post-Refactoring Verification
@@ -253,10 +206,7 @@ npm test
 # Check that no functionality changed
 # Compare test count: should be same or higher
 # Compare coverage: should be same or higher
-
-# Verify no dead code was left behind
-npx ts-prune 2>&1 | head -20  # TypeScript
-# or equivalent for the project's language
+# ... (condensed)
 ```
 
 ```
@@ -287,47 +237,6 @@ POST-REFACTORING REPORT:
 5. **Strangler over big bang.** For large refactors, migrate incrementally. Never rewrite a module in one commit.
 6. **Revert fast.** If a step breaks tests and the fix isn't obvious in 5 minutes, revert. Think more, then try again.
 
-## Example Usage
-
-### Extracting a service from a controller
-```
-User: /godmode:refactor Extract business logic from UserController into a service
-
-Refactor: Analyzing UserController...
-
-ASSESSMENT:
-- UserController: 340 lines, cyclomatic complexity 24
-- Mixed concerns: HTTP handling + business logic + validation
-- Test coverage: 78% (missing error paths)
-- 3 files depend on UserController
-
-IMPACT: 4 files affected, 2 new files
-PATTERN: Extract Service
-
-SAFETY NET: 147 tests passing, but missing error path coverage.
-I'll write 2 characterization tests first, then proceed.
-
-[Writes tests, commits]
-[Executes 5-step extraction]
-[Reports: 152 tests passing, 82% coverage, no behavior change]
-```
-
-### Renaming across codebase
-```
-User: /godmode:refactor Rename "getUser" to "findUserById" everywhere
-
-Refactor: Scanning for all references...
-
-IMPACT: 14 files reference "getUser"
-- 3 function definitions
-- 11 call sites
-- 0 dynamic/string references
-
-Executing rename...
-All 14 files updated. 147 tests passing.
-Commit: "refactor: rename getUser to findUserById (14 files)"
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -335,12 +244,6 @@ Commit: "refactor: rename getUser to findUserById (14 files)"
 | (none) | Interactive refactoring with full analysis |
 | `--extract <type>` | Extract function/class/module/interface |
 | `--inline <target>` | Inline function/variable/class |
-| `--move <target> <dest>` | Move code to a new location |
-| `--rename <old> <new>` | Rename symbol across codebase |
-| `--analyze-only` | Impact analysis without making changes |
-| `--dry-run` | Show planned changes without applying them |
-| `--no-verify` | Skip pre-refactoring test verification (dangerous) |
-| `--strangler` | Use strangler pattern for incremental migration |
 
 ## Auto-Detection
 
@@ -375,19 +278,6 @@ WHILE refactor_targets is not empty AND current_iteration < max_iterations:
     9. current_iteration += 1
 
 POST-LOOP: Run full test suite + coverage comparison (must not decrease)
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENT DISPATCH (3 worktrees):
-  Agent 1 — "refactor-core": core modules being refactored (leaf dependencies first)
-  Agent 2 — "refactor-tests": update/add tests for modules being refactored
-  Agent 3 — "refactor-callers": update call sites and imports after renames/moves
-
-MERGE ORDER: tests → core → callers
-CONFLICT ZONES: import paths, function signatures (agree on new signatures before dispatch)
-PRE-CONDITION: All agents must share the target function/module signatures before starting
 ```
 
 ## HARD RULES
@@ -469,25 +359,7 @@ IF coverage decreases after refactoring:
 IF dead code is detected after refactoring:
   1. Verify zero references with grep AND type checker
   2. Check for dynamic references (reflection, string-based imports)
-  3. Remove confirmed dead code in a separate commit
-  4. Run tests after removal to confirm nothing depended on it
-
-IF refactoring scope is too large (> 30 dependents):
-  1. Switch to strangler pattern (new alongside old)
-  2. Migrate dependents one at a time in separate commits
-  3. Remove old code only after all dependents are migrated
-  4. Each migration commit must pass all tests independently
 ```
-
-## Anti-Patterns
-
-- **Do NOT refactor without tests.** Refactoring untested code is rewriting while hoping nothing breaks. Write tests first.
-- **Do NOT combine refactoring with feature work.** Structure changes and behavior changes in one commit make failures impossible to diagnose.
-- **Do NOT do "big bang" refactors.** A 50-file commit is un-reviewable and un-revertable. Small steps.
-- **Do NOT rename for style preference alone.** Rename only when the current name is misleading.
-- **Do NOT refactor without impact analysis.** 2 minutes of grep prevents 30 broken files.
-- **Do NOT ignore failing tests.** If tests fail during refactoring, your transformation changed behavior. Revert.
-
 
 ## Keep/Discard Discipline
 ```
@@ -535,42 +407,6 @@ WHILE complexity_targets is not empty AND current_iteration < max_iterations:
     # Measure BEFORE
     cyclomatic_before = measure_cyclomatic(target)
     cognitive_before = measure_cognitive(target)
-    loc_before = count_lines(target)
-
-    # Plan and apply ONE refactoring transformation
-    transformation = select_best_transformation(target)
-    apply_transformation(target, transformation)
-
-    # Measure AFTER
-    cyclomatic_after = measure_cyclomatic(target)
-    cognitive_after = measure_cognitive(target)
-    loc_after = count_lines(target)
-    tests_pass = run_tests()
-
-    # KEEP/DISCARD decision
-    IF NOT tests_pass:
-        REVERT transformation
-        decision = "DISCARD — tests failed"
-    ELSE IF cyclomatic_after >= cyclomatic_before AND cognitive_after >= cognitive_before:
-        REVERT transformation
-        decision = "DISCARD — no complexity reduction"
-    ELSE:
-        COMMIT: "refactor: {transformation} in {target} (cyclomatic {before}→{after})"
-        decision = "KEEP — complexity reduced"
-
-    reductions.append({
-        target: target,
-        transformation: transformation,
-        cyclomatic: {before: cyclomatic_before, after: cyclomatic_after},
-        cognitive: {before: cognitive_before, after: cognitive_after},
-        loc: {before: loc_before, after: loc_after},
-        decision: decision
-    })
-
-    REPORT "Iteration {current_iteration}: {target} — {transformation} — {decision}"
-
-total_complexity_after = measure_total_complexity()
-REPORT "Total complexity: {total_complexity_before} → {total_complexity_after} ({reduction_pct}% reduction)"
 ```
 
 ### Complexity Metrics
@@ -591,39 +427,6 @@ COMPLEXITY MEASUREMENT:
 │  the control flow)    │             │ (Python)               │
 ├───────────────────────┼─────────────┼────────────────────────┤
 │  Lines of code (LOC)  │ ≤ 50 per   │ wc -l (raw)            │
-│  per function         │ function    │ cloc (logical)         │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Nesting depth        │ ≤ 3 levels  │ eslint max-depth rule  │
-│                       │             │ manual review          │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Parameter count      │ ≤ 4 per     │ eslint max-params rule │
-│                       │ function    │ pylint max-args        │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Halstead difficulty  │ context-    │ escomplex (JS)         │
-│  (operand/operator    │ dependent   │ radon hal (Python)     │
-│  complexity)          │             │                        │
-├───────────────────────┼─────────────┼────────────────────────┤
-│  Maintainability index│ ≥ 65        │ radon mi (Python)      │
-│  (composite: Halstead │             │ CodeMetrics (VS ext)   │
-│  + cyclomatic + LOC)  │             │                        │
-└───────────────────────┴─────────────┴────────────────────────┘
-
-MEASUREMENT COMMANDS:
-  # TypeScript/JavaScript
-  npx eslint --rule '{"complexity": ["error", 10]}' src/
-  npx eslint --plugin sonarjs --rule '{"sonarjs/cognitive-complexity": ["error", 15]}' src/
-
-  # Python
-  radon cc src/ -a -nc   # cyclomatic complexity, average, no colors
-  radon mi src/ -nc      # maintainability index
-  python -m cognitive_complexity src/module.py
-
-  # Go
-  gocyclo -over 10 ./...
-  gocognit -over 15 ./...
-
-  # Java
-  pmd check -d src/ -R rulesets/java/design.xml -f text
 ```
 
 ### Keep/Discard Decision Matrix
@@ -644,23 +447,6 @@ KEEP/DISCARD CRITERIA:
 │  Both metrics unchanged or increased    │ DISCARD            │
 ├─────────────────────────────────────────┼────────────────────┤
 │  LOC increased > 30% without complexity │ DISCARD            │
-│  reduction (bloating, not simplifying)  │                    │
-├─────────────────────────────────────────┼────────────────────┤
-│  Nesting depth reduced by 2+ levels     │ KEEP (even if LOC  │
-│                                         │ increases slightly)│
-├─────────────────────────────────────────┼────────────────────┤
-│  Coverage decreased after transformation│ DISCARD until      │
-│                                         │ coverage restored  │
-└─────────────────────────────────────────┴────────────────────┘
-
-TRANSFORMATION → COMPLEXITY IMPACT MAP:
-  Extract Function:      Cyclomatic ↓ (splits decisions), Cognitive ↓ (named abstraction)
-  Replace Conditional w/ Polymorphism: Cyclomatic ↓↓, Cognitive ↓↓
-  Guard Clauses:         Cognitive ↓↓ (reduces nesting), Cyclomatic = (same branches)
-  Replace Loop w/ Pipeline: Cognitive ↓, Cyclomatic = (same paths)
-  Extract Variable:      Cognitive ↓ (named intermediate), Cyclomatic =
-  Introduce Null Object: Cyclomatic ↓ (removes null checks), Cognitive ↓
-  Compose Method:        Cyclomatic = (splits only), Cognitive ↓↓
 ```
 
 ### Complexity Reduction Report
@@ -681,17 +467,5 @@ COMPLEXITY REDUCTION REPORT:
 │  Transformations attempted: <N>                               │
 │  Transformations kept: <N>                                    │
 │  Transformations discarded: <N>                               │
-│  Total cyclomatic reduction: <before> → <after> (<pct>%)      │
-│  Total cognitive reduction: <before> → <after> (<pct>%)       │
-│  Functions above threshold (before): <N>                      │
-│  Functions above threshold (after): <N>                       │
-│  Tests: all passing | <N> failures                            │
-│  Coverage: <before>% → <after>%                               │
-└──────────────────────────────────────────────────────────────┘
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run refactoring tasks sequentially: tests first, then core modules, then caller updates. Maintain merge order: tests -> core -> callers.
-- Use branch isolation per task: `git checkout -b godmode-refactor-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

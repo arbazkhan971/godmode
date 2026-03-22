@@ -48,34 +48,6 @@ IF ormconfig.ts OR data-source.ts with TypeORM imports:
 IF .sequelizerc OR config/config.json with Sequelize:
   Tool = Sequelize
   Migration dir = migrations/
-
-IF manage.py AND <app>/models.py:
-  Tool = Django
-  Migration dir = <app>/migrations/
-
-IF Gemfile with 'rails' AND db/migrate/:
-  Tool = Rails
-  Migration dir = db/migrate/
-
-IF migrate.go OR golang-migrate config:
-  Tool = Go-migrate
-  Migration dir = migrations/ OR db/migrations/
-
-IF alembic/ OR alembic.ini:
-  Tool = Alembic
-  Migration dir = alembic/versions/
-
-IF flyway.conf OR sql/V*__*.sql:
-  Tool = Flyway
-  Migration dir = sql/
-
-IF knexfile.ts OR knexfile.js:
-  Tool = Knex
-  Migration dir = migrations/
-
-ELSE:
-  Tool = Raw SQL
-  Migration dir = <ask user or scan for .sql files>
 ```
 
 ### Step 2: Analyze Schema Change Request
@@ -101,14 +73,7 @@ npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamode
 # Django
 python manage.py makemigrations --dry-run --verbosity 2
 
-# Rails
-bin/rails db:migrate:status
-
-# TypeORM
-npx typeorm schema:log
-
-# Alembic
-alembic check
+# ... (condensed)
 ```
 
 ### Step 3: Backward Compatibility Assessment
@@ -143,13 +108,6 @@ CAUTION (review carefully):
 DANGEROUS (requires explicit plan):
   - DROP COLUMN (data loss — is anything still reading it?)
   - DROP TABLE (data loss — is anything still referencing it?)
-  - CHANGE COLUMN TYPE (if data truncation possible)
-  - RENAME TABLE (breaks all queries referencing old name)
-
-BREAKING (must use expand-contract pattern):
-  - Any change to a column that is actively read/written by running code
-  - Any removal of a column still referenced in application queries
-  - Any type change that could fail for existing data
 ```
 
 #### Expand-Contract Pattern (for DANGEROUS/BREAKING changes)
@@ -201,15 +159,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ('users', '0012_previous_migration'),
-    ]
-
-    operations = [
-        migrations.AddField(
-            model_name='user',
-            name='role',
-            field=models.CharField(max_length=50, default='user'),
-        ),
-    ]
+# ... (condensed)
 ```
 
 #### Rails Example
@@ -229,7 +179,7 @@ CREATE INDEX idx_users_role ON users (role);
 
 -- DOWN
 DROP INDEX IF EXISTS idx_users_role;
-ALTER TABLE users DROP COLUMN IF EXISTS role;
+# ... (condensed)
 ```
 
 #### Knex Example
@@ -240,13 +190,7 @@ exports.up = function(knex) {
     table.index('role', 'idx_users_role');
   });
 };
-
-exports.down = function(knex) {
-  return knex.schema.alterTable('users', (table) => {
-    table.dropIndex('role', 'idx_users_role');
-    table.dropColumn('role');
-  });
-};
+# ... (condensed)
 ```
 
 #### Go-migrate Example
@@ -266,15 +210,7 @@ export class AddUserRole1700000000000 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(
             `ALTER TABLE "users" ADD "role" varchar(50) NOT NULL DEFAULT 'user'`
-        );
-    }
-
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(
-            `ALTER TABLE "users" DROP COLUMN "role"`
-        );
-    }
-}
+# ... (condensed)
 ```
 
 #### Alembic Example
@@ -285,17 +221,7 @@ Revision ID: a1b2c3d4e5f6
 Revises: 9z8y7x6w5v4u
 Create Date: 2025-01-15 10:30:00.000000
 """
-from alembic import op
-import sqlalchemy as sa
-
-revision = 'a1b2c3d4e5f6'
-down_revision = '9z8y7x6w5v4u'
-
-def upgrade() -> None:
-    op.add_column('users', sa.Column('role', sa.String(50), nullable=False, server_default='user'))
-
-def downgrade() -> None:
-    op.drop_column('users', 'role')
+# ... (condensed)
 ```
 
 ### Step 5: Validate Migration Before Applying
@@ -310,20 +236,7 @@ npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamode
 
 # Django
 python manage.py makemigrations --check
-python manage.py migrate --plan
-
-# Rails
-bin/rails db:migrate:status
-
-# Alembic
-alembic check
-alembic heads  # Ensure single head (no branch conflicts)
-
-# Flyway
-flyway validate
-
-# Generic SQL
-# Parse SQL for syntax errors using database-specific tool
+# ... (condensed)
 ```
 
 #### 5b: Rollback Test (Critical)
@@ -341,23 +254,7 @@ npx prisma migrate reset  # WARNING: destroys data, dev only
 
 # Django
 python manage.py migrate <app> <migration_name>
-python manage.py migrate <app> <previous_migration_name>  # rollback
-python manage.py migrate <app> <migration_name>           # re-apply
-
-# Rails
-bin/rails db:migrate
-bin/rails db:rollback STEP=1
-bin/rails db:migrate
-
-# Alembic
-alembic upgrade head
-alembic downgrade -1
-alembic upgrade head
-
-# Knex
-npx knex migrate:latest
-npx knex migrate:rollback
-npx knex migrate:latest
+# ... (condensed)
 ```
 
 #### 5c: Data Preservation Check
@@ -369,10 +266,7 @@ SELECT * FROM <table> LIMIT 5;
 
 -- After migration UP: verify data preserved
 SELECT COUNT(*) FROM <table>;  -- same count
-SELECT * FROM <table> LIMIT 5; -- data intact, new column has default
-
--- After migration DOWN: verify data restored
-SELECT COUNT(*) FROM <table>;  -- same count
+# ... (condensed)
 ```
 
 #### 5d: Lock Duration Estimation
@@ -384,8 +278,7 @@ SELECT reltuples::bigint AS row_estimate FROM pg_class WHERE relname = '<table>'
 
 -- MySQL: check table size
 SELECT table_rows, data_length, index_length
-FROM information_schema.tables
-WHERE table_name = '<table>';
+# ... (condensed)
 ```
 
 Lock duration guidelines:
@@ -458,100 +351,6 @@ Commit: `"migrate: <table>.<change> -- <risk level>"`
 9. **Name migrations descriptively.** `add_role_to_users` not `migration_042`. Future developers need to understand the change from the filename.
 10. **Handle seeds and fixtures.** When schema changes affect seed data or test fixtures, update them in the same migration.
 
-## Example Usage
-
-### Adding a column
-```
-User: /godmode:migrate Add a "role" column to the users table with default "member"
-
-Migrate: Detecting environment...
-
-MIGRATION ENVIRONMENT:
-Tool:           Prisma
-Database:       PostgreSQL
-Migration dir:  prisma/migrations/
-Current head:   20250101_add_user_avatar
-Pending:        0
-
-SCHEMA CHANGE REQUEST:
-Type:         ADD COLUMN
-Tables:       users
-Columns:      role (String, default: "member")
-
-RISK ASSESSMENT:
-Level:          SAFE
-Reversible:     YES
-Data loss risk: NONE
-Downtime:       ZERO
-Lock duration:  < 1 second (users table: 12,400 rows)
-
-Generating migration...
-- Updated prisma/schema.prisma: added `role String @default("member")`
-- Generated: prisma/migrations/20250115_add_user_role/migration.sql
-
-Validating...
-  Schema valid:     YES
-  Rollback tested:  YES (prisma migrate reset in dev)
-  Data preserved:   YES (12,400 rows retained, role = "member" for all)
-
-Apply now? [Y/n]
-```
-
-### Dangerous rename with expand-contract
-```
-User: /godmode:migrate Rename the "email" column to "email_address" in users
-
-Migrate: Detecting environment...
-
-RISK ASSESSMENT:
-Level:          BREAKING
-Reversible:     PARTIAL
-Data loss risk: NONE (but breaks all queries referencing "email")
-Downtime:       POSSIBLE if deployed without code coordination
-
-This is a BREAKING change. I recommend the expand-contract pattern:
-
-PHASE 1 — EXPAND (this migration):
-  1. Add column "email_address" (nullable)
-  2. Backfill: UPDATE users SET email_address = email
-  3. Add NOT NULL constraint after backfill
-  4. Add unique index on email_address
-
-Deploy code that writes to BOTH "email" and "email_address".
-
-PHASE 2 — CONTRACT (separate migration, after Phase 1 is stable):
-  1. Switch reads to "email_address"
-  2. Stop writing to "email"
-  3. Drop "email" column
-
-Generate Phase 1 migration? [Y/n]
-```
-
-### Rolling back a failed migration
-```
-User: /godmode:migrate --rollback The last migration broke the app
-
-Migrate: Checking migration history...
-
-Last applied: 20250115_add_payment_status
-Status:       APPLIED but application errors detected
-
-Rolling back...
-  bin/rails db:rollback STEP=1
-  Removed: add_payment_status migration changes
-  Schema restored to: 20250114_add_invoice_table
-
-Verification:
-  Schema matches pre-migration state: YES
-  Application starts: YES
-  Tests pass: YES
-
-Rollback successful. The migration file is still present at
-db/migrate/20250115_add_payment_status.rb for debugging.
-
-Investigate the failure with /godmode:debug, then fix and re-apply.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -559,18 +358,6 @@ Investigate the failure with /godmode:debug, then fix and re-apply.
 | (none) | Interactive migration workflow: detect, generate, validate |
 | `--generate` | Generate migration file without applying |
 | `--validate` | Validate pending migrations without applying |
-| `--apply` | Apply all pending migrations |
-| `--rollback` | Roll back the last applied migration |
-| `--rollback <N>` | Roll back the last N migrations |
-| `--status` | Show migration status (applied, pending, failed) |
-| `--diff` | Show schema diff between code and database |
-| `--dry-run` | Show what migration would do without generating files |
-| `--sql` | Output raw SQL regardless of ORM (useful for review) |
-| `--seed` | Run seed files after migration |
-| `--force` | Skip confirmation prompts (use with caution) |
-| `--expand-contract` | Force expand-contract pattern for the change |
-| `--check-compat` | Run backward compatibility check only |
-| `--lock-estimate` | Estimate lock duration for pending migrations |
 
 ## Auto-Detection
 
@@ -590,13 +377,6 @@ ON startup:
 
   IF alembic/ exists:
     heads = run("alembic heads")
-    IF heads.count > 1:
-      WARN "Alembic has multiple heads (branch conflict). Run /godmode:migrate --status."
-
-  IF db/migrate/ exists AND Gemfile has 'rails':
-    pending = run("bin/rails db:migrate:status")
-    IF pending.has_down:
-      WARN "Rails has pending migrations. Run /godmode:migrate --apply."
 ```
 
 ## Iterative Migration Protocol
@@ -617,64 +397,6 @@ WHILE current_migration < total_migrations:
   3. ESTIMATE lock duration for affected tables
   4. IF risk >= DANGEROUS:
        REQUIRE explicit user confirmation
-       IF expand-contract needed: split into phases
-
-  5. APPLY migration UP
-  6. VERIFY:
-     - Schema matches expected state
-     - Row counts preserved
-     - Application can start
-
-  IF verification_fails:
-    ROLLBACK migration DOWN
-    failed.append(migration)
-    HALT "Migration {migration.name} failed verification. Rolled back."
-    BREAK
-  ELSE:
-    applied.append(migration)
-    current_migration += 1
-
-  REPORT "{current_migration}/{total_migrations} migrations applied"
-
-FINAL: Report all applied migrations and any failures
-```
-
-## Multi-Agent Dispatch
-
-```
-WHEN performing a large-scale schema migration (multiple tables, expand-contract):
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (migration-generator):
-    - Generate migration files for all schema changes
-    - Ensure proper ordering (tables before foreign keys)
-    - Include UP and DOWN for every migration
-    - Output: migration files in tool-specific format
-
-  Agent 2 (validation):
-    - Test each migration: UP -> verify -> DOWN -> verify -> UP
-    - Check data preservation (row counts, sample data)
-    - Estimate lock duration for each DDL operation
-    - Output: validation report per migration
-
-  Agent 3 (application-code):
-    - Update model/entity files to match new schema
-    - Update queries and repositories for schema changes
-    - Handle dual-read/dual-write for expand-contract phases
-    - Output: updated application code
-
-  Agent 4 (seed-and-fixture):
-    - Update seed data for new schema
-    - Update test fixtures for new columns/tables
-    - Verify test suite passes with migrated schema
-    - Output: updated seeds + fixtures + test results
-
-MERGE:
-  - Verify migration files match application code changes
-  - Verify seeds and fixtures work with migrated schema
-  - Verify all validation checks passed
-  - Run full test suite
 ```
 
 ## HARD RULES
@@ -695,14 +417,6 @@ MERGE:
 5. ALWAYS check lock duration before applying DDL on tables > 100K rows.
    Use CONCURRENTLY or online DDL tools for large tables.
 
-6. NEVER add a NOT NULL column without a DEFAULT to a table with existing rows.
-   This will fail on every database engine.
-
-7. NEVER rename or drop a column without the expand-contract pattern
-   if the application is actively reading/writing that column.
-
-8. ALWAYS preserve existing data. A migration that loses data without
-   explicit user confirmation is a production incident.
 ```
 
 ## TSV Logging
@@ -733,21 +447,6 @@ All of these must be true before marking the task complete:
 | Migration fails on existing data | Check for NOT NULL without DEFAULT, type cast errors, or constraint violations. Add DEFAULT or backfill in a separate data migration. |
 | DOWN migration fails | Fix the DOWN before proceeding. A migration without working rollback is not shippable. Test DOWN on a copy of the UP-migrated database. |
 | ORM not detected | Ask user which ORM/migration tool. Never guess. Check `package.json`, `requirements.txt`, `Gemfile`, `go.mod` for ORM dependencies. |
-| Lock timeout on large table | Use online DDL: `pt-online-schema-change` (MySQL), `CREATE INDEX CONCURRENTLY` (Postgres), or expand-contract pattern. |
-| Conflicting migration versions | Run `prisma migrate status` / `alembic heads` / `rails db:migrate:status` to detect. Merge migration files or create a merge migration. |
-| Tests fail after migration | Check fixture files for missing new columns. Update factories/fixtures. Run `prisma generate` or equivalent to regenerate client. |
-
-## Anti-Patterns
-
-- **Do NOT generate migrations without detecting the tool first.** Prisma migration in a Django project is worse than nothing.
-- **Do NOT apply migrations without rollback testing.** No escape hatch in production.
-- **Do NOT combine unrelated changes.** Independent rollback requires independent files.
-- **Do NOT skip backward compatibility checks.** Even ADD COLUMN can break on MySQL table rewrites.
-- **Do NOT rename or drop columns without expand-contract.** Direct renames break running instances.
-- **Do NOT ignore lock duration on large tables.** 10-minute table lock = 10-minute outage.
-- **Do NOT put business logic in migrations.** Use separate data migrations for complex transformations.
-- **Do NOT forget to update seeds and fixtures.** NOT NULL columns break fixtures missing the new column.
-- **Do NOT assume the database is empty.** Always account for existing data.
 
 ## Keep/Discard Discipline
 
@@ -766,8 +465,6 @@ Stop the migrate skill when:
 4. Seed files and test fixtures updated for new columns/tables.
 5. Lock duration estimated and documented for tables > 1M rows.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run migration tasks sequentially: migration generation, then validation, then application code updates.
-- Use branch isolation per task: `git checkout -b godmode-migrate-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Output Format
+Print: `Migrate: {table}.{change} — risk: {SAFE|CAUTION|DANGEROUS|BREAKING}. Rollback: {tested|untested}. Data preserved: {yes|no}. Status: {DONE|PARTIAL}.`

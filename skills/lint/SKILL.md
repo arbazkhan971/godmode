@@ -27,13 +27,7 @@ ls -la .eslintrc* .prettierrc* biome.json .editorconfig .stylelintrc* \
        .rubocop.yml .clang-format .clang-tidy 2>/dev/null
 
 # Check for pre-commit hooks
-ls -la .husky/ .pre-commit-config.yaml .git/hooks/pre-commit 2>/dev/null
-
-# Check package.json for lint scripts
-grep -A5 '"lint"' package.json 2>/dev/null
-
-# Count current violations
-npx eslint . --format compact 2>/dev/null | wc -l
+# ... (condensed)
 ```
 
 ```
@@ -72,23 +66,6 @@ TOOL SELECTION BY LANGUAGE:
 │  CSS/SCSS     │ Stylelint         │ Prettier          │ —                │
 │  HTML         │ HTMLHint          │ Prettier          │ —                │
 │  Markdown     │ markdownlint      │ Prettier          │ —                │
-│  SQL          │ sqlfluff          │ sqlfluff          │ —                │
-│  Shell        │ shellcheck        │ shfmt             │ —                │
-└──────────────┴──────────────────┴──────────────────┴─────────────────┘
-
-DECISION: ESLint + Prettier vs Biome
-┌──────────────────┬────────────────────────────┬─────────────────────────┐
-│  Criterion        │ ESLint + Prettier           │ Biome                    │
-├──────────────────┼────────────────────────────┼─────────────────────────┤
-│  Performance      │ Moderate (JS-based)         │ Fast (Rust-based, 100x)  │
-│  Plugin ecosystem │ Massive (1000+ plugins)     │ Growing, limited          │
-│  Custom rules     │ Full AST-based rule API     │ Not yet supported         │
-│  Framework support│ React, Vue, Svelte, etc.    │ React, Vue (expanding)   │
-│  Configuration    │ Complex (2 tools, conflicts)│ Single config file        │
-│  Adoption         │ Industry standard           │ Growing rapidly           │
-├──────────────────┼────────────────────────────┼─────────────────────────┤
-│  Choose if...     │ Need plugins, custom rules  │ Want speed, simplicity   │
-└──────────────────┴────────────────────────────┴─────────────────────────┘
 ```
 
 ### Step 3: Configuration
@@ -102,62 +79,7 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import importPlugin from 'eslint-plugin-import';
-
-export default tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
-  prettier,
-  {
-    languageOptions: {
-      parserOptions: {
-        project: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    plugins: {
-      react,
-      'react-hooks': reactHooks,
-      import: importPlugin,
-    },
-    rules: {
-      // TypeScript-specific
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-      }],
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/explicit-function-return-type': ['warn', {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true,
-      }],
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-
-      // Import ordering
-      'import/order': ['error', {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        alphabetize: { order: 'asc' },
-      }],
-      'import/no-duplicates': 'error',
-
-      // React
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-
-      // General
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'prefer-const': 'error',
-      'no-var': 'error',
-      eqeqeq: ['error', 'always'],
-    },
-  },
-  {
-    ignores: ['dist/', 'build/', 'node_modules/', '*.config.js'],
-  },
-);
+# ... (condensed)
 ```
 
 ```json
@@ -167,12 +89,7 @@ export default tseslint.config(
   "singleQuote": true,
   "trailingComma": "all",
   "printWidth": 100,
-  "tabWidth": 2,
-  "arrowParens": "always",
-  "endOfLine": "lf",
-  "bracketSpacing": true,
-  "jsxSingleQuote": false
-}
+# ... (condensed)
 ```
 
 ```
@@ -195,57 +112,7 @@ package-lock.json
   "organizeImports": {
     "enabled": true
   },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "complexity": {
-        "noExcessiveCognitiveComplexity": { "level": "error", "options": { "maxAllowedComplexity": 15 } }
-      },
-      "correctness": {
-        "noUnusedVariables": "error",
-        "noUnusedImports": "error",
-        "useExhaustiveDependencies": "warn"
-      },
-      "suspicious": {
-        "noExplicitAny": "error",
-        "noConsoleLog": "warn"
-      },
-      "style": {
-#### Ruff (Python)
-
-```toml
-# pyproject.toml
-[tool.ruff]
-target-version = "py312"
-line-length = 100
-
-[tool.ruff.lint]
-select = [
-    "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings
-    "F",    # pyflakes
-    "I",    # isort
-    "B",    # flake8-bugbear
-    "C4",   # flake8-comprehensions
-    "UP",   # pyupgrade
-    "ARG",  # flake8-unused-arguments
-    "SIM",  # flake8-simplify
-    "TCH",  # flake8-type-checking
-    "PTH",  # flake8-use-pathlib
-    "RUF",  # Ruff-specific rules
-]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-]
-
-[tool.ruff.lint.isort]
-known-first-party = ["myproject"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-docstring-code-format = true
+# ... (condensed)
 ```
 
 #### golangci-lint (Go)
@@ -257,44 +124,7 @@ run:
   go: "1.22"
 
 linters:
-  enable:
-    - errcheck        # unchecked errors
-    - govet           # suspicious constructs
-    - staticcheck     # advanced static analysis
-    - unused          # unused code
-    - gosimple        # simplification suggestions
-    - ineffassign     # useless assignments
-    - typecheck       # type checking
-    - gocritic        # opinionated linter
-    - gofumpt         # strict gofmt
-    - misspell        # spelling errors
-    - revive          # fast, configurable linter
-    - exhaustive      # exhaustive enum switches
-    - nilerr          # nil error returns
-    - errorlint       # error wrapping
-    - prealloc        # slice preallocation
-
-linters-settings:
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-  revive:
-    rules:
-      - name: exported
-        severity: warning
-      - name: unexported-return
-        severity: warning
-  govet:
-    enable-all: true
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - gocritic
-        - errcheck
+# ... (condensed)
 ```
 
 ### Step 4: Custom Rule Creation
@@ -308,35 +138,7 @@ module.exports = {
   meta: {
     type: 'problem',
     docs: {
-      description: 'Disallow direct process.env access — use config module instead',
-    },
-    messages: {
-      noDirectEnv: 'Direct process.env.{{name}} access is not allowed. Import from "@/config" instead.',
-    },
-    schema: [],
-  },
-  create(context) {
-    return {
-      MemberExpression(node) {
-        if (
-          node.object.type === 'MemberExpression' &&
-          node.object.object.name === 'process' &&
-          node.object.property.name === 'env'
-        ) {
-          // Allow in config files
-          const filename = context.getFilename();
-          if (filename.includes('/config/') || filename.includes('/config.')) return;
-
-          context.report({
-            node,
-            messageId: 'noDirectEnv',
-            data: { name: node.property.name || node.property.value },
-          });
-        }
-
-### Step 5: Auto-Fix Strategies
-Maximize automated fixes to reduce manual work:
-
+# ... (condensed)
 ```
 AUTO-FIX STRATEGY:
 ┌─────────────────────────────────────────────────────────────┐
@@ -372,14 +174,6 @@ npx prettier --write "**/*.{ts,tsx,js,jsx,json,css,md}"
 
 # Python
 ruff check --fix .
-ruff format .
-
-# Go
-golangci-lint run --fix
-goimports -w .
-
-# Biome (all-in-one)
-npx biome check --write .
 ```
 
 ```
@@ -428,15 +222,6 @@ npx husky init
       "prettier --write"
     ],
     "*.py": [
-      "ruff check --fix",
-      "ruff format"
-    ],
-    "*.go": [
-      "golangci-lint run --fix",
-      "goimports -w"
-    ]
-  }
-}
 ```
 
 ```bash
@@ -452,32 +237,7 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-json
-      - id: check-added-large-files
-        args: ['--maxkb=500']
-      - id: no-commit-to-branch
-        args: ['--branch', 'main']
-
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.0
-    hooks:
-      - id: ruff
-        args: ['--fix']
-      - id: ruff-format
-
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.10.0
-    hooks:
-      - id: eslint
-        files: \.[jt]sx?$
-        args: ['--fix', '--max-warnings=0']
-
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v1.60.0
-    hooks:
-      - id: golangci-lint
+# ... (condensed)
 ```
 
 ```bash
@@ -507,14 +267,6 @@ CODING STANDARDS:
 │  Naming: classes     │ PascalCase                   │ ESLint   │
 │  Naming: constants   │ UPPER_SNAKE_CASE             │ ESLint   │
 │  Naming: files       │ kebab-case.ts                │ ESLint   │
-│  Naming: types       │ PascalCase                   │ TSC      │
-│  Naming: interfaces  │ PascalCase (no I- prefix)    │ ESLint   │
-│  Error handling      │ Explicit, no silent catches  │ ESLint   │
-│  Any type            │ Forbidden                    │ ESLint   │
-│  Console.log         │ Warning (use logger)         │ ESLint   │
-│  Unused variables    │ Error (prefix _ to ignore)   │ ESLint   │
-│  Floating promises   │ Error (must await or void)   │ ESLint   │
-└──────────────────────┴──────────────────────────────┴──────────┘
 ```
 
 #### .editorconfig (Universal)
@@ -556,53 +308,6 @@ indent_style = tab
 3. **Zero warnings in CI.** Warnings are future errors. Set `--max-warnings=0` in CI to prevent warning accumulation.
 4. **Lint only staged files in pre-commit.** Running the linter on the entire codebase in a pre-commit hook makes commits painful. Use lint-staged.
 5. **Agree on rules as a team, then automate enforcement.** Style debates happen once during configuration. After that, the tools enforce the decision.
-6. **Migrate incrementally.** Adding 50 new rules to an existing codebase generates thousands of violations. Enable rules one at a time, auto-fix, commit.
-
-## Example Usage
-
-### Setting up ESLint + Prettier for a TypeScript project
-```
-User: /godmode:lint Set up linting for our TypeScript React project
-
-Lint: Scanning project...
-
-ASSESSMENT:
-  Language: TypeScript + React
-  Current linter: None
-  Current formatter: None
-  Pre-commit hooks: None
-  Files: 147 .ts/.tsx files
-
-SETUP:
-  Linter: ESLint 9 (flat config) + typescript-eslint strict
-  Formatter: Prettier
-  Hooks: Husky + lint-staged
-  Editor: VS Code settings with format-on-save
-
-INITIAL FIX:
-  Total violations found: 312
-  Auto-fixed: 287 (92%)
-  Manual review: 25 (8%)
-    - 12 @typescript-eslint/no-explicit-any
-    - 8 @typescript-eslint/no-floating-promises
-    - 5 no-console (intentional logging)
-
-Commits:
-  1. "lint: configure ESLint 9 + Prettier for TypeScript React"
-## HARD RULES
-1. NEVER debate formatting in code reviews — configure the formatter, automate it, and never discuss it again.
-2. NEVER enable all lint rules at once on an existing codebase — start with recommended, add rules incrementally.
-3. NEVER lint in CI without linting locally first — developers must get feedback in seconds, not minutes.
-4. NEVER use `eslint-disable` as a strategy — a file full of disable comments is worse than no linting.
-5. NEVER run the full linter in pre-commit hooks — lint only staged files. Full linting makes commits painful.
-6. NEVER skip the formatter — linting without formatting eliminates only half the style noise.
-7. NEVER keep warnings around — warnings are noise. Promote to error or remove the rule.
-8. ALWAYS configure linting with team agreement — rules imposed without consensus will be circumvented.
-9. ALWAYS set `--max-warnings=0` in CI — prevent warning accumulation over time.
-10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
-
-## Auto-Detection
-On activation, detect linting context automatically:
 ```
 AUTO-DETECT:
 1. Detect language(s):
@@ -660,6 +365,18 @@ WHILE current_rule_group < len(rule_groups):
 EXIT when all rule groups enabled and violations resolved
 ```
 
+## HARD RULES
+1. NEVER debate formatting in code reviews — configure the formatter, automate it, and never discuss it again.
+2. NEVER enable all lint rules at once on an existing codebase — start with recommended, add rules incrementally.
+3. NEVER lint in CI without linting locally first — developers must get feedback in seconds, not minutes.
+4. NEVER use `eslint-disable` as a strategy — a file full of disable comments is worse than no linting.
+5. NEVER run the full linter in pre-commit hooks — lint only staged files. Full linting makes commits painful.
+6. NEVER skip the formatter — linting without formatting eliminates only half the style noise.
+7. NEVER keep warnings around — warnings are noise. Promote to error or remove the rule.
+8. ALWAYS configure linting with team agreement — rules imposed without consensus will be circumvented.
+9. ALWAYS set `--max-warnings=0` in CI — prevent warning accumulation over time.
+10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
+
 ## Keep/Discard Discipline
 ```
 After EACH rule group is enabled and auto-fixed:
@@ -706,23 +423,6 @@ PREFER the simpler linting approach:
   - Fewer strict rules correctly enforced over many loose rules that produce warnings
 ```
 
-## Multi-Agent Dispatch
-For multi-language projects or large codebases:
-```
-DISPATCH parallel agents (one per language/tool):
-
-Agent 1 (worktree: lint-ts):
-  - TypeScript/JavaScript linting (ESLint or Biome)
-  - Scope: **/*.ts, **/*.tsx, **/*.js, **/*.jsx
-  - Output: Linter config + auto-fixed violations
-
-Agent 2 (worktree: lint-python):
-  - Python linting (Ruff)
-  - Scope: **/*.py
-  - Output: Ruff config + auto-fixed violations
-
-Agent 3 (worktree: lint-hooks):
-
 ## Flags & Options
 
 | Flag | Description |
@@ -730,19 +430,6 @@ Agent 3 (worktree: lint-hooks):
 | (none) | Full lint setup (linter + formatter + hooks + CI) |
 | `--tool <name>` | Use specific tool (eslint, biome, ruff, golangci-lint) |
 | `--fix` | Auto-fix all existing violations |
-| `--hooks` | Set up pre-commit hooks only |
-| `--ci` | Generate CI lint configuration only |
-| `--custom-rule <name>` | Create a custom lint rule |
-| `--migrate <from> <to>` | Migrate between lint tools |
-| `--audit` | Count violations without fixing |
-| `--strict` | Enable strictest rule set |
-| `--style-guide` | Generate style guide document |
-
-## Output Format
-Print on completion: `Lint: {tool} configured with {rule_count} rules. Violations: {before_count} → {after_count} ({auto_fixed} auto-fixed, {manual} manual). Pre-commit: {hooks_status}. Verdict: {verdict}.`
-
-## TSV Logging
-Log every lint adoption iteration to `.godmode/lint-results.tsv`:
 ```
 iteration	rule_group	violations_before	auto_fixed	manual_remaining	tests_pass	status
 1	import-ordering	89	89	0	yes	clean
@@ -769,5 +456,13 @@ Columns: iteration, rule_group, violations_before, auto_fixed, manual_remaining,
 - **Migration breaks existing CI**: Run the linter in warning mode first (`--max-warnings=999`), fix violations incrementally, then tighten to `--max-warnings=0`.
 - **Team disagrees on rules**: Use the recommended preset as the baseline. Only discuss additions or overrides. Document the decision in a team ADR. Automate enforcement so the debate only happens once.
 
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+
+## Output Format
+Print: `Lint: {violations_before} -> {violations_after} violations. Auto-fixed: {N}. Rules: {total}. Status: {DONE|PARTIAL}.`
+
+## TSV Logging
+Append to `.godmode/lint-results.tsv`:
+```
+timestamp	tool	violations_before	violations_after	auto_fixed	rules_added	status
+```
+One row per lint pass. Never overwrite previous rows.

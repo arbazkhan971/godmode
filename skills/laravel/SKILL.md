@@ -71,29 +71,7 @@ class Order extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'customer_id', 'status', 'total_cents', 'notes',
-    ];
-
-    protected $casts = [
-        'status' => OrderStatus::class,      // Enum casting
-        'total_cents' => 'integer',
-        'metadata' => 'array',               // JSON casting
-        'confirmed_at' => 'datetime',
-        'is_priority' => 'boolean',
-    ];
-
-    // Relationships
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class);
-    }
-
-    public function items(): HasMany
-    # ... (additional patterns follow same structure)
-    case Shipped = 'shipped';
-    case Delivered = 'delivered';
-    case Cancelled = 'cancelled';
-}
+# ... (condensed)
 ```
 
 ```
@@ -124,22 +102,7 @@ class OrderController extends Controller
     public function index(Request $request): JsonResponse
     {
         $orders = Order::query()
-            ->with(['customer:id,name,email', 'items:id,order_id,product_id,quantity'])
-            ->withCount('items')
-            ->active()
-            ->recent()
-            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
-            ->when($request->customer_id, fn ($q, $id) => $q->forCustomer($id))
-            ->paginate($request->integer('per_page', 25));
-
-        return OrderResource::collection($orders)->response();
-    }
-}
-
-// API Resource (never expose models directly)
-    # ...
-    }
-}
+# ... (condensed)
 ```
 
 Rules:
@@ -160,29 +123,7 @@ namespace App\Contracts;
 interface PaymentGateway
 {
     public function charge(int $amountCents, string $currency, array $metadata = []): PaymentResult;
-    public function refund(string $transactionId, int $amountCents): RefundResult;
-}
-
-// Implementation
-namespace App\Services;
-
-class StripePaymentGateway implements PaymentGateway
-{
-    public function __construct(
-        private readonly StripeClient $stripe,
-        private readonly LoggerInterface $logger,
-    ) {}
-
-    public function charge(int $amountCents, string $currency, array $metadata = []): PaymentResult
-    {
-        try {
-            $intent = $this->stripe->paymentIntents->create([
-                'amount' => $amountCents,
-    # ... (additional patterns follow same structure)
-            return $order;
-        });
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -218,29 +159,7 @@ class ProcessOrderPayment implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     use Batchable; // For batch processing
 
-    public int $tries = 3;
-    public array $backoff = [10, 60, 300]; // Exponential backoff
-
-    public function __construct(
-        public readonly Order $order,
-    ) {}
-
-    public function handle(PaymentGateway $payment): void
-    {
-        if ($this->batch()?->cancelled()) {
-            return;
-        }
-
-        $result = $payment->charge($this->order->total_cents, 'usd');
-
-        if ($result->failed()) {
-            $this->fail(new PaymentFailedException($result->error));
-            return;
-    # ... (additional patterns follow same structure)
-            'updated_at' => $this->order->updated_at->toISOString(),
-        ];
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -259,14 +178,6 @@ ASYNC ARCHITECTURE:
 │  Unique Jobs (ShouldBeUnique)        │  Prevent duplicate processing   │
 └──────────────────────────────────────┴──────────────────────────────────┘
 
-QUEUE CONFIGURATION:
-┌──────────┬──────────────┬──────────────────────────────────┐
-│  Queue   │  Priority    │  Examples                         │
-├──────────┼──────────────┼──────────────────────────────────┤
-│  high    │  Processed first │  Payments, critical alerts    │
-│  default │  Standard    │  Emails, notifications            │
-│  low     │  Background  │  Reports, exports, cleanup        │
-└──────────┴──────────────┴──────────────────────────────────┘
 ```
 
 Rules:
@@ -287,29 +198,7 @@ Implement secure authentication:
 
 // API routes with Sanctum
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', fn (Request $request) => $request->user());
-    Route::apiResource('orders', OrderController::class);
-});
-
-// Token issuance
-class AuthController extends Controller
-{
-    public function login(LoginRequest $request): JsonResponse
-    {
-        if (! Auth::attempt($request->validated())) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $user = Auth::user();
-        $token = $user->createToken(
-            name: $request->device_name ?? 'api-token',
-    # ... (additional patterns follow same structure)
-
-        return new OrderResource($order);
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -342,29 +231,7 @@ describe('Order', function () {
         $order = Order::factory()->create();
         expect($order->customer)->toBeInstanceOf(Customer::class);
     });
-
-    it('scopes active orders exclude cancelled', function () {
-        Order::factory()->create(['status' => OrderStatus::Confirmed]);
-        Order::factory()->create(['status' => OrderStatus::Cancelled]);
-
-        expect(Order::active()->count())->toBe(1);
-    });
-
-    it('is cancelable when pending or confirmed', function () {
-        $pending = Order::factory()->make(['status' => OrderStatus::Pending]);
-        $shipped = Order::factory()->make(['status' => OrderStatus::Shipped]);
-
-        expect($pending->isCancelable())->toBeTrue()
-            ->and($shipped->isCancelable())->toBeFalse();
-    });
-});
-
-// Pest test — API endpoint
-    # ... (additional patterns follow same structure)
-        $job = new ProcessOrderPayment($order);
-        expect(fn () => $job->handle($gateway))->toThrow(PaymentFailedException::class);
-    });
-});
+# ... (condensed)
 ```
 
 ```php
@@ -374,30 +241,7 @@ class OrderFactory extends Factory
     protected $model = Order::class;
 
     public function definition(): array
-    {
-        return [
-            'customer_id' => Customer::factory(),
-            'status' => OrderStatus::Pending,
-            'total_cents' => fake()->numberBetween(1000, 100000),
-            'notes' => fake()->optional()->sentence(),
-        ];
-    }
-
-    public function confirmed(): static
-    {
-        return $this->state(fn () => [
-            'status' => OrderStatus::Confirmed,
-            'confirmed_at' => now(),
-        ]);
-    }
-
-    public function withItems(int $count = 3): static
-    {
-        return $this->afterCreating(fn (Order $order) =>
-            OrderItem::factory()->count($count)->create(['order_id' => $order->id])
-        );
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -416,13 +260,6 @@ TESTING STRATEGY:
 │  Notifications                       │  Notification::fake              │
 └──────────────────────────────────────┴──────────────────────────────────┘
 
-TEST HELPERS:
-- Factories: Build test data with states and afterCreating hooks
-- Fake facades: Queue::fake(), Event::fake(), Mail::fake(), Notification::fake()
-- Sanctum::actingAs(): Authenticate as user with abilities
-- assertDatabaseHas/assertDatabaseMissing: Verify database state
-- Travel helpers: $this->travel(5)->minutes() for time-dependent tests
-- RefreshDatabase trait: Clean database between tests (migration-based)
 ```
 
 Rules:
@@ -452,13 +289,6 @@ LARAVEL VALIDATION:
 │  Routes cached for production        │  PASS    │  route:cache         │
 │  Environment variables validated     │  PASS    │  No missing env vars │
 │  Database indexes on FKs             │  PASS    │  All foreign keys    │
-│  Migrations reversible               │  PASS    │  All have down()     │
-│  Tests pass (Pest green)             │  PASS    │  Full suite passing  │
-│  CSRF/CORS configured               │  PASS    │  Per environment     │
-│  Queue monitoring configured         │  PASS    │  Horizon or pulse    │
-└──────────────────────────────────────┴──────────┴──────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ```
@@ -494,51 +324,6 @@ Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
 6. **Pest for testing.** Pest's expressive syntax makes tests readable and maintainable. Use fake facades to isolate side effects.
 7. **Cache everything in production.** Run `config:cache`, `route:cache`, `view:cache`, and `event:cache` in production. The performance difference is significant.
 
-## Example Usage
-
-### Building a Laravel API
-```
-User: /godmode:laravel Build an e-commerce API
-
-Laravel: Assessing requirements...
-
-LARAVEL ASSESSMENT:
-Project: E-Commerce API
-Laravel: 11.x
-PHP: 8.3
-Architecture: API-only
-Auth: Sanctum (SPA + mobile tokens)
-Queue: Redis + Horizon
-
-Creating models: Product, Order, OrderItem, Customer, Category...
-Setting up Sanctum authentication...
-Creating API Resources and Form Requests...
-Implementing queued jobs: ProcessPayment, SendConfirmation...
-Writing Pest tests: 60 tests across models, API, jobs...
-
-All 15 checks PASS.
-```
-
-### Optimizing Eloquent Queries
-```
-User: /godmode:laravel Our order listing page is slow
-
-Laravel: Analyzing queries...
-
-FINDINGS:
-1. N+1 on Order -> Customer (eager loading missing)
-2. N+1 on Order -> Items (loading items per order)
-3. Missing index on orders.status column
-4. Loading full Order model when only 3 fields needed
-
-FIXES:
-1. Added ->with('customer:id,name')
-2. Added ->withCount('items')
-3. Added index migration for status
-4. Used select() to limit columns
-Query time: 1200ms -> 8ms
-```
-
 ## HARD RULES
 1. NEVER return raw Eloquent models from controllers — always use API Resources (JsonResource).
 2. NEVER use `$guarded = []` — explicitly define `$fillable` on every model. Mass assignment vulnerabilities are real.
@@ -569,20 +354,6 @@ AUTO-DETECT:
    - resources/js/ with Vue/React → Inertia
 4. Detect auth:
    - config/sanctum.php → Sanctum
-   - config/passport.php → Passport
-   - laravel/breeze or laravel/jetstream in composer.json
-5. Detect queue/cache:
-   - config/queue.php → connection driver (redis, database, sqs)
-   - config/cache.php → cache driver
-   - config/horizon.php → Laravel Horizon
-6. Detect testing:
-   - tests/Feature/, tests/Unit/
-   - pestphp/pest in composer.json → Pest
-   - phpunit.xml → PHPUnit
-7. Detect deployment:
-   - forge.yml → Laravel Forge
-   - serverless.yml → Laravel Vapor
-   - docker-compose.yml → Docker/Sail
 ```
 
 ## Iterative Build Protocol
@@ -603,43 +374,6 @@ WHILE current_layer < len(layers):
      - routes: Route registration with middleware
      - tests: Pest tests for this layer
   2. VALIDATE layer:
-     - Run: php artisan test --filter={layer}
-     - Check: No N+1 (preventLazyLoading catches these)
-     - Check: No mass assignment vulnerabilities
-  3. IF validation fails → fix before proceeding to next layer
-  4. COMMIT: "laravel: {feature} — {layer} layer"
-  5. current_layer += 1
-
-EXIT when all layers complete and tests pass
-```
-
-## Multi-Agent Dispatch
-For large Laravel features spanning multiple domains:
-```
-DISPATCH parallel agents (one per domain):
-
-Agent 1 (worktree: laravel-models):
-  - Models, migrations, factories, seeders
-  - Scope: app/Models/, database/
-  - Output: Eloquent models with relationships and factories
-
-Agent 2 (worktree: laravel-api):
-  - Controllers, Form Requests, API Resources, Routes
-  - Scope: app/Http/, routes/
-  - Output: Complete API layer
-
-Agent 3 (worktree: laravel-services):
-  - Action classes, Service classes, Events, Jobs, Listeners
-  - Scope: app/Actions/, app/Services/, app/Events/, app/Jobs/
-  - Output: Business logic with async processing
-
-Agent 4 (worktree: laravel-tests):
-  - Pest test suite covering all layers
-  - Scope: tests/
-  - Output: Feature + Unit tests with factories
-
-MERGE ORDER: models → services → api → tests
-CONFLICT RESOLUTION: models branch owns migrations and model definitions
 ```
 
 ## Flags & Options
@@ -649,15 +383,6 @@ CONFLICT RESOLUTION: models branch owns migrations and model definitions
 | (none) | Full Laravel setup workflow |
 | `--api` | API-only Laravel application |
 | `--auth sanctum` | Configure Sanctum auth |
-| `--auth passport` | Configure Passport OAuth2 |
-| `--queue redis` | Configure Redis queue with Horizon |
-| `--model <name>` | Generate model with best practices |
-| `--events` | Set up event-driven architecture |
-| `--broadcast` | Configure real-time broadcasting |
-| `--test` | Generate Pest test suite |
-| `--optimize` | Find and fix N+1 and slow queries |
-| `--upgrade <version>` | Upgrade Laravel version with guide |
-| `--audit` | Audit existing Laravel app for anti-patterns |
 
 ## Output Format
 
@@ -734,30 +459,6 @@ Pass 2 — Queue Processing:
   3. Add uniqueId() to prevent duplicate jobs, failed() for error notification
   4. Enable after_commit on queue connection
   5. Scale workers per queue priority with Horizon
-
-Pass 3 — Cache Strategy:
-  1. Identify cacheable data with TTL and invalidation rules
-  2. Use Cache::remember() for expensive queries, cache tags for group invalidation
-  3. Add Model observers for automatic cache invalidation on writes
-  4. Enable config:cache, route:cache, view:cache, event:cache in production
-
-Pass 4 — Database & Index Audit:
-  1. Find missing indexes on foreign key columns
-  2. Add composite indexes for common query patterns
-  3. Run EXPLAIN ANALYZE on slow queries
-  4. Run php artisan optimize for production
-
-OPTIMIZATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  N+1 violations              │  <N>      │  0        │  FIXED    │
-│  Avg queries per endpoint    │  <N>      │  <N>      │  -<N>%    │
-│  Cache hit rate              │  <N>%     │  <N>%     │  +<N>%    │
-│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
 
 ## Keep/Discard Discipline
@@ -771,7 +472,6 @@ After EACH implementation or optimization change:
   4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
 ```
 
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -784,9 +484,3 @@ DO NOT STOP just because:
   - A non-critical check is pending (that can be a follow-up pass)
 ```
 
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run Laravel tasks sequentially: models, then API, then services, then tests.
-- Use branch isolation per task: `git checkout -b godmode-laravel-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

@@ -35,12 +35,6 @@ Current known metrics:
   Current RPS capacity: <N | unknown>
   Concurrent users: <N | unknown>
 
-Target SLOs:
-  Response time P95: <Xms>
-  Response time P99: <Xms>
-  Error rate: < <X>%
-  Throughput: <N> requests/sec
-  Availability: <X>%
 ```
 
 ### Step 2: Select Test Type
@@ -145,61 +139,7 @@ import { check, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 
 // Custom metrics
-const errorRate = new Rate('errors');
-const responseTime = new Trend('response_time');
-
-// Test configuration
-export const options = {
-  stages: [
-    { duration: '2m', target: 50 },    // Ramp up
-    { duration: '10m', target: 50 },   // Steady state
-    { duration: '2m', target: 100 },   // Push higher
-    { duration: '5m', target: 100 },   // Hold at peak
-    { duration: '2m', target: 0 },     // Ramp down
-  ],
-  thresholds: {
-    http_req_duration: ['p(95)<500', 'p(99)<1000'],  // P95 < 500ms, P99 < 1s
-    errors: ['rate<0.01'],                             // Error rate < 1%
-    http_req_failed: ['rate<0.01'],                    // HTTP failures < 1%
-  },
-};
-
-// Test scenario
-export default function () {
-  // Endpoint 1: List (high traffic)
-  const listRes = http.get('http://localhost:3000/api/items', {
-    headers: { 'Authorization': `Bearer ${__ENV.API_TOKEN}` },
-  });
-  check(listRes, {
-    'list status is 200': (r) => r.status === 200,
-    'list response time < 500ms': (r) => r.timings.duration < 500,
-  });
-  errorRate.add(listRes.status !== 200);
-  responseTime.add(listRes.timings.duration);
-
-  sleep(1); // Think time between requests
-
-  // Endpoint 2: Create (write operation)
-  const createRes = http.post(
-    'http://localhost:3000/api/items',
-    JSON.stringify({ name: `item-${Date.now()}`, value: Math.random() }),
-    { headers: { 'Content-Type': 'application/json' } }
-  );
-  check(createRes, {
-    'create status is 201': (r) => r.status === 201,
-    'create response time < 1000ms': (r) => r.timings.duration < 1000,
-  });
-  errorRate.add(createRes.status !== 201);
-
-  sleep(Math.random() * 3 + 1); // Variable think time (1-4s)
-}
-
-// Summary output
-export function handleSummary(data) {
-  return {
-    'loadtest/results/baseline-summary.json': JSON.stringify(data, null, 2),
-  };
-}
+# ... (condensed)
 ```
 
 #### Artillery (YAML)
@@ -210,46 +150,7 @@ config:
   phases:
     - duration: 120      # 2 min ramp-up
       arrivalRate: 5
-      rampTo: 50
-      name: "Ramp up"
-    - duration: 600      # 10 min steady
-      arrivalRate: 50
-      name: "Steady state"
-    - duration: 120      # 2 min ramp-down
-      arrivalRate: 50
-      rampTo: 0
-      name: "Ramp down"
-  defaults:
-    headers:
-      Authorization: "Bearer {{ $processEnvironment.API_TOKEN }}"
-  ensure:
-    p95: 500
-    p99: 1000
-    maxErrorRate: 1
-
-scenarios:
-  - name: "Browse and create"
-    weight: 70
-    flow:
-      - get:
-          url: "/api/items"
-          capture:
-            - json: "$[0].id"
-              as: "itemId"
-      - think: 2
-      - get:
-          url: "/api/items/{{ itemId }}"
-      - think: 1
-
-  - name: "Create item"
-    weight: 30
-    flow:
-      - post:
-          url: "/api/items"
-          json:
-            name: "item-{{ $randomNumber(1000, 9999) }}"
-            value: "{{ $randomNumber(1, 100) }}"
-      - think: 3
+# ... (condensed)
 ```
 
 #### Locust (Python)
@@ -260,40 +161,7 @@ import json
 import time
 import random
 
-class APIUser(HttpUser):
-    wait_time = between(1, 4)  # Think time between requests
-    host = "http://localhost:3000"
-
-    def on_start(self):
-        """Called when a simulated user starts."""
-        self.token = self.environment.parsed_options.api_token
-        self.headers = {"Authorization": f"Bearer {self.token}"}
-
-    @task(7)  # 70% of traffic
-    def list_items(self):
-        with self.client.get("/api/items", headers=self.headers,
-                             catch_response=True) as response:
-            if response.status_code != 200:
-                response.failure(f"Got {response.status_code}")
-            elif response.elapsed.total_seconds() > 0.5:
-                response.failure(f"Too slow: {response.elapsed.total_seconds():.2f}s")
-
-    @task(3)  # 30% of traffic
-    def create_item(self):
-        payload = {
-            "name": f"item-{int(time.time())}",
-            "value": random.randint(1, 100)
-        }
-        with self.client.post("/api/items", json=payload,
-                              headers=self.headers,
-                              catch_response=True) as response:
-            if response.status_code != 201:
-                response.failure(f"Got {response.status_code}")
-
-    @task(1)  # 10% of traffic — heavy operation
-    def search_items(self):
-        query = random.choice(["widget", "gadget", "tool", "device"])
-        self.client.get(f"/api/items/search?q={query}", headers=self.headers)
+# ... (condensed)
 ```
 
 ### Step 4: Establish Baseline
@@ -315,18 +183,6 @@ Database: <type, size, connection pool>
 │ CPU usage (%)       │ <val>    │ <val>    │ <val>    │ <val>    │
 │ Memory usage (MB)   │ <val>    │ <val>    │ <val>    │ <val>    │
 │ DB connections      │ <val>    │ <val>    │ <val>    │ <val>    │
-│ Network I/O (MB/s)  │ <val>    │ <val>    │ <val>    │ <val>    │
-└─────────────────────┴──────────┴──────────┴──────────┴──────────┘
-
-Per-endpoint breakdown:
-┌─────────────────────┬──────┬──────┬──────┬──────┬───────┐
-│ Endpoint            │ RPS  │ P50  │ P95  │ P99  │ Errors│
-├─────────────────────┼──────┼──────┼──────┼──────┼───────┤
-│ GET /api/items      │ <N>  │ <ms> │ <ms> │ <ms> │ <N>%  │
-│ POST /api/items     │ <N>  │ <ms> │ <ms> │ <ms> │ <N>%  │
-│ GET /api/items/:id  │ <N>  │ <ms> │ <ms> │ <ms> │ <N>%  │
-│ GET /api/search     │ <N>  │ <ms> │ <ms> │ <ms> │ <N>%  │
-└─────────────────────┴──────┴──────┴──────┴──────┴───────┘
 ```
 
 ### Step 5: Bottleneck Analysis
@@ -348,19 +204,6 @@ BOTTLENECK ANALYSIS:
 │  Error analysis     │ Errors start at <N> RPS                │
 │                     │ Error type: <timeout | 5xx | conn      │
 │                     │ refused | OOM>                         │
-├──────────────────────────────────────────────────────────────┤
-│  Correlation        │ Response time correlates with <DB query│
-│                     │ time | external API calls | GC pauses> │
-├──────────────────────────────────────────────────────────────┤
-│  Slowest            │ GET /api/search — full table scan      │
-│  endpoints          │ POST /api/orders — N+1 query problem   │
-│                     │ GET /api/reports — no pagination        │
-└──────────────────────────────────────────────────────────────┘
-
-ROOT CAUSES (ranked by impact):
-1. <cause> — Affects <N>% of requests — Fix: <recommendation>
-2. <cause> — Affects <N>% of requests — Fix: <recommendation>
-3. <cause> — Affects <N>% of requests — Fix: <recommendation>
 ```
 
 ### Step 6: Statistical Significance
@@ -419,22 +262,6 @@ RULES FOR VALID COMPARISON:
 │                                                              │
 │  CAPACITY:                                                   │
 │  Max stable load: <N> concurrent users / <N> rps             │
-│  Breaking point: <N> concurrent users / <N> rps              │
-│  Headroom: <X>% above current production traffic             │
-│                                                              │
-│  BOTTLENECKS:                                                │
-│  1. <bottleneck> — <impact>                                  │
-│  2. <bottleneck> — <impact>                                  │
-│  3. <bottleneck> — <impact>                                  │
-│                                                              │
-│  SLO COMPLIANCE:                                             │
-│  P95 < 500ms: <PASS/FAIL> (actual: <X>ms)                   │
-│  P99 < 1000ms: <PASS/FAIL> (actual: <X>ms)                  │
-│  Error rate < 1%: <PASS/FAIL> (actual: <X>%)                 │
-│  Throughput > 100rps: <PASS/FAIL> (actual: <N>rps)           │
-│                                                              │
-│  Verdict: <MEETS SLOs | NEEDS OPTIMIZATION | CRITICAL>      │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 8: Commit and Transition
@@ -454,59 +281,6 @@ RULES FOR VALID COMPARISON:
 5. **Correlate, don't guess.** When response time increases, check CPU, memory, database query time, and network I/O simultaneously. The bottleneck is where saturation occurs.
 6. **Realistic scenarios.** Load tests should simulate real user behavior — mixed read/write operations, think time between requests, varied payloads.
 7. **Automate for regression.** Performance tests should run in CI to catch regressions before they reach production.
-
-## Example Usage
-
-### Baseline load test
-```
-User: /godmode:loadtest Establish a performance baseline for our API
-
-Loadtest: Analyzing your API endpoints...
-
-Found 12 endpoints in src/routes/
-Selecting top 5 by traffic weight:
-  GET  /api/users        (40% of traffic)
-  GET  /api/users/:id    (25% of traffic)
-  POST /api/orders       (15% of traffic)
-  GET  /api/products     (12% of traffic)
-  GET  /api/search       (8% of traffic)
-
-Generating k6 test script...
-Saved: loadtest/baseline.k6.js
-
-Running baseline (50 users, 10 minutes)...
-
-BASELINE RESULTS:
-P50: 45ms  P95: 180ms  P99: 420ms
-Throughput: 340 rps
-Error rate: 0.02%
-Breaking point: ~500 concurrent users
-
-Verdict: MEETS SLOs — healthy headroom above production traffic
-```
-
-### Stress test before launch
-```
-User: /godmode:loadtest Stress test — we're expecting 10x traffic for Black Friday
-
-Loadtest: Configuring stress test for 10x surge...
-
-Current baseline: 50 rps normal, target: 500 rps sustained
-Test: Ramp from 50 to 600 rps over 30 minutes
-
-STRESS TEST RESULTS:
-Breaking point: 420 rps (16% below target)
-Bottleneck: Database connection pool (max 20, needs 80+)
-Secondary: Redis memory at 90% at 400 rps
-
-CRITICAL: System cannot handle 10x traffic.
-Recommendations:
-1. Increase DB connection pool to 100
-2. Scale Redis to 4GB
-3. Add read replicas for GET-heavy endpoints
-
-Run /godmode:optimize to address bottlenecks, then re-test.
-```
 
 ## HARD RULES
 1. NEVER load test production without coordination — unannounced load tests are indistinguishable from DDoS attacks.
@@ -538,15 +312,6 @@ AUTO-DETECT:
    - docker-compose.yml → local stack
    - k8s manifests → container resources, replica count
    - terraform → cloud resources, instance types
-5. Detect database:
-   - Connection config → estimate data volume
-   - Migration count → schema complexity
-6. Detect monitoring:
-   - Prometheus, Grafana, Datadog, NewRelic configs
-   - CloudWatch, Application Insights
-7. Detect SLOs:
-   - SLO/SLA documentation
-   - alerting thresholds in monitoring config
 ```
 
 ## Iterative Load Test Protocol
@@ -567,24 +332,6 @@ WHILE current_phase != "complete":
     2. IDENTIFY breaking point (error rate > 10% or P99 > 10s)
     3. RECORD: max stable load, breaking point, bottleneck
     4. current_phase = "analyze"
-
-  IF current_phase == "analyze":
-    1. CORRELATE: response time vs CPU vs memory vs DB connections
-    2. IDENTIFY top 3 bottlenecks ranked by impact
-    3. REPORT findings with specific fix recommendations
-    4. IF meets SLOs with headroom → current_phase = "complete"
-    5. ELSE → current_phase = "optimize"
-
-  IF current_phase == "optimize":
-    1. APPLY fix for top bottleneck
-    2. RE-RUN baseline to verify improvement
-    3. STATISTICAL comparison: before vs after (5 runs each)
-    4. IF improvement confirmed → current_phase = "stress"
-    5. IF no improvement → revert, try next bottleneck
-    6. iteration += 1
-    7. IF iteration > 5 → REPORT: "Optimization plateau reached"
-
-EXIT when SLOs met OR optimization plateau
 ```
 
 ## Keep/Discard Discipline
@@ -633,35 +380,6 @@ PREFER the simpler load testing approach:
   - Local load testing before distributed load generation (unless target throughput exceeds one machine)
 ```
 
-## Multi-Agent Dispatch
-For comprehensive performance validation across test types:
-```
-DISPATCH parallel agents (one per test type):
-
-Agent 1 (worktree: loadtest-baseline):
-  - Baseline load test with standard traffic pattern
-  - Scope: all high-traffic endpoints
-  - Output: Baseline metrics (P50/P95/P99/throughput)
-
-Agent 2 (worktree: loadtest-stress):
-  - Stress test to find breaking point
-  - Scope: same endpoints, increasing load
-  - Output: Breaking point, max stable capacity
-
-Agent 3 (worktree: loadtest-spike):
-  - Spike test for sudden surge behavior
-  - Scope: critical endpoints (checkout, auth)
-  - Output: Recovery time, degradation behavior
-
-Agent 4 (worktree: loadtest-soak):
-  - Soak test for memory leaks and gradual degradation
-  - Scope: full API, moderate sustained load
-  - Output: Memory/connection trends over 4+ hours
-
-MERGE ORDER: baseline → stress → spike → soak (results only, no code conflicts)
-CONFLICT RESOLUTION: each agent writes to its own results subdirectory
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -669,22 +387,6 @@ CONFLICT RESOLUTION: each agent writes to its own results subdirectory
 | (none) | Baseline load test with standard ramp pattern |
 | `--stress` | Find the breaking point with increasing load |
 | `--spike` | Test sudden traffic surge behavior |
-| `--soak` | Long-duration endurance test (4+ hours) |
-| `--tool <name>` | Generate scripts for specific tool (k6, artillery, locust, jmeter) |
-| `--baseline` | Establish and save baseline metrics |
-| `--compare <file>` | Compare results against a previous baseline |
-| `--ci` | Generate CI-friendly test with pass/fail thresholds |
-| `--endpoints <list>` | Test specific endpoints only |
-
-## Anti-Patterns
-
-- **Do NOT load test production without coordination.** Unannounced load tests are indistinguishable from DDoS attacks.
-- **Do NOT test without think time.** Real users pause between requests. No think time overestimates capacity.
-- **Do NOT ignore tail latency.** If P50 is 50ms but P99 is 5s, 1 in 100 users has a terrible experience.
-- **Do NOT compare single runs.** One run with P95=200ms and another with P95=180ms is noise. Run 5+ times.
-- **Do NOT test with empty databases.** Performance on 100 rows is meaningless. Use production-scale data.
-- **Do NOT skip warm-up.** Cold starts and JIT compilation make the first minutes unrepresentative.
-
 
 ## Output Format
 Print on completion: `Loadtest: {test_type} — P95: {p95}ms, P99: {p99}ms, throughput: {rps} rps, errors: {error_rate}%. Breaking point: {breaking_point} users. Verdict: {verdict}.`
@@ -717,8 +419,3 @@ Columns: iteration, test_type, target_rps, actual_rps, p50_ms, p95_ms, p99_ms, e
 - **Test crashes at high concurrency**: Increase file descriptor limits (`ulimit -n 65535`). Check connection pool sizes on both client and server. Use connection keep-alive.
 - **Cannot reproduce production performance**: Match data volume (seed with production-scale data). Match hardware specs. Match network latency (test from same region as users). Include realistic user scenarios, not just single-endpoint hammering.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run load test tasks sequentially: baseline, then stress, then spike, then soak.
-- Use branch isolation per task: `git checkout -b godmode-loadtest-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

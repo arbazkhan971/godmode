@@ -37,29 +37,6 @@ PIPELINE SECURITY ASSESSMENT:
 │ │ SAST │ YES/NO │ <tool or none> │ │
 │ │ DAST │ YES/NO │ <tool or none> │ │
 │ │ SCA │ YES/NO │ <tool or none> │ │
-│ │ Container scanning │ YES/NO │ <tool or none> │ │
-│ │ Secret scanning │ YES/NO │ <tool or none> │ │
-│ │ IaC scanning │ YES/NO │ <tool or none> │ │
-│ │ License compliance │ YES/NO │ <tool or none> │ │
-│ │ SBOM generation │ YES/NO │ <tool or none> │ │
-│ │ Signed commits │ YES/NO │ <GPG/SSH> │ │
-│ │ Signed artifacts │ YES/NO │ <cosign/notation> │ │
-│ │ Security gates │ YES/NO │ <blocking/advisory> │ │
-│ └────────────────────┴──────────┴───────────────────────┘ │
-│ │
-│ GAPS IDENTIFIED: │
-│ - <missing control 1> │
-│ - <missing control 2> │
-│ - <misconfigured control> │
-│ │
-│ MATURITY LEVEL: │
-│ [ ] Level 0: No security in pipeline │
-│ [ ] Level 1: Basic dependency scanning │
-│ [ ] Level 2: SAST + SCA + secret scanning │
-│ [ ] Level 3: Full SAST/DAST/SCA + container scanning │
-│ [ ] Level 4: Security gates + SBOM + signed artifacts │
-│ [ ] Level 5: Continuous verification + policy-as-code │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 2: SAST Integration (Static Application Security Testing)
@@ -73,30 +50,7 @@ on:
  pull_request:
  branches: [main]
  push:
- branches: [main]
-
-jobs:
- semgrep:
- runs-on: ubuntu-latest
- container:
- image: semgrep/semgrep
- steps:
- - uses: actions/checkout@v4
- - name: Run Semgrep
- run: |
- semgrep ci \
- --config auto \
- --config p/owasp-top-ten \
- --config p/cwe-top-25 \
- --config p/security-audit \
- --sarif --output semgrep-results.sarif
- env:
- SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
- - name: Upload SARIF
- uses: github/codeql-action/upload-sarif@v3
- with:
- sarif_file: semgrep-results.sarif
- if: always()
+# ... (condensed)
 ```
 
 ```
@@ -115,12 +69,6 @@ Custom rules directory:.semgrep/
  - Architecture rules (no direct DB access from controllers)
 
 Severity thresholds:
- Block PR: ERROR level findings
- Warn: WARNING level findings
- Ignore: INFO level (track but don't block)
-
-Baseline: semgrep ci --baseline-commit ${{ github.event.pull_request.base.sha }}
- Only report NEW findings, not existing technical debt
 ```
 
 #### CodeQL
@@ -131,31 +79,7 @@ on:
  pull_request:
  branches: [main]
  push:
- branches: [main]
- schedule:
- - cron: '0 6 * * 1' # Weekly deep scan
-
-jobs:
- codeql:
- runs-on: ubuntu-latest
- permissions:
- security-events: write
- strategy:
- matrix:
- language: ['javascript', 'python'] # Add your languages
- steps:
- - uses: actions/checkout@v4
- - name: Initialize CodeQL
- uses: github/codeql-action/init@v3
- with:
- languages: ${{ matrix.language }}
- queries: security-extended # security-and-quality for broader coverage
- - name: Autobuild
- uses: github/codeql-action/autobuild@v3
- - name: Perform CodeQL Analysis
- uses: github/codeql-action/analyze@v3
- with:
- category: "/language:${{ matrix.language }}"
+# ... (condensed)
 ```
 
 ```
@@ -174,7 +98,6 @@ Advantages over pattern-matching:
 Languages supported: C/C++, C#, Go, Java/Kotlin, JavaScript/TypeScript, Python, Ruby, Swift
 ```
 
-
 ### Step 3: DAST Integration (Dynamic Application Security Testing)
 Configure runtime security testing against running applications:
 
@@ -186,35 +109,7 @@ on:
  pull_request:
  branches: [main]
  workflow_dispatch:
-
-jobs:
- zap-scan:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - name: Start application
- run: |
- docker-compose -f docker-compose.test.yml up -d
- # Wait for app to be ready
- timeout 60 bash -c 'until curl -s http://localhost:3000/health; do sleep 2; done'
- - name: ZAP Baseline Scan
- uses: zaproxy/action-baseline@v0.12.0
- with:
- target: 'http://localhost:3000'
- rules_file_name: '.zap/rules.tsv'
- cmd_options: '-a -j'
- - name: ZAP Full Scan (scheduled)
- if: github.event_name == 'schedule'
- uses: zaproxy/action-full-scan@v0.10.0
- with:
- target: 'http://localhost:3000'
- rules_file_name: '.zap/rules.tsv'
- - name: Upload Report
- uses: actions/upload-artifact@v4
- with:
- name: zap-report
- path: report_html.html
- if: always()
+# ... (condensed)
 ```
 
 ```
@@ -240,7 +135,6 @@ Authentication for ZAP:
  Users: Test accounts for authenticated scanning
 ```
 
-
 ### Step 4: SCA (Software Composition Analysis)
 Scan dependencies for known vulnerabilities and license issues:
 
@@ -251,59 +145,7 @@ on:
  pull_request:
  branches: [main]
  push:
- branches: [main]
- schedule:
- - cron: '0 8 * * *' # Daily vulnerability check
-
-jobs:
- # GitHub native dependency scanning
- dependabot:
- # Configured via.github/dependabot.yml
- # Automatic PRs for vulnerable dependencies
-
- # Snyk SCA
- snyk:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - name: Snyk Security Scan
- uses: snyk/actions/node@master # or /python, /golang, /docker
- env:
- SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
- with:
- args: --severity-threshold=high --fail-on=upgradable
- - name: Snyk Monitor (push to main only)
- if: github.ref == 'refs/heads/main'
- uses: snyk/actions/node@master
- env:
- SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
- with:
- command: monitor
-
- # npm/yarn native audit
- npm-audit:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - uses: actions/setup-node@v4
- - run: npm ci
- - run: npm audit --audit-level=high
-
- # SBOM generation
- sbom:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - name: Generate SBOM
- uses: anchore/sbom-action@v0
- with:
- format: spdx-json
- output-file: sbom.spdx.json
- - name: Upload SBOM
- uses: actions/upload-artifact@v4
- with:
- name: sbom
- path: sbom.spdx.json
+# ... (condensed)
 ```
 
 ```
@@ -322,21 +164,6 @@ SCA CONFIGURATION:
 │ SEVERITY POLICY: │
 │ CRITICAL: Block merge + alert security team immediately │
 │ HIGH: Block merge + create ticket │
-│ MEDIUM: Warn in PR + create ticket (30-day SLA) │
-│ LOW: Track in dashboard (90-day SLA) │
-│ │
-│ EXCEPTIONS: │
-│ File:.snyk or.nsprc or audit-exceptions.json │
-│ Format: CVE-ID + justification + expiry date + reviewer │
-│ Review: Security team reviews exceptions quarterly │
-└──────────────────────────────────────────────────────────────┘
-
-SBOM (Software Bill of Materials):
- Format: SPDX or CycloneDX
- Generated: On every release and container build
- Storage: Artifact registry alongside the release
- Purpose: Supply chain transparency, vulnerability tracking, license compliance
- Requirement: Executive Order 14028 (US federal) and similar regulations
 ```
 
 ### Step 5: Container Scanning
@@ -350,40 +177,7 @@ on:
  push:
  branches: [main]
  pull_request:
- paths:
- - 'Dockerfile*'
- - 'docker-compose*.yml'
- - '.dockerignore'
-
-jobs:
- trivy:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- - name: Build image
- run: docker build -t app:${{ github.sha }}.
- - name: Trivy vulnerability scan
- uses: aquasecurity/trivy-action@master
- with:
- image-ref: 'app:${{ github.sha }}'
- format: 'sarif'
- output: 'trivy-results.sarif'
- severity: 'CRITICAL,HIGH'
- exit-code: '1' # Fail on CRITICAL/HIGH
- - name: Upload Trivy SARIF
- uses: github/codeql-action/upload-sarif@v3
- with:
- sarif_file: 'trivy-results.sarif'
- if: always()
-
- # Also scan IaC files
- - name: Trivy config scan
- uses: aquasecurity/trivy-action@master
- with:
- scan-type: 'config'
- scan-ref: '.'
- exit-code: '1'
- severity: 'CRITICAL,HIGH'
+# ... (condensed)
 ```
 
 ```
@@ -406,7 +200,6 @@ CONTAINER HARDENING CHECKS:
  - [ ].dockerignore excludes sensitive files
 ```
 
-
 ### Step 6: Secret Scanning in CI/CD
 Prevent secrets from reaching the repository:
 
@@ -417,31 +210,7 @@ on:
  pull_request:
  branches: [main]
  push:
- branches: [main]
-
-jobs:
- gitleaks:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- with:
- fetch-depth: 0 # Full history for thorough scanning
- - name: Gitleaks scan
- uses: gitleaks/gitleaks-action@v2
- env:
- GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
- GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
-
- trufflehog:
- runs-on: ubuntu-latest
- steps:
- - uses: actions/checkout@v4
- with:
- fetch-depth: 0
- - name: TruffleHog scan
- uses: trufflesecurity/trufflehog@main
- with:
- extra_args: --only-verified --results=verified
+# ... (condensed)
 ```
 
 ```
@@ -460,14 +229,6 @@ SECRET SCANNING LAYERS:
 │ [[rules]] │
 │ id = "internal-api-key" │
 │ description = "Internal API key pattern" │
-│ regex = '''INTERNAL_[A-Z]+_KEY\s*=\s*['"][^'"]+['"]''' │
-│ severity = "CRITICAL" │
-│ │
-│ ALLOWLIST: │
-│ [allowlist] │
-│ paths = ["test/fixtures/**", "docs/examples/**"] │
-│ description = "Test fixtures with fake secrets" │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 7: Security Gates in Deployment Pipelines
@@ -489,15 +250,7 @@ SECURITY GATE CONFIGURATION:
 │ Unsigned artifact │ Pre-deploy │ BLOCK │ No override │
 │ SonarQube gate │ PR check │ BLOCK │ Security team │
 ├──────────────────────────────────────────────────────────────┤
-│ OVERRIDE PROCESS: │
-│ 1. Finding triaged by responsible team │
-│ 2. Risk acceptance documented with justification │
-│ 3. Exception has expiry date (max 30 days) │
-│ 4. Exception tracked in security dashboard │
-│ 5. Exception reviewed at next security review │
-└──────────────────────────────────────────────────────────────┘
 ```
-
 
 ### Step 8: Infrastructure as Code (IaC) Security
 Scan infrastructure definitions for misconfigurations:
@@ -570,53 +323,32 @@ SECURITY METRICS DASHBOARD:
 7. **Sign everything.** Commits, container images, release artifacts. Supply chain security requires provenance at every step.
 8. **Measure and improve.** Track mean time to remediation, gate override rates, and vulnerability trends. You cannot improve what you do not measure.
 
-## Example Usage
-
-### Setting up a security pipeline from scratch
-```
-User: /godmode:devsecops Set up security scanning for our Node.js project on GitHub Actions
-
-DevSecOps: Assessing current pipeline...
-
-CURRENT STATE:
- CI platform: GitHub Actions
- Existing security: npm audit only (Level 1)
- Target maturity: Level 3
-
-IMPLEMENTATION PLAN:
- 1. SAST: Semgrep with OWASP + CWE rulesets
- 2. SCA: Snyk for deep dependency analysis + npm audit
- 3. Secret scanning: gitleaks pre-commit + CI
- 4. Container scanning: Trivy for Docker images
- 5. Security gates: Block on CRITICAL/HIGH, warn on MEDIUM
-
-Creating workflow files...
-.github/workflows/sast-semgrep.yml — Semgrep SAST on every PR
-.github/workflows/sca.yml — Snyk + npm audit
-.github/workflows/secret-scan.yml — gitleaks + trufflehog
-.github/workflows/container-scan.yml — Trivy on Dockerfile changes
-.github/workflows/secure-pipeline.yml — Orchestrator with security gate
-
-Maturity: Level 1 -> Level 3
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
-|------|-------------|
-| (none) | Full pipeline security assessment and setup |
-| `--assess` | Assess current pipeline security maturity only |
-| `--sast` | Set up SAST tools (Semgrep, CodeQL, SonarQube) |
-| `--dast` | Set up DAST tools (OWASP ZAP, Burp) |
-| `--sca` | Set up SCA and dependency scanning |
-| `--containers` | Set up container scanning (Trivy, Snyk) |
-| `--secrets` | Set up secret scanning in CI/CD |
-| `--gates` | Configure security gates only |
-| `--iac` | Set up IaC security scanning |
-| `--sbom` | Set up SBOM generation |
-| `--metrics` | Set up security metrics dashboard |
-| `--platform <name>` | Target CI platform (github, gitlab, jenkins, azure) |
+```
+current_iteration = 0
+scan_queue = [SAST, SCA, secret_scan, container_scan, IaC_scan, DAST]
+max_iterations = len(scan_queue) + 4 # buffer for discovered scan types
+
+WHILE scan_queue is not empty AND current_iteration < max_iterations:
+ current_iteration += 1
+ scan_type = scan_queue.pop(next)
+ configure and run scan_type
+ collect findings (CRITICAL, HIGH, MEDIUM, LOW)
+ FOR each CRITICAL/HIGH finding:
+ triage: true positive or false positive
+ if true positive: create fix or exception with expiry
+ if false positive: add to allowlist with justification
+ IF new scan type dependencies discovered (e.g., IaC scan reveals missing container scan):
+ add to scan_queue
+ report: "Iteration {current_iteration}: {scan_type} — {N} findings, {M} fixed, {remaining} scans queued"
+
+STOP CONDITIONS:
+ - scan_queue is empty (all scan types processed)
+ - OR max_iterations reached
+ - OR all CRITICAL/HIGH findings triaged and have remediation plan
+```
 
 ## HARD RULES
 
@@ -661,17 +393,6 @@ WHILE scan_queue is not empty AND current_iteration < max_iterations:
  configure and run scan_type
  collect findings (CRITICAL, HIGH, MEDIUM, LOW)
  FOR each CRITICAL/HIGH finding:
- triage: true positive or false positive
- if true positive: create fix or exception with expiry
- if false positive: add to allowlist with justification
- IF new scan type dependencies discovered (e.g., IaC scan reveals missing container scan):
- add to scan_queue
- report: "Iteration {current_iteration}: {scan_type} — {N} findings, {M} fixed, {remaining} scans queued"
-
-STOP CONDITIONS:
- - scan_queue is empty (all scan types processed)
- - OR max_iterations reached
- - OR all CRITICAL/HIGH findings triaged and have remediation plan
 ```
 
 ## Keep/Discard Discipline
@@ -718,8 +439,6 @@ FOR each security scanner finding:
 4. Assess maturity level (0-5) based on controls found
 5. Identify gaps and set scan_queue for the hardening loop
 ```
-
-
 
 ## Output Format
 
@@ -775,3 +494,12 @@ FAIL if ANY of the following:
  - Container images deployed without scanning
  - :latest used for scanner images
 ```
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Scanner times out in CI | Pin scanner version, reduce scan scope to changed files only on PRs. Full scan on weekly schedule. Increase CI timeout for security jobs. |
+| False positives blocking PRs | Add to `.semgrepignore` or inline `# nosec` with justification comment. Never blanket-suppress a rule — suppress per-line only. |
+| Secret detected in git history | Rotate the secret immediately. Use `git filter-repo` or BFG to remove from history. Enable push protection to prevent recurrence. |
+| Container scan finds OS-level CVE | Rebuild image from latest base. If no fix available, document accepted risk with expiry date and monitor for upstream patch. |
+

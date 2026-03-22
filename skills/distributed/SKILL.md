@@ -57,36 +57,6 @@ CAP THEOREM ANALYSIS:
 | / \ |
 | AVAILABILITY ---/-------- AP --------\--- PARTITION TOLERANCE |
 | zone |
-+---------------------------------------------------------------+
-
-TRADE-OFF DECISION:
-+--------------------------------------------------------------+
-| Dimension | Choice | Justification |
-+--------------------------------------------------------------+
-| During partition | Consistency (CP)| <why or why not> |
-| | OR Availability | |
-| | (AP) | |
-| Normal operation | Tunable per | <which operations |
-| | operation | need strong vs eventual>|
-| Read consistency | <level> | <justification> |
-| Write consistency | <level> | <justification> |
-+--------------------------------------------------------------+
-
-CONSISTENCY LEVELS:
-+--------------------------------------------------------------+
-| Level | Guarantee | Latency Cost |
-+--------------------------------------------------------------+
-| Linearizable | Real-time ordering | Highest (quorum) |
-| Sequential | Global total order | High |
-| Causal | Respects causality | Medium |
-| Session | Read-your-writes | Low-Medium |
-| Eventual | Converges eventually | Lowest |
-+--------------------------------------------------------------+
-
-PACELC EXTENSION:
-During Partition: <choose Availability or Consistency>
-Else (normal): <choose Latency or Consistency>
-PACELC Classification: <PA/EL | PA/EC | PC/EL | PC/EC>
 ```
 
 Rules:
@@ -115,33 +85,6 @@ RAFT STATE MACHINE:
  Follower --[election timeout]--> Candidate
  Candidate --[majority votes]--> Leader
  Candidate --[higher term seen]--> Follower
- Leader --[higher term seen]--> Follower
-
-RAFT CONFIGURATION:
- Cluster size: <N> (odd number: 3, 5, 7)
- Quorum: <(N/2) + 1>
- Election timeout: 150-300ms (randomized)
- Heartbeat interval: 50ms (must be << election timeout)
- Log compaction: Snapshot every <N> entries
-
-FAULT TOLERANCE:
- 3 nodes: tolerates 1 failure
- 5 nodes: tolerates 2 failures
- 7 nodes: tolerates 3 failures
- Formula: tolerates (N-1)/2 failures
-
-USE WHEN:
-- Need strong consistency (linearizable reads/writes)
-- Cluster size is small-to-medium (3-7 nodes)
-- Leader-based coordination is acceptable
-- Need understandable consensus (vs Paxos complexity)
-
-IMPLEMENTATIONS:
-- etcd: Kubernetes coordination, service discovery
-- CockroachDB: Distributed SQL with Raft per range
-- TiKV: Distributed key-value with Raft groups
-- HashiCorp Consul: Service mesh, KV store
-- Custom: hashicorp/raft (Go), openraft (Rust)
 ```
 
 #### Paxos Consensus
@@ -161,27 +104,6 @@ PAXOS PHASES:
  Phase 2a (Accept): Proposer sends accept(n, value) to acceptors
  Phase 2b (Accepted): Acceptors accept if no higher proposal seen
 
-VARIANTS:
-+--------------------------------------------------------------+
-| Variant | Improvement | Use Case |
-+--------------------------------------------------------------+
-| Basic Paxos | Single value consensus | Rare in practice|
-| Multi-Paxos | Pipelined log replication| Database replication|
-| Fast Paxos | 2 round trips vs 3 | Low-latency |
-| Flexible Paxos | Asymmetric quorums | Read-heavy |
-| EPaxos | Leaderless, commutative | Multi-leader |
-+--------------------------------------------------------------+
-
-USE WHEN:
-- Need proven theoretical foundation
-- Multi-leader or leaderless operation required (EPaxos)
-- Existing system uses Paxos-based protocols
-- Academic or research context
-
-PREFER RAFT WHEN:
-- Building from scratch (simpler to implement correctly)
-- Team does not have deep distributed systems expertise
-- Debugging and operational simplicity matter
 ```
 
 #### Consensus Decision Matrix
@@ -221,37 +143,6 @@ CONFIGURATION:
  Lock TTL: <duration> (must be >> clock drift + operation time)
  Retry delay: <random 0-retry_max ms>
  Retry count: <3-5 attempts>
- Clock drift factor: 0.01 (1% of TTL)
-
-REDLOCK IMPLEMENTATION:
- lock_key = "lock:<resource>"
- lock_value = "<unique-client-id>:<uuid>" // For safe unlock
- lock_ttl = 30000 // 30 seconds
-
- // Acquire
- acquired = 0
- start_time = now()
- for each redis_instance:
- if SET lock_key lock_value NX PX lock_ttl:
- acquired++
- elapsed = now() - start_time
- if acquired >= (N/2 + 1) AND elapsed < lock_ttl:
- // Lock acquired, valid for (lock_ttl - elapsed) ms
- else:
- // Release all, retry
-
- // Release (must use Lua script for atomicity)
- EVAL "if redis.call('get', KEYS[1]) == ARGV[1] then
- return redis.call('del', KEYS[1])
- else
- return 0
- end" 1 lock_key lock_value
-
-LIMITATIONS:
-- Controversial: Martin Kleppmann argues Redlock is unsafe
-- Clock skew can cause split-lock scenarios
-- No fencing tokens by default (add manually)
-- Network partitions can cause lock to appear held
 ```
 
 #### ZooKeeper-based Locks
@@ -271,16 +162,6 @@ ADVANTAGES OVER REDLOCK:
 - Fencing tokens: use zxid (ZooKeeper transaction ID)
 
 ZOOKEEPER LOCK PATTERN:
- /locks/
- /resource-a/
- lock-0000000001 (held by client-1, ephemeral)
- lock-0000000002 (waiting, watches 0001)
- lock-0000000003 (waiting, watches 0002)
-
-CONFIGURATION:
- Session timeout: 30s (balance between quick failover and false expiry)
- Lock path: /locks/<namespace>/<resource>
- Fencing token: zxid of lock node creation
 ```
 
 #### Distributed Lock Decision
@@ -300,12 +181,6 @@ DISTRIBUTED LOCK SELECTION:
 
 IMPORTANT DISTINCTION:
 - Efficiency lock: Prevents duplicate work, tolerates occasional failure
- -> Redlock is fine, simpler to operate
-- Correctness lock: Prevents data corruption, must never fail
- -> ZooKeeper or etcd with fencing tokens
-
-SELECTED: <Redlock | ZooKeeper | etcd> -- <justification>
-FENCING: <Yes (required for correctness) | No (efficiency lock)>
 ```
 
 ### Step 5: Sharding and Partitioning Strategies
@@ -327,43 +202,6 @@ CONSISTENT HASHING:
  Hash Ring:
  0 ----[Node A]---- 90 ----[Node B]---- 180 ----[Node C]---- 270 ---- 360
  | | |
- keys 271-90 keys 91-180 keys 181-270
-
- Virtual Nodes (vnodes):
- - Each physical node gets 100-200 virtual nodes on the ring
- - Ensures even distribution despite heterogeneous hardware
- - Adding a node steals proportional keys from all existing nodes
- - Removing a node distributes keys proportionally
-
- REBALANCING:
- - Add node: Only 1/N of keys need to move (vs hash % N where all move)
- - Remove node: Only removed node's keys redistribute
- - Weight adjustment: Add/remove vnodes for the physical node
-
-PARTITION KEY SELECTION:
-+--------------------------------------------------------------+
-| Criterion | Good Key | Bad Key |
-+--------------------------------------------------------------+
-| Cardinality | user_id (millions) | country (few) |
-| Distribution | UUID (uniform) | timestamp (hot) |
-| Query pattern | Matches WHERE clause | Requires scatter |
-| Write distribution | Even across partitions| All to one shard |
-+--------------------------------------------------------------+
-
-HOT SPOT MITIGATION:
-- Salting: Append random suffix to hot keys (trade-off: scatter reads)
-- Split hot partitions: Sub-partition the hot shard
-- Caching: Cache hot keys to avoid hitting the shard
-- Write buffering: Batch writes to hot partitions
-
-SHARD MAP:
-+--------------------------------------------------------------+
-| Shard | Key Range / Hash Range | Node | Replicas |
-+--------------------------------------------------------------+
-| shard-0 | <range> | node-1 | node-2, node-3|
-| shard-1 | <range> | node-2 | node-3, node-1|
-| shard-2 | <range> | node-3 | node-1, node-2|
-+--------------------------------------------------------------+
 ```
 
 ### Step 6: Eventual Consistency Patterns
@@ -406,14 +244,6 @@ CRDT TYPES:
 
 CRDT GUARANTEE:
 - All replicas converge to the same state without coordination
-- No conflict resolution needed -- merge function is automatic
-- Trade-off: Limited operations, metadata overhead
-
-WHEN TO USE CRDTs:
-- Multi-master replication (each node accepts writes)
-- Offline-first applications (sync when reconnected)
-- Collaborative editing (multiple users editing simultaneously)
-- Counters and sets across distributed nodes
 ```
 
 #### Conflict Resolution Strategies
@@ -451,52 +281,6 @@ LEADER ELECTION PATTERNS:
 +--------------------------------------------------------------+
 
 LEADER ELECTION REQUIREMENTS:
-1. Safety: At most one leader at any time
-2. Liveness: Election eventually completes
-3. Stability: Leader remains until failure or voluntary step-down
-
-KUBERNETES LEASE-BASED ELECTION:
-apiVersion: coordination.k8s.io/v1
-kind: Lease
-metadata:
- name: my-service-leader
- namespace: default
-spec:
- holderIdentity: pod-name-xyz
- leaseDurationSeconds: 15
- acquireTime: "2025-01-15T10:00:00Z"
- renewTime: "2025-01-15T10:00:10Z"
- leaseTransitions: 3
-
-LEADER RESPONSIBILITIES:
-+--------------------------------------------------------------+
-| Responsibility | How |
-+--------------------------------------------------------------+
-| Heartbeat/renewal | Renew lease every <interval> |
-| Graceful handoff | Release lease on shutdown signal |
-| Work distribution | Assign partitions to followers |
-| Follower health check | Reassign work from failed followers |
-| Split-brain prevention | Fencing token on every operation |
-+--------------------------------------------------------------+
-
-FENCING TOKENS:
-- Every time a new leader is elected, increment a monotonic token
-- Include the token in every write operation
-- Storage layer rejects writes with stale tokens
-- Prevents split-brain: old leader's writes are rejected
-
-LEADER ELECTION DECISION:
-+--------------------------------------------------------------+
-| Environment | Recommendation |
-+--------------------------------------------------------------+
-| Kubernetes | K8s Lease API (simplest) |
-| etcd available | etcd election (battle-tested) |
-| ZooKeeper available| ZK ephemeral nodes (strong guarantees) |
-| Database only | Advisory locks (pragmatic) |
-| Custom cluster | Raft-based (build with hashicorp/raft) |
-+--------------------------------------------------------------+
-
-SELECTED: <approach> -- <justification>
 ```
 
 ### Step 8: Network Partition Handling
@@ -518,14 +302,6 @@ PARTITION HANDLING STRATEGY:
 FAILURE DETECTION:
 - Heartbeat timeout: Simple, configurable, prone to false positives
 - Phi accrual: Adaptive, based on heartbeat history, fewer false positives
-- Gossip-based: Scalable, uses multiple opinions before declaring failure
-- Timeout = <base_timeout> * <suspicion_multiplier> * log(cluster_size)
-
-SPLIT-BRAIN PREVENTION:
-1. Quorum requirement: Only majority partition can serve writes
-2. Fencing: Old leader's operations rejected by fencing token
-3. STONITH: Shoot The Other Node In The Head (forcibly stop minority)
-4. Witness: Third-party arbiter breaks ties in even-sized clusters
 ```
 
 ### Step 9: Distributed System Topology
@@ -612,35 +388,6 @@ Commit: `"distributed: <system> -- <consistency model>, <consensus>, <N> shards,
 7. **Test with real partitions.** Use chaos engineering to inject network partitions, clock skew, and node failures. Paper designs are insufficient.
 8. **Document the failure modes.** For every component, document what happens when it fails. If you cannot answer "what happens when X is down?", the design is incomplete.
 
-## Example Usage
-
-### Designing a distributed key-value store
-```
-User: /godmode:distributed Design a distributed KV store for our configuration service
-
-Distributed: Analyzing requirements...
-
-DISTRIBUTED SYSTEM CONTEXT:
- Purpose: Configuration service for 50 microservices
- Consistency: Strong (config changes must be visible immediately)
- Availability: 99.99% target
- Data volume: Small (< 1GB total), read-heavy (1000:1 read:write)
-
-CAP ANALYSIS:
- Choice: CP -- config must be consistent, brief unavailability OK
- PACELC: PC/EC -- consistency always, even at latency cost
-
-CONSENSUS: Raft (3-node cluster)
- Quorum reads for strong consistency
- Follower reads with linearizable lease for reduced leader load
-
-SHARDING: Not needed (data fits on single Raft group)
-REPLICATION: 3 replicas, synchronous within Raft
-
-Verdict: SOUND -- 12/12 checks pass
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -648,13 +395,6 @@ Verdict: SOUND -- 12/12 checks pass
 | (none) | Full distributed system design |
 | `--cap` | CAP theorem trade-off analysis only |
 | `--consensus` | Consensus protocol selection and configuration |
-| `--lock` | Distributed locking design |
-| `--shard` | Sharding and partitioning strategy |
-| `--consistency` | Eventual consistency pattern design |
-| `--leader` | Leader election design |
-| `--partition` | Network partition handling strategy |
-| `--topology` | Generate distributed system topology diagram |
-| `--validate` | Validate existing distributed architecture |
 
 ## Auto-Detection
 
@@ -676,29 +416,6 @@ AUTO-DETECT SEQUENCE:
  - Kafka, RabbitMQ, SQS, NATS, Redis Streams in configs
  - Event-driven patterns: event bus, event store, pub/sub
 
-4. Detect data distribution:
- - Multiple database connection strings → data partitioned across stores
- - Sharding configuration in database config (MongoDB shardKey, Vitess, Citus)
- - Read replica configuration (primary/replica endpoints)
-
-5. Detect consistency patterns:
- - grep for: eventual consistency, saga, compensation, outbox pattern
- - Check for: dual-write code, CDC (change data capture) configs
- - Check for: idempotency keys, correlation IDs, fencing tokens
-
-6. Detect replication topology:
- - Multi-region deployment configs (AWS regions, GCP regions)
- - Replication lag monitoring (pg_stat_replication, ReplicaLag metrics)
- - Async vs sync replication configuration
-
-7. Auto-classify:
- - Single service + single DB → not distributed (suggest /godmode:architect)
- - Multiple services + message broker → event-driven distributed
- - Multiple services + shared DB → distributed monolith (anti-pattern)
- - Multi-region deployment → geo-distributed system
-
--> Auto-populate DISTRIBUTED SYSTEM CONTEXT from detected signals.
--> Only ask about consistency requirements if not inferrable from code.
 ```
 
 ## Keep/Discard Discipline
@@ -759,33 +476,11 @@ Append one row per session. Create the file with headers on first run.
 8. Network partition test plan exists with specific chaos experiments defined.
 9. Replication topology diagrammed with sync/async paths labeled.
 
+
 ## Error Recovery
-```
-IF user skips CAP discussion and jumps to implementation:
- → Block: "CAP trade-off must be documented before design. Is your system CP or AP during partitions?"
- → Do NOT proceed until consistency requirements are explicitly stated
-
-IF consensus cluster has even number of nodes:
- → Warn: "Even node count ({N}) risks split-brain with no majority"
- → Recommend: add a witness/arbiter node or use odd count (N+1)
-
-IF Redlock chosen for a correctness-critical lock:
- → Warn: "Redlock is debated for correctness locks (Kleppmann critique). Consider ZooKeeper or etcd with fencing tokens."
- → If user accepts risk: document in design: "Redlock used as efficiency lock; data corruption risk accepted"
-
-IF sharding key produces hot spots (one shard receives >50% of writes):
- → Identify the hot key pattern (timestamp-based? popular entity?)
- → Apply mitigation: salting, split hot partition, or write buffering
- → Re-measure write distribution after fix
-
-IF network partition test reveals data loss:
- → Identify: was the partition CP or AP? Was fencing token enforced?
- → If AP without conflict resolution: add CRDT, vector clocks, or application-level merge
- → If CP with data loss: check quorum configuration and fencing token implementation
- → Re-run partition test — must show zero data loss
-
-IF replication lag exceeds acceptable threshold:
- → Measure: what is the current lag (pg_stat_replication.replay_lag)?
- → Check: is the replica under-resourced? Is WAL generation rate too high?
- → Mitigate: increase replica resources, or implement bounded-staleness reads that check lag before serving
-```
+| Failure | Action |
+|---------|--------|
+| Split-brain during network partition | Use consensus protocol (Raft/Paxos). Configure quorum-based writes. Prefer CP over AP for financial data. |
+| Message ordering violated | Use partition keys for ordering guarantees. Add sequence numbers. Implement idempotent consumers for at-least-once delivery. |
+| Service discovery fails | Add health check retries. Use DNS-based discovery with TTL. Fall back to static configuration as last resort. |
+| Clock skew causes event ordering issues | Use logical clocks (Lamport/vector clocks). Never rely on wall clock for causal ordering across nodes. |

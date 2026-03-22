@@ -38,11 +38,7 @@ find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | sort
 # Find OpenAPI/Swagger specs
 find . -name "openapi*" -o -name "swagger*" | head -20
 
-# Check for doc generation config
-ls .jsdoc.json tsconfig.json typedoc.json mkdocs.yml 2>/dev/null
-
-# Count documented vs undocumented exports
-grep -r "export" --include="*.ts" --include="*.js" -l | head -20
+# ... (condensed)
 ```
 
 Present inventory:
@@ -72,21 +68,7 @@ openapi: "3.0.3"
 info:
   title: <API name>
   version: <version>
-paths:
-  /api/<resource>:
-    get:
-      summary: <derived from handler name and code>
-      parameters: <derived from query/path params>
-      responses:
-        200:
-          description: <derived from return type>
-          content:
-            application/json:
-              schema: <derived from response object>
-        400:
-          description: <derived from validation errors>
-        401:
-          description: <if auth middleware present>
+# ... (condensed)
 ```
 
 For each endpoint:
@@ -107,9 +89,7 @@ Analyze code and add documentation:
  * @param <name> - <description from usage context>
  * @returns <description from return statements>
  * @throws <Error type> <when condition, from throw statements>
- * @example
- * <derived from test files or usage in codebase>
- */
+# ... (condensed)
 ```
 
 #### For Python (docstrings):
@@ -120,15 +100,7 @@ def function_name(param: Type) -> ReturnType:
     Args:
         param: <description from usage context>
 
-    Returns:
-        <description from return statements>
-
-    Raises:
-        <ErrorType>: <when condition, from raise statements>
-
-    Example:
-        >>> <derived from test files or usage>
-    """
+# ... (condensed)
 ```
 
 Rules for code docs:
@@ -157,18 +129,6 @@ For project or module READMEs:
 ## API Reference
 
 <Summary table of public exports with links to detailed docs>
-
-## Configuration
-
-<Derived from config files, environment variables, .env.example>
-
-## Development
-
-<Derived from scripts in package.json, Makefile, or similar>
-
-## License
-
-<Derived from LICENSE file>
 ```
 
 ### Step 6: Create Runbooks
@@ -261,51 +221,6 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 5. **Match existing style.** If the project uses JSDoc, write JSDoc. If it uses NumPy-style docstrings, use those. Don't introduce a new convention.
 6. **Runbooks are commands, not prose.** Every runbook step should be a copy-pasteable command with expected output. Narrative text belongs in guides, not runbooks.
 
-## Example Usage
-
-### Generating API docs
-```
-User: /godmode:docs Generate OpenAPI spec for our API
-
-Docs: Scanning the codebase for API endpoints...
-
-Found 14 endpoints in src/routes/:
-- GET    /api/users          (src/routes/users.ts:12)
-- POST   /api/users          (src/routes/users.ts:34)
-- GET    /api/users/:id      (src/routes/users.ts:56)
-- PUT    /api/users/:id      (src/routes/users.ts:78)
-- DELETE /api/users/:id      (src/routes/users.ts:92)
-...
-
-Auth middleware detected on 12/14 endpoints (all except POST /auth/*)
-Validation schemas found for 8/14 endpoints
-
-Generating OpenAPI 3.0 spec...
-Saved to docs/api/openapi.yaml
-
-Coverage: 14/14 endpoints documented
-Missing schemas: 6 request bodies need manual review
-```
-
-### Auditing documentation
-```
-User: /godmode:docs --audit
-
-Docs: Scanning documentation against codebase...
-
-DOCUMENTATION HEALTH:
-- README.md: OK (last updated 3 days ago)
-- docs/api/openapi.yaml: STALE (missing 3 new endpoints added this week)
-- src/services/: 12/20 public functions undocumented (60% coverage)
-- docs/runbooks/: EMPTY (no runbooks exist)
-
-RECOMMENDATIONS:
-1. Update OpenAPI spec — 3 endpoints added since last update
-2. Add JSDoc to 8 critical service functions
-3. Create deployment runbook from CI/CD config
-4. Fix 2 broken links in README.md
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -313,12 +228,6 @@ RECOMMENDATIONS:
 | (none) | Interactive documentation generation |
 | `--api` | Generate API documentation only (OpenAPI/Swagger) |
 | `--code` | Generate code documentation only (JSDoc/docstrings) |
-| `--readme` | Generate or update README files |
-| `--runbook <topic>` | Create a runbook for a specific operation |
-| `--audit` | Audit existing docs for staleness and gaps |
-| `--coverage` | Report documentation coverage percentage |
-| `--fix-links` | Find and fix broken documentation links |
-| `--format <fmt>` | Output format: markdown, html, json (default: markdown) |
 
 ## HARD RULES
 
@@ -350,35 +259,6 @@ WHILE documentation_queue is not empty:
   IF documentation_queue is empty:
     Run full link-check and coverage report
     BREAK
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENTS (3 worktrees):
-
-Agent 1 — "api-docs":
-  EnterWorktree("api-docs")
-  Scan all route/controller/handler files
-  Generate or update OpenAPI spec and endpoint docs
-  Verify request/response schemas match code
-  ExitWorktree()
-
-Agent 2 — "code-docs":
-  EnterWorktree("code-docs")
-  Scan all public exports lacking JSDoc/docstrings
-  Generate documentation from implementation + tests
-  Add @example blocks from test fixtures
-  ExitWorktree()
-
-Agent 3 — "runbooks-and-readme":
-  EnterWorktree("runbooks-and-readme")
-  Generate/update README from package.json, config, entry points
-  Create runbooks from CI/CD configs and deploy scripts
-  Audit existing docs for broken links and staleness
-  ExitWorktree()
-
-MERGE: Combine all branches, resolve conflicts in shared files (README, index).
 ```
 
 ## Auto-Detection
@@ -460,14 +340,6 @@ IF doc generation tool fails:
 IF links in documentation are broken:
   1. Use a link checker tool (markdown-link-check, linkinator)
   2. Update moved references to their new locations
-  3. Remove references to deleted files/sections
-  4. Add a CI check to catch broken links on every PR
-
-IF runbook commands fail:
-  1. Run every command in the runbook on a clean environment to verify
-  2. Check for environment-specific dependencies (PATH, env vars, permissions)
-  3. Add prerequisite checks to the runbook ("Before running, verify X is installed")
-  4. Never publish a runbook without executing every command in it
 ```
 
 ## Keep/Discard Discipline
@@ -496,16 +368,6 @@ DO NOT STOP just because:
   - Runbooks are not yet created (code docs come first)
 ```
 
-## Anti-Patterns
-
-- **Do NOT write documentation without reading the code.** Docs that contradict code are worse than no docs.
-- **Do NOT document private internals extensively.** Focus on public APIs. Internal code changes frequently.
-- **Do NOT copy function names as descriptions.** "`getUserById` — Gets a user by ID" adds zero value. Describe actual behavior.
-- **Do NOT skip error documentation.** Callers need to know what can go wrong.
-- **Do NOT generate docs and forget.** Documentation rots faster than code. Audit regularly.
-- **Do NOT write runbooks from memory.** Run every command first. A runbook with a wrong command is dangerous.
-
-
 ## Documentation Audit Loop
 
 Systematic protocol for scoring documentation coverage, detecting staleness, and validating API docs:
@@ -526,152 +388,5 @@ WHILE current_iteration < max_iterations:
        public_types = count exported types/interfaces/classes
        api_endpoints = count route definitions (REST, GraphQL, gRPC)
        config_vars = count environment variables / config keys
-       modules = count top-level source directories or packages
-
-    2. MEASURE documentation coverage for each category:
-       FOR each category in [functions, types, endpoints, config, modules]:
-         documented = count items with JSDoc/docstring/OpenAPI entry
-         total = count total items
-         coverage_pct = (documented / total) * 100
-
-    3. SCORE with letter grades:
-       A: >= 90% coverage
-       B: 70-89% coverage
-       C: 50-69% coverage
-       D: 30-49% coverage
-       F: < 30% coverage
-
-    4. REPORT:
-       DOCUMENTATION COVERAGE SCORECARD:
-       ┌────────────────────┬──────────┬───────────┬───────┐
-       │  Category          │ Covered  │ Total     │ Grade │
-       ├────────────────────┼──────────┼───────────┼───────┤
-       │  Public functions  │  47      │  120      │  D    │
-       │  Public types      │  18      │  32       │  C    │
-       │  API endpoints     │  12      │  14       │  B    │
-       │  Config variables  │  3       │  22       │  F    │
-       │  Module READMEs    │  2       │  8        │  D    │
-       ├────────────────────┼──────────┼───────────┼───────┤
-       │  Overall           │  82      │  196      │  D    │
-       └────────────────────┴──────────┴───────────┴───────┘
-
-    5. PRIORITIZE gaps (highest impact first):
-       - Undocumented public API endpoints (external consumers depend on these)
-       - Undocumented configuration variables (setup blockers)
-       - Undocumented public functions with >5 callers (high fan-in)
-       - Undocumented types used in API request/response (contract clarity)
-
-  IF phase == "stale_detection":
-    1. FOR each documented item, compare modification dates:
-       doc_modified = git log -1 --format="%aI" -- {doc_file}
-       code_modified = git log -1 --format="%aI" -- {code_file}
-
-       IF code_modified > doc_modified:
-         staleness_days = (code_modified - doc_modified).days
-         stale_items.append({ doc_file, code_file, staleness_days })
-
-    2. FOR each doc file, check for references to deleted code:
-       - Extract function/class/endpoint names referenced in docs
-       - Cross-reference against actual codebase symbols
-       - Flag any reference that no longer exists as ORPHAN
-
-    3. FOR each doc file, check for outdated signatures:
-       - Extract parameter lists and return types from docs
-       - Compare against actual function signatures in code
-       - Flag mismatches as SIGNATURE_DRIFT
-
-    4. SCORE staleness:
-       stale_docs = count(doc_modified < code_modified by >7 days)
-       orphan_refs = count(references to deleted code)
-       signature_drifts = count(mismatched parameter/return docs)
-
-    5. REPORT:
-       STALENESS REPORT:
-       ┌─────────────────────────────────────────────────────┐
-       │  Stale docs (code changed, docs not):  <N>          │
-       │  Orphan references (deleted code):     <N>          │
-       │  Signature drifts (params changed):    <N>          │
-       │  Freshest doc:  <file> (<N> days ago)               │
-       │  Stalest doc:   <file> (<N> days ago)               │
-       │  Average doc age vs code age:  <N> days behind      │
-       └─────────────────────────────────────────────────────┘
-
-  IF phase == "api_doc_validation":
-    1. DETECT API documentation format:
-       - OpenAPI/Swagger: openapi.yaml, openapi.json, swagger.*
-       - GraphQL schema: schema.graphql, *.graphqls
-       - Postman collection: *.postman_collection.json
-       - Custom markdown: docs/api/*.md
-
-    2. VALIDATE API docs against actual implementation:
-       FOR each documented endpoint:
-         a. VERIFY route exists in code (path + method match)
-         b. VERIFY request parameters match actual handler params
-         c. VERIFY response schema matches actual response shape
-         d. VERIFY authentication requirements match middleware chain
-         e. VERIFY documented error responses match actual error handling
-         f. VERIFY examples are valid (parseable JSON, correct field names)
-
-    3. DETECT undocumented endpoints:
-       - Scan all route definitions in code
-       - Cross-reference against API docs
-       - Flag any endpoint with no documentation
-
-    4. VALIDATE OpenAPI spec (if exists):
-       - Schema validates against OpenAPI 3.x specification
-       - All $ref references resolve
-       - All examples validate against their schemas
-       - No unused schema definitions
-
-    5. REPORT:
-       API DOC VALIDATION:
-       ┌─────────────────────────────────────────────────────┐
-       │  Documented endpoints:     <N> / <N total>          │
-       │  Route matches:            <N> / <N> correct        │
-       │  Parameter matches:        <N> / <N> correct        │
-       │  Response schema matches:  <N> / <N> correct        │
-       │  Auth doc matches:         <N> / <N> correct        │
-       │  Valid examples:           <N> / <N>                │
-       │  Spec validation:          PASS / FAIL (<errors>)   │
-       │  Undocumented endpoints:   <N> (list)               │
-       └─────────────────────────────────────────────────────┘
-
-  IF phase == "link_integrity":
-    1. SCAN all docs for internal links (markdown links, image refs, code refs)
-    2. VERIFY each target exists (file reference: test -f; anchor: grep heading)
-    3. REPORT broken links with file:line and suggested fix (MISSING or MOVED)
-
-  IF phase == "freshness_enforcement":
-    Freshness policy:
-      API docs: within 7 days of endpoint changes
-      README: within 14 days of feature changes
-      Code docs: must match current function signature
-      Runbooks: reviewed quarterly (90 days)
-      ADRs: no staleness requirement (historical)
-
-    FOR each doc, compare git modification date against related code files.
-    Flag violations exceeding policy threshold.
-
-  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS ATTENTION}"
-
-FINAL DOCUMENTATION HEALTH:
-┌──────────────────────────────────────────────────────────┐
-│  DOCUMENTATION AUDIT SUMMARY                              │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Grade  │ Action Items               │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Coverage scoring    │  <A-F> │  <N> items to document     │
-│  Stale detection     │  <A-F> │  <N> docs to update        │
-│  API doc validation  │  <A-F> │  <N> endpoints to fix      │
-│  Link integrity      │  <A-F> │  <N> broken links          │
-│  Freshness           │  <A-F> │  <N> violations            │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │  <A-F> │  <priority action>         │
-└──────────────────────┴────────┴───────────────────────────┘
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run documentation tasks sequentially: API docs, then code docs, then runbooks/README.
-- Use branch isolation per task: `git checkout -b godmode-docs-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

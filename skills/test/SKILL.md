@@ -59,3 +59,24 @@ Stop when FIRST of:
 - Coverage >= target.
 - 50 iterations reached (safety limit).
 - Coverage plateaus (3 consecutive iterations with < 0.5% gain): stop, report partial coverage.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Test passes immediately (no RED phase) | Delete the test — it is not testing what you think. Rewrite to assert the specific untested behavior. |
+| Coverage does not increase after adding test | Verify the test exercises the uncovered lines (check coverage report line-by-line). The test may be hitting already-covered paths. |
+| Unrelated test breaks after new test | Revert new test. Investigate shared state or import side effects. Fix isolation, then re-add. |
+| Coverage plateaus below target | Switch from unit to integration tests for remaining uncovered paths. Check for dead code that inflates the denominator. |
+
+## Success Criteria
+1. Coverage meets or exceeds target percentage.
+2. All tests pass (`test_cmd` exits 0).
+3. Every new test was RED before GREEN (verified by failing first).
+4. No mocking of internal implementation — only external I/O mocked.
+
+## TSV Logging
+Append to `.godmode/test-results.tsv`:
+```
+iteration	test_file	lines_covered	coverage_before	coverage_after	delta	status
+```
+One row per test iteration. Status: kept, discarded, plateau.

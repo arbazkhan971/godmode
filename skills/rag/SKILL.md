@@ -36,17 +36,6 @@ Query patterns:
   - Conversational: Multi-turn Q&A with follow-up questions
   - Structured: "List all products under $50" (metadata filtering + retrieval)
 
-Quality requirements:
-  - Answer accuracy target: <percentage>
-  - Retrieval relevance target: <percentage — relevant docs in top-K>
-  - Latency budget: <ms for retrieval + generation>
-  - Hallucination tolerance: <zero | low | moderate>
-  - Citation requirement: <must cite sources | optional | none>
-
-Infrastructure:
-  - Cloud: <AWS | GCP | Azure | self-hosted>
-  - Existing stack: <databases, search engines, LLM providers>
-  - Budget: <vector DB cost, embedding API cost, LLM API cost>
 ```
 
 If the user hasn't specified, ask: "What documents do you want to search over, and what questions will users ask?"
@@ -70,23 +59,6 @@ Candidates:
 │ BGE-large-en-v1.5       │ 1024   │ 64.2     │ ~20ms*  │ Free*    │ 512     │
 │ GTE-large               │ 1024   │ 63.1     │ ~15ms*  │ Free*    │ 512     │
 │ E5-mistral-7b           │ 4096   │ 66.6     │ ~100ms* │ Free*    │ 32768   │
-│ Nomic embed-text-v1.5   │ 768    │ 62.3     │ ~15ms*  │ Free*    │ 8192    │
-└─────────────────────────┴────────┴──────────┴──────────┴──────────┴──────────┘
-* Self-hosted latency and cost
-
-Selection criteria:
-  1. Quality: MTEB score on domain-relevant benchmarks
-  2. Context window: must handle document chunk size
-  3. Latency: must fit within retrieval latency budget
-  4. Cost: embedding entire corpus + ongoing query volume
-  5. Matryoshka support: can reduce dimensions without reindexing
-  6. Multilingual: required if corpus has multiple languages
-
-SELECTED: <Model> — <justification>
-
-Dimensionality: <full | reduced to N dims via Matryoshka>
-Estimated indexing cost: $<cost> for <N> documents
-Estimated query cost: $<cost>/month at <N> queries/day
 ```
 
 ### Step 3: Chunking Strategy
@@ -108,28 +80,6 @@ Strategy candidates:
 │ Code-aware (AST)       │ Source code repositories                             │
 │ Markdown/HTML headers  │ Structured docs with clear section hierarchy         │
 │ Sliding window         │ When context at chunk boundaries is critical         │
-│ Parent-child           │ Retrieve small chunks, return parent for context     │
-└────────────────────────┴──────────────────────────────────────────────────────┘
-
-SELECTED: <Strategy> — <justification>
-
-Parameters:
-  Chunk size: <N tokens> (typical: 256-1024)
-  Chunk overlap: <N tokens> (typical: 50-200, or 10-20% of chunk size)
-  Separator hierarchy: <e.g., \n\n -> \n -> . -> space>
-  Minimum chunk size: <N tokens> (discard smaller chunks)
-
-Metadata per chunk:
-  - source_document: <file path or URL>
-  - section_title: <heading hierarchy>
-  - chunk_index: <position in document>
-  - total_chunks: <chunks in source document>
-  - document_type: <type — pdf, markdown, html, code>
-  - last_updated: <timestamp>
-  - custom: <domain-specific metadata for filtering>
-
-Estimated chunks: <N total chunks> from <N documents>
-Avg tokens per chunk: <N>
 ```
 
 ### Step 4: Vector Store Design
@@ -151,39 +101,6 @@ Candidates:
 │ pgvector        │ Extension│ Millions │ SQL      │ Free*    │ Existing     │
 │                 │          │          │          │          │ Postgres     │
 │ Qdrant          │ Managed/ │ Billions │ Advanced │ Free-$   │ High perf,   │
-│                 │ Self-host│          │          │          │ filtering    │
-│ Milvus          │ Managed/ │ Billions │ Advanced │ Free-$   │ Large scale, │
-│                 │ Self-host│          │          │          │ GPU accel    │
-│ LanceDB        │ Embedded │ Millions │ SQL      │ Free     │ Serverless,  │
-│                 │          │          │          │          │ multimodal   │
-│ Elasticsearch   │ Managed/ │ Billions │ Full-text│ $$       │ Hybrid with  │
-│                 │ Self-host│          │ + vector │          │ existing ES  │
-└─────────────────┴──────────┴──────────┴──────────┴──────────┴──────────────┘
-
-Selection criteria:
-  1. Scale: <N vectors>, growth rate
-  2. Query latency: <target p95 ms>
-  3. Filtering: <metadata filtering requirements>
-  4. Multi-tenancy: <shared index vs tenant isolation>
-  5. Existing infrastructure: <leverage existing DBs>
-  6. Cost: <monthly budget>
-  7. Operational complexity: <managed vs self-hosted>
-
-SELECTED: <Store> — <justification>
-
-Index configuration:
-  Index type: <HNSW | IVF | FLAT | PQ>
-  Distance metric: <cosine | dot product | euclidean>
-  HNSW parameters:
-    M: <connections per layer — default 16>
-    ef_construction: <build quality — default 200>
-    ef_search: <query quality — default 100>
-
-  Namespace/collection strategy:
-    <one collection per tenant | one collection with metadata filtering | sharded>
-
-  Replication: <single | replicated for HA>
-  Backup: <strategy and frequency>
 ```
 
 ### Step 5: Ingestion Pipeline Design
@@ -205,36 +122,6 @@ Stage 1 — Document loading:
     - Docx/PPTX: <python-docx | python-pptx | Unstructured>
     - Code: <tree-sitter AST parser>
     - Database: <SQL query -> document format>
-    - API: <connector with pagination and rate limiting>
-
-Stage 2 — Cleaning & transformation:
-  - Remove boilerplate (headers, footers, navigation)
-  - Normalize whitespace and encoding
-  - Extract and preserve tables as structured text
-  - Extract image descriptions (OCR or vision model)
-  - Resolve cross-references and links
-  - Detect and handle duplicates (exact + near-duplicate)
-
-Stage 3 — Chunking:
-  <Apply strategy from Step 3>
-  - Attach metadata to each chunk
-  - Generate chunk summaries (optional, for hierarchical retrieval)
-
-Stage 4 — Embedding & indexing:
-  - Batch embed chunks (<batch_size> per API call)
-  - Rate limit embedding API calls (<requests/min>)
-  - Upsert to vector store with metadata
-  - Verify index count matches expected chunks
-
-Stage 5 — Quality verification:
-  - Sample <N> random chunks and verify content integrity
-  - Run <N> test queries and verify retrieval quality
-  - Log ingestion stats: documents, chunks, failures, duration
-
-Pipeline schedule:
-  Full reindex: <frequency — weekly | on-demand>
-  Incremental: <frequency — daily | real-time via webhook>
-  Staleness detection: <max age before re-ingestion>
 ```
 
 ### Step 6: Retrieval Optimization
@@ -256,36 +143,6 @@ Hybrid search (RECOMMENDED for production):
   Sparse search catches exact matches (product IDs, proper nouns, acronyms).
   Hybrid gets both.
 
-Query preprocessing:
-  - Query expansion: <rephrase query for better retrieval — HyDE, multi-query>
-  - Query decomposition: <split complex queries into sub-queries>
-  - Query routing: <route to different indexes based on query type>
-  - Metadata filtering: <pre-filter by date, source, category before vector search>
-
-Reranking (RECOMMENDED for high-quality retrieval):
-  Stage 1: Vector search retrieves top-<N> candidates (fast, broad)
-  Stage 2: Cross-encoder reranker scores top-<N> for relevance (slow, precise)
-
-  Reranker options:
-  ┌──────────────────────┬──────────┬──────────┬──────────────────────────┐
-  │ Reranker             │ Latency  │ Cost     │ Notes                    │
-  ├──────────────────────┼──────────┼──────────┼──────────────────────────┤
-  │ Cohere rerank-v3     │ ~200ms   │ $1/1K    │ Best quality, managed    │
-  │ Voyage rerank-2      │ ~150ms   │ $0.05/1K │ Cost-effective           │
-  │ BGE-reranker-v2-m3   │ ~100ms*  │ Free*    │ Self-hosted, multilingual│
-  │ ColBERT v2           │ ~50ms*   │ Free*    │ Self-hosted, fast        │
-  │ LLM-based reranking  │ ~500ms   │ $$       │ Most flexible, expensive │
-  └──────────────────────┴──────────┴──────────┴──────────────────────────┘
-
-  SELECTED: <Reranker> — <justification>
-  Retrieve top-<N>, rerank to top-<K> (e.g., retrieve 20, rerank to 5)
-
-Advanced retrieval patterns:
-  - Parent-child retrieval: retrieve small chunks, return parent section
-  - Contextual compression: LLM extracts only relevant sentences from chunks
-  - Multi-index routing: route query to domain-specific indexes
-  - Self-RAG: model decides whether retrieval is needed for each query
-  - Agentic RAG: agent iteratively retrieves, evaluates, and re-queries
 ```
 
 ### Step 7: Context Assembly & Prompt Integration
@@ -307,35 +164,6 @@ Assembly strategy:
   2. Include chunks until context budget is exhausted
   3. Format each chunk with source attribution:
      [Source: <document name>, Section: <section title>]
-     <chunk content>
-  4. Add retrieval metadata for citation:
-     Sources used: <list of source documents with chunk IDs>
-
-Context formatting:
-  "Use the following context to answer the user's question.
-   If the answer is not in the context, say 'I don't have enough
-   information to answer this question.'
-
-   Context:
-   ---
-   [Source: <doc1>] <chunk 1 content>
-   ---
-   [Source: <doc2>] <chunk 2 content>
-   ---
-
-   Question: <user query>
-   Answer:"
-
-Citation strategy:
-  Option A — Inline citations: "The refund policy allows returns within 30 days [Source: refund-policy.md]"
-  Option B — Footnote citations: "Answer text [1][2]" with sources listed at end
-  Option C — No citations (internal use only)
-  SELECTED: <Option>
-
-Conversation memory (multi-turn):
-  - Store last <N> turns of conversation
-  - Summarize older turns to save context
-  - Re-retrieve on follow-up questions with conversation context
 ```
 
 ### Step 8: RAG Evaluation
@@ -357,41 +185,6 @@ Retrieval metrics:
 │ MRR (Mean Reciprocal   │ <val>    │ Average 1/rank of first relevant result  │
 │   Rank)                │          │                                          │
 │ NDCG @ K              │ <val>    │ Ranking quality considering relevance     │
-│ Precision @ K          │ <val>    │ % of top-K results that are relevant     │
-│ Recall @ K             │ <val>    │ % of all relevant results in top-K       │
-│ Retrieval latency p95  │ <ms>     │ 95th percentile retrieval time           │
-└────────────────────────┴──────────┴──────────────────────────────────────────┘
-
-Generation metrics:
-┌────────────────────────┬──────────┬──────────────────────────────────────────┐
-│ Metric                 │ Score    │ Description                              │
-├────────────────────────┼──────────┼──────────────────────────────────────────┤
-│ Faithfulness           │ <val>    │ Answer is grounded in retrieved context   │
-│ Relevance              │ <val>    │ Answer addresses the question asked       │
-│ Completeness           │ <val>    │ Answer covers all aspects of the question │
-│ Correctness            │ <val>    │ Answer is factually correct               │
-│ Hallucination rate     │ <val>    │ % of claims not supported by context      │
-│ Citation accuracy      │ <val>    │ % of citations pointing to correct source │
-│ Answer latency p95     │ <ms>     │ 95th percentile end-to-end time          │
-└────────────────────────┴──────────┴──────────────────────────────────────────┘
-
-Failure analysis:
-  Retrieval failures: <N> queries where relevant docs not retrieved
-    Root causes: <vocabulary mismatch | chunk boundary issues | missing docs>
-  Generation failures: <N> queries where answer is wrong despite correct retrieval
-    Root causes: <context too long | contradicting chunks | ambiguous question>
-  Out-of-scope handling: <N> queries correctly refused when answer not in corpus
-
-Evaluation tools:
-  - RAGAS: faithfulness, answer relevancy, context precision/recall
-  - DeepEval: hallucination, toxicity, bias metrics
-  - LLM-as-judge: custom rubric evaluation using a strong model
-  - Human evaluation: expert review of sampled responses
-
-VERDICT: <PASS | NEEDS IMPROVEMENT>
-  Strengths: <what works well>
-  Weaknesses: <what needs improvement>
-  Priority fixes: <ranked list of improvements>
 ```
 
 ### Step 9: RAG Artifacts & Commit
@@ -419,17 +212,6 @@ Evaluation:
 - Hallucination rate: <val>
 - E2E latency p95: <ms>
 
-Artifacts:
-- Config: config/rag/<pipeline>-config.yaml
-- Pipeline: src/rag/<pipeline>/
-- Tests: tests/rag/<pipeline>/eval.py (<N> test cases)
-- Report: docs/rag/<pipeline>-eval-results.md
-
-Next steps:
--> /godmode:prompt — Optimize the generation prompt
--> /godmode:eval — Run comprehensive evaluation
--> /godmode:agent — Build an agent with RAG as a tool
--> /godmode:deploy — Deploy the RAG pipeline
 ```
 
 Commit: `"rag: <pipeline> — <embedding model>, <vector store>, <N> chunks, faithfulness=<val>"`
@@ -454,25 +236,6 @@ WHILE current_iteration < max_iterations AND quality < target:
      - Generation failures: context overload, contradicting chunks, ambiguity
 
   2. APPLY single fix targeting top failure category:
-     - Retrieval: adjust chunk size/overlap, add reranker, enable hybrid search
-     - Generation: reduce top-K, improve prompt, add citation instructions
-     - Corpus: add missing documents, update stale content
-     - ONE change per iteration
-
-  3. RE-EVALUATE:
-     - Run same golden set against updated pipeline
-     - Record: { iteration, change, hit_rate, faithfulness, hallucination_rate, latency }
-
-  4. COMPARE:
-     - IF primary metric improved AND no regression: ACCEPT change
-     - IF hallucination rate increased: REJECT immediately
-     - IF plateau for 2 iterations: STOP
-
-  OUTPUT:
-  Iteration | Change | Hit@5 | Faithfulness | Hallucination | Latency
-  0         | baseline| 78%  | 0.82         | 8.5%          | 2.1s
-  1         | +rerank | 89%  | 0.88         | 5.2%          | 2.4s
-  ...
 ```
 
 ## HARD RULES
@@ -503,47 +266,6 @@ HARD RULES — NEVER VIOLATE:
 6. **Context window is a budget.** Every token of context competes with the model's ability to reason. More context is not always better. Retrieve less, rerank more.
 7. **Test with real user queries.** Synthetic test queries are a start. Real user queries reveal failure modes you did not anticipate.
 
-## Example Usage
-
-### Building a RAG System from Scratch
-```
-User: /godmode:rag Build a knowledge base for our internal documentation
-
-RAG: Starting discovery...
-
-RAG DISCOVERY:
-Use case: Internal docs Q&A for engineering team
-Data sources:
-  - Confluence wiki: 2,400 pages, ~15MB text
-  - GitHub READMEs: 180 repos, ~3MB text
-  - Notion runbooks: 95 docs, ~2MB text
-Total: 2,675 documents, ~20MB text
-Update frequency: Daily sync
-
-EMBEDDING: text-embedding-3-small (1536d, $0.02/1M tokens)
-  Indexing cost: ~$0.40 for entire corpus
-  Query cost: ~$0.60/month at 1000 queries/day
-
-CHUNKING: Markdown headers + recursive character
-  Chunk size: 512 tokens, overlap: 64 tokens
-  Estimated: ~12,000 chunks
-
-VECTOR STORE: pgvector (existing Postgres infrastructure)
-  Index: HNSW, cosine similarity
-  Filtering: by source, team, date
-
-RETRIEVAL: Hybrid (dense 0.7 + BM25 0.3) + Cohere rerank-v3
-  Retrieve top-20, rerank to top-5
-
-EVALUATION (50 test queries):
-  Hit rate @ 5: 94%
-  Faithfulness: 0.91
-  Hallucination rate: 3.2%
-  E2E latency p95: 1.8s
-
-Verdict: PASS — Ready for internal deployment.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -551,15 +273,6 @@ Verdict: PASS — Ready for internal deployment.
 | (none) | Full RAG pipeline design workflow |
 | `--ingest <source>` | Run document ingestion pipeline |
 | `--chunk <strategy>` | Force chunking strategy: `fixed`, `recursive`, `semantic`, `sentence`, `code`, `markdown` |
-| `--store <name>` | Force vector store: `pinecone`, `weaviate`, `chroma`, `pgvector`, `qdrant`, `milvus` |
-| `--embed <model>` | Force embedding model |
-| `--eval` | Run evaluation suite against current pipeline |
-| `--diagnose` | Diagnose retrieval quality issues |
-| `--compare` | Compare two pipeline configurations |
-| `--reindex` | Force full reindexing of corpus |
-| `--hybrid` | Enable hybrid search (dense + sparse) |
-| `--rerank <model>` | Add or change reranking model |
-| `--stats` | Show pipeline statistics (chunks, queries, latency) |
 
 ## Output Format
 
@@ -622,27 +335,7 @@ IF hallucination rate is high (> 5%):
   5. Consider adding a hallucination detection step as a post-processing guard
 
 IF latency is too high:
-  1. Check embedding computation time — cache embeddings for repeated queries
-  2. Check vector search time — consider approximate nearest neighbors (HNSW)
-  3. Reduce top-K retrieval count (less to rerank = faster)
-  4. Profile the full pipeline to identify the bottleneck (embedding, retrieval, reranking, generation)
-
-IF reindexing fails or produces inconsistent results:
-  1. Verify source documents have not changed format or encoding
-  2. Check for duplicates in the corpus that may skew retrieval
-  3. Clear the vector store and perform a full reindex from scratch
-  4. Validate chunk count matches expected (documents * avg_chunks_per_doc)
 ```
-
-## Anti-Patterns
-
-- **Do NOT skip chunking design.** Default chunking (500 chars, no overlap) is almost always wrong. Chunking strategy is the highest-impact decision.
-- **Do NOT use vector search alone.** Hybrid search with BM25 catches exact keyword matches that embeddings miss.
-- **Do NOT retrieve without reranking.** A cross-encoder reranker on top-N results dramatically improves precision.
-- **Do NOT stuff the entire context window.** Irrelevant chunks dilute the signal. Retrieve less, rerank more.
-- **Do NOT ignore chunk boundaries.** Use overlap and respect natural document boundaries.
-- **Do NOT evaluate end-to-end only.** Measure retrieval and generation quality separately.
-- **Do NOT launch without hallucination measurement.** Measure hallucination rate and set a hard threshold.
 
 ## Keep/Discard Discipline
 ```
@@ -670,7 +363,6 @@ DO NOT STOP just because:
   - Embedding cost seems high (optimize cost after quality targets are met)
 ```
 
-
 ## RAG Optimization Loop
 
 Structured iterative loop for systematically improving retrieval precision, recall, chunk quality, and embedding effectiveness:
@@ -691,102 +383,5 @@ RETRIEVAL PRECISION/RECALL TUNING:
 │  NDCG @ 10           │ <val>   │ <val>   │ <delta> │ <H/M/L>    │
 │  Retrieval latency   │ <ms>    │ <ms>    │ <delta> │ <H/M/L>    │
 └──────────────────────────────────────────────────────────────────┘
-
-PRECISION/RECALL DIAGNOSTICS:
-  Low precision (irrelevant results in top-K):
-    → Reduce top-K and add reranker (retrieve 20, rerank to 5)
-    → Tighten metadata filters (pre-filter by source/date/category)
-    → Increase embedding dimensionality or switch to higher-quality model
-    → Add negative examples to evaluation set to detect noise
-
-  Low recall (relevant documents not retrieved at all):
-    → Increase top-K retrieval count (retrieve more, then rerank)
-    → Enable hybrid search (BM25 catches keyword matches embeddings miss)
-    → Add query expansion (HyDE: generate hypothetical document, embed that)
-    → Check if relevant content exists in corpus (missing docs vs bad retrieval)
-    → Test multi-query retrieval (rephrase query 3 ways, union results)
-
-CHUNK SIZE TUNING:
-┌──────────────────────────────────────────────────────────────────┐
-│  Chunk Size  │ Overlap │ Chunks │ Recall@10 │ Precision@5 │ MRR  │
-├──────────────────────────────────────────────────────────────────┤
-│  128 tokens  │ 16      │ <N>    │ <val>     │ <val>       │ <val>│
-│  256 tokens  │ 32      │ <N>    │ <val>     │ <val>       │ <val>│
-│  512 tokens  │ 64      │ <N>    │ <val>     │ <val>       │ <val>│
-│  1024 tokens │ 128     │ <N>    │ <val>     │ <val>       │ <val>│
-│  Semantic    │ N/A     │ <N>    │ <val>     │ <val>       │ <val>│
-│  Parent-child│ varies  │ <N>    │ <val>     │ <val>       │ <val>│
-└──────────────────────────────────────────────────────────────────┘
-
-  OPTIMAL: <chunk size> — <rationale based on metrics>
-
-  Chunk size tradeoffs:
-    Smaller chunks (128-256): Higher precision, lower recall, more chunks to search
-    Larger chunks (512-1024): Higher recall, lower precision, more context per result
-    Semantic chunks: Variable size, respects topic boundaries, harder to tune
-    Parent-child: Small retrieval unit, large context unit — best of both worlds
-
-EMBEDDING QUALITY ASSESSMENT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Result   │ Action          │
-├──────────────────────────────────────────────────────────────────┤
-│  Embedding model MTEB score         │ <score>  │ <upgrade if low>│
-│  Domain-specific eval (custom set)  │ <score>  │ <fine-tune?>    │
-│  Cosine similarity distribution     │ <range>  │ <spread check>  │
-│    - Relevant pairs avg similarity  │ <val>    │ >0.7 expected   │
-│    - Irrelevant pairs avg similarity│ <val>    │ <0.4 expected   │
-│    - Separation margin              │ <delta>  │ >0.3 expected   │
-│  Cross-lingual performance (if req) │ <score>  │ <multilingual?> │
-│  Embedding dimensionality vs perf   │ <dims>   │ <reduce if ok>  │
-│  Matryoshka dim reduction tested    │ <score>  │ <savings?>      │
-│  Query vs document embedding match  │ <method> │ <asymmetric?>   │
-└──────────────────────────────────────────────────────────────────┘
-
-  IF separation margin < 0.2:
-    → Embedding model is not discriminative enough for this domain
-    → Try: domain-specific model, fine-tuned embeddings, or higher-dim model
-    → Test: Voyage, Cohere embed-v3, or fine-tuned BGE on domain data
-
-OPTIMIZATION ITERATION PROTOCOL:
-current_iteration = 0
-max_iterations = 8
-metrics_history = []
-
-WHILE current_iteration < max_iterations:
-  current_iteration += 1
-
-  1. MEASURE current metrics on golden set:
-     - retrieval: precision@5, recall@10, MRR, NDCG@10
-     - generation: faithfulness, hallucination_rate, relevance
-     - system: latency_p95, cost_per_query
-
-  2. DIAGNOSE the weakest metric:
-     - IF recall low: expand retrieval (hybrid search, query expansion, more top-K)
-     - IF precision low: tighten retrieval (reranker, metadata filter, smaller top-K)
-     - IF faithfulness low: improve context assembly (fewer chunks, better ranking)
-     - IF hallucination high: strengthen grounding (stricter prompt, citation enforcement)
-     - IF latency high: optimize infrastructure (caching, index tuning, fewer chunks)
-
-  3. APPLY exactly ONE change targeting the weakest metric
-
-  4. RE-MEASURE all metrics on the same golden set
-
-  5. COMPARE:
-     - IF target metric improved AND no metric regressed by >2%: ACCEPT
-     - IF hallucination_rate increased: REJECT immediately
-     - IF no improvement for 2 consecutive iterations: ESCALATE
-       (consider fundamental change: different embedding model, different chunking strategy)
-
-  6. LOG iteration: { iteration, change, precision, recall, MRR, faithfulness, hallucination, latency }
-
-  metrics_history.append(current_metrics)
-
-FINAL:
-  REPORT optimization trajectory (table of all iterations)
-  IDENTIFY remaining gaps vs targets
-  RECOMMEND next-phase improvements (if targets not yet met)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run RAG tasks sequentially: ingestion pipeline, then retrieval/reranking, then generation/prompting, then evaluation suite.
-Use branch isolation per task: `git checkout -b godmode-rag-{task}`, implement, commit, merge back.

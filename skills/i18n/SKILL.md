@@ -23,26 +23,6 @@ Scan the codebase for internationalization readiness:
 I18N AUDIT:
 Project: <project name>
 Framework: <React/Vue/Angular/iOS/Android/etc.>
-Current locale support: <none | partial | full>
-Files scanned: <count>
-
-Hardcoded strings found:
-  - UI text: <count> instances across <count> files
-  - Error messages: <count> instances
-  - Validation messages: <count> instances
-  - Email/notification templates: <count> instances
-
-Locale-unaware patterns:
-  - Date formatting: <count> (e.g., toLocaleDateString missing locale arg)
-  - Number formatting: <count> (e.g., .toFixed() instead of Intl.NumberFormat)
-  - Currency display: <count> (e.g., hardcoded "$" prefix)
-  - String concatenation for sentences: <count> (breaks word order in other languages)
-  - Hardcoded pluralization: <count> (e.g., `count === 1 ? "item" : "items"`)
-
-RTL readiness:
-  - Directional CSS (margin-left, padding-right, text-align: left): <count>
-  - Hardcoded LTR icons/arrows: <count>
-  - Layout assumptions (float: left, flexbox without logical properties): <count>
 ```
 
 ### Step 2: Select i18n Framework
@@ -52,11 +32,6 @@ Based on the project stack, recommend and configure the appropriate i18n framewo
 FRAMEWORK SELECTION:
 Stack: <detected stack>
 Recommended library: <library>
-Justification: <why this library>
-
-Alternatives considered:
-  - <alt 1>: <why not>
-  - <alt 2>: <why not>
 ```
 
 #### Framework matrix:
@@ -66,11 +41,6 @@ Alternatives considered:
 | React | react-intl / react-i18next | Component-based, ICU MessageFormat, hooks API |
 | Vue | vue-i18n | Directive-based, SFC support, composition API |
 | Angular | @angular/localize / ngx-translate | Built-in i18n, AOT compilation, lazy loading |
-| iOS (Swift) | Foundation (NSLocalizedString) / swift-gen | Xcode integration, stringsdict for plurals |
-| Android (Kotlin) | Android Resources (strings.xml) | Built-in resource system, quantity strings |
-| Node.js backend | i18next / messageformat | Server-side rendering, ICU support |
-| Flutter | flutter_localizations / intl | ARB files, code generation |
-| Generic | ICU MessageFormat | Industry standard, handles complex plural/gender rules |
 
 ### Step 3: Extract Strings
 Systematically extract all hardcoded strings into resource files:
@@ -79,16 +49,6 @@ Systematically extract all hardcoded strings into resource files:
 STRING EXTRACTION PLAN:
 Source files: <list of files with hardcoded strings>
 Target format: <JSON | YAML | .properties | .strings | .xml | ARB>
-Key naming convention: <namespace.component.context>
-Base locale: <e.g., en-US>
-
-Extraction rules:
-  1. UI-visible text → extract (buttons, labels, headings, placeholders)
-  2. Log messages → do NOT extract (developer-facing, not user-facing)
-  3. Error messages shown to users → extract
-  4. Internal error codes → do NOT extract
-  5. Alt text / ARIA labels → extract (accessibility is locale-dependent)
-  6. Hardcoded URLs → do NOT extract (unless locale-specific content)
 ```
 
 For each file, perform extraction:
@@ -96,8 +56,6 @@ For each file, perform extraction:
 FILE: <path>
 BEFORE:
 ```<language>
-// Hardcoded string
-<original code>
 ```
 
 AFTER:
@@ -115,7 +73,6 @@ Max length: <if UI constrained, specify character limit>
 
 ### Step 4: Pluralization Rules
 Implement locale-aware pluralization using CLDR plural categories:
-
 ```
 PLURAL CATEGORIES BY LOCALE:
 English (en): one, other
@@ -155,8 +112,6 @@ const label = formatMessage({ id: 'items.count' }, { count });
 
 ### Step 5: Date, Number, and Currency Formatting
 Replace all locale-unaware formatting with Intl API or equivalent:
-
-#### Date Formatting
 ```
 PATTERN: Locale-unaware date
 BEFORE: date.toLocaleDateString() // uses browser default
@@ -199,7 +154,6 @@ Examples:
 
 ### Step 6: RTL (Right-to-Left) Support
 For RTL languages (Arabic, Hebrew, Persian, Urdu):
-
 ```
 RTL AUDIT:
 Target RTL locales: <list>
@@ -235,7 +189,6 @@ CHANGES REQUIRED:
 
 ### Step 7: Character Set Validation
 Verify the application handles all Unicode correctly:
-
 ```
 CHARACTER SET CHECKS:
 [ ] Database columns use UTF-8 (utf8mb4 for MySQL, not utf8)
@@ -253,7 +206,6 @@ CHARACTER SET CHECKS:
 
 ### Step 8: Translation Workflow
 Set up the process for managing translations:
-
 ```
 TRANSLATION WORKFLOW:
 
@@ -288,7 +240,6 @@ TRANSLATION WORKFLOW:
 
 ### Step 9: i18n Testing
 Test internationalization across target locales:
-
 ```
 I18N TEST PLAN:
 
@@ -354,68 +305,6 @@ I18N TEST PLAN:
 
 ### Step 11: Commit and Transition
 1. Commit extracted strings: `"i18n: extract <N> strings to resource files"`
-2. Commit locale configuration: `"i18n: configure <locales> with formatting rules"`
-3. Commit RTL support: `"i18n: add RTL layout support for <locales>"`
-4. If incomplete: "Strings extracted and locales configured. Run `/godmode:build` to implement remaining items."
-5. If complete: "Internationalization complete. Run `/godmode:test` to verify all locales."
-
-## Key Behaviors
-
-1. **Extract, don't translate.** The skill extracts strings and sets up infrastructure. Actual translation is a human/service task.
-2. **ICU MessageFormat preferred.** It handles plurals, gender, select, and nested constructs. Simpler formats break for complex languages.
-3. **Test with pseudo-localization first.** Before any real translation, pseudo-localization catches 90% of i18n bugs instantly.
-4. **RTL is not optional.** If any target locale is RTL, every layout must be audited. CSS logical properties are the modern solution.
-5. **Locale is not language.** en-US and en-GB are different locales (date format, spelling). Always use full locale codes.
-6. **Never concatenate translated strings.** `"Hello " + name + ", you have " + count + " items"` breaks word order in other languages. Use placeholders.
-
-## Example Usage
-
-### Internationalizing a React application
-```
-User: /godmode:i18n Add support for Spanish and Arabic
-
-I18n: Auditing codebase for i18n readiness...
-
-I18N AUDIT:
-Framework: React (Next.js)
-Current locale support: none
-Hardcoded strings: 247 across 34 files
-Locale-unaware patterns: 18 date, 7 number, 3 currency
-RTL readiness: 42 directional CSS properties to convert
-
-Recommended library: react-intl (FormatJS)
-Reason: ICU MessageFormat, hooks API, strong TypeScript support
-
-String extraction plan:
-  Phase 1: Common components (buttons, nav, footer) — 45 strings
-  Phase 2: Feature pages — 156 strings
-  Phase 3: Error/validation messages — 46 strings
-
-[extracts strings, configures locales, adds RTL support]
-
-Results:
-  Strings extracted: 247/247
-  Locales: en-US (base), es-ES, ar-SA
-  RTL: 42 CSS properties converted to logical properties
-  Pseudo-localization: PASS
-
-Next: Send resource files to translation service, then /godmode:test
-```
-
-## HARD RULES
-1. NEVER concatenate translated strings — use ICU MessageFormat with placeholders. No exceptions.
-2. NEVER use binary plural logic (`count === 1 ? ... : ...`) — use CLDR plural rules via the i18n library.
-3. NEVER hardcode locale-specific formats (dates, numbers, currency) — use `Intl` APIs or equivalent.
-4. NEVER skip RTL audit if any target locale is RTL — every layout must be verified.
-5. NEVER expose raw Eloquent/ORM models in translation resource files — keys must be semantic.
-6. NEVER commit translation files with missing placeholders — validate placeholder preservation before merge.
-7. ALWAYS use full locale codes (`en-US`, not `en`) — locale is not language.
-8. ALWAYS add translator context/notes for ambiguous strings ("Save" can mean save-to-disk or save-money).
-9. ALWAYS run pseudo-localization before real translation — it catches 90% of i18n bugs instantly.
-10. ALWAYS use UTF-8 (utf8mb4 for MySQL) for all storage — never truncate multi-byte characters.
-
-## Auto-Detection
-On activation, detect project i18n context automatically before prompting:
 ```
 AUTO-DETECT:
 1. Scan for existing i18n config:
@@ -451,47 +340,17 @@ WHILE current_iteration < total_batches:
 EXIT when all strings extracted OR user requests stop
 ```
 
-## Multi-Agent Dispatch
-When targeting 3+ locales, parallelize locale-specific work across worktrees:
-```
-DISPATCH parallel agents (one per locale group):
-
-Agent 1 (worktree: i18n-rtl):
-  - RTL layout audit and CSS logical property conversion
-  - Scope: all CSS/style files
-  - Output: RTL-ready stylesheets
-
-Agent 2 (worktree: i18n-formats):
-  - Date, number, currency formatting fixes
-  - Scope: all files using Intl APIs or locale-unaware formatting
-  - Output: Locale-aware formatting throughout
-
-Agent 3 (worktree: i18n-extract):
-  - String extraction for remaining files
-  - Scope: UI component files with hardcoded strings
-  - Output: Resource files + externalized strings
-
-Agent 4 (worktree: i18n-tests):
-  - Pseudo-localization test suite + locale-specific format tests
-  - Scope: test directory
-  - Output: i18n test suite
-
-MERGE ORDER: extract → formats → rtl → tests
-CONFLICT RESOLUTION: extract branch is source of truth for resource files
-```
-
-## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Full i18n audit and extraction |
-| `--audit` | Audit only, no changes |
-| `--extract` | Extract strings only |
-| `--rtl` | RTL support audit and fixes only |
-| `--format` | Date/number/currency formatting only |
-| `--test` | Run i18n test suite only |
-| `--locale <code>` | Target specific locale |
-| `--pseudo` | Run pseudo-localization test |
+## HARD RULES
+1. NEVER concatenate translated strings — use ICU MessageFormat with placeholders. No exceptions.
+2. NEVER use binary plural logic (`count === 1 ? ... : ...`) — use CLDR plural rules via the i18n library.
+3. NEVER hardcode locale-specific formats (dates, numbers, currency) — use `Intl` APIs or equivalent.
+4. NEVER skip RTL audit if any target locale is RTL — every layout must be verified.
+5. NEVER expose raw Eloquent/ORM models in translation resource files — keys must be semantic.
+6. NEVER commit translation files with missing placeholders — validate placeholder preservation before merge.
+7. ALWAYS use full locale codes (`en-US`, not `en`) — locale is not language.
+8. ALWAYS add translator context/notes for ambiguous strings ("Save" can mean save-to-disk or save-money).
+9. ALWAYS run pseudo-localization before real translation — it catches 90% of i18n bugs instantly.
+10. ALWAYS use UTF-8 (utf8mb4 for MySQL) for all storage — never truncate multi-byte characters.
 
 ## Output Format
 Print after each workflow step:
@@ -503,7 +362,6 @@ Print after each workflow step:
 Print final summary: `i18n: {N} locales, {total_keys} keys, coverage: {avg}%. Framework: {library}. Format: {icu/gettext/custom}. RTL: {supported/not_needed}. Pseudo-loc: {tested/skipped}.`
 
 ## TSV Logging
-After each workflow step, append a row to `.godmode/i18n-results.tsv`:
 ```
 STEP\tCOMPONENT\tLOCALE\tSTATUS\tDETAILS
 1\taudit\t-\tcomplete\t47 hardcoded strings found in 12 files
@@ -513,67 +371,7 @@ STEP\tCOMPONENT\tLOCALE\tSTATUS\tDETAILS
 5\ttest\tpseudo\tpassed\tpseudo-loc reveals 3 truncation issues in sidebar
 ```
 
-## Success Criteria
-All of these must be true before marking the task complete:
-1. Zero hardcoded user-visible strings remain in source code (grep returns no matches).
-2. Default locale resource file contains all extracted keys with no empty values.
-3. ICU MessageFormat (or equivalent) is used for all plurals and interpolations — no string concatenation.
-4. Date, number, and currency formatting uses `Intl` API (or equivalent) with user locale, not hardcoded formats.
-5. RTL support works if RTL locales are in scope (CSS logical properties, `dir` attributes, mirrored layouts).
-6. Pseudo-localization test passes with no truncation, overlap, or layout breakage.
-7. Missing translation detection exists (falls back gracefully + logs warning, never shows raw key to user).
-8. All new code has tests (extraction completeness, formatter output, RTL rendering).
-
-## Error Recovery
-| Failure | Action |
-|---------|--------|
-| i18n library not detected | Check `package.json` for `react-intl`, `next-intl`, `i18next`, `vue-i18n`, `gettext`. If none found, ask user which framework. Do not guess. |
-| Extraction misses strings | Expand extraction patterns. Check for strings in: template literals, JSX attributes, error messages, validation messages, enum labels. Re-run extraction. |
-| Plural rules incorrect for locale | Verify CLDR plural categories for the target locale. Arabic has 6 forms (zero, one, two, few, many, other). Test each form with representative numbers. |
-| RTL layout broken | Check for `text-align: left` (use `start`), `margin-left` (use `margin-inline-start`), `float: left` (use `float: inline-start`). Apply CSS logical properties. |
-| Pseudo-loc shows truncation | Increase container width or switch to flexible layout. Pseudo-loc pads ~30% which matches German expansion. Fix all truncation before real translation. |
-| Resource file has merge conflicts | Use flat key structure (dot-notation) instead of nested JSON. Flat keys produce fewer merge conflicts. Resolve conflicts key-by-key. |
-
-## Keep/Discard Discipline
-```
-After EACH batch of string extractions or formatting fixes:
-  1. MEASURE: Run pseudo-localization test — any truncation, overlap, or layout breakage?
-  2. COMPARE: Are there fewer hardcoded strings than before? Does the build pass?
-  3. DECIDE:
-     - KEEP if: pseudo-loc passes AND build succeeds AND no raw keys visible to users
-     - DISCARD if: layout breaks OR build fails OR placeholders are corrupted
-  4. COMMIT kept changes. Fix discarded changes before the next batch.
-
-Never merge string extractions that break placeholder integrity ({name}, {{count}}).
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - Zero hardcoded user-visible strings remain (grep returns no matches)
-  - Pseudo-localization test passes with no truncation or layout breakage
-  - All date/number/currency formatting uses Intl API with locale parameter
-  - User explicitly requests stop
-
-DO NOT STOP just because:
-  - RTL support is partial (ship LTR locales first, RTL in next pass)
-  - Translation coverage is below 100% (extraction and formatting are the priority)
-```
-
-## Anti-Patterns
-
-- **Do NOT concatenate strings for sentences.** Word order differs across languages. Use ICU MessageFormat with placeholders.
-- **Do NOT use simple if/else for plurals.** English has 2 forms. Arabic has 6. Use CLDR plural rules through your i18n library.
-- **Do NOT assume text direction.** Even in LTR apps, user-generated content may contain RTL text.
-- **Do NOT hardcode date/number formats.** `MM/DD/YYYY` is wrong everywhere except the US. Use `Intl.DateTimeFormat`.
-- **Do NOT use string length for UI constraints.** German is ~30% longer than English. Test with pseudo-localization.
-- **Do NOT skip context for translators.** "Save" can mean "save to disk" or "save money." Translators need context.
-- **Do NOT treat missing translations as acceptable.** A fallback to English in a Japanese UI is a bug.
-
-
 ## I18n Audit Loop
-
-Comprehensive iterative audit for translation coverage, locale testing, and RTL support verification:
 
 ```
 I18N AUDIT LOOP:
@@ -692,8 +490,34 @@ FINAL REPORT:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run i18n tasks sequentially: RTL support, then format adapters, then string extraction, then tests.
-- Use branch isolation per task: `git checkout -b godmode-i18n-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Missing translation key at runtime | Add fallback chain: requested locale -> default locale -> key name. Log missing keys for translator backlog. |
+| Pluralization rules incorrect | Use ICU MessageFormat, not manual if/else. Verify locale-specific plural categories (some languages have 6 plural forms). |
+| Date/number formatting wrong for locale | Use `Intl.DateTimeFormat` and `Intl.NumberFormat` with explicit locale parameter. Never format manually. |
+| Translation file merge conflicts | Use one file per locale per namespace. Keep keys sorted alphabetically. Use flat key structure over nested. |
+
+## Success Criteria
+1. All user-visible strings extracted to translation files (zero hardcoded strings).
+2. Fallback locale configured and tested (missing key shows default, not blank or key name).
+3. Pluralization uses ICU MessageFormat for all locales.
+4. Date, number, and currency formatting uses `Intl` APIs with correct locale.
+
+## Keep/Discard Discipline
+```
+After EACH i18n change:
+  KEEP if: all locales render correctly AND no missing key warnings AND fallback works
+  DISCARD if: missing keys at runtime OR formatting errors OR layout breaks in RTL
+  On discard: revert. Fix extraction or key mapping before retrying.
+```
+
+## Stop Conditions
+```
+STOP when ALL of:
+  - All user-visible strings extracted to locale files
+  - Fallback chain tested (missing key -> default locale -> key name)
+  - Pluralization and formatting correct for all target locales
+  - CI check validates no missing keys on every PR
+```

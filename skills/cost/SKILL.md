@@ -235,46 +235,6 @@ Anomaly detection:
 6. **Tagging is foundational.** Cost optimization without proper tagging is guesswork. Fix tagging first, then optimize.
 7. **Continuous, not one-time.** Cost optimization is a recurring practice, not a project. Set up alerts and schedules for ongoing governance.
 
-## Example Usage
-
-### Analyzing cloud costs
-```
-User: /godmode:cost Our AWS bill jumped 40% last month, help me figure out why
-
-Cost: Let me investigate.
-
-COST INVENTORY:
-Provider: AWS
-Account: 123456789012
-Time period: Last 3 months
-
-Current monthly spend: $18,500 (was $13,200 two months ago)
-Month-over-month: +40% ($5,300 increase)
-
-Investigating top cost increases...
-
-Top cost drivers for the increase:
-1. EC2 instances: +$2,800 (14 new instances in us-east-1, 8 are idle)
-2. RDS: +$1,200 (staging DB upgraded to db.r5.2xlarge, running at 3% CPU)
-3. Data transfer: +$800 (cross-region replication enabled but not needed)
-4. S3: +$500 (lifecycle policies not set, 2TB of old logs accumulating)
-
-WASTE DETECTION:
-Idle EC2 instances (8): $1,600/month
-Oversized staging RDS: $900/month wasted capacity
-Unnecessary cross-region transfer: $800/month
-S3 logs without lifecycle: $500/month growth
-
-Quick wins to implement today:
-1. Terminate 8 idle EC2 instances → save $1,600/month
-2. Downsize staging RDS to db.t3.medium → save $900/month
-3. Disable cross-region replication → save $800/month
-4. Add S3 lifecycle policy (30d → IA, 90d → Glacier) → save $400/month
-
-Total recoverable: $3,700/month ($44,400/year)
-Implementation time: < 2 hours
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -376,15 +336,6 @@ AUTO-DETECT:
 -> Only ask user about time period if not obvious.
 ```
 
-## Anti-Patterns
-
-- **Do NOT recommend changes without utilization data.** "You should use smaller instances" without CPU/memory data is speculation.
-- **Do NOT optimize production aggressively.** A 5% savings is not worth a production outage risk. Be conservative with production resources.
-- **Do NOT ignore data transfer costs.** Data transfer is often the hidden cost driver. Always check cross-region and internet egress.
-- **Do NOT recommend reserved instances for unstable workloads.** Only recommend reservations for workloads with 3+ months of stable, predictable usage.
-- **Do NOT skip the tagging audit.** Without proper tags, you cannot attribute costs to teams or projects. Tagging comes first.
-- **Do NOT treat cost optimization as one-time.** Set up ongoing monitoring, alerts, and recurring reviews. Costs drift back up without governance.
-
 ## Output Format
 Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%). Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict: {verdict}.`
 
@@ -483,35 +434,3 @@ PREFER the simpler cost optimization:
   - Use built-in cloud provider tools (AWS Cost Explorer) before third-party solutions
 ```
 
-## Multi-Agent Dispatch
-For comprehensive cost optimization:
-```
-DISPATCH parallel agents (one per cost category):
-
-Agent 1 (worktree: cost-compute):
-  - Rightsize compute instances based on utilization
-  - Identify idle/stopped instances
-  - Scope: EC2, ECS, Lambda, GCE, AKS
-  - Output: Compute optimization recommendations
-
-Agent 2 (worktree: cost-storage):
-  - Identify unused storage (unattached EBS, orphan snapshots)
-  - Recommend storage tier changes (gp2 → gp3, S3 lifecycle)
-  - Scope: EBS, S3, RDS storage, EFS
-  - Output: Storage optimization recommendations
-
-Agent 3 (worktree: cost-network):
-  - Analyze data transfer costs (cross-region, egress)
-  - Recommend CDN, VPC endpoints, regional consolidation
-  - Scope: VPC, CloudFront, NAT Gateway, Transit Gateway
-  - Output: Network cost optimization recommendations
-
-MERGE ORDER: compute → storage → network (results only, no conflicts)
-CONFLICT RESOLUTION: each agent owns its cost category exclusively
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run cost tasks sequentially: compute rightsizing, then storage cleanup, then network cost analysis.
-- Use branch isolation per task: `git checkout -b godmode-cost-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

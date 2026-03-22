@@ -106,3 +106,24 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - **Rule 8 (multi-agent):** Execute tasks sequentially in the current session instead of dispatching parallel agents. One task at a time, commit after each.
 - **Worktree isolation:** Use branch-based isolation: `git checkout -b godmode-{task}`, work, merge back. See `adapters/shared/sequential-dispatch.md`.
 - **All other rules apply unchanged.** The loop, verification, rollback, and logging work identically.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Stack detection finds no match | Ask user for `test_cmd`, `lint_cmd`, `build_cmd`. Cache the answers. Do not guess. |
+| Skill SKILL.md not found | List available skills with `ls skills/`. Suggest closest match. Never fabricate skill instructions. |
+| Stuck in phase loop (>5 discards) | Escalate to previous phase (BUILD stuck -> re-PLAN). Log `stuck_reason` in session-log.tsv. |
+| Agent merge conflict | Discard conflicting agent. Re-queue task with narrower scope in next round. |
+
+## Success Criteria
+1. Stack detected and cached with correct `test_cmd`, `lint_cmd`, `build_cmd`.
+2. Skill matched and its SKILL.md followed to completion.
+3. Session logged in `.godmode/session-log.tsv` with stop_reason.
+4. No broken commits left in history (reverted on failure).
+
+## TSV Logging
+Append to `.godmode/session-log.tsv`:
+```
+timestamp	skill	iterations	kept	discarded	stop_reason	outcome
+```
+One row per skill invocation. Never overwrite previous rows.

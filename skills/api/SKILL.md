@@ -134,21 +134,6 @@ Option B — Header Versioning:
 
 Option C — Query Parameter Versioning:
   /api/resources?version=2
-  Pros: Simple, easy to test
-  Cons: Breaks caching, not RESTful
-
-Option D — Content Negotiation:
-  Accept: application/json; version=2
-  Pros: Standards-based, flexible
-  Cons: Complex implementation
-
-SELECTED: <Option> — <justification>
-
-DEPRECATION POLICY:
-- Sunset header: Sunset: <date>
-- Deprecation notice: X-API-Deprecated: true
-- Migration guide: Link: <url>; rel="successor-version"
-- Minimum support window: <N months/years>
 ```
 
 ### Step 5: Pagination Design
@@ -170,20 +155,6 @@ Option B — Cursor-based (RECOMMENDED for large datasets):
     pagination: {
       next_cursor: "eyJpZCI6MTAwfQ==",
       has_more: true
-    }
-  }
-  Pros: Consistent, performant at scale
-  Cons: No random access, no total count
-
-Option C — Keyset (page token):
-  GET /api/v1/resources?after=<last_id>&limit=10
-  Pros: Database-friendly, no offset skipping
-  Cons: Requires stable sort key
-
-SELECTED: <Option> — <justification>
-
-DEFAULT LIMIT: <N> (e.g., 20)
-MAX LIMIT: <N> (e.g., 100)
 ```
 
 ### Step 6: Error Response Design
@@ -205,34 +176,6 @@ ERROR RESPONSE FORMAT:
     "request_id": "<unique request identifier>",
     "documentation_url": "<link to relevant API docs>"
   }
-}
-
-HTTP STATUS CODE MAPPING:
-┌──────┬─────────────────────────────────────────────────────┐
-│ Code │ Usage                                                │
-├──────┼─────────────────────────────────────────────────────┤
-│ 200  │ Success (GET, PUT, PATCH)                            │
-│ 201  │ Created (POST that creates a resource)               │
-│ 204  │ No Content (DELETE, or PUT with no response body)    │
-│ 400  │ Bad Request (validation errors, malformed input)     │
-│ 401  │ Unauthorized (missing or invalid auth credentials)   │
-│ 403  │ Forbidden (valid auth but insufficient permissions)  │
-│ 404  │ Not Found (resource does not exist)                  │
-│ 409  │ Conflict (duplicate, version conflict)               │
-│ 422  │ Unprocessable Entity (valid syntax, invalid semantics)│
-│ 429  │ Too Many Requests (rate limit exceeded)              │
-│ 500  │ Internal Server Error (unexpected server failure)    │
-│ 503  │ Service Unavailable (maintenance, overload)          │
-└──────┴─────────────────────────────────────────────────────┘
-
-ERROR CODES (machine-readable):
-- VALIDATION_ERROR — input failed validation
-- RESOURCE_NOT_FOUND — requested resource does not exist
-- DUPLICATE_RESOURCE — resource with same unique key exists
-- RATE_LIMIT_EXCEEDED — too many requests
-- AUTHENTICATION_REQUIRED — no valid credentials provided
-- PERMISSION_DENIED — credentials valid but access denied
-- INTERNAL_ERROR — unexpected server error
 ```
 
 ### Step 7: Rate Limiting Design
@@ -254,19 +197,6 @@ TIERS:
 └──────────────┴──────────────┴──────────────┴──────────────┘
 
 RESPONSE HEADERS:
-X-RateLimit-Limit: <max requests per window>
-X-RateLimit-Remaining: <requests remaining>
-X-RateLimit-Reset: <unix timestamp when window resets>
-Retry-After: <seconds to wait> (only on 429 responses)
-
-EXCEEDED RESPONSE (429):
-{
-  "error": {
-    "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Rate limit exceeded. Retry after <N> seconds.",
-    "retry_after": <N>
-  }
-}
 ```
 
 ### Step 8: OpenAPI Specification Generation
@@ -279,82 +209,7 @@ info:
   version: "<version>"
   description: "<API description>"
   contact:
-    name: "<team>"
-    email: "<email>"
-  license:
-    name: "<license>"
-servers:
-  - url: "https://api.<domain>/v1"
-    description: "Production"
-  - url: "https://staging-api.<domain>/v1"
-    description: "Staging"
-paths:
-  /<resource>:
-    get:
-      summary: "List <resources>"
-      operationId: "list<Resources>"
-      parameters:
-        - $ref: "#/components/parameters/Cursor"
-        - $ref: "#/components/parameters/Limit"
-      responses:
-        "200":
-          description: "Success"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/<Resource>List"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/RateLimitExceeded"
-      security:
-        - BearerAuth: []
-components:
-  schemas:
-    <Resource>:
-      type: object
-      required: [id, <required_fields>]
-      properties:
-        id:
-          type: string
-          format: uuid
-        # ... all fields with types, formats, constraints
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-  parameters:
-    Cursor:
-      name: cursor
-      in: query
-      schema:
-        type: string
-    Limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-  responses:
-    Unauthorized:
-      description: "Authentication required"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    RateLimitExceeded:
-      description: "Rate limit exceeded"
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
+# ... (condensed)
 ```
 
 ### Step 9: Validation
@@ -376,13 +231,6 @@ API DESIGN VALIDATION:
 │  Request/response examples exist    │  PASS | FAIL           │
 │  No breaking changes (if updating)  │  PASS | FAIL | N/A     │
 │  HATEOAS links (if applicable)      │  PASS | FAIL | N/A     │
-│  Idempotency keys on mutations      │  PASS | FAIL           │
-│  OpenAPI spec valid                 │  PASS | FAIL           │
-│  Field naming convention consistent │  PASS | FAIL           │
-│  No sensitive data in URLs          │  PASS | FAIL           │
-└──────────────────────────────────────┴────────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 If the project has an existing OpenAPI spec, validate it:
@@ -428,64 +276,6 @@ Commit: `"api: <service> — <N> endpoints, <M> resources, OpenAPI spec generate
 6. **Rate limit everything.** Every public endpoint needs rate limiting. Internal endpoints need it too — they just get higher limits.
 7. **Validate the spec.** Generate it, then validate it with tooling. A broken OpenAPI spec is worse than no spec.
 
-## Example Usage
-
-### Designing a REST API
-```
-User: /godmode:api Design a REST API for a task management system
-
-API: Starting discovery...
-
-API DISCOVERY:
-Project: Task Management Service
-Type: REST
-Consumers: React frontend, mobile app, third-party integrations
-Scale: ~1000 RPS peak
-Auth: OAuth2 with JWT bearer tokens
-Existing APIs: None (greenfield)
-
-RESOURCE MODEL:
-- Project (id, name, description, owner_id, status)
-- Task (id, title, description, status, priority, assignee_id, project_id, due_date)
-- Comment (id, body, author_id, task_id)
-- Label (id, name, color)
-
-ENDPOINT CATALOG:
-GET    /api/v1/projects           List projects
-POST   /api/v1/projects           Create project
-GET    /api/v1/projects/:id       Get project
-PATCH  /api/v1/projects/:id       Update project
-DELETE /api/v1/projects/:id       Delete project
-GET    /api/v1/projects/:id/tasks List tasks in project
-POST   /api/v1/projects/:id/tasks Create task in project
-...
-
-Generating OpenAPI spec...
-Validating design...
-All 15 checks PASS.
-```
-
-### Validating an existing API
-```
-User: /godmode:api Validate our current API design
-
-API: Scanning for existing API specs and routes...
-
-Found: src/routes/*.ts (Express routes)
-Found: docs/openapi.yaml (existing spec)
-
-Running validation...
-
-FINDINGS:
-1. FAIL: Inconsistent naming — /api/v1/user (singular) vs /api/v1/tasks (plural)
-2. FAIL: No pagination on GET /api/v1/tasks — returns all tasks
-3. FAIL: Error responses use different formats across endpoints
-4. PASS: HTTP methods used correctly
-5. FAIL: No rate limiting headers in responses
-
-Verdict: NEEDS REVISION — 4 issues found
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -493,13 +283,6 @@ Verdict: NEEDS REVISION — 4 issues found
 | (none) | Full API design workflow |
 | `--type rest` | Design REST API (default) |
 | `--type graphql` | Design GraphQL API |
-| `--type grpc` | Design gRPC API |
-| `--validate` | Validate existing API spec or routes |
-| `--spec` | Generate OpenAPI spec only (skip design steps) |
-| `--versioning <strategy>` | Force versioning strategy: `url`, `header`, `query`, `content` |
-| `--pagination <strategy>` | Force pagination strategy: `offset`, `cursor`, `keyset` |
-| `--diff <v1> <v2>` | Compare two API versions for breaking changes |
-| `--mock` | Generate mock server from the spec |
 
 ## Auto-Detection
 
@@ -521,18 +304,6 @@ AUTO-DETECT SEQUENCE:
    - Count endpoints and resources
 4. Detect auth patterns:
    - grep for 'bearer', 'jwt', 'apiKey', 'oauth' in route middleware
-5. Detect existing pagination:
-   - grep for 'cursor', 'offset', 'limit', 'page' in query params
-6. Detect error handling:
-   - Check for centralized error handler or middleware
-   - Analyze error response format consistency
-7. Detect versioning:
-   - Check URL patterns for /v1/, /v2/ prefixes
-   - Check for version headers in middleware
-8. Auto-configure:
-   - No spec → generate OpenAPI from existing routes
-   - Existing spec → validate against implementation
-   - No versioning → recommend URL path versioning
 ```
 
 ## HARD RULES
@@ -551,17 +322,6 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 10. Log all API design decisions as TSV:
     ENDPOINT\tMETHOD\tPAGINATION\tAUTH\tRATE_LIMIT\tNOTES
 ```
-
-## Anti-Patterns
-
-- **Do NOT design APIs around database tables.** APIs expose resources, not tables.
-- **Do NOT use verbs in URLs.** `GET /api/v1/users` is right. The HTTP method IS the verb.
-- **Do NOT return different error formats from different endpoints.** One error schema for the entire API.
-- **Do NOT skip pagination.** Every list endpoint must paginate.
-- **Do NOT embed sensitive data in URLs.** Query parameters end up in logs.
-- **Do NOT design without consumers in mind.** An API designed in isolation will be redesigned.
-- **Do NOT generate a spec and skip validation.** Always validate with tooling.
-- **Do NOT version reactively.** Version from the start.
 
 ## Keep/Discard Discipline
 ```
@@ -704,63 +464,6 @@ WHILE current_iteration < max_iterations AND NOT all_checks_pass:
   validation_errors = run_spectral_lint(spec_file)  // or redocly lint
   IF validation_errors > 0:
     FOR each error:
-      FIX the violation in the spec
-      issues_found.append({type: "SPEC_VALIDATION", detail: error})
-      issues_fixed.append({type: "SPEC_VALIDATION", detail: error})
-    REVALIDATE — repeat until 0 errors
-
-  // Phase 2: Breaking Change Detection
-  IF previous_spec exists:
-    breaking_changes = run_oasdiff(previous_spec, spec_file)
-    // oasdiff or openapi-diff: detect removed endpoints, changed types, narrowed enums
-    FOR each breaking_change:
-      severity = classify(breaking_change)  // BREAKING | DEPRECATION | ADDITIVE
-      IF severity == "BREAKING":
-        REVERT the change — add new fields additively instead
-        issues_found.append({type: "BREAKING_CHANGE", detail: breaking_change})
-        issues_fixed.append({type: "BREAKING_CHANGE", fix: "reverted to additive"})
-      ELSE IF severity == "DEPRECATION":
-        ADD Sunset header and deprecation notice to spec
-        LOG: "DEPRECATION — {endpoint} scheduled for sunset"
-
-  // Phase 3: Design Quality Checks
-  quality_checks = {
-    naming_consistency:      all_endpoints_use_plural_nouns(),
-    http_methods_correct:    no_GET_with_body AND no_POST_for_reads(),
-    pagination_present:      every_list_endpoint_has_pagination(),
-    error_schema_unified:    single_error_schema_across_all_4xx_5xx(),
-    auth_defined:            every_non_public_endpoint_has_security(),
-    rate_limit_headers:      all_responses_include_ratelimit_headers(),
-    idempotency_keys:        all_mutation_endpoints_accept_idempotency_key(),
-    no_sensitive_in_urls:    no_tokens_or_pii_in_query_params(),
-    examples_present:        every_endpoint_has_request_response_example(),
-    field_naming:            all_fields_use_consistent_case()  // snake_case or camelCase, not mixed
-  }
-
-  FOR each check in quality_checks:
-    IF check.status == FAIL:
-      FIX the issue in the spec
-      issues_found.append({type: "QUALITY", check: check.name})
-      issues_fixed.append({type: "QUALITY", check: check.name})
-
-  // Phase 4: Keep/Discard Decision
-  revalidation_result = run_spectral_lint(spec_file)
-  breaking_result = run_oasdiff(previous_spec, spec_file)
-
-  IF revalidation_result.errors == 0 AND breaking_result.breaking == 0 AND all(quality_checks):
-    KEEP all changes
-    COMMIT: "api: audit pass #{current_iteration} — {len(issues_fixed)} issues fixed, 0 errors"
-    all_checks_pass = true
-  ELSE:
-    LOG: "Iteration {current_iteration}: {revalidation_result.errors} spec errors, {breaking_result.breaking} breaking changes remaining"
-    CONTINUE
-
-  REPORT: "Audit iteration {current_iteration}/{max_iterations}: found={len(issues_found)}, fixed={len(issues_fixed)}, remaining={revalidation_result.errors + breaking_result.breaking}"
-
-ON COMPLETION:
-  LOG to .godmode/api-audit.tsv:
-    timestamp\tspec_file\titerations\tissues_found\tissues_fixed\tbreaking_changes_caught\tvalidation_errors_fixed\tverdict
-  REPORT: "API audit complete: {current_iteration} iterations, {len(issues_fixed)} fixes, spec valid, 0 breaking changes"
 ```
 
 ### Breaking Change Detection Reference
@@ -781,15 +484,5 @@ BREAKING CHANGE CATEGORIES (auto-detected by oasdiff):
 │ New endpoint added                     │ ADDITIVE     │ Keep                        │
 │ Enum value added                       │ ADDITIVE     │ Keep                        │
 │ Field marked deprecated                │ DEPRECATION  │ Keep, add Sunset            │
-└────────────────────────────────────────┴──────────────┴─────────────────────────────┘
-
-THRESHOLDS:
-- 0 breaking changes allowed per release (hard gate)
-- Deprecated fields must have Sunset date within 6 months
-- Additive changes: unlimited, no gate
-- Spec validation: 0 errors, 0 warnings (spectral/redocly)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run API tasks sequentially: spec design, then implementation, then tests.
-Use branch isolation per task: `git checkout -b godmode-api-{task}`, implement, commit, merge back.

@@ -26,30 +26,7 @@ cat package.json 2>/dev/null | grep -E '"svelte"|"@sveltejs/kit"'
 # Detect SvelteKit vs standalone
 ls svelte.config.js svelte.config.ts 2>/dev/null
 
-# Detect Svelte version (4 vs 5)
-cat node_modules/svelte/package.json 2>/dev/null | grep '"version"'
-
-# Detect reactivity model (runes vs legacy)
-grep -rl '\$state\|\$derived\|\$effect\|\$props' src/ 2>/dev/null | head -5
-grep -rl '\$:' src/ 2>/dev/null | head -5
-
-# Detect state management
-grep -r "writable\|readable\|derived" src/ 2>/dev/null | head -5
-
-# Detect adapter
-grep -E "adapter-(auto|node|static|vercel|cloudflare|netlify)" svelte.config.* 2>/dev/null
-
-# Detect CSS approach
-grep -E "tailwindcss|unocss|scss|sass" package.json 2>/dev/null
-
-# Detect testing
-grep -E "vitest|playwright|@testing-library/svelte" package.json 2>/dev/null
-
-# Detect TypeScript
-ls src/app.d.ts tsconfig.json 2>/dev/null
-
-# Detect UI library
-grep -E "skeleton|daisyui|melt-ui|bits-ui" package.json 2>/dev/null
+# ... (condensed)
 ```
 
 ## Workflow
@@ -73,21 +50,6 @@ Component count: <N>
 Route count: <N>
 
 Directory structure:
- src/
- lib/
- components/ Reusable components
- stores/ Svelte stores
- utils/ Utility functions
- server/ Server-only modules
- routes/ SvelteKit file-based routes
- params/ Route param matchers
- hooks.server.ts Server hooks
- hooks.client.ts Client hooks
- app.html HTML template
- app.d.ts App-level types
-
-Quality score: <HIGH / MEDIUM / LOW>
-Issues detected: <N>
 ```
 
 If starting fresh, ask: "What are you building? Do you need SSR (SvelteKit) or a client-only app?"
@@ -112,45 +74,7 @@ Guide the appropriate reactivity approach:
  let summary = $derived.by(() => {
  if (items.length === 0) return 'No items';
  if (items.length === 1) return '1 item';
- return `${items.length} items`;
- });
-
- // $effect — side effects (replaces $: reactive statements with side effects)
- $effect(() => {
- console.log(`Count changed to ${count}`);
- // Cleanup function (optional)
- return () => {
- console.log('Cleaning up previous effect');
- };
- });
-
- // $props — component props (replaces export let)
- interface Props {
- title: string;
- subtitle?: string;
- onSave: (data: FormData) => void;
- }
- let { title, subtitle = 'Default subtitle', onSave }: Props = $props();
-
- // $bindable — two-way bindable props
- let { value = $bindable('') }: { value: string } = $props();
-
- // Functions modify state directly
- function increment() {
- count++;
- }
-
- function addItem(item: string) {
- items.push(item); // Direct mutation works with $state
- }
-</script>
-
-<h1>{title}</h1>
-<p>{subtitle}</p>
-<p>Count: {count} (doubled: {doubled})</p>
-<button onclick={increment}>Increment</button>
 ```
-
 
 Decision guide:
 ```
@@ -182,42 +106,8 @@ import type { CartItem, Product } from '$lib/types';
 class CartStore {
  items = $state<CartItem[]>([]);
 
- total = $derived(
- this.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
- );
-
- count = $derived(
- this.items.reduce((sum, item) => sum + item.quantity, 0)
- );
-
- isEmpty = $derived(this.items.length === 0);
-
- add(product: Product, quantity = 1) {
- const existing = this.items.find(i => i.productId === product.id);
- if (existing) {
- existing.quantity += quantity;
- } else {
- this.items.push({
- productId: product.id,
- name: product.name,
- price: product.price,
- quantity,
- });
- }
- }
-
- remove(productId: string) {
- this.items = this.items.filter(i => i.productId !== productId);
- }
-
- clear() {
- this.items = [];
- }
-}
-
-export const cart = new CartStore();
+# ... (condensed)
 ```
-
 
 Rules for stores:
 - **Svelte 5:** Use reactive classes (`.svelte.ts`) for shared state across components
@@ -246,25 +136,6 @@ src/routes/
 │ ├── +page.svelte Register form
 │ └── +page.server.ts Register form action
 ├── dashboard/
-│ ├── +layout.svelte Dashboard layout (sidebar)
-│ ├── +layout.server.ts Auth guard + user data
-│ ├── +page.svelte Dashboard home
-│ └── settings/
-│ └── +page.svelte Settings page
-├── blog/
-│ ├── +page.svelte Blog list
-│ ├── +page.server.ts Blog list loader
-│ └── [slug]/
-│ ├── +page.svelte Blog post
-│ └── +page.server.ts Blog post loader
-├── api/
-│ └── health/
-│ └── +server.ts API endpoint
-└── (marketing)/
- ├── about/
- │ └── +page.svelte About page
- └── pricing/
- └── +page.svelte Pricing page
 ```
 
 #### Load Functions
@@ -275,23 +146,7 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 
 export const load: PageServerLoad = async ({ params, locals, depends }) => {
- // Declare dependency for invalidation
- depends('app:blog');
-
- const post = await db.post.findUnique({
- where: { slug: params.slug, published: true },
- include: { author: true, comments: { orderBy: { createdAt: 'desc' } } },
- });
-
- if (!post) {
- error(404, { message: 'Post not found' });
- }
-
- return {
- post,
- isAuthor: locals.user?.id === post.authorId,
- };
-};
+# ... (condensed)
 ```
 
 ```typescript
@@ -301,13 +156,7 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
  if (!locals.user) {
- redirect(303, '/auth/login');
- }
-
- return {
- user: locals.user,
- };
-};
+# ... (condensed)
 ```
 
 #### Form Actions
@@ -318,56 +167,8 @@ import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/database';
 
 export const load: PageServerLoad = async ({ params }) => {
- const post = await db.post.findUnique({ where: { slug: params.slug } });
- if (!post) error(404, 'Not found');
- return { post };
-};
-
-export const actions: Actions = {
- // Named action: <form method="POST" action="?/addComment">
- addComment: async ({ request, params, locals }) => {
- if (!locals.user) {
- return fail(401, { message: 'Must be logged in' });
- }
-
- const formData = await request.formData();
- const body = formData.get('body')?.toString();
-
- if (!body || body.length < 3) {
- return fail(400, {
- body,
- errors: { body: 'Comment must be at least 3 characters' },
- });
- }
-
- await db.comment.create({
- data: {
- body,
- postSlug: params.slug,
- authorId: locals.user.id,
- },
- });
-
- return { success: true };
- },
-
- deleteComment: async ({ request, locals }) => {
- if (!locals.user) return fail(401, { message: 'Unauthorized' });
-
- const formData = await request.formData();
- const commentId = formData.get('commentId')?.toString();
-
- const comment = await db.comment.findUnique({ where: { id: commentId } });
- if (!comment || comment.authorId !== locals.user.id) {
- return fail(403, { message: 'Not allowed' });
- }
-
- await db.comment.delete({ where: { id: commentId } });
- return { success: true };
- },
-};
+# ... (condensed)
 ```
-
 
 Rules for SvelteKit routing:
 - **Server load functions for data** — `+page.server.ts` for data that needs database/API access
@@ -402,21 +203,8 @@ export const prerender = true;
 
 // routes/dashboard/+layout.ts
 // Disable SSR for dashboard (client-only rendering)
-export const ssr = false;
-
-// routes/blog/[slug]/+page.server.ts
-// SSR with cache headers
-export const load: PageServerLoad = async ({ params, setHeaders }) => {
- const post = await getPost(params.slug);
-
- setHeaders({
- 'Cache-Control': 'public, max-age=60, s-maxage=3600',
- });
-
- return { post };
-};
+# ... (condensed)
 ```
-
 
 ### Step 6: Adapter Configuration
 Configure the deployment adapter:
@@ -435,8 +223,6 @@ ADAPTER SELECTION:
 │ Bun │ svelte-adapter-bun │ Bun runtime │
 └──────────────────┴───────────────────────────┴───────────────────────┘
 ```
-
-
 
 ### Step 7: Component Patterns
 Establish reusable component patterns:
@@ -458,23 +244,7 @@ Establish reusable component patterns:
 </script>
 
 <div class="card">
- {#if header}
- <div class="card-header">{@render header()}</div>
- {:else}
- <div class="card-header"><h3>{title}</h3></div>
- {/if}
-
- <div class="card-body">
- {@render children()}
- </div>
-
- {#if footer}
- <div class="card-footer">{@render footer()}</div>
- {/if}
-</div>
 ```
-
-
 
 ### Step 8: Testing
 Set up testing with Vitest and Playwright:
@@ -494,33 +264,8 @@ import { render, fireEvent } from '@testing-library/svelte';
 import Counter from './Counter.svelte';
 
 describe('Counter', () => {
- it('renders initial count', () => {
- const { getByText } = render(Counter, { props: { initial: 5 } });
- expect(getByText('Count: 5')).toBeTruthy();
- });
-
- it('increments on click', async () => {
- const { getByText, getByRole } = render(Counter, { props: { initial: 0 } });
-
- const button = getByRole('button', { name: 'Increment' });
- await fireEvent.click(button);
-
- expect(getByText('Count: 1')).toBeTruthy();
- });
-
- it('does not go below zero when min is set', async () => {
- const { getByText, getByRole } = render(Counter, {
- props: { initial: 0, min: 0 },
- });
-
- const button = getByRole('button', { name: 'Decrement' });
- await fireEvent.click(button);
-
- expect(getByText('Count: 0')).toBeTruthy();
- });
-});
+# ... (condensed)
 ```
-
 
 ### Step 9: Validation
 Validate the Svelte application against best practices:
@@ -541,15 +286,6 @@ SVELTE APPLICATION AUDIT:
 │ Hooks for auth/logging │ PASS | FAIL │
 │ Stores/state well-organized │ PASS | FAIL │
 │ No $effect for derived state (use $derived)│ PASS | FAIL │
-│ No fetch in components (use load) │ PASS | FAIL │
-│ Accessibility attributes present │ PASS | FAIL │
-│ Test coverage meets thresholds │ PASS | FAIL │
-│ Bundle size within budget │ PASS | FAIL │
-│ No unused imports or components │ PASS | FAIL │
-│ Security headers configured (CSP) │ PASS | FAIL │
-└───────────────────────────────────────────┴──────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ### Step 10: Deliverables & Handoff
@@ -590,36 +326,6 @@ Commit: `"svelte: <project> — <N> routes, <N> components, <SvelteKit | Svelte>
 6. **Prerender what you can.** Static pages should be prerendered at build time. Dynamic pages should be SSR with cache headers. Only client-render what truly cannot be server-rendered.
 7. **Choose the right adapter.** Match the adapter to your deployment target. `adapter-auto` works for CI detection, but explicit adapters give you platform-specific features.
 
-## Example Usage
-
-### Building a new SvelteKit app
-```
-User: /godmode:svelte Build a blog with authentication and comments
-
-Svelte: Starting project assessment...
-
-SVELTE PROJECT ASSESSMENT:
-Svelte version: 5
-Meta-framework: SvelteKit
-Reactivity: Runes ($state, $derived, $effect)
-State management: Svelte 5 reactive classes
-Adapter: adapter-node (Docker deployment)
-
-Scaffolding:
- Routes: /, /auth/login, /auth/register, /blog, /blog/[slug], /dashboard
- Load functions: 6 server loaders
- Form actions: login, register, addComment, deleteComment, createPost
- Hooks: auth session verification, error logging
- Components: Nav, Footer, PostCard, CommentForm, AuthForm
-
-Rendering strategy:
- / -> Prerendered (static)
- /blog -> SSR with 60s cache
- /blog/[slug] -> SSR with 5min cache
- /dashboard -> CSR (ssr: false)
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -627,15 +333,6 @@ Rendering strategy:
 | (none) | Full Svelte/SvelteKit project assessment and setup |
 | `--audit` | Audit existing Svelte project against best practices |
 | `--migrate` | Migrate Svelte 4 to Svelte 5 runes |
-| `--sveltekit` | Set up or configure SvelteKit |
-| `--stores` | Design and implement state management |
-| `--routing` | Design SvelteKit routing with load functions |
-| `--actions` | Implement form actions for mutations |
-| `--adapter <platform>` | Configure deployment adapter |
-| `--ssr` | Configure rendering strategy per route |
-| `--test` | Set up Vitest and write component tests |
-| `--component <name>` | Generate a new component with tests |
-| `--hooks` | Set up server/client hooks |
 
 ## Keep/Discard Discipline
 Each change either advances the branch or gets reverted.
@@ -748,3 +445,11 @@ IF test failures:
  3. Verify async state changes are wrapped in act() or waitFor()
  4. Check that mocked stores use the correct writable/readable interface
 ```
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| `svelte-check` type errors | Read errors line by line. Fix prop type mismatches and missing types first. Re-run after each batch of fixes. |
+| Hydration mismatch | Wrap browser-only code in `{#if browser}` or `onMount`. Check for `Date.now()` or `Math.random()` in SSR. |
+| Load function errors | Verify `+page.server.ts` vs `+page.ts` placement. Ensure `error()` and `redirect()` are thrown, not returned. Await `parent()` calls. |
+| `$:` reactive statements in Svelte 5 | Replace with runes: `$state` for state, `$derived` for computed, `$effect` for side effects. |

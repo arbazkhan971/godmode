@@ -79,12 +79,6 @@ RACE CONDITION ANALYSIS:
 +--------------------------------------------------------------+
 
 DETECTION TOOLS:
-- Go: go run -race./...
-- Rust: cargo +nightly miri test (for unsafe code)
-- Java: ThreadSanitizer, FindBugs/SpotBugs
-- C/C++: ThreadSanitizer (TSan), Helgrind
-- Python: threading module + careful review (GIL does not prevent logical races)
-- Node.js: Async race conditions in event loop (not thread races)
 ```
 
 #### Common Race Condition Patterns and Fixes
@@ -146,20 +140,6 @@ PATTERNS:
 3. Controlled concurrency -- p-limit, p-map (when too many concurrent ops)
  import pLimit from 'p-limit';
  const limit = pLimit(10); // Max 10 concurrent
- const results = await Promise.all(
- urls.map(url => limit(() => fetch(url)))
- );
-
-4. Error handling -- Promise.allSettled (when partial failure is OK)
- const results = await Promise.allSettled(promises);
- const successes = results.filter(r => r.status === 'fulfilled');
- const failures = results.filter(r => r.status === 'rejected');
-
-ANTI-PATTERNS:
-- await in a loop (sequential when it could be concurrent)
-- Unhandled promise rejections (always catch or use allSettled)
-- Mixing callbacks and promises (pick one)
-- Not propagating cancellation (use AbortController)
 ```
 
 #### Python (asyncio)
@@ -179,20 +159,6 @@ PATTERNS:
  return await fetch(url)
 
 3. Task groups (Python 3.11+) -- structured concurrency
- async with asyncio.TaskGroup() as tg:
- task1 = tg.create_task(fetch_user(user_id))
- task2 = tg.create_task(fetch_orders(user_id))
- # Both tasks guaranteed complete or cancelled here
-
-4. Async generators -- streaming results
- async for chunk in stream_response(url):
- process(chunk)
-
-ANTI-PATTERNS:
-- Using asyncio.sleep(0) as a yield point hack
-- Blocking the event loop with sync I/O (use run_in_executor)
-- Creating tasks without awaiting or storing references
-- Ignoring CancelledError (always clean up on cancellation)
 ```
 
 #### Go (Goroutines + Channels)
@@ -212,34 +178,6 @@ PATTERNS:
 
 2. Worker pool
  jobs := make(chan Job, 100)
- results := make(chan Result, 100)
- for w := 0; w < numWorkers; w++ {
- go worker(jobs, results)
- }
-
-3. Context cancellation
- ctx, cancel := context.WithTimeout(parentCtx, 5*time.Second)
- defer cancel()
- select {
- case result := <-doWork(ctx):
- return result, nil
- case <-ctx.Done():
- return nil, ctx.Err()
- }
-
-4. errgroup (structured concurrency)
- g, ctx := errgroup.WithContext(parentCtx)
- g.Go(func() error { return fetchUser(ctx, id) })
- g.Go(func() error { return fetchOrders(ctx, id) })
- if err := g.Wait(); err != nil {
- return err
- }
-
-ANTI-PATTERNS:
-- Goroutine leak (always ensure goroutines can exit)
-- Unbuffered channel deadlock (sender and receiver must be ready)
-- Closing a channel from the receiver side
-- Not using context for cancellation propagation
 ```
 
 #### Rust (Tokio / async-std)
@@ -259,27 +197,6 @@ PATTERNS:
 
 3. Bounded concurrency -- tokio::sync::Semaphore
  let sem = Arc::new(Semaphore::new(10));
- for url in urls {
- let permit = sem.clone().acquire_owned().await?;
- tokio::spawn(async move {
- let _permit = permit;
- fetch(url).await
- });
- }
-
-4. Channels -- tokio::sync::mpsc
- let (tx, mut rx) = mpsc::channel(100);
- tokio::spawn(async move {
- while let Some(msg) = rx.recv().await {
- process(msg).await;
- }
- });
-
-OWNERSHIP RULES:
-- Arc<Mutex<T>> for shared mutable state across tasks
-- Arc<RwLock<T>> when reads dominate writes
-- Channels (mpsc, broadcast, watch) for message passing
-- Send + Sync bounds required for cross-task sharing
 ```
 
 ### Step 5: Lock-Free Data Structures
@@ -301,26 +218,6 @@ LOCK-FREE DATA STRUCTURES:
 
 WHEN TO USE LOCK-FREE:
 - High contention on a specific data structure
-- Locks measured as a bottleneck via profiling
-- Real-time or low-latency requirements
-- Reader-heavy workloads with rare writes
-
-WHEN TO AVOID LOCK-FREE:
-- Simple cases where a mutex works fine
-- Complex invariants spanning multiple fields
-- When correctness is hard to verify
-- Premature optimization without profiling evidence
-
-MEMORY ORDERING (Rust/C++):
-+--------------------------------------------------------------+
-| Ordering | Guarantees | Use Case |
-+--------------------------------------------------------------+
-| Relaxed | Atomicity only | Counters |
-| Acquire/Release | Happens-before on pair | Lock-like sync |
-| SeqCst | Total global order | Default safe |
-+--------------------------------------------------------------+
-
-Rule: Start with SeqCst. Only relax ordering after proving correctness and measuring the performance difference.
 ```
 
 ### Step 6: Actor Model Design
@@ -342,13 +239,6 @@ ACTOR SYSTEM DESIGN:
 
 SUPERVISION STRATEGY:
 +--------------------------------------------------------------+
-| Error Type | Strategy |
-+--------------------------------------------------------------+
-| Transient error | Restart child actor |
-| Permanent error | Stop child actor, escalate to parent |
-| Timeout | Restart with backoff |
-| Unknown | Stop all children, escalate |
-+--------------------------------------------------------------+
 ```
 
 #### Erlang/OTP Patterns
@@ -368,15 +258,6 @@ RESTART STRATEGIES:
 
 OTP BEHAVIORS:
 - gen_server: Request-response server (most common)
-- gen_statem: Finite state machine
-- gen_event: Event handling with multiple handlers
-- supervisor: Supervises child processes
-
-LET IT CRASH:
-- Do NOT write defensive code inside actors
-- Let unexpected errors crash the actor
-- Supervisor restarts with clean state
-- Separate error handling from business logic
 ```
 
 #### Akka/Pekko Patterns
@@ -396,29 +277,6 @@ PATTERNS:
  val future: Future[Response] = actor ? Request(data)
 
 2. Tell pattern (fire-and-forget)
- actor ! ProcessOrder(orderId)
-
-3. Pipe pattern (async result to actor)
- futureResult.pipeTo(sender())
-
-4. Stash pattern (defer messages during state transitions)
- def receive = {
- case Initialize => stash(); context.become(initializing)
- }
- def initializing = {
- case Initialized => unstashAll(); context.become(ready)
- }
-
-SUPERVISION:
- override val supervisorStrategy = OneForOneStrategy(
- maxNrOfRetries = 10,
- withinTimeRange = 1.minute
- ) {
- case _: ArithmeticException => Resume
- case _: NullPointerException => Restart
- case _: IllegalArgumentException => Stop
- case _: Exception => Escalate
- }
 ```
 
 ### Step 7: Deadlock Detection and Prevention
@@ -440,30 +298,6 @@ PREVENTION STRATEGIES:
 | Lock timeout | Hold and wait | Give up after timeout |
 | Try-lock | Hold and wait | Non-blocking attempt |
 | Single lock | Hold and wait | One coarse lock |
-| Lock-free design | Mutual exclusion | Atomics, channels |
-| Resource hierarchy | Circular wait | Number resources, |
-| | | acquire in order |
-+--------------------------------------------------------------+
-
-DEADLOCK DETECTION CHECKLIST:
-+--------------------------------------------------------------+
-| Check | Status |
-+--------------------------------------------------------------+
-| All locks acquired in consistent order | PASS | FAIL |
-| No nested lock acquisition | PASS | FAIL | N/A |
-| Timeouts on all lock acquisitions | PASS | FAIL |
-| No lock held during I/O operations | PASS | FAIL |
-| Channel operations have timeouts/select | PASS | FAIL | N/A |
-| Database transactions are short-lived | PASS | FAIL | N/A |
-| No callback invoked while holding lock | PASS | FAIL |
-+--------------------------------------------------------------+
-
-DETECTION TOOLS:
-- Go: goroutine dump (SIGQUIT or runtime.Stack)
-- Java: jstack, ThreadMXBean.findDeadlockedThreads()
-- Rust: parking_lot deadlock detection (debug builds)
-- Database: pg_stat_activity, SHOW ENGINE INNODB STATUS
-- General: Runtime deadlock detectors, watchdog timers
 ```
 
 ### Step 8: Concurrent Testing Strategies
@@ -485,29 +319,6 @@ CONCURRENT TESTING APPROACH:
 +--------------------------------------------------------------+
 
 TESTING CHECKLIST:
-1. [ ] Run race detector on all concurrent code paths
-2. [ ] Stress test with 100x normal concurrency
-3. [ ] Test with artificially slow I/O (delays, timeouts)
-4. [ ] Verify invariants hold under concurrent access
-5. [ ] Test cancellation paths (what happens mid-operation?)
-6. [ ] Test error paths under concurrency (error + concurrent access)
-7. [ ] Verify graceful shutdown (all goroutines/tasks complete)
-8. [ ] Test with single-threaded runtime (catches parallelism assumptions)
-
-STRESS TEST TEMPLATE:
- Run test 1000 times with max parallelism:
- - Go: go test -race -count=1000 -parallel=<GOMAXPROCS>./...
- - Rust: cargo test -- --test-threads=<N> (repeat with script)
- - Java: Run under Thread Sanitizer or jcstress
- - Node: Run concurrent promise batches, check for missing/duplicate results
-
-INVARIANT TESTING:
- For every concurrent data structure, define invariants:
- - Size invariant: insertions - deletions = current size
- - Ordering invariant: elements always sorted (if applicable)
- - Uniqueness invariant: no duplicate entries (if applicable)
- - Completeness invariant: no lost updates
- Run property tests that concurrently mutate and verify invariants hold.
 ```
 
 ### Step 9: Concurrency Model Selection
@@ -584,29 +395,6 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 7. **Start with the simplest correct solution.** A mutex that works is better than a lock-free structure that might work. Optimize only with profiling evidence.
 8. **Document the concurrency model.** Future developers need to understand why a particular approach was chosen and what invariants must be maintained.
 
-## Example Usage
-
-### Analyzing thread safety of a shared cache
-```
-User: /godmode:concurrent Analyze thread safety of our in-memory cache
-
-Concurrent: Analyzing shared state...
-
-SHARED STATE INVENTORY:
- cache map[string]CacheEntry -- Read-Write, protected by sync.RWMutex -- OK
- hitCount int64 -- Read-Write, NO PROTECTION -- UNSAFE
- lastEviction time.Time -- Write from evictor goroutine, read from handler -- UNSAFE
-
-RACE CONDITIONS FOUND: 2
- 1. hitCount increment in Get() -- read-modify-write without lock
- Fix: Use atomic.AddInt64(&c.hitCount, 1)
- 2. lastEviction written by evictor, read by stats handler -- data race
- Fix: Use atomic.Value or protect with existing RWMutex
-
-VERDICT: UNSAFE -- 2 race conditions, fixes provided
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -614,12 +402,6 @@ VERDICT: UNSAFE -- 2 race conditions, fixes provided
 | (none) | Full concurrency analysis and design |
 | `--analyze` | Thread safety analysis of existing code |
 | `--race` | Race condition detection and fixes |
-| `--async` | Async/await pattern design |
-| `--lockfree` | Lock-free data structure design |
-| `--actor` | Actor model system design |
-| `--deadlock` | Deadlock detection and prevention |
-| `--test` | Concurrent testing strategy |
-| `--model` | Concurrency model selection guide |
 
 ## Auto-Detection
 
@@ -641,24 +423,6 @@ AUTO-DETECT SEQUENCE:
  - grep for: Promise.all, Promise.allSettled, Worker (Node.js)
  - grep for: asyncio.gather, threading.Lock, multiprocessing (Python)
  - grep for: synchronized, ReentrantLock, ExecutorService (Java)
-
-3. Detect shared mutable state:
- - Global variables modified from multiple goroutines/threads
- - Package-level maps, slices, counters without synchronization
- - Singleton instances accessed concurrently
-
-4. Detect existing race condition signals:
- - Check for: go test -race results in CI config
- - Check for: ThreadSanitizer flags in build config
- - Check test output for: DATA RACE, deadlock, timeout
-
-5. Auto-classify workload:
- - I/O-bound: many HTTP calls, database queries, file operations
- - CPU-bound: computation, data processing, encoding
- - Mixed: both I/O and CPU in the same service
-
--> Auto-populate CONCURRENCY CONTEXT from detected signals.
--> Only ask user about specific shared state and I/O profile if not detectable.
 ```
 
 ## Keep/Discard Discipline
@@ -719,35 +483,11 @@ Append one row per session. Create the file with headers on first run.
 7. At least one stress test written: run 1000 iterations with maximum parallelism.
 8. Every mutex has a comment documenting what shared state it protects.
 
+
 ## Error Recovery
-```
-IF race detector reports a data race:
- → Locate the shared mutable state from the race report
- → Classify: check-then-act, read-modify-write, or compound action?
- → Apply the narrowest fix: atomic > channel > mutex
- → Re-run race detector — must report zero races before proceeding
-
-IF deadlock detected (goroutine/thread dump shows all blocked):
- → Identify the circular wait from the stack traces
- → Check lock acquisition order — are locks acquired in inconsistent order?
- → Fix: enforce global lock ordering, or use try-lock with timeout
- → Add a regression test that reproduces the deadlock scenario
-
-IF stress test reveals intermittent failure:
- → Increase iteration count to 10,000 to make failure reproducible
- → Add artificial delays (sleep 1ms) at suspected race points to widen the window
- → Once reproduced reliably, apply fix, then remove artificial delays
- → Run stress test 10,000 times — must pass all iterations
-
-IF goroutine/task leak detected (count grows over time):
- → Find the goroutine/task that never exits: runtime.NumGoroutine() or equivalent
- → Check: does it have a termination condition? Is context cancellation propagated?
- → Fix: add context.WithCancel, defer cancel(), and select on ctx.Done()
- → Verify: goroutine count stabilizes after fix
-
-IF lock contention causes performance degradation (profiler shows lock wait time):
- → Measure: what percentage of time is spent waiting for locks?
- → Reduce critical section scope: move I/O and computation outside the lock
- → Consider: RWMutex if reads dominate, or lock-free structure if profiling justifies it
- → Do NOT switch to lock-free without profiling evidence
-```
+| Failure | Action |
+|---------|--------|
+| Deadlock detected | Use consistent lock ordering. Add lock timeout. Use `NOWAIT` or `SKIP LOCKED` in SQL. Log lock acquisition order for debugging. |
+| Race condition in tests (flaky) | Run stress test 1000x to reproduce reliably. Add explicit synchronization or use deterministic scheduling in test harness. |
+| Thread pool exhaustion | Check for blocking calls in async code. Add backpressure. Monitor active thread count. Consider work-stealing scheduler. |
+| Data corruption under load | Add mutex/lock around shared state. Use atomic operations for counters. Verify all shared state is documented with protecting lock. |

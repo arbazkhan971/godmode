@@ -49,16 +49,6 @@ STARTER SELECTION:
 │  spring-boot-starter-actuator        │  Health, metrics, info endpoints │
 │  spring-boot-starter-validation      │  Bean validation (Jakarta)       │
 │  spring-boot-starter-cache           │  Caching abstraction             │
-│  spring-boot-starter-mail            │  Email sending                   │
-│  spring-boot-starter-amqp            │  RabbitMQ messaging              │
-│  spring-cloud-starter-netflix-eureka │  Service discovery               │
-│  spring-cloud-starter-gateway        │  API Gateway (reactive)          │
-│  spring-cloud-starter-openfeign      │  Declarative HTTP clients        │
-│  spring-cloud-starter-circuitbreaker │  Resilience4j circuit breakers   │
-│  spring-cloud-starter-config         │  Centralized configuration       │
-└──────────────────────────────────────┴──────────────────────────────────┘
-
-SELECTED: <list of starters with justification>
 ```
 
 Rules:
@@ -77,77 +67,7 @@ spring:
     name: ${SERVICE_NAME:my-service}
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-
-  # Database
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:mydb}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    hikari:
-      maximum-pool-size: ${DB_POOL_SIZE:10}
-      minimum-idle: ${DB_POOL_MIN:5}
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-
-  # JPA
-  jpa:
-    open-in-view: false          # CRITICAL: always disable OSIV
-    hibernate:
-      ddl-auto: validate         # Never auto-create in prod
-    properties:
-      hibernate:
-        format_sql: true
-        generate_statistics: false
-        jdbc:
-          batch_size: 25
-        order_inserts: true
-        order_updates: true
-
-  # Jackson
-  jackson:
-    default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
-    deserialization:
-      fail-on-unknown-properties: false
-
-# Server
-server:
-  port: ${SERVER_PORT:8080}
-  shutdown: graceful
-  tomcat:
-    connection-timeout: 5s
-    keep-alive-timeout: 15s
-    threads:
-      max: 200
-      min-spare: 10
-
-# Actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: when_authorized
-      probes:
-        enabled: true
-  metrics:
-    tags:
-      application: ${spring.application.name}
-
-# Logging
-logging:
-  level:
-    root: INFO
-    com.example: DEBUG
-    org.springframework.security: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-  pattern:
-    console: "%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n"
+# ... (condensed)
 ```
 
 ```
@@ -183,31 +103,7 @@ Design and implement security:
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-            .csrf(csrf -> csrf.disable())  // Disable for stateless API
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health/**").permitAll()
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/v1/**").authenticated()
-                .anyRequest().denyAll()
-            )
-            .oauth2ResourceServer(oauth2 ->
-                oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter())))
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(customAuthEntryPoint())
-                .accessDeniedHandler(customAccessDeniedHandler()))
-            .build();
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        return JwtDecoders.fromIssuerLocation(issuerUri);
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -244,56 +140,7 @@ Design the data layer:
     @Index(name = "idx_orders_customer", columnList = "customer_id"),
     @Index(name = "idx_orders_status", columnList = "status")
 })
-public class Order extends BaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @ManyToOne(fetch = FetchType.LAZY)  // ALWAYS lazy by default
-    @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> items = new ArrayList<>();
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status;
-
-    @Version
-    private Long version;  // Optimistic locking
-}
-
-// Repository with custom queries
-public interface OrderRepository extends JpaRepository<Order, UUID> {
-
-    // Derived query
-    List<Order> findByCustomerIdAndStatus(UUID customerId, OrderStatus status);
-
-    // JPQL with fetch join to avoid N+1
-    @Query("SELECT o FROM Order o JOIN FETCH o.items WHERE o.id = :id")
-    Optional<Order> findByIdWithItems(@Param("id") UUID id);
-
-    // Native query for complex reporting
-    @Query(value = "SELECT DATE(created_at) as date, COUNT(*) as count " +
-           "FROM orders WHERE created_at >= :since GROUP BY DATE(created_at)",
-           nativeQuery = true)
-    List<OrderDailyCount> getDailyOrderCounts(@Param("since") LocalDate since);
-
-    // Specification-based dynamic queries
-    Page<Order> findAll(Specification<Order> spec, Pageable pageable);
-
-    // Projection for lightweight reads
-    @Query("SELECT o.id as id, o.status as status, o.createdAt as createdAt " +
-           "FROM Order o WHERE o.customer.id = :customerId")
-    List<OrderSummary> findSummariesByCustomerId(@Param("customerId") UUID customerId);
-
-    // Bulk update (bypasses entity lifecycle — use with caution)
-    @Modifying
-    @Query("UPDATE Order o SET o.status = :status WHERE o.id IN :ids")
-    int bulkUpdateStatus(@Param("ids") List<UUID> ids, @Param("status") OrderStatus status);
-}
+# ... (condensed)
 ```
 
 ```
@@ -341,19 +188,6 @@ ACTUATOR CONFIGURATION:
 │  /actuator/beans                     │  DISABLED in prod                │
 │  /actuator/heapdump                  │  DISABLED in prod                │
 └──────────────────────────────────────┴──────────────────────────────────┘
-
-CUSTOM HEALTH INDICATORS:
-- DatabaseHealthIndicator: Connection pool status, query latency
-- ExternalServiceHealthIndicator: Downstream API availability
-- DiskSpaceHealthIndicator: Disk usage thresholds
-- CustomBusinessHealthIndicator: Business-specific health (e.g., queue depth)
-
-CUSTOM METRICS (Micrometer):
-- http_server_requests (auto): Request count, duration, status
-- db_query_duration: Database query timing
-- business_orders_created: Business event counters
-- cache_hit_ratio: Cache effectiveness
-- external_api_call_duration: Downstream API latency
 ```
 
 ```java
@@ -363,40 +197,7 @@ public class PaymentGatewayHealthIndicator implements HealthIndicator {
 
     @Override
     public Health health() {
-        try {
-            boolean reachable = paymentClient.ping();
-            if (reachable) {
-                return Health.up()
-                    .withDetail("gateway", "reachable")
-                    .withDetail("latency_ms", latency)
-                    .build();
-            }
-            return Health.down()
-                .withDetail("gateway", "unreachable")
-                .build();
-        } catch (Exception e) {
-            return Health.down(e).build();
-        }
-    }
-}
-
-// Custom business metrics
-@Component
-public class OrderMetrics {
-
-    private final Counter ordersCreated;
-    private final Timer orderProcessingTime;
-
-    public OrderMetrics(MeterRegistry registry) {
-        this.ordersCreated = Counter.builder("business.orders.created")
-            .description("Total orders created")
-            .tag("service", "order-service")
-            .register(registry);
-        this.orderProcessingTime = Timer.builder("business.orders.processing_time")
-            .description("Order processing duration")
-            .register(registry);
-    }
-}
+# ... (condensed)
 ```
 
 ### Step 6: Spring Cloud Microservices
@@ -418,18 +219,6 @@ MICROSERVICES ARCHITECTURE:
          │  - Own database    │   or gRPC    │  - Own database    │
          └─────────┬─────────┘              └────────┬──────────┘
                    │                                  │
-         ┌─────────▼─────────┐              ┌────────▼──────────┐
-         │  PostgreSQL A      │              │  PostgreSQL B      │
-         └───────────────────┘              └───────────────────┘
-
-CROSS-CUTTING CONCERNS:
-├── Config Server (Spring Cloud Config) — Centralized configuration
-├── Service Discovery (Eureka / Consul / K8s DNS) — Service registry
-├── Circuit Breaker (Resilience4j) — Fault tolerance
-├── Distributed Tracing (Micrometer Tracing + Zipkin/Jaeger) — Request tracing
-├── API Gateway (Spring Cloud Gateway) — Edge routing
-├── Event Bus (Kafka / RabbitMQ) — Async communication
-└── Secrets (Vault / K8s Secrets) — Secret management
 ```
 
 ### Step 7: Testing Strategy
@@ -442,80 +231,7 @@ class OrderServiceTest {
 
     @Mock private OrderRepository orderRepository;
     @Mock private PaymentClient paymentClient;
-    @InjectMocks private OrderService orderService;
-
-    @Test
-    void createOrder_withValidInput_returnsCreatedOrder() {
-        // Given
-        var request = new CreateOrderRequest(customerId, items);
-        when(orderRepository.save(any())).thenReturn(expectedOrder);
-
-        // When
-        var result = orderService.createOrder(request);
-
-        // Then
-        assertThat(result.status()).isEqualTo(OrderStatus.CREATED);
-        verify(orderRepository).save(any());
-    }
-}
-
-// Integration test — MockMvc for controller layer
-@WebMvcTest(OrderController.class)
-class OrderControllerTest {
-
-    @Autowired private MockMvc mockMvc;
-    @MockitoBean private OrderService orderService;
-
-    @Test
-    void getOrder_returnsOrder() throws Exception {
-        when(orderService.findById(orderId)).thenReturn(Optional.of(order));
-
-        mockMvc.perform(get("/api/v1/orders/{id}", orderId)
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(orderId.toString()))
-            .andExpect(jsonPath("$.status").value("CREATED"));
-    }
-
-    @Test
-    void getOrder_notFound_returns404() throws Exception {
-        when(orderService.findById(any())).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/v1/orders/{id}", UUID.randomUUID())
-                .with(jwt()))
-            .andExpect(status().isNotFound());
-    }
-}
-
-// Full integration test — TestContainers
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
-class OrderIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
-
-    @Autowired private TestRestTemplate restTemplate;
-
-    @Test
-    void fullOrderLifecycle() {
-        // Create order
-        var response = restTemplate.postForEntity("/api/v1/orders", request, OrderResponse.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        // Verify persistence
-        var fetched = restTemplate.getForEntity("/api/v1/orders/{id}",
-            OrderResponse.class, response.getBody().id());
-        assertThat(fetched.getBody().status()).isEqualTo("CREATED");
-    }
-}
+# ... (condensed)
 ```
 
 ```
@@ -566,13 +282,6 @@ SPRING BOOT VALIDATION:
 │  Health probes for K8s               │  PASS    │  Liveness + readiness│
 │  Config externalized (env vars)      │  PASS    │  12-factor compliant │
 │  Tests pass with TestContainers      │  PASS    │  Real DB in tests    │
-│  No deprecated API usage             │  PASS    │  Spring Boot 3.x API │
-│  Flyway migrations present           │  PASS    │  Version-controlled  │
-│  Error handling centralized          │  PASS    │  @ControllerAdvice   │
-│  DTO/projection for API responses    │  PASS    │  No entity exposure  │
-└──────────────────────────────────────┴──────────┴──────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ```
@@ -606,38 +315,6 @@ Commit: `"spring: <service> — <N> endpoints, Spring Boot <version>, <starters>
 6. **Profile-driven configuration.** Local, dev, staging, and production environments get separate profiles. Secrets come from environment variables or Vault.
 7. **Actuator for production.** Health probes for Kubernetes, Prometheus metrics for monitoring, and structured logging for observability are configured before shipping.
 
-## Example Usage
-
-### Building a Spring Boot REST API
-```
-User: /godmode:spring Build an order management service
-
-Spring: Assessing requirements...
-
-SPRING BOOT ASSESSMENT:
-Project: Order Management Service
-Spring Boot: 3.3.x
-Language: Java 21
-Build: Gradle (Kotlin DSL)
-Architecture: Modular monolith
-Database: PostgreSQL 16
-
-STARTER SELECTION:
-- spring-boot-starter-web (REST API)
-- spring-boot-starter-data-jpa (PostgreSQL via Hibernate)
-- spring-boot-starter-security (JWT auth)
-- spring-boot-starter-actuator (health + metrics)
-- spring-boot-starter-validation (input validation)
-
-Configuring application.yml...
-Setting up SecurityFilterChain...
-Creating entity/repository/service/controller layers...
-Adding Flyway migrations...
-Writing tests (MockMvc + TestContainers)...
-
-All 15 checks PASS.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -645,15 +322,6 @@ All 15 checks PASS.
 | (none) | Full Spring Boot setup workflow |
 | `--starter <name>` | Add specific starter and configure it |
 | `--security jwt` | Configure JWT-based security |
-| `--security oauth2` | Configure OAuth2 login |
-| `--data jpa` | Set up Spring Data JPA with best practices |
-| `--data mongodb` | Set up Spring Data MongoDB |
-| `--cloud` | Add Spring Cloud microservices patterns |
-| `--actuator` | Configure Actuator for production |
-| `--test` | Generate test suite (MockMvc + TestContainers) |
-| `--migrate` | Set up Flyway migrations |
-| `--audit` | Audit existing Spring Boot app for anti-patterns |
-| `--upgrade <version>` | Upgrade Spring Boot version with migration guide |
 
 ## HARD RULES
 
@@ -728,31 +396,7 @@ IF tests fail:
 IF JPA/Hibernate errors:
   1. LazyInitializationException → use @EntityGraph or JOIN FETCH, never OSIV
   2. N+1 queries → add @BatchSize or use JOIN FETCH in repository queries
-  3. OptimisticLockException → implement retry logic with @Retryable
-  4. Schema mismatch → verify Flyway/Liquibase migrations are up to date
-
-IF Spring Security errors:
-  1. 403 Forbidden → check SecurityFilterChain rules and method security
-  2. CORS errors → configure CorsConfigurationSource bean
-  3. CSRF issues → verify token handling for SPA frontends
-  4. Authentication loop → check filter order and entry point configuration
-
-IF dependency injection errors:
-  1. NoSuchBeanDefinitionException → verify @Component/@Service annotation and package scanning
-  2. Circular dependency → restructure with @Lazy or extract shared logic
-  3. Multiple bean candidates → use @Primary or @Qualifier
 ```
-
-## Anti-Patterns
-
-- **Do NOT leave OSIV enabled.** It silently loads data in the view layer, hiding N+1 queries.
-- **Do NOT use `ddl-auto: update` in production.** Use Flyway or Liquibase.
-- **Do NOT use `@Autowired` on fields.** Use constructor injection.
-- **Do NOT return JPA entities from controllers.** Use DTOs or projections.
-- **Do NOT catch exceptions in every controller.** Use `@ControllerAdvice` for centralized error handling.
-- **Do NOT use `WebSecurityConfigurerAdapter`.** Use `SecurityFilterChain` beans.
-- **Do NOT test against H2 when deploying to PostgreSQL.** Use TestContainers.
-- **Do NOT ignore Actuator security.** Exposed `/actuator/env` or `/actuator/heapdump` leaks secrets.
 
 ## Keep/Discard Discipline
 ```
@@ -780,6 +424,3 @@ DO NOT STOP just because:
   - One non-critical deprecation warning remains (document it)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run Spring Boot tasks inline in the current conversation.
-All Spring Boot conventions, patterns, and quality checks apply identically.

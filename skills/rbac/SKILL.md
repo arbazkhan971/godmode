@@ -36,20 +36,6 @@ Resources to protect:
 
 User populations:
   - End users: <roles and typical permissions>
-  - Admin users: <admin levels, super-admin vs scoped admin>
-  - Service accounts: <what services access what resources>
-  - External partners: <limited access patterns>
-
-Multi-tenancy:
-  Tenant isolation: <shared database | schema-per-tenant | DB-per-tenant>
-  Cross-tenant access: <never | admin only | configurable sharing>
-  Tenant-scoped roles: <same roles all tenants | custom roles per tenant>
-
-Delegation requirements:
-  - [ ] Users can share resources with other users
-  - [ ] Users can delegate permissions temporarily
-  - [ ] Admins can create custom roles
-  - [ ] Organization hierarchy affects permissions
 ```
 
 ### Step 2: Permission Model Selection
@@ -74,44 +60,6 @@ RBAC DESIGN:
 │  │   └── billing_admin                                       │
 │  └── support_admin                                           │
 │                                                              │
-│  Inheritance: Child roles inherit ALL permissions of parent  │
-│  Direction: More specific roles are LOWER in hierarchy       │
-│  Assignment: Users get ONE primary role per scope            │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Role definitions:
-┌─────────────────┬────────────────────────────────────────────┐
-│ Role            │ Permissions                                │
-├─────────────────┼────────────────────────────────────────────┤
-│ super_admin     │ * (all permissions, all tenants)           │
-│ org_admin       │ org:*, users:*, billing:*, settings:*      │
-│ team_admin      │ team:*, projects:*, members:manage         │
-│ member          │ projects:read, projects:write, comments:*  │
-│ contributor     │ projects:read, projects:write              │
-│ viewer          │ projects:read, comments:read               │
-│ billing_admin   │ billing:*, invoices:*, plans:*             │
-│ support_admin   │ users:read, tickets:*, logs:read           │
-└─────────────────┴────────────────────────────────────────────┘
-
-Permission format: <resource>:<action>
-  Actions: create, read, update, delete, list, manage, *
-  Resources: projects, users, teams, billing, settings, ...
-  Wildcard: resource:* = all actions on resource
-  Global: * = all permissions (super_admin only)
-
-Data model:
-  Table: roles
-    id, name, description, parent_role_id, tenant_id, is_system, created_at
-
-  Table: permissions
-    id, resource, action, description, created_at
-
-  Table: role_permissions
-    role_id, permission_id
-
-  Table: user_roles
-    user_id, role_id, scope_type (global | org | team), scope_id, granted_by, granted_at, expires_at
 ```
 
 #### Model: ABAC (Attribute-Based Access Control)
@@ -133,46 +81,6 @@ Resource attributes (what):
   - resource.classification (public | internal | confidential | restricted)
   - resource.created_at, resource.tags
 
-Action attributes (how):
-  - action.type (create | read | update | delete | share | export)
-  - action.bulk (true | false)
-  - action.fields (which fields are being accessed/modified)
-
-Environment attributes (context):
-  - env.time (business hours, maintenance window)
-  - env.ip_range (office network, VPN, public)
-  - env.device_trust (managed device, BYOD)
-  - env.risk_score (from threat detection system)
-
-Policy examples:
-  POLICY: "Confidential documents require MFA"
-  RULE: IF resource.classification == "confidential"
-        AND user.mfa_verified == false
-        THEN DENY
-        MESSAGE: "MFA required for confidential resources"
-
-  POLICY: "Data export only during business hours from trusted networks"
-  RULE: IF action.type == "export"
-        AND (env.time NOT IN business_hours OR env.ip_range != "office")
-        THEN DENY
-        MESSAGE: "Data export restricted to business hours from office network"
-
-  POLICY: "Bulk operations require admin role"
-  RULE: IF action.bulk == true
-        AND user.role NOT IN ["admin", "super_admin"]
-        THEN DENY
-        MESSAGE: "Bulk operations require admin privileges"
-
-Policy evaluation order:
-  1. Explicit DENY rules (highest priority)
-  2. Explicit PERMIT rules
-  3. Default DENY (if no rule matches, deny access)
-
-Policy storage:
-  Format: JSON | YAML | Rego (Open Policy Agent) | Cedar (AWS)
-  Location: Database (dynamic) | Config files (static) | Policy service (centralized)
-  Caching: Cache evaluated policies with TTL (5 minutes)
-  Versioning: Policy changes tracked with author, timestamp, reason
 ```
 
 #### Model: ReBAC (Relationship-Based Access Control)
@@ -194,65 +102,6 @@ Type definitions (schema):
   type user {}
 
   type document {
-    relation owner: user
-    relation editor: user | team#member
-    relation viewer: user | team#member | document#editor | document#owner
-
-    permission can_read = viewer
-    permission can_write = editor + owner
-    permission can_delete = owner
-    permission can_share = owner
-  }
-
-  type folder {
-    relation owner: user
-    relation editor: user | team#member
-    relation viewer: user | team#member
-
-    permission can_read = viewer + editor + owner
-    permission can_create_document = editor + owner
-  }
-
-  type team {
-    relation admin: user
-    relation member: user
-
-    permission can_manage = admin
-    permission can_invite = admin
-  }
-
-  type organization {
-    relation owner: user
-    relation admin: user
-    relation member: user | team#member
-
-    permission can_manage = owner + admin
-    permission can_read = member
-  }
-
-Relationship inheritance:
-  document#owner -> document#editor -> document#viewer (implicit upward)
-  folder#editor -> folder/documents#editor (parent to child)
-  team#member -> team's resources (transitive through membership)
-
-Implementation options:
-  - SpiceDB (open-source Zanzibar) — recommended for self-hosted
-  - Auth0 FGA (managed Zanzibar)
-  - Ory Keto (open-source)
-  - AWS Verified Permissions (Cedar language)
-  - Custom: Tuple store in PostgreSQL with recursive CTE queries
-
-Check API:
-  check(user: "alice", permission: "can_read", resource: "document:doc1") -> ALLOWED
-  check(user: "bob", permission: "can_delete", resource: "document:doc1") -> DENIED
-  list_objects(user: "alice", permission: "can_read", type: "document") -> [doc1, doc2, doc5]
-  list_users(permission: "can_read", resource: "document:doc1") -> [alice, bob, team:eng members]
-
-Performance:
-  Lookup latency target: < 10ms at p99
-  Caching: Cache permission checks with short TTL (30s-60s)
-  Consistency: Tunable — immediate for writes, eventual for reads
-  Indexing: Composite index on (resource_type, resource_id, relation, user_type, user_id)
 ```
 
 ### Step 3: Role Hierarchy Design
@@ -274,17 +123,6 @@ ROLE HIERARCHY DESIGN:
 │     Permissions are the UNION of all ancestor permissions.   │
 │     Use when: Cross-functional roles needed.                 │
 │                                                              │
-│  3. SCOPED ROLES (role + scope)                              │
-│     Same role name has different permissions per scope.       │
-│     Example: admin of Team A != admin of Team B.             │
-│     Use when: Multi-tenant or multi-team systems.            │
-│                                                              │
-│  Constraint rules:                                           │
-│  - Separation of duties: user cannot hold role A AND role B  │
-
-### Step 4: Resource-Based Access Control
-Design resource-level permissions:
-
 ```
 RESOURCE-BASED ACCESS CONTROL:
 
@@ -327,32 +165,6 @@ PERMISSION INHERITANCE:
 │  Folder permissions cascade to all documents within          │
 │  Subfolder permissions can RESTRICT but not EXPAND parent    │
 │  Breaking inheritance: Mark resource as "custom permissions" │
-│                                                              │
-│  ROLE INHERITANCE:                                           │
-│  super_admin inherits org_admin permissions                  │
-│  org_admin inherits team_admin permissions                   │
-│  team_admin inherits member permissions                      │
-│  member inherits viewer permissions                          │
-│                                                              │
-│  OVERRIDES:                                                  │
-│  Explicit DENY at any level overrides inherited ALLOW        │
-│  Explicit ALLOW at resource level overrides role-based DENY  │
-│  Admin override: super_admin can bypass all restrictions     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-DELEGATION MODEL:
-  Types of delegation:
-    1. GRANT delegation: User can grant their own permissions to others
-       Constraint: Cannot delegate permissions they don't hold
-       Constraint: Cannot delegate higher than their own level
-       Example: Editor can grant viewer access, but not editor access
-
-    2. IMPERSONATION: Admin acts as another user (for support)
-
-### Step 6: Policy Engine Design
-Design the authorization decision engine:
-
 ```
 POLICY ENGINE:
 ┌──────────────────────────────────────────────────────────────┐
@@ -405,27 +217,6 @@ Audit log schema:
       ip_address: "<client-ip>",
       user_agent: "<browser/client>",
       session_id: "<session-id>"
-    },
-    resource: {
-      type: "<resource-type>",
-      id: "<resource-id>",
-      tenant_id: "<tenant-id>",
-      owner_id: "<owner-id>"
-    },
-    action: "<action-attempted>",
-    context: {
-      policy_id: "<matching-policy>",
-      reason: "<why allowed/denied>",
-      evaluation_time_ms: <N>,
-      request_id: "<correlation-id>"
-    }
-  }
-
-Log levels by event:
-
-### Step 8: Implementation Artifacts
-Generate the authorization implementation:
-
 ```
 IMPLEMENTATION ARTIFACTS:
 ┌──────────────────────────────────────────────────────────────┐
@@ -457,19 +248,6 @@ IMPLEMENTATION ARTIFACTS:
 │    Inheritance: <enabled/disabled>                           │
 │                                                             │
 │  Delegation:                                                │
-│    Grant delegation: <enabled/disabled>                      │
-│    Impersonation: <enabled/disabled>                         │
-│    Temporary elevation: <enabled/disabled>                   │
-### Step 10: Commit and Transition
-1. Save architecture as `docs/auth/<feature>-access-control.md`
-2. Commit: `"rbac: <feature> — <model> with <N> roles, <N> permissions"`
-3. If INCOMPLETE: "Access control model needs additional work. Address remaining items, then re-run `/godmode:rbac`."
-4. If PRODUCTION READY: "Access control model complete. Run `/godmode:build` to implement, or `/godmode:secure` to audit."
-
-## Permission Matrix Audit Loop
-
-Structured loop for verifying the permission model against least-privilege principles:
-
 ```
 resources = list_all_protected_resources()
 roles = list_all_defined_roles()
@@ -510,12 +288,6 @@ FOR each user/service account:
      - IF gap found: add back the specific missing permission (not the entire role)
   5. LOG to .godmode/rbac-least-privilege.tsv:
      timestamp	subject_type	subject_id	current_perms_count	used_perms_count	recommended_perms_count	excessive_count	verdict
-
-SEVERITY RATINGS:
-  CRITICAL: Service account with wildcard (*) permissions in production
-  HIGH: User with admin role who has not used admin features in 90+ days
-
-## Keep/Discard Discipline
 
 ```
 FOR each permission audit finding:
@@ -564,23 +336,6 @@ AUTO-DETECT SEQUENCE:
    - Identify unprotected routes (no auth middleware)
 ```
 
-## Multi-Agent Dispatch
-
-For comprehensive access control implementation:
-
-```
-PARALLEL AGENTS:
-Agent 1 — Permission Model & Schema (worktree: rbac-model)
-  - Design role hierarchy and permission definitions
-  - Create database migrations for roles, permissions, user_roles
-  - Implement role resolution with hierarchy traversal
-  - Seed default roles and permissions
-
-Agent 2 — Policy Engine & Middleware (worktree: rbac-engine)
-  - Build policy evaluation engine (RBAC/ABAC/ReBAC)
-  - Create authorization middleware for all routes
-  - Implement field-level access control
-
 ## HARD RULES
 
 ```
@@ -609,93 +364,10 @@ HARD RULES — NEVER VIOLATE:
 6. **Resource ownership matters.** The owner of a resource should always have full control. Ownership is a relationship, not a role. Combine RBAC (role-based) with resource ownership (relationship-based) for practical systems.
 7. **Test authorization, not authentication.** Write tests that verify: users CAN access what they should, users CANNOT access what they should not, permission changes take effect, and audit logs are generated.
 
-## Example Usage
-
-### Designing RBAC for a SaaS platform
-```
-User: /godmode:rbac Design access control for our multi-tenant project management SaaS
-
-RBAC: Discovering requirements...
-
-ACCESS CONTROL REQUIREMENTS:
-Application type: Multi-tenant SaaS
-Resources: Organizations, Teams, Projects, Tasks, Files, Comments
-User populations: Org owners, admins, members, guests
-Multi-tenancy: Shared database with tenant_id isolation
-
-ROLE HIERARCHY:
-  org_owner
-  ├── org_admin
-  │   ├── project_admin
-  │   │   ├── project_member
-  │   │   │   └── project_viewer
-  │   │   └── project_contributor
-  │   └── team_admin
-  └── billing_admin
-
-PERMISSION MATRIX:
-┌─────────────────┬───────┬───────┬────────┬────────┬────────┐
-│ Resource        │ Owner │ Admin │ Member │ Contrib│ Viewer │
-├─────────────────┼───────┼───────┼────────┼────────┼────────┤
-│ Project CRUD    │ CRUD  │ CRUD  │ RU     │ R      │ R      │
-│ Task CRUD       │ CRUD  │ CRUD  │ CRUD   │ CRU    │ R      │
-│ File upload     │ YES   │ YES   │ YES    │ YES    │ NO     │
-│ Member invite   │ YES   │ YES   │ NO     │ NO     │ NO     │
-│ Settings        │ YES   │ YES   │ NO     │ NO     │ NO     │
-│ Billing         │ YES   │ bill  │ NO     │ NO     │ NO     │
-└─────────────────┴───────┴───────┴────────┴────────┴────────┘
-
-Generating implementation artifacts...
-```
-
-### Adding ReBAC to an existing system
-```
-User: /godmode:rbac Add document sharing with "shared with me" functionality
-
-RBAC: Analyzing existing access control...
-  Found: RBAC with roles in src/auth/
-  Missing: Relationship-based access for document sharing
-
-ReBAC EXTENSION:
-  Relationship types:
-    document:owner — full control
-    document:editor — read + write
-    document:viewer — read only
-    document:commenter — read + comment
-
-  Sharing flow:
-    Owner clicks "Share" -> Selects user/team -> Chooses permission level
-    Creates relationship tuple: user:bob has editor on document:doc123
-    Bob sees document in "Shared with me" via list_objects query
-
-  Implementation:
-    Table: resource_relationships (type, resource_id, relation, subject_type, subject_id)
-    Middleware: Check ownership OR relationship before resource access
-    Query: "Shared with me" = list all resources where user has any relation
-```
-
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full access control design and implementation |
-| `--model rbac` | RBAC model design |
-| `--model abac` | ABAC model design |
-| `--model rebac` | ReBAC model design |
-| `--hierarchy` | Role hierarchy design only |
-| `--permissions` | Permission matrix design only |
-| `--delegation` | Delegation and sharing model only |
-| `--audit` | Audit logging design only |
-| `--policies` | Policy engine design only |
-| `--review` | Access review report (who has access to what) |
-| `--migrate` | Migrate between access control models |
-| `--test` | Generate authorization test suite |
-| `--matrix` | Generate permission matrix visualization |
-
-## Output Format
-
-Every RBAC invocation must produce a structured report:
-
 ```
 ┌────────────────────────────────────────────────────────────┐
 │  RBAC RESULT                                                │
@@ -766,8 +438,6 @@ IF audit logging fails or loses events:
   5. File an incident report — unlogged authorization is a compliance violation
 ```
 
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -779,4 +449,14 @@ STOP when ANY of these are true:
 DO NOT STOP just because:
   - One role has complex inheritance (resolve it)
   - Audit logging works for denials only (must log allows too)
+```
+## Output Format
+Print: `RBAC: {roles} roles, {permissions} permissions. Audit log: {active|missing}. Tests: {pass|fail}. Status: {DONE|PARTIAL}.`
+
+## Keep/Discard Discipline
+```
+After EACH RBAC change:
+  KEEP if: all permission checks pass AND no privilege escalation possible AND audit log captures allow/deny
+  DISCARD if: any unauthorized access possible OR audit logging broken OR existing permissions regressed
+  On discard: revert immediately. RBAC bugs are security bugs.
 ```

@@ -59,20 +59,6 @@ LOG LEVEL STRATEGY:
 │         │ completed, but the process     │ File write failed  │
 │         │ continues serving others.      │ Auth token invalid │
 │  ─────────────────────────────────────────────────────────── │
-│  WARN   │ Something unexpected happened  │ Retry succeeded    │
-│         │ but the operation completed.   │ Cache miss fallback│
-│         │ Or: a condition that will      │ Deprecated API used│
-│         │ become an error soon.          │ Disk 80% full      │
-│         │                                │ Slow query (>1s)   │
-│  ─────────────────────────────────────────────────────────── │
-│  INFO   │ Normal operations that are     │ Server started     │
-│         │ significant business events.   │ User signed up     │
-│         │ What you'd want in production. │ Order completed    │
-    # ... (additional patterns follow same structure)
-  3. If you'd want to see it in a dashboard, it's INFO
-  4. If you only need it while debugging, it's DEBUG
-  5. Never log at ERROR level for expected conditions (404, validation failure)
-  6. A healthy system should have ZERO ERROR logs in normal operation
 ```
 
 ### Step 3: Structured Logging Implementation
@@ -95,13 +81,6 @@ STRUCTURED (GOOD):
     "timestamp": "2024-01-15T10:23:45.123Z",
     "level": "error",
     "message": "Payment failed",
-    "service": "checkout-api",
-    "environment": "production",
-    "requestId": "req_abc123",
-    "traceId": "trace_def456",
-    # ...
-  - Filterable (environment=production AND level=error)
-  - PII fields identifiable and redactable
 ```
 
 #### Implementation — Node.js (pino)
@@ -112,29 +91,7 @@ const pino = require('pino');
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
 
-  // Base fields included in every log line
-  base: {
-    service: process.env.SERVICE_NAME || 'my-service',
-    environment: process.env.NODE_ENV || 'development',
-    version: process.env.APP_VERSION || 'unknown',
-    hostname: require('os').hostname(),
-  },
-
-  // Timestamp as ISO string (not epoch)
-  timestamp: pino.stdTimeFunctions.isoTime,
-
-  // Serializers for common objects
-  serializers: {
-    err: pino.stdSerializers.err,  // serialize Error objects properly
-    req: (req) => ({
-      method: req.method,
-      url: req.url,
-      headers: {
-    # ... (additional patterns follow same structure)
-  req.log.info({ orderId: order.id, total: order.total }, 'Order created');
-
-  res.status(201).json(order);
-}));
+# ... (condensed)
 ```
 
 #### Implementation — Go (slog)
@@ -145,29 +102,7 @@ import (
     "context"
     "log/slog"
     "os"
-    "time"
-)
-
-// Setup creates a structured JSON logger
-func Setup(service, environment, version string) *slog.Logger {
-    handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-        Level: parseLevel(os.Getenv("LOG_LEVEL")),
-        ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-            // Redact sensitive fields
-            if isSensitive(a.Key) {
-                return slog.String(a.Key, "[REDACTED]")
-            }
-            // Use ISO timestamp
-            if a.Key == slog.TimeKey {
-                return slog.String("timestamp", a.Value.Time().Format(time.RFC3339Nano))
-            }
-            return a
-        },
-    # ... (additional patterns follow same structure)
-    )
-
-    json.NewEncoder(w).Encode(order)
-}
+# ... (condensed)
 ```
 
 #### Implementation — Python (structlog)
@@ -178,29 +113,7 @@ import uuid
 from functools import wraps
 
 # Configure structlog
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        # PII redaction processor
-        redact_sensitive_fields,
-        # JSON output for production, pretty for dev
-        structlog.dev.ConsoleRenderer() if os.getenv("ENV") == "development"
-        else structlog.processors.JSONRenderer(),
-    ],
-    wrapper_class=structlog.make_filtering_bound_logger(
-        logging.getLevelName(os.getenv("LOG_LEVEL", "INFO"))
-    ),
-    context_class=dict,
-    logger_factory=structlog.PrintLoggerFactory(),
-    # ... (additional patterns follow same structure)
-
-    logger.info("Order created", order_id=order.id, total=order.total)
-
-    return order
+# ... (condensed)
 ```
 
 ### Step 4: Correlation IDs and Request Tracing
@@ -223,13 +136,6 @@ Flow:
     │    requestId=req_001   │            │           │
     │    traceId=trace_xyz   │            │           │
     │          │             │            │           │
-    │          └──Headers──→ │            │           │
-    │               X-Request-ID: req_001 │           │
-    │               X-Trace-ID: trace_xyz │           │
-    │               X-Span-ID: span_aaa   │           │
-    # ...
-  Service B log: { "traceId": "trace_xyz", "message": "Charging payment" }
-  Service A log: { "traceId": "trace_xyz", "message": "Order confirmed" }
 ```
 
 #### Implementation — Propagation Middleware
@@ -240,29 +146,7 @@ function correlationMiddleware(req, res, next) {
   req.id = req.headers['x-request-id'] || generateId('req');
   req.traceId = req.headers['x-trace-id'] || generateId('trace');
   req.spanId = generateId('span');
-  req.parentSpanId = req.headers['x-span-id'] || null;
-
-  // Set response headers for client correlation
-  res.set('X-Request-ID', req.id);
-  res.set('X-Trace-ID', req.traceId);
-
-  next();
-}
-
-// HTTP client that propagates correlation IDs
-class TracedHttpClient {
-  constructor(baseLogger) {
-    this.logger = baseLogger;
-  }
-
-  async request(url, options, context) {
-    const childSpanId = generateId('span');
-
-    # ... (additional patterns follow same structure)
-
-function generateId(prefix) {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
+# ... (condensed)
 ```
 
 #### OpenTelemetry Integration
@@ -273,22 +157,7 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http')
 const { OTLPLogExporter } = require('@opentelemetry/exporter-logs-otlp-http');
 
 const sdk = new NodeSDK({
-  serviceName: process.env.SERVICE_NAME,
-  traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT + '/v1/traces',
-  }),
-  logRecordExporter: new OTLPLogExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT + '/v1/logs',
-  }),
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-http': {
-        requestHook: (span, request) => {
-          span.setAttribute('http.request_id', request.headers['x-request-id']);
-        },
-    # ...
-// Logs automatically include trace context (traceId, spanId)
-// from the active OpenTelemetry span
+# ... (condensed)
 ```
 
 ### Step 5: PII Redaction in Logs
@@ -310,18 +179,6 @@ PII REDACTION POLICY:
 │  Date of birth         │ MASK      │ ****-**-15              │
 │  Home address          │ REDACT    │ [REDACTED]              │
 │  Auth token / JWT      │ TRUNCATE  │ eyJhb....[TRUNCATED]    │
-│  API key               │ TRUNCATE  │ sk_live_...abc          │
-│  Cookie values         │ REDACT    │ [REDACTED]              │
-│  Request body (POST)   │ SELECTIVE │ Log allowed fields only │
-│  Query parameters      │ SELECTIVE │ Redact known PII params │
-└──────────────────────────────────────────────────────────────┘
-
-RULES:
-  1. Allowlist, not blocklist — log only explicitly allowed fields
-  2. Redact by default — if unsure, redact
-  3. Redact at the logger level, not in business logic
-  4. Test redaction — log a known PII value and verify it's redacted
-  5. Audit quarterly — new fields may introduce PII
 ```
 
 #### Implementation — Redaction Utilities
@@ -332,29 +189,7 @@ const redactor = {
     if (!value || typeof value !== 'string') return value;
     const [local, domain] = value.split('@');
     if (!domain) return '[REDACTED_EMAIL]';
-    return `${local[0]}***@${domain}`;
-  },
-
-  phone(value) {
-    if (!value || typeof value !== 'string') return value;
-    const digits = value.replace(/\D/g, '');
-    if (digits.length < 4) return '[REDACTED_PHONE]';
-    return value.slice(0, -4).replace(/\d/g, '*') + value.slice(-4);
-  },
-
-  creditCard(value) {
-    return '[REDACTED]';
-  },
-
-  ip(value) {
-    if (!value || typeof value !== 'string') return value;
-    // Anonymize last octet (IPv4) or last 80 bits (IPv6)
-    const parts = value.split('.');
-    # ... (additional patterns follow same structure)
-  'req.headers.cookie',
-  'token', '*.token',
-  'secret', '*.secret',
-];
+# ... (condensed)
 ```
 
 ### Step 6: Log Aggregation Architecture
@@ -376,20 +211,6 @@ Application → stdout (JSON) → Filebeat → Logstash → Elasticsearch → Ki
                             └─────┬──────┘
                                   ↓
                             ┌─────────────┐
-                            │  Logstash   │
-                            │  - Parse    │
-                            │  - Transform│
-                            │  - Enrich   │
-                            │  - Filter   │
-                            │  - Route    │
-                            └─────┬──────┘
-                                  ↓
-                            ┌─────────────┐
-    # ... (additional patterns follow same structure)
-    if [userId] {
-      mutate { add_field => { "[@metadata][index]" => "logs-user-activity" } }
-    }
-  }
 ```
 
 #### Grafana Loki (Lightweight Alternative)
@@ -409,20 +230,6 @@ Application → stdout (JSON) → Promtail → Loki → Grafana
                                   ↓
                             ┌─────────────┐
                             │    Loki     │
-                            │  - Label    │
-                            │    index    │
-                            │  - Chunk   │
-                            │    storage │
-                            │  - LogQL   │
-                            └─────┬──────┘
-                                  ↓
-                            ┌─────────────┐
-                            │  Grafana    │
-    # ... (additional patterns follow same structure)
-  rate({level="error"}[5m])
-
-  # Top 10 error messages
-  topk(10, sum by (message) (rate({level="error"}[1h])))
 ```
 
 #### AWS CloudWatch Logs
@@ -442,20 +249,6 @@ CloudWatch Insights query examples:
 
   # Error rate by service
   stats count(*) as errorCount by service
-  | filter level = "error"
-  | sort errorCount desc
-
-  # P95 request duration
-  stats percentile(duration_ms, 95) as p95
-  | filter message = "Request completed"
-
-  # Trace a specific request
-  fields @timestamp, service, message
-    # ... (additional patterns follow same structure)
-        }
-      }
-    }
-  }
 ```
 
 ### Step 7: Log Retention and Rotation
@@ -476,34 +269,6 @@ LOG RETENTION POLICY:
 │  Development │ All       │ 3 days    │ Hot (3d)              │
 │  ─────────────────────────────────────────────────────────── │
 │  Compliance  │ Audit logs│ 7 years   │ Hot (90d) → Archive   │
-│  (if needed) │           │           │ (7 years, immutable)  │
-└──────────────────────────────────────────────────────────────┘
-
-ROTATION:
-  File-based logging:
-    - Rotate daily or at 100MB, whichever comes first
-    - Compress rotated files (gzip)
-    - Delete after retention period
-    - Use logrotate (Linux) or built-in library rotation
-
-  Container logging:
-    - Log to stdout/stderr (12-factor app)
-    - Container runtime handles rotation (Docker: max-size, max-file)
-    - Log shipper (Filebeat/Promtail) handles delivery
-    - Aggregation system handles retention
-
-Docker log rotation:
-  {
-    "log-driver": "json-file",
-    "log-opts": {
-      "max-size": "50m",
-      "max-file": "5"
-    }
-  }
-
-Kubernetes:
-  Container logs rotated by kubelet (default 10MB, 5 files)
-  Ship to aggregation system before rotation deletes them
 ```
 
 ### Step 8: Logging Performance
@@ -524,24 +289,6 @@ LOGGING PERFORMANCE GUIDELINES:
 │                        │ Truncate request/response bodies   │
 │  ─────────────────────────────────────────────────────────── │
 │  Disk fill from logs   │ Rotation + retention policy        │
-│                        │ Alerts on disk usage > 80%         │
-│  ─────────────────────────────────────────────────────────── │
-│  Log shipper backpres  │ Drop oldest on buffer full (not    │
-│                        │ block the application)             │
-└──────────────────────────────────────────────────────────────┘
-
-Performance code pattern:
-  // BAD: Stringify even when debug is disabled
-  logger.debug(`User data: ${JSON.stringify(largeObject)}`);
-
-  // GOOD: Only compute if level is enabled
-  if (logger.isLevelEnabled('debug')) {
-    logger.debug({ userData: largeObject }, 'User data loaded');
-  }
-
-  // BEST: Use lazy serialization (pino does this automatically)
-  logger.debug({ userData: largeObject }, 'User data loaded');
-  // pino only serializes if debug level is active
 ```
 
 ### Step 9: Logging Checklist
@@ -562,37 +309,6 @@ LOGGING VERIFICATION CHECKLIST:
 │    [ ] No ERROR logs for expected conditions (404)   │      │
 │    [ ] DEBUG disabled in production by default       │      │
 │    [ ] Log level configurable at runtime             │      │
-│  ─────────────────────────────────────────────────────────── │
-│  Context             │                                │      │
-│    [ ] Request ID in every log within a request      │      │
-│    [ ] Trace ID propagated across service boundaries │      │
-│    [ ] User ID included when authenticated           │      │
-│    [ ] Error logs include stack trace and cause chain│      │
-│  ─────────────────────────────────────────────────────────── │
-│  PII                 │                                │      │
-│    [ ] Sensitive fields redacted (password, token)   │      │
-│    [ ] Email/phone masked, not fully logged          │      │
-│    [ ] Auth headers and cookies never logged         │      │
-│    [ ] Redaction tested with sample PII values       │      │
-│  ─────────────────────────────────────────────────────────── │
-│  Aggregation         │                                │      │
-│    [ ] Logs ship to aggregation system (ELK/Loki/CW)│      │
-│    [ ] Can search by requestId/traceId across services│     │
-│    [ ] Alert rules configured for error rate spikes  │      │
-│    [ ] Dashboards for key log metrics                │      │
-│  ─────────────────────────────────────────────────────────── │
-│  Retention           │                                │      │
-│    [ ] Retention policy defined per environment      │      │
-│    [ ] Log rotation configured (size/time based)     │      │
-│    [ ] Compliance logs archived per policy           │      │
-│    [ ] Storage tiering in place (hot/warm/cold)      │      │
-│  ─────────────────────────────────────────────────────────── │
-│  Performance         │                                │      │
-│    [ ] Async logging (no blocking I/O in hot path)   │      │
-│    [ ] Debug-level computation guarded by level check│      │
-│    [ ] Max message size enforced                     │      │
-│    [ ] Log shipper backpressure won't block app      │      │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Output
@@ -630,16 +346,6 @@ AUTO-DETECT:
 3. Check for correlation IDs:
    - grep for requestId, traceId, correlationId, X-Request-ID
 4. Check for PII in logs:
-   - grep for email, password, token, ssn, credit in log statements
-   - Identify fields that need redaction
-5. Detect log aggregation:
-   - docker-compose with elasticsearch, kibana, logstash → ELK
-   - promtail config, loki → Grafana Loki
-   - CloudWatch agent config → AWS CloudWatch
-   - OTEL_EXPORTER config → OpenTelemetry
-6. Check log rotation:
-   - logrotate config, Docker log-opts
-   - Log retention policies in cloud config
 ```
 
 ## Iterative Logging Implementation Protocol
@@ -660,17 +366,6 @@ WHILE current_service < len(services):
      b. Log request start + completion with duration
      c. Auto-classify log level by status code (5xx=ERROR, 4xx=WARN)
   4. REPLACE unstructured logs:
-     - console.log/print → structured logger calls
-     - Add context fields (userId, orderId, etc.)
-     - Assign correct log levels
-  5. VERIFY:
-     - Run application, check log output is valid JSON
-     - Verify PII is redacted (test with sample sensitive data)
-     - Verify correlation IDs propagate across service calls
-  6. COMMIT: "logging: {service} — structured logging with correlation IDs"
-  7. current_service += 1
-
-EXIT when all services have structured logging
 ```
 
 ## Keep/Discard Discipline
@@ -720,35 +415,6 @@ PREFER the simpler logging approach:
   - Fewer log levels in practice: ERROR + WARN + INFO covers 95% of production needs
 ```
 
-## Multi-Agent Dispatch
-For multi-service logging infrastructure:
-```
-DISPATCH parallel agents (one per concern):
-
-Agent 1 (worktree: logging-core):
-  - Logger configuration and middleware for all services
-  - Scope: shared logging library/config
-  - Output: Reusable logger setup with PII redaction
-
-Agent 2 (worktree: logging-migrate):
-  - Replace unstructured logs with structured calls
-  - Scope: all source files with console.log/print/log.Println
-  - Output: Structured log calls with proper levels and context
-
-Agent 3 (worktree: logging-correlation):
-  - Correlation ID propagation across service boundaries
-  - Scope: HTTP clients, message queue producers/consumers
-  - Output: Trace ID propagation middleware + traced HTTP client
-
-Agent 4 (worktree: logging-pipeline):
-  - Log aggregation pipeline setup (ELK/Loki/CloudWatch)
-  - Scope: infrastructure configs, docker-compose, k8s
-  - Output: Log shipping + dashboards + alert rules
-
-MERGE ORDER: core → migrate → correlation → pipeline
-CONFLICT RESOLUTION: core branch owns logger config, others depend on it
-```
-
 ## Chaining
 - **From `/godmode:errorhandling`:** After designing error hierarchy, implement structured logging with `/godmode:logging`
 - **From `/godmode:logging` to `/godmode:observe`:** After logging is in place, add metrics and tracing with `/godmode:observe`
@@ -790,8 +456,3 @@ iteration	task	services_configured	format	correlation_ids	pii_redacted	retention
 - **Logs not appearing in aggregator**: Check the log shipping agent (Fluentd, Filebeat, CloudWatch agent). Verify network connectivity to the aggregator. Check log file rotation — the agent may be tailing a rotated file.
 - **Different services use different log formats**: Standardize on a single schema. Create a shared logging library/wrapper that all services import. Enforce the schema in code review.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run logging tasks sequentially: core setup, then migration, then correlation, then pipeline.
-- Use branch isolation per task: `git checkout -b godmode-logging-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

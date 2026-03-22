@@ -100,34 +100,7 @@ const promClient = require('prom-client');
 promClient.collectDefaultMetrics();
 
 // HTTP request duration histogram
-const httpDuration = new promClient.Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'HTTP request duration in seconds',
-  labelNames: ['method', 'path', 'status_code'],
-  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
-});
-
-// HTTP request counter
-const httpRequests = new promClient.Counter({
-  name: 'http_requests_total',
-  help: 'Total HTTP requests',
-  labelNames: ['method', 'path', 'status_code'],
-});
-
-// Middleware
-app.use((req, res, next) => {
-  const end = httpDuration.startTimer();
-  res.on('finish', () => {
-    const labels = {
-      method: req.method,
-      path: req.route?.path || req.path,
-      status_code: res.statusCode,
-    };
-    end(labels);
-    httpRequests.inc(labels);
-  });
-  next();
-});
+# ... (condensed)
 ```
 
 **DataDog (Python / Flask)**
@@ -138,17 +111,7 @@ from datadog import statsd
 def before_request():
     g.start_time = time.monotonic()
 
-@app.after_request
-def after_request(response):
-    duration = time.monotonic() - g.start_time
-    tags = [
-        f"method:{request.method}",
-        f"path:{request.path}",
-        f"status:{response.status_code}",
-    ]
-    statsd.increment("http.requests.total", tags=tags)
-    statsd.histogram("http.request.duration", duration, tags=tags)
-    return response
+# ... (condensed)
 ```
 
 ### Step 3: Structured Logging Strategy
@@ -162,17 +125,7 @@ Design a consistent, queryable logging approach:
   "service": "api-gateway",
   "version": "1.2.3",
   "trace_id": "abc123def456",
-  "span_id": "789ghi012",
-  "request_id": "req-uuid-here",
-  "message": "Request completed",
-  "method": "POST",
-  "path": "/api/orders",
-  "status_code": 201,
-  "duration_ms": 45,
-  "user_id": "user-123",
-  "ip": "10.0.1.50",
-  "error": null
-}
+# ... (condensed)
 ```
 
 #### Log Levels and Usage
@@ -250,21 +203,7 @@ const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http')
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
 const sdk = new NodeSDK({
-  traceExporter: new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces',
-  }),
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-http': { enabled: true },
-      '@opentelemetry/instrumentation-express': { enabled: true },
-      '@opentelemetry/instrumentation-pg': { enabled: true },
-      '@opentelemetry/instrumentation-redis': { enabled: true },
-    }),
-  ],
-  serviceName: process.env.OTEL_SERVICE_NAME || 'api-service',
-});
-
-sdk.start();
+# ... (condensed)
 ```
 
 #### Trace Propagation
@@ -319,19 +258,6 @@ SLO FRAMEWORK:
 │   request duration)   │           │         │ requests   │
 │                       │           │         │ can exceed │
 │                       │           │         │            │
-│  Latency (P99)        │ < 1000ms  │ 30 days │ Budget:    │
-│  (99th percentile)    │           │         │ 0.1% of    │
-│                       │           │         │ requests   │
-│                       │           │         │            │
-│  Error Rate           │ < 0.1%    │ 30 days │ Budget:    │
-│  (5xx / total)        │           │         │ 0.1% of    │
-│                       │           │         │ requests   │
-│                       │           │         │            │
-│  Throughput           │ > 1000    │ 5 min   │ Alert if   │
-│  (requests/sec)       │ rps       │         │ < 500 rps  │
-└──────────────────────────────────────────────────────────┘
-
-Error budget remaining: 85% (12.7 min consumed of 43.2 min)
 ```
 
 #### SLO Burn Rate Alerts
@@ -342,34 +268,7 @@ Error budget remaining: 85% (12.7 min consumed of 43.2 min)
   expr: |
     (
       sum(rate(http_requests_total{status_code=~"5.."}[1h]))
-      / sum(rate(http_requests_total[1h]))
-    ) > (14.4 * 0.001)
-    and
-    (
-      sum(rate(http_requests_total{status_code=~"5.."}[5m]))
-      / sum(rate(http_requests_total[5m]))
-    ) > (14.4 * 0.001)
-  labels:
-    severity: critical
-  annotations:
-    summary: "High error burn rate — SLO budget depleting rapidly"
-
-# Slow burn: 3x burn rate over 3 days (consumes 10% of budget)
-- alert: SLOHighBurnRate_Slow
-  expr: |
-    (
-      sum(rate(http_requests_total{status_code=~"5.."}[3d]))
-      / sum(rate(http_requests_total[3d]))
-    ) > (3 * 0.001)
-    and
-    (
-      sum(rate(http_requests_total{status_code=~"5.."}[6h]))
-      / sum(rate(http_requests_total[6h]))
-    ) > (3 * 0.001)
-  labels:
-    severity: warning
-  annotations:
-    summary: "Elevated error rate — SLO budget being consumed"
+# ... (condensed)
 ```
 
 ### Step 6: Alert Rule Design
@@ -392,15 +291,6 @@ ALERT RULES:
 │  CertExpiring          │ < 1 day to expiry  │ Critical    │
 │  DatabaseConnExhausted │ free conns < 5     │ Critical    │
 │  QueueBacklog          │ depth > 1000       │ Warning     │
-│  ErrorBudgetBurning    │ burn rate > 14.4x  │ Critical    │
-└──────────────────────────────────────────────────────────┘
-
-Every alert MUST have:
-  1. Clear, descriptive name
-  2. Actionable runbook link
-  3. Appropriate severity (page vs. notify)
-  4. Sufficient duration threshold (no flapping)
-  5. Context in annotations (current value, threshold, affected service)
 ```
 
 #### Prometheus Alert Rules
@@ -411,39 +301,7 @@ groups:
       - alert: HighErrorRate
         expr: |
           sum(rate(http_requests_total{status_code=~"5.."}[5m]))
-          / sum(rate(http_requests_total[5m]))
-          > 0.01
-        for: 5m
-        labels:
-          severity: critical
-          team: backend
-        annotations:
-          summary: "Error rate above 1% for 5 minutes"
-          description: "Current error rate: {{ $value | humanizePercentage }}"
-          runbook: "https://wiki.example.com/runbooks/high-error-rate"
-          dashboard: "https://grafana.example.com/d/api-overview"
-
-      - alert: HighLatencyP95
-        expr: |
-          histogram_quantile(0.95,
-            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
-          ) > 0.5
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "P95 latency above 500ms"
-          description: "Current P95: {{ $value | humanizeDuration }}"
-
-      - alert: PodCrashLooping
-        expr: |
-          increase(kube_pod_container_status_restarts_total[5m]) > 3
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "Pod {{ $labels.pod }} is crash-looping"
-          description: "{{ $value }} restarts in the last 5 minutes"
+# ... (condensed)
 ```
 
 ### Step 7: Dashboard Design
@@ -465,30 +323,6 @@ DASHBOARD LAYOUT — Service Overview:
 │  │ Error Budget: 85% remaining │ 12.7 min consumed   │   │
 │  │ Latency SLO: P95 < 200ms │ Current: 145ms │ OK    │   │
 │  └────────────────────────────────────────────────────┘   │
-│                                                           │
-│  ROW 3: Request Breakdown                                 │
-│  ┌──────────────────────┐ ┌──────────────────────────┐   │
-│  │ By Status Code       │ │ By Endpoint              │   │
-│  │  200: 95.2%          │ │  /api/users: 420 rps     │   │
-│  │  201: 3.5%           │ │  /api/orders: 380 rps    │   │
-│  │  400: 0.8%           │ │  /api/products: 250 rps  │   │
-│  │  500: 0.03%          │ │  /healthz: 100 rps       │   │
-│  └──────────────────────┘ └──────────────────────────┘   │
-│                                                           │
-│  ROW 4: Infrastructure                                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-│  │ CPU      │ │ Memory   │ │ Pods     │ │ Network  │    │
-│  │ 62%      │ │ 71%      │ │ 3/3      │ │ 45 MB/s  │    │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │
-│                                                           │
-│  ROW 5: Dependencies                                      │
-│  ┌──────────────────────┐ ┌──────────────────────────┐   │
-│  │ Database             │ │ Redis Cache              │   │
-│  │  Connections: 12/100 │ │  Hit rate: 94.2%         │   │
-│  │  Query P95: 8ms      │ │  Memory: 256Mi/512Mi     │   │
-│  │  Slow queries: 0     │ │  Evictions: 0            │   │
-│  └──────────────────────┘ └──────────────────────────┘   │
-└──────────────────────────────────────────────────────────┘
 ```
 
 ### Step 8: Commit and Report
@@ -513,51 +347,6 @@ DASHBOARD LAYOUT — Service Overview:
 7. **Trace critical paths.** Not every function needs a span. Trace service boundaries, database calls, and external API calls.
 8. **Never log secrets.** Sanitize logs before emission. Mask PII, redact tokens, exclude passwords.
 
-## Example Usage
-
-### Setting up observability for a new service
-```
-User: /godmode:observe Set up monitoring for our API
-
-Observe: Assessing current observability...
-
-OBSERVABILITY ASSESSMENT:
-  Metrics: NONE — No instrumentation found
-  Logging: BASIC — console.log only, unstructured
-  Tracing: NONE — No trace headers propagated
-  Overall: 1/10 — needs full instrumentation
-
-Setting up three pillars...
-
-1. METRICS — Added Prometheus client
-   - 4 RED metrics (rate, errors, duration, in-flight)
-   - 6 infrastructure metrics (CPU, memory, connections)
-   - 3 business metrics (signups, orders, payments)
-   - /metrics endpoint exposed
-
-2. LOGGING — Structured JSON logging
-   - Winston logger configured with JSON format
-   - Request ID middleware for correlation
-   - Log levels: ERROR, WARN, INFO (production)
-   - Sensitive fields redacted
-
-3. TRACING — OpenTelemetry
-   - Auto-instrumentation for HTTP, Express, pg, redis
-   - W3C trace context propagation
-   - OTLP exporter configured
-
-4. ALERTS — 8 alert rules created
-   - HighErrorRate, HighLatency, PodCrashLoop, etc.
-   - All alerts have runbook links
-
-5. SLOs — Defined
-   - Availability: 99.9% (30-day window)
-   - Latency P95: < 200ms
-   - Error budget tracking enabled
-
-New observability score: 9/10
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -565,12 +354,6 @@ New observability score: 9/10
 | (none) | Full observability assessment and recommendations |
 | `--metrics` | Set up metrics instrumentation only |
 | `--logging` | Set up structured logging only |
-| `--tracing` | Set up distributed tracing only |
-| `--alerts` | Design alert rules only |
-| `--slos` | Define SLO/SLI framework only |
-| `--dashboard` | Design monitoring dashboards only |
-| `--audit` | Assess current observability coverage |
-| `--tool <name>` | Target specific tool (prometheus, datadog, cloudwatch, etc.) |
 
 ## HARD RULES
 
@@ -676,18 +459,6 @@ PREFER the simpler observability approach:
   - Single dashboard per service before multi-dashboard sprawl
 ```
 
-## Anti-Patterns
-
-- **Do NOT alert on symptoms without context.** "CPU is high" is not actionable. Include the user-facing impact.
-- **Do NOT use unstructured logs.** Use structured JSON with consistent fields.
-- **Do NOT create metric labels with unbounded cardinality.** `user_id` as a Prometheus label kills your monitoring.
-- **Do NOT set alerts without `for` duration.** Require the condition to persist (typically 5 minutes).
-- **Do NOT log PII or secrets.** Mask email addresses, redact tokens, exclude passwords.
-- **Do NOT build dashboards without a question.** If you cannot state the question, the dashboard is noise.
-- **Do NOT skip trace context propagation.** Broken traces lose visibility at service boundaries.
-- **Do NOT ignore error budget.** When depleted, stop shipping features and fix reliability.
-
-
 ## Output Format
 Print on completion: `Observe: {pillar_count}/3 pillars configured (metrics/logs/traces). SLOs: {slo_count} defined. Alerts: {alert_count} configured. Dashboards: {dashboard_count}. Error budget: {error_budget_pct}% remaining. Verdict: {verdict}.`
 
@@ -713,14 +484,11 @@ Columns: iteration, pillar(metrics/logging/tracing/alerts/dashboards), tool, ite
 - PII redacted from all logs and traces.
 - Error budget tracked and enforced (feature freeze when depleted).
 
-## Error Recovery
-- **Metrics cardinality explosion**: Identify labels with high cardinality (`user_id`, `request_path` with parameters). Replace with bounded labels (status code ranges, endpoint patterns). Drop offending series with relabeling rules.
-- **Trace context lost between services**: Verify W3C Trace Context headers (`traceparent`, `tracestate`) are propagated. Check HTTP client libraries for automatic propagation. Add manual instrumentation at the boundary where context breaks.
-- **Alert fatigue (too many alerts firing)**: Review alert thresholds. Increase `for` duration. Group related alerts. Remove alerts that never lead to action. Each alert must have a runbook.
-- **Logs too expensive (cloud log storage costs)**: Set retention policies (7d hot, 30d warm, 90d cold). Filter out debug/verbose logs in production. Sample high-volume log lines instead of capturing all.
-- **Dashboard shows no data**: Check the data source connection. Verify metric names and label selectors match. Check the time range. Ensure the scrape interval is shorter than the dashboard refresh interval.
-- **SLO calculation shows 100% availability**: The SLO is likely misconfigured. Verify the error condition captures actual user-facing errors. Check that the measurement window is correct. A 100% SLO over months means you are not measuring real errors.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run observability tasks sequentially: metrics, then logging, then tracing, then alerts.
-Use branch isolation per task: `git checkout -b godmode-observe-{task}`, implement, commit, merge back.
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Metrics cardinality explosion | Remove high-cardinality labels (user IDs, request IDs). Use histograms instead of per-value counters. Set cardinality limits in collector. |
+| Traces missing spans | Check sampling rate. Verify context propagation across service boundaries. Check that all HTTP clients propagate trace headers. |
+| Alert fatigue (too many false alerts) | Tune thresholds using historical data. Add `for:` duration to firing conditions. Use multi-signal alerts (metric + log + trace). |
+| Log volume exceeds budget | Add structured logging with severity levels. Drop DEBUG in production. Sample high-volume paths. Compress before shipping. |

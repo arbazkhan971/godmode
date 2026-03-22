@@ -27,8 +27,7 @@ Map the real external dependencies the code interacts with:
 # Check for existing integration tests
 find. -name "*integration*" -o -name "*e2e*" -o -path "*/it/*"
 
-# Check for Docker/container configuration
-find. -name "docker-compose*" -o -name "Dockerfile*" -o -name "testcontainers*"
+# ... (condensed)
 ```
 
 ```
@@ -67,59 +66,7 @@ import { Client } from 'pg';
 
 describe('UserRepository (integration)', () => {
  let container: StartedPostgreSqlContainer;
- let client: Client;
-
- beforeAll(async () => {
- // Start a real PostgreSQL container
- container = await new PostgreSqlContainer('postgres:16-alpine')
-.withDatabase('testdb')
-.withUsername('test')
-.withPassword('test')
-.start();
-
- // Connect using the container's dynamic port
- client = new Client({
- host: container.getHost(),
- port: container.getMappedPort(5432),
- database: container.getDatabase(),
- user: container.getUsername(),
- password: container.getPassword(),
- });
- await client.connect();
-
- // Run migrations
- await runMigrations(client);
- }, 60_000); // Container startup can take time
-
- afterAll(async () => {
- await client.end();
- await container.stop();
- });
-
- beforeEach(async () => {
- // Clean slate for each test
- await client.query('DELETE FROM users');
- });
-
- it('inserts and retrieves a user', async () => {
- const repo = new UserRepository(client);
-
- await repo.save({ id: '1', name: 'Alice', email: 'alice@example.com' });
- const user = await repo.findById('1');
-
- expect(user).toEqual({
- id: '1',
- name: 'Alice',
- email: 'alice@example.com',
- });
- });
-
- it('returns null for non-existent user', async () => {
- const repo = new UserRepository(client);
- const user = await repo.findById('nonexistent');
- expect(user).toBeNull();
- });
-});
+# ... (condensed)
 ```
 
 #### Testcontainers — Python
@@ -131,34 +78,7 @@ import psycopg2
 
 @pytest.fixture(scope="module")
 def postgres():
- """Start a PostgreSQL container for the test module."""
- with PostgresContainer("postgres:16-alpine") as pg:
- conn = psycopg2.connect(pg.get_connection_url())
- run_migrations(conn)
- yield conn
- conn.close()
-
-@pytest.fixture(autouse=True)
-def clean_tables(postgres):
- """Clean all tables before each test."""
- cursor = postgres.cursor()
- cursor.execute("DELETE FROM users")
- postgres.commit()
- yield
- postgres.rollback()
-
-def test_inserts_and_retrieves_user(postgres):
- repo = UserRepository(postgres)
- repo.save(User(id="1", name="Alice", email="alice@example.com"))
-
- user = repo.find_by_id("1")
-
- assert user.name == "Alice"
- assert user.email == "alice@example.com"
-
-def test_returns_none_for_nonexistent_user(postgres):
- repo = UserRepository(postgres)
- assert repo.find_by_id("nonexistent") is None
+# ... (condensed)
 ```
 
 #### Testcontainers — Java (JUnit 5)
@@ -170,41 +90,8 @@ class UserRepositoryIntegrationTest {
  @Container
  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
 .withDatabaseName("testdb")
-.withUsername("test")
-.withPassword("test");
-
- private UserRepository repo;
- private JdbcTemplate jdbc;
-
- @BeforeEach
- void setUp() {
- var dataSource = new DriverManagerDataSource(
- postgres.getJdbcUrl(),
- postgres.getUsername(),
- postgres.getPassword()
- );
- jdbc = new JdbcTemplate(dataSource);
- runMigrations(jdbc);
- repo = new UserRepository(jdbc);
- }
-
- @AfterEach
- void tearDown() {
- jdbc.execute("DELETE FROM users");
- }
-
- @Test
- void insertsAndRetrievesUser() {
- repo.save(new User("1", "Alice", "alice@example.com"));
-
- var user = repo.findById("1");
-
- assertThat(user).isPresent();
- assertThat(user.get().getName()).isEqualTo("Alice");
- }
-}
+# ... (condensed)
 ```
-
 
 ### Step 3: Database Seeding and Cleanup
 
@@ -220,9 +107,7 @@ async function setupTestDatabase(client: Client) {
 
  // Step 2: Seed reference data (enums, configs, lookup tables)
  await seedReferenceData(client);
-
- // Step 3: Do NOT seed test-specific data here — do it in each test
-}
+# ... (condensed)
 ```
 
 **2. Fixture-based seeding (for test data)**
@@ -235,38 +120,8 @@ export function createUser(overrides: Partial<User> = {}): User {
  id: randomUUID(),
  name: 'Test User',
  email: `test-${randomUUID()}@example.com`,
- role: 'member',
- createdAt: new Date(),
-...overrides,
- };
-}
-
-export function createOrder(user: User, overrides: Partial<Order> = {}): Order {
- return {
- id: randomUUID(),
- userId: user.id,
- items: [{ product: 'Widget', quantity: 1, price: 9.99 }],
- status: 'pending',
- total: 9.99,
-...overrides,
- };
-}
-
-// In tests:
-it('marks order as shipped', async () => {
- const user = createUser();
- await userRepo.save(user);
- const order = createOrder(user, { status: 'paid' });
- await orderRepo.save(order);
-
- await orderService.shipOrder(order.id);
-
- const updated = await orderRepo.findById(order.id);
- expect(updated.status).toBe('shipped');
-});
+# ... (condensed)
 ```
-
-
 
 #### Cleanup Strategies
 
@@ -288,10 +143,7 @@ let transaction: Transaction;
 beforeEach(async () => {
  transaction = await db.beginTransaction();
 });
-
-afterEach(async () => {
- await transaction.rollback(); // All changes disappear
-});
+# ... (condensed)
 ```
 
 ```python
@@ -311,9 +163,7 @@ it('finds user by email', async () => {
  const user = createUser({ email: `${unique}@test.com` });
  await repo.save(user);
 
- const found = await repo.findByEmail(`${unique}@test.com`);
- expect(found.id).toBe(user.id);
-});
+# ... (condensed)
 ```
 
 Use when: Tests modify schema, or cleanup is too complex.
@@ -344,58 +194,6 @@ describe('POST /api/users (integration)', () => {
  let app: Express;
  let container: StartedPostgreSqlContainer;
 
- beforeAll(async () => {
- container = await new PostgreSqlContainer().start();
- app = createApp({
- databaseUrl: container.getConnectionString(),
- });
- });
-
- afterAll(async () => {
- await container.stop();
- });
-
- it('creates a user and returns 201', async () => {
- const response = await request(app)
-.post('/api/users')
-.send({ name: 'Alice', email: 'alice@example.com' })
-.expect(201);
-
- expect(response.body).toMatchObject({
- id: expect.any(String),
- name: 'Alice',
- email: 'alice@example.com',
- });
-
- // Verify it was actually persisted
- const getResponse = await request(app)
-.get(`/api/users/${response.body.id}`)
-.expect(200);
-
- expect(getResponse.body.name).toBe('Alice');
- });
-
- it('returns 409 when email already exists', async () => {
- await request(app)
-.post('/api/users')
-.send({ name: 'Alice', email: 'duplicate@example.com' })
-.expect(201);
-
- await request(app)
-.post('/api/users')
-.send({ name: 'Bob', email: 'duplicate@example.com' })
-.expect(409);
- });
-
- it('returns 400 for invalid email format', async () => {
- const response = await request(app)
-.post('/api/users')
-.send({ name: 'Alice', email: 'not-an-email' })
-.expect(400);
-
- expect(response.body.error).toContain('email');
- });
-});
 ```
 
 #### Testing Authenticated Endpoints
@@ -407,39 +205,7 @@ describe('authenticated API routes', () => {
  beforeAll(async () => {
  // Create a test user and get a real auth token
  await request(app)
-.post('/api/auth/register')
-.send({ email: 'test@example.com', password: 'Test1234!' });
-
- const loginResponse = await request(app)
-.post('/api/auth/login')
-.send({ email: 'test@example.com', password: 'Test1234!' });
-
- authToken = loginResponse.body.token;
- });
-
- it('returns user profile with valid token', async () => {
- const response = await request(app)
-.get('/api/me')
-.set('Authorization', `Bearer ${authToken}`)
-.expect(200);
-
- expect(response.body.email).toBe('test@example.com');
- });
-
- it('returns 401 without token', async () => {
- await request(app)
-.get('/api/me')
-.expect(401);
- });
-
- it('returns 401 with expired token', async () => {
- const expiredToken = createExpiredToken({ userId: '1' });
- await request(app)
-.get('/api/me')
-.set('Authorization', `Bearer ${expiredToken}`)
-.expect(401);
- });
-});
+# ... (condensed)
 ```
 
 ### Step 5: Service-Level Integration Patterns
@@ -454,44 +220,7 @@ describe('OrderService (integration)', () => {
  let orderRepo: OrderRepository;
  let inventoryRepo: InventoryRepository;
 
- beforeAll(async () => {
- const db = await setupTestDatabase();
- orderRepo = new OrderRepository(db);
- inventoryRepo = new InventoryRepository(db);
- orderService = new OrderService(orderRepo, inventoryRepo);
- });
-
- it('creates order AND decrements inventory atomically', async () => {
- // Seed: 10 widgets in stock
- await inventoryRepo.setStock('widget', 10);
-
- // Act: place order for 3 widgets
- const order = await orderService.placeOrder({
- items: [{ product: 'widget', quantity: 3 }],
- });
-
- // Assert: order created
- expect(order.status).toBe('confirmed');
-
- // Assert: inventory decremented
- const stock = await inventoryRepo.getStock('widget');
- expect(stock).toBe(7);
- });
-
- it('rolls back order when inventory is insufficient', async () => {
- await inventoryRepo.setStock('widget', 2);
-
- await expect(
- orderService.placeOrder({
- items: [{ product: 'widget', quantity: 5 }],
- })
- ).rejects.toThrow(InsufficientStockError);
-
- // Inventory should be unchanged (transaction rolled back)
- const stock = await inventoryRepo.getStock('widget');
- expect(stock).toBe(2);
- });
-});
+# ... (condensed)
 ```
 
 #### Pattern 2: Service-to-Service Integration
@@ -504,35 +233,7 @@ describe('CheckoutFlow (integration)', () => {
  let paymentService: PaymentService;
  let notificationService: NotificationService;
 
- beforeAll(async () => {
- const db = await setupTestDatabase();
- // Mock server for external payment API
- const paymentMock = await startWireMockServer({
- mappings: [
- {
- request: { method: 'POST', url: '/charge' },
- response: { status: 200, body: { transactionId: 'tx_123' } },
- },
- ],
- });
-
- paymentService = new PaymentService({ baseUrl: paymentMock.url });
- orderService = new OrderService(new OrderRepository(db));
- notificationService = new NotificationService(new InMemoryEmailSender());
- });
-
- it('completes checkout: creates order, charges payment, sends confirmation', async () => {
- const result = await checkoutFlow.execute({
- userId: 'user-1',
- items: [{ product: 'widget', quantity: 1, price: 9.99 }],
- paymentMethod: 'card_123',
- });
-
- expect(result.order.status).toBe('paid');
- expect(result.payment.transactionId).toBe('tx_123');
- expect(result.notificationSent).toBe(true);
- });
-});
+# ... (condensed)
 ```
 
 #### Pattern 3: Message Queue Integration
@@ -545,37 +246,8 @@ describe('Order Event Processing (integration)', () => {
  let consumer: OrderEventConsumer;
 
  beforeAll(async () => {
- kafkaContainer = await new KafkaContainer().start();
- const brokers = [`${kafkaContainer.getHost()}:${kafkaContainer.getMappedPort(9093)}`];
-
- producer = new OrderEventProducer({ brokers });
- consumer = new OrderEventConsumer({ brokers, groupId: 'test-group' });
- await consumer.subscribe('order-events');
- });
-
- it('publishes order.created event and consumer processes it', async () => {
- const receivedEvents: OrderEvent[] = [];
- consumer.on('order.created', (event) => receivedEvents.push(event));
- await consumer.start();
-
- await producer.publish({
- type: 'order.created',
- orderId: 'order-123',
- userId: 'user-1',
- total: 49.99,
- });
-
- // Wait for consumer to process (with timeout)
- await waitFor(() => expect(receivedEvents).toHaveLength(1), { timeout: 5000 });
-
- expect(receivedEvents[0]).toMatchObject({
- type: 'order.created',
- orderId: 'order-123',
- });
- });
-});
+# ... (condensed)
 ```
-
 
 ### Step 6: Integration Test Configuration
 
@@ -589,8 +261,7 @@ Keep integration tests separate from unit tests so they can run independently:
  "test": "jest --testPathPattern='tests/unit'",
  "test:integration": "jest --testPathPattern='tests/integration'",
  "test:all": "jest"
- }
-}
+# ... (condensed)
 ```
 
 ```toml
@@ -615,13 +286,8 @@ def test_with_real_database():
 package repository_test
 
 func TestWithRealDatabase(t *testing.T) {
- if testing.Short() {
- t.Skip("skipping integration test in short mode")
- }
-...
-}
+# ... (condensed)
 ```
-
 
 ### Step 7: Run, Verify, and Report
 
@@ -665,9 +331,6 @@ Slowest test: <name> (<Xms>)
 5. **Separate integration from unit tests.** Integration tests are slower (seconds, not milliseconds). Run them separately in CI so unit tests stay fast.
 6. **Seed minimally.** Each test seeds only the data it needs. Global seeding creates hidden dependencies between tests.
 7. **Test failure modes.** Database down, network timeout, connection pool exhausted — integration tests should verify graceful degradation.
-
-## Example Usage
-
 
 ## Keep/Discard Discipline
 Each integration test boundary either passes or gets reverted. No flaky tests remain.
@@ -723,13 +386,6 @@ AUTO-DETECT:
 | (none) | Assess boundaries and write integration tests |
 | `--for <file>` | Write integration tests for a specific module |
 | `--container <type>` | Specify container type (postgres, mysql, redis, kafka, mongo) |
-| `--seed` | Focus on creating seed data and fixtures |
-| `--api` | Focus on API endpoint integration tests |
-| `--service` | Focus on service-level integration patterns |
-| `--ci` | Generate CI configuration for integration tests |
-| `--cleanup <strategy>` | Specify cleanup strategy (truncate, rollback, unique) |
-
-
 
 ## Output Format
 Print on completion: `Integration: {total_tests} tests across {boundary_count} boundaries. Containers: {containers}. Pass rate: {pass_rate}%. Avg duration: {avg_ms}ms. Verdict: {verdict}.`
@@ -752,3 +408,11 @@ Columns: iteration, boundary, container, tests_written, tests_passing, avg_durat
 - Failure modes tested (connection failure, timeout, constraint violation).
 - Average test duration under 5 seconds per test (excluding container startup).
 - CI pipeline runs integration tests on every PR with container support.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Container fails to start | Check Docker daemon is running. Verify image tag exists. Increase startup timeout. Fall back to `docker-compose` if Testcontainers unavailable. |
+| Port conflict on container | Use random port mapping (Testcontainers default). Never hardcode ports. Check for zombie containers: `docker ps -a`. |
+| Test data leaks between tests | Verify cleanup strategy: transaction rollback, TRUNCATE, or unique prefixes. Run tests in isolation to confirm. |
+| Flaky integration test (passes sometimes) | Check for race conditions, shared state, or insufficient wait times. Add explicit readiness checks before assertions. |

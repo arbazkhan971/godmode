@@ -44,11 +44,7 @@ grep -r "from 'redux\|from 'zustand\|from 'jotai\|from 'mobx\|from '@tanstack/re
 # Count state-related files
 find src/ -name "*.store.*" -o -name "*.slice.*" -o -name "*.atom.*" -o -name "*.machine.*" -o -name "*Store.*" -o -name "*Context.*" | wc -l
 
-# Detect prop drilling (components receiving 5+ props)
-grep -rn "interface.*Props" src/ --include="*.tsx" --include="*.ts" -A 10 | grep -c ";"
-
-# Detect Context usage (potential performance issues)
-grep -rn "createContext\|useContext\|React.createContext" src/ --include="*.ts" --include="*.tsx" -l
+# ... (condensed)
 ```
 
 ### Step 2: Classify State by Category
@@ -71,19 +67,6 @@ STATE CLASSIFICATION:
 +-------------------+------------------+----------------------------------+----------------------------+
 | Form state        | Component mount  | Input values, validation errors, | React Hook Form, Formik,   |
 |                   |                  | dirty/touched tracking           | Vuelidate, native          |
-+-------------------+------------------+----------------------------------+----------------------------+
-| URL state         | Navigation       | Filters, pagination, sort order, | URL search params, router   |
-|                   |                  | selected item IDs                | state                      |
-+-------------------+------------------+----------------------------------+----------------------------+
-| Persisted state   | Cross-session    | Theme preference, auth tokens,   | localStorage + Zustand     |
-|                   |                  | draft content, feature flags     | persist, IndexedDB         |
-+-------------------+------------------+----------------------------------+----------------------------+
-| Computed/derived  | Reactive         | Filtered lists, totals, search   | Selectors, computed,       |
-|                   |                  | results from local data          | useMemo, derived atoms     |
-+-------------------+------------------+----------------------------------+----------------------------+
-| Machine state     | Process lifetime | Auth flow, checkout wizard,      | XState, Robot, custom      |
-|                   |                  | file upload, WebSocket lifecycle  | finite state machine       |
-+-------------------+------------------+----------------------------------+----------------------------+
 ```
 
 **Key rule:** If data comes from a server, it is server state. Do NOT put it in Redux/Zustand/Pinia. Use a server-state tool (React Query, SWR, Apollo). This single distinction eliminates 80% of state management complexity.
@@ -108,13 +91,6 @@ FRONTEND STATE DECISION MATRIX:
 +---------------+----------+--------+----------+--------+---------+----------+
 
 RECOMMENDATION:
-- Large team, complex domain, need time-travel debugging -> Redux Toolkit
-- Medium app, want minimal boilerplate                   -> Zustand
-- Atomic/granular state, independent pieces              -> Jotai
-- Complex domain objects with observable patterns        -> MobX
-- Vue.js application                                     -> Pinia
-- Fine-grained reactivity, maximum performance           -> Signals (@preact/signals, @angular/signals, solid signals)
-- Simple app, few shared state pieces                    -> React Context + useReducer (no library needed)
 ```
 
 #### 3b: Server State Library Selection
@@ -135,13 +111,6 @@ SERVER STATE DECISION MATRIX:
 | Bundle size      | ~12KB       | ~4KB   | ~33KB        | ~11KB    |
 | Best for         | REST APIs   | Simple | GraphQL      | Redux    |
 |                  |             | fetch  | APIs         | users    |
-+------------------+-------------+--------+--------------+----------+
-
-RECOMMENDATION:
-- REST API, need full cache control & devtools  -> React Query (@tanstack/react-query)
-- Simple data fetching, minimal config          -> SWR
-- GraphQL API                                   -> Apollo Client
-- Already using Redux Toolkit                   -> RTK Query
 ```
 
 ### Step 4: Design State Architecture
@@ -166,19 +135,6 @@ Root:
 │   │   └── theme: { mode, accent }
 │   ├── domain/
 │   │   ├── cart: { items, appliedCoupon }
-│   │   └── wizard: { step, data, completedSteps }
-│   └── auth/
-│       ├── user: { id, email, role }
-│       └── session: { token, expiresAt }
-│
-├── URL state (router)
-│   ├── /products?category=X&sort=Y&page=N
-│   └── /orders/:id
-│
-└── persisted state (localStorage + sync)
-    ├── theme preference
-    ├── recent searches
-    └── draft content
 ```
 
 #### 4b: Zustand Store Example
@@ -190,80 +146,7 @@ import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface CartItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface CartState {
-  items: CartItem[];
-  couponCode: string | null;
-  // Computed (derived in selectors, not stored)
-  // Actions
-  addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  applyCoupon: (code: string) => void;
-  clearCart: () => void;
-}
-
-export const useCartStore = create<CartState>()(
-  devtools(
-    persist(
-      subscribeWithSelector(
-        immer((set, get) => ({
-          items: [],
-          couponCode: null,
-
-          addItem: (item) =>
-            set((state) => {
-              const existing = state.items.find(
-                (i) => i.productId === item.productId,
-              );
-              if (existing) {
-                existing.quantity += 1;
-              } else {
-                state.items.push({ ...item, quantity: 1 });
-              }
-            }),
-
-          removeItem: (productId) =>
-            set((state) => {
-              state.items = state.items.filter(
-                (i) => i.productId !== productId,
-              );
-            }),
-
-          updateQuantity: (productId, quantity) =>
-            set((state) => {
-              const item = state.items.find(
-                (i) => i.productId === productId,
-              );
-              if (item) {
-                item.quantity = Math.max(0, quantity);
-              }
-            }),
-
-          applyCoupon: (code) => set({ couponCode: code }),
-          clearCart: () => set({ items: [], couponCode: null }),
-        })),
-      ),
-      { name: 'cart-storage' },
-    ),
-    { name: 'CartStore' },
-  ),
-);
-
-// Selectors (derived state -- computed outside the store)
-export const selectCartTotal = (state: CartState) =>
-  state.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-export const selectCartItemCount = (state: CartState) =>
-  state.items.reduce((sum, item) => sum + item.quantity, 0);
-
-export const selectCartItem = (productId: string) => (state: CartState) =>
-  state.items.find((i) => i.productId === productId);
+# ... (condensed)
 ```
 
 #### 4c: Redux Toolkit Slice Example
@@ -275,71 +158,7 @@ import type { RootState } from '../store';
 
 interface CartItem {
   productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface CartState {
-  items: CartItem[];
-  couponCode: string | null;
-}
-
-const initialState: CartState = {
-  items: [],
-  couponCode: null,
-};
-
-export const cartSlice = createSlice({
-  name: 'cart',
-  initialState,
-  reducers: {
-    addItem: (state, action: PayloadAction<Omit<CartItem, 'quantity'>>) => {
-      const existing = state.items.find(
-        (i) => i.productId === action.payload.productId,
-      );
-      if (existing) {
-        existing.quantity += 1;
-      } else {
-        state.items.push({ ...action.payload, quantity: 1 });
-      }
-    },
-    removeItem: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(
-        (i) => i.productId !== action.payload,
-      );
-    },
-    updateQuantity: (
-      state,
-      action: PayloadAction<{ productId: string; quantity: number }>,
-    ) => {
-      const item = state.items.find(
-        (i) => i.productId === action.payload.productId,
-      );
-      if (item) {
-        item.quantity = Math.max(0, action.payload.quantity);
-      }
-    },
-    applyCoupon: (state, action: PayloadAction<string>) => {
-      state.couponCode = action.payload;
-    },
-    clearCart: () => initialState,
-  },
-});
-
-export const { addItem, removeItem, updateQuantity, applyCoupon, clearCart } =
-  cartSlice.actions;
-
-// Memoized selectors
-const selectCart = (state: RootState) => state.cart;
-
-export const selectCartTotal = createSelector(selectCart, (cart) =>
-  cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-);
-
-export const selectCartItemCount = createSelector(selectCart, (cart) =>
-  cart.items.reduce((sum, item) => sum + item.quantity, 0),
-);
+# ... (condensed)
 ```
 
 #### 4d: Jotai Atoms Example
@@ -351,51 +170,7 @@ import { atomWithStorage } from 'jotai/utils';
 
 interface CartItem {
   productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-// Base atom (persisted to localStorage)
-export const cartItemsAtom = atomWithStorage<CartItem[]>('cart-items', []);
-export const couponCodeAtom = atomWithStorage<string | null>('coupon-code', null);
-
-// Derived atoms (computed, read-only)
-export const cartTotalAtom = atom((get) =>
-  get(cartItemsAtom).reduce((sum, item) => sum + item.price * item.quantity, 0),
-);
-
-export const cartItemCountAtom = atom((get) =>
-  get(cartItemsAtom).reduce((sum, item) => sum + item.quantity, 0),
-);
-
-// Write atoms (actions)
-export const addItemAtom = atom(
-  null,
-  (get, set, item: Omit<CartItem, 'quantity'>) => {
-    const items = get(cartItemsAtom);
-    const existing = items.find((i) => i.productId === item.productId);
-    if (existing) {
-      set(
-        cartItemsAtom,
-        items.map((i) =>
-          i.productId === item.productId
-            ? { ...i, quantity: i.quantity + 1 }
-            : i,
-        ),
-      );
-    } else {
-      set(cartItemsAtom, [...items, { ...item, quantity: 1 }]);
-    }
-  },
-);
-
-export const removeItemAtom = atom(null, (get, set, productId: string) => {
-  set(
-    cartItemsAtom,
-    get(cartItemsAtom).filter((i) => i.productId !== productId),
-  );
-});
+# ... (condensed)
 ```
 
 ### Step 5: Server State with React Query
@@ -454,9 +229,7 @@ Do NOT use a state machine when:
 // Key rules:
 //   - Type context and events explicitly
 //   - Use assign() for context mutations
-//   - Use invoke for async (API calls) with onDone/onError
-//   - Mark terminal states with type: 'final'
-//   - Allow BACK and CANCEL from every non-terminal state
+# ... (condensed)
 ```
 
 ### Step 7: State Persistence and Hydration
@@ -527,14 +300,6 @@ REALTIME CACHE SYNC PATTERN (WebSocket + React Query):
 |  - URL state:      <N> parameters                             |
 |  - Persisted:      <N> items                                  |
 |  - State machines: <N> machines                               |
-+--------------------------------------------------------------+
-|  Architecture decisions:                                      |
-|  1. <decision and rationale>                                  |
-|  2. <decision and rationale>                                  |
-+--------------------------------------------------------------+
-|  Files created/modified:                                      |
-|  - <file path and purpose>                                    |
-+--------------------------------------------------------------+
 ```
 
 Commit: `"state: design <description> state architecture"`
@@ -552,59 +317,6 @@ Commit: `"state: design <description> state architecture"`
 9. **URL state is shareable state.** Filters, pagination, sort order, and selected items should be in the URL so users can share and bookmark.
 10. **Hydration must be idempotent.** SSR hydration should produce the same result whether it runs once or twice. No side effects in hydration logic.
 
-## Example Usage
-
-### Designing state for a new feature
-```
-User: /godmode:state I'm building a dashboard with real-time order tracking,
-      user preferences, and filtering. What state architecture should I use?
-
-State: Analyzing requirements...
-
-STATE CLASSIFICATION:
-- Orders data (from API, real-time updates)     -> Server state (React Query + WebSocket sync)
-- User preferences (theme, layout)              -> Persisted client state (Zustand + persist)
-- Dashboard filters (date range, status)        -> URL state (search params)
-- Active order detail (selected from list)       -> URL state (route param)
-- Sidebar collapsed                              -> Client UI state (Zustand)
-
-ARCHITECTURE:
-1. React Query for all order data (staleTime: 30s for dashboard freshness)
-2. WebSocket listener that invalidates order queries on real-time events
-3. Zustand store with persist middleware for user preferences
-4. URL search params for filters (shareable, bookmarkable)
-5. No Redux needed -- no complex domain state
-
-Files to create:
-- lib/query-keys.ts            (query key factory)
-- hooks/use-orders.ts          (React Query hooks)
-- hooks/use-realtime-sync.ts   (WebSocket cache sync)
-- stores/preferences.store.ts  (Zustand persisted store)
-```
-
-### Migrating from Redux to React Query + Zustand
-```
-User: /godmode:state Our Redux store has 40 slices and it's getting unmaintainable.
-      Most slices just cache API data. How do I migrate?
-
-State: Auditing current Redux store...
-
-Found 40 slices:
-- 32 slices are server state (API caching) -> Migrate to React Query
-- 5 slices are UI state (modals, sidebar, theme) -> Migrate to Zustand
-- 3 slices are domain state (cart, wizard, editor) -> Keep in Zustand
-
-MIGRATION PLAN:
-Phase 1: Add React Query alongside Redux (no removals)
-Phase 2: Migrate server-state slices one at a time (32 slices)
-Phase 3: Move UI state to Zustand (5 slices)
-Phase 4: Move domain state to Zustand (3 slices)
-Phase 5: Remove Redux entirely
-
-Estimated reduction: 40 Redux slices -> 0 Redux + 8 Zustand stores + React Query
-Lines of code eliminated: ~3,200 (reducers, actions, selectors, thunks)
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -612,15 +324,6 @@ Lines of code eliminated: ~3,200 (reducers, actions, selectors, thunks)
 | (none) | Interactive state management design workflow |
 | `--audit` | Audit current state architecture and identify issues |
 | `--classify` | Classify all state in the codebase by category |
-| `--migrate` | Generate migration plan from one state library to another |
-| `--optimistic` | Design optimistic update patterns for mutations |
-| `--machine` | Design a state machine for a complex workflow |
-| `--persist` | Set up state persistence and hydration |
-| `--ssr` | Design SSR-compatible state with hydration |
-| `--realtime` | Set up real-time state synchronization (WebSocket/SSE) |
-| `--devtools` | Configure state debugging tools |
-| `--selectors` | Optimize selectors to prevent unnecessary re-renders |
-| `--report` | Generate full state architecture report |
 
 ## HARD RULES
 
@@ -693,14 +396,6 @@ IF optimistic update causes stale UI:
 IF hydration mismatch occurs with persisted state:
   1. Ensure persisted state is only restored in useEffect (not during SSR)
   2. Use a hydration-safe pattern: render server default first, then apply persisted state
-  3. Add a `hasHydrated` flag to prevent flash of wrong content
-  4. Test with `localStorage.clear()` to verify the app works without persisted state
-
-IF state becomes inconsistent across tabs:
-  1. Use BroadcastChannel or storage event listener for cross-tab sync
-  2. Ensure the source of truth is the server (re-fetch on tab focus)
-  3. Implement a version stamp on persisted state to detect stale data
-  4. Clear persisted state on app version change
 ```
 
 ## Auto-Detection
@@ -738,24 +433,6 @@ WHILE state_tasks is not empty AND current_iteration < max_iterations:
 
 POST-LOOP: Run full test suite + re-render profiling to verify no regressions
 ```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENT DISPATCH (3 worktrees):
-  Agent 1 — "state-server": Server state setup (React Query/SWR queries, mutations, cache config)
-  Agent 2 — "state-client": Client state setup (Zustand/Jotai stores, selectors, persistence)
-  Agent 3 — "state-tests": Tests for all stores, selectors, and state transitions
-
-MERGE ORDER: server state → client state → tests
-CONFLICT ZONES: shared types, store interfaces (agree on interfaces before dispatch)
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run state tasks sequentially: classify state, then server state setup, then client state, then tests.
-- Use branch isolation per task: `git checkout -b godmode-state-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
 
 ## Keep/Discard Discipline
 ```

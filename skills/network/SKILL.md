@@ -46,13 +46,7 @@ dig +short <domain> CNAME
 dig +short <domain> MX
 dig +short <domain> TXT
 nslookup <domain>
-
-# Certificate check
-openssl s_client -connect <domain>:443 -servername <domain> < /dev/null 2>/dev/null | openssl x509 -noout -dates -subject -issuer
-
-# Connectivity check
-curl -sI https://<domain> | head -20
-traceroute <domain>
+# ... (condensed)
 ```
 
 If no networking is configured: "No networking infrastructure detected. Shall I design a network architecture (VPC + DNS + SSL + LB) or address a specific component?"
@@ -105,16 +99,7 @@ dig @1.1.1.1 <domain> A +short       # Cloudflare DNS
 dig @208.67.222.222 <domain> A +short # OpenDNS
 
 # DNSSEC validation
-dig <domain> +dnssec +short
-
-# Full chain resolution
-dig +trace <domain>
-
-# Email DNS validation
-dig <domain> MX +short
-dig <domain> TXT +short | grep spf
-dig _dmarc.<domain> TXT +short
-dig <selector>._domainkey.<domain> TXT +short
+# ... (condensed)
 ```
 
 ### Step 3: SSL/TLS Certificate Management
@@ -128,12 +113,7 @@ sudo certbot certonly --webroot -w /var/www/html -d <domain> -d www.<domain>
 # Obtain wildcard certificate (DNS challenge required)
 sudo certbot certonly --dns-<provider> -d <domain> -d *.<domain>
 
-# Renew certificates
-sudo certbot renew --dry-run
-sudo certbot renew
-
-# Check certificate status
-sudo certbot certificates
+# ... (condensed)
 ```
 
 #### Kubernetes cert-manager
@@ -144,42 +124,7 @@ kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
 spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: <admin-email>
-    privateKeySecretRef:
-      name: letsencrypt-prod-key
-    solvers:
-      - http01:
-          ingress:
-            class: nginx
-      - dns01:
-          cloudflare:
-            email: <email>
-            apiTokenSecretRef:
-              name: cloudflare-api-token
-              key: api-token
-        selector:
-          dnsZones:
-            - "<domain>"
-
----
-# Certificate resource
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: <domain>-tls
-  namespace: <namespace>
-spec:
-  secretName: <domain>-tls-secret
-  issuerRef:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
-  dnsNames:
-    - <domain>
-    - www.<domain>
-    - api.<domain>
-  renewBefore: 720h    # Renew 30 days before expiry
+# ... (condensed)
 ```
 
 #### Certificate Monitoring
@@ -226,12 +171,6 @@ CLOUDFRONT DISTRIBUTION:
 │  /images/*       │ S3        │ 604800   │ Yes      │ No   │
 │  Default (*)     │ ALB       │ 0        │ Yes      │ Yes  │
 ├──────────────────────────────────────────────────────────┤
-│  Security:                                                │
-│  SSL: TLS 1.2 minimum                                     │
-│  WAF: Attached (rate limiting + SQL injection + XSS)      │
-│  Geo-restriction: None                                     │
-│  Origin Access: OAC for S3, custom headers for ALB        │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Cloudflare Configuration
@@ -251,15 +190,6 @@ CLOUDFLARE ZONE:
 │  Early Hints: Enabled                                     │
 │  Rocket Loader: Disabled (conflicts with SPA frameworks)  │
 ├──────────────────────────────────────────────────────────┤
-│  Security:                                                │
-│  WAF: Managed Rules (OWASP Core Ruleset)                  │
-│  Bot Fight Mode: Enabled                                  │
-│  Rate Limiting: 100 req/10s per IP on /api/*              │
-│  DDoS Protection: Automatic                               │
-│  Page Rules:                                              │
-│    /api/* -> Cache Level: Bypass, SSL: Full               │
-│    /static/* -> Cache Level: Cache Everything, Edge: 7d   │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### CDN Cache Optimization
@@ -305,20 +235,6 @@ APPLICATION LOAD BALANCER:
 │  Name              │ Port │ Health Check  │ Targets       │
 │  ─────────────────────────────────────────────────────── │
 │  api-targets       │ 3000 │ /healthz (5s) │ 3 instances   │
-│  web-targets       │ 8080 │ /health (5s)  │ 2 instances   │
-├──────────────────────────────────────────────────────────┤
-│  Routing Rules:                                           │
-│  Priority │ Condition         │ Action                    │
-│  1        │ Host: api.*       │ Forward to api-targets    │
-│  2        │ Path: /ws/*       │ Forward to ws-targets     │
-│  Default  │ *                 │ Forward to web-targets    │
-├──────────────────────────────────────────────────────────┤
-│  Security:                                                │
-│  Security Groups: <sg-id> (443 from 0.0.0.0/0)           │
-│  SSL Policy: ELBSecurityPolicy-TLS13-1-2-2021-06         │
-│  WAF: <waf-acl-id> attached                               │
-│  Access Logs: Enabled (S3 bucket)                         │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Nginx Load Balancer
@@ -338,56 +254,6 @@ server {
     server_name api.example.com;
 
     # TLS configuration
-    ssl_certificate /etc/ssl/certs/api.example.com.pem;
-    ssl_certificate_key /etc/ssl/private/api.example.com.key;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;
-
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-
-    # Security headers
-    add_header X-Frame-Options DENY always;
-    add_header X-Content-Type-Options nosniff always;
-    add_header X-XSS-Protection "1; mode=block" always;
-
-    # Rate limiting
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
-    limit_req zone=api burst=20 nodelay;
-
-    location / {
-        proxy_pass http://api_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Timeouts
-        proxy_connect_timeout 5s;
-        proxy_read_timeout 30s;
-        proxy_send_timeout 30s;
-
-        # Health check (Nginx Plus or third-party module)
-        # health_check interval=5s fails=3 passes=2;
-    }
-
-    location /health {
-        access_log off;
-        return 200 "OK";
-    }
-}
-
-server {
-    listen 80;
-    server_name api.example.com;
-    return 301 https://$host$request_uri;
-}
 ```
 
 #### HAProxy Configuration
@@ -407,14 +273,6 @@ HAProxy CONFIGURATION:
 │  Max connections per server: 1000                         │
 │  Queue timeout: 5s                                        │
 │  Connection timeout: 5s                                   │
-│  Server timeout: 30s                                      │
-│  Client timeout: 30s                                      │
-├──────────────────────────────────────────────────────────┤
-│  Stick Tables (Rate Limiting):                            │
-│  Table: per_ip_rate                                       │
-│  Type: ip, size: 1m, expire: 10s                          │
-│  Track: src, rate(10s) > 100 -> deny                      │
-└──────────────────────────────────────────────────────────┘
 ```
 
 ### Step 6: Network Security
@@ -437,22 +295,6 @@ VPC DESIGN:
 │  │  10.0.10.0/24 (AZ-a) │  10.0.11.0/24 (AZ-b)           │ │
 │  │  ECS/EKS tasks        │  ECS/EKS tasks                  │ │
 │  └─────────────────────────────────────────────────────────┘ │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  ISOLATED SUBNETS (data tier)                            │ │
-│  │  10.0.20.0/24 (AZ-a) │  10.0.21.0/24 (AZ-b)           │ │
-│  │  RDS, ElastiCache     │  RDS, ElastiCache               │ │
-│  └─────────────────────────────────────────────────────────┘ │
-│                                                               │
-│  Route Tables:                                                │
-│    Public: 0.0.0.0/0 -> IGW                                  │
-│    Private: 0.0.0.0/0 -> NAT GW                              │
-│    Isolated: No internet route (VPC endpoints for AWS APIs)   │
-│                                                               │
-│  VPC Endpoints:                                               │
-│    S3 (Gateway), ECR (Interface), Secrets Manager (Interface) │
-│    CloudWatch Logs (Interface), STS (Interface)               │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 #### Security Groups
@@ -472,15 +314,6 @@ SECURITY GROUP DESIGN:
 ├──────────────────────────────────────────────────────────┤
 │  SG: db-sg                                                │
 │  Inbound:  5432 from app-sg only                          │
-│  Outbound: None (no egress needed)                        │
-├──────────────────────────────────────────────────────────┤
-│  SG: cache-sg                                             │
-│  Inbound:  6379 from app-sg only                          │
-│  Outbound: None                                           │
-├──────────────────────────────────────────────────────────┤
-│  Principle: Least privilege — each SG allows only         │
-│  traffic from the tier directly above it                   │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Network ACLs and Firewall
@@ -500,13 +333,6 @@ NETWORK SECURITY RULES:
 
 Defense in Depth Checklist:
   [x] WAF rules block SQL injection, XSS, known bad bots
-  [x] Rate limiting at CDN edge (per IP, per path)
-  [x] Security groups follow least-privilege
-  [x] NACLs deny known malicious IP ranges
-  [x] Kubernetes NetworkPolicies restrict pod communication
-  [x] Application enforces CORS, CSP, HSTS headers
-  [x] VPC Flow Logs enabled for forensic analysis
-  [x] No public access to database or cache subnets
 ```
 
 ### Step 7: Commit and Report
@@ -533,69 +359,6 @@ Defense in Depth Checklist:
 7. **VPC design uses three tiers.** Public (LB), private (app), isolated (data). Data tier has no internet access. All tiers span multiple availability zones.
 8. **Log everything.** VPC Flow Logs, ALB access logs, WAF logs. You cannot investigate what you did not record.
 
-## Example Usage
-
-### Setting up HTTPS for a new domain
-```
-User: /godmode:network Set up HTTPS for api.myapp.com
-
-Network: Discovering current state...
-
-Domain: api.myapp.com
-DNS: CNAME -> d1234.cloudfront.net (CloudFront)
-Certificate: NONE — no SSL configured
-
-Plan:
-  1. Request Let's Encrypt certificate for api.myapp.com
-  2. Configure CloudFront to use custom SSL certificate
-  3. Set minimum TLS version to 1.2
-  4. Add HSTS header (max-age=31536000)
-  5. Redirect HTTP -> HTTPS
-
-Executing...
-
-Certificate: Issued (Let's Encrypt, valid until 2026-06-17)
-CloudFront: Updated with custom SSL
-TLS: Minimum version 1.2
-HSTS: Enabled
-HTTP redirect: Configured
-
-Verification:
-  [x] https://api.myapp.com returns 200
-  [x] http://api.myapp.com redirects to HTTPS (301)
-  [x] TLS 1.1 connection rejected
-  [x] HSTS header present
-  [x] Certificate valid for 90 days
-```
-
-### Troubleshooting 502 Bad Gateway
-```
-User: /godmode:network Getting 502 errors on our API
-
-Network: Investigating 502 Bad Gateway...
-
-Checks:
-  [x] DNS resolution: api.myapp.com -> 52.1.2.3 (correct)
-  [x] ALB health: 2/3 targets healthy
-  [ ] Target group: 1 target UNHEALTHY (10.0.10.45:3000)
-  [x] Security groups: app-sg allows traffic from alb-sg
-  [ ] Backend logs: Connection refused on 10.0.10.45:3000
-
-Root cause: Application on instance 10.0.10.45 is down.
-  - Process not running (OOMKilled at 14:23 UTC)
-  - Auto-restart failed due to port conflict
-
-Fix applied:
-  1. Killed orphaned process holding port 3000
-  2. Restarted application service
-  3. Verified health check passing
-  4. All 3/3 targets now healthy
-  5. 502 errors resolved
-
-Recommendation: Set up process manager (systemd/supervisord)
-  with automatic restart and memory limits.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -603,13 +366,6 @@ Recommendation: Set up process manager (systemd/supervisord)
 | (none) | Full network audit and topology report |
 | `--dns` | DNS configuration and troubleshooting only |
 | `--ssl` | SSL/TLS certificate management only |
-| `--cdn` | CDN configuration and optimization only |
-| `--lb` | Load balancer setup and health check only |
-| `--vpc` | VPC and network architecture design only |
-| `--security` | Firewall rules and security group audit only |
-| `--troubleshoot` | Diagnose networking issues (502s, timeouts, DNS) |
-| `--domain <name>` | Target a specific domain |
-| `--provider <name>` | Use specific provider (aws, cloudflare, gcp) |
 
 ## Iterative Network Setup Protocol
 
@@ -629,27 +385,6 @@ WHILE current_component < total_components:
   2. DESIGN configuration based on requirements
   3. APPLY configuration
   4. VALIDATE:
-     - vpc: subnets reachable, route tables correct
-     - security_groups: least-privilege, no 0.0.0.0/0 on non-LB
-     - load_balancer: health checks passing, targets healthy
-     - ssl: certificate valid, TLS 1.2+ enforced, HSTS enabled
-     - cdn: cache headers correct, invalidation works
-     - dns: resolution correct from multiple resolvers
-
-  IF validation_fails:
-    validation_failures.append({component: component, reason: reason})
-    FIX and re-validate
-    CONTINUE  # retry same component
-  ELSE:
-    configured.append(component)
-    current_component += 1
-
-  REPORT "{current_component}/{total_components} networking components configured"
-
-FINAL:
-  RUN end-to-end test: curl -sI https://{domain}
-  VERIFY: 200 OK, valid cert, HSTS header, correct origin
-  REPORT full network inventory
 ```
 
 ## HARD RULES
@@ -670,27 +405,7 @@ FINAL:
 5. Load balancers MUST have health checks configured.
    Without health checks, traffic goes to dead backends.
 
-6. VPC design MUST use three tiers (public, private, isolated)
-   spanning at least two availability zones.
-
-7. NEVER cache authenticated/personalized content at the CDN
-   unless cache keys include auth tokens.
-
-8. VPC Flow Logs MUST be enabled on all production VPCs.
-   You cannot investigate what you did not record.
 ```
-
-## Anti-Patterns
-
-- **Do NOT use self-signed certificates in production.** Let's Encrypt is free.
-- **Do NOT expose database ports to the internet.** Databases belong in isolated subnets.
-- **Do NOT use 0.0.0.0/0 in security group rules** except for ALB inbound on 80/443.
-- **Do NOT set DNS TTL to 0.** Use 60s minimum for dynamic records.
-- **Do NOT skip HSTS.** Enable HSTS with preload on all production domains.
-- **Do NOT cache authenticated content at the CDN** without auth-aware cache keys.
-- **Do NOT rely on a single availability zone.** Span at least two AZs.
-- **Do NOT ignore VPC Flow Logs.** Enable them on all production VPCs.
-
 
 ## Output Format
 Print on completion: `Network: {resource_count} resources configured. TLS: {tls_status}. DNS: {domain_count} domains. LB: {lb_type}. CDN: {cdn_status}. Security groups: {sg_count}. Verdict: {verdict}.`
@@ -772,6 +487,3 @@ PREFER the simpler networking approach:
   - Fewer security group rules with broader service groups before many narrow rules
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.
-Use branch isolation per task: `git checkout -b godmode-network-{task}`, implement, commit, merge back.

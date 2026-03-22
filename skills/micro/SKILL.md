@@ -11,1037 +11,166 @@ description: |
 - User says "design microservices", "decompose this monolith", "split this service"
 - User says "service mesh", "service discovery", "saga pattern"
 - User says "inter-service communication", "gRPC between services", "event-driven services"
-- When building a new distributed system or migrating from a monolith
-- When `/godmode:plan` identifies microservice decomposition tasks
-- When `/godmode:review` flags tight coupling or service boundary issues
+- Building a new distributed system or migrating from a monolith
 
 ## Workflow
 
-### Step 1: System Context & Current State Assessment
-Understand the existing architecture before decomposing anything:
-
+### Step 1: System Context Assessment
 ```
 SYSTEM CONTEXT:
-Project: <name and purpose>
-Current Architecture: Monolith | Modular Monolith | Microservices (partial) | Greenfield
-Team Structure: <number of teams, ownership model>
-Scale Requirements: <expected request volume, data volume, growth projections>
-Deployment Cadence: <how often teams need to deploy independently>
-Data Stores: <databases, caches, message brokers currently in use>
-Constraints: <latency SLAs, compliance requirements, team skill level>
-Pain Points: <what is driving the need for microservices>
+Project: <name>  Current Architecture: Monolith | Modular Monolith | Microservices | Greenfield
+Team Structure: <teams, ownership>  Scale: <request volume, data volume, growth>
+Data Stores: <databases, caches, brokers>  Constraints: <SLAs, compliance, skill level>
+Pain Points: <what drives the need for microservices>
 ```
 
-If the user has not provided context, ask: "What is the current architecture, and what problem are we solving with microservices? Not every system needs microservices."
+### Step 2: Service Decomposition
+Define bounded contexts with domain-driven decomposition:
 
-### Step 2: Service Decomposition Strategy
-Identify bounded contexts and define service boundaries:
-
-#### Domain-Driven Decomposition
 ```
 BOUNDED CONTEXT MAP:
-+---------------------------------------------------------------+
-|  Context: <Name>                                               |
-|  Description: <what business capability it owns>               |
-|  Core entities: <list of domain entities>                      |
-|  Commands: <list of state-changing operations>                 |
-|  Queries: <list of read operations>                            |
-|  Events published: <list of domain events emitted>             |
-|  Events consumed: <list of domain events subscribed to>        |
-|  Data ownership: <what data this context exclusively owns>     |
-|  Team: <owning team>                                           |
-+---------------------------------------------------------------+
-
-CONTEXT RELATIONSHIPS:
-+---------------------+          +---------------------+
-|  Order Context      | -------> |  Payment Context    |
-|  (upstream)         | publishes|  (downstream)       |
-|                     | OrderPlaced                     |
-+---------------------+          +---------------------+
-        |                                |
-        | publishes                      | publishes
-        | OrderShipped                   | PaymentCompleted
-        v                                v
-+---------------------+          +---------------------+
-|  Shipping Context   |          |  Notification       |
-|  (downstream)       |          |  Context            |
-+---------------------+          +---------------------+
+  Context: <Name>
+  Business capability: <what it owns>
+  Core entities, Commands, Queries, Events published/consumed
+  Data ownership: <exclusively owned data>  Team: <owning team>
 ```
 
-#### Decomposition Decision Framework
-```
-DECOMPOSITION CRITERIA:
-+--------------------------------------------------------------+
-|  Criterion                    | Weight | Score (1-5) | Notes  |
-+--------------------------------------------------------------+
-|  Business domain boundary     | HIGH   | <score>     |        |
-|  Independent deployment need  | HIGH   | <score>     |        |
-|  Different scaling needs      | MEDIUM | <score>     |        |
-|  Different technology needs   | MEDIUM | <score>     |        |
-|  Data ownership clarity       | HIGH   | <score>     |        |
-|  Team ownership alignment     | HIGH   | <score>     |        |
-|  Transactional boundary       | HIGH   | <score>     |        |
-|  Change frequency difference  | MEDIUM | <score>     |        |
-+--------------------------------------------------------------+
+Decomposition criteria (HIGH weight): business domain boundary, independent deployment need, data ownership clarity, team alignment, transactional boundary. Rules: decompose by business capability (not technical layer), each service owns its data exclusively, if two services need strong consistency they belong together.
 
-DECOMPOSITION VERDICT: <SPLIT | KEEP TOGETHER | DEFER>
-Rationale: <why this boundary makes sense or does not>
+### Step 3: Inter-Service Communication
+
+**REST** — Simple CRUD, immediate response needed, external-facing. Add circuit breaker (5 failures -> open), timeout (3s), retry (3x exponential), fallback.
+
+**gRPC** — High-throughput internal (10k+ RPS), low-latency, streaming, polyglot. Use deadline propagation, client-side load balancing, health checking protocol.
+
+**Event-Driven (Async)** — Eventual consistency, decoupling, fan-out, long-running processes. Standard event format: event_id, event_type, version, timestamp, source, correlation_id, data. Brokers: Kafka (high-throughput, ordered), RabbitMQ (flexible routing), SQS/SNS (AWS-native), NATS (ultra-low latency).
+
+```
+DECISION: Need immediate response -> Sync (REST/gRPC)
+          Fire-and-forget/fan-out  -> Async (Events/Pub-Sub)
+          High-throughput internal  -> gRPC
+          External API              -> REST
 ```
 
-Rules:
-- Decompose along business capabilities, not technical layers
-- Each service owns its data exclusively -- no shared databases
-- If two services need strong transactional consistency, they probably belong together
-- A microservice should be owned by a single team
-- If you cannot name the bounded context, the boundary is wrong
+### Step 4: Service Mesh
+**Istio:** VirtualService (traffic routing/splitting), DestinationRule (circuit breaking, load balancing), PeerAuthentication (mTLS STRICT), AuthorizationPolicy (service-to-service ACL). Best for complex routing, multi-cluster, WASM.
 
-### Step 3: Inter-Service Communication Design
-Choose the right communication pattern for each service interaction:
-
-#### Synchronous Communication (Request-Response)
-
-**REST (HTTP/JSON)**
-```
-USE WHEN:
-- Simple CRUD operations across services
-- Client needs an immediate response
-- Low-to-medium throughput requirements
-- External-facing APIs
-
-DESIGN:
-+-------------------+     HTTP/JSON      +-------------------+
-|  Order Service    | -----------------> |  Product Service  |
-|                   | GET /products/:id  |                   |
-|                   | <-- 200 + body     |                   |
-+-------------------+                    +-------------------+
-
-RESILIENCE:
-- Circuit breaker: Open after 5 consecutive failures
-- Timeout: 3s (never wait forever)
-- Retry: 3 attempts with exponential backoff (100ms, 400ms, 1600ms)
-- Fallback: Return cached data or degraded response
-- Bulkhead: Isolate thread pools per downstream service
-```
-
-**gRPC (HTTP/2 + Protobuf)**
-```
-USE WHEN:
-- High-throughput internal communication (10k+ RPS)
-- Low-latency requirements (sub-10ms)
-- Streaming data (server-push, bidirectional)
-- Polyglot services needing strong type contracts
-
-DESIGN:
-+-------------------+     gRPC/Protobuf  +-------------------+
-|  API Gateway      | -----------------> |  User Service     |
-|                   | GetUser(id)        |                   |
-|                   | <-- UserResponse   |                   |
-+-------------------+                    +-------------------+
-
-PROTO DEFINITION:
-syntax = "proto3";
-
-service UserService {
-  rpc GetUser(GetUserRequest) returns (UserResponse);
-  rpc ListUsers(ListUsersRequest) returns (stream UserResponse);
-  rpc CreateUser(CreateUserRequest) returns (UserResponse);
-  rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
-  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
-}
-
-message GetUserRequest {
-  string id = 1;
-}
-
-message UserResponse {
-  string id = 1;
-  string email = 2;
-  string name = 3;
-  google.protobuf.Timestamp created_at = 4;
-}
-
-RESILIENCE:
-- Deadline propagation: Set deadlines, not timeouts
-- Retry policy: Retry on UNAVAILABLE with backoff
-- Load balancing: Client-side round-robin or weighted
-- Health checking: gRPC health checking protocol
-```
-
-#### Asynchronous Communication (Event-Driven)
-
-**Event/Message-Based**
-```
-USE WHEN:
-- Eventual consistency is acceptable
-- Decoupling producers from consumers
-- Fan-out to multiple consumers
-- Long-running processes
-- Cross-service data synchronization
-
-DESIGN:
-+-------------------+     Event Bus      +-------------------+
-|  Order Service    | -- OrderPlaced --> |  Inventory Service|
-|                   |                    |  Payment Service  |
-|                   |                    |  Notification Svc |
-+-------------------+                    +-------------------+
-
-EVENT FORMAT:
-{
-  "event_id": "evt-uuid-here",
-  "event_type": "order.placed",
-  "version": "1.0",
-  "timestamp": "2025-01-15T10:30:45.123Z",
-  "source": "order-service",
-  "correlation_id": "req-uuid-here",
-  "data": {
-    "order_id": "ord-123",
-    "customer_id": "cust-456",
-    "total_amount": 99.99,
-    "items": [...]
-  }
-}
-
-BROKER OPTIONS:
-- Kafka: High-throughput, ordered, persistent, replay
-- RabbitMQ: Flexible routing, low-latency, mature
-- SQS/SNS: AWS-native, serverless, managed
-- NATS: Ultra-low latency, lightweight, cloud-native
-```
-
-#### Communication Pattern Decision Matrix
-```
-COMMUNICATION DECISION:
-+--------------------------------------------------------------+
-|  Scenario                          | Pattern    | Protocol    |
-+--------------------------------------------------------------+
-|  Need immediate response           | Sync       | REST/gRPC   |
-|  Fire-and-forget notification      | Async      | Events      |
-|  Fan-out to multiple consumers     | Async      | Pub/Sub     |
-|  Long-running workflow             | Async      | Saga/Events |
-|  High-throughput internal calls    | Sync       | gRPC        |
-|  External API exposure             | Sync       | REST        |
-|  Data replication across services  | Async      | CDC/Events  |
-|  Request with async processing     | Hybrid     | REST + Event|
-+--------------------------------------------------------------+
-```
-
-### Step 4: Service Mesh Configuration
-Configure the data plane and control plane for service-to-service communication:
-
-#### Istio Configuration
-```yaml
-# VirtualService: Traffic routing and splitting
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: order-service
-spec:
-  hosts:
-    - order-service
-  http:
-    - match:
-        - headers:
-            x-canary:
-              exact: "true"
-      route:
-        - destination:
-            host: order-service
-            subset: canary
-          weight: 100
-    - route:
-        - destination:
-            host: order-service
-            subset: stable
-          weight: 95
-        - destination:
-            host: order-service
-            subset: canary
-          weight: 5
-
----
-# DestinationRule: Load balancing and circuit breaking
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
-metadata:
-  name: order-service
-spec:
-  host: order-service
-  trafficPolicy:
-    connectionPool:
-      tcp:
-        maxConnections: 100
-      http:
-        h2UpgradePolicy: DEFAULT
-        http1MaxPendingRequests: 100
-        http2MaxRequests: 1000
-    outlierDetection:
-      consecutive5xxErrors: 5
-      interval: 30s
-      baseEjectionTime: 30s
-      maxEjectionPercent: 50
-    loadBalancer:
-      simple: LEAST_REQUEST
-  subsets:
-    - name: stable
-      labels:
-        version: v1
-    - name: canary
-      labels:
-        version: v2
-
----
-# PeerAuthentication: Mutual TLS
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: default
-  namespace: <namespace>
-spec:
-  mtls:
-    mode: STRICT
-
----
-# AuthorizationPolicy: Service-to-service access control
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: order-service-policy
-spec:
-  selector:
-    matchLabels:
-      app: order-service
-  rules:
-    - from:
-        - source:
-            principals: ["cluster.local/ns/<ns>/sa/api-gateway"]
-      to:
-        - operation:
-            methods: ["GET", "POST"]
-            paths: ["/api/v1/orders*"]
-```
-
-#### Linkerd Configuration
-```yaml
-# ServiceProfile: Retry and timeout policies
-apiVersion: linkerd.io/v1alpha2
-kind: ServiceProfile
-metadata:
-  name: order-service.<namespace>.svc.cluster.local
-  namespace: <namespace>
-spec:
-  routes:
-    - name: GET /api/v1/orders
-      condition:
-        method: GET
-        pathRegex: /api/v1/orders
-      isRetryable: true
-      timeout: 3s
-    - name: POST /api/v1/orders
-      condition:
-        method: POST
-        pathRegex: /api/v1/orders
-      isRetryable: false
-      timeout: 5s
-
----
-# TrafficSplit: Canary deployment
-apiVersion: split.smi-spec.io/v1alpha1
-kind: TrafficSplit
-metadata:
-  name: order-service
-  namespace: <namespace>
-spec:
-  service: order-service
-  backends:
-    - service: order-service-stable
-      weight: 950
-    - service: order-service-canary
-      weight: 50
-```
-
-#### Service Mesh Comparison
-```
-SERVICE MESH SELECTION:
-+--------------------------------------------------------------+
-|  Feature              | Istio          | Linkerd              |
-+--------------------------------------------------------------+
-|  Complexity           | High           | Low                  |
-|  Resource overhead    | Higher (~128Mi)| Lower (~64Mi)        |
-|  mTLS                 | Built-in       | Built-in             |
-|  Traffic splitting    | VirtualService | TrafficSplit (SMI)   |
-|  Observability        | Kiali, Jaeger  | Dashboard, tap       |
-|  Multi-cluster        | Yes            | Yes                  |
-|  Learning curve       | Steep          | Gentle               |
-|  Extensibility        | WASM, EnvoyFil.| Limited              |
-|  Best for             | Complex routing| Simple, lightweight  |
-+--------------------------------------------------------------+
-
-RECOMMENDATION:
-- Start with Linkerd if: simple mTLS + observability needed
-- Choose Istio if: advanced traffic management, multi-cluster, WASM
-```
+**Linkerd:** ServiceProfile (retry/timeout per route), TrafficSplit (canary). Simpler, lighter (~64Mi vs ~128Mi), gentler learning curve.
 
 ### Step 5: Service Discovery & Load Balancing
-Configure how services find and communicate with each other:
+K8s DNS: `<service>.<namespace>.svc.cluster.local`. Load balancing: Round Robin (homogeneous), Least Request (variable latency), Consistent Hash (sticky sessions).
 
+### Step 6: Saga Pattern (Distributed Transactions)
+
+**Choreography (2-4 services):** Each service publishes events, next service reacts. Loose coupling, hard to trace. Each step has a compensating action.
+
+**Orchestration (5+ services):** Central coordinator manages steps, compensates in reverse on failure. Easy to trace, unit-testable.
+
+Rules: every step MUST have a compensating action (idempotent), persist saga state, use correlation IDs, set timeouts, log every transition.
+
+### Step 7: Service Topology
 ```
-SERVICE DISCOVERY PATTERNS:
-+--------------------------------------------------------------+
-|  Pattern              | Implementation        | Best For       |
-+--------------------------------------------------------------+
-|  DNS-based (K8s)      | CoreDNS + Services    | K8s-native     |
-|  Client-side          | Eureka, Consul SDK    | JVM, polyglot  |
-|  Server-side          | K8s Service, ALB      | Cloud-native   |
-|  Service mesh         | Istio/Linkerd sidecar | Zero-code      |
-+--------------------------------------------------------------+
-
-KUBERNETES SERVICE DISCOVERY:
-Service DNS:  <service-name>.<namespace>.svc.cluster.local
-Short form:   <service-name>.<namespace>
-Same namespace: <service-name>
-
-Example:
-  Order Service -> http://product-service.catalog.svc.cluster.local:8080/api/v1/products
-  Same namespace: http://product-service:8080/api/v1/products
-```
-
-#### Load Balancing Strategies
-```
-LOAD BALANCING:
-+--------------------------------------------------------------+
-|  Strategy        | How it works             | Best for         |
-+--------------------------------------------------------------+
-|  Round Robin     | Sequential distribution  | Homogeneous pods |
-|  Least Request   | Route to least-busy pod  | Variable latency |
-|  Random          | Random selection         | Large clusters   |
-|  Consistent Hash | Same client -> same pod  | Sticky sessions  |
-|  Weighted        | Distribute by weight     | Canary/migration |
-+--------------------------------------------------------------+
-
-IMPLEMENTATION (Istio):
-trafficPolicy:
-  loadBalancer:
-    simple: LEAST_REQUEST    # or ROUND_ROBIN, RANDOM, PASSTHROUGH
-
-IMPLEMENTATION (K8s native):
-# K8s Services default to round-robin via kube-proxy/iptables
-# For session affinity:
-spec:
-  sessionAffinity: ClientIP
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 10800
-```
-
-### Step 6: Distributed Transaction Management (Saga Pattern)
-Manage data consistency across service boundaries without distributed locks:
-
-#### Choreography-Based Saga (Event-Driven)
-```
-SAGA: Order Processing (Choreography)
-
-1. Order Service        -> publishes OrderCreated
-2. Payment Service      -> consumes OrderCreated
-                        -> processes payment
-                        -> publishes PaymentCompleted | PaymentFailed
-3. Inventory Service    -> consumes PaymentCompleted
-                        -> reserves stock
-                        -> publishes StockReserved | StockInsufficient
-4. Shipping Service     -> consumes StockReserved
-                        -> schedules shipment
-                        -> publishes ShipmentScheduled
-
-COMPENSATION (on failure):
-PaymentFailed       -> Order Service cancels order
-StockInsufficient   -> Payment Service refunds payment
-                    -> Order Service cancels order
-ShipmentFailed      -> Inventory Service releases stock
-                    -> Payment Service refunds payment
-                    -> Order Service cancels order
-
-SAGA FLOW:
-OrderCreated -> PaymentCompleted -> StockReserved -> ShipmentScheduled
-     |                |                  |                  |
-     v                v                  v                  v
-OrderCancelled  PaymentRefunded   StockReleased    ShipmentCancelled
-  (compensate)    (compensate)     (compensate)      (compensate)
-```
-
-#### Orchestration-Based Saga (Central Coordinator)
-```
-SAGA: Order Processing (Orchestration)
-
-Saga Orchestrator (Order Saga):
-  Step 1: CreateOrder       -> Order Service
-  Step 2: ProcessPayment    -> Payment Service
-  Step 3: ReserveStock      -> Inventory Service
-  Step 4: ScheduleShipment  -> Shipping Service
-
-  On failure at Step N:
-    Compensate Step N-1, N-2, ..., Step 1 (reverse order)
-
-ORCHESTRATOR STATE MACHINE:
-+----------+     +----------+     +----------+     +----------+
-|  ORDER   | --> | PAYMENT  | --> |  STOCK   | --> | SHIPPING |
-|  PENDING |     | PENDING  |     | PENDING  |     | PENDING  |
-+----------+     +----------+     +----------+     +----------+
-     |                |                |                |
-     v                v                v                v
-+----------+     +----------+     +----------+     +----------+
-|  ORDER   |     | PAYMENT  |     |  STOCK   |     | SHIPPING |
-|  CREATED |     | COMPLETED|     | RESERVED |     | SCHEDULED|
-+----------+     +----------+     +----------+     +----------+
-                      |                |                |
-                      v                v                v
-                +----------+     +----------+     +----------+
-                | PAYMENT  |     |  STOCK   |     | SHIPPING |
-                | REFUNDED |     | RELEASED |     | CANCELLED|
-                +----------+     +----------+     +----------+
-                (compensate)     (compensate)     (compensate)
-```
-
-#### Saga Pattern Selection
-```
-SAGA SELECTION:
-+--------------------------------------------------------------+
-|  Factor              | Choreography       | Orchestration      |
-+--------------------------------------------------------------+
-|  Complexity          | Low (few services) | High (many steps)  |
-|  Coupling            | Loose              | Central coordinator|
-|  Visibility          | Hard to trace      | Easy to trace      |
-|  Single point failure| No                 | Orchestrator       |
-|  Best for            | 2-4 services       | 5+ services        |
-|  Error handling      | Each service       | Centralized        |
-|  Testing             | Integration-heavy  | Unit-testable      |
-+--------------------------------------------------------------+
-
-SELECTED: <Choreography | Orchestration> -- <justification>
-```
-
-#### Saga Implementation Guidelines
-```
-SAGA RULES:
-1. Every step MUST have a compensating action
-2. Compensating actions MUST be idempotent
-3. Saga state MUST be persisted (survive restarts)
-4. Use correlation IDs to track saga instances
-5. Set timeouts on each step (detect hung sagas)
-6. Log every state transition for debugging
-7. Dead letter failed sagas for manual review
-
-SAGA STATE TABLE:
-CREATE TABLE saga_instances (
-  saga_id         UUID PRIMARY KEY,
-  saga_type       VARCHAR(100) NOT NULL,
-  correlation_id  UUID NOT NULL,
-  current_step    VARCHAR(100) NOT NULL,
-  status          VARCHAR(20) NOT NULL,  -- RUNNING, COMPLETED, COMPENSATING, FAILED
-  payload         JSONB NOT NULL,
-  created_at      TIMESTAMP NOT NULL,
-  updated_at      TIMESTAMP NOT NULL,
-  completed_at    TIMESTAMP,
-  error           TEXT
-);
-
-CREATE TABLE saga_step_log (
-  id              UUID PRIMARY KEY,
-  saga_id         UUID REFERENCES saga_instances(saga_id),
-  step_name       VARCHAR(100) NOT NULL,
-  action          VARCHAR(20) NOT NULL,  -- EXECUTE, COMPENSATE
-  status          VARCHAR(20) NOT NULL,  -- PENDING, SUCCESS, FAILED
-  request         JSONB,
-  response        JSONB,
-  executed_at     TIMESTAMP NOT NULL,
-  duration_ms     INTEGER
-);
-```
-
-### Step 7: Service Topology & Architecture Diagram
-Generate the microservice topology:
-
-```
-SERVICE TOPOLOGY:
-+---------------------------------------------------------------+
-|  External Clients (Web, Mobile, Third-Party)                   |
-+---------------------------------------------------------------+
-                          |
-                    [API Gateway]
-                    (rate limiting, auth, routing)
-                          |
-          +---------------+---------------+
-          |               |               |
-    [Order Service] [Product Service] [User Service]
-          |               |               |
-          +-------+-------+               |
-                  |                        |
-            [Event Bus / Message Broker]   |
-            (Kafka / RabbitMQ / NATS)     |
-                  |                        |
-    +-------------+-------------+          |
-    |             |             |          |
-[Payment Svc] [Inventory Svc] [Notification Svc]
-    |             |
-    +------+------+
-           |
-    [Database per Service]
-    Order DB | Product DB | User DB | Payment DB | Inventory DB
-+---------------------------------------------------------------+
-
-SERVICE REGISTRY:
-+--------------------------------------------------------------+
-|  Service            | Port  | Protocol | Owner    | SLA       |
-+--------------------------------------------------------------+
-|  api-gateway        | 8080  | REST     | Platform | 99.99%    |
-|  order-service      | 8081  | gRPC     | Orders   | 99.9%     |
-|  product-service    | 8082  | gRPC     | Catalog  | 99.9%     |
-|  user-service       | 8083  | gRPC     | Identity | 99.95%    |
-|  payment-service    | 8084  | gRPC     | Payments | 99.99%    |
-|  inventory-service  | 8085  | gRPC     | Supply   | 99.9%     |
-|  notification-svc   | 8086  | Async    | Comms    | 99.5%     |
-+--------------------------------------------------------------+
+Clients -> API Gateway (rate limiting, auth, routing)
+  -> [Order|Product|User Service] -> Event Bus -> [Payment|Inventory|Notification Svc]
+  -> Database per Service
 ```
 
 ### Step 8: Resilience Patterns
-Configure fault tolerance across the service mesh:
-
-```
-RESILIENCE CONFIGURATION:
-+--------------------------------------------------------------+
-|  Pattern           | Config                | Service           |
-+--------------------------------------------------------------+
-|  Circuit Breaker   | 5 consecutive 5xx     | All downstream    |
-|                    | 30s half-open         | calls             |
-|  Timeout           | 3s default            | Sync calls        |
-|                    | 30s for batch ops     |                   |
-|  Retry             | 3 attempts            | Idempotent ops    |
-|                    | Exponential backoff   | GET, PUT, DELETE  |
-|                    | Jitter: 0-500ms       |                   |
-|  Bulkhead          | 10 concurrent per svc | All services      |
-|  Rate Limit        | Per service tier      | API Gateway       |
-|  Fallback          | Cached/degraded       | Non-critical data |
-+--------------------------------------------------------------+
-```
+Circuit Breaker (5 consecutive 5xx, 30s half-open), Timeout (3s default), Retry (3x exponential with jitter), Bulkhead (10 concurrent per svc), Rate Limit (per tier), Fallback (cached/degraded).
 
 ### Step 9: Validation
-Validate the microservice architecture against best practices:
-
-```
-ARCHITECTURE VALIDATION:
-+--------------------------------------------------------------+
-|  Check                                    | Status             |
-+--------------------------------------------------------------+
-|  Each service has a single bounded context| PASS | FAIL        |
-|  No shared databases between services     | PASS | FAIL        |
-|  Service ownership mapped to teams        | PASS | FAIL        |
-|  Async communication where possible       | PASS | FAIL        |
-|  Circuit breakers on all sync calls       | PASS | FAIL        |
-|  Timeouts on all external calls           | PASS | FAIL        |
-|  Saga pattern for distributed transactions| PASS | FAIL        |
-|  Service mesh or equivalent configured    | PASS | FAIL        |
-|  Health checks on every service           | PASS | FAIL        |
-|  Independent deployability verified       | PASS | FAIL        |
-|  Data ownership clearly defined           | PASS | FAIL        |
-|  API contracts defined between services   | PASS | FAIL        |
-|  Observability on all services            | PASS | FAIL        |
-|  Resilience patterns applied              | PASS | FAIL        |
-+--------------------------------------------------------------+
-
-VERDICT: <PASS | NEEDS REVISION>
-```
+Check: single bounded context per service, no shared databases, single team ownership, async where possible, circuit breakers on sync calls, saga for distributed transactions, health checks, independent deployability.
 
 ### Step 10: Artifacts & Commit
-Generate the deliverables:
-
 ```
-MICROSERVICE DESIGN COMPLETE:
-
-Artifacts:
-- Architecture diagram: docs/architecture/<system>-topology.md
-- Service catalog: docs/architecture/<system>-services.md
-- Communication contracts: docs/architecture/<system>-communication.md
-- Saga definitions: docs/architecture/<system>-sagas.md
-- Service mesh config: k8s/mesh/ or infra/mesh/
-- Validation: <PASS | NEEDS REVISION>
-
-Next steps:
--> /godmode:api -- Design the API for each service
--> /godmode:event -- Design the event-driven communication layer
--> /godmode:contract -- Define inter-service contracts
--> /godmode:k8s -- Deploy services to Kubernetes
--> /godmode:observe -- Instrument observability across services
+Artifacts: topology diagram, service catalog, communication contracts, saga definitions, mesh config
+Commit: "micro: <system> -- <N> services, <pattern>, <saga type>"
+Next: /godmode:api, /godmode:event, /godmode:k8s, /godmode:observe
 ```
-
-Commit: `"micro: <system> -- <N> services, <communication pattern>, <saga type>"`
 
 ## Key Behaviors
-
-1. **Decompose by business capability, not by technical layer.** A "database service" or "validation service" is not a microservice. An "order service" or "payment service" is.
-2. **Each service owns its data.** No shared databases. Period. If two services need the same data, one owns it and the other gets it via API or events.
-3. **Default to asynchronous communication.** Synchronous calls create temporal coupling. Use events unless the caller genuinely needs an immediate response.
-4. **Every sync call needs a circuit breaker.** One slow downstream service should not take down the entire system. Fail fast, degrade gracefully.
-5. **Sagas replace distributed transactions.** There is no distributed ACID across microservices. Use sagas with compensating actions.
-6. **Start with a modular monolith.** If you are building from scratch, build a well-structured monolith first. Extract services when you have clear boundaries and team scaling needs.
-7. **Service mesh is infrastructure, not optional.** mTLS, observability, traffic management, and resilience patterns belong in the mesh, not in application code.
-8. **One team per service.** If a service requires coordination across multiple teams to deploy, the boundary is wrong.
-
-## Example Usage
-
-### Decomposing a monolith into microservices
-```
-User: /godmode:micro Decompose our e-commerce monolith
-
-Micro: Analyzing current architecture...
-
-SYSTEM CONTEXT:
-  Architecture: Monolith (Rails, 180k LOC)
-  Teams: 4 (Orders, Catalog, Payments, Platform)
-  Pain points: Deploy conflicts, scaling bottlenecks on checkout
-
-BOUNDED CONTEXTS IDENTIFIED:
-  1. Order Management -- orders, line items, order status
-  2. Product Catalog -- products, categories, search
-  3. User Identity -- users, auth, profiles
-  4. Payment Processing -- payments, refunds, invoices
-  5. Inventory -- stock levels, reservations, warehouses
-  6. Notifications -- email, SMS, push
-
-COMMUNICATION DESIGN:
-  Sync (gRPC): API Gateway -> All services
-  Async (Kafka): Order -> Payment, Inventory, Notifications
-  Saga: Order processing (choreography, 4 steps)
-
-SERVICE MESH: Istio (mTLS, traffic splitting, circuit breaking)
-
-Validation: 14/14 checks PASS
-```
-
-### Designing a saga for distributed transactions
-```
-User: /godmode:micro Design a saga for our booking workflow
-
-Micro: Designing orchestration-based saga...
-
-SAGA: Booking Workflow
-  Step 1: CreateBooking     -> Booking Service
-  Step 2: ChargePayment     -> Payment Service
-  Step 3: ReserveRoom       -> Inventory Service
-  Step 4: SendConfirmation  -> Notification Service
-
-  Compensations:
-  Step 4 fail: Cancel notification (no-op)
-  Step 3 fail: Refund payment, cancel booking
-  Step 2 fail: Cancel booking
-
-  State machine: 4 steps, 3 compensations
-  Persistence: saga_instances table
-  Timeout: 30s per step, 120s total
-```
+1. **Decompose by business capability, not technical layer.**
+2. **Each service owns its data.** No shared databases.
+3. **Default to async communication.** Sync creates temporal coupling.
+4. **Every sync call needs a circuit breaker.** Fail fast, degrade gracefully.
+5. **Sagas replace distributed transactions.** No distributed ACID.
+6. **Start with a modular monolith.** Extract when boundaries are proven.
+7. **Service mesh is infrastructure.** mTLS, observability, resilience in the mesh.
+8. **One team per service.**
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full microservice design workflow |
-| `--decompose` | Analyze and propose service decomposition |
-| `--communication` | Design inter-service communication only |
+| `--decompose` | Propose service decomposition |
+| `--communication` | Design inter-service communication |
 | `--saga <name>` | Design a specific saga workflow |
-| `--mesh istio` | Generate Istio service mesh configuration |
-| `--mesh linkerd` | Generate Linkerd service mesh configuration |
-| `--topology` | Generate service topology diagram |
-| `--validate` | Validate existing microservice architecture |
-| `--resilience` | Design resilience patterns (circuit breaker, retry, bulkhead) |
-| `--migrate` | Plan monolith-to-microservices migration |
+| `--mesh istio\|linkerd` | Generate service mesh config |
+| `--validate` | Validate existing architecture |
+| `--resilience` | Design resilience patterns |
+
+## HARD RULES
+1. NEVER share a database between services.
+2. NEVER decompose by technical layer ("database service" is wrong).
+3. NEVER skip modular monolith for greenfield projects.
+4. EVERY sync call MUST have circuit breaker, timeout (3s), retry with backoff.
+5. EVERY service MUST have health check and be independently deployable.
+6. NEVER use distributed transactions (2PC). Use sagas.
+7. EVERY event MUST include: event_id, type, version, timestamp, source, correlation_id, data.
 
 ## Auto-Detection
-
 ```
-IF directory contains docker-compose.yml OR docker-compose.yaml:
-  services_count = count services in compose file
-  IF services_count > 2:
-    SUGGEST "Detected multi-service Docker Compose with {services_count} services. Activate /godmode:micro?"
-
-IF directory contains k8s/ OR kubernetes/ OR helm/:
-  deployment_count = count Deployment manifests
-  IF deployment_count > 2:
-    SUGGEST "Detected {deployment_count} Kubernetes deployments. Activate /godmode:micro?"
-
-IF directory contains istio/ OR linkerd/ OR service-mesh/:
-  SUGGEST "Detected service mesh configuration. Activate /godmode:micro?"
-
-IF directory contains proto/ OR *.proto files:
-  SUGGEST "Detected gRPC proto definitions. Activate /godmode:micro?"
-
-IF package.json contains "@grpc" OR "@nestjs/microservices" OR "moleculer" OR "seneca":
-  SUGGEST "Detected microservice framework. Activate /godmode:micro?"
-```
-
-## Iterative Decomposition Protocol
-
-```
-WHEN decomposing a monolith OR designing multi-service architecture:
-
-current_service = 0
-total_services = len(identified_bounded_contexts)
-failed_validations = []
-
-WHILE current_service < total_services:
-  service = bounded_contexts[current_service]
-
-  1. DEFINE service boundary (entities, commands, events)
-  2. DESIGN communication pattern (sync/async)
-  3. DEFINE data ownership (which tables/collections)
-  4. VALIDATE boundary:
-     - No shared database with other services
-     - Single team ownership
-     - Independent deployability
-     - Clear API contract
-
-  IF validation_fails:
-    failed_validations.append(service)
-    LOG "Service {service.name} boundary invalid: {reason}"
-    MERGE with adjacent context OR re-split
-  ELSE:
-    current_service += 1
-
-  IF current_service % 3 == 0:
-    REPORT progress: "{current_service}/{total_services} services designed"
-
-FINAL: Generate topology diagram with all validated services
-IF len(failed_validations) > 0:
-  REPORT "Revisit: {failed_validations}"
+IF docker-compose with >2 services OR k8s deployments >2 OR istio/linkerd config
+OR proto files OR @grpc/@nestjs/microservices/moleculer in package.json
+  -> Suggest /godmode:micro
 ```
 
 ## Multi-Agent Dispatch
 ```
-Agent 1 (service-design): Bounded contexts, entity ownership -> service-catalog.md
-Agent 2 (communication-design): Inter-service patterns, event schemas -> contracts.md
-Agent 3 (infrastructure): Service mesh, resilience patterns -> k8s/mesh/ configs
-Agent 4 (saga-design): Saga workflows, compensating actions -> saga-definitions.md
-MERGE: Validate service names, event names, and mesh configs are consistent
-```
-
-## HARD RULES
-
-```
-1. NEVER design a microservice that shares a database with another service.
-   One service = one data store. No exceptions.
-
-2. NEVER decompose by technical layer (e.g., "database service", "auth library service").
-   Decompose by business domain ONLY.
-
-3. NEVER skip the modular monolith step for greenfield projects.
-   Build modular first. Extract when boundaries are proven.
-
-4. EVERY synchronous call between services MUST have a circuit breaker,
-   timeout (max 3s default), and retry with exponential backoff.
-
-5. EVERY service MUST have a health check endpoint and be independently deployable.
-
-6. NEVER use distributed transactions (2PC) across services.
-   Use sagas with compensating actions.
-
-7. EVERY event MUST include: event_id, event_type, version, timestamp,
-   source, correlation_id, and data payload.
-
-8. NEVER create a service with fewer than 2 bounded context entities.
-   That is a nano-service, not a microservice.
-```
-
-## Output Format
-
-```
-MICROSERVICE ARCHITECTURE COMPLETE:
-  Services: <N> services decomposed from <source>
-  Communication: <sync: REST/gRPC | async: events/queues | hybrid>
-  Service mesh: <Istio | Linkerd | none>
-  Service discovery: <Consul | Kubernetes DNS | AWS Cloud Map | none>
-  Saga pattern: <choreography | orchestration | none>
-  API gateway: <Kong | Traefik | AWS API Gateway | none>
-  Observability: distributed tracing <on|off>, centralized logging <on|off>
-  Circuit breakers: <N> configured
-  Health checks: <N> services with /healthz
-
-SERVICE SUMMARY:
-+--------------------------------------------------------------+
-|  Service          | Owns           | Communicates With | Proto |
-+--------------------------------------------------------------+
-|  <service>        | <domain>       | <services>        | gRPC  |
-+--------------------------------------------------------------+
+Agent 1 (service-design): Bounded contexts, entity ownership
+Agent 2 (communication): Inter-service patterns, event schemas
+Agent 3 (infrastructure): Service mesh, resilience patterns
+Agent 4 (saga-design): Saga workflows, compensating actions
+MERGE: Validate consistency of names, events, configs
 ```
 
 ## TSV Logging
-
-Log every microservice design session to `.godmode/micro-results.tsv`:
-
-```
-Fields: timestamp\tproject\tservices_count\tcommunication\tsaga_pattern\tservice_mesh\tcircuit_breakers\thealth_checks\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-platform\t6\thybrid\tchoreography\tistio\t6\t6\tabc1234
-```
-
-Append after every completed microservice design pass. One row per session. If the file does not exist, create it with a header row.
+Log to `.godmode/micro-results.tsv`: `timestamp\tproject\tservices_count\tcommunication\tsaga_pattern\tservice_mesh\tcircuit_breakers\thealth_checks\tcommit_sha`
 
 ## Success Criteria
-
-```
-MICROSERVICE SUCCESS CRITERIA:
-+--------------------------------------------------------------+
-|  Criterion                                  | Required         |
-+--------------------------------------------------------------+
-|  Each service owns its data (no shared DB)  | YES              |
-|  Service boundaries follow domain boundaries| YES              |
-|  Health check endpoint on every service     | YES              |
-|  Circuit breaker on every external call     | YES              |
-|  Distributed tracing across service calls   | YES              |
-|  Centralized logging with correlation IDs   | YES              |
-|  Saga pattern for multi-service transactions| YES (if needed)  |
-|  API gateway for external traffic           | YES (production)  |
-|  Graceful degradation (service down ≠ outage)| YES             |
-|  Independent deployability per service      | YES              |
-+--------------------------------------------------------------+
-
-VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
-```
+- Each service owns its data (no shared DB)
+- Boundaries follow domain boundaries
+- Health check on every service
+- Circuit breaker on every external call
+- Distributed tracing + centralized logging with correlation IDs
+- Independent deployability per service
 
 ## Error Recovery
+1. **Cascading failure:** Add circuit breakers, fallback responses, bulkhead isolation.
+2. **Saga fails mid-way:** Compensate in reverse, log state, verify idempotency.
+3. **Service discovery not resolving:** Check DNS/registry health, retry with backoff, cache last-known addresses.
+4. **Circular dependency:** Extract shared logic or use events to break the cycle.
+5. **Data inconsistency:** Verify eventual consistency window, check event ordering, add reconciliation job.
 
-```
-ERROR RECOVERY — MICROSERVICES:
-1. Cascading failure (one service down → all down):
-   → Add circuit breakers to every inter-service call. Implement fallback responses. Add bulkhead isolation (separate thread pools per dependency).
-2. Distributed transaction fails mid-saga:
-   → Implement compensating transactions for each saga step. Log saga state. Add saga orchestrator or choreography events for rollback. Verify idempotency of compensations.
-3. Service discovery not resolving:
-   → Check DNS/Consul/service registry health. Verify service registration on startup. Add retry with backoff on resolution failure. Cache last-known-good addresses.
-4. Circular dependency between services:
-   → Identify the cycle. Extract shared logic into a new service or shared library. Use events instead of synchronous calls to break the cycle.
-5. Data inconsistency across services:
-   → Verify eventual consistency window is acceptable. Check event ordering. Add reconciliation job that compares data across services periodically. Fix root cause in event handlers.
-6. Observability gap (cannot trace request across services):
-   → Verify trace context propagation (W3C Trace Context headers). Check that all services instrument outgoing calls. Add trace ID to all log entries.
-```
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-micro-{task}`. See `adapters/shared/sequential-dispatch.md`.
 
-## Microservice Audit
-
-Structured audit loop for service boundary validation and API contract testing across the microservice architecture:
-
-```
-MICROSERVICE AUDIT LOOP:
-
-current_iteration = 0
-max_iterations = 15
-audit_queue = [
-    "service_boundary_validation",
-    "api_contract_testing",
-    "data_ownership_verification",
-    "communication_pattern_review",
-    "resilience_pattern_audit",
-    "independent_deployability_check",
-    "observability_gap_detection"
-]
-audit_findings = []
-
-WHILE audit_queue is not empty AND current_iteration < max_iterations:
-    current_iteration += 1
-    audit_aspect = audit_queue.pop(0)
-
-    1. SCAN all services for {audit_aspect}
-    2. VALIDATE against microservice best practices
-    3. CLASSIFY findings: PASS | WARN | FAIL
-    4. IF FAIL: generate remediation plan with effort estimate
-    5. IF new concerns surface: audit_queue.append(new_concern)
-    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
-
-FINAL: Microservice health report with prioritized fixes
-```
-
-### Service Boundary Validation
-
-```
-SERVICE BOUNDARY VALIDATION:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                              │ Service    │ Status     │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Single bounded context per service │ <service>  │ PASS|FAIL  │
-│  (service does not span multiple    │            │            │
-│  business domains)                  │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Exclusive data ownership           │ <service>  │ PASS|FAIL  │
-│  (no shared database tables between │            │            │
-│  services)                          │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Single team ownership              │ <service>  │ PASS|FAIL  │
-│  (one team owns and deploys this    │            │            │
-│  service exclusively)               │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Independent deployability          │ <service>  │ PASS|FAIL  │
-│  (can deploy without coordinating   │            │            │
-│  with other services)               │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Cohesion score                     │ <service>  │ <1-10>     │
-│  (all operations relate to the same │            │            │
-│  domain concept)                    │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Coupling score                     │ <service>  │ <1-10>     │
-│  (number of synchronous dependencies│            │            │
-│  on other services)                 │            │            │
-├─────────────────────────────────────┼────────────┼────────────┤
-│  Size appropriateness               │ <service>  │ PASS|WARN  │
-│  (not too small: nano-service,      │            │            │
-│  not too large: mini-monolith)      │            │            │
-└─────────────────────────────────────┴────────────┴────────────┘
-
-BOUNDARY VIOLATION DETECTION:
-  # Shared database detection
-  grep -rn "DATABASE_URL\|DB_HOST\|connection_string" --include="*.env*" --include="*.yaml"
-  # Compare: do multiple services point to the same database?
-
-  # Cross-service direct code references
-  grep -rn "import.*from.*other-service" --include="*.ts" --include="*.py"
-  # Services should never import code from another service directly
-
-  # Deployment coupling detection
-  # Check CI/CD: do services have independent pipelines?
-  # Check: does deploying service A require redeploying service B?
-
-  # Shared library analysis
-  # List shared libraries used by each service
-  # Flag: shared libraries containing business logic (should be service-owned)
-
-FOR EACH BOUNDARY VIOLATION:
-  Service: <name>
-  Violation: <type: shared DB | shared code | deployment coupling | domain bleed>
-  Evidence: <specific files, configs, or dependencies>
-  Severity: CRITICAL | HIGH | MEDIUM
-  Remediation:
-    - <step 1: e.g., create service-owned database>
-    - <step 2: e.g., implement data sync via events>
-    - <step 3: e.g., remove direct database access>
-  Effort: <S|M|L|XL>
-```
+## Output Format
+Print: `Micro: {services} services, {communication} pattern. Circuit breakers: {N}. Contract tests: {pass|fail}. Status: {DONE|PARTIAL}.`
 
 ## Keep/Discard Discipline
 ```
-After EACH service boundary definition or communication pattern change:
-  1. MEASURE: Validate boundary — is data ownership exclusive? Can the service deploy independently?
-  2. COMPARE: Does the decomposition reduce coupling vs the previous architecture?
-  3. DECIDE:
-     - KEEP if: boundary passes all validation checks AND single-team ownership AND independent deployability
-     - DISCARD if: shared database detected OR circular dependency created OR service requires cross-team coordination to deploy
-  4. COMMIT kept boundary definitions. Merge back with adjacent context on discard.
+After EACH microservice change:
+  KEEP if: contract tests pass AND circuit breakers work AND no cascading failures
+  DISCARD if: contract broken OR cascading failure detected OR service discovery fails
+  On discard: revert. Fix contract or communication pattern before retrying.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All service boundaries validated (exclusive data ownership, independent deploy, single team)
-  - Communication patterns defined for all service interactions
-  - Saga workflows defined for all cross-service transactions
-  - User explicitly requests stop
-
-DO NOT STOP just because:
-  - Service mesh is not yet configured (design is the priority; infra follows)
-  - Contract tests are not yet written (document contracts first, test second)
+STOP when ALL of:
+  - All service boundaries defined with clear contracts
+  - Circuit breakers configured for all inter-service calls
+  - Contract tests passing in CI
+  - Communication patterns documented for all service interactions
 ```
-
-## Platform Fallback
-Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-micro-{task}`. See `adapters/shared/sequential-dispatch.md`.

@@ -23,15 +23,6 @@ Understand the design problem before recommending a pattern:
 PATTERN CONTEXT:
 Problem: <What is the design challenge?>
 Language: <Primary implementation language>
-Framework: <Framework in use, if any>
-Constraints:
-  - Performance: <latency/throughput requirements>
-  - Testability: <unit test isolation needs>
-  - Extensibility: <expected future changes>
-  - Team familiarity: <patterns the team already uses>
-Current code:
-  - File(s): <files exhibiting the problem>
-  - Symptom: <what feels wrong — duplication, coupling, complexity, rigidity>
 ```
 
 ### Step 2: Pattern Classification
@@ -44,22 +35,6 @@ When the problem is about object creation — too many constructors, complex ini
 CREATIONAL PATTERNS:
 ┌──────────────────┬────────────────────────────────────────────────────────┐
 │ Pattern          │ Use When                                             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Factory Method   │ A class can't anticipate the type of objects it needs │
-│                  │ to create. Subclasses should decide.                  │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Abstract Factory │ You need families of related objects without          │
-│                  │ specifying their concrete classes.                    │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Builder          │ Object construction requires many optional parameters │
-│                  │ or multi-step initialization.                         │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Singleton        │ Exactly one instance is needed system-wide AND it     │
-│                  │ must be globally accessible. (Prefer DI instead.)     │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Prototype        │ Creating new objects is expensive, and similar        │
-│                  │ objects already exist to clone.                       │
-└──────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 #### Category B: Structural Patterns
@@ -69,28 +44,6 @@ When the problem is about composing objects — how to assemble classes and obje
 STRUCTURAL PATTERNS:
 ┌──────────────────┬────────────────────────────────────────────────────────┐
 │ Pattern          │ Use When                                             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Adapter          │ You need to use a class with an incompatible          │
-│                  │ interface. Wraps it to match what the client expects. │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Bridge           │ You want to vary both abstraction and implementation  │
-│                  │ independently. Separates what from how.               │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Composite        │ You have tree structures where individual objects and │
-│                  │ groups should be treated uniformly.                   │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Decorator        │ You need to add responsibilities to objects           │
-│                  │ dynamically without modifying the class.              │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Facade           │ You want a simplified interface to a complex          │
-│                  │ subsystem. Reduces coupling to internals.             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Flyweight        │ You have many similar objects and need to reduce      │
-│                  │ memory usage by sharing common state.                 │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Proxy            │ You need controlled access to an object — lazy init,  │
-│                  │ access control, logging, caching.                     │
-└──────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 #### Category C: Behavioral Patterns
@@ -100,37 +53,6 @@ When the problem is about object communication — how objects interact and dist
 BEHAVIORAL PATTERNS:
 ┌──────────────────┬────────────────────────────────────────────────────────┐
 │ Pattern          │ Use When                                             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Strategy         │ You have multiple algorithms for a task and want to   │
-│                  │ switch between them at runtime.                       │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Observer         │ One object's state change should notify many          │
-│                  │ dependents automatically.                             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Command          │ You need to parameterize actions, queue them, or      │
-│                  │ support undo/redo.                                    │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Chain of Resp.   │ Multiple handlers might process a request, and you    │
-│                  │ don't want the sender coupled to a specific handler.  │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Template Method  │ You have an algorithm skeleton where subclasses       │
-│                  │ override specific steps.                              │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ State            │ Object behavior changes based on internal state, and  │
-│                  │ you're replacing large if/switch blocks.              │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Mediator         │ Many objects communicate in complex ways. Centralize  │
-│                  │ communication to reduce coupling.                     │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Iterator         │ You need to traverse a collection without exposing    │
-│                  │ its internal structure.                               │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Visitor          │ You need to add operations to a class hierarchy       │
-│                  │ without modifying the classes.                        │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Memento          │ You need to capture and restore object state          │
-│                  │ (snapshots, undo).                                    │
-└──────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 #### Category D: Modern / Distributed System Patterns
@@ -140,37 +62,6 @@ When the problem involves distributed systems, resilience, or data consistency a
 MODERN PATTERNS:
 ┌──────────────────┬────────────────────────────────────────────────────────┐
 │ Pattern          │ Use When                                             │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Repository       │ You want to decouple domain logic from data access.   │
-│                  │ Provides collection-like interface to the data store. │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ CQRS             │ Read and write models have different optimization     │
-│                  │ needs. Separate command and query responsibilities.   │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Saga             │ You need distributed transactions across services.    │
-│                  │ Orchestration (central) or choreography (events).     │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Circuit Breaker  │ Calls to an external service may fail or hang.        │
-│                  │ Fail fast when the service is unhealthy.              │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Outbox           │ You need to publish events AND update a database      │
-│                  │ atomically. Write events to an outbox table first.    │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Strangler Fig    │ You need to incrementally migrate from a legacy       │
-│                  │ system. Route traffic gradually to the new system.    │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Event Sourcing   │ You need a complete audit trail and the ability to    │
-│                  │ rebuild state from events.                            │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Bulkhead         │ You need to isolate failures so one component's       │
-│                  │ failure doesn't cascade to the entire system.         │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Sidecar          │ You need to attach cross-cutting concerns (logging,   │
-│                  │ proxy, config) to services without modifying them.    │
-├──────────────────┼────────────────────────────────────────────────────────┤
-│ Backend for      │ Different clients (web, mobile, IoT) need different   │
-│ Frontend (BFF)   │ API shapes from the same backend services.            │
-└──────────────────┴────────────────────────────────────────────────────────┘
 ```
 
 ### Step 3: Pattern Recommendation
@@ -180,25 +71,6 @@ For each candidate pattern, provide a structured recommendation:
 PATTERN RECOMMENDATION:
 ┌────────────────────────────────────────────────────────────────────┐
 │  Pattern: <Name>                                                   │
-│  Category: <Creational | Structural | Behavioral | Modern>        │
-│  Confidence: <HIGH | MEDIUM | LOW>                                │
-├────────────────────────────────────────────────────────────────────┤
-│  Problem it solves:                                               │
-│  <1-2 sentences describing the exact problem>                     │
-│                                                                    │
-│  Why this pattern:                                                │
-│  <1-2 sentences connecting the pattern to the user's situation>   │
-│                                                                    │
-│  Trade-offs:                                                      │
-│  ✓ <benefit 1>                                                    │
-│  ✓ <benefit 2>                                                    │
-│  ✗ <drawback 1>                                                   │
-│  ✗ <drawback 2>                                                   │
-│                                                                    │
-│  Alternatives considered:                                         │
-│  - <pattern A>: rejected because <reason>                         │
-│  - <pattern B>: also viable if <condition>                        │
-└────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 4: Language-Specific Implementation
@@ -208,9 +80,6 @@ Produce implementation in the project's language with:
 IMPLEMENTATION GUIDE:
 1. Interface/type definitions
 2. Core pattern implementation
-3. Usage example
-4. Unit test demonstrating the pattern
-5. Integration notes (how it connects to existing code)
 ```
 
 Adapt to language idioms:
@@ -227,38 +96,6 @@ Scan the codebase for common anti-patterns:
 ANTI-PATTERN SCAN:
 ┌──────────────────────┬──────────────────────────────────────────────────┐
 │ Anti-Pattern         │ Detection Signals                               │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ God Object           │ Class with 500+ lines, 20+ methods, touching    │
-│                      │ multiple domains. Low cohesion, high coupling.   │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Spaghetti Code       │ No clear structure, goto-like control flow,     │
-│                      │ deeply nested conditionals, no separation.      │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Shotgun Surgery      │ A single change requires modifying many files.  │
-│                      │ Related logic scattered across the codebase.    │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Feature Envy         │ A method uses more data from another class than │
-│                      │ its own. Likely belongs in the other class.     │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Primitive Obsession  │ Using primitives (string, int) instead of       │
-│                      │ domain types (Email, Money, UserId).            │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Anemic Domain Model  │ Domain objects are pure data holders with no    │
-│                      │ behavior. All logic lives in service classes.   │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Circular Dependency  │ Module A depends on B, B depends on A.          │
-│                      │ Break with dependency inversion or events.      │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Leaky Abstraction    │ Implementation details leak through the public  │
-│                      │ interface. Database columns exposed in API.     │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Distributed Monolith │ Microservices that must be deployed together.   │
-│                      │ All the costs of distribution, none of the      │
-│                      │ benefits of independence.                       │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Golden Hammer        │ Using one pattern/tool for everything. Not      │
-│                      │ every problem is a nail.                        │
-└──────────────────────┴──────────────────────────────────────────────────┘
 ```
 
 For each detected anti-pattern:
@@ -266,9 +103,6 @@ For each detected anti-pattern:
 ANTI-PATTERN FINDING:
 Name: <anti-pattern name>
 Location: <file:line>
-Evidence:
-```<language>
-// The problematic code
 ```
 Impact: <why this is harmful>
 Remediation pattern: <which design pattern fixes this>
@@ -280,116 +114,6 @@ Refactored code:
 
 ### Step 6: Artifacts & Transition
 1. Save pattern analysis: `docs/patterns/<feature>-pattern-analysis.md`
-2. Commit: `"pattern: <feature> — <pattern name> (<language>)"`
-3. Suggest next steps:
-   - "Pattern identified. Run `/godmode:refactor` to apply the pattern."
-   - "Anti-patterns detected. Run `/godmode:fix` to remediate."
-   - "Pattern designed. Run `/godmode:test` to write tests for the new structure."
-
-## Key Behaviors
-
-1. **Diagnose before prescribing.** Understand the actual problem in the codebase before recommending a pattern. A pattern applied to the wrong problem creates complexity, not clarity.
-2. **One pattern at a time.** Recommend the single most impactful pattern first. Layering multiple patterns simultaneously makes code harder to understand.
-3. **Show, don't tell.** Every recommendation includes language-specific implementation code. Abstract UML is not enough.
-4. **Anti-patterns are patterns too.** Recognizing what NOT to do is as valuable as knowing what to do. Always scan for anti-patterns alongside recommendations.
-5. **Context over dogma.** The "right" pattern depends on the language, framework, team, and problem. A Singleton in Go (package-level variable) is different from Singleton in Java.
-6. **Simplicity wins.** If a problem can be solved with a function and an interface, don't recommend a full pattern. The simplest solution that works is the best solution.
-7. **Teach the principle.** Explain the underlying principle (dependency inversion, open/closed, single responsibility) so the team can recognize when to apply the pattern themselves.
-
-## Example Usage
-
-### Finding a pattern for a problem
-```
-User: /godmode:pattern I have a notification system that needs to send
-      via email, SMS, Slack, and push. New channels keep getting added.
-
-Pattern: Analyzing the design problem...
-
-PATTERN CONTEXT:
-Problem: Multiple notification channels with new ones added frequently
-Symptom: Growing if/else or switch statements in notification sending code
-Category: Behavioral
-
-PATTERN RECOMMENDATION:
-┌────────────────────────────────────────────────────────────────────┐
-│  Pattern: Strategy                                                │
-│  Category: Behavioral                                             │
-│  Confidence: HIGH                                                 │
-├────────────────────────────────────────────────────────────────────┤
-│  Problem it solves:                                               │
-│  Multiple algorithms (channels) for the same operation (send      │
-│  notification) with the expectation of adding more.               │
-│                                                                    │
-│  Why this pattern:                                                │
-│  Encapsulates each channel as a strategy. Adding a new channel    │
-│  means adding a new class, not modifying existing code (OCP).     │
-│                                                                    │
-│  Trade-offs:                                                      │
-│  ✓ Open for extension (new channels = new class only)             │
-│  ✓ Each channel is independently testable                         │
-│  ✓ Channels can be swapped at runtime                             │
-│  ✗ More files/classes than a simple switch                        │
-│                                                                    │
-│  Alternatives considered:                                         │
-│  - Observer: rejected — this is not a 1-to-many broadcast         │
-│  - Chain of Responsibility: viable if channels have priority/     │
-│    fallback behavior (try email, fall back to SMS)                │
-└────────────────────────────────────────────────────────────────────┘
-
-Shall I generate the TypeScript implementation?
-```
-
-### Detecting anti-patterns
-```
-User: /godmode:pattern --detect Scan the codebase for anti-patterns
-
-Pattern: Scanning...
-
-ANTI-PATTERN FINDING 1:
-Name: God Object
-Location: src/services/UserService.ts:1-847
-Evidence: 847 lines, 34 methods, handles auth, profile, billing, notifications
-Impact: Any change risks breaking unrelated features. Impossible to test in isolation.
-Remediation: Extract into focused services (AuthService, ProfileService,
-             BillingService, NotificationService) using Facade if a unified
-             interface is still needed.
-
-ANTI-PATTERN FINDING 2:
-Name: Primitive Obsession
-Location: src/models/Order.ts:12
-Evidence: `price: number` instead of `Money`, `email: string` instead of `Email`
-Impact: No validation at the type level. Invalid values propagate silently.
-Remediation: Introduce Value Objects (→ /godmode:ddd)
-```
-
-## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Analyze the current problem and recommend a pattern |
-| `--detect` | Scan codebase for anti-patterns without recommending new patterns |
-| `--gof` | Limit recommendations to Gang of Four patterns only |
-| `--modern` | Limit recommendations to modern/distributed patterns only |
-| `--implement <pattern>` | Skip analysis, implement a specific pattern directly |
-| `--compare <p1> <p2>` | Compare two specific patterns for the current problem |
-| `--language <lang>` | Generate implementation in a specific language |
-| `--teach` | Extended explanation with underlying SOLID principles |
-
-## HARD RULES
-
-1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Always complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
-2. **NEVER stack multiple patterns at once.** Recommend ONE pattern, let the team implement it, then evaluate if another is needed.
-3. **NEVER recommend Singleton for dependency sharing.** Use dependency injection instead. Singleton is the last resort, not the first choice.
-4. **NEVER apply patterns prophylactically.** A pattern should solve a CURRENT problem, not a theoretical future one. YAGNI applies to patterns.
-5. **NEVER produce a recommendation without language-specific implementation code.** Abstract UML alone is insufficient. Show the actual code.
-6. **ALWAYS include trade-offs.** Every recommendation must list both benefits AND drawbacks.
-7. **ALWAYS show alternatives considered.** Explain why the recommended pattern was chosen over at least one alternative.
-8. **ALWAYS include a unit test demonstrating the pattern.** If the pattern cannot be tested, reconsider the recommendation.
-
-## Auto-Detection
-
-Before recommending patterns, detect the existing codebase context:
-
 ```
 AUTO-DETECT SEQUENCE:
 1. Language and framework:
@@ -415,8 +139,6 @@ AUTO-DETECT SEQUENCE:
 
 ## Explicit Loop Protocol
 
-Pattern detection and remediation is iterative:
-
 ```
 current_iteration = 0
 findings = []  # anti-patterns found, patterns to recommend
@@ -441,6 +163,17 @@ WHILE findings is not empty AND current_iteration < 8:
 OUTPUT: Pattern analysis report with all recommendations and implementations.
 ```
 
+## HARD RULES
+
+1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Always complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
+2. **NEVER stack multiple patterns at once.** Recommend ONE pattern, let the team implement it, then evaluate if another is needed.
+3. **NEVER recommend Singleton for dependency sharing.** Use dependency injection instead. Singleton is the last resort, not the first choice.
+4. **NEVER apply patterns prophylactically.** A pattern should solve a CURRENT problem, not a theoretical future one. YAGNI applies to patterns.
+5. **NEVER produce a recommendation without language-specific implementation code.** Abstract UML alone is insufficient. Show the actual code.
+6. **ALWAYS include trade-offs.** Every recommendation must list both benefits AND drawbacks.
+7. **ALWAYS show alternatives considered.** Explain why the recommended pattern was chosen over at least one alternative.
+8. **ALWAYS include a unit test demonstrating the pattern.** If the pattern cannot be tested, reconsider the recommendation.
+
 ## Output Format
 Print on completion:
 ```
@@ -460,52 +193,6 @@ timestamp	feature	pattern_recommended	category	confidence	antipatterns_found	lan
 Append one row per session. Create the file with headers on first run.
 
 ## Success Criteria
-1. Problem Analysis (Step 1) completed before any pattern recommendation.
-2. Recommendation includes at least one rejected alternative with specific reason.
-3. Trade-offs list includes both benefits and drawbacks — never one-sided.
-4. Language-specific implementation code produced, not abstract UML.
-5. At least one unit test demonstrating the pattern is included.
-6. Anti-pattern scan completed when `--detect` flag is used or when code is provided.
-7. Implementation respects language idioms (no Java patterns forced on Python/Go).
-
-## Error Recovery
-```
-IF user asks for a pattern without describing the problem:
-  → Ask: "What design challenge are you facing? Describe the symptom: duplication, coupling, complexity, or rigidity."
-  → Do NOT recommend a pattern until Step 1 (Problem Analysis) is complete
-
-IF multiple patterns fit equally well:
-  → Recommend the simpler one
-  → Document: "Both {A} and {B} apply. Choosing {A} for simplicity. Switch to {B} if {condition}."
-
-IF anti-pattern scan finds zero issues:
-  → Report: "No structural anti-patterns detected in the scanned scope"
-  → Suggest: "Run with a broader scope or specific module path if concerns remain"
-
-IF the recommended pattern adds more complexity than the problem warrants:
-  → Downgrade recommendation: "A plain function/interface solves this without a full pattern"
-  → Apply YAGNI: recommend the pattern only when complexity justifies it
-
-IF user insists on a specific pattern that does not fit the problem:
-  → Explain why the pattern does not match: "{pattern} solves {X}, but your problem is {Y}"
-  → Implement if user still requests, but add a comment: "// NOTE: {pattern} may be overengineered here"
-
-IF codebase uses a framework with built-in patterns (NestJS, Spring, etc.):
-  → Prefer framework-native patterns over standalone GoF implementations
-  → Document: "Using {framework}'s built-in {mechanism} instead of manual {pattern}"
-```
-
-## Anti-Patterns
-
-- **Do NOT recommend patterns without understanding the problem.** Diagnose first.
-- **Do NOT apply patterns prophylactically.** YAGNI applies to patterns too.
-- **Do NOT recommend Singleton for dependency sharing.** Use dependency injection.
-- **Do NOT stack multiple patterns at once.** One pattern at a time.
-- **Do NOT ignore language idioms.** Visitor in Python differs from Visitor in Java.
-- **Do NOT confuse patterns with frameworks.** "Use Redux" is not a pattern recommendation.
-- **Do NOT treat patterns as sacred.** Partial implementations are fine.
-
-## Keep/Discard Discipline
 ```
 After EACH pattern recommendation or refactoring:
   1. MEASURE: Does the applied pattern reduce the original symptom (duplication, coupling, complexity)?
@@ -531,10 +218,7 @@ DO NOT STOP just because:
   - The pattern could be extended further (ship the minimal viable pattern)
 ```
 
-
 ## Design Pattern Audit
-
-Systematically detect existing patterns, flag anti-patterns, and generate targeted refactor suggestions across the codebase:
 
 ```
 DESIGN PATTERN AUDIT LOOP:
@@ -559,8 +243,6 @@ FINAL: Pattern audit report with prioritized refactor suggestions
 ```
 
 ### Pattern Detection
-
-Automatically detect which design patterns are already in use and whether they are correctly implemented:
 
 ```
 PATTERN DETECTION SCAN:
@@ -612,8 +294,6 @@ For each detected pattern:
 ```
 
 ### Anti-Pattern Flagging
-
-Comprehensive anti-pattern scan with severity, impact, and remediation:
 
 ```
 ANTI-PATTERN AUDIT:
@@ -687,8 +367,6 @@ DETECTION COMMANDS:
 
 ### Refactor Suggestions
 
-For each flagged anti-pattern, generate a targeted refactor plan:
-
 ```
 REFACTOR SUGGESTION FORMAT:
 ┌──────────────────────────────────────────────────────────────┐
@@ -750,6 +428,19 @@ PATTERN AUDIT SUMMARY:
   Recommended first action: {highest priority refactor}
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run pattern refactoring tasks sequentially: god objects, then coupling, then primitive obsession.
-Use branch isolation per task: `git checkout -b godmode-pattern-{task}`, implement, commit, merge back.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Pattern adds complexity without benefit | Revert. Simple code that works beats elegant code that confuses. Only apply patterns to solve proven problems, not hypothetical ones. |
+| Refactoring breaks existing tests | Run tests after each small step. If a single refactor step breaks tests, the step is too large — split into smaller steps. |
+| Team unfamiliar with chosen pattern | Document the pattern with a concrete example from the codebase. Keep the implementation minimal — avoid gold-plating. |
+| Pattern conflicts with framework conventions | Prefer framework conventions over textbook patterns. Adapt the pattern to fit the framework, not the other way around. |
+
+## Keep/Discard Discipline
+```
+After EACH pattern application:
+  KEEP if: all tests pass AND code complexity reduced or unchanged AND team can understand the change
+  DISCARD if: tests break OR complexity increased OR pattern is over-engineered for the problem
+  On discard: revert. The simplest working solution is the correct one.
+```

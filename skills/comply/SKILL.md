@@ -35,13 +35,6 @@ Data classification:
   Personal data: <files/modules handling PII>
   Sensitive data: <files/modules handling health/financial/auth data>
   Public data: <files/modules with non-sensitive data>
-
-Data flows:
-  Collection points: <where data enters the system>
-  Storage locations: <databases, caches, logs, files>
-  Processing points: <services that transform/analyze data>
-  Sharing/export: <APIs, integrations, reports>
-  Deletion points: <where/how data is removed>
 ```
 
 ### Step 2: GDPR Compliance Check
@@ -108,19 +101,6 @@ HIPAA — SAFEGUARDS ASSESSMENT:
 │ Facility access controls         │ YES/NO    │ <ref>    │
 │ Workstation security             │ YES/NO    │ <ref>    │
 │ Device and media controls        │ YES/NO    │ <ref>    │
-├──────────────────────────────────────────────────────────┤
-│ TECHNICAL SAFEGUARDS                                     │
-│ Access control (unique user IDs) │ YES/NO    │ <ref>    │
-│ Audit controls (activity logs)   │ YES/NO    │ <ref>    │
-│ Integrity controls (checksums)   │ YES/NO    │ <ref>    │
-│ Transmission security (TLS)      │ YES/NO    │ <ref>    │
-│ Encryption at rest (AES-256)     │ YES/NO    │ <ref>    │
-└──────────────────────────────────────────────────────────┘
-
-PHI DATA FLOW:
-  Minimum necessary: <only required PHI fields accessed?>
-  De-identification: <is PHI de-identified where possible?>
-  Audit logging: <all PHI access logged with who/what/when?>
 ```
 
 ### Step 4: SOC2 Compliance Check
@@ -168,13 +148,6 @@ PCI-DSS — REQUIREMENTS CHECK:
 │ 9. Restrict physical access            │ PASS/FAIL/N/A  │
 │ 10. Log and monitor all access         │ PASS/FAIL      │
 │ 11. Test security regularly            │ PASS/FAIL      │
-│ 12. Organizational security policies   │ PASS/FAIL      │
-└──────────────────────────────────────────────────────────┘
-
-Cardholder data environment (CDE):
-  Scope reduction: <using tokenization/third-party processor?>
-  PAN storage: <is primary account number stored? If yes, is it encrypted?>
-  CVV storage: <NEVER store CVV — verify this>
 ```
 
 ### Step 6: Audit Trail Design & Validation
@@ -196,14 +169,6 @@ AUDIT TRAIL ASSESSMENT:
 │ Admin operations      │ YES/NO │ who, what, when         │
 └──────────────────────────────────────────────────────────┘
 
-Audit log properties:
-- [ ] Tamper-resistant (append-only or immutable storage)
-- [ ] Retention period defined and enforced (<N> months/years)
-- [ ] Searchable and queryable for investigations
-- [ ] No PII/PHI in log messages (or properly redacted)
-- [ ] Timestamps in UTC with consistent format
-- [ ] Correlation IDs for request tracing
-- [ ] Separate storage from application data
 ```
 
 ### Step 7: Data Retention & Deletion
@@ -274,20 +239,6 @@ Actions required:
 │    MEDIUM:   <N> (should fix within 90 days)               │
 │    LOW:      <N> (best practice, not required)             │
 │                                                            │
-│  Audit trail:    <COMPLETE | PARTIAL | MISSING>            │
-│  Data retention: <DEFINED | PARTIAL | UNDEFINED>           │
-│  License risk:   <CLEAR | REVIEW NEEDED | RISK>            │
-│                                                            │
-│  Verdict: <COMPLIANT | CONDITIONAL | NON-COMPLIANT>       │
-├────────────────────────────────────────────────────────────┤
-│  MUST FIX (blocking):                                      │
-│  1. <CRITICAL finding with regulation reference>           │
-│  2. <CRITICAL finding with regulation reference>           │
-│                                                            │
-│  SHOULD FIX (30 days):                                     │
-│  3. <HIGH finding>                                         │
-│  4. <HIGH finding>                                         │
-└────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 10: Commit and Transition
@@ -306,55 +257,6 @@ Actions required:
 6. **License compliance is non-negotiable.** A single GPL dependency in a proprietary SaaS product can create legal exposure. Always check.
 7. **Audit trails are infrastructure.** Logging is not optional for regulated systems. Verify it exists, verify it captures the right events, verify it is tamper-resistant.
 
-## Example Usage
-
-### GDPR compliance audit
-```
-User: /godmode:comply We're launching in the EU next month, check our GDPR compliance
-
-Comply: Defining compliance scope...
-
-COMPLIANCE SCOPE:
-Target: Full application
-Applicable regulations: GDPR
-Data classification: User profiles (PII), order history, analytics events
-
-Running GDPR assessment...
-
-FINDING 1: No consent management for analytics tracking
-Severity: CRITICAL
-Regulation: GDPR Article 6(1)(a), Article 7
-Location: src/middleware/analytics.ts:12
-Evidence:
-```typescript
-// Analytics fires on every page load — no consent check
-app.use(analyticsMiddleware);
-```
-Remediation: Gate analytics behind consent check:
-```typescript
-app.use((req, res, next) => {
-  if (req.cookies.analytics_consent === 'granted') {
-    analyticsMiddleware(req, res, next);
-  } else {
-    next();
-  }
-});
-```
-
-FINDING 2: No data export endpoint (Right to portability)
-Severity: HIGH
-Regulation: GDPR Article 20
-Evidence: No endpoint found that exports user data in machine-readable format
-Remediation: Create GET /api/users/:id/export returning JSON with all user data
-
-FINDING 3: Soft delete does not cascade to backups
-Severity: HIGH
-Regulation: GDPR Article 17 (Right to erasure)
-Location: src/services/user.ts:45
-Evidence: deleteUser() sets deleted_at but data persists in daily backups indefinitely
-Remediation: Add backup purge job that removes soft-deleted records after 30 days
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -362,14 +264,6 @@ Remediation: Add backup purge job that removes soft-deleted records after 30 day
 | (none) | Full compliance audit across all applicable regulations |
 | `--gdpr` | GDPR compliance check only |
 | `--hipaa` | HIPAA compliance check only |
-| `--soc2` | SOC2 compliance check only |
-| `--pci` | PCI-DSS compliance check only |
-| `--audit-trail` | Audit trail design and validation only |
-| `--retention` | Data retention policy review only |
-| `--licenses` | License compliance scan only |
-| `--privacy` | Privacy-focused review (consent, data minimization, rights) |
-| `--quick` | Top findings only, skip exhaustive checklist |
-| `--report` | Generate report from last audit |
 
 ## HARD RULES
 
@@ -405,21 +299,6 @@ WHILE regulations is not empty:
     FOR each requirement in regulation.requirements:
         evidence = find_evidence(requirement)
         IF evidence.status == NON_COMPLIANT:
-            finding = {
-                regulation: regulation.name,
-                article: requirement.reference,
-                severity: assess_severity(requirement),
-                location: evidence.code_location,
-                remediation: generate_remediation(requirement)
-            }
-            all_findings.append(finding)
-
-    git commit findings for this regulation
-
-    IF current_iteration % 5 == 0:
-        print(f"Progress: {current_iteration} regulations assessed, {len(all_findings)} findings")
-
-generate_report(all_findings)
 ```
 
 ## Auto-Detection
@@ -442,27 +321,7 @@ AUTO-DETECT:
 
 4. Existing compliance artifacts:
    ls docs/compliance/ docs/privacy/ PRIVACY.md DPA.md 2>/dev/null
-
-5. Audit logging:
-   grep -ri "audit.log\|audit.trail\|event.log" src/ -l 2>/dev/null
-
-6. Geographic scope:
-   grep -ri "eu\|gdpr\|europe\|california\|ccpa" src/ docs/ -l 2>/dev/null
-
--> Auto-select applicable regulations based on data types detected.
--> Auto-scope the audit to relevant code paths.
--> Only ask user to confirm scope if multiple regulations apply.
 ```
-
-## Anti-Patterns
-
-- **Do NOT treat compliance as a checkbox exercise.** Checking boxes without understanding the spirit of the regulation leads to false confidence and real violations.
-- **Do NOT copy generic compliance templates.** Every application has unique data flows. The audit must examine YOUR code, YOUR data flows, YOUR architecture.
-- **Do NOT skip license compliance.** "We only use open source" does not mean "we are license-compliant." GPL in a SaaS product creates real legal risk.
-- **Do NOT log PII in audit trails.** Audit logs that say "user John Smith (SSN: 123-45-6789) accessed record" create a new compliance problem. Log user IDs, not PII.
-- **Do NOT assume cloud provider handles compliance.** AWS being HIPAA-eligible does not make YOUR application HIPAA-compliant. You own the application layer.
-- **Do NOT ignore data retention.** "We keep everything forever" is a compliance violation for most regulations. Define retention periods and enforce them automatically.
-- **Do NOT provide legal advice.** This skill identifies technical compliance gaps. For legal interpretation, recommend consulting legal counsel.
 
 ## Output Format
 
@@ -512,14 +371,6 @@ CONDITIONAL if:
   - Zero CRITICAL findings
   - HIGH findings exist but all have remediation plans with < 30-day SLA
   - No active data breaches or unmitigated exposure
-
-NON-COMPLIANT if ANY of the following:
-  - Any CRITICAL compliance gap exists (e.g., no consent management for EU user data)
-  - PHI is transmitted without encryption (HIPAA violation)
-  - CVV/full PAN stored in the database (PCI-DSS violation)
-  - Audit trail is missing or tamper-possible
-  - Data subject rights (access, erasure, portability) are not implemented when GDPR applies
-  - GPL/AGPL dependency in proprietary SaaS without legal clearance
 ```
 
 ## Error Recovery
@@ -565,8 +416,3 @@ STOP when FIRST of:
   - stuck: >5 findings discarded for lack of code evidence
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run compliance tasks sequentially: scope definition, then per-regulation checks (GDPR, HIPAA, SOC2, PCI-DSS), then audit trail validation, then license compliance.
-- Use branch isolation per task: `git checkout -b godmode-comply-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

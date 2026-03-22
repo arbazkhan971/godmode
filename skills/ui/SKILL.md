@@ -151,8 +151,7 @@ grep -rn "#[0-9a-fA-F]\{3,6\}" src/ --include="*.css" --include="*.tsx" --includ
 # Find hardcoded pixel values for spacing
 grep -rn "margin:\|padding:\|gap:" src/ --include="*.css" --include="*.scss" | grep -v "var(--"
 
-# Find hardcoded z-index values
-grep -rn "z-index:" src/ --include="*.css" --include="*.tsx" --include="*.scss"
+# ... (condensed)
 ```
 
 ### Step 5: Component Library Structure
@@ -175,26 +174,6 @@ src/
       DataTable.test.tsx
       DataTable.stories.tsx
       DataTable.types.ts
-      components/             # Sub-components
-        TableHeader.tsx
-        TableRow.tsx
-        TableCell.tsx
-      hooks/                  # Component-specific hooks
-        useTableSort.ts
-        useTablePagination.ts
-      index.ts
-  tokens/
-    colors.css                # Color tokens
-    typography.css            # Typography tokens
-    spacing.css               # Spacing tokens
-    index.css                 # Token aggregation
-  styles/
-    globals.css               # Global styles, resets
-    utilities.css             # Utility classes
-  hooks/
-    useMediaQuery.ts          # Shared UI hooks
-    useClickOutside.ts
-    useFocusTrap.ts
 ```
 
 #### Component File Template
@@ -205,21 +184,7 @@ import type { ButtonProps } from './Button.types';
 import styles from './Button.module.css';
 import { clsx } from 'clsx';
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'medium', children, className, ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        className={clsx(styles.button, styles[variant], styles[size], className)}
-        {...props}
-      >
-        {children}
-      </button>
-    );
-  }
-);
-
-Button.displayName = 'Button';
+# ... (condensed)
 ```
 
 ```typescript
@@ -229,9 +194,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   /** Size of the button */
   size?: 'small' | 'medium' | 'large';
-  /** Loading state */
-  loading?: boolean;
-}
+# ... (condensed)
 ```
 
 ### Step 6: Storybook Integration
@@ -254,65 +217,7 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   title: 'Components/Button',
-  component: Button,
-  tags: ['autodocs'],
-  argTypes: {
-    variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger'],
-      description: 'Visual style variant',
-    },
-    size: {
-      control: 'select',
-      options: ['small', 'medium', 'large'],
-      description: 'Size of the button',
-    },
-    disabled: { control: 'boolean' },
-    loading: { control: 'boolean' },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Primary: Story = {
-  args: { children: 'Primary Button', variant: 'primary' },
-};
-
-export const Secondary: Story = {
-  args: { children: 'Secondary Button', variant: 'secondary' },
-};
-
-export const AllVariants: Story = {
-  render: () => (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-      <Button variant="primary">Primary</Button>
-      <Button variant="secondary">Secondary</Button>
-      <Button variant="ghost">Ghost</Button>
-      <Button variant="danger">Danger</Button>
-    </div>
-  ),
-};
-
-export const AllSizes: Story = {
-  render: () => (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-      <Button size="small">Small</Button>
-      <Button size="medium">Medium</Button>
-      <Button size="large">Large</Button>
-    </div>
-  ),
-};
-
-export const States: Story = {
-  render: () => (
-    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-      <Button>Default</Button>
-      <Button disabled>Disabled</Button>
-      <Button loading>Loading</Button>
-    </div>
-  ),
-};
+# ... (condensed)
 ```
 
 #### Story Quality Checklist
@@ -358,13 +263,7 @@ const meta: Meta<typeof Button> = {
   component: Button,
   tags: ['autodocs'],  // Generates docs from JSDoc and TypeScript types
   parameters: {
-    docs: {
-      description: {
-        component: 'Primary UI button component. Use for actions and form submissions.',
-      },
-    },
-  },
-};
+# ... (condensed)
 ```
 
 ### Step 8: Pattern Consistency Rules
@@ -427,28 +326,7 @@ PATTERN VIOLATIONS:
 |  Component Quality:                                         |
 |  Well-structured:  <N> components                           |
 |  Needs improvement: <N> components                          |
-|  Missing standards: <N> components                          |
 |                                                             |
-|  Design System:                                             |
-|  Token coverage: <X>%                                       |
-|  Hardcoded values: <N> violations                           |
-|  Naming consistency: <HIGH/MEDIUM/LOW>                      |
-|                                                             |
-|  Storybook:                                                 |
-|  Story coverage: <X>%                                       |
-|  Doc coverage: <X>%                                         |
-|  A11y addon coverage: <X>%                                  |
-|                                                             |
-|  CSS Architecture:                                          |
-|  Current: <approach>                                        |
-|  Recommendation: <keep/migrate to X>                        |
-|  Justification: <reason>                                    |
-|                                                             |
-|  Priority Actions:                                          |
-|  1. <highest impact improvement>                            |
-|  2. <second improvement>                                    |
-|  3. <third improvement>                                     |
-+------------------------------------------------------------+
 ```
 
 ### Step 10: Commit and Transition
@@ -470,68 +348,6 @@ PATTERN VIOLATIONS:
 6. **Composition over configuration.** Prefer `<Card><Card.Header>Title</Card.Header></Card>` over `<Card title="Title" headerVariant="bold">`. Composition is more flexible and easier to type.
 7. **Document the "why" not the "what."** Component docs should explain when to use a component and when NOT to. "Use Button for actions, use Link for navigation" prevents misuse.
 
-## Example Usage
-
-### Full UI architecture review
-```
-User: /godmode:ui
-
-UI: Analyzing component architecture...
-
-UI ARCHITECTURE ANALYSIS:
-Framework: React 18
-Styling: Mixed (CSS Modules + some inline styles)
-Component library: Custom (37 components)
-Storybook: Yes (v7.6) — 22/37 components have stories
-Design tokens: Partial (colors defined, spacing hardcoded)
-
-Component Quality:
-Well-structured: 18 components
-Needs improvement: 12 components
-Missing standards: 7 components
-
-FINDING 1: 7 components have hardcoded color values
-  Card.module.css: #f5f5f5 → should use var(--color-surface)
-  Modal.module.css: #333 → should use var(--color-text-primary)
-  ...
-
-FINDING 2: 5 components missing ref forwarding
-  Input, Select, Textarea, Checkbox, Radio
-
-FINDING 3: 15 components missing Storybook stories
-  ...
-
-Priority Actions:
-1. Replace 23 hardcoded values with design tokens
-2. Add ref forwarding to 5 form components
-3. Write Storybook stories for 15 undocumented components
-
-Verdict: MEDIUM consistency — 12 violations require attention.
-```
-
-### CSS architecture decision
-```
-User: /godmode:ui --css-decision
-
-UI: Analyzing project context for CSS recommendation...
-
-Project context:
-- React 18 with Next.js 14
-- SSR required
-- 3 developers
-- Dark mode requirement
-- No existing CSS architecture
-
-Recommendation: Tailwind CSS + CSS custom properties for tokens
-
-Justification:
-- SSR compatible (no runtime CSS)
-- Fast development velocity for small team
-- Built-in dark mode support via class strategy
-- Design tokens map directly to tailwind.config.ts
-- Consistent output across team members
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -539,13 +355,6 @@ Justification:
 | (none) | Full UI architecture audit |
 | `--component <name>` | Audit a specific component |
 | `--tokens` | Design token audit only |
-| `--storybook` | Storybook coverage audit only |
-| `--css-decision` | CSS architecture recommendation |
-| `--structure` | Component directory structure audit |
-| `--patterns` | Component API pattern consistency check |
-| `--fix` | Auto-fix violations (token replacement, ref forwarding, display names) |
-| `--init` | Initialize component library structure from scratch |
-| `--generate <name>` | Generate a new component with all standard files |
 
 ## HARD RULES
 
@@ -569,32 +378,7 @@ grep -r "react\|vue\|svelte\|@angular/core" package.json 2>/dev/null
 # Detect CSS approach
 grep -r "tailwindcss\|styled-components\|@emotion\|css-modules\|sass\|less" package.json 2>/dev/null
 
-# Detect component library
-grep -r "radix\|shadcn\|chakra\|mantine\|ant-design\|material-ui\|headless" package.json 2>/dev/null
-
-# Detect Storybook
-ls .storybook/ 2>/dev/null
-grep -r "storybook" package.json 2>/dev/null
-
-# Count components
-find src/ -name "*.tsx" -o -name "*.vue" -o -name "*.svelte" 2>/dev/null | wc -l
-
-# Detect design tokens
-find src/ -name "tokens.*" -o -name "theme.*" -o -name "design-system.*" 2>/dev/null
-```
-
-## Multi-Agent Dispatch
-
-For large component library builds, dispatch parallel agents:
-
-```
-DISPATCH 3 agents:
-  Agent 1 (worktree: ui-primitives):  Primitive components (Button, Input, Label, Badge, Avatar)
-  Agent 2 (worktree: ui-composite):   Composite components (Dialog, Dropdown, DataTable, Form)
-  Agent 3 (worktree: ui-layout):      Layout components (Sidebar, Nav, Page, Grid) + design tokens
-
-MERGE order: Agent 3 (tokens/layout) first, then Agent 1 (primitives), then Agent 2 (composites)
-CONFLICT resolution: Token definitions in Agent 3 are authoritative
+# ... (condensed)
 ```
 
 ## Output Format
@@ -654,14 +438,6 @@ IF accessibility violations are found:
 IF bundle size exceeds budget:
   1. Check for accidentally imported full library (e.g., all of lodash)
   2. Verify tree-shaking is working (named imports, sideEffects: false)
-  3. Consider lazy-loading heavy components (code splitting)
-  4. If unavoidable, document the size increase and justify it
-
-IF TypeScript errors block build:
-  1. Fix type errors in the component file first
-  2. Update prop interfaces to match actual usage
-  3. Never use `as any` to suppress errors — find the correct type
-  4. Run `tsc --noEmit` to verify zero errors before commit
 ```
 
 ## Component Library Audit Loop
@@ -684,41 +460,6 @@ Phase 1 — Consistency Scoring
   │  className/style override accepted      │  5       │  Check props    │
   │  Consistent prop naming (variant/size)  │  10      │  Compare to std │
   │  All design tokens used (no hardcoded)  │  15      │  Grep for raw   │
-  │  Storybook story with all variants      │  10      │  Check stories  │
-  │  Storybook docs (autodocs or MDX)       │  5       │  Check docs     │
-  │  Unit test covering primary use case    │  10      │  Check test file│
-  │  Accessibility (keyboard + ARIA)        │  10      │  axe-core check │
-  │  Responsive (works at 320px+)           │  5       │  Visual check   │
-  │  Loading/empty/error states handled     │  5       │  Check variants │
-  │  displayName set (for React DevTools)   │  5       │  Check code     │
-  └─────────────────────────────────────────┴──────────┴─────────────────┘
-
-  FOR EACH component in the library:
-    1. EVALUATE against each criterion
-    2. CALCULATE score (0-100)
-    3. CLASSIFY:
-       - 90-100: EXCELLENT — no action needed
-       - 70-89: GOOD — minor improvements
-       - 50-69: NEEDS WORK — significant gaps
-       - 0-49: POOR — major remediation required
-
-  CONSISTENCY SCORECARD:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Component     │  Types │ Tokens │ Story │ Test │ A11y │  TOTAL     │
-  ├────────────────┼────────┼────────┼───────┼──────┼──────┼────────────┤
-  │  Button        │  10    │  15    │  10   │  10  │  10  │  92  EXCEL │
-  │  Input         │  10    │  15    │  10   │  10  │  5   │  85  GOOD  │
-  │  DataTable     │  5     │  10    │  0    │  0   │  0   │  35  POOR  │
-  │  Modal         │  10    │  12    │  5    │  5   │  5   │  62  NEEDS │
-  │  Card          │  10    │  15    │  10   │  10  │  10  │  88  GOOD  │
-  │  Select        │  5     │  10    │  5    │  0   │  0   │  40  POOR  │
-  │  ...           │  ...   │  ...   │  ...  │  ...  │  ... │  ...       │
-  ├────────────────┼────────┼────────┼───────┼──────┼──────┼────────────┤
-  │  LIBRARY AVG   │        │        │       │      │      │  <N>/100   │
-
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
-## Keep/Discard Discipline
 ```
 After EACH component fix or token replacement:
   1. MEASURE: Run visual regression test — does the component look the same?
@@ -742,4 +483,11 @@ STOP when ANY of these are true:
 DO NOT STOP just because:
   - One component has a low consistency score (fix it)
   - Storybook docs are incomplete for low-priority components
+```
+## Keep/Discard Discipline
+```
+After EACH UI change:
+  KEEP if: visual regression test passes AND a11y audit clean AND responsive at all breakpoints
+  DISCARD if: visual regression detected OR a11y violation introduced OR layout breaks at any breakpoint
+  On discard: revert. Screenshot diff before and after to identify the regression.
 ```

@@ -10,801 +10,213 @@ description: |
 - User invokes `/godmode:monorepo`
 - User says "monorepo", "workspace setup", "manage packages"
 - User asks about "selective builds", "dependency graph", "package boundaries"
-- User wants to "share configuration", "enforce boundaries", "optimize CI"
-- Multi-package project has slow CI, tangled dependencies, or inconsistent configs
+- Multi-package project has slow CI, tangled deps, or inconsistent configs
 - Migrating from multi-repo to monorepo (or vice versa)
-- New monorepo needs initial structure and tooling
 
 ## Workflow
 
-### Step 1: Monorepo Assessment
-Evaluate the current monorepo or plan a new one:
-
+### Step 1: Assessment
 ```
 MONOREPO ASSESSMENT:
-┌──────────────────────────────────────────────────────────────┐
-│  Repository: <name>                                           │
-│  Structure: <monorepo | multi-repo | hybrid>                  │
-├──────────────────┬───────────────────────────────────────────┤
-│  Packages         │ <N> packages                              │
-│  Languages        │ <list>                                    │
-│  Build tool       │ <current or none>                         │
-│  Package manager  │ <npm | pnpm | yarn | bun>                 │
-│  CI time          │ <N min> (full) / <N min> (affected only)  │
-│  Boundary issues  │ <N> cross-package violations              │
-│  Shared configs   │ <N> duplicated config files               │
-│  Circular deps    │ <N> cycles detected                       │
-├──────────────────┴───────────────────────────────────────────┤
-│  Health: <HEALTHY | NEEDS ATTENTION | CRITICAL>               │
-└──────────────────────────────────────────────────────────────┘
+Repository: <name>, Structure: <monorepo|multi-repo|hybrid>
+Packages: <N>, Languages: <list>, Build tool: <current|none>
+Package manager: <npm|pnpm|yarn|bun>
+CI time: <N min> (full) / <N min> (affected only)
+Boundary violations: <N>, Shared configs: <N> duplicated, Circular deps: <N>
+Health: HEALTHY | NEEDS ATTENTION | CRITICAL
 ```
 
 ### Step 2: Tool Selection
-Choose the right monorepo tool for the project:
 
 ```
-MONOREPO TOOL COMPARISON:
-┌──────────────┬───────────────────────────────────────────────────────┐
-│  Tool         │ Strengths                                             │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Turborepo    │ Zero-config caching, simple setup, fast adoption      │
-│               │ Best for: JS/TS projects, small-medium monorepos      │
-│               │ Caching: Local + remote (Vercel)                      │
-│               │ Learning curve: LOW                                   │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Nx           │ Rich plugin ecosystem, code generation, dep graph UI  │
-│               │ Best for: Enterprise, Angular/React, large monorepos  │
-│               │ Caching: Local + Nx Cloud (remote)                    │
-│               │ Learning curve: MEDIUM                                │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Lerna        │ Publishing workflow, changelog generation              │
-│               │ Best for: Library authors, npm package publishing      │
-│               │ Caching: Via Nx integration (Lerna 6+)                │
-│               │ Learning curve: LOW                                   │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Bazel        │ Language-agnostic, hermetic builds, massive scale     │
-│               │ Best for: Google-scale, multi-language, 1000+ devs    │
-│               │ Caching: Remote execution + remote cache              │
-│               │ Learning curve: HIGH                                  │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  Rush         │ Strict dependency management, phantom dep prevention  │
-│               │ Best for: Large JS/TS monorepos with strict policies  │
-│               │ Caching: cobuild (distributed)                        │
-│               │ Learning curve: MEDIUM-HIGH                           │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  pnpm          │ Workspace protocol, strict node_modules, fast installs│
-│  workspaces   │ Best for: Lightweight, no extra tooling needed        │
-│               │ Caching: None built-in (pair with Turbo or Nx)        │
-│               │ Learning curve: LOW                                   │
-└──────────────┴───────────────────────────────────────────────────────┘
-```
+TOOL COMPARISON:
+  Turborepo: Zero-config caching, simple setup. Best for JS/TS, small-medium. Learning: LOW.
+  Nx: Rich plugins, code generation, dep graph UI. Best for enterprise, large. Learning: MEDIUM.
+  Lerna: Publishing workflow, changelogs. Best for npm package authors. Learning: LOW.
+  Bazel: Language-agnostic, hermetic. Best for Google-scale, multi-language. Learning: HIGH.
+  Rush: Strict dep management, phantom dep prevention. Best for strict policies. Learning: MEDIUM-HIGH.
+  pnpm workspaces: Lightweight, no extra tooling. Pair with Turbo or Nx for caching. Learning: LOW.
 
-#### Selection Decision Tree
-```
-Is the project multi-language (Go + TypeScript + Python)?
-  YES → Bazel (or Nx with custom executors)
-  NO → Continue
-
-Does the team need code generation and rich tooling?
-  YES → Nx
-  NO → Continue
-
-Is the primary goal publishing npm packages?
-  YES → Lerna + pnpm workspaces
-  NO → Continue
-
-Does the team prefer minimal configuration?
-  YES → Turborepo + pnpm workspaces
-  NO → Rush (if strict policies needed) or Nx
+DECISION TREE:
+  Multi-language? → Bazel (or Nx custom executors)
+  Need codegen + rich tooling? → Nx
+  Publishing npm packages? → Lerna + pnpm workspaces
+  Prefer minimal config? → Turborepo + pnpm workspaces
+  Strict policies needed? → Rush
 ```
 
 ### Step 3: Package Structure
-Define the monorepo directory layout:
 
 ```
-RECOMMENDED STRUCTURE:
 <repo>/
-├── apps/                    # Deployable applications
-│   ├── web/                 # Frontend application
-│   │   ├── package.json
-│   │   ├── tsconfig.json    # Extends shared config
-│   │   └── src/
-│   ├── api/                 # Backend API
-│   │   ├── package.json
-│   │   └── src/
-│   └── admin/               # Admin dashboard
-│       ├── package.json
-│       └── src/
-├── packages/                # Shared libraries
-│   ├── ui/                  # Shared UI components
-│   │   ├── package.json
-│   │   └── src/
-│   ├── config/              # Shared configuration
-│   │   ├── eslint/
-│   │   ├── tsconfig/
-│   │   └── prettier/
-│   ├── utils/               # Shared utilities
-│   │   ├── package.json
-│   │   └── src/
-│   └── types/               # Shared TypeScript types
-│       ├── package.json
-│       └── src/
-├── tools/                   # Build tools, scripts, generators
-│   └── generators/
-├── package.json             # Root — workspaces, devDependencies
-├── pnpm-workspace.yaml      # Workspace definition
-├── turbo.json               # Build pipeline (if Turborepo)
-├── nx.json                  # Workspace config (if Nx)
-└── tsconfig.base.json       # Root TypeScript config
+├── apps/          # Deployable applications (web, api, admin)
+├── packages/      # Shared libraries (ui, config, utils, types)
+├── tools/         # Build tools, scripts, generators
+├── package.json   # Root workspaces + devDependencies
+├── pnpm-workspace.yaml / turbo.json / nx.json
+└── tsconfig.base.json
+
+NAMING: @<org>/<package-name>, lowercase kebab-case, scoped.
+Apps: "private": true. Packages: publishable unless purely internal.
 ```
 
-#### Package Naming Convention
+### Step 4: Boundary Enforcement
+
 ```
-NAMING CONVENTION:
-@<org>/<package-name>
+RULES:
+  apps/ can import packages/ — ALLOWED
+  packages/ can import other packages/ — ALLOWED (if declared)
+  apps/ CANNOT import other apps/ — BLOCKED
+  packages/ CANNOT import apps/ — BLOCKED
+  No circular dependencies — BLOCKED
+  All cross-package deps must be explicit — ENFORCED
 
-Examples:
-  @acme/ui          — Shared UI components
-  @acme/utils       — Shared utilities
-  @acme/config      — Shared configuration
-  @acme/types       — Shared TypeScript types
-  @acme/web         — Web application (private, not published)
-  @acme/api         — API server (private, not published)
-
-Rules:
-  - Lowercase, kebab-case
-  - Scoped to org (@acme/)
-  - apps/ packages: "private": true in package.json
-  - packages/ packages: publishable unless purely internal
+ENFORCEMENT:
+  Nx: @nx/enforce-module-boundaries with sourceTag/onlyDependOnLibsWithTags
+  Turborepo: turbo.json pipeline with dependsOn: ["^build"] + custom boundary checker script
 ```
 
-### Step 4: Package Boundary Enforcement
-Prevent unauthorized cross-package dependencies:
+### Step 5: Selective Builds & Caching
 
-#### Dependency Rules
 ```
-BOUNDARY RULES:
-┌──────────────────────────────────────────────────────────────┐
-│  Rule                                    │ Enforcement        │
-├──────────────────────────────────────────┼────────────────────┤
-│  apps/ can import packages/              │ ALLOWED            │
-│  packages/ can import other packages/    │ ALLOWED (if declared)│
-│  apps/ CANNOT import other apps/         │ BLOCKED            │
-│  packages/ CANNOT import apps/           │ BLOCKED            │
-│  No circular dependencies                │ BLOCKED            │
-│  tools/ CANNOT be imported at runtime    │ BLOCKED            │
-│  All cross-package deps must be explicit │ ENFORCED           │
-└──────────────────────────────────────────┴────────────────────┘
+AFFECTED DETECTION:
+  Turborepo: npx turbo run build --filter=...[origin/main]
+  Nx: npx nx affected --target=build --base=origin/main
+
+CI: Use path-based triggers (dorny/paths-filter) to run only affected package builds.
+
+REMOTE CACHING:
+  Turborepo: npx turbo login + npx turbo link (Vercel)
+  Nx: npx nx connect-to-nx-cloud
+  Impact: 15-min build → 30 seconds with cache hit
 ```
 
-#### Nx Boundary Enforcement
-```json
-// nx.json or .eslintrc.json
-{
-  "rules": {
-    "@nx/enforce-module-boundaries": [
-      "error",
-      {
-        "depConstraints": [
-          { "sourceTag": "type:app", "onlyDependOnLibsWithTags": ["type:lib", "type:util"] },
-          { "sourceTag": "type:lib", "onlyDependOnLibsWithTags": ["type:lib", "type:util"] },
-          { "sourceTag": "type:util", "onlyDependOnLibsWithTags": ["type:util"] },
-          { "sourceTag": "scope:web", "onlyDependOnLibsWithTags": ["scope:web", "scope:shared"] },
-          { "sourceTag": "scope:api", "onlyDependOnLibsWithTags": ["scope:api", "scope:shared"] }
-        ],
-        "allow": [],
-        "enforceBuildableLibDependency": true
-      }
-    ]
-  }
-}
+### Step 6: Dependency Graph Health
+
+```
+VISUALIZE: turbo run build --graph or npx nx graph
+
+HEALTH CHECKS:
+  Circular dependencies → extract shared code into new package
+  Hub packages (>5 dependents) → split into focused packages
+  Orphan packages (0 dependents) → remove or archive
+  Deep chains (4+ levels) → flatten where possible
 ```
 
-#### Turborepo Boundary Enforcement
-```jsonc
-// turbo.json
-{
-  "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
-    },
-    "test": {
-      "dependsOn": ["^build"]
-    },
-    "lint": {
-      "outputs": []
-    },
-    "typecheck": {
-      "dependsOn": ["^build"],
-      "outputs": []
-    }
-  }
-}
+### Step 7: Shared Configuration
+
+Centralize in `packages/config/`:
+- **TypeScript**: base.json (strict, declarations), nextjs.json (extends base), library.json (extends base)
+- **ESLint**: base.js (recommended+prettier), react.js (extends base+react)
+- **Prettier**: shared config
+
+All packages extend: `"extends": "@acme/config/tsconfig/base.json"`
+
+Root scripts: `build`, `test`, `lint`, `typecheck`, `clean`, `format`, `check-boundaries`, `graph`.
+
+### Step 8: Commit
 ```
-
-```typescript
-// tools/check-boundaries.ts — Custom boundary checker
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
-
-interface Violation {
-  source: string;
-  target: string;
-  rule: string;
-}
-
-function checkBoundaries(root: string): Violation[] {
-  const violations: Violation[] = [];
-  const apps = readdirSync(join(root, 'apps'));
-  const packages = readdirSync(join(root, 'packages'));
-
-  for (const app of apps) {
-    const pkg = JSON.parse(readFileSync(join(root, 'apps', app, 'package.json'), 'utf-8'));
-    for (const dep of Object.keys(pkg.dependencies || {})) {
-      // Check if app imports another app
-      if (apps.some(a => dep.includes(a) && a !== app)) {
-        violations.push({
-          source: `apps/${app}`,
-          target: dep,
-          rule: 'apps/ cannot import other apps/',
-        });
-      }
-    }
-  }
-  return violations;
-}
+"monorepo: <project> — initialize <tool> with <N> packages"
+"monorepo: <project> — enforce package boundaries"
+"monorepo: <project> — selective builds and remote caching"
+"monorepo: <project> — shared tsconfig, eslint, prettier"
 ```
-
-### Step 5: Selective Builds & Testing
-Only build and test what changed:
-
-#### Change Detection
-```bash
-# Turborepo — automatic affected detection
-npx turbo run build --filter=...[origin/main]
-npx turbo run test --filter=...[HEAD~1]
-
-# Nx — affected commands
-npx nx affected --target=build --base=origin/main
-npx nx affected --target=test --base=origin/main
-
-# Manual detection with git
-git diff --name-only origin/main...HEAD | xargs -I{} dirname {} | sort -u
-```
-
-#### CI Configuration for Selective Builds
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on:
-  pull_request:
-    branches: [main]
-
-jobs:
-  detect:
-    runs-on: ubuntu-latest
-    outputs:
-      packages: ${{ steps.filter.outputs.changes }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            web:
-              - 'apps/web/**'
-              - 'packages/ui/**'
-              - 'packages/utils/**'
-            api:
-              - 'apps/api/**'
-              - 'packages/utils/**'
-              - 'packages/types/**'
-
-  build-web:
-    needs: detect
-    if: contains(needs.detect.outputs.packages, 'web')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run build --filter=@acme/web...
-
-  build-api:
-    needs: detect
-    if: contains(needs.detect.outputs.packages, 'api')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run build --filter=@acme/api...
-```
-
-#### Remote Caching
-```bash
-# Turborepo remote caching
-npx turbo login
-npx turbo link
-# Builds now share cache across CI runs and developers
-
-# Nx Cloud
-npx nx connect-to-nx-cloud
-# Or self-hosted: set NX_CLOUD_AUTH_TOKEN and NX_CLOUD_API
-```
-
-### Step 6: Dependency Graph Management
-Visualize and maintain the dependency graph:
-
-```bash
-# Turborepo — dependency graph
-npx turbo run build --graph=dependency-graph.html
-
-# Nx — interactive dependency graph
-npx nx graph
-
-# Custom — generate from package.json files
-node tools/dep-graph.js > docs/dependency-graph.mmd
-```
-
-#### Dependency Graph Health Checks
-```
-DEPENDENCY GRAPH HEALTH:
-┌──────────────────────────────────────────────────────────────┐
-│  Total packages: <N>                                          │
-│  Total edges: <N>                                             │
-│  Max depth: <N> levels                                        │
-│  Circular dependencies: <N>                                   │
-│  Orphan packages (no dependents): <N>                         │
-│  Hub packages (> 5 dependents): <N>                           │
-├──────────────────────────────────────────────────────────────┤
-│  ISSUES:                                                      │
-│  [ ] Circular: @acme/utils <-> @acme/types                    │
-│  [ ] Hub risk: @acme/utils has 12 dependents (fragile)        │
-│  [ ] Orphan: @acme/legacy-helpers has 0 dependents            │
-│  [ ] Deep chain: web -> ui -> theme -> tokens (4 levels)      │
-├──────────────────────────────────────────────────────────────┤
-│  RECOMMENDATIONS:                                             │
-│  1. Break circular dep: extract shared types to @acme/shared  │
-│  2. Split @acme/utils into focused packages                   │
-│  3. Remove or archive @acme/legacy-helpers                    │
-└──────────────────────────────────────────────────────────────┘
-```
-
-### Step 7: Shared Configuration Patterns
-Eliminate configuration duplication across packages:
-
-#### Shared TypeScript Config
-```jsonc
-// packages/config/tsconfig/base.json
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  }
-}
-
-// packages/config/tsconfig/nextjs.json
-{
-  "extends": "./base.json",
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "jsx": "preserve",
-    "plugins": [{ "name": "next" }]
-  }
-}
-
-// packages/config/tsconfig/library.json
-{
-  "extends": "./base.json",
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "outDir": "./dist"
-  }
-}
-```
-
-```jsonc
-// apps/web/tsconfig.json — consuming shared config
-{
-  "extends": "@acme/config/tsconfig/nextjs.json",
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules"]
-}
-```
-
-#### Shared ESLint Config
-```javascript
-// packages/config/eslint/base.js
-module.exports = {
-  extends: ['eslint:recommended', 'prettier'],
-  env: { node: true, es2022: true },
-  parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
-  rules: {
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-  },
-};
-
-// packages/config/eslint/react.js
-module.exports = {
-  extends: ['./base.js', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
-  settings: { react: { version: 'detect' } },
-  rules: {
-    'react/prop-types': 'off', // Using TypeScript
-    'react/react-in-jsx-scope': 'off', // React 17+
-  },
-};
-```
-
-#### Root package.json Scripts
-```jsonc
-// package.json (root)
-{
-  "private": true,
-  "workspaces": ["apps/*", "packages/*"],
-  "scripts": {
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "check-boundaries": "node tools/check-boundaries.js",
-    "graph": "turbo run build --graph=docs/dep-graph.html"
-  },
-  "devDependencies": {
-    "turbo": "^2.0.0",
-    "prettier": "^3.0.0"
-  }
-}
-```
-
-### Step 8: Commit and Transition
-1. Commit monorepo config: `"monorepo: <project> — initialize <tool> with <N> packages"`
-2. Commit boundary rules: `"monorepo: <project> — enforce package boundaries"`
-3. Commit CI pipeline: `"monorepo: <project> — selective builds and remote caching"`
-4. Commit shared configs: `"monorepo: <project> — shared tsconfig, eslint, prettier"`
 
 ## Key Behaviors
 
-1. **Choose the right tool for the scale.** Turborepo for simplicity, Nx for features, Bazel for massive scale. Do not use Bazel for a 5-package monorepo.
-2. **Enforce boundaries from day one.** Letting packages import anything from anywhere creates an untangleable mess. Set rules before writing code.
-3. **Build only what changed.** Full rebuilds in CI are the #1 monorepo pain point. Selective builds are not optional.
-4. **Remote caching is transformative.** A 15-minute CI build that hits cache drops to 30 seconds. Configure remote caching early.
-5. **Shared configs reduce drift.** Every duplicated tsconfig.json or .eslintrc is a potential inconsistency. Centralize and extend.
-6. **The dependency graph is your map.** Visualize it regularly. If it looks like spaghetti, the architecture needs work.
-
-## Example Usage
-
-### Setting up a new Turborepo monorepo
-```
-User: /godmode:monorepo Set up a monorepo for our web app, API, and shared component library
-
-Monorepo: Analyzing project requirements...
-
-RECOMMENDATION: Turborepo + pnpm workspaces
-Reason: 3 packages, TypeScript-only, team prefers minimal config
-
-STRUCTURE:
-  apps/web       — Next.js frontend
-  apps/api       — Express API
-  packages/ui    — Shared React components
-  packages/utils — Shared utilities
-  packages/types — Shared TypeScript types
-  packages/config — Shared tsconfig, eslint, prettier
-
-SETUP:
-1. Initialized pnpm workspace with 6 packages
-2. Configured turbo.json pipeline (build -> test -> lint)
-3. Set up shared TypeScript, ESLint, and Prettier configs
-4. Created boundary check script
-5. Added CI with selective builds and remote caching
-
-CI IMPACT:
-  Full build: 4.2 min
-  Affected only (typical PR): 1.1 min
-  With remote cache hit: 0.3 min
-```
-
-### Optimizing an existing monorepo
-```
-User: /godmode:monorepo Our CI takes 25 minutes and developers are frustrated
-
-Monorepo: Auditing current monorepo...
-
-ASSESSMENT:
-  Packages: 23
-  Tool: npm workspaces (no build orchestrator)
-  CI time: 24.7 min (builds everything, no caching)
-  Boundary violations: 7 (apps importing other apps)
-  Shared configs: 0 (23 duplicated tsconfig.json files)
-  Circular deps: 2 cycles
-
-IMPROVEMENT PLAN:
-1. Add Turborepo for task orchestration and caching
-2. Fix 7 boundary violations
-3. Break 2 circular dependency cycles
-4. Centralize 23 tsconfig.json files into shared config
-5. Enable remote caching
-
-RESULT:
-  CI time: 24.7 min → 3.2 min (affected only) / 0.8 min (cache hit)
-  Boundary violations: 7 → 0
-  Circular deps: 2 → 0
-  Config duplication: 23 files → 3 shared + 23 extending
-```
+1. **Choose the right tool for scale.** Turborepo for simplicity, Nx for features, Bazel for massive scale.
+2. **Enforce boundaries from day one.** Unrestricted imports create untangleable messes.
+3. **Build only what changed.** Full rebuilds are the #1 monorepo pain point.
+4. **Remote caching is transformative.** 15-min → 30 seconds.
+5. **Shared configs reduce drift.** Centralize and extend.
+6. **Visualize the dependency graph regularly.** Spaghetti = architecture problem.
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full monorepo assessment and optimization |
-| `--init <tool>` | Initialize new monorepo (turborepo, nx, lerna, rush) |
-| `--audit` | Audit existing monorepo health |
-| `--boundaries` | Check and enforce package boundaries |
-| `--graph` | Generate dependency graph visualization |
-| `--selective` | Configure selective builds and testing |
+| (none) | Full assessment and optimization |
+| `--init <tool>` | Initialize new monorepo |
+| `--audit` | Audit existing health |
+| `--boundaries` | Check/enforce boundaries |
+| `--graph` | Dependency graph visualization |
+| `--selective` | Configure selective builds |
 | `--cache` | Set up remote caching |
-| `--shared-config` | Create shared configuration packages |
-| `--migrate` | Migrate from multi-repo to monorepo |
-| `--ci` | Generate CI configuration for monorepo |
+| `--shared-config` | Create shared configs |
+| `--migrate` | Multi-repo to monorepo |
+| `--ci` | Generate CI configuration |
 
 ## Auto-Detection
-
 ```
-IF pnpm-workspace.yaml exists:
-  packages = parse workspace packages
-  DETECT tool = "pnpm workspaces"
-  SUGGEST "pnpm monorepo detected ({len(packages)} packages). Activate /godmode:monorepo?"
-
-IF turbo.json exists:
-  DETECT tool = "Turborepo"
-  SUGGEST "Turborepo monorepo detected. Activate /godmode:monorepo?"
-
-IF nx.json exists:
-  DETECT tool = "Nx"
-  SUGGEST "Nx monorepo detected. Activate /godmode:monorepo?"
-
-IF lerna.json exists:
-  DETECT tool = "Lerna"
-  SUGGEST "Lerna monorepo detected. Activate /godmode:monorepo?"
-
-IF package.json has "workspaces" field:
-  packages = parse workspaces glob
-  IF len(packages) > 1:
-    SUGGEST "npm/yarn workspaces detected ({len(packages)} packages). Activate /godmode:monorepo?"
-
-IF apps/ AND packages/ directories exist:
-  SUGGEST "Monorepo directory structure detected. Activate /godmode:monorepo?"
-
-IF multiple package.json files exist at depth 2+:
-  count = count_package_jsons()
-  IF count > 3:
-    SUGGEST "Multi-package project detected ({count} package.json files). Activate /godmode:monorepo?"
-```
-
-## Iterative Monorepo Health Protocol
-
-```
-WHEN auditing or improving an existing monorepo:
-
-current_check = 0
-checks = [
-  "circular_dependencies",
-  "boundary_violations",
-  "config_duplication",
-  "orphan_packages",
-  "hub_package_risk",
-  "ci_optimization",
-  "cache_configuration"
-]
-total_checks = len(checks)
-issues_found = []
-fixes_applied = []
-
-WHILE current_check < total_checks:
-  check = checks[current_check]
-
-  1. RUN diagnostic for {check}
-  2. IF issues detected:
-       issues_found.append({check: check, count: issue_count, details: details})
-       3. GENERATE fix for each issue
-       4. APPLY fix
-       5. VERIFY fix resolved the issue
-       fixes_applied.append({check: check, fix: fix_description})
-
-  current_check += 1
-  REPORT "Audit progress: {current_check}/{total_checks} checks complete"
-
-FINAL:
-  REPORT "Issues found: {len(issues_found)}, Fixes applied: {len(fixes_applied)}"
-  MEASURE CI time improvement: before vs after
-  GENERATE dependency graph visualization
-```
-
-## Multi-Agent Dispatch
-
-```
-WHEN setting up or restructuring a monorepo with many packages:
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (structure):
-    - Design package directory layout
-    - Create package.json for each package
-    - Configure workspace references
-    - Output: directory structure + package.json files
-
-  Agent 2 (shared-config):
-    - Create shared TypeScript config (base, nextjs, library)
-    - Create shared ESLint config (base, react)
-    - Create shared Prettier config
-    - Output: packages/config/ with all shared configs
-
-  Agent 3 (ci-pipeline):
-    - Configure selective builds (affected-only)
-    - Set up remote caching (Turborepo/Nx Cloud)
-    - Create CI workflow with path-based triggers
-    - Output: .github/workflows/ + turbo.json/nx.json
-
-  Agent 4 (boundary-enforcement):
-    - Create boundary check script
-    - Configure lint rules for module boundaries
-    - Scan for and fix existing violations
-    - Output: tools/check-boundaries.ts + lint config
-
-MERGE:
-  - Verify shared configs are correctly extended by all packages
-  - Verify CI pipeline detects changes in all packages
-  - Verify boundary rules are consistent with package structure
-  - Run full build to validate everything works together
+Detect: pnpm-workspace.yaml, turbo.json, nx.json, lerna.json, package.json workspaces,
+apps/+packages/ directories, multiple package.json files at depth 2+.
 ```
 
 ## HARD RULES
 
+1. NEVER use a monorepo without a build orchestrator.
+2. EVERY package MUST declare explicit dependencies. No phantom deps. Use pnpm strict.
+3. NEVER allow circular dependencies.
+4. apps/ MUST NOT import other apps/.
+5. ALWAYS commit lock file. Use --frozen-lockfile in CI.
+6. EVERY PR: only build/test affected packages.
+7. Shared config MUST be centralized in packages/config/.
+8. NEVER hoist all deps to root. Causes phantom dependency problems.
+
+## Iterative Health Protocol
 ```
-1. NEVER use a monorepo without a build orchestrator (Turborepo, Nx, Bazel).
-   Running sequential builds across 20 packages is not a monorepo strategy.
+CHECKS: circular_deps → boundary_violations → config_duplication → orphan_packages →
+  hub_package_risk → ci_optimization → cache_configuration
+FOR EACH: diagnose, generate fix, apply, verify.
+POST: Report issues found/fixed, measure CI time improvement, generate dep graph.
+```
 
-2. EVERY package MUST declare its dependencies explicitly.
-   No phantom dependencies. Use pnpm strict mode.
-
-3. NEVER allow circular dependencies between packages.
-   If A imports B and B imports A, extract shared code into C.
-
-4. apps/ packages MUST NOT import other apps/ packages.
-   Only packages/ can be shared. Apps are deployment boundaries.
-
-5. ALWAYS commit the lock file. Use --frozen-lockfile in CI.
-   Non-reproducible installs cause "works on my machine" bugs.
-
-6. EVERY PR MUST only build and test affected packages.
-   Full rebuilds on every PR defeat the purpose of a monorepo.
-
-7. Shared configuration (tsconfig, eslint, prettier) MUST be centralized
-   in a packages/config/ package. No duplicated config files.
-
-8. NEVER hoist all dependencies to root. Hoisting causes phantom
-   dependency problems. Use strict node_modules (pnpm default).
+## Multi-Agent Dispatch
+```
+Agent 1 (structure): Package layout, package.json files, workspace refs
+Agent 2 (shared-config): TypeScript, ESLint, Prettier configs
+Agent 3 (ci-pipeline): Selective builds, remote caching, CI workflows
+Agent 4 (boundary-enforcement): Boundary checker, lint rules, fix violations
+MERGE: Verify configs extend correctly, CI detects all packages, boundaries consistent.
 ```
 
 ## Output Format
-
-After each monorepo skill invocation, emit a structured report:
-
 ```
 MONOREPO REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Repository          │  <name>                        │
-│  Tool                │  <Turborepo | Nx | Lerna | Bazel> │
-│  Package manager     │  <pnpm | npm | yarn | bun>     │
-│  Packages            │  <N> (apps: <N>, libs: <N>)    │
-│  Boundary violations │  <N> found / <N> fixed         │
-│  Circular deps       │  <N> found / <N> fixed         │
-│  Config duplication  │  <N> duplicated / <N> shared    │
-│  CI time (full)      │  <N> min                       │
-│  CI time (affected)  │  <N> min                       │
-│  Remote caching      │  ENABLED / NOT CONFIGURED      │
-│  Verdict             │  HEALTHY | NEEDS ATTENTION     │
-└──────────────────────────────────────────────────────┘
+Repository: <name>, Tool: <name>, Package manager: <name>
+Packages: <N> (apps: <N>, libs: <N>)
+Boundary violations: <N>/<N> fixed, Circular deps: <N>/<N> fixed
+CI time: <full> / <affected> / <cached>
+Remote caching: ENABLED | NOT CONFIGURED
+Verdict: HEALTHY | NEEDS ATTENTION
 ```
 
 ## TSV Logging
-
-Log every monorepo operation for tracking:
-
-```
-timestamp	skill	action	packages	boundary_violations	ci_time_min	status
-2026-03-20T14:00:00Z	monorepo	init_turborepo	6	0	4.2	healthy
-2026-03-20T14:30:00Z	monorepo	audit_boundaries	23	7	24.7	needs_fix
-```
+Append to `.godmode/monorepo-results.tsv`: `timestamp	skill	action	packages	boundary_violations	ci_time_min	status`
 
 ## Success Criteria
-
-The monorepo skill is complete when ALL of the following are true:
-1. Build orchestrator is configured (Turborepo, Nx, or equivalent)
-2. Zero boundary violations (apps do not import other apps)
-3. Zero circular dependencies between packages
-4. Shared configs are centralized (tsconfig, eslint, prettier in packages/config)
-5. CI uses selective builds (only affected packages are built/tested)
-6. Remote caching is configured (reduces CI time by 70-90%)
-7. Lock file is committed and --frozen-lockfile is used in CI
-8. All packages declare explicit dependencies (no phantom deps)
+1. Build orchestrator configured. 2. Zero boundary violations. 3. Zero circular deps. 4. Shared configs centralized. 5. CI uses selective builds. 6. Remote caching configured. 7. Lock file committed + --frozen-lockfile in CI. 8. All packages have explicit deps.
 
 ## Error Recovery
-
 ```
-IF circular dependency is detected:
-  1. Identify the cycle: package A -> B -> A
-  2. Extract shared code into a new package C that both A and B import
-  3. Update imports in A and B to reference C instead of each other
-  4. Verify the cycle is broken: run dependency graph visualization
-
-IF CI time is excessive (> 10 min for affected-only builds):
-  1. Check that selective builds are configured correctly (--filter or affected)
-  2. Verify remote caching is working (check cache hit rate)
-  3. Check for packages that are always rebuilt (usually config or types packages)
-  4. Consider splitting large packages into smaller, more focused ones
-
-IF boundary violation is detected:
-  1. Identify which app is importing from another app
-  2. Extract the shared code into a packages/ library
-  3. Update both apps to import from the shared library
-  4. Add lint rule to prevent future violations
-
-IF build fails after adding a new package:
-  1. Verify the package is listed in pnpm-workspace.yaml (or equivalent)
-  2. Check that the package's package.json has the correct name and scope
-  3. Run pnpm install to update the workspace graph
-  4. Verify the build pipeline includes the new package in the dependency graph
+Circular dep → extract shared into new package C. Update A and B to import C.
+CI too slow → verify selective builds, check cache hit rate, split large packages.
+Boundary violation → extract shared code to packages/ library, add lint rule.
+New package fails → verify workspace config, package.json name/scope, run install.
 ```
 
 ## Keep/Discard Discipline
 ```
-After EACH monorepo structural change:
-  1. MEASURE: Run full build, check boundary violations, detect circular deps.
-  2. COMPARE: Is CI time equal or lower? Are boundary violations zero? Are cycles zero?
-  3. DECIDE:
-     - KEEP if build passes AND boundary violations = 0 AND circular deps = 0.
-     - DISCARD if build fails OR new boundary violation OR new circular dependency.
-  4. COMMIT kept changes. Revert discarded changes before the next iteration.
-
-Never keep a change that introduces a circular dependency.
-Never keep a configuration that allows apps/ to import other apps/.
+KEEP if build passes AND boundary violations = 0 AND circular deps = 0.
+DISCARD if build fails OR new violation OR new circular dep.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Build orchestrator configured AND zero boundary violations AND zero circular deps AND remote caching enabled
-  - Shared configs centralized AND selective builds working AND CI affected-only < 3 min
-  - User explicitly requests stop
-  - Max iterations (10) reached
+STOP when: orchestrator configured AND zero violations AND zero circular deps AND remote caching
+  AND shared configs AND selective builds AND CI affected-only < 3 min
+  OR user requests stop OR max 10 iterations
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run monorepo tasks sequentially: structure, then shared config, then CI pipeline.
-- Use branch isolation per task: `git checkout -b godmode-monorepo-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` unavailable. Branch per task. See `adapters/shared/sequential-dispatch.md`.

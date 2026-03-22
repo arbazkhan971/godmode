@@ -30,12 +30,6 @@ SCHEDULING REQUIREMENTS ASSESSMENT:
 |  Task type            | <cleanup | report | sync | alert |
 |                       |  billing | digest | health check> |
 |  Frequency            | <seconds | minutes | hourly |     |
-|                       |  daily | weekly | monthly | cron> |
-|  Cron expression      | <* * * * * | custom>              |
-|  Duration per run     | << 1s | seconds | minutes | hours>|
-|  Overlap allowed?     | <yes | no | skip-if-running>      |
-|  Idempotent?          | <yes | must make idempotent>      |
-|  Timezone             | <UTC | user-local | configurable> |
     # ... (condensed)
 +---------------------------------------------------------+
 ```
@@ -49,9 +43,6 @@ CRON EXPRESSION SYNTAX:
 |  Minute       | 0-59            | * , - /                 |
 |  Hour         | 0-23            | * , - /                 |
 |  Day of month | 1-31            | * , - / ? L W           |
-|  Month        | 1-12 or JAN-DEC | * , - /                |
-|  Day of week  | 0-7 or SUN-SAT | * , - / ? L #           |
-|  (Second)     | 0-59 (optional) | * , - /                 |
 +---------------------------------------------------------+
 
 Common patterns:
@@ -73,7 +64,6 @@ SCHEDULER TECHNOLOGY SELECTION:
 | (repeatable)     | Production  |          | (leader    | (survives |          |
 |                  | recurring   |          | election)  | restart)  |          |
 |                  |             |          |            |           |          |
-| Agenda           | Node.js     | MongoDB  | Yes        | MongoDB   | Low      |
     # ... (condensed)
   Cloud-native, no servers to manage?          -> EventBridge / Cloud Scheduler
 ```
@@ -91,10 +81,6 @@ SCHEDULE ARCHITECTURE:
 |                                                                        |
 |                     +-- daily-digest -------------- Worker Pool A (2)  |
 |  Cron Engine ------+-- cleanup-expired ----------- Worker Pool B (3)  |
-|  (single leader)   +-- sync-inventory ------------ Worker Pool A (2)  |
-|                     +-- generate-reports ---------- Worker Pool C (1)  |
-|                     +-- health-check -------------- Inline (fast)     |
-|                     +-- billing-cycle ------------- Worker Pool C (1)  |
 |                                                                        |
     # ... (condensed)
 +----------------------------------------------------------------------+
@@ -108,15 +94,7 @@ import Redis from 'ioredis';
 const connection = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null,
-});
-
-// Dedicated queue for scheduled/recurring work
-const schedulerQueue = new Queue('scheduled-jobs', {
-  connection,
-  defaultJobOptions: {
-    # ... (condensed)
-});
+# ... (condensed)
 ```
 
 #### Celery Beat (Python — Production)
@@ -127,15 +105,7 @@ from datetime import timedelta
 
 app = Celery('scheduler', broker='redis://localhost:6379/0', backend='redis://localhost:6379/1')
 
-app.conf.update(
-    timezone='UTC',
-    beat_schedule_filename='/var/lib/celery/beat-schedule',  # Persist schedule state
-    beat_max_loop_interval=60,  # Check schedule every 60s max
-    task_acks_late=True,
-    worker_prefetch_multiplier=1,
-    task_reject_on_worker_lost=True,
-    # ... (condensed)
-        raise self.retry(exc=exc)
+# ... (condensed)
 ```
 
 #### APScheduler (Python — Standalone)
@@ -146,15 +116,7 @@ from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 
-jobstores = {
-    'default': RedisJobStore(host='localhost', port=6379, db=2),
-}
-executors = {
-    'default': ThreadPoolExecutor(20),
-    'cpu_bound': ProcessPoolExecutor(4),
-}
-    # ... (condensed)
-scheduler.start()
+# ... (condensed)
 ```
 
 #### Sidekiq-Cron (Ruby)
@@ -165,19 +127,7 @@ Sidekiq::Cron::Job.load_from_hash(
     'cron'  => '0 9 * * *',
     'class' => 'DailyDigestWorker',
     'queue' => 'default',
-    'description' => 'Send daily digest emails at 9 AM UTC',
-  },
-  'cleanup_sessions' => {
-    'cron'  => '0 */6 * * *',
-    'class' => 'CleanupSessionsWorker',
-    'queue' => 'maintenance',
-    'description' => 'Clean up expired sessions every 6 hours',
-  },
-  'sync_inventory' => {
-    'cron'  => '*/15 * * * *',
-    'class' => 'InventorySyncWorker',
-    # ... (condensed)
-end
+# ... (condensed)
 ```
 
 #### Hangfire (.NET)
@@ -197,13 +147,6 @@ services.AddHangfire(config => config
 );
 services.AddHangfireServer();
 
-// Register recurring jobs
-RecurringJob.AddOrUpdate<IDailyDigestService>(
-    "daily-digest",
-    service => service.SendDigestAsync(),
-    # ...
-    new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc }
-);
 ```
 
 #### Quartz (Java)
@@ -214,19 +157,7 @@ public class QuartzConfig {
 
     @Bean
     public JobDetail dailyDigestJob() {
-        return JobBuilder.newJob(DailyDigestJob.class)
-            .withIdentity("daily-digest", "scheduled")
-            .storeDurably()
-            .requestRecovery(true)  // Re-execute on scheduler crash recovery
-            .build();
-    }
-
-    @Bean
-    public Trigger dailyDigestTrigger() {
-        return TriggerBuilder.newTrigger()
-            .forJob(dailyDigestJob())
-    # ... (condensed)
-// spring.quartz.properties.org.quartz.scheduler.instanceId=AUTO
+# ... (condensed)
 ```
 
 ### Step 3: Idempotency for Retries
@@ -241,10 +172,6 @@ IDEMPOTENCY STRATEGIES FOR SCHEDULED JOBS:
 |  Date-based key       | "digest:2025-03-15" — one per day |
 |  Window-based key     | "sync:2025-03-15T10:00Z" — one   |
 |                       | per 15-min window                 |
-|  Database upsert      | INSERT ... ON CONFLICT DO NOTHING |
-|  Redis SETNX          | Acquire lock with expiry          |
-|  Idempotency token    | Unique key per logical run        |
-|  State check          | Query current state before acting |
 +---------------------------------------------------------+
 
 Principle: derive the idempotency key from the SCHEDULE, not the job ID.
@@ -261,19 +188,7 @@ class ScheduledJobRunner {
 
   async runOnce(
     jobName: string,
-    scheduleWindow: string,
-    handler: () => Promise<any>,
-    ttl: number = 86400,
-  ): Promise<{ status: 'executed' | 'skipped'; result?: any }> {
-    const idempotencyKey = `scheduled:${jobName}:${scheduleWindow}`;
-
-    // Check if this window was already processed
-    const alreadyRan = await this.redis.get(idempotencyKey);
-    if (alreadyRan) {
-      return { status: 'skipped' };
-    }
-    # ... (condensed)
-}, { connection });
+# ... (condensed)
 ```
 
 ### Step 4: Distributed Job Locking
@@ -289,15 +204,8 @@ DISTRIBUTED LOCKING STRATEGIES:
 |                      |          | atomic acquire   | CP    |
 |                      |          |                  |       |
 |  Redlock             | Redis    | Multi-node       | Cont- |
-|                      | (3+ nodes| consensus        | rover-|
-|                      |          |                  | sial  |
 |                      |          |                  |       |
-|  PostgreSQL          | PG       | Strong           | Slower|
-|  advisory locks      |          | consistency,     | than  |
-|                      |          | no extra infra   | Redis |
 |                      |          |                  |       |
-|  ZooKeeper /         | ZK/etcd  | CP guarantee,    | Heavy |
-|  etcd lease          |          | proven in prod   | infra |
     # ... (condensed)
   - Enterprise / Kafka ecosystem                         -> ZooKeeper
 ```
@@ -310,19 +218,7 @@ class DistributedSchedulerLock {
   async acquireLeader(schedulerId: string, ttl: number = 30): Promise<boolean> {
     // Only one scheduler instance becomes leader
     const acquired = await this.redis.set(
-      'scheduler:leader',
-      schedulerId,
-      'EX', ttl,
-      'NX'
-    );
-    return acquired === 'OK';
-  }
-
-  async renewLeadership(schedulerId: string, ttl: number = 30): Promise<boolean> {
-    // Renew only if we are still the leader (atomic check-and-set)
-    const script = `
-    # ... (condensed)
-}
+# ... (condensed)
 ```
 
 #### PostgreSQL Advisory Lock
@@ -333,17 +229,7 @@ def pg_advisory_lock_for_job(conn, job_name: str) -> bool:
     """Acquire a PostgreSQL advisory lock for a scheduled job.
     Returns True if lock acquired, False if another process holds it."""
     # Convert job name to a stable int64 for PG advisory lock
-    lock_id = int(hashlib.sha256(job_name.encode()).hexdigest()[:15], 16)
-
-    cursor = conn.cursor()
-    cursor.execute("SELECT pg_try_advisory_lock(%s)", (lock_id,))
-    acquired = cursor.fetchone()[0]
-    return acquired
-
-def pg_advisory_unlock(conn, job_name: str):
-    lock_id = int(hashlib.sha256(job_name.encode()).hexdigest()[:15], 16)
-    cursor = conn.cursor()
-    cursor.execute("SELECT pg_advisory_unlock(%s)", (lock_id,))
+# ... (condensed)
 ```
 
 ### Step 5: Job Monitoring & Alerting
@@ -358,21 +244,7 @@ CRON JOB MONITORING:
 |  Jobs scheduled            | 8       | —        | OK     |
 |  Last run: daily-digest    | 09:00   | miss > 1h| OK     |
 |  Last run: cleanup         | 06:00   | miss > 7h| OK     |
-|  Last run: sync-inventory  | 10:45   | miss >20m| OK     |
-|  Active runs               | 1       | > 5      | OK     |
-|  Failed in last 24h        | 2       | > 10     | OK     |
-|  Avg run duration          | 4.2s    | > 60s    | OK     |
-|  Longest running now       | 3.1s    | > 300s   | OK     |
-|  Overlap incidents (24h)   | 0       | > 0      | OK     |
-|  Missed schedules (24h)    | 0       | > 0      | OK     |
 +---------------------------------------------------------+
-
-Alerting rules:
-  CRITICAL: Job missed its schedule window + grace period
-  CRITICAL: Job running longer than 5x its average duration
-  WARNING:  Job failure rate > 10% in last hour
-  WARNING:  DLQ depth for scheduled jobs > 0
-  INFO:     Job completed but took 2x longer than average
 ```
 
 #### Monitoring Implementation
@@ -383,19 +255,7 @@ class CronJobMonitor {
 
   async recordRun(jobName: string, result: {
     status: 'success' | 'failure';
-    duration: number;
-    error?: string;
-  }) {
-    const key = `cron:monitor:${jobName}`;
-    const now = Date.now();
-
-    await this.redis.pipeline()
-      .hset(key, 'last_run_at', now)
-      .hset(key, 'last_status', result.status)
-      .hset(key, 'last_duration_ms', result.duration)
-      .hincrby(key, `count_${result.status}`, 1)
-    # ... (condensed)
-}
+# ... (condensed)
 ```
 
 ### Step 6: Dead Letter Handling for Scheduled Jobs
@@ -410,21 +270,7 @@ SCHEDULED JOB DLQ DESIGN:
 |  Queue:       scheduled-jobs-dlq                          |
 |  Retention:   30 days                                     |
 |  Alert:       Any entry (scheduled jobs should not fail)  |
-|  Review:      Immediate (every DLQ entry = investigation) |
 |                                                           |
-|  Entry format:                                            |
-|  {                                                        |
-|    "job_name": "daily-digest",                            |
-|    "schedule": "0 9 * * *",                               |
-|    "scheduled_window": "2025-03-15T09:00Z",               |
-|    "attempts": 3,                                         |
-|    "first_failed_at": "2025-03-15T09:00:05Z",            |
-|    "last_failed_at": "2025-03-15T09:01:42Z",             |
-|    "errors": [                                            |
-|      { "attempt": 1, "error": "ECONNREFUSED ...", ... }, |
-    # ...
-|    4. Escalate to incident if SLA breached                |
-+---------------------------------------------------------+
 ```
 
 ### Step 7: Priority Queues & Job Chaining
@@ -439,21 +285,11 @@ SCHEDULED JOB PRIORITIES:
 |  P0       | */5 * * * *      | Health check       | < 30s  |
 |  P1       | */15 * * * *     | Inventory sync     | < 2m   |
 |  P1       | 0 9 * * *        | Daily digest       | < 5m   |
-|  P2       | 0 */6 * * *      | Session cleanup    | < 30m  |
-|  P3       | 0 2 * * 1        | Weekly report      | < 2h   |
-|  P3       | 0 0 1 * *        | Monthly billing    | < 4h   |
 +---------------------------------------------------------+
 
 JOB CHAINING (dependent execution):
 +---------------------------------------------------------+
 |  Pipeline: "end-of-day"                                   |
-|  Trigger: 0 23 * * * (11 PM UTC daily)                    |
-|                                                           |
-|  Step 1: aggregate-daily-stats                            |
-|      |   (5 min)                                          |
-    # ...
-|  On failure at any step: alert, stop chain, DLQ           |
-+---------------------------------------------------------+
 ```
 
 #### Job Chaining Implementation
@@ -464,22 +300,7 @@ import { FlowProducer } from 'bullmq';
 const flowProducer = new FlowProducer({ connection });
 
 // End-of-day pipeline — child jobs run first, parent last
-await flowProducer.add({
-  name: 'send-report-email',
-  queueName: 'scheduled-jobs',
-  data: { type: 'email', report: 'daily' },
-  children: [
-    {
-      name: 'generate-daily-report',
-      queueName: 'scheduled-jobs',
-      data: { type: 'report', period: 'daily' },
-      children: [
-        {
-          name: 'aggregate-daily-stats',
-          queueName: 'scheduled-jobs',
-    # ...
-  ],
-});
+# ... (condensed)
 ```
 
 ### Step 8: Rate-Limited Execution
@@ -494,8 +315,6 @@ RATE-LIMITED SCHEDULING:
 |  API with 100 req/min    | Token bucket limiter on worker |
 |  Email provider 500/hr   | BullMQ limiter: 500 per 3600s |
 |  DB batch writes         | Chunk + delay between batches  |
-|  External webhook        | Concurrency 1 + delay between  |
-|  Multiple tenants        | Per-tenant rate limit keys     |
 +---------------------------------------------------------+
 ```
 
@@ -507,22 +326,7 @@ async function runDailyDigest() {
     where: { digestEnabled: true, lastDigestBefore: today() },
   });
 
-  // Enqueue individual emails with rate limiting
-  for (const user of users) {
-    await emailQueue.add('send-digest-email', {
-      userId: user.id,
-      date: today(),
-    }, {
-      priority: 5,
-      // BullMQ handles rate limiting at the worker level
-    });
-  }
-
-  return { queued: users.length };
-}
-    # ...
-  },
-});
+# ... (condensed)
 ```
 
 ### Step 9: Timezone Handling
@@ -537,21 +341,6 @@ TIMEZONE HANDLING:
 |  1. Store all schedules in UTC internally                 |
 |  2. Convert to user timezone for display only             |
 |  3. Use IANA timezone names (America/New_York), never     |
-|     fixed offsets (UTC-5) — offsets break with DST        |
-|  4. Test with DST transitions:                            |
-|     - "Spring forward": 2 AM -> 3 AM (1 AM runs, 2 AM   |
-|       does not exist)                                     |
-|     - "Fall back": 2 AM -> 1 AM (1 AM runs twice!)       |
-|  5. For user-facing schedules, convert at fire time:      |
-|     "9 AM user-local" = different UTC per user per day    |
-|  6. For system jobs, always use UTC — no DST surprises    |
-+---------------------------------------------------------+
-
-BullMQ timezone support:
-  repeat: { pattern: '0 9 * * *', tz: 'America/New_York' }
-    # ...
-Quartz timezone support:
-  .inTimeZone(TimeZone.getTimeZone("America/New_York"))
 ```
 
 ### Step 10: Database-Backed vs Redis-Backed Schedulers
@@ -566,13 +355,6 @@ SCHEDULER PERSISTENCE COMPARISON:
 |  Speed               | Sub-ms operations | 1-10ms queries |
 |  Durability          | RDB/AOF (config)  | Full ACID      |
 |  Crash recovery      | May lose last      | No data loss   |
-|                      | few seconds        |                |
-|  Schedule history    | Manual (lists)     | Native (rows)  |
-|  Query flexibility   | Limited            | Full SQL       |
-|  Clustering          | Redis Cluster      | DB replication |
-|  Ops complexity      | Moderate (Redis)   | Low (existing) |
-|  Best for            | High-frequency     | Audit trail,   |
-|                      | jobs, low latency  | compliance     |
 +---------------------------------------------------------+
 
 Use Redis-backed (BullMQ, Sidekiq-Cron) when:
@@ -604,48 +386,6 @@ Use Redis-backed (BullMQ, Sidekiq-Cron) when:
 7. **Dead letter every exhausted retry.** Scheduled jobs that fail all retries must go to a DLQ with full context. Do not silently drop them — they represent missed business operations.
 8. **Separate scheduler from executor.** The process that decides "it is time to run" should not be the process that does the work. Scheduler enqueues; workers execute. This allows independent scaling.
 
-## Example Usage
-
-### Setting up scheduled tasks
-```
-User: /godmode:cron Set up daily report generation and hourly data sync for our Node.js app
-
-Cron: Assessing scheduling requirements...
-
-SCHEDULING REQUIREMENTS:
-  Tasks: 2 (report generation, data sync)
-  Frequencies: daily (report), hourly (sync)
-  Duration: report ~10min, sync ~30s
-  Infra: Redis available
-  Constraint: 3 app instances — need distributed locking
-
-Recommendation: BullMQ repeatable jobs
-  Rationale: Node.js native, Redis already available, built-in
-  distributed locking, dashboard via Bull Board.
-
-Scheduled jobs registered:
-```
-
-### Debugging missed scheduled jobs
-```
-User: /godmode:cron --diagnose Our daily digest stopped running 3 days ago
-
-Cron: Diagnosing scheduled job health...
-
-SCHEDULE HEALTH CHECK:
-  Job: daily-digest
-  Schedule: 0 9 * * * (9 AM UTC daily)
-  Last successful run: 3 days ago (2025-03-12T09:00:05Z)
-  Last attempted run: 2 days ago (2025-03-13T09:00:02Z) — FAILED
-  Runs since failure: 0 (scheduler stopped attempting)
-
-Root cause: BullMQ repeatable job was removed during deployment
-  - Deployment at 2025-03-13T08:45Z cleared all repeatable jobs
-  - registerScheduledJobs() threw an error on line 42 (Redis timeout)
-  - Error was caught but not alerted
-  - No jobs were re-registered after deployment
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -653,13 +393,6 @@ Root cause: BullMQ repeatable job was removed during deployment
 | (none) | Full scheduled task design workflow |
 | `--tech <name>` | Target specific scheduler (bullmq, celery, sidekiq, apscheduler, hangfire, quartz, node-cron) |
 | `--diagnose` | Diagnose missed or failing scheduled jobs |
-| `--expression <cron>` | Validate and explain a cron expression |
-| `--chain` | Design dependent job pipelines |
-| `--migrate` | Migrate from one scheduler to another |
-| `--monitor` | Set up schedule monitoring and alerting |
-| `--backfill` | Backfill missed scheduled job runs |
-| `--timezone` | Design timezone-aware user-facing schedules |
-| `--lock` | Design distributed locking for multi-instance |
 
 ## HARD RULES
 
@@ -683,19 +416,7 @@ grep -r "celery\|apscheduler\|django-cron\|huey" requirements.txt setup.py pypro
 grep -r "sidekiq\|sidekiq-cron\|whenever\|clockwork" Gemfile 2>/dev/null
 
 # Detect existing cron jobs
-grep -rl "cron\|schedule\|repeatable\|every\|interval" src/ --include="*.ts" --include="*.js" --include="*.py" --include="*.rb" 2>/dev/null | head -10
-
-# Detect queue infrastructure
-grep -r "redis\|rabbitmq\|sqs\|pubsub" package.json docker-compose.* 2>/dev/null
-
-
-## Output Format
-Print on completion: `Cron: {job_count} jobs configured. Scheduler: {scheduler_type}. Locking: {lock_status}. Monitoring: {monitor_status}. Idempotent: {idempotent_count}/{job_count}. Overlap guard: {overlap_status}. Verdict: {verdict}.`
-
-## TSV Logging
-
-Log every invocation to `.godmode/` as TSV. Create on first run.
-
+# ... (condensed)
 ```
 iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitoring	status
 1	daily_report	0 6 * * *	bullmq	redis_lock	yes	max_instances:1	yes	configured
@@ -712,26 +433,6 @@ iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitorin
 - Job monitoring with success/failure alerting.
 - Startup registry check verifies all jobs are registered.
 - Schedule definitions auditable (logged on startup, versioned in code).
-
-## Error Recovery
-
-- **Job fires multiple times across instances**: Enable distributed locking immediately. Use Redis-based locking (Redlock) or database advisory locks. Verify the lock TTL is longer than the job execution time.
-- **Job silently stops running**: Check the scheduler process is alive. Verify the job is still registered (startup registry check). Check Redis connection if using Redis-backed scheduler. Add monitoring that alerts when a job does not run within its expected window.
-- **Job execution overlaps with next scheduled run**: Enable overlap protection (`max_instances: 1` or `skipIfRunning`). If the job consistently exceeds its interval, increase the interval or optimize the job.
-- **DST transition causes missed/duplicate job**: Verify all schedules use UTC. If user-facing schedules must be in local time, use IANA timezone names (not fixed offsets). Test across DST boundaries.
-- **Job fails but retries indefinitely**: Set a maximum retry count. Use exponential backoff. After max retries, alert and move to dead-letter queue. Do not retry non-retriable errors (validation failures, auth errors).
-- **Scheduler restart loses in-flight jobs**: Use a persistent queue (Redis, PostgreSQL, SQS) to store job state. On restart, the scheduler should resume in-flight jobs, not lose them.
-
-## Iterative Loop Protocol
-```
-current_job = 0
-jobs = detect_scheduled_jobs()  // from cron config, code analysis, scheduler library
-
-WHILE current_job < len(jobs):
-  job = jobs[current_job]
-  1. AUDIT: Check schedule, locking, idempotency, overlap handling, monitoring
-  2. FIX: Add missing safeguards (locking, idempotency, overlap guard)
-  3. TEST: Verify job runs correctly in isolation
 
 ## Keep/Discard Discipline
 ```
@@ -775,22 +476,21 @@ PREFER the simpler scheduling approach:
   - Fewer jobs with broader scope over many narrow-scope jobs (e.g., one cleanup job vs five)
 ```
 
-## Multi-Agent Dispatch
-For comprehensive cron/scheduling setup:
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Job runs twice (no lock) | Add file-based lock or advisory lock. Check if cron expression fires more frequently than job duration. |
+| Job silently fails | Add exit code checking, stderr capture, and alerting. Log start/end with duration. |
+| Timezone confusion | Always use UTC in cron expressions. Convert display times to UTC. Document timezone in comments. |
+| Job overlaps with next scheduled run | Add `skip-if-running` guard. Set `concurrencyPolicy: Forbid` in K8s CronJobs. Increase interval or optimize job. |
+
+## Output Format
+Print: `Cron: {N} jobs configured. Schedule: {expressions}. Lock: {present|missing}. Alert: {active|none}. Status: {DONE|PARTIAL}.`
+
+## TSV Logging
+Append to `.godmode/cron-results.tsv`:
 ```
-DISPATCH parallel agents (one per concern):
-
-Agent 1 (worktree: cron-scheduler):
-  - Set up scheduler library and job registration
-  - Configure schedules and overlap protection
-  - Scope: scheduler config, job definitions
-  - Output: Scheduler infrastructure with job registry
-
-Agent 2 (worktree: cron-locking):
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run cron tasks sequentially: scheduler setup, then distributed locking, then monitoring.
-- Use branch isolation per task: `git checkout -b godmode-cron-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+timestamp	job_name	schedule	lock_type	alert_configured	timeout_s	status
 ```
+One row per cron job configured. Never overwrite previous rows.

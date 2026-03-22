@@ -314,66 +314,6 @@ Post-deployment verification:
 7. **Environments are isolated.** Dev, staging, and production use separate state, separate accounts/projects, and separate credentials.
 8. **Secrets never in IaC.** Use variable references, secret managers, or parameter stores. Never hardcode credentials.
 
-## Example Usage
-
-### Validating a Terraform project
-```
-User: /godmode:infra Validate our Terraform setup
-
-Infra: Discovering infrastructure context...
-
-INFRASTRUCTURE CONTEXT:
-IaC Tool: Terraform v1.6.2
-Provider: AWS (us-east-1)
-State Backend: S3 (terraform-state-prod)
-Modules: vpc, ecs-cluster, rds, redis, alb
-Environments: dev, staging, production
-
-Running validation...
-  terraform fmt -check: PASS
-  terraform validate: PASS
-  terraform plan: 16 resources, 0 changes
-
-Running policy checks...
-  POLICY VIOLATION 1: S3 bucket missing encryption
-  Severity: HIGH
-  Resource: aws_s3_bucket.uploads
-  Remediation: Add server_side_encryption_configuration block
-
-Cost estimate: $197.37/mo (no change)
-Drift detection: 0 drifted resources
-
-Verdict: 1 policy violation to fix before shipping.
-```
-
-### Scaffolding new infrastructure
-```
-User: /godmode:infra Set up Terraform for a new microservice on AWS
-
-Infra: Scaffolding Terraform project...
-
-Created:
-  terraform/
-    main.tf          — Provider config, backend
-    variables.tf     — Input variables with defaults
-    outputs.tf       — Stack outputs
-    versions.tf      — Required provider versions
-    environments/
-      dev.tfvars     — Dev environment values
-      staging.tfvars — Staging environment values
-      prod.tfvars    — Production environment values
-    modules/
-      ecs-service/   — ECS Fargate service module
-      alb/           — Application Load Balancer module
-      rds/           — RDS PostgreSQL module
-
-All modules include:
-  - Input validation
-  - Mandatory tagging
-  - Encryption at rest
-  - Least-privilege IAM
-```
-
 ## HARD RULES
 1. NEVER apply infrastructure changes without reviewing the plan output first. No blind `terraform apply`.
 2. NEVER hardcode secrets, credentials, or API keys in IaC files — use secret managers or variable references.
@@ -485,35 +425,6 @@ PREFER the simpler infrastructure approach:
   - Terraform workspaces before duplicated directory structures (for simple cases)
 ```
 
-## Multi-Agent Dispatch
-For multi-environment or multi-module infrastructure work:
-```
-DISPATCH parallel agents (one per concern):
-
-Agent 1 (worktree: infra-modules):
-  - Validate and test infrastructure modules
-  - Scope: modules/ directory
-  - Run: terraform validate + unit tests (Terratest)
-
-Agent 2 (worktree: infra-security):
-  - Security and policy audit
-  - Scope: all .tf files
-  - Run: OPA policy checks, tfsec, checkov scans
-
-Agent 3 (worktree: infra-cost):
-  - Cost analysis across all environments
-  - Scope: all *.tfvars + plan outputs
-  - Run: infracost breakdown for each environment
-
-Agent 4 (worktree: infra-drift):
-  - Drift detection for deployed environments
-  - Scope: staging + production state
-  - Run: terraform plan -detailed-exitcode per env
-
-MERGE ORDER: modules → security → cost → drift (read-only, no merge needed)
-CONFLICT RESOLUTION: modules branch is source of truth for .tf files
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -528,18 +439,6 @@ CONFLICT RESOLUTION: modules branch is source of truth for .tf files
 | `--scaffold` | Generate new IaC project structure |
 | `--apply` | Apply changes (requires prior plan review) |
 | `--env <name>` | Target a specific environment (dev, staging, prod) |
-
-## Anti-Patterns
-
-- **Do NOT apply without reviewing the plan.** Blind `terraform apply` destroys things. Always review the plan output.
-- **Do NOT hardcode secrets.** Use `var.db_password` from a secret manager, not `password = "hunter2"` in your `.tf` files.
-- **Do NOT use local state in production.** S3, GCS, or Terraform Cloud backend with state locking. Always.
-- **Do NOT skip tagging.** Untagged resources become orphans that cost money and confuse incident response.
-- **Do NOT use `*` in IAM policies.** Least privilege means specifying exactly which actions on which resources.
-- **Do NOT manually modify infrastructure.** If you changed it in the console, it will drift. Change it in code.
-- **Do NOT share state between environments.** Each environment gets its own state file and its own credentials.
-- **Do NOT ignore cost estimates.** A missing cost review is how you get a $50,000 surprise bill.
-
 
 ## Output Format
 Print on completion: `Infra: {resource_count} resources across {module_count} modules. Drift: {drift_status}. Security: {policy_violations} violations. Cost: ${monthly_estimate}/mo. Verdict: {verdict}.`
@@ -573,8 +472,3 @@ Columns: iteration, task, provider, resources_planned, resources_changed, drift_
 - **Module version conflict**: Pin module versions explicitly. Use version constraints (`~> 3.0`). Check for breaking changes in the module changelog before upgrading.
 - **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources that should be in a lower tier. Verify auto-scaling max limits are set.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run infra tasks sequentially: modules, then security, then cost analysis, then drift detection.
-- Use branch isolation per task: `git checkout -b godmode-infra-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

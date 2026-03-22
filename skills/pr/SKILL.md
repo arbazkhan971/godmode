@@ -35,23 +35,6 @@ Size classification:
   S:   11-50 lines   (ideal — single concept, quick review)
   M:   51-200 lines  (acceptable — focused feature or fix)
   L:   201-500 lines (too large — consider splitting)
-  XL:  500+ lines    (must split — stacked PRs required)
-
-Current size: <XS | S | M | L | XL>
-
-Change categories:
-  - [ ] New feature
-  - [ ] Bug fix
-  - [ ] Refactor (no behavior change)
-  - [ ] Documentation
-  - [ ] Test coverage
-  - [ ] Configuration / infrastructure
-  - [ ] Dependency update
-  - [ ] Database migration
-
-Risk level: <LOW | MEDIUM | HIGH>
-Review urgency: <ASAP | normal | low priority>
-Suggested reviewers: <based on file ownership / CODEOWNERS>
 ```
 
 ### Step 2: PR Size Optimization
@@ -73,41 +56,6 @@ PR SPLITTING STRATEGIES:
 └───────────────────┴─────────────────────────────────────────┘
 
 SPLITTING EXAMPLE:
-  Original: 450-line PR "Add user permissions system"
-
-  Split into:
-  PR 1: Add permission model and migration (80 lines) — S
-    - Database schema for permissions table
-    - Model with validations
-    - Unit tests for model
-
-  PR 2: Add permission service layer (120 lines) — M
-    - Business logic for checking permissions
-    - Caching layer for permission lookups
-    - Service tests
-
-  PR 3: Add permission API endpoints (90 lines) — M
-    - REST endpoints for CRUD operations
-    - Request validation
-    - Integration tests
-
-  PR 4: Add permission UI components (100 lines) — M
-    - Permission management page
-    - Role assignment UI
-    - Component tests
-
-  Result: 4 focused PRs instead of 1 overwhelming PR
-  Average review time: 15 min each vs 2+ hours for the original
-
-WHY SMALL PRS MATTER:
-┌─────────────────────────────────────────────────────────────┐
-│ PR Size  │ Review Quality │ Time to Merge │ Bug Escape Rate│
-├──────────┼────────────────┼───────────────┼────────────────┤
-│ < 50 LOC │ Thorough       │ < 1 hour      │ Very low       │
-│ 50-200   │ Good           │ < 4 hours     │ Low            │
-│ 200-500  │ Declining      │ 1-3 days      │ Moderate       │
-│ 500+     │ Rubber stamp   │ 3+ days       │ High           │
-└──────────┴────────────────┴───────────────┴────────────────┘
 ```
 
 ### Step 3: PR Description Template
@@ -129,38 +77,6 @@ PR DESCRIPTION TEMPLATE:
 │                                                             │
 │ ## Changes                                                  │
 │ - <Bulleted list of specific changes>                       │
-│ - <One line per logical change>                             │
-│                                                             │
-│ ## Testing                                                  │
-│ - <How was this tested?>                                    │
-│ - <New tests added? Which scenarios?>                       │
-│ - <Manual testing steps, if applicable>                     │
-│                                                             │
-│ ## Screenshots (if UI change)                               │
-│ | Before | After |                                          │
-│ |--------|-------|                                          │
-│ | <img>  | <img> |                                          │
-│                                                             │
-│ ## Checklist                                                │
-│ - [ ] Tests passing                                         │
-│ - [ ] Lint clean                                            │
-│ - [ ] Documentation updated                                 │
-│ - [ ] No breaking changes (or documented)                   │
-│ - [ ] Reviewed my own diff before requesting review         │
-│                                                             │
-│ ## Reviewer Notes                                           │
-│ <Anything specific reviewers should focus on?>              │
-│ <Areas of uncertainty where feedback is wanted?>            │
-└─────────────────────────────────────────────────────────────┘
-
-DESCRIPTION ANTI-PATTERNS:
-  ✗ "Fixed the thing"               — What thing? Why?
-  ✗ "See ticket for details"        — PR should be self-contained
-  ✗ No description at all           — Forces reviewers to read every line blind
-  ✗ 500-word essay                  — Keep it scannable
-  ✓ "Fix race condition in checkout that caused duplicate charges
-     when users double-clicked the pay button. Added debounce to the
-     submit handler and idempotency key to the payment API call."
 ```
 
 ### Step 4: Stacked PRs for Large Features
@@ -182,64 +98,6 @@ STACKED PR PATTERN:
 │    │     │     │                                            │
 │    │     │     └─────────────────────────────────            │
 │    │     │                                                  │
-│    │     └───────────────────────────────────────            │
-│    │                                                        │
-│    └─────────────────────────────────────────────            │
-│                                                             │
-│  Merge order: PR 1 → PR 2 → PR 3 → PR 4                   │
-│  Each PR is small, focused, and independently reviewable    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-
-STACKED PR WORKFLOW:
-
-1. Plan the stack:
-   Decompose the feature into ordered, dependent PRs
-   Each PR should be reviewable in < 30 minutes
-   Each PR should pass CI independently
-
-2. Create the branches:
-   git checkout main
-   git checkout -b feat/permissions-model        # PR 1
-   # ... make changes, commit ...
-   git checkout -b feat/permissions-service       # PR 2 (branches from PR 1)
-   # ... make changes, commit ...
-   git checkout -b feat/permissions-api           # PR 3 (branches from PR 2)
-   # ... make changes, commit ...
-
-3. Create PRs with correct base branches:
-   gh pr create --base main --head feat/permissions-model
-   gh pr create --base feat/permissions-model --head feat/permissions-service
-   gh pr create --base feat/permissions-service --head feat/permissions-api
-
-4. Review and merge bottom-up:
-   Merge PR 1 → main (re-target PR 2 to main)
-   Merge PR 2 → main (re-target PR 3 to main)
-   Merge PR 3 → main
-
-RETARGETING AFTER MERGE:
-  When PR 1 merges to main:
-  gh pr edit <PR-2-number> --base main
-  git checkout feat/permissions-service
-  git rebase main
-  git push --force-with-lease
-
-STACKED PR DESCRIPTION:
-  Add to each PR in the stack:
-  "## Stack
-   This is PR 2/4 in the permissions feature stack:
-   1. [x] #101 — Data model (merged)
-   2. [ ] #102 — Service layer (this PR)
-   3. [ ] #103 — API endpoints (depends on this PR)
-   4. [ ] #104 — UI (depends on #103)
-
-   Review this PR independently. It builds on #101."
-
-TOOLING:
-  - ghstack (Meta): automated stacked diffs for GitHub
-  - git-branchless: stacked branch management
-  - Graphite: SaaS for stacked PRs with auto-rebase
-  - spr: simple stacked PR tool
 ```
 
 ### Step 5: Review Request Strategies
@@ -261,48 +119,6 @@ REVIEW REQUEST STRATEGIES:
 CODEOWNERS FILE (.github/CODEOWNERS):
   # Default owner for everything
   * @team-lead
-
-  # Frontend
-  /src/components/  @frontend-team
-  /src/pages/       @frontend-team
-  *.css             @frontend-team
-  *.tsx             @frontend-team
-
-  # Backend
-  /src/api/         @backend-team
-  /src/services/    @backend-team
-  /src/models/      @backend-team
-
-  # Infrastructure
-  /terraform/       @infra-team
-  /docker/          @infra-team
-  /.github/         @devops-lead
-
-  # Security-sensitive
-  /src/auth/        @security-team @team-lead
-  /src/crypto/      @security-team
-
-GETTING REVIEWED FASTER:
-  1. Keep PRs small (< 200 lines)
-  2. Write a clear description (reviewers skim first)
-  3. Self-review before requesting (catch obvious issues)
-  4. Add inline comments on tricky parts (guide the reviewer)
-  5. Tag specific reviewers (don't rely on auto-assignment alone)
-  6. Set urgency: 🔴 blocking / 🟡 normal / 🟢 low priority
-  7. Review others' PRs promptly (reciprocity drives speed)
-  8. Time your requests (morning in the reviewer's timezone)
-
-REVIEW ETIQUETTE:
-  As author:
-  - Respond to all comments (even if just "Done" or "Won't fix because...")
-  - Don't dismiss reviews without explanation
-  - Push fixes as new commits (easier to re-review), squash before merge
-
-  As reviewer:
-  - Review within 4 hours (business hours) — or decline and suggest someone else
-  - Distinguish blockers from suggestions (prefix: "nit:", "blocking:", "question:")
-  - Approve with comments if only nits remain
-  - Don't request changes on style preferences the linter allows
 ```
 
 ### Step 6: Auto-Labeling and Auto-Assignment
@@ -324,31 +140,6 @@ AUTO-LABELING RULES:
 │ Lines changed < 50                 │ size/S                 │
 │ Lines changed 50-200               │ size/M                 │
 │ Lines changed 200-500              │ size/L                 │
-│ Lines changed > 500                │ size/XL, needs-split   │
-│ PR description mentions "breaking" │ breaking-change        │
-│ Files in /src/auth/ or /src/crypto/│ security-review        │
-│ Files match *.sql or *migration*   │ database               │
-└────────────────────────────────────┴────────────────────────┘
-
-GITHUB ACTIONS LABELER (.github/labeler.yml):
-  frontend:
-    - changed-files:
-      - any-glob-to-any-file: ['src/components/**', 'src/pages/**', '*.css', '*.tsx']
-
-  backend:
-    - changed-files:
-      - any-glob-to-any-file: ['src/api/**', 'src/services/**', 'src/models/**']
-
-  infrastructure:
-    - changed-files:
-      - any-glob-to-any-file: ['terraform/**', 'docker/**', '.github/**']
-
-  tests:
-    - changed-files:
-      - any-glob-to-any-file: ['**/*.test.*', '**/*.spec.*']
-### Step 7: PR Metrics and Cycle Time Optimization
-Measure and improve the PR review process:
-
 ```
 PR METRICS DASHBOARD:
 ┌─────────────────────────────────────────────────────────────┐
@@ -480,23 +271,6 @@ WHILE remaining_diff > 200 lines AND current_iteration < 8:
   2. CREATE branch and PR:
      - Branch from previous stack branch (or main for first)
      - Create PR with base = previous branch
-## Multi-Agent Dispatch
-
-For large feature PRs that need splitting across domains:
-
-```
-PARALLEL AGENTS (when feature spans multiple domains):
-Agent 1 — Backend PR (worktree: pr-backend)
-  - Extract backend changes (models, services, migrations)
-  - Create PR with tests passing independently
-
-Agent 2 — API PR (worktree: pr-api)
-  - Extract API layer changes (controllers, serializers, routes)
-  - Base on Agent 1's branch
-
-Agent 3 — Frontend PR (worktree: pr-frontend)
-  - Extract frontend changes (components, pages, styles)
-
 ## HARD RULES
 
 ```
@@ -522,37 +296,6 @@ HARD RULES — NEVER VIOLATE:
 5. **Automate the boring parts.** Labels, assignment, size checks, and template enforcement should be automated. Humans focus on code quality, not metadata.
 6. **Measure and improve.** Track cycle time, review rounds, and PR size. What gets measured gets improved.
 7. **Review others promptly.** PR review is a team sport. If you want fast reviews, review others' PRs fast. The golden rule applies.
-
-## Example Usage
-
-### Creating a well-structured PR
-```
-User: /godmode:pr I've finished the rate limiter feature and need to
-       create a PR.
-
-PR: Assessing PR context...
-
-PR ASSESSMENT:
-Branch: feat/rate-limiter
-Base: main
-Commits: 14
-Files changed: 8
-Lines: +342 / -12
-Size: L (354 lines — consider splitting)
-
-Recommendation: Split into 2 stacked PRs
-
-PR 1: "feat(middleware): add rate limiter core with Redis store"
-  Files: rate-limiter.ts, redis-store.ts, config.ts, tests
-  Size: M (180 lines)
-  Base: main
-
-PR 2: "feat(api): apply rate limiting to public endpoints"
-  Files: routes.ts, middleware-chain.ts, integration tests
-  Size: M (174 lines)
-  Base: PR 1
-
-Creating PR 1...
 
 ## Summary
 Add rate limiting middleware with configurable limits per endpoint
@@ -589,13 +332,6 @@ Labels: backend, feature, size/M
 | (none) | Full PR assessment, sizing, and creation |
 | `--template` | Generate PR description template only |
 | `--split` | Analyze and recommend PR splitting strategy |
-| `--stack` | Create stacked PRs for current feature |
-| `--metrics` | Show PR cycle time metrics for the team |
-| `--labels` | Set up auto-labeling configuration |
-| `--codeowners` | Generate CODEOWNERS file from git history |
-| `--size-check` | Check if current diff is too large |
-| `--self-review` | Run self-review checklist before requesting |
-| `--retarget` | Retarget stacked PRs after a merge |
 
 ## Output Format
 
@@ -637,34 +373,6 @@ The PR skill is complete when ALL of the following are true:
 5. Appropriate reviewers are assigned (1-2 specific people, not the whole team)
 6. PR targets the correct base branch
 7. Stacked PRs (if any) have correct dependency chain and are < 5 deep
-
-## Error Recovery
-
-```
-IF PR is too large (> 400 lines):
-  1. Analyze the diff by concern: refactoring, feature, tests, config
-  2. Split into separate PRs by concern (each independently mergeable)
-  3. Use stacked PRs if changes have dependencies
-  4. If splitting is not possible, add a detailed self-review walkthrough in the description
-
-IF CI fails on the PR:
-  1. Check the specific failing step (test, lint, type check, build)
-  2. Fix locally, push the fix as a new commit (not amend during review)
-  3. If the failure is flaky/unrelated, document it and re-run CI
-  4. Never merge with failing CI
-
-IF reviewers are not responding within 24 hours:
-  1. Send a direct message with a brief summary of the PR
-  2. If still no response, re-assign to a different available reviewer
-  3. Consider the PR may be too large — offer to walk through it
-  4. Set a team SLA for PR review turnaround (recommendation: < 24 hours)
-
-IF stacked PR chain breaks after a merge:
-  1. Retarget child PRs to the new base (the merged PR's target branch)
-  2. Rebase each child PR onto the new base
-  3. Resolve any conflicts introduced by the merge
-  4. Update PR descriptions to reflect the new dependency chain
-```
 
 ## Auto-Detection
 
@@ -731,8 +439,6 @@ WHILE current_iteration < max_iterations:
        - Unresolved TODOs: <N> (target: 0 or explicitly documented)
        - Hardcoded values: <N> (target: 0)
 
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
 ## Keep/Discard Discipline
 ```
 After EACH PR quality gate:
@@ -758,3 +464,10 @@ DO NOT STOP just because:
   - One PR is borderline on size (split it or justify)
   - Reviewers have not responded yet (that is outside this skill's scope)
 ```
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| PR too large (>500 lines) | Split by concern: refactoring in one PR, feature in another. Use stacked PRs if changes are sequential. |
+| CI fails on PR | Read failure output. Fix locally, push. Do not merge with failing CI. Check if failure is flaky (re-run once). |
+| Merge conflicts | Rebase onto target branch. Resolve conflicts locally. Never resolve conflicts in the GitHub UI for complex changes. |
+| Review feedback contradicts existing patterns | Check codebase conventions. If reviewer is correct, fix. If existing pattern is intentional, explain with code reference. |

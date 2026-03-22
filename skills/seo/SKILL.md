@@ -9,811 +9,211 @@ description: |
 ## When to Activate
 - User invokes `/godmode:seo`
 - User says "SEO audit", "check meta tags", "add structured data", "schema markup"
-- User mentions "Core Web Vitals", "LCP", "FID", "CLS", "INP"
+- User mentions "Core Web Vitals", "LCP", "INP", "CLS"
 - User asks about "sitemap", "robots.txt", "Open Graph", "social sharing"
-- Pre-ship quality gate during `/godmode:ship` workflow
-- After content changes, new page creation, or URL restructuring
+- Pre-ship quality gate or after content/URL changes
 - When search ranking drops or Google Search Console reports issues
 
 ## Workflow
 
 ### Step 1: Technical SEO Discovery
-Assess the current SEO posture of the site:
-
 ```
 SEO DISCOVERY:
 Target: <URL / entire site / specific pages>
 Framework: <Next.js | Nuxt | Gatsby | SvelteKit | Astro | static HTML>
 Rendering: <SSR | SSG | CSR | ISR | hybrid>
-Current tools: <Google Search Console | Ahrefs | Semrush | none>
-
-SEO infrastructure:
-  Sitemap: <present at /sitemap.xml | missing>
-  Robots.txt: <present at /robots.txt | missing>
-  Canonical tags: <present | missing | inconsistent>
-  Meta tags: <complete | partial | missing>
-  Structured data: <present | missing>
-  Open Graph: <present | missing>
-  Hreflang: <present | missing | N/A (single language)>
-  HTTPS: <yes | no>
-  Mobile-friendly: <yes | no>
+Infrastructure: Sitemap, Robots.txt, Canonical tags, Meta tags, Structured data, OG, Hreflang, HTTPS, Mobile
 ```
 
 ### Step 2: Meta Tag Audit
-Verify every page has correct, complete meta tags:
-
 ```
-META TAG AUDIT:
-┌─────────────────────────────────────────────────────────────────┐
-│ Page               │ Title       │ Description │ Canonical │ OG │
-├─────────────────────────────────────────────────────────────────┤
-│ /                  │ OK (55 ch)  │ OK (152 ch) │ OK        │ OK │
-│ /about             │ MISSING     │ TOO SHORT   │ OK        │ MISSING │
-│ /blog/:slug        │ OK (48 ch)  │ DUPLICATE   │ MISSING   │ PARTIAL │
-│ /products/:id      │ TOO LONG    │ OK (145 ch) │ OK        │ OK │
-└─────────────────────────────────────────────────────────────────┘
+TITLE: 50-60 chars, unique per page, primary keyword near beginning, brand at end
+DESCRIPTION: 150-160 chars, unique, includes keyword, has call to action
+CANONICAL: Every page must have self-referencing canonical. Trailing slash consistent. No canonical to 404/redirect.
 
-Title tag rules:
-  - Length: 50-60 characters (Google truncates at ~60)
-  - Unique per page
-  - Primary keyword near the beginning
-  - Brand name at the end (separated by | or —)
-
-Meta description rules:
-  - Length: 150-160 characters (Google truncates at ~160)
-  - Unique per page
-  - Contains primary keyword naturally
-  - Includes call to action
-  - No duplicate descriptions across pages
-
-Canonical tag rules:
-  - Every page must have a self-referencing canonical
-  - Paginated pages point to canonical (or use rel=prev/next)
-  - HTTP pages canonical to HTTPS version
-  - Trailing slash consistency (pick one, enforce everywhere)
-  - No canonical pointing to 404 or redirect
+MINIMUM META TAGS PER PAGE:
+  <title>, <meta description>, <link canonical>, <meta robots>
+  OG: og:type, og:title, og:description, og:image (1200x630), og:url, og:site_name
+  Twitter: twitter:card, twitter:title, twitter:description, twitter:image
+  JSON-LD structured data (see Step 3)
 ```
 
-#### Meta Tag Implementation
-```html
-<!-- Minimum required meta tags per page -->
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Primary Keyword — Secondary Keyword | Brand</title>
-  <meta name="description" content="Compelling 150-160 char description with keyword.">
-  <link rel="canonical" href="https://example.com/current-page">
-  <meta name="robots" content="index, follow">
+### Step 3: Structured Data (Schema.org JSON-LD)
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Page Title">
-  <meta property="og:description" content="Description for social sharing.">
-  <meta property="og:image" content="https://example.com/og-image-1200x630.jpg">
-  <meta property="og:url" content="https://example.com/current-page">
-  <meta property="og:site_name" content="Brand Name">
+Common types to implement per page type:
+- **Homepage**: Organization (name, url, logo, sameAs, contactPoint)
+- **Blog posts**: Article (headline, author, datePublished, dateModified, image, publisher)
+- **Products**: Product (name, image, description, brand, offers with price/availability, aggregateRating)
+- **FAQ**: FAQPage (mainEntity with Question/Answer pairs)
+- **Breadcrumbs**: BreadcrumbList (itemListElement with position, name, item)
+- **Search**: WebSite + SearchAction for sitelinks search box
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Page Title">
-  <meta name="twitter:description" content="Description for Twitter.">
-  <meta name="twitter:image" content="https://example.com/twitter-card-1200x628.jpg">
-
-  <!-- Structured Data (JSON-LD) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Page Title",
-    "description": "Page description"
-  }
-  </script>
-</head>
-```
-
-### Step 3: Structured Data & Schema.org Implementation
-Add and validate schema.org markup for rich search results:
-
-```
-STRUCTURED DATA AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Page Type        │ Schema Type        │ Status    │ Rich Result  │
-├──────────────────────────────────────────────────────────────────┤
-│ Homepage         │ Organization       │ VALID     │ Knowledge    │
-│ Product pages    │ Product            │ MISSING   │ Product card │
-│ Blog posts       │ Article            │ PARTIAL   │ Article      │
-│ FAQ page         │ FAQPage            │ MISSING   │ FAQ          │
-│ Contact page     │ LocalBusiness      │ MISSING   │ Map pack     │
-│ Breadcrumbs      │ BreadcrumbList     │ MISSING   │ Breadcrumbs  │
-│ Search           │ WebSite+SearchAction│ MISSING  │ Sitelinks    │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-#### Common Schema.org Templates
-
-**Organization:**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Company Name",
-  "url": "https://example.com",
-  "logo": "https://example.com/logo.png",
-  "sameAs": [
-    "https://twitter.com/company",
-    "https://linkedin.com/company/company"
-  ],
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "telephone": "+1-800-555-0199",
-    "contactType": "customer service"
-  }
-}
-```
-
-**Article (Blog Post):**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "Article Title",
-  "author": {
-    "@type": "Person",
-    "name": "Author Name"
-  },
-  "datePublished": "2026-01-15",
-  "dateModified": "2026-03-01",
-  "image": "https://example.com/article-image.jpg",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Publisher Name",
-    "logo": { "@type": "ImageObject", "url": "https://example.com/logo.png" }
-  }
-}
-```
-
-**Product:**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  "name": "Product Name",
-  "image": "https://example.com/product.jpg",
-  "description": "Product description",
-  "brand": { "@type": "Brand", "name": "Brand" },
-  "offers": {
-    "@type": "Offer",
-    "price": "29.99",
-    "priceCurrency": "USD",
-    "availability": "https://schema.org/InStock"
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.5",
-    "reviewCount": "89"
-  }
-}
-```
-
-**FAQ Page:**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Question text here?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Answer text here."
-      }
-    }
-  ]
-}
-```
-
-**BreadcrumbList:**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://example.com" },
-    { "@type": "ListItem", "position": 2, "name": "Category", "item": "https://example.com/category" },
-    { "@type": "ListItem", "position": 3, "name": "Current Page" }
-  ]
-}
-```
-
-#### Validation
-```bash
-# Validate structured data with Google's Rich Results Test
-npx structured-data-testing-tool --url https://example.com
-
-# Validate JSON-LD syntax
-npx jsonld-lint schema.json
-
-# Test with Schema.org validator
-# https://validator.schema.org (manual browser test)
-# https://search.google.com/test/rich-results (manual browser test)
-```
+Validate with Google Rich Results Test and Schema.org validator. Structured data MUST match visible page content.
 
 ### Step 4: Sitemap & Robots.txt
-Validate and generate sitemap and robots.txt:
 
-#### Sitemap Validation
 ```
 SITEMAP AUDIT:
-Location: /sitemap.xml
-Format: XML (standard) / XML index (multi-sitemap)
-Pages listed: <N>
-Pages on site: <N>
+  Location: /sitemap.xml. Format: XML. Check: missing pages, dead URLs, non-canonical URLs,
+  missing lastmod, size limits (50MB / 50K URLs → split). Must be in robots.txt.
 
-Issues:
-- [ ] Missing pages: <list of pages not in sitemap>
-- [ ] Dead pages: <sitemap URLs returning 404>
-- [ ] Non-canonical URLs in sitemap
-- [ ] Missing lastmod dates
-- [ ] Sitemap size > 50MB or > 50,000 URLs (needs splitting)
-- [ ] Sitemap not referenced in robots.txt
+ROBOTS.TXT:
+  Allow important pages. Block admin/login/API/internal and duplicate params (?sort=, ?filter=).
+  Reference sitemap. NEVER block CSS/JS (search engines need to render).
 ```
 
-```xml
-<!-- sitemap.xml template -->
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://example.com/</loc>
-    <lastmod>2026-03-19</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://example.com/about</loc>
-    <lastmod>2026-02-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-</urlset>
-```
-
-#### Robots.txt Validation
-```
-ROBOTS.TXT AUDIT:
-Location: /robots.txt
-
-Rules:
-- [ ] Allows search engine crawling of important pages
-- [ ] Blocks admin/login/API/internal pages
-- [ ] Blocks duplicate content paths (?sort=, ?filter=)
-- [ ] References sitemap location
-- [ ] Does not accidentally block CSS/JS (breaks rendering)
-- [ ] Crawl-delay is reasonable (or absent for major engines)
-```
+### Step 5: Core Web Vitals
 
 ```
-# robots.txt template
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /internal/
-Disallow: /*?sort=
-Disallow: /*?filter=
-Disallow: /*?page=
+TARGETS: LCP < 2.5s, INP < 200ms, CLS < 0.1
 
-Sitemap: https://example.com/sitemap.xml
+LCP FIXES: Preload LCP image, responsive srcset/sizes, modern formats (WebP/AVIF),
+  inline critical CSS, reduce TTFB, defer non-critical JS/CSS, CDN, fetchpriority="high"
+
+CLS FIXES: Explicit width/height on images/videos, aspect-ratio CSS, reserve space for ads/embeds,
+  preload fonts, font-display:optional/swap, avoid inserting above existing content, transform animations
+
+INP FIXES: Break long tasks (>50ms) with yield, requestIdleCallback, web workers,
+  debounce/throttle inputs, minimize DOM (<1500 elements), content-visibility:auto
 ```
 
-### Step 5: Core Web Vitals Optimization
-Measure and optimize Google's Core Web Vitals:
-
+### Step 6: Open Graph & Social Sharing
 ```
-CORE WEB VITALS REPORT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Metric   │ Value    │ Target   │ Status │ Impact               │
-├──────────────────────────────────────────────────────────────────┤
-│ LCP      │ 3.8s     │ < 2.5s   │ POOR   │ Largest content slow │
-│ INP      │ 150ms    │ < 200ms  │ GOOD   │ Interactions fast    │
-│ CLS      │ 0.18     │ < 0.1    │ POOR   │ Layout shifts        │
-│ FCP      │ 2.1s     │ < 1.8s   │ NEEDS  │ First paint slow     │
-│ TTFB     │ 450ms    │ < 200ms  │ POOR   │ Server response slow │
-└──────────────────────────────────────────────────────────────────┘
+OG Image: min 1200x630 (Facebook/LinkedIn), JPG/PNG < 8MB, absolute URL, publicly accessible.
+Test: Facebook Debugger, Twitter Card Validator, LinkedIn Post Inspector.
 ```
 
-```bash
-# Measure Core Web Vitals with Lighthouse
-npx lighthouse https://example.com --only-categories=performance --output=json --output-path=./cwv-report.json
-
-# Web Vitals JavaScript library for real user monitoring
-npm install web-vitals
+### Step 7: SEO Monitoring
 ```
+Track: Organic traffic (GA weekly), Search impressions/clicks (Search Console weekly),
+  Keyword rankings (Ahrefs/Semrush weekly), CWV field data (CrUX monthly),
+  CWV lab data (Lighthouse CI every deploy), Crawl errors, Structured data errors.
 
-#### LCP Optimization (Largest Contentful Paint)
-```
-LCP DIAGNOSIS:
-LCP element: <img src="hero.jpg" /> (or <h1>, <video>, <div with background-image>)
-Current LCP: <value>
-
-Optimization checklist:
-- [ ] Preload LCP image: <link rel="preload" as="image" href="hero.jpg">
-- [ ] Use responsive images with srcset and sizes
-- [ ] Serve modern formats (WebP, AVIF) with <picture> fallback
-- [ ] Inline critical CSS (above-the-fold styles)
-- [ ] Reduce server response time (TTFB < 200ms)
-- [ ] Remove render-blocking resources (defer non-critical JS/CSS)
-- [ ] Use CDN for static assets
-- [ ] Set fetchpriority="high" on LCP image
-```
-
-#### CLS Optimization (Cumulative Layout Shift)
-```
-CLS DIAGNOSIS:
-Layout shift sources:
-  1. <element> shifts by <value> at <timestamp>
-  2. <element> shifts by <value> at <timestamp>
-
-Optimization checklist:
-- [ ] Set explicit width/height on all images and videos
-- [ ] Use aspect-ratio CSS property for responsive containers
-- [ ] Reserve space for ads/embeds with min-height
-- [ ] Preload web fonts to prevent FOIT/FOUT shifts
-- [ ] Use font-display: optional or swap with size-adjust
-- [ ] Avoid inserting content above existing content dynamically
-- [ ] Use transform animations instead of top/left/width/height
-- [ ] Set contain: layout on dynamic containers
-```
-
-#### INP Optimization (Interaction to Next Paint)
-```
-INP DIAGNOSIS:
-Slowest interactions:
-  1. <element> click: <value>ms (processing: <value>ms)
-  2. <element> input: <value>ms (processing: <value>ms)
-
-Optimization checklist:
-- [ ] Break long tasks (> 50ms) with yield to main thread
-- [ ] Defer non-critical event handlers with requestIdleCallback
-- [ ] Use web workers for heavy computation
-- [ ] Debounce/throttle rapid input handlers
-- [ ] Minimize DOM size (target < 1,500 elements)
-- [ ] Avoid forced synchronous layouts in event handlers
-- [ ] Use content-visibility: auto for off-screen content
-```
-
-### Step 6: Open Graph & Social Media Meta
-Optimize how pages appear when shared on social platforms:
-
-```
-SOCIAL SHARING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│ Page         │ OG Title │ OG Desc │ OG Image │ Twitter │ Result │
-├──────────────────────────────────────────────────────────────────┤
-│ /            │ OK       │ OK      │ OK (1200x630) │ OK  │ PASS   │
-│ /blog/:slug  │ OK       │ MISSING │ MISSING       │ MISSING │ FAIL │
-│ /product/:id │ OK       │ OK      │ WRONG SIZE    │ OK  │ WARN   │
-└──────────────────────────────────────────────────────────────────┘
-
-OG Image requirements:
-  - Minimum: 1200x630 pixels (Facebook/LinkedIn optimal)
-  - Twitter large card: 1200x628 pixels
-  - Format: JPG or PNG (< 8MB)
-  - Must be absolute URL (not relative path)
-  - Must be publicly accessible (no auth required)
-```
-
-```bash
-# Test Open Graph tags
-npx open-graph-scraper --url https://example.com
-
-# Preview social cards
-# https://developers.facebook.com/tools/debug/ (Facebook)
-# https://cards-dev.twitter.com/validator (Twitter)
-# https://www.linkedin.com/post-inspector/ (LinkedIn)
-```
-
-### Step 7: SEO Monitoring & Keyword Tracking
-Set up ongoing SEO monitoring:
-
-```
-SEO MONITORING SETUP:
-┌──────────────────────────────────────────────────────────────────┐
-│ Metric                    │ Tool              │ Frequency        │
-├──────────────────────────────────────────────────────────────────┤
-│ Organic traffic           │ Google Analytics   │ Weekly           │
-│ Search impressions/clicks │ Search Console     │ Weekly           │
-│ Keyword rankings          │ Ahrefs/Semrush     │ Weekly           │
-│ Core Web Vitals (field)   │ CrUX / Search Console │ Monthly      │
-│ Core Web Vitals (lab)     │ Lighthouse CI      │ Every deploy     │
-│ Crawl errors              │ Search Console     │ Weekly           │
-│ Backlink profile          │ Ahrefs/Semrush     │ Monthly          │
-│ Structured data errors    │ Search Console     │ Weekly           │
-│ Mobile usability          │ Search Console     │ Monthly          │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-#### Lighthouse CI Integration
-```bash
-# Install Lighthouse CI
-npm install -g @lhci/cli
-
-# Configure .lighthouserc.js
-cat > .lighthouserc.js << 'LHRC'
-module.exports = {
-  ci: {
-    collect: {
-      url: ['http://localhost:3000/', 'http://localhost:3000/blog', 'http://localhost:3000/product/1'],
-      numberOfRuns: 3,
-    },
-    assert: {
-      assertions: {
-        'categories:performance': ['error', { minScore: 0.9 }],
-        'categories:seo': ['error', { minScore: 0.9 }],
-        'first-contentful-paint': ['warn', { maxNumericValue: 1800 }],
-        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
-        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-        'interactive': ['warn', { maxNumericValue: 3800 }],
-      },
-    },
-    upload: {
-      target: 'temporary-public-storage',
-    },
-  },
-};
-LHRC
-
-# Run Lighthouse CI
-lhci autorun
+Lighthouse CI: Configure assertions for performance >= 0.9, seo >= 0.9, LCP < 2500, CLS < 0.1.
 ```
 
 ### Step 8: SEO Findings Report
+For each issue: severity (CRITICAL/HIGH/MEDIUM/LOW), category, affected pages, evidence, impact, remediation code, verification method.
 
-For each issue found:
-```
-### SEO FINDING <N>: <Title>
-**Severity:** CRITICAL | HIGH | MEDIUM | LOW
-**Category:** Meta Tags | Structured Data | Core Web Vitals | Crawlability | Social | Content
-**Page(s):** <affected URLs or file paths>
-**Evidence:**
-  <current state — missing tag, wrong value, poor metric>
+- **CRITICAL**: Site not indexable (robots.txt blocks, noindex, no sitemap, canonical loops)
+- **HIGH**: Missing meta descriptions, no structured data on products, CWV failing, broken OG
+- **MEDIUM**: Duplicate descriptions, missing alt text, suboptimal CWV, incomplete schema
+- **LOW**: Missing hreflang (single-language), suboptimal title length
 
-**Impact:**
-  <how this affects search ranking, click-through rate, or indexing>
-
-**Remediation:**
-```html
-<!-- The fix -->
-<fixed code>
-```
-
-**Verification:**
-  <how to confirm the fix — tool command, validator URL, or metric check>
-```
-
-Severity definitions:
-- **CRITICAL**: Site not indexable. Blocked by robots.txt, noindex on important pages, no sitemap, broken canonical loops. Immediate revenue impact.
-- **HIGH**: Significant ranking/CTR loss. Missing meta descriptions, no structured data on product pages, Core Web Vitals failing, broken Open Graph images.
-- **MEDIUM**: Suboptimal performance. Duplicate meta descriptions, missing alt text, slow LCP but within thresholds, incomplete schema markup.
-- **LOW**: Minor improvements. Missing hreflang for single-language sites, suboptimal title length, missing secondary structured data types.
-
-### Step 9: Auto-Fix Common SEO Issues
-Apply automated fixes for straightforward issues:
-
-```
-AUTO-FIXABLE SEO ISSUES:
-1. Add missing meta description tags
-2. Add canonical tags (self-referencing)
-3. Generate sitemap.xml from page routes
-4. Generate robots.txt with sensible defaults
-5. Add Open Graph meta tags (derive from existing meta)
-6. Add JSON-LD structured data (Organization, BreadcrumbList)
-7. Add width/height attributes to images (CLS fix)
-8. Add fetchpriority="high" to LCP image
-9. Add preload link for LCP resource
-10. Fix image alt text (flag empty alt on non-decorative images)
-```
-
-For each auto-fix:
-```
-FIX <N>: <description>
-File: <path>
-Before: <original code>
-After: <fixed code>
-SEO impact: <what this improves — indexing, ranking, CTR, CWV>
-```
+### Step 9: Auto-Fix Common Issues
+Auto-fixable: missing meta descriptions, canonical tags, sitemap generation, robots.txt defaults, OG tags, JSON-LD (Organization, BreadcrumbList), image width/height (CLS), fetchpriority on LCP, preload LCP resource, flag empty alt text.
 
 ### Step 10: SEO Report
-
 ```
-+------------------------------------------------------------+
-|  SEO AUDIT — <target>                                       |
-+------------------------------------------------------------+
-|  Technical SEO:                                             |
-|  Meta tags: <complete/partial/missing> (<N> pages checked)  |
-|  Canonical tags: <OK/issues found>                          |
-|  Sitemap: <valid/invalid/missing>                           |
-|  Robots.txt: <valid/invalid/missing>                        |
-|  HTTPS: <yes/no>                                            |
-|  Mobile-friendly: <yes/no>                                  |
-|                                                             |
-|  Core Web Vitals:                                           |
-|  LCP: <value> (target: < 2.5s) — <GOOD/NEEDS IMPROVEMENT/POOR>  |
-|  INP: <value> (target: < 200ms) — <GOOD/NEEDS IMPROVEMENT/POOR> |
-|  CLS: <value> (target: < 0.1) — <GOOD/NEEDS IMPROVEMENT/POOR>   |
-|                                                             |
-|  Structured Data:                                           |
-|  Schema types: <N> implemented, <N> recommended             |
-|  Validation: <all valid/N errors>                           |
-|  Rich result eligible: <list of types>                      |
-|                                                             |
-|  Social Sharing:                                            |
-|  Open Graph: <complete/partial/missing>                     |
-|  Twitter Cards: <complete/partial/missing>                  |
-|                                                             |
-|  Findings: <total>                                          |
-|    CRITICAL: <N>  HIGH: <N>  MEDIUM: <N>  LOW: <N>         |
-|                                                             |
-|  Lighthouse SEO Score: <N>/100                              |
-|  Lighthouse Performance Score: <N>/100                      |
-|                                                             |
-|  Auto-fixed: <N> issues                                     |
-|  Manual fix required: <N> issues                            |
-|                                                             |
-|  Verdict: <PASS | NEEDS WORK | FAIL>                       |
-+------------------------------------------------------------+
-|  Priority fixes:                                            |
-|  1. <highest impact finding>                                |
-|  2. <second highest impact finding>                         |
-|  3. <third highest impact finding>                          |
-+------------------------------------------------------------+
+SEO AUDIT — <target>:
+  Meta tags: <status> (<N> pages), Canonical: <status>, Sitemap: <status>, Robots.txt: <status>
+  CWV: LCP <N>s, INP <N>ms, CLS <N>
+  Structured data: <N> types, Validation: <status>, Rich result eligible: <types>
+  Social: OG <status>, Twitter Cards <status>
+  Findings: CRITICAL:<N> HIGH:<N> MEDIUM:<N> LOW:<N>
+  Lighthouse: SEO <N>/100, Performance <N>/100
+  Verdict: PASS (>=90, all CWV good, no CRITICAL/HIGH) | NEEDS WORK (>=70) | FAIL (<70 or CRITICAL)
 ```
 
-Verdicts:
-- **PASS**: Lighthouse SEO >= 90, all CWV in "Good" range, no CRITICAL/HIGH findings.
-- **NEEDS WORK**: Lighthouse SEO >= 70, CWV mostly acceptable, HIGH findings with remediation path.
-- **FAIL**: Lighthouse SEO < 70, or any CRITICAL finding, or CWV in "Poor" range.
-
-### Step 11: Commit and Transition
-1. Save report as `docs/seo/<target>-seo-audit.md`
-2. If auto-fixes were applied, commit: `"seo: <target> — fix <N> SEO issues"`
-3. Commit report: `"seo: <target> — <verdict> (Lighthouse: <N>/100, CWV: <status>)"`
-4. If FAIL: "Critical SEO issues found. Fix the priority items, then re-audit with `/godmode:seo`."
-5. If PASS: "SEO audit passed. Ready for `/godmode:ship`."
+Commit: `"seo: <target> — fix <N> issues"` or `"seo: <target> — <verdict> (Lighthouse: <N>/100)"`
 
 ## Key Behaviors
 
-1. **Crawlability is the foundation.** If search engines cannot crawl and index the site, nothing else matters. Fix robots.txt, sitemap, and canonical tags first.
-2. **Core Web Vitals affect ranking.** Google uses CWV as a ranking signal. LCP, INP, and CLS are not optional performance metrics — they directly impact search visibility.
-3. **Structured data earns rich results.** JSON-LD markup does not directly improve ranking, but rich results dramatically improve click-through rates. Implement schema.org for every eligible page type.
-4. **Meta tags are the sales pitch.** Title and description are what users see in search results. Write them for humans (compelling, actionable) while including target keywords naturally.
-5. **Open Graph is not optional.** Every page shared on social media needs proper OG tags. A missing OG image means an ugly, text-only card that nobody clicks.
-6. **Measure with field data, not just lab data.** Lighthouse scores are lab measurements. Real user data from CrUX or web-vitals library reflects actual user experience. Both matter.
-7. **SEO is ongoing, not a one-time fix.** Set up monitoring, run audits on every deploy, and track rankings over time. A site that was optimized six months ago may have regressed.
-
-## Example Usage
-
-### Full SEO audit
-```
-User: /godmode:seo
-
-SEO: Discovering site structure...
-
-SEO DISCOVERY:
-Target: https://example.com (Next.js SSR)
-Pages: 47 routes detected
-Sitemap: Present (43 URLs — missing 4 pages)
-Robots.txt: Present (2 issues)
-
-Running meta tag audit...
-  Complete: 38/47 pages
-  Missing descriptions: 6 pages
-  Duplicate titles: 3 pages
-
-Running structured data audit...
-  Organization: present, valid
-  BreadcrumbList: missing (recommended)
-  Article: present on 12/20 blog posts
-  Product: missing on all product pages (HIGH impact)
-
-Core Web Vitals (Lighthouse):
-  LCP: 3.2s (NEEDS IMPROVEMENT — hero image not preloaded)
-  INP: 120ms (GOOD)
-  CLS: 0.15 (POOR — images without dimensions)
-
-Auto-fixing 8 issues...
-Manual fix required for 5 issues.
-
-Verdict: NEEDS WORK — Lighthouse SEO: 82/100, 2 HIGH findings.
-```
-
-### Structured data only
-```
-User: /godmode:seo --schema-only
-
-SEO: Auditing structured data...
-
-Found 3 schema types. Recommending 5 additional:
-  1. Product (all /product/* pages) — enables product rich results
-  2. FAQPage (/faq) — enables FAQ rich results
-  3. BreadcrumbList (all pages) — enables breadcrumb display
-  4. SearchAction (homepage) — enables sitelinks search box
-  5. Review (product pages) — enables star ratings in search
-
-Generating JSON-LD for each page type...
-```
+1. **Crawlability first.** Fix robots.txt, sitemap, canonicals before anything else.
+2. **CWV affects ranking.** LCP, INP, CLS are Google ranking signals.
+3. **Structured data earns rich results.** JSON-LD dramatically improves CTR.
+4. **Meta tags are the sales pitch.** Write for humans with natural keywords.
+5. **Open Graph is not optional.** Missing OG = ugly social cards nobody clicks.
+6. **Measure with field data, not just lab.** CrUX + web-vitals for real user experience.
+7. **SEO is ongoing.** Audit every deploy, track rankings over time.
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full SEO audit (meta, schema, CWV, social, crawlability) |
-| `--meta-only` | Audit meta tags only (title, description, canonical) |
-| `--schema-only` | Structured data audit and implementation only |
-| `--cwv` | Core Web Vitals analysis only |
-| `--social` | Open Graph and Twitter Card audit only |
-| `--sitemap` | Sitemap and robots.txt audit only |
-| `--page <url>` | Audit a specific page |
-| `--fix` | Auto-fix issues after audit |
-| `--monitor` | Set up ongoing SEO monitoring (Lighthouse CI) |
-| `--ci` | CI-friendly output (exit code 1 on failure) |
+| (none) | Full SEO audit |
+| `--meta-only` | Meta tags only |
+| `--schema-only` | Structured data only |
+| `--cwv` | Core Web Vitals only |
+| `--social` | Open Graph / Twitter Cards only |
+| `--sitemap` | Sitemap / robots.txt only |
+| `--page <url>` | Audit specific page |
+| `--fix` | Auto-fix after audit |
+| `--monitor` | Set up Lighthouse CI |
+| `--ci` | CI-friendly output (exit 1 on failure) |
 
 ## Auto-Detection
-
 ```
-AUTO-DETECT: framework (Next.js/Nuxt/Gatsby/Astro), SSR/SSG config, meta tag library
-(next/head, react-helmet, vue-meta), structured data (application/ld+json), sitemap
-(public/sitemap.xml), robots.txt, analytics (GA, Search Console), canonical tags,
-image optimization (next/image, sharp, WebP/AVIF).
-```
-
-## Iterative SEO Audit Loop
-
-```
-current_iteration = 0
-max_iterations = 10
-pages_to_audit = [list of page types/routes to audit]
-
-WHILE pages_to_audit is not empty AND current_iteration < max_iterations:
-    page = pages_to_audit.pop(0)
-    1. Check meta tags: title (50-60 chars), description (150-160 chars), canonical URL
-    2. Check structured data: validate JSON-LD against schema.org, test with Rich Results Test
-    3. Check Core Web Vitals: LCP < 2.5s, INP < 200ms, CLS < 0.1
-    4. Check images: alt text, dimensions, srcset, lazy loading, modern formats
-    5. Check heading hierarchy: single H1, logical H2-H6 nesting
-    6. Check internal linking: orphan pages, broken links, anchor text quality
-    7. Auto-fix what's possible (missing dimensions, missing alt text placeholders)
-    8. Flag manual fixes required with priority (HIGH/MEDIUM/LOW)
-    9. IF Lighthouse SEO < 90 → identify and fix blocking issues
-    10. IF passing → commit: "seo: audit + fix <page> (Lighthouse SEO: <score>)"
-    11. current_iteration += 1
-
-POST-LOOP: Generate sitemap, verify robots.txt, submit to Search Console
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENT DISPATCH (3 worktrees):
-  Agent 1 — "seo-meta": meta tags, canonical URLs, Open Graph, Twitter Cards per page type
-  Agent 2 — "seo-schema": JSON-LD structured data for all page types
-  Agent 3 — "seo-performance": Core Web Vitals fixes, image optimization, Lighthouse CI setup
-
-MERGE ORDER: meta → schema → performance (meta and schema are content, performance is optimization)
-CONFLICT ZONES: head/metadata components, layout files (coordinate on head structure first)
+Detect: framework, SSR/SSG config, meta tag library (next/head, react-helmet, vue-meta),
+JSON-LD, sitemap, robots.txt, analytics, canonical tags, image optimization.
 ```
 
 ## HARD RULES
 
+1. EVERY page: unique title (50-60 chars) and meta description (150-160 chars).
+2. EVERY page: canonical URL. No duplicate content without canonicalization.
+3. EVERY image: alt text. Decorative = alt="" (empty, not missing).
+4. NEVER client-side render SEO-critical content. SSR/SSG for indexable pages.
+5. Structured data MUST match visible content. Fake markup = manual penalty.
+6. Sitemap MUST be auto-generated and updated on deploy.
+7. EVERY page: single H1 tag with logical heading hierarchy.
+8. CWV targets: LCP < 2.5s, INP < 200ms, CLS < 0.1. Non-negotiable.
+9. NEVER block CSS/JS in robots.txt.
+10. EVERY SPA route change: update document title and push to analytics.
+
+## Iterative Audit Loop
 ```
-MECHANICAL CONSTRAINTS — NEVER VIOLATE:
-1. EVERY page must have a unique title (50-60 chars) and meta description (150-160 chars).
-2. EVERY page must have a canonical URL. No duplicate content without canonicalization.
-3. EVERY image must have alt text. Decorative images get alt="" (empty, not missing).
-4. NEVER use client-side rendering for SEO-critical content. SSR/SSG for indexable pages.
-5. Structured data MUST match visible page content. Fake markup = manual penalty.
-6. Sitemap MUST be auto-generated and updated on deploy. Stale sitemaps waste crawl budget.
-7. EVERY page must have a single H1 tag. Multiple H1s confuse document structure.
-8. Core Web Vitals targets: LCP < 2.5s, INP < 200ms, CLS < 0.1. Non-negotiable.
-9. NEVER block CSS/JS in robots.txt. Search engines need to render pages.
-10. EVERY route change in SPA must update the document title and push to analytics.
+FOR EACH page type:
+  Check meta tags, structured data, CWV, images, headings, internal links.
+  Auto-fix what possible, flag manual fixes with priority.
+  If Lighthouse SEO < 90 → fix blocking issues.
+POST-LOOP: Generate sitemap, verify robots.txt, submit to Search Console.
+```
+
+## Multi-Agent Dispatch
+```
+Agent 1 — seo-meta: meta tags, canonical URLs, OG, Twitter Cards
+Agent 2 — seo-schema: JSON-LD structured data for all page types
+Agent 3 — seo-performance: CWV fixes, image optimization, Lighthouse CI
+MERGE: meta → schema → performance. Coordinate on head structure.
 ```
 
 ## Output Format
-
-After each SEO skill invocation, emit a structured report:
-
 ```
 SEO AUDIT REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Pages audited      │  <N>                            │
-│  Meta tags fixed    │  <N>                            │
-│  Structured data    │  <N> schemas added/updated      │
-│  Canonical URLs     │  <N> set / <N> missing          │
-│  Core Web Vitals    │  LCP: <N>s  INP: <N>ms  CLS: <N>│
-│  Lighthouse SEO     │  <N>/100                        │
-│  Sitemap            │  <N> URLs, auto-generated: YES/NO│
-│  Robots.txt         │  Valid: YES/NO                  │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
+  Pages: <N>, Meta fixed: <N>, Schemas: <N>, Canonicals: <N>/<N>
+  CWV: LCP <N>s, INP <N>ms, CLS <N>
+  Lighthouse SEO: <N>/100, Sitemap: <status>, Robots.txt: <status>
+  Verdict: PASS | NEEDS REVISION
 ```
 
 ## TSV Logging
-
-Log every SEO action for tracking:
-
-```
-timestamp	skill	page	action	metric	before	after	status
-2026-03-20T14:00:00Z	seo	/home	meta_title	length	0	58	fixed
-2026-03-20T14:01:00Z	seo	/product	structured_data	Product	missing	added	fixed
-2026-03-20T14:02:00Z	seo	/blog	core_web_vitals	LCP	3.8s	2.1s	improved
-```
+Append to `.godmode/seo-results.tsv`: `timestamp	skill	page	action	metric	before	after	status`
 
 ## Success Criteria
-
-The SEO skill is complete when ALL of the following are true:
-1. Every page has a unique meta title (50-60 chars) and meta description (150-160 chars)
-2. Every page has a canonical URL set
-3. Structured data (JSON-LD) validates with zero errors in Google Rich Results Test
-4. Core Web Vitals meet targets: LCP < 2.5s, INP < 200ms, CLS < 0.1
-5. Lighthouse SEO score >= 90
-6. Sitemap is auto-generated and referenced in robots.txt
-7. Every page has a single H1 tag and logical heading hierarchy
-8. Open Graph and Twitter Card meta tags are present on all shareable pages
+1. Every page: unique title + description. 2. Every page: canonical URL. 3. JSON-LD validates (0 errors). 4. CWV targets met. 5. Lighthouse SEO >= 90. 6. Sitemap auto-generated in robots.txt. 7. Single H1 per page. 8. OG + Twitter Cards on all shareable pages.
 
 ## Error Recovery
-
 ```
-IF Lighthouse SEO score is below 90:
-  1. Review the specific failing audits in the Lighthouse report
-  2. Fix in priority order: missing titles > missing descriptions > missing alt text > crawl issues
-  3. Re-run Lighthouse after each batch of fixes
-  4. If score remains low, check for blocked resources in robots.txt
-
-IF structured data validation fails:
-  1. Paste the JSON-LD into Google Rich Results Test (https://search.google.com/test/rich-results)
-  2. Fix required fields first (name, description for Article; name, image for Product)
-  3. Ensure JSON-LD values match visible page content (no fabricated data)
-  4. Re-validate after each fix
-
-IF Core Web Vitals fail:
-  1. LCP > 2.5s: optimize largest image (compress, add srcset, preload), reduce server response time
-  2. INP > 200ms: profile long tasks, break up heavy JavaScript, defer non-critical scripts
-  3. CLS > 0.1: add explicit width/height to images/video, avoid injecting content above the fold
-  4. Re-measure with PageSpeed Insights after each optimization
-
-IF sitemap generation fails:
-  1. Verify the sitemap plugin/script is installed and configured
-  2. Check build output for sitemap.xml in the correct public directory
-  3. Validate sitemap XML syntax at https://www.xml-sitemaps.com/validate-xml-sitemap.html
-  4. Ensure robots.txt contains: Sitemap: https://<domain>/sitemap.xml
+Lighthouse SEO < 90 → fix: missing titles > descriptions > alt text > crawl issues.
+Structured data fails → fix required fields, ensure data matches visible content.
+CWV fails → LCP: optimize images/TTFB. INP: break long tasks. CLS: add dimensions.
+Sitemap fails → verify plugin, check build output, validate XML syntax.
 ```
 
 ## Keep/Discard Discipline
 ```
-After EACH SEO optimization:
-  1. MEASURE: Run Lighthouse SEO + Performance, validate structured data, check crawlability.
-  2. COMPARE: Did Lighthouse SEO score hold or improve? Did CWV metrics hold or improve?
-  3. DECIDE:
-     - KEEP if Lighthouse SEO >= previous AND CWV metrics held AND structured data validates.
-     - DISCARD if Lighthouse SEO dropped OR CWV regressed OR structured data has errors.
-  4. COMMIT kept changes. Revert discarded changes before the next optimization.
-
-Never keep structured data that does not match visible page content.
-Never keep a change that blocks CSS/JS in robots.txt.
+KEEP if Lighthouse SEO >= previous AND CWV held AND structured data validates.
+DISCARD if SEO dropped OR CWV regressed OR structured data errors.
+Never keep structured data that doesn't match visible content.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Lighthouse SEO >= 95 AND LCP < 2.5s AND INP < 200ms AND CLS < 0.1
-  - All pages have unique titles, descriptions, canonicals, and valid structured data
-  - User explicitly requests stop
-  - Max iterations (10) reached
+STOP when: Lighthouse SEO >= 95 AND LCP < 2.5s AND INP < 200ms AND CLS < 0.1
+  AND all pages have titles/descriptions/canonicals/valid structured data
+  OR user requests stop OR max 10 iterations
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run SEO tasks sequentially: meta tags/canonicals, then JSON-LD structured data, then Core Web Vitals/performance.
-- Use branch isolation per task: `git checkout -b godmode-seo-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` unavailable. Branch per task. See `adapters/shared/sequential-dispatch.md`.

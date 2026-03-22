@@ -61,22 +61,6 @@ FAILURE DOMAIN MAP:
 │                  │ Container/VM host       │ Service relocation│
 ├──────────────────────────────────────────────────────────────┤
 │  Storage         │ Primary database        │ Read/write loss  │
-│                  │ Read replicas           │ Read degradation │
-│                  │ Cache (Redis/Memcached) │ Performance drop │
-│                  │ File storage (S3/GCS)   │ Upload/download  │
-│                  │ Message queue           │ Async processing │
-├──────────────────────────────────────────────────────────────┤
-│  Dependencies    │ Auth provider (OAuth)   │ Login broken     │
-│                  │ Payment gateway         │ Checkout broken  │
-│                  │ Email/SMS service       │ Notifications    │
-│                  │ CDN                     │ Static assets    │
-│                  │ Search service          │ Search broken    │
-├──────────────────────────────────────────────────────────────┤
-│  Data            │ Data corruption         │ Incorrect results│
-│                  │ Schema migration fail   │ Service crash    │
-│                  │ Replication lag         │ Stale reads      │
-│                  │ Full disk              │ Write failures   │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 3: Design Chaos Experiments
@@ -121,17 +105,6 @@ Injection:
   # Or in application code (test mode)
   CHAOS_PAYMENT_LATENCY_MS=5000
 
-Expected behavior:
-  - Checkout returns "Payment processing delayed, please try again" within 3s
-  - Circuit breaker opens after 5 consecutive timeouts
-  - Other endpoints (product listing, search) unaffected
-  - Queue message created for retry
-
-Observe:
-  - Response time of checkout endpoint
-  - Circuit breaker state transitions
-  - Error messages shown to users
-  - Retry queue depth
 ```
 
 **Experiment N2: DNS Failure**
@@ -306,38 +279,6 @@ CIRCUIT BREAKER VALIDATION:
 │  HALF-OPEN: Limited requests to test recovery                 │
 └───────────────────────────────────────────────────────────────┘
 
-Test each transition:
-1. CLOSED → OPEN
-   Inject: <N> consecutive failures
-   Verify: Circuit opens, requests return fallback immediately
-   Verify: No further calls to the failing dependency
-
-2. OPEN → HALF-OPEN
-   Wait: <timeout period> (e.g., 30 seconds)
-   Verify: Circuit transitions to half-open
-   Verify: ONE request is allowed through to test the dependency
-
-3. HALF-OPEN → CLOSED (recovery)
-   Action: Restore the dependency
-   Verify: Test request succeeds
-   Verify: Circuit closes, normal traffic resumes
-
-4. HALF-OPEN → OPEN (still failing)
-   Action: Keep dependency down
-   Verify: Test request fails
-   Verify: Circuit re-opens for another timeout period
-
-RESULTS:
-┌────────────────────────┬──────────┬────────────────────────┐
-│ Transition             │ Status   │ Notes                  │
-├────────────────────────┼──────────┼────────────────────────┤
-│ CLOSED → OPEN          │ PASS/FAIL│ <detail>               │
-│ OPEN → HALF-OPEN       │ PASS/FAIL│ <detail>               │
-│ HALF-OPEN → CLOSED     │ PASS/FAIL│ <detail>               │
-│ HALF-OPEN → OPEN       │ PASS/FAIL│ <detail>               │
-│ Fallback response      │ PASS/FAIL│ <detail>               │
-│ Metrics/logging        │ PASS/FAIL│ <detail>               │
-└────────────────────────┴──────────┴────────────────────────┘
 ```
 
 ### Step 5: Game Day Planning
@@ -359,36 +300,6 @@ TIMELINE:
 ┌──────┬──────────────────────────────────────────────────────┐
 │ Time │ Activity                                             │
 ├──────┼──────────────────────────────────────────────────────┤
-│ 0:00 │ Kickoff — verify steady state, review experiment plan│
-│ 0:15 │ Experiment 1 — <failure injection>                   │
-│ 0:45 │ Observe and document — <what happened>               │
-│ 1:00 │ Rollback Experiment 1 — verify recovery              │
-│ 1:15 │ Break — discuss findings                             │
-│ 1:30 │ Experiment 2 — <failure injection>                   │
-│ 2:00 │ Observe and document                                 │
-│ 2:15 │ Rollback Experiment 2 — verify recovery              │
-│ 2:30 │ Experiment 3 — <failure injection>                   │
-│ 3:00 │ Observe and document                                 │
-│ 3:15 │ Rollback all — verify full steady state              │
-│ 3:30 │ Retrospective — findings, action items, next steps   │
-│ 4:00 │ End — publish game day report                        │
-└──────┴──────────────────────────────────────────────────────┘
-
-SAFETY PROTOCOLS:
-- [ ] Production experiments require VP/Director approval
-- [ ] Blast radius limited to <scope>
-- [ ] Kill switch tested and accessible to all participants
-- [ ] Incident channel open during all experiments
-- [ ] No experiments during peak traffic hours
-- [ ] Customer support team notified in advance
-- [ ] Rollback verified for each experiment before injection
-
-ESCALATION PATH:
-If unexpected impact detected:
-1. Immediately execute rollback procedure
-2. Notify incident commander
-3. Follow standard incident response process
-4. Document the unexpected behavior for post-mortem
 ```
 
 ### Step 6: Resilience Scorecard
@@ -409,33 +320,6 @@ If unexpected impact detected:
 │  │ Network partition       │ A/B/C/F│ <detail>          │    │
 │  │ Process crash           │ A/B/C/F│ <detail>          │    │
 │  │ Memory pressure         │ A/B/C/F│ <detail>          │    │
-│  │ CPU saturation          │ A/B/C/F│ <detail>          │    │
-│  │ Database failure        │ A/B/C/F│ <detail>          │    │
-│  │ Cache failure           │ A/B/C/F│ <detail>          │    │
-│  │ Disk pressure           │ A/B/C/F│ <detail>          │    │
-│  │ Dependency outage       │ A/B/C/F│ <detail>          │    │
-│  │ Circuit breakers        │ A/B/C/F│ <detail>          │    │
-│  └─────────────────────────┴────────┴───────────────────┘    │
-│                                                              │
-│  Grading:                                                    │
-│  A = Resilient (graceful degradation, auto-recovery)         │
-│  B = Adequate (handles failure, manual recovery needed)      │
-│  C = Fragile (partial outage, slow recovery)                 │
-│  F = Vulnerable (cascading failure, data loss risk)          │
-│                                                              │
-│  FINDINGS:                                                   │
-│  1. <finding> — Grade impact: <domain>                       │
-│  2. <finding> — Grade impact: <domain>                       │
-│  3. <finding> — Grade impact: <domain>                       │
-│                                                              │
-│  RECOVERY TIMES:                                             │
-│  Process restart: <X>s (target: <Y>s)                        │
-│  DB failover: <X>s (target: <Y>s)                            │
-│  Cache cold start: <X>s (target: <Y>s)                       │
-│  Full system recovery: <X>s (target: <Y>s)                   │
-│                                                              │
-│  Overall Resilience: <RESILIENT | ADEQUATE | FRAGILE>        │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 7: Commit and Transition
@@ -456,58 +340,6 @@ If unexpected impact detected:
 6. **Production chaos requires ceremony.** Never run production chaos experiments casually. Game days need planning, approval, and incident response readiness.
 7. **Document surprises.** The most valuable chaos engineering outcomes are the unexpected behaviors — things the team didn't know could happen.
 
-## Example Usage
-
-### Testing dependency resilience
-```
-User: /godmode:chaos Test what happens when our payment provider goes down
-
-Chaos: Defining steady state...
-
-STEADY STATE:
-  Checkout success rate: 99.8%
-  P95 response time: 340ms
-  Error rate: 0.2%
-
-EXPERIMENT: Payment Provider Outage
-Hypothesis: "When the payment API is unreachable, checkout shows a user-
-  friendly error and queues the order for retry. Other features (browsing,
-  search, cart) are unaffected."
-
-Injecting failure (toxiproxy: block payment-api)...
-
-RESULTS:
-  Checkout: Returns "Payment temporarily unavailable" in 2.1s ← PASS
-  Circuit breaker: Opens after 5 failures ← PASS
-  Order queue: 12 orders queued for retry ← PASS
-  Browse/search: Unaffected, P95 = 42ms ← PASS
-  SURPRISE: Cart total still calls payment API for tax calc ← FINDING
-
-  Cart is coupled to payment API unnecessarily.
-  Recommendation: Cache tax rates locally, update daily.
-```
-
-### Game day planning
-```
-User: /godmode:chaos Plan a game day for our microservices platform
-
-Chaos: Analyzing your architecture...
-
-Found 7 services, 3 databases, 2 caches, 4 external APIs
-
-GAME DAY PLAN:
-Duration: 3 hours
-Experiments:
-  1. Kill order-service pod (test auto-restart + request retry)
-  2. Add 3s latency to user-service (test timeout + circuit breaker)
-  3. Flush Redis cache (test cold-cache performance)
-  4. Partition inventory-service from database (test read replica failover)
-  5. Block Stripe API (test payment circuit breaker)
-
-Safety: staging environment, kill switch per experiment
-Team: 4 engineers + 1 facilitator
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -515,13 +347,6 @@ Team: 4 engineers + 1 facilitator
 | (none) | Full chaos assessment — map failure domains, design experiments |
 | `--experiment <name>` | Run a specific pre-designed experiment |
 | `--network` | Network failure experiments only |
-| `--process` | Process/compute failure experiments only |
-| `--storage` | Storage/database failure experiments only |
-| `--deps` | External dependency failure experiments only |
-| `--circuit-breaker` | Circuit breaker validation only |
-| `--gameday` | Generate a game day plan |
-| `--scorecard` | Generate resilience scorecard from past experiments |
-| `--production` | Flag for production experiments (requires extra safety checks) |
 
 ## HARD RULES
 
@@ -556,27 +381,6 @@ WHILE experiments is not empty:
 
     rollback_tested = test_rollback(experiment)
     IF NOT rollback_tested:
-        SKIP experiment, log reason
-        CONTINUE
-
-    # Execute
-    inject_failure(experiment)
-    observe(experiment.duration)
-    result = capture_metrics()
-    execute_rollback(experiment)
-
-    # Verify recovery
-    post_steady_state = verify_steady_state()
-    IF NOT post_steady_state:
-        ESCALATE "System did not recover after rollback"
-        BREAK
-
-    results.append(result)
-    git commit experiment result
-
-    IF current_iteration % 5 == 0:
-        print(f"Progress: {current_iteration}/{len(experiments) + current_iteration} experiments complete")
-        print_scorecard(results)
 ```
 
 ## Auto-Detection
@@ -599,12 +403,6 @@ AUTO-DETECT:
 
 4. Monitoring stack:
    kubectl get svc -A | grep -i "grafana\|prometheus\|datadog"
-
-5. Chaos tooling already installed:
-   which toxiproxy-cli litmus chaostoolkit 2>/dev/null
-
--> Auto-select injection method based on detected infrastructure.
--> Auto-configure monitoring queries for the detected stack.
 ```
 
 ## Success Criteria
@@ -624,36 +422,6 @@ All of these must be true before marking the task complete:
 | Injection cannot be reversed | Kill the injection process immediately. If using Toxiproxy: `toxiproxy-cli toxic remove`. If using tc: `tc qdisc del dev eth0 root`. If process kill: restart the service. Document the failed abort path and fix it before next experiment. |
 | Monitoring not showing impact | Verify metric queries target the correct service/pod. Check time range alignment. If metrics are delayed (>30s lag), do not proceed — you cannot observe what you cannot measure. |
 | System crashes instead of degrading | This IS a finding. Document it. The expected behavior was graceful degradation; actual behavior was crash. Create a high-priority backlog item for resilience improvement. |
-| Blast radius exceeded | Abort immediately. Check scope configuration (target only intended pods/services). Review injection parameters. Reduce blast radius for next attempt. |
-| Docker/K8s not available | Fall back to application-level injection: artificial latency in middleware, random error responses, connection pool exhaustion. No infrastructure access needed. |
-| Team not available for game day | Never run production chaos experiments solo. Reschedule. For non-production, proceed but limit blast radius to single-service. |
-
-## Multi-Agent Dispatch
-```
-Agent 1 (worktree: chaos-infra):
-  - Set up monitoring dashboards for steady-state metrics
-  - Configure chaos injection tools (Toxiproxy/tc/Litmus)
-  - Build abort scripts with one-command rollback
-
-Agent 2 (worktree: chaos-experiments):
-  - Design experiment specifications (hypothesis, method, blast radius, abort)
-  - Implement injection scripts per failure domain
-  - Create experiment execution runbook
-
-Agent 3 (worktree: chaos-resilience):
-  - Implement circuit breakers and fallbacks for identified failure points
-  - Add health checks and readiness probes
-  - Write recovery validation tests
-
-MERGE ORDER: infra -> experiments -> resilience
-CONFLICT ZONES: monitoring config, service configuration, health check endpoints
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run chaos tasks sequentially: monitoring setup, then experiment design, then injection tooling, then resilience implementation.
-- Use branch isolation per task: `git checkout -b godmode-chaos-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
 
 ## Keep/Discard Discipline
 ```
@@ -681,12 +449,6 @@ DO NOT STOP just because:
   - Production experiments are not yet approved (complete staging experiments first)
 ```
 
-## Anti-Patterns
 
-- **Do NOT inject failures without monitoring.** If you cannot observe the impact, you cannot learn from the experiment.
-- **Do NOT skip the hypothesis.** "Let's see what happens" is not chaos engineering. Predict the outcome, then verify.
-- **Do NOT start in production.** Start in development, graduate to staging, then production.
-- **Do NOT run chaos without a rollback plan.** If you cannot undo the injection in under 30 seconds, you are not ready.
-- **Do NOT test during peak traffic.** Production chaos runs during low-traffic periods with the team on standby.
-- **Do NOT treat chaos as a one-time event.** Resilience degrades as code changes. Run experiments monthly.
-- **Do NOT ignore findings.** Every surprise should become a backlog item. A finding without a fix is wasted effort.
+## Output Format
+Print: `Chaos: {system} — {N} experiments, {confirmed}/{total} hypotheses confirmed. Surprises: {S}. Resilience: {RESILIENT|ADEQUATE|FRAGILE}. Status: {DONE|PARTIAL}.`

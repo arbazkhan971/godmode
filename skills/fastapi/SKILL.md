@@ -50,20 +50,6 @@ app/
 │   │   └── auth.py         # Authentication endpoints
 │   └── deps.py             # API-specific dependencies
 ├── models/
-│   ├── __init__.py
-│   ├── order.py            # SQLAlchemy models
-│   └── customer.py
-├── schemas/
-│   ├── __init__.py
-│   ├── order.py            # Pydantic schemas (request/response)
-│   └── customer.py
-├── services/
-│   ├── __init__.py
-    # ... (additional patterns follow same structure)
-└── tests/
-    ├── conftest.py          # Fixtures (client, DB, factories)
-    ├── test_orders.py
-    └── test_auth.py
 ```
 
 Rules:
@@ -83,29 +69,7 @@ from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field, EmailStr, field_validator, model_validator
-
-# Enum for type safety
-class OrderStatus(str, Enum):
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    SHIPPED = "shipped"
-    DELIVERED = "delivered"
-    CANCELLED = "cancelled"
-
-# Base schema with shared fields
-class OrderBase(BaseModel):
-    notes: str | None = Field(None, max_length=500, examples=["Handle with care"])
-
-# Create schema (request body)
-class OrderCreate(OrderBase):
-    customer_id: UUID
-    items: list["OrderItemCreate"] = Field(..., min_length=1, max_length=100)
-
-    # ... (additional patterns follow same structure)
-    name: str
-    email: EmailStr
-
-    model_config = ConfigDict(from_attributes=True)
+# ... (condensed)
 ```
 
 ```
@@ -143,29 +107,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.config import settings
-from app.db.session import async_session_factory
-
-# Database session dependency
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-
-# Type alias for cleaner signatures
-DbSession = Annotated[AsyncSession, Depends(get_db)]
-
-    # ... (additional patterns follow same structure)
-    page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=100),
-) -> PaginatedResponse[OrderResponse]:
-    return await service.get_orders(user, page, per_page)
+# ... (condensed)
 ```
 
 ```
@@ -201,29 +143,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, String, Numeric, Index
-from datetime import datetime
-from uuid import UUID, uuid4
-
-# Engine setup
-engine = create_async_engine(
-    settings.database_url,  # postgresql+asyncpg://...
-    pool_size=20,
-    max_overflow=10,
-    pool_timeout=30,
-    pool_recycle=1800,
-    echo=settings.debug,
-)
-
-async_session_factory = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    # ... (additional patterns follow same structure)
-        result = await self.session.execute(
-            update(Order).where(Order.id.in_(ids)).values(status=status)
-        )
-        return result.rowcount
+# ... (condensed)
 ```
 
 ```
@@ -262,29 +182,7 @@ from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
 @router.post("/orders", response_model=OrderResponse, status_code=201)
 async def create_order(
     data: OrderCreate,
-    service: OrderServiceDep,
-    user: CurrentUser,
-    background_tasks: BackgroundTasks,
-) -> OrderResponse:
-    order = await service.create_order(data, user)
-
-    # Fire-and-forget tasks
-    background_tasks.add_task(send_confirmation_email, order.id)
-    background_tasks.add_task(notify_warehouse, order.id)
-    background_tasks.add_task(update_analytics, "order_created", order.id)
-
-    return OrderResponse.model_validate(order)
-
-# For heavy tasks, use Celery or ARQ
-from arq import create_pool
-from arq.connections import RedisSettings
-
-# ARQ worker tasks
-    # ... (additional patterns follow same structure)
-        "order_id": str(order.id),
-        "status": order.status,
-        "updated_at": order.updated_at.isoformat(),
-    })
+# ... (condensed)
 ```
 
 ```
@@ -324,29 +222,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from app.main import create_app
-from app.db.session import Base, get_db
-from app.core.security import create_access_token
-
-# Test database
-TEST_DATABASE_URL = "postgresql+asyncpg://test:test@localhost:5432/test_db"
-
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
-
-@pytest.fixture(scope="session")
-async def engine():
-    engine = create_async_engine(TEST_DATABASE_URL)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    # ... (additional patterns follow same structure)
-
-def test_order_update_requires_at_least_one_field():
-    with pytest.raises(ValueError, match="At least one field"):
-        OrderUpdate()
+# ... (condensed)
 ```
 
 ```
@@ -365,14 +241,6 @@ TESTING STRATEGY:
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 TEST TOOLING:
-- pytest-asyncio / anyio: Async test execution
-- HTTPX AsyncClient: HTTP testing without running server
-- factory-boy: Test data factories (FactoryBoy with async support)
-- Faker: Realistic test data generation
-- respx: Mock external HTTP requests
-- pytest-cov: Code coverage
-- TestContainers: Real PostgreSQL in tests (CI)
-- dependency_overrides: Swap dependencies for testing
 ```
 
 Rules:
@@ -402,13 +270,6 @@ FASTAPI VALIDATION:
 │  Alembic migrations present          │  PASS    │  Version-controlled  │
 │  Tests pass with HTTPX               │  PASS    │  Async test suite    │
 │  Config via pydantic-settings        │  PASS    │  Typed env vars      │
-│  CORS configured                     │  PASS    │  Per environment     │
-│  OpenAPI docs generated              │  PASS    │  Auto from schemas   │
-│  Background tasks for heavy work     │  PASS    │  No sync blocking    │
-│  Structured logging configured       │  PASS    │  JSON in production  │
-└──────────────────────────────────────┴──────────┴──────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ```
@@ -444,45 +305,6 @@ Commit: `"fastapi: <service> — <N> async endpoints, Pydantic schemas, pytest"`
 6. **Auto-generated docs are a feature.** FastAPI generates OpenAPI docs from your type annotations and Pydantic schemas. Keep them accurate — they are your API documentation.
 7. **Background tasks for side effects.** Email, analytics, notifications — anything that does not affect the response body goes in a background task or job queue.
 
-## Example Usage
-
-### Building a FastAPI Service
-```
-User: /godmode:fastapi Build an inventory management API
-
-FastAPI: Assessing requirements...
-
-FASTAPI ASSESSMENT:
-Project: Inventory Management API
-FastAPI: 0.115.x
-Python: 3.12
-Database: PostgreSQL (asyncpg)
-ORM: SQLAlchemy 2.0 async
-Auth: JWT bearer tokens
-
-Creating Pydantic schemas: Product, Warehouse, StockLevel...
-Setting up async SQLAlchemy with repository pattern...
-Configuring JWT authentication dependencies...
-Creating async endpoints with DI...
-Writing pytest + HTTPX test suite...
-
-All 15 checks PASS.
-```
-
-### Designing Pydantic Models
-```
-User: /godmode:fastapi Design schemas for a multi-tenant SaaS API
-
-FastAPI: Designing Pydantic schemas...
-
-SCHEMAS:
-- TenantCreate / TenantResponse (with settings JSON field)
-- UserCreate / UserUpdate / UserResponse (with role enum)
-- Paginated[T] generic wrapper for all list endpoints
-- Custom validators: email uniqueness per tenant, role transitions
-- Discriminated union for notification preferences
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -490,15 +312,6 @@ SCHEMAS:
 | (none) | Full FastAPI setup workflow |
 | `--schemas` | Design Pydantic models with validation |
 | `--auth jwt` | Configure JWT authentication |
-| `--auth oauth2` | Configure OAuth2 with scopes |
-| `--db sqlalchemy` | Set up async SQLAlchemy |
-| `--db tortoise` | Set up Tortoise ORM |
-| `--websocket` | Add WebSocket support |
-| `--tasks celery` | Configure Celery task queue |
-| `--tasks arq` | Configure ARQ (async-native) |
-| `--test` | Generate pytest + HTTPX test suite |
-| `--optimize` | Profile and optimize async performance |
-| `--audit` | Audit existing FastAPI app for anti-patterns |
 
 ## Auto-Detection
 
@@ -543,35 +356,6 @@ WHILE current_iteration < len(resources) AND NOT user_says_stop:
 ON COMPLETION:
   RUN full validation checklist (Step 7)
   REPORT: "<N> resources, <M> endpoints, <K> tests, all async, validation PASS/FAIL"
-```
-
-## Multi-Agent Dispatch
-
-For large FastAPI services, dispatch parallel agents per resource domain:
-
-```
-PARALLEL FASTAPI AGENTS:
-When building multiple resource domains simultaneously:
-
-Agent 1 (worktree: api-core):
-  - Set up FastAPI app factory, config (pydantic-settings), DB session
-  - Implement auth dependencies (JWT, role-based access)
-  - Create shared schemas (PaginatedResponse, error types)
-  - Set up Alembic and base model with TimestampMixin
-
-Agent 2 (worktree: api-domain-a):
-  - Build resource domain A (schemas, models, repos, services, routes)
-  - Write tests for domain A endpoints and services
-  - Create Alembic migrations for domain A models
-
-Agent 3 (worktree: api-domain-b):
-  - Build resource domain B (schemas, models, repos, services, routes)
-  - Write tests for domain B endpoints and services
-  - Create Alembic migrations for domain B models
-
-MERGE STRATEGY: Core merges first. Domain agents rebase onto core, then merge sequentially.
-  Alembic migration conflicts resolved by regenerating heads after merge.
-  Final: run full test suite, verify OpenAPI docs render correctly.
 ```
 
 ## Hard Rules
@@ -663,29 +447,6 @@ Pass 2 — Dependency Injection Audit:
   3. Flatten deeply nested Depends() chains
   4. Add try/finally cleanup to all yield dependencies
 
-Pass 3 — Response Time:
-  1. Baseline with timing middleware (X-Process-Time-ms header)
-  2. Optimize DB queries: selectin/joined loading, load_only(), indexes
-  3. Use ORJSONResponse as default response class for faster serialization
-  4. Use asyncio.gather() for independent async calls
-  5. Add Redis cache for computed results, HTTP cache headers for clients
-
-Pass 4 — Startup & Shutdown:
-  1. Initialize all shared resources in lifespan context manager
-  2. Clean up all resources on shutdown (close clients, dispose engines)
-  3. No module-level resource creation
-  4. Configure uvicorn --timeout-graceful-shutdown 30
-
-OPTIMIZATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  Blocking calls in async     │  <N>      │  0        │  FIXED    │
-│  Avg response time (ms)     │  <N>      │  <N>      │  -<N>%    │
-│  p99 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
-│  Shutdown cleanup verified   │  NO       │  YES      │  FIXED    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
 
 ## Keep/Discard Discipline
@@ -699,7 +460,6 @@ After EACH implementation or optimization change:
   4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
 ```
 
-
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -712,9 +472,3 @@ DO NOT STOP just because:
   - A non-critical check is pending (that can be a follow-up pass)
 ```
 
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run FastAPI tasks sequentially: core API setup, then domain A, then domain B.
-- Use branch isolation per task: `git checkout -b godmode-fastapi-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

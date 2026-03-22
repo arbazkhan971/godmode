@@ -38,26 +38,6 @@ Evaluation trigger:
   - Comparison: evaluating multiple candidates
 
 What to evaluate:
-  Quality dimensions:
-    - Correctness: <does the output contain the right information?>
-    - Relevance: <does the output address the question/task?>
-    - Completeness: <does the output cover all aspects?>
-    - Faithfulness: <is the output grounded in provided context?>
-    - Safety: <does the output avoid harmful content?>
-    - Format: <does the output match the required structure?>
-    - Consistency: <same input produces similar outputs?>
-    - Latency: <how fast is the response?>
-    - Cost: <how much does each call cost?>
-
-  Domain-specific dimensions:
-    - <dimension>: <what it measures in this domain>
-    - <dimension>: <what it measures in this domain>
-
-Evaluation budget:
-  - Evaluation dataset size: <N examples>
-  - Human evaluation budget: <hours available>
-  - LLM judge budget: <$ for running judge evaluations>
-  - Timeline: <when results are needed>
 ```
 
 If the user hasn't specified, ask: "What AI system should I evaluate, and what quality dimensions matter most?"
@@ -81,36 +61,6 @@ Dataset sources:
 │ Adversarial set       │ <N>      │ Deliberately tricky or edge-case inputs   │
 │                       │          │ (tests robustness)                        │
 │ Domain benchmark      │ <N>      │ Standard benchmark for the domain         │
-│                       │          │ (comparable to published results)         │
-│ Regression set        │ <N>      │ Previously-failed cases that were fixed   │
-│                       │          │ (prevents reintroduction of bugs)         │
-└───────────────────────┴──────────┴────────────────────────────────────────────┘
-
-Total evaluation examples: <N>
-
-Dataset schema:
-  - id: unique identifier
-  - input: the query/prompt/task given to the system
-  - reference_output: expected correct output (gold standard)
-  - context: relevant context (for RAG evaluation)
-  - metadata:
-      - difficulty: easy | medium | hard
-      - category: <task category>
-      - source: <where this example came from>
-      - tags: [<relevant tags>]
-
-Dataset quality checks:
-  [ ] No duplicate inputs
-  [ ] Reference outputs reviewed by domain expert
-  [ ] Balanced across categories and difficulty levels
-  [ ] No data leakage (eval examples not in training data)
-  [ ] PII redacted or synthetic
-  [ ] Adversarial examples included
-
-Dataset versioning:
-  Version: <semver>
-  Location: <path or artifact store>
-  Changelog: <what changed from previous version>
 ```
 
 ### Step 3: Evaluation Framework Selection
@@ -132,24 +82,6 @@ Framework options:
 │ Humanloop           │ Prompt management + evaluation: versioning, A/B tests   │
 │ Custom framework    │ Domain-specific needs not covered by existing tools     │
 └─────────────────────┴──────────────────────────────────────────────────────────┘
-
-SELECTED: <Framework> — <justification>
-
-Evaluation pipeline architecture:
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ Dataset  │ -> │  System  │ -> │  Judge   │ -> │ Aggregate│ -> │  Report  │
-│ Loading  │    │  Under   │    │ (auto +  │    │  Metrics │    │ & Store  │
-│          │    │  Test    │    │  human)  │    │          │    │          │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
-
-Pipeline steps:
-  1. Load evaluation dataset (versioned, immutable)
-  2. Run system under test on each example (record output + metadata)
-  3. Score each output using automated judges and/or human review
-  4. Aggregate scores into summary metrics
-  5. Compare against baseline and previous versions
-  6. Generate report with pass/fail verdict
-  7. Store results for historical tracking
 ```
 
 ### Step 4: Automated Evaluation — LLM-as-Judge
@@ -171,56 +103,6 @@ Scoring rubrics:
 │                  │       │ 3: Mostly correct, minor errors                   │
 │                  │       │ 4: Correct with minor omissions                   │
 │                  │       │ 5: Fully correct and complete                     │
-├──────────────────┼───────┼──────────────────────────────────────────────────┤
-│ Relevance        │ 1-5   │ 1: Completely off-topic                          │
-│                  │       │ 2: Tangentially related                           │
-│                  │       │ 3: Addresses question partially                   │
-│                  │       │ 4: Addresses question well                        │
-│                  │       │ 5: Directly and fully addresses question          │
-├──────────────────┼───────┼──────────────────────────────────────────────────┤
-│ Faithfulness     │ 1-5   │ 1: Entirely fabricated                           │
-│ (RAG)            │       │ 2: Mostly unsupported by context                 │
-│                  │       │ 3: Mix of supported and unsupported claims        │
-│                  │       │ 4: Mostly grounded in context                     │
-│                  │       │ 5: Fully grounded, every claim traceable          │
-├──────────────────┼───────┼──────────────────────────────────────────────────┤
-│ Safety           │ 0-1   │ 0: Contains harmful, biased, or inappropriate    │
-│                  │       │    content                                        │
-│                  │       │ 1: Safe and appropriate                           │
-├──────────────────┼───────┼──────────────────────────────────────────────────┤
-│ Format           │ 0-1   │ 0: Does not match required output format         │
-│ compliance       │       │ 1: Matches required format exactly               │
-└──────────────────┴───────┴──────────────────────────────────────────────────┘
-
-Judge prompt template:
-  "You are an expert evaluator. Given:
-   - The QUESTION asked
-   - The REFERENCE ANSWER (gold standard)
-   - The SYSTEM OUTPUT (to evaluate)
-   - The CONTEXT provided (if RAG)
-
-   Score the SYSTEM OUTPUT on <dimension> using this rubric:
-   <rubric>
-
-   Respond with:
-   {
-     'score': <1-5>,
-     'reasoning': '<1-2 sentences explaining the score>'
-   }
-
-   Be strict. A score of 5 means perfection."
-
-Judge calibration:
-  - Run judge on <N> examples with known human scores
-  - Measure agreement: Cohen's kappa >= 0.7 (substantial agreement)
-  - If agreement is low, refine rubric and re-calibrate
-  - Use majority vote across 3 judge runs for critical evaluations
-
-Judge biases to mitigate:
-  - Position bias: randomize order of candidates in comparison tasks
-  - Verbosity bias: longer answers are not always better
-  - Self-preference: never judge a model with itself
-  - Anchoring: present rubric before examples, not after
 ```
 
 ### Step 5: Human Evaluation Protocol
@@ -242,21 +124,6 @@ Evaluator selection:
   - Training: <evaluation guidelines document, calibration examples>
 
 Evaluation interface:
-  - Randomized example order (prevent ordering effects)
-  - Blind evaluation (evaluator does not know which version produced output)
-  - Side-by-side comparison (when comparing two systems)
-  - Required justification for extreme scores (1 or 5)
-
-Protocol:
-  1. Evaluator training (15 min):
-     - Review evaluation guidelines
-     - Score 5 calibration examples together
-     - Discuss scoring disagreements
-     - Align on rubric interpretation
-
-### Step 6: Benchmark Creation
-Create a reusable benchmark for ongoing evaluation:
-
 ```
 BENCHMARK DESIGN:
 
@@ -471,121 +338,7 @@ Commit: `"eval: <system> — v<version>, <N> examples, correctness=<val>, faithf
 6. **Regression tests only grow.** Every production bug becomes a regression test. The regression set never shrinks. It is the immune system of your AI system.
 7. **Evaluation datasets are living artifacts.** They need versioning, maintenance, and periodic expansion. A stale benchmark produces false confidence.
 
-## Example Usage
-
-### Evaluating a RAG System
-```
-User: /godmode:eval Evaluate our customer support RAG chatbot
-
-Eval: Starting evaluation...
-
-EVALUATION DISCOVERY:
-System: Customer support RAG chatbot v2.3
-Type: RAG pipeline (embedding + retrieval + generation)
-Model: Claude 3.5 Sonnet
-Trigger: Monthly quality check
-
-DATASET: 200 examples
-  Golden set: 80 hand-curated Q&A pairs
-  Production logs: 70 sampled with human ratings
-  Adversarial: 30 edge cases and injection attempts
-  Regression: 20 previously-fixed failures
-
-EVALUATION:
-  Retrieval:
-    Hit rate @ 5: 91.2%
-    MRR: 0.83
-  Generation:
-    Correctness: 4.1/5
-    Faithfulness: 4.3/5
-    Relevance: 4.4/5
-    Safety: 100%
-  Regression: 20/20 passing
-  vs Baseline (v2.0): +3.2% correctness, +5.1% faithfulness
-
-VERDICT: PASS — All metrics above targets. No regressions.
-```
-
-### Running LLM-as-Judge Evaluation
-```
-User: /godmode:eval --judge Compare GPT-4 vs Claude on our summarization task
-
-Eval: Setting up LLM-as-judge comparison...
-
-Judge: Claude 3.5 Sonnet (calibrated against 30 human-scored examples)
-Judge agreement: Cohen's kappa = 0.78 (substantial)
-
-Running on 150 examples...
-
-RESULTS:
-┌──────────────┬──────────┬──────────┬──────────┬──────────┐
-│ Metric       │ GPT-4    │ Claude   │ Diff     │ Sig?     │
-├──────────────┼──────────┼──────────┼──────────┼──────────┤
-│ Correctness  │ 4.12     │ 4.28     │ +0.16    │ YES p=.02│
-│ Conciseness  │ 3.89     │ 4.15     │ +0.26    │ YES p=.01│
-│ Faithfulness │ 4.31     │ 4.35     │ +0.04    │ NO p=.41 │
-│ Latency p95  │ 2.1s     │ 1.8s     │ -0.3s    │ YES      │
-│ Cost/call    │ $0.018   │ $0.015   │ -$0.003  │ —        │
-└──────────────┴──────────┴──────────┴──────────┴──────────┘
-
-Recommendation: Claude is significantly better on correctness and conciseness,
-with no significant difference on faithfulness. Lower cost and latency.
-Recommend switching to Claude.
-```
-
-### Setting Up Regression Testing
-```
-User: /godmode:eval --regression Set up regression tests for our AI pipeline
-
-Eval: Collecting failure cases...
-
-Found 15 production incidents in the last 90 days:
-  - 6 incorrect answers (wrong facts)
-  - 4 format violations (invalid JSON)
-  - 3 hallucinations (unsupported claims)
-  - 2 safety issues (PII leakage)
-
-Creating regression test set:
-  15 tests created from production incidents
-  5 tests from edge cases found during evaluation
-  Total: 20 regression tests
-
-CI/CD integration:
-  - Added to GitHub Actions pipeline
-  - Runs on every PR touching prompts/ or src/ai/
-  - Blocks merge if any regression test fails
-
-Regression baseline: 20/20 PASSING
-```
-
 ## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Full evaluation workflow |
-| `--dataset` | Create or manage evaluation dataset |
-| `--judge` | Set up LLM-as-judge evaluation |
-| `--human` | Set up human evaluation protocol |
-| `--benchmark` | Create reusable benchmark |
-| `--regression` | Set up or run regression tests |
-| `--compare <a> <b>` | Compare two systems or versions |
-| `--report` | Generate evaluation report from existing results |
-| `--ci` | Generate CI/CD integration for eval pipeline |
-| `--calibrate` | Calibrate LLM judge against human scores |
-| `--significance` | Run statistical significance analysis |
-| `--history` | Show evaluation history and trend charts |
-| `--quick` | Run lightweight evaluation (golden set only) |
-| `--full` | Run comprehensive evaluation (all categories) |
-
-## HARD RULES
-
-1. **Never evaluate without a baseline.** "Our model scores 4.2/5" is meaningless without comparison. Always report relative to a previous version, a naive baseline, or a published benchmark.
-2. **Never use the same model as judge and subject.** Self-evaluation is biased. Use a different, preferably stronger model as the judge. Never judge GPT-4 with GPT-4.
-3. **Never skip calibration of LLM judges.** An uncalibrated judge may consistently over-score or under-score. Validate against human ratings (Cohen's kappa >= 0.7) before trusting automated evaluation.
-4. **Never deploy AI changes without running the regression suite.** Every production bug becomes a regression test. The suite blocks deployment if regressions are detected.
-5. **Never delete regression tests.** Once a bug is caught and tested, that test stays forever. The regression set is the immune system of your AI system.
-
-## Loop Protocol
 
 ```
 eval_dimension_queue = [correctness, relevance, faithfulness, safety, format, latency, cost]
@@ -612,41 +365,13 @@ WHILE eval_dimension_queue is not empty:
     BREAK
 ```
 
-## Multi-Agent Dispatch
+## HARD RULES
 
-```
-PARALLEL AGENTS (3 worktrees):
-
-Agent 1 — "dataset-and-judges":
-  EnterWorktree("dataset-and-judges")
-  Curate or load evaluation dataset (golden set + production logs + adversarial)
-  Design LLM judge prompts with scoring rubrics
-  Calibrate judges against human ratings (measure Cohen's kappa)
-  ExitWorktree()
-
-Agent 2 — "automated-evaluation":
-  EnterWorktree("automated-evaluation")
-  Run system under test on all evaluation examples
-  Score with automated judges across all quality dimensions
-
-## Auto-Detection
-
-```
-AUTO-DETECT AI evaluation context:
-  1. Check for existing eval framework: evals/ directory, eval-config.yaml, promptfoo.yaml
-  2. Scan for evaluation datasets: evals/dataset/, tests/golden_set/, fixtures/eval/
-  3. Detect AI framework: langchain, llamaindex, openai SDK, anthropic SDK
-  4. Check for existing judge prompts: evals/judges/, prompts/judge/
-  5. Scan for regression tests: evals/regression/, tests/ai_regression/
-  6. Detect model config: model name, provider, version in env vars or config
-  7. Check CI for existing eval jobs: eval workflow, benchmark step
-
-  USE detected context to:
-    - Reuse existing evaluation datasets and judges
-    - Match existing eval framework (DeepEval, RAGAS, Promptfoo, custom)
-    - Compare against most recent baseline run
-    - Add to existing CI pipeline rather than creating new one
-```
+1. **Never evaluate without a baseline.** "Our model scores 4.2/5" is meaningless without comparison. Always report relative to a previous version, a naive baseline, or a published benchmark.
+2. **Never use the same model as judge and subject.** Self-evaluation is biased. Use a different, preferably stronger model as the judge. Never judge GPT-4 with GPT-4.
+3. **Never skip calibration of LLM judges.** An uncalibrated judge may consistently over-score or under-score. Validate against human ratings (Cohen's kappa >= 0.7) before trusting automated evaluation.
+4. **Never deploy AI changes without running the regression suite.** Every production bug becomes a regression test. The suite blocks deployment if regressions are detected.
+5. **Never delete regression tests.** Once a bug is caught and tested, that test stays forever. The regression set is the immune system of your AI system.
 
 ## Output Format
 
@@ -690,34 +415,6 @@ The eval skill is complete when ALL of the following are true:
 7. Evaluation runs in CI and blocks merges on regression
 8. All evaluation artifacts (datasets, judge prompts, results) are versioned
 
-## Error Recovery
-
-```
-IF evaluation metrics are inconsistent across runs:
-  1. Check for non-determinism in the system under test (set temperature=0 if applicable)
-  2. Increase the evaluation dataset size to reduce variance
-  3. Run multiple evaluation passes and report mean + confidence interval
-  4. Check if the LLM judge is non-deterministic (use same seed/temperature for judge)
-
-IF LLM judge disagrees with human ratings:
-  1. Calculate judge-human agreement (Cohen's kappa or Spearman correlation)
-  2. If agreement < 0.7: recalibrate the judge prompt with human-labeled examples
-  3. Add few-shot examples of correct judgments to the judge prompt
-  4. Consider using majority vote from multiple judge runs
-
-IF regression test fails on a new change:
-  1. Identify exactly which test cases regressed
-  2. Determine if the regression is in retrieval, generation, or both
-  3. Do NOT delete the failing regression test — fix the system instead
-  4. If the regression is acceptable (trade-off), document the justification
-
-IF evaluation takes too long to run in CI:
-  1. Split evaluation into fast (smoke) and full (nightly) suites
-  2. Run smoke suite on every PR (< 5 minutes, core test cases only)
-  3. Run full suite nightly or on release branches
-  4. Cache embedding computations and model responses where safe
-```
-
 ## Evaluation Framework Audit
 
 Comprehensive audit of the evaluation framework itself to ensure metrics are meaningful, benchmarks are comprehensive, and regressions are detectable:
@@ -760,8 +457,6 @@ METRIC SELECTION AUDIT:
 
 BENCHMARK COVERAGE AUDIT:
 
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
 ## Keep/Discard Discipline
 ```
 After EACH evaluation dimension scored:
@@ -787,3 +482,10 @@ DO NOT STOP just because:
   - One dimension shows no significant difference (report it as-is)
   - Human evaluation budget is exhausted (use automated judges for remaining)
 ```
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Evaluation scores are noisy/inconsistent | Increase sample size. Use multiple judges and take median. Add calibration examples to the prompt. |
+| LLM judge disagrees with human ratings | Calibrate judge prompt with labeled examples. Check for position bias (swap A/B order). Use structured rubrics. |
+| Test set too small for significance | Calculate minimum sample size for desired confidence interval. Expand test set or reduce dimensions evaluated. |
+| Regression detected but unclear cause | Bisect recent changes. Run eval on each commit in range. Check for prompt drift or data quality changes. |

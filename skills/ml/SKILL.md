@@ -59,40 +59,7 @@ model:
   type: <architecture name>
   layers: <layer configuration>
   hidden_size: <N>
-  num_heads: <N>          # if transformer
-  dropout: <rate>
-  activation: <function>
-
-# Training
-training:
-  optimizer: <Adam | SGD | AdamW | custom>
-  learning_rate: <rate>
-  lr_schedule: <cosine | linear | step | warmup+decay>
-  warmup_steps: <N>
-  batch_size: <N>
-  epochs: <N>
-  max_steps: <N>
-  gradient_clipping: <max_norm>
-  weight_decay: <rate>
-  mixed_precision: <fp16 | bf16 | fp32>
-
-# Regularization
-regularization:
-  dropout: <rate>
-  label_smoothing: <rate>
-  data_augmentation: <list of transforms>
-  early_stopping:
-    patience: <epochs>
-    metric: <monitored metric>
-    min_delta: <minimum improvement>
-
-# Data
-data:
-  train_size: <N samples>
-  val_size: <N samples>
-  test_size: <N samples>
-  preprocessing: <list of steps>
-  feature_engineering: <list of features>
+# ... (condensed)
 ```
 
 #### Hyperparameter Search
@@ -137,22 +104,6 @@ Quality checks:
   Missing values: <count per feature, percentage>
   Duplicates: <count of exact duplicate rows>
   Outliers: <count per feature, method used>
-  Class distribution:
-    <class 1>: <N> (<pct>%)
-    <class 2>: <N> (<pct>%)
-    Imbalance ratio: <ratio>
-    Recommendation: <none | oversample | undersample | SMOTE | class weights>
-
-Data leakage checks:
-  [ ] No target leakage (features derived from label)
-  [ ] No train/test leakage (same entity in both splits)
-  [ ] Temporal consistency (no future data in training set)
-  [ ] No proxy features that indirectly encode the label
-
-Drift check (vs previous version):
-  Feature distributions: <STABLE | DRIFTED — list of drifted features>
-  Label distribution: <STABLE | SHIFTED>
-  Schema changes: <NONE | ADDED | REMOVED — list>
 ```
 
 ### Step 4: Bias Detection
@@ -175,22 +126,6 @@ Per-attribute analysis:
 │                │ 31-50    │ <N>      │ <val>    │ <val>    │ <val>    │
 │                │ 51+      │ <N>      │ <val>    │ <val>    │ <val>    │
 └────────────────┴──────────┴──────────┴──────────┴──────────┴──────────┘
-
-Fairness metrics:
-  Demographic parity: <value> (threshold: < 0.1 difference)
-  Equalized odds: <value> (threshold: < 0.1 difference)
-  Predictive parity: <value> (threshold: < 0.1 difference)
-  Individual fairness: <value>
-
-Verdict: <PASS | REVIEW REQUIRED | FAIL>
-Findings:
-  - <bias finding 1 with evidence>
-  - <bias finding 2 with evidence>
-
-Mitigation recommendations:
-  - <technique 1 — e.g., resampling underrepresented groups>
-  - <technique 2 — e.g., adversarial debiasing>
-  - <technique 3 — e.g., calibrated equalized odds post-processing>
 ```
 
 ### Step 5: Model Training and Tracking
@@ -213,19 +148,6 @@ Live metrics:
   Training loss:    <value> (trend: <decreasing | plateauing | diverging>)
   Validation loss:  <value> (trend: <decreasing | plateauing | increasing>)
   Primary metric:   <value> (best: <value> at epoch <N>)
-  Learning rate:    <current LR>
-  GPU utilization:  <percentage>
-  GPU memory:       <used>/<total>
-
-Checkpoints saved:
-  - checkpoint-epoch-<N>: <metric value> <BEST>
-  - checkpoint-epoch-<N>: <metric value>
-  - checkpoint-latest: <metric value>
-
-Early stopping:
-  Patience: <remaining>/<total>
-  Best epoch: <N>
-  Best metric: <value>
 ```
 
 ### Step 6: Model Evaluation
@@ -248,27 +170,6 @@ Classification metrics:
 Per-class metrics:
 ┌────────────┬───────────┬────────┬──────┬──────────┐
 │ Class      │ Precision │ Recall │ F1   │ Support  │
-├────────────┼───────────┼────────┼──────┼──────────┤
-│ <class 1>  │ <val>     │ <val>  │ <val>│ <N>      │
-│ <class 2>  │ <val>     │ <val>  │ <val>│ <N>      │
-│ <class 3>  │ <val>     │ <val>  │ <val>│ <N>      │
-└────────────┴───────────┴────────┴──────┴──────────┘
-
-Regression metrics (if applicable):
-  MAE:   <value>
-  RMSE:  <value>
-  R2:    <value>
-  MAPE:  <value>
-
-Confidence analysis:
-  Calibration error (ECE): <value>
-  Confidence histogram: <distribution description>
-  Prediction entropy: mean=<value>, std=<value>
-
-Error analysis:
-  Most confused classes: <class A> <-> <class B> (<N> misclassifications)
-  Hardest samples: <description of samples with highest loss>
-  Failure modes: <categorized list of error patterns>
 ```
 
 ### Step 7: Experiment Comparison
@@ -312,56 +213,6 @@ Statistical significance:
 5. **Bias is a blocker.** A model that performs well on average but poorly for a protected group is not ready to deploy. Check before shipping.
 6. **Track negative results.** Failed experiments are valuable. They tell you what does not work and prevent others from repeating dead ends.
 
-## Example Usage
-
-### Running an ML Experiment
-```
-User: /godmode:ml Train a text classifier for support ticket routing
-
-ML: Setting up experiment...
-
-EXPERIMENT DEFINITION:
-ID: EXP-2025-03-15-001
-Name: support-ticket-classifier-v1
-Hypothesis: Fine-tuned DistilBERT will achieve >0.85 F1 on 12-class ticket routing
-Objective: maximize macro F1
-Baseline: TF-IDF + LogisticRegression (F1=0.72)
-Task: multi-class classification (12 categories)
-Dataset: support-tickets-v3 (45,000 labeled tickets)
-Framework: PyTorch + HuggingFace Transformers
-
-Validating dataset...
-  Schema: OK
-  Missing values: 0
-  Class distribution: moderate imbalance (ratio 1:8)
-  Recommendation: apply class weights
-  Leakage check: PASS
-  Bias check: analyzing by customer_region and account_tier...
-
-Training with hyperparameters:
-  model: distilbert-base-uncased
-  learning_rate: 2e-5
-  batch_size: 32
-  epochs: 10
-  early_stopping: patience=3
-
-Training complete. Results:
-  F1: 0.873 (+21.3% vs baseline)
-  AUC-ROC: 0.952
-  Bias check: PASS (all regions within 0.05 F1)
-
-Recommendation: Model exceeds target. Run /godmode:mlops to deploy.
-```
-
-### Comparing Experiments
-```
-User: /godmode:ml --compare EXP-001,EXP-002,EXP-003
-
-ML: Loading experiment results...
-
-<comparison table with metrics, significance tests, and recommendation>
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -369,12 +220,6 @@ ML: Loading experiment results...
 | (none) | Interactive experiment setup and tracking |
 | `--track` | Track a running experiment (attach to training process) |
 | `--compare <ids>` | Compare multiple experiments side by side |
-| `--validate <dataset>` | Run dataset validation checks |
-| `--bias <dataset>` | Run bias detection on dataset or model predictions |
-| `--evaluate <checkpoint>` | Evaluate a model checkpoint on test set |
-| `--search <config>` | Run hyperparameter search |
-| `--registry` | Show experiment registry |
-| `--export <id>` | Export experiment artifacts (model, config, results) |
 
 ## Auto-Detection
 
@@ -418,63 +263,6 @@ WHILE current_experiment < total_experiments:
   2. CONFIGURE hyperparameters from config
   3. TRAIN model with checkpointing
   4. EVALUATE on validation set
-  5. CHECK for bias across protected attributes
-  6. LOG results to experiment registry
-
-  score = evaluation_result.primary_metric
-  IF score > best_score:
-    best_score = score
-    best_experiment = config.id
-    SAVE best checkpoint
-
-  results.append({id: config.id, score: score, vs_baseline: score - baseline_score})
-  current_experiment += 1
-
-  IF current_experiment % 5 == 0:
-    REPORT "Progress: {current_experiment}/{total_experiments}, best so far: {best_experiment} ({best_score})"
-
-  # Early termination: if last 3 experiments show no improvement
-  IF len(results) >= 3 AND all(r.score <= best_score for r in results[-3:]):
-    SUGGEST "Last 3 experiments showed no improvement. Consider new approach."
-
-FINAL:
-  REPORT experiment comparison table
-  RECOMMEND best_experiment with statistical significance test
-  IF bias_detected: BLOCK deployment until addressed
-```
-
-## Multi-Agent Dispatch
-
-```
-WHEN running hyperparameter search OR comparing architectures:
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (experiment-A):
-    - Train model with config A (e.g., learning_rate=1e-3, model=base)
-    - Full evaluation + bias check
-    - Output: results/exp-A.json
-
-  Agent 2 (experiment-B):
-    - Train model with config B (e.g., learning_rate=3e-4, model=large)
-    - Full evaluation + bias check
-    - Output: results/exp-B.json
-
-  Agent 3 (experiment-C):
-    - Train model with config C (e.g., distilled model, augmented data)
-    - Full evaluation + bias check
-    - Output: results/exp-C.json
-
-  Agent 4 (dataset-validation):
-    - Run comprehensive dataset quality checks
-    - Run bias detection across all protected attributes
-    - Output: reports/dataset-quality.md
-
-MERGE:
-  - Compare all experiment results side by side
-  - Run statistical significance tests between top results
-  - Select winner based on metric + latency + size tradeoff
-  - Verify winner passes bias checks from Agent 4
 ```
 
 ## HARD RULES
@@ -495,14 +283,6 @@ MERGE:
 5. ALWAYS test statistical significance before claiming improvement.
    A 0.2% improvement could be noise. Use paired bootstrap (10K iterations).
 
-6. NEVER hardcode hyperparameters in training scripts.
-   Use configuration files (YAML/JSON) that are version-controlled.
-
-7. EVERY failed experiment MUST be logged with explanation of why it failed.
-   Negative results prevent duplicate wasted effort.
-
-8. ALWAYS check for data leakage before training:
-   no target leakage, no train/test overlap, no future data in training.
 ```
 
 ## Output Format
@@ -565,14 +345,6 @@ IF training diverges or loss increases:
 IF model passes validation but fails in production:
   1. Compare production data distribution with training data distribution
   2. Check for feature drift (features computed differently in production)
-  3. Verify feature engineering pipeline is identical between training and serving
-  4. Add monitoring for input distribution and prediction distribution
-
-IF bias check reveals fairness violations:
-  1. Analyze which subgroups are affected and by how much
-  2. Check training data representation for the affected subgroups
-  3. Apply mitigation: resampling, reweighting, or fairness-constrained training
-  4. Re-evaluate and document the trade-off between overall accuracy and fairness
 ```
 
 ## Keep/Discard Discipline
@@ -601,16 +373,6 @@ DO NOT STOP just because:
   - Training takes a long time (schedule it, do not skip it)
 ```
 
-## Anti-Patterns
-
-- **Do NOT skip the baseline.** "Our model has 0.92 F1" means nothing without knowing what a trivial baseline achieves.
-- **Do NOT tune on test data.** The test set is sacred. Touch it once for final evaluation.
-- **Do NOT ignore class imbalance.** 95% accuracy is trivial when 95% of samples are one class. Use F1, AUC-PR, or balanced accuracy.
-- **Do NOT ship without bias check.** A model that works for most users but fails for a subgroup is a liability.
-- **Do NOT hardcode hyperparameters.** Use configuration files. Hardcoded values are not reproducible or searchable.
-- **Do NOT discard failed experiments.** Log them with reasons. They prevent duplicate wasted effort.
-
-
 ## ML Pipeline Audit
 
 Systematically audit the end-to-end ML pipeline for production readiness:
@@ -631,62 +393,6 @@ DATA VALIDATION AUDIT:
 │  Label quality verification         │ PASS|FAIL│ <QA process>    │
 │  Data versioning (DVC, LakeFS, etc) │ PASS|FAIL│ <tool + version>│
 │  Train/val/test split reproducible  │ PASS|FAIL│ <seed + method> │
-│  Data pipeline idempotency tested   │ PASS|FAIL│ <test evidence> │
-│  Outlier detection and handling     │ PASS|FAIL│ <method + thresh>│
-│  Feature correlation analysis done  │ PASS|FAIL│ <report link>   │
-│  Target leakage scan completed      │ PASS|FAIL│ <scan results>  │
-└──────────────────────────────────────────────────────────────────┘
-
-MODEL METRICS AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Metric Category    │ Tracked │ Threshold │ Alerting │ Dashboard │
-├──────────────────────────────────────────────────────────────────┤
-│  Primary metric     │ YES|NO  │ <value>   │ YES|NO   │ YES|NO    │
-│  Secondary metrics  │ YES|NO  │ <values>  │ YES|NO   │ YES|NO    │
-│  Per-class metrics  │ YES|NO  │ <values>  │ YES|NO   │ YES|NO    │
-│  Calibration (ECE)  │ YES|NO  │ <value>   │ YES|NO   │ YES|NO    │
-│  Inference latency  │ YES|NO  │ <p99 ms>  │ YES|NO   │ YES|NO    │
-│  Prediction distrib │ YES|NO  │ <PSI>     │ YES|NO   │ YES|NO    │
-│  Feature importance │ YES|NO  │ N/A       │ NO       │ YES|NO    │
-│  Slice-based evals  │ YES|NO  │ <per-grp> │ YES|NO   │ YES|NO    │
-│  Cost per prediction│ YES|NO  │ <budget>  │ YES|NO   │ YES|NO    │
-└──────────────────────────────────────────────────────────────────┘
-
-EXPERIMENT TRACKING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Requirement                        │ Status   │ Tool            │
-├──────────────────────────────────────────────────────────────────┤
-│  All experiments logged centrally   │ PASS|FAIL│ <MLflow|W&B|etc>│
-│  Hyperparams recorded per run       │ PASS|FAIL│ <auto or manual>│
-│  Git SHA linked to each experiment  │ PASS|FAIL│ <integration>   │
-│  Data version linked to each run    │ PASS|FAIL│ <DVC|hash|tag>  │
-│  Random seeds stored and replayable │ PASS|FAIL│ <seed strategy> │
-│  Environment captured (pip freeze)  │ PASS|FAIL│ <conda|docker>  │
-│  Artifact storage (model checkpts)  │ PASS|FAIL│ <S3|GCS|local>  │
-│  Comparison dashboards available    │ PASS|FAIL│ <tool URL>      │
-│  Failed experiments documented      │ PASS|FAIL│ <log evidence>  │
-│  Model lineage traceable end-to-end │ PASS|FAIL│ <from data->prod│
-└──────────────────────────────────────────────────────────────────┘
-
-PIPELINE RELIABILITY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Details         │
-├──────────────────────────────────────────────────────────────────┤
-│  Pipeline runs on schedule          │ PASS|FAIL│ <cron/trigger>  │
-│  Pipeline failures trigger alerts   │ PASS|FAIL│ <alert channel> │
-│  Retry logic for transient failures │ PASS|FAIL│ <retry policy>  │
-│  Resource limits set (GPU/mem/time) │ PASS|FAIL│ <limits>        │
-│  Pipeline DAG is version-controlled │ PASS|FAIL│ <Airflow|Kubeflow│
-│  Intermediate outputs cached        │ PASS|FAIL│ <cache strategy>│
-│  End-to-end pipeline test exists    │ PASS|FAIL│ <test details>  │
-│  Pipeline runs are idempotent       │ PASS|FAIL│ <verified how>  │
-└──────────────────────────────────────────────────────────────────┘
-
-AUDIT VERDICT: <PASS — pipeline production-ready | FAIL — <N> items to fix>
-Priority fixes:
-  1. <highest priority issue>
-  2. <second priority issue>
-  3. <third priority issue>
 ```
 
 ### ML Pipeline Audit Loop
@@ -707,8 +413,3 @@ SCORING:
   >= 95%: production-ready (next audit in 30 days)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run ML experiments sequentially: experiment A, then experiment B, then experiment C. Compare results after all complete.
-- Use branch isolation per task: `git checkout -b godmode-ml-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

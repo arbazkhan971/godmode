@@ -62,16 +62,6 @@ MVVM STRUCTURE:
 │   └── ProductRepository.swift / ProductRepository.kt
 ├── services/         # API clients, database, external services
 │   ├── ApiService.swift / ApiService.kt
-│   └── DatabaseService.swift / DatabaseService.kt
-└── di/               # Dependency injection
-    └── AppModule.swift / AppModule.kt
-
-Rules:
-  - Views observe ViewModels (never call repositories directly)
-  - ViewModels expose state as observable streams (StateFlow/LiveData, @Published, useState)
-  - ViewModels call repositories, never services directly
-  - Repositories abstract data source (network vs cache vs database)
-  - Models are plain data objects (no business logic)
 ```
 
 #### MVI (Model-View-Intent)
@@ -112,12 +102,6 @@ CLEAN ARCHITECTURE LAYERS:
 │  (Repository Implementations, API         │
 │   Clients, Database, Mappers)             │
 │  Depends on: Domain                       │
-└──────────────────────────────────────────┘
-
-Dependency Rule: Dependencies point INWARD only.
-  - Domain NEVER imports from Presentation or Data
-  - Presentation imports from Domain
-  - Data implements Domain interfaces
 ```
 
 ### Step 3: Project Setup
@@ -207,19 +191,6 @@ IOS SIGNING SETUP:
    - Ad Hoc: for internal testing (limited to 100 devices per type)
    - App Store: for App Store distribution (no device restriction)
    - Enterprise: for in-house distribution (requires Enterprise account)
-
-4. Automatic signing (recommended for development):
-   Xcode → Target → Signing & Capabilities → Automatic
-
-5. Manual signing (required for CI/CD):
-   - Export certificates as .p12 files (password-protected)
-   - Download provisioning profiles as .mobileprovision
-   - Store securely in CI/CD secrets (never in git)
-
-6. Keychain setup for CI:
-   security create-keychain -p <password> build.keychain
-   security import <certificate.p12> -k build.keychain -P <password> -T /usr/bin/codesign
-   security set-key-partition-list -S apple-tool:,apple: -s -k <password> build.keychain
 ```
 
 #### Android Signing
@@ -239,17 +210,6 @@ ANDROID SIGNING SETUP:
      }
    }
 
-3. CRITICAL security rules:
-   - NEVER commit keystore files to git
-   - NEVER hardcode passwords in build files
-   - Use environment variables or CI/CD secret storage
-   - Back up keystore securely — if lost, you cannot update the app
-
-4. Google Play App Signing (recommended):
-   - Upload key: you sign the upload bundle
-   - App signing key: Google re-signs for distribution
-   - Benefit: Google holds the app signing key securely
-   - Setup: Play Console → Setup → App signing
 ```
 
 ### Step 5: App Store Submission
@@ -271,25 +231,6 @@ Pre-submission:
       - App preview videos (optional, 15-30 seconds)
       - Category and subcategory selected
       - Age rating questionnaire completed
-      - Copyright notice
-      - Contact information
-
-Build submission:
-  1. Archive in Xcode: Product → Archive
-  2. Upload via Xcode Organizer or Transporter
-  3. Wait for App Store Connect processing (10-30 minutes)
-  4. Select build in App Store Connect
-  5. Submit for review
-
-  CI/CD alternative:
-  xcodebuild archive -scheme <scheme> -archivePath <path>
-  xcodebuild -exportArchive -archivePath <path> -exportOptionsPlist <plist>
-  xcrun altool --upload-app -f <ipa> -t ios -u <email> -p <app-specific-password>
-
-Review timeline:
-  - First submission: 1-3 days typically
-  - Updates: 1-2 days typically
-  - Expedited review: available for critical bugs (use sparingly)
 ```
 
 #### Google Play Store
@@ -309,24 +250,6 @@ Pre-submission:
       - Category selected
       - Content rating questionnaire completed
       - Target audience and content declarations
-      - Contact details (email required)
-
-Build submission:
-  1. Build release AAB: ./gradlew bundleRelease
-  2. Sign with upload key
-  3. Upload to Play Console → Release → Production
-  4. Complete release notes
-  5. Submit for review
-
-  CI/CD alternative:
-  - Use Google Play Developer API or Fastlane supply
-  - Upload AAB via API with release notes
-  - Promote from internal → alpha → beta → production
-
-Review timeline:
-  - New apps: 1-7 days (longer for first submission)
-  - Updates: hours to 3 days typically
-  - Pre-registration available for pre-launch
 ```
 
 ### Step 6: Mobile-Specific Performance
@@ -367,15 +290,6 @@ iOS-specific:
   - Use autorelease pools for batch operations
   - Monitor memory warnings: didReceiveMemoryWarning
 
-Android-specific:
-  - Avoid Context leaks (never store Activity reference in static/singleton)
-  - Use ViewModel for configuration-change survival
-  - Profile with Android Studio → Memory Profiler
-  - Use LeakCanary in debug builds for automatic leak detection
-
-Memory budgets:
-  iPhone (typical): 200-400MB usable before jetsam kills the app
-  Android (varies): check ActivityManager.getMemoryClass() for device limit
 ```
 
 #### Network Optimization
@@ -395,13 +309,6 @@ Offline support pattern:
   2. Read from local database (always fast, always available)
   3. Sync with server in background (push changes, pull updates)
   4. Handle conflicts (last-write-wins, merge, user-resolution)
-  5. Queue offline mutations (replay when connected)
-
-Measurement:
-  iOS: Instruments → Network template / Charles Proxy
-  Android: Android Studio → Network Profiler / Charles Proxy
-  React Native: Flipper → Network plugin
-  Flutter: DevTools → Network tab
 ```
 
 #### App Startup Performance
@@ -421,15 +328,6 @@ Reduce binary size:
   [ ] Strip debug symbols for release builds
   [ ] Compress assets (images, fonts)
   [ ] Use app thinning (iOS) / app bundles (Android)
-  [ ] Lazy-load features via dynamic frameworks / feature modules
-
-Measurement:
-  iOS: Instruments → App Launch template
-       DYLD_PRINT_STATISTICS=1 (environment variable)
-  Android: adb shell am start -W <package>/<activity>
-           Android Studio → Profiler → Startup
-  React Native: Performance monitor overlay
-  Flutter: flutter run --trace-startup
 ```
 
 ### Step 7: Platform-Specific Features
@@ -466,20 +364,6 @@ COMMON MOBILE FEATURES CHECKLIST:
 │    Startup: <Nms> (target: <1000ms)                            │
 │    Memory peak: <N>MB (budget: <N>MB)                          │
 │    App size: <N>MB (budget: <N>MB)                             │
-│    Battery: <OPTIMIZED | NEEDS WORK>                           │
-│                                                                │
-│  Store readiness:                                              │
-│    App Store: <N>/<total> checklist items complete              │
-│    Play Store: <N>/<total> checklist items complete             │
-│                                                                │
-│  Platform features:                                            │
-│    <feature>: <IMPLEMENTED | IN PROGRESS | NOT STARTED>        │
-│    <feature>: <IMPLEMENTED | IN PROGRESS | NOT STARTED>        │
-├────────────────────────────────────────────────────────────────┤
-│  Next: /godmode:test — Run mobile test suite                   │
-│        /godmode:perf — Profile performance in detail           │
-│        /godmode:ship — Submit to app stores                    │
-└────────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 9: Commit and Transition
@@ -497,87 +381,6 @@ COMMON MOBILE FEATURES CHECKLIST:
 4. **Test on real devices.** Simulators/emulators miss real-world issues: thermal throttling, memory pressure, network variability, platform-specific rendering.
 5. **Offline is a feature, not an edge case.** Mobile devices lose connectivity regularly. Design for offline-first, not online-only with graceful degradation.
 6. **App Store guidelines change.** Always check the latest Apple and Google review guidelines before submission. Rejection delays are costly.
-
-## Example Usage
-
-### Setting up a new React Native app
-```
-User: /godmode:mobile Create a new e-commerce app for iOS and Android
-
-Mobile: Assessing requirements...
-
-MOBILE PROJECT:
-Type: New app
-Platforms: iOS + Android
-Approach: Cross-platform (React Native)
-Architecture: MVVM with Clean Architecture layers
-
-Setting up project structure...
-  /src
-    /presentation (screens, components, viewmodels)
-    /domain (use cases, entities, repository interfaces)
-    /data (API client, local database, repository implementations)
-    /navigation
-    /di
-
-Configuring:
-  - TypeScript + strict mode
-  - React Navigation with type-safe routes
-  - Zustand for state management
-  - React Query for server state
-  - MMKV for local storage
-  - Flipper for debugging
-
-Signing:
-  iOS: automatic signing with development team
-  Android: debug keystore configured, release keystore instructions provided
-
-Performance baseline:
-  Cold start: 1.2s (target: < 1s — optimization needed)
-  Bundle size: 12MB (target: < 50MB — OK)
-
-Next: /godmode:build to implement first feature
-```
-
-## Flags & Options
-
-| Flag | Description |
-|------|-------------|
-| (none) | Full mobile project assessment and setup |
-| `--ios` | iOS-specific setup and configuration |
-| `--android` | Android-specific setup and configuration |
-| `--signing` | App signing and provisioning setup only |
-| `--store` | App store submission preparation only |
-| `--perf` | Mobile performance audit only |
-| `--arch <pattern>` | Use specific architecture (mvvm, mvi, clean) |
-| `--framework <name>` | Use specific framework (rn, flutter, swift, kotlin) |
-
-## Auto-Detection
-
-```
-IF directory contains ios/ OR *.xcodeproj OR *.xcworkspace:
-  DETECT platform = "iOS"
-  IF Podfile exists: dependency_manager = "CocoaPods"
-  IF Package.swift exists: dependency_manager = "SPM"
-  SUGGEST "iOS project detected ({dependency_manager}). Activate /godmode:mobile?"
-
-IF directory contains android/ OR build.gradle OR build.gradle.kts:
-  DETECT platform = "Android"
-  IF build.gradle contains "compose": ui_framework = "Jetpack Compose"
-  SUGGEST "Android project detected ({ui_framework}). Activate /godmode:mobile?"
-
-IF package.json contains "react-native":
-  DETECT platform = "React Native"
-  version = package.json.dependencies["react-native"]
-  SUGGEST "React Native {version} project detected. Activate /godmode:mobile?"
-
-IF pubspec.yaml exists AND contains "flutter":
-  DETECT platform = "Flutter"
-  SUGGEST "Flutter project detected. Activate /godmode:mobile?"
-
-IF directory contains *.swift AND *.kt:
-  SUGGEST "Multi-platform native mobile project detected. Activate /godmode:mobile?"
-```
 
 ## Iterative Build & Ship Protocol
 
@@ -597,36 +400,6 @@ WHILE current_feature < total_features:
   3. TEST on simulator/emulator
   4. TEST on physical device (minimum supported OS version)
   5. MEASURE performance impact:
-     - Startup time delta
-     - Memory usage delta
-     - App size delta
-     - Battery impact (if applicable)
-
-  IF startup_time > 1000ms OR memory_peak > budget:
-    performance_checks.append({feature: feature, issue: "performance regression"})
-    OPTIMIZE before proceeding
-
-  completed.append(feature)
-  current_feature += 1
-
-  IF current_feature % 3 == 0:
-    REPORT "{current_feature}/{total_features} features built"
-    RUN full test suite on device
-
-FINAL:
-  RUN app store submission checklist
-  IF all_checks_pass: "Ready for submission"
-  ELSE: REPORT failing checks
-```
-
-## Multi-Agent Dispatch
-
-```
-Agent 1 (ios-platform): iOS features, signing, simulator/device testing
-Agent 2 (android-platform): Android features, signing, emulator/device testing
-Agent 3 (shared-logic): shared business logic, cross-platform tests
-Agent 4 (store-preparation): App Store + Play Store metadata and assets
-MERGE: Verify shared logic integrates with both platforms, run full test suite
 ```
 
 ## HARD RULES
@@ -647,16 +420,6 @@ MERGE: Verify shared logic integrates with both platforms, run full test suite
 5. EVERY image MUST be resized to display size before rendering.
    Never load a 4K image for a 100px thumbnail.
 
-6. ALWAYS implement offline support as a first-class feature.
-   Mobile devices lose connectivity regularly. Design for offline-first.
-
-7. Performance budgets are non-negotiable:
-   - Cold start: < 1 second
-   - Memory: within device memory class limit
-   - App size: < 50MB initial download (unless justified)
-
-8. NEVER commit signing certificates or keystores to version control.
-   Store in CI/CD secrets or secure vault.
 ```
 
 ## Output Format
@@ -702,46 +465,6 @@ The mobile skill is complete when ALL of the following are true:
 7. Platform conventions are respected (iOS HIG, Material Design guidelines)
 8. No signing certificates or secrets committed to version control
 
-## Error Recovery
-
-```
-IF build fails on one platform but not the other:
-  1. Check platform-specific native module compatibility
-  2. Verify native dependencies are linked (pod install for iOS, gradle sync for Android)
-  3. Clear build caches: `cd ios && pod deintegrate && pod install`, or `cd android && ./gradlew clean`
-  4. Check minimum OS version requirements in platform config
-
-IF app crashes on launch (release build only):
-  1. Check ProGuard/R8 rules — missing keep rules cause obfuscation crashes
-  2. Compare debug vs release build configurations
-  3. Check for missing native libraries stripped by the release build
-  4. Test with a staging release build before app store submission
-
-IF performance is below targets:
-  1. Profile with platform tools (Xcode Instruments / Android Profiler)
-  2. Check for excessive re-renders (React Native) or widget rebuilds (Flutter)
-  3. Optimize images: compress, use appropriate resolution per device
-  4. Defer heavy initialization to after first frame render
-
-IF app store submission is rejected:
-  1. Read the rejection reason carefully — Apple/Google provide specific guideline references
-  2. Fix the cited issue exactly (do not add unrelated changes)
-  3. Write a clear resolution note in the resubmission
-  4. For metadata rejections: update screenshots, descriptions, or privacy policy as requested
-```
-
-## Anti-Patterns
-
-- **Do NOT build native for simple content-focused apps.** Cross-platform saves 40-60% effort for standard UI apps.
-- **Do NOT ignore platform conventions.** iOS uses bottom nav; Android uses top app bars. Respect platform idioms.
-- **Do NOT skip ProGuard/R8 rules testing.** Missing rules cause release builds to crash while debug builds work.
-- **Do NOT store secrets in the app binary.** Binaries are trivially decompiled.
-- **Do NOT treat tablets as big phones.** Use adaptive multi-pane layouts and landscape support.
-- **Do NOT hardcode dimensions.** Use responsive layouts that adapt to screen size and dynamic type.
-- **Do NOT submit without testing on minimum supported OS version.**
-- **Do NOT lose the signing keystore.** If lost, you must publish a new app with a new package name.
-
-
 ## Keep/Discard Discipline
 
 After each mobile build pass, evaluate:
@@ -759,8 +482,11 @@ Stop the mobile skill when:
 4. No signing certificates or secrets committed to version control.
 5. At least one E2E smoke test passes on each platform.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run mobile tasks sequentially: iOS platform, then Android platform, then shared logic.
-- Use branch isolation per task: `git checkout -b godmode-mobile-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Build fails on one platform only | Check platform-specific dependencies. Verify native module linking. Clean build cache (`cd ios && pod install`, `cd android && ./gradlew clean`). |
+| App crashes on startup | Check for missing permissions in manifest/plist. Verify all native modules are linked. Check for async initialization race conditions. |
+| Hot reload stops working | Restart metro bundler (RN) or dev server. Clear watchman cache. Check for syntax errors in recently saved files. |
+| App store rejection | Read rejection reason carefully. Common: missing privacy manifest, background mode misuse, incomplete metadata. Fix and resubmit. |

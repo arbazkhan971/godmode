@@ -81,3 +81,24 @@ If your platform lacks `Agent()` or worktree isolation:
 - Clean up branches: `git branch -d godmode-build-{task_id}`.
 - Task ordering, dependency logic, conflict handling, and TSV logging remain identical.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Merge conflict between agents | Discard conflicting agent's work. Re-queue task in next round with narrower file scope. Never manually resolve conflicts. |
+| Test failure after merge | Run `/godmode:fix` with specific test failure. Max 2 retries, then `git revert HEAD` and re-queue with broader context. |
+| Agent touches files outside scope | Discard agent output entirely. Log scope violation. Re-dispatch with explicit file list. |
+| Build command fails post-merge | Check for missing imports or circular dependencies introduced by merge. Revert and re-queue. |
+
+## Success Criteria
+1. All plan tasks completed and merged (or explicitly logged as reverted/backlogged).
+2. `build_cmd && lint_cmd && test_cmd` all pass on final state.
+3. Every new function has at least one test.
+4. Zero unresolved merge conflicts in history.
+
+## TSV Logging
+Append to `.godmode/build-log.tsv`:
+```
+round	task_id	agent_time_ms	status	conflicted_file	notes
+```
+One row per agent per round. Status: merged, reverted, conflict, timeout.

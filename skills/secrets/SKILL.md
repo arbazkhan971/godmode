@@ -52,13 +52,7 @@ gitleaks detect --source . --verbose
 # Scan git history for past leaks
 gitleaks detect --source . --log-opts="--all" --verbose
 
-# Scan with truffleHog for high-entropy strings
-trufflehog filesystem --directory . --only-verified
-
-# Check for common patterns
-grep -rn "password\s*=\s*['\"]" --include="*.py" --include="*.js" --include="*.ts"
-grep -rn "api_key\s*=\s*['\"]" --include="*.py" --include="*.js" --include="*.ts"
-grep -rn "secret\s*=\s*['\"]" --include="*.py" --include="*.js" --include="*.ts"
+# ... (condensed)
 ```
 
 ```
@@ -77,19 +71,6 @@ LEAK DETECTION RESULTS:
 │  Evidence: const STRIPE_KEY = "sk_live_abc123..."         │
 │  Severity: CRITICAL                                       │
 │  Action: Revoke key immediately, rotate, use env var      │
-│                                                           │
-│  LEAK 2: SMTP Password in config                          │
-│  File: config/email.yaml:8                                │
-│  Evidence: password: "smtp_password_here"                 │
-│  Severity: HIGH                                           │
-│  Action: Move to secret manager, rotate credential        │
-│                                                           │
-│  LEAK 3: AWS Key in git history                           │
-│  Commit: a1b2c3d (2024-06-15)                             │
-│  Evidence: AWS_SECRET_ACCESS_KEY in old .env commit       │
-│  Severity: CRITICAL                                       │
-│  Action: Rotate AWS credentials, remove from history      │
-└──────────────────────────────────────────────────────────┘
 ```
 
 For each verified leak:
@@ -115,29 +96,7 @@ vault operator init -key-shares=5 -key-threshold=3
 # Enable secrets engine
 vault secrets enable -path=app kv-v2
 
-# Store a secret
-vault kv put app/api-service \
-  DATABASE_URL="postgres://user:pass@host:5432/db" \
-  JWT_SECRET="generated-256-bit-key" \
-  STRIPE_KEY="sk_live_rotated_key"
-
-# Create access policy
-vault policy write api-service - <<EOF
-path "app/data/api-service" {
-  capabilities = ["read"]
-}
-path "app/metadata/api-service" {
-  capabilities = ["read", "list"]
-}
-EOF
-
-# Create AppRole for service authentication
-vault auth enable approle
-vault write auth/approle/role/api-service \
-  token_policies="api-service" \
-  token_ttl=1h \
-  token_max_ttl=4h \
-  secret_id_ttl=24h
+# ... (condensed)
 ```
 
 #### AWS Secrets Manager
@@ -148,13 +107,7 @@ aws secretsmanager create-secret \
   --secret-string '{"username":"admin","password":"rotated-pass","host":"db.example.com"}'
 
 # Enable automatic rotation
-aws secretsmanager rotate-secret \
-  --secret-id "prod/api-service/database" \
-  --rotation-lambda-arn arn:aws:lambda:us-east-1:123456:function:secret-rotator \
-  --rotation-rules '{"AutomaticallyAfterDays": 30}'
-
-# Retrieve secret in application
-aws secretsmanager get-secret-value --secret-id "prod/api-service/database"
+# ... (condensed)
 ```
 
 #### GCP Secret Manager
@@ -165,12 +118,7 @@ echo -n "super-secret-value" | gcloud secrets create api-key \
   --replication-policy="automatic"
 
 # Add a new version (rotation)
-echo -n "new-rotated-value" | gcloud secrets versions add api-key --data-file=-
-
-# Grant access to service account
-gcloud secrets add-iam-policy-binding api-key \
-  --member="serviceAccount:api-service@project.iam.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor"
+# ... (condensed)
 ```
 
 ### Step 4: .env File Management
@@ -184,15 +132,7 @@ JWT_SECRET=development-secret-change-in-production
 REDIS_URL=redis://localhost:6379
 STRIPE_KEY=sk_test_placeholder
 AWS_REGION=us-east-1
-LOG_LEVEL=debug
-
-# .env — NOT committed (actual local values)
-DATABASE_URL=postgres://dev:actual_pass@localhost:5432/myapp_dev
-JWT_SECRET=actual-dev-jwt-secret
-REDIS_URL=redis://localhost:6379
-STRIPE_KEY=sk_test_actual_key
-AWS_REGION=us-east-1
-LOG_LEVEL=debug
+# ... (condensed)
 ```
 
 #### .gitignore Verification
@@ -313,15 +253,7 @@ repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.0
     hooks:
-      - id: gitleaks
-
-# Alternative: git-secrets (AWS)
-git secrets --install
-git secrets --register-aws
-
-# Alternative: detect-secrets (Yelp)
-detect-secrets scan > .secrets.baseline
-detect-secrets audit .secrets.baseline
+# ... (condensed)
 ```
 
 ```
@@ -359,65 +291,6 @@ PREVENTION LAYER:
 7. **Audit access regularly.** If a human accessed production secrets, there should be a documented reason.
 8. **Defense in depth.** Pre-commit hooks catch local mistakes. CI scans catch missed hooks. GitHub push protection catches everything else. Use all three layers.
 
-## Example Usage
-
-### Scanning for leaked secrets
-```
-User: /godmode:secrets Check for leaked secrets in our repo
-
-Secrets: Scanning codebase and git history...
-
-Running gitleaks... 3 findings
-Running truffleHog... 1 finding (verified)
-Running pattern scan... 2 findings
-
-VERIFIED LEAKS: 2
-
-LEAK 1: Stripe Live API Key
-  File: src/payment.ts:12
-  const key = "sk_live_abc123..."
-  Severity: CRITICAL
-  Action: Revoke in Stripe dashboard NOW
-
-LEAK 2: Database password in git history
-  Commit: a1b2c3d (committed 2024-06-15)
-  File: .env (later gitignored but already committed)
-  Severity: CRITICAL
-  Action: Rotate database password, scrub git history
-
-FALSE POSITIVES: 2 (test fixtures with fake keys)
-
-Immediate actions required:
-1. Revoke Stripe key sk_live_abc123...
-2. Rotate database password
-3. Scrub .env from git history with BFG
-4. Install pre-commit hook to prevent future leaks
-```
-
-### Setting up secret management
-```
-User: /godmode:secrets Set up AWS Secrets Manager for our API
-
-Secrets: Configuring AWS Secrets Manager...
-
-Created secrets:
-  prod/api-service/database — DB credentials (30-day rotation)
-  prod/api-service/jwt — JWT signing key (90-day rotation)
-  prod/api-service/stripe — Stripe API key (90-day rotation)
-
-Updated application:
-  - Added AWS SDK secret retrieval
-  - Removed hardcoded values from config
-  - Added secret caching (5-minute TTL)
-  - Added graceful handling for rotation
-
-Configured rotation:
-  - Lambda function for database password rotation
-  - Rotation schedules set per policy
-
-All 3 secrets migrated to AWS Secrets Manager.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -425,11 +298,6 @@ All 3 secrets migrated to AWS Secrets Manager.
 | (none) | Full secret audit: inventory, leak scan, rotation check |
 | `--scan` | Scan for leaked secrets only |
 | `--rotate` | Check rotation status and rotate overdue secrets |
-| `--audit` | Access audit for secret usage |
-| `--setup` | Set up secret management infrastructure |
-| `--env` | Validate .env files against .env.example |
-| `--hook` | Install pre-commit secret scanning hook |
-| `--provider <name>` | Target secret provider (vault, aws, gcp, azure) |
 
 ## Auto-Detection
 
@@ -463,37 +331,6 @@ WHILE audit_tasks is not empty AND current_iteration < max_iterations:
 
     PHASE 2 — CLASSIFY:
       FOR each detected secret:
-        Classify: LEAKED (in source/history) | HARDCODED (in config) | EXPOSED (weak protection) | MANAGED (vault/runtime)
-        Assign severity: CRITICAL (leaked prod cred) | HIGH (hardcoded) | MEDIUM (no rotation) | LOW (minor policy gap)
-        Tag: secret_type (api_key | db_password | token | cert | encryption_key)
-
-    PHASE 3 — ROTATE:
-      IF check_rotation: verify rotation policy and last rotation date for each secret
-      IF remediate: move hardcoded secrets to manager, rotate any exposed secrets
-      FOR each CRITICAL/HIGH finding:
-        attempt = 0, max_retries = 3
-        WHILE not rotated AND attempt < max_retries:
-          attempt += 1
-          Revoke old credential → generate new → store in manager → verify app works
-          IF rotation fails: log failure, retry with backoff
-        IF attempt == max_retries: ESCALATE to manual rotation
-
-    PHASE 4 — VERIFY:
-      IF automate: install pre-commit hooks, configure CI secret scanning
-      IF verify: re-run full scan to confirm zero hardcoded secrets
-      FOR each remediated secret:
-        Confirm old credential is revoked (attempt auth with it)
-        Confirm new credential works (attempt auth with it)
-        IF verification fails: re-queue for remediation (max 2 re-queues)
-
-    REPORT: "Iteration {current_iteration}/{max_iterations}: {task} — {N} secrets processed, {M} remediated"
-
-STOP CONDITIONS:
-  - All 8 audit tasks completed
-  - OR max_iterations (8) reached
-  - OR zero CRITICAL/HIGH findings remain AND verification passes
-
-POST-LOOP: Generate secrets audit report with findings, remediations, and ongoing monitoring plan
 ```
 
 ## False Positive Handling
@@ -549,17 +386,6 @@ DO NOT STOP just because:
   - False positives remain in scanner output (add them to the allowlist)
 ```
 
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENT DISPATCH (2 worktrees):
-  Agent 1 — "secrets-scan": scan source + history, identify all hardcoded/exposed secrets
-  Agent 2 — "secrets-infra": set up secret manager, rotation policies, pre-commit hooks
-
-MERGE ORDER: scan → infra (scan identifies what to migrate, infra sets up the target)
-CONFLICT ZONES: config files referencing secrets (coordinate env var naming)
-```
-
 ## HARD RULES
 
 ```
@@ -575,17 +401,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 9. Secret rotation MUST be automated. Manual rotation is forgotten rotation.
 10. NEVER store secrets in plain text at rest. Use encrypted storage (Vault, KMS, Secrets Manager).
 ```
-
-## Anti-Patterns
-
-- **Do NOT hardcode secrets.** Not in source code, config files, Dockerfiles, or CI configs.
-- **Do NOT commit .env files.** Add to .gitignore before the first commit. If already committed, scrub history.
-- **Do NOT share secrets via Slack, email, or chat.** Use a secret manager or one-time-use link.
-- **Do NOT skip rotation because "nothing happened."** Rotation limits blast radius of unknown compromises.
-- **Do NOT log secrets.** Sanitize all log output. Mask values in error messages.
-- **Do NOT use long-lived credentials when short-lived alternatives exist.** Prefer IAM roles over access keys.
-- **Do NOT ignore secret scanning alerts.** Act on them immediately.
-
 
 ## Output Format
 
@@ -655,17 +470,5 @@ IF secret manager is unavailable:
   3. If extended outage: use cached secrets (applications should cache with short TTL)
   4. If no cache: halt the affected service rather than operating without secrets
   5. Post-incident: review whether multi-region secret replication is needed
-
-IF pre-commit hook is bypassed (--no-verify):
-  1. CI pipeline secret scan is the second line of defense — it must catch the leak
-  2. If CI also missed it: GitHub/GitLab push protection is the third line
-  3. If all three layers failed: the secret scanning rules need updating
-  4. Add the missed pattern to custom rules (.gitleaks.toml or equivalent)
-  5. Re-scan the entire repository with updated rules
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run secrets tasks sequentially: scan for exposed secrets, then set up secret manager and rotation.
-- Use branch isolation per task: `git checkout -b godmode-secrets-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

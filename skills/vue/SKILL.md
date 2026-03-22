@@ -26,31 +26,7 @@ cat package.json 2>/dev/null | grep -E '"vue"|"nuxt"|"@vue/"'
 # Detect Vue version (2 vs 3)
 cat node_modules/vue/package.json 2>/dev/null | grep '"version"'
 
-# Detect meta-framework
-ls nuxt.config.ts nuxt.config.js 2>/dev/null
-
-# Detect Composition API vs Options API
-grep -rl 'defineComponent\|setup()\|<script setup' src/ 2>/dev/null | head -5
-grep -rl 'data()\|methods:\|computed:' src/ 2>/dev/null | head -5
-
-# Detect state management
-grep -E "pinia|vuex" package.json 2>/dev/null
-
-# Detect router
-grep -E "vue-router" package.json 2>/dev/null
-
-# Detect UI framework
-grep -E "vuetify|quasar|primevue|element-plus|naive-ui|radix-vue" package.json 2>/dev/null
-
-# Detect CSS approach
-grep -E "tailwindcss|unocss|scss|sass|less" package.json 2>/dev/null
-
-# Detect testing
-grep -E "vitest|jest|@vue/test-utils|cypress|playwright" package.json 2>/dev/null
-
-# Detect TypeScript
-ls tsconfig.json 2>/dev/null
-grep -E "vue-tsc|typescript" package.json 2>/dev/null
+# ... (condensed)
 ```
 
 ## Workflow
@@ -74,16 +50,6 @@ Component count: <N>
 
 Directory structure:
  src/
- components/ <N> components
- composables/ <N> composables
- stores/ <N> Pinia stores
- views/ <N> route views
- router/ Router config
- assets/ Static assets
- utils/ Utility functions
-
-Quality score: <HIGH / MEDIUM / LOW>
-Issues detected: <N>
 ```
 
 If starting fresh, ask: "What are you building? Do you need SSR (Nuxt) or is a SPA sufficient?"
@@ -137,53 +103,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
  save: [user: User]
- cancel: []
-}>()
-
-// 3. Composables
-const router = useRouter()
-const userStore = useUserStore()
-const { data, loading, error } = useAsyncData(() => fetchUser(props.userId))
-
-// 4. Reactive state
-const isEditing = ref(false)
-const formData = ref<Partial<User>>({})
-
-// 5. Computed properties
-const displayName = computed(() =>
- `${data.value?.firstName} ${data.value?.lastName}`
-)
-
-// 6. Watchers
-watch(() => props.userId, (newId) => {
- // Re-fetch when userId changes
- fetchUser(newId)
-})
-
-// 7. Methods
-function startEditing() {
- isEditing.value = true
- formData.value = {...data.value }
-}
-
-function saveChanges() {
- emit('save', formData.value as User)
- isEditing.value = false
-}
-
-// 8. Lifecycle hooks
-onMounted(() => {
- // Analytics, DOM access, etc.
-})
-</script>
-
-<template>
- <!-- Template uses flat, readable structure -->
-</template>
-
-<style scoped>
-/* Component-scoped styles */
-</style>
 ```
 
 #### Composable Patterns
@@ -194,28 +113,7 @@ import type { User } from '@/types'
 
 export function useUser(userId: MaybeRef<string>) {
  const user = ref<User | null>(null)
- const loading = ref(false)
- const error = ref<Error | null>(null)
-
- const fullName = computed(() =>
- user.value ? `${user.value.firstName} ${user.value.lastName}` : ''
- )
-
- async function fetch() {
- loading.value = true
- error.value = null
- try {
- user.value = await api.getUser(toValue(userId))
- } catch (e) {
- error.value = e as Error
- } finally {
- loading.value = false
- }
- }
-
- // Return reactive state + methods
- return { user, loading, error, fullName, fetch }
-}
+# ... (condensed)
 ```
 
 Rules for composables:
@@ -250,37 +148,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 export const useAuthStore = defineStore('auth', () => {
- // State
- const token = ref<string | null>(localStorage.getItem('token'))
- const user = ref<User | null>(null)
- const loading = ref(false)
-
- // Getters (computed)
- const isAuthenticated = computed(() => !!token.value)
- const isAdmin = computed(() => user.value?.role === 'admin')
-
- // Actions
- async function login(credentials: LoginCredentials) {
- loading.value = true
- try {
- const response = await api.login(credentials)
- token.value = response.token
- user.value = response.user
- localStorage.setItem('token', response.token)
- } finally {
- loading.value = false
- }
- }
-
- function logout() {
- token.value = null
- user.value = null
- localStorage.removeItem('token')
- useRouter().push('/login')
- }
-
- return { token, user, loading, isAuthenticated, isAdmin, login, logout }
-})
+# ... (condensed)
 ```
 
 Rules for Pinia:
@@ -316,56 +184,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
  history: createWebHistory(import.meta.env.BASE_URL),
- scrollBehavior(to, from, savedPosition) {
- return savedPosition || { top: 0 }
- },
- routes: [
- {
- path: '/',
- component: () => import('@/layouts/DefaultLayout.vue'),
- children: [
- { path: '', name: 'home', component: () => import('@/views/Home.vue') },
- { path: 'about', name: 'about', component: () => import('@/views/About.vue') },
- ],
- },
- {
- path: '/auth',
- component: () => import('@/layouts/AuthLayout.vue'),
- meta: { guestOnly: true },
- children: [
- { path: 'login', name: 'login', component: () => import('@/views/Login.vue') },
- { path: 'register', name: 'register', component: () => import('@/views/Register.vue') },
- ],
- },
- {
- path: '/dashboard',
- component: () => import('@/layouts/DashboardLayout.vue'),
- meta: { requiresAuth: true },
- children: [
- // Lazy-loaded dashboard routes
- ],
- },
- {
- path: '/:pathMatch(.*)*',
- name: 'not-found',
- component: () => import('@/views/NotFound.vue'),
- },
- ],
-})
-
-// Navigation guards
-router.beforeEach((to, from) => {
- const auth = useAuthStore()
-
- if (to.meta.requiresAuth && !auth.isAuthenticated) {
- return { name: 'login', query: { redirect: to.fullPath } }
- }
- if (to.meta.guestOnly && auth.isAuthenticated) {
- return { name: 'home' }
- }
-})
-
-export default router
+# ... (condensed)
 ```
 
 Rules:
@@ -400,38 +219,7 @@ export default defineNuxtConfig({
  routeRules: {
  '/': { prerender: true }, // SSG at build time
  '/blog/**': { isr: 60 }, // ISR — revalidate every 60s
- '/dashboard/**': { ssr: false }, // SPA — client-only
- '/api/**': { cors: true, headers: { 'cache-control': 'no-store' } },
- },
-
- // Modules
- modules: [
- '@pinia/nuxt',
- '@nuxtjs/tailwindcss',
- '@vueuse/nuxt',
- '@nuxt/image',
- '@nuxt/fonts',
- ],
-
- // Runtime config (environment variables)
- runtimeConfig: {
- secretKey: process.env.SECRET_KEY, // Server-only
- public: {
- apiBase: process.env.API_BASE || '/api', // Client + server
- },
- },
-
- // TypeScript
- typescript: {
- strict: true,
- typeCheck: true,
- },
-
- // Experimental features
- experimental: {
- typedPages: true,
- },
-})
+# ... (condensed)
 ```
 
 #### Nuxt Data Fetching Patterns
@@ -451,14 +239,6 @@ const { data: posts, pending, error, refresh } = await useAsyncData(
 // useFetch — shorthand for useAsyncData + $fetch
 const { data: user } = await useFetch(`/api/users/${route.params.id}`, {
  key: `user-${route.params.id}`,
- pick: ['id', 'name', 'email'], // Only include these fields (smaller payload)
-})
-
-// Server-only data (never sent to client bundle)
-const { data: analytics } = await useAsyncData('analytics', () => {
- // This runs only on server
- return fetchAnalytics()
-}, { server: true, lazy: true })
 ```
 
 Rules for Nuxt:
@@ -500,40 +280,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import UserCard from '@/components/UserCard.vue'
 
-describe('UserCard', () => {
- function createWrapper(props = {}) {
- return mount(UserCard, {
- props: {
- user: { id: '1', name: 'Jane', email: 'jane@test.com' },
-...props,
- },
- global: {
- plugins: [createTestingPinia({ createSpy: vi.fn })],
- stubs: { RouterLink: true },
- },
- })
- }
-
- it('renders user name and email', () => {
- const wrapper = createWrapper()
- expect(wrapper.text()).toContain('Jane')
- expect(wrapper.text()).toContain('jane@test.com')
- })
-
- it('emits edit event when edit button is clicked', async () => {
- const wrapper = createWrapper()
- await wrapper.find('[data-testid="edit-btn"]').trigger('click')
- expect(wrapper.emitted('edit')).toHaveLength(1)
- expect(wrapper.emitted('edit')![0]).toEqual([{ id: '1' }])
- })
-
- it('shows admin badge when user is admin', () => {
- const wrapper = createWrapper({
- user: { id: '1', name: 'Jane', email: 'jane@test.com', role: 'admin' },
- })
- expect(wrapper.find('[data-testid="admin-badge"]').exists()).toBe(true)
- })
-})
+# ... (condensed)
 ```
 
 #### Composable Testing
@@ -544,43 +291,8 @@ import { useUser } from '@/composables/useUser'
 import { flushPromises } from '@vue/test-utils'
 
 vi.mock('@/api', () => ({
- getUser: vi.fn(),
-}))
-
-describe('useUser', () => {
- beforeEach(() => {
- vi.clearAllMocks()
- })
-
- it('fetches user and exposes reactive state', async () => {
- const mockUser = { id: '1', firstName: 'Jane', lastName: 'Doe' }
- vi.mocked(api.getUser).mockResolvedValue(mockUser)
-
- const { user, loading, fullName, fetch } = useUser('1')
-
- expect(loading.value).toBe(false)
- fetch()
- expect(loading.value).toBe(true)
-
- await flushPromises()
-
- expect(user.value).toEqual(mockUser)
- expect(fullName.value).toBe('Jane Doe')
- expect(loading.value).toBe(false)
- })
-
- it('handles fetch errors', async () => {
- vi.mocked(api.getUser).mockRejectedValue(new Error('Network error'))
-
- const { error, fetch } = useUser('1')
- await fetch()
-
- expect(error.value).toBeInstanceOf(Error)
- expect(error.value!.message).toBe('Network error')
- })
-})
+# ... (condensed)
 ```
-
 
 ### Step 9: Validation
 Validate the Vue application against best practices:
@@ -601,15 +313,6 @@ VUE APPLICATION AUDIT:
 │ Emits typed with defineEmits<T> │ PASS | FAIL │
 │ No direct DOM manipulation │ PASS | FAIL │
 │ No v-html with user input │ PASS | FAIL │
-│ Key attribute on v-for loops │ PASS | FAIL │
-│ Error boundaries on async components │ PASS | FAIL │
-│ Test coverage meets thresholds │ PASS | FAIL │
-│ Bundle size within budget │ PASS | FAIL │
-│ No unused components or imports │ PASS | FAIL │
-│ Accessibility attributes present │ PASS | FAIL │
-└─────────────────────────────────────────┴────────────────────┘
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ### Step 10: Deliverables & Handoff
@@ -647,33 +350,6 @@ Commit: `"vue: <project> — <N> components, <M> stores, <Composition API | Opti
 6. **Test composables independently.** Composables are pure logic; test them without mounting components. Test components for rendering and interaction.
 7. **Choose rendering strategy per route.** Nuxt hybrid rendering lets you SSG marketing pages, SSR product pages, and SPA dashboards in one app.
 
-## Example Usage
-
-### Building a new Vue 3 SPA
-```
-User: /godmode:vue Build a task management app with authentication
-
-Vue: Starting project assessment...
-
-VUE PROJECT ASSESSMENT:
-Vue version: 3.x (new project)
-Build tool: Vite
-API style: Composition API (<script setup>)
-State management: Pinia
-Router: Vue Router 4
-TypeScript: yes (strict)
-
-Scaffolding project structure...
-Creating stores: useAuthStore, useTaskStore, useNotifyStore
-Creating composables: useAuth, useTasks, usePagination, useForm
-Creating views: Login, Register, Dashboard, TaskList, TaskDetail
-Setting up router with auth guards...
-Setting up Vitest with coverage thresholds...
-
-14 components, 3 stores, 5 composables, 8 routes
-```
-
-
 ## Flags & Options
 
 | Flag | Description |
@@ -681,14 +357,6 @@ Setting up Vitest with coverage thresholds...
 | (none) | Full Vue project assessment and setup |
 | `--audit` | Audit existing Vue project against best practices |
 | `--migrate` | Migrate Options API to Composition API |
-| `--nuxt` | Set up or configure Nuxt 3 |
-| `--pinia` | Design and implement Pinia stores |
-| `--router` | Design and implement Vue Router configuration |
-| `--vite` | Optimize Vite configuration |
-| `--test` | Set up Vitest and write component tests |
-| `--composable <name>` | Generate a new composable with tests |
-| `--component <name>` | Generate a new component with tests and story |
-| `--upgrade` | Upgrade Vue 2 to Vue 3 migration guide |
 
 ## TSV Logging
 
@@ -739,3 +407,14 @@ Each change either advances the branch or gets reverted. No half-finished work r
 6. **ALWAYS lazy-load routes with dynamic `import()`.** Every route loaded upfront is bundle bloat users pay for.
 7. **ALWAYS extract business logic to composables.** Components handle rendering; composables handle logic.
 8. **NEVER use `reactive()` for primitives.** Use `ref()` for primitives. `reactive()` is for objects when you want deep reactivity without `.value`.
+
+## Output Format
+Print: `Vue: {action} complete. Components: {N}. Stores: {N}. Composables: {N}. vue-tsc: {pass|fail}. Status: {DONE|PARTIAL}.`
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| `vue-tsc` type errors | Read error output line by line. Fix prop type mismatches, missing generic args, and incorrect emit signatures first. Re-run after each batch. |
+| HMR not reflecting changes | Check for circular imports in composables. Verify Vite config `optimizeDeps.include` lists heavy deps. Restart dev server as last resort. |
+| Pinia store not reactive after destructure | Use `storeToRefs()` for state/getters. Direct destructure loses reactivity. Actions can be destructured directly. |
+| Hydration mismatch (Nuxt) | Wrap browser-only code in `<ClientOnly>` or `onMounted`. Avoid `Date.now()` or `Math.random()` during SSR. |

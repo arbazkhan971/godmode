@@ -125,21 +125,6 @@ AGGREGATES:
 ┌─────────────────────────────────────────────────┐
 │  <<Aggregate>> Inventory                        │
 │  Commands: ReserveInventory, ReleaseInventory   │
-│  Events: InventoryReserved, InventoryOutOfStock │
-│  Invariants:                                    │
-│  - Stock count cannot go negative               │
-│  - Reserved quantity cannot exceed available     │
-└─────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────┐
-│  <<Aggregate>> Payment                          │
-│  Commands: ProcessPayment, IssueRefund          │
-│  Events: PaymentReceived, PaymentFailed,        │
-│          RefundIssued                            │
-│  Invariants:                                    │
-│  - Refund cannot exceed original payment        │
-│  - Payment must reference a valid order          │
-└─────────────────────────────────────────────────┘
 ```
 
 #### Phase 5: Bounded Context Discovery
@@ -160,17 +145,6 @@ BOUNDED CONTEXTS:
 │  └─────────────────────────┘  └──────────────────────────────┘  │
 │                                                                 │
 │  ┌─────────────────────────┐  ┌──────────────────────────────┐  │
-│  │  BILLING CONTEXT        │  │  IDENTITY CONTEXT            │  │
-│  │                         │  │                              │  │
-│  │  Aggregates:            │  │  Aggregates:                 │  │
-│  │  - Payment              │  │  - Customer                  │  │
-│  │  - Invoice              │  │  - Account                   │  │
-│  │                         │  │                              │  │
-│  │  "Order" = a billable   │  │  "Customer" = account with   │  │
-│  │  transaction            │  │  credentials and profile     │  │
-│  └─────────────────────────┘  └──────────────────────────────┘  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 4: Context Mapping
@@ -192,37 +166,6 @@ CONTEXT MAP:
 │                  (Published Language)                                    │
 │                                                                         │
 │   Reporting ──── ACL ────► Legacy ERP System                           │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-
-CONTEXT RELATIONSHIP TYPES:
-┌──────────────────────┬──────────────────────────────────────────────────┐
-│ Relationship         │ When to Use                                     │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Partnership          │ Two teams cooperate closely, evolve interface   │
-│                      │ together. High trust, high coordination.        │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Customer/Supplier    │ Downstream needs influence upstream priorities. │
-│                      │ Upstream accommodates but owns the interface.   │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Conformist           │ Downstream conforms to upstream's model.        │
-│                      │ No influence on the upstream team.              │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Anti-Corruption      │ Downstream translates upstream's model to       │
-│ Layer (ACL)          │ protect its own domain from pollution.          │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Open Host Service    │ Upstream exposes a well-defined protocol        │
-│                      │ (API) that any downstream can consume.          │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Published Language   │ A shared language (schema, API spec) used       │
-│                      │ between contexts. Often paired with OHS.        │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Shared Kernel        │ Two contexts share a small subset of the model. │
-│                      │ Use sparingly — creates tight coupling.         │
-├──────────────────────┼──────────────────────────────────────────────────┤
-│ Separate Ways        │ No integration. Contexts are completely         │
-│                      │ independent with duplicated concepts.           │
-└──────────────────────┴──────────────────────────────────────────────────┘
 ```
 
 ### Step 5: Tactical Design — Aggregate Internals
@@ -244,23 +187,6 @@ Entities (within this aggregate):
 
 Value Objects:
   - <ValueObjectName>: <immutable, defined by attributes not identity>
-    Properties: <list>
-    Validation: <what makes it valid>
-    Equality: <compared by value, not reference>
-  - <ValueObjectName>: ...
-
-Domain Events (emitted by this aggregate):
-  - <EventName>: <when emitted, what data it carries>
-  - <EventName>: ...
-
-Commands (accepted by this aggregate):
-  - <CommandName>: <preconditions, what it does, events it produces>
-  - <CommandName>: ...
-
-Repository Interface:
-  - save(aggregate): void
-  - findById(id): Aggregate | null
-  - <custom queries needed by the domain>
 ```
 
 #### Aggregate Design Rules
@@ -280,12 +206,6 @@ AGGREGATE BOUNDARY RULES:
 
 5. CASCADE RULE: Only the aggregate root can be referenced from outside.
    Internal entities are accessed through the root.
-
-6. INVARIANT RULE: An aggregate protects its invariants. All state
-   changes go through the root, which validates business rules.
-
-7. IDENTITY RULE: Entities have identity (ID). Value Objects do not.
-   Prefer Value Objects over Entities when possible.
 ```
 
 ### Step 6: Domain Event Catalog
@@ -307,15 +227,6 @@ DOMAIN EVENT CATALOG:
 │                      │             │ warehouseId, reservedAt            │
 ├──────────────────────┼─────────────┼────────────────────────────────────┤
 │ OrderShipped         │ Fulfillment │ shipmentId, orderId, trackingNo,   │
-│                      │             │ carrier, shippedAt                 │
-└──────────────────────┴─────────────┴────────────────────────────────────┘
-
-EVENT SCHEMA RULES:
-1. Events are past tense (OrderPlaced, not PlaceOrder)
-2. Events are immutable — never modify a published event
-3. Events carry enough data for consumers to act without callbacks
-4. Events have a version field for schema evolution
-5. Events are the contract between bounded contexts
 ```
 
 ### Step 7: Implementation Scaffold
@@ -337,17 +248,6 @@ src/
 │   │   ├── repositories/
 │   │   │   └── <Repository>.ts           # Repository interface (port)
 │   │   └── services/
-│   │       └── <DomainService>.ts        # Domain services (stateless logic)
-│   ├── application/
-│   │   ├── handlers/
-│   │   │   └── <CommandHandler>.ts       # Command handlers (use cases)
-│   │   └── queries/
-│   │       └── <QueryHandler>.ts         # Query handlers (read side)
-│   └── infrastructure/
-│       ├── persistence/
-│       │   └── <RepositoryImpl>.ts       # Repository implementation (adapter)
-│       └── messaging/
-│           └── <EventPublisher>.ts       # Event publishing adapter
 ```
 
 ### Step 8: Artifacts & Transition
@@ -372,109 +272,6 @@ src/
 7. **Not everything needs DDD.** CRUD operations, reports, and generic domains do not benefit from tactical DDD patterns. Reserve the investment for the core domain.
 8. **Event storming is collaborative.** Even in a solo coding session, walk through the event storming phases. The structured thinking process catches model errors early.
 
-## Example Usage
-
-### Modeling an e-commerce domain
-```
-User: /godmode:ddd Model the domain for our e-commerce platform
-
-DDD: Starting domain discovery...
-
-DOMAIN CONTEXT:
-Business: Online retail marketplace
-Core domain: Ordering & Checkout (competitive differentiator)
-Supporting: Inventory management, Customer profiles
-Generic: Authentication, Email notifications, Payment processing
-
-Beginning event storming...
-
-Phase 1 — Domain Events discovered: 24 events
-Phase 2 — Timeline with 4 alternate flows mapped
-Phase 3 — 18 commands identified with actors
-Phase 4 — 6 aggregates identified
-Phase 5 — 4 bounded contexts defined
-
-BOUNDED CONTEXTS:
-1. Ordering (core) — Order, Cart, Promotion
-2. Fulfillment (supporting) — Shipment, Inventory
-3. Billing (supporting) — Payment, Invoice
-4. Identity (generic) — Customer, Account
-
-CONTEXT MAP:
-Ordering ←Partnership→ Fulfillment
-Ordering ←Customer/Supplier→ Billing
-Billing ←Conformist→ Stripe (External)
-Identity ←Open Host Service→ All
-
-Shall I proceed to tactical design for the Ordering context?
-```
-
-### Designing aggregate boundaries
-```
-User: /godmode:ddd --aggregate Design the Order aggregate boundaries
-
-DDD: Analyzing the Order aggregate...
-
-AGGREGATE DESIGN — Order:
-Root Entity: Order
-  ID: OrderId (UUID)
-  State: status, customerId, items[], totalAmount, placedAt
-  Invariants:
-    1. Order must have at least one item
-    2. Total must equal sum of item prices
-    3. Cannot transition from Delivered to Cancelled
-
-Entities:
-  - OrderItem: quantity, productId, unitPrice, subtotal
-
-Value Objects:
-  - Money: amount (decimal), currency (enum)
-  - Address: street, city, state, zip, country
-  - OrderStatus: Draft | Placed | Paid | Shipped | Delivered | Cancelled
-
-Domain Events:
-  - OrderPlaced: orderId, customerId, items[], totalAmount
-  - OrderCancelled: orderId, reason, cancelledAt
-
-Commands:
-  - PlaceOrder: precondition (cart not empty), produces OrderPlaced
-  - CancelOrder: precondition (status < Shipped), produces OrderCancelled
-
-NOTE: Payment is NOT inside the Order aggregate. Payment is in the
-Billing context. They communicate via events (OrderPlaced → ProcessPayment).
-```
-
-### Facilitating event storming
-```
-User: /godmode:ddd --event-storm We're building a ride-sharing app
-
-DDD: Starting event storming session...
-
-Let me explore the domain. What happens from a rider's perspective?
-
-Phase 1 — Events:
-🟧 RideRequested
-🟧 DriverMatched
-🟧 DriverEnRoute
-🟧 RiderPickedUp
-🟧 RideInProgress
-🟧 RideCompleted
-🟧 PaymentCharged
-🟧 RiderRated
-🟧 DriverRated
-🟧 RideCancelled
-🟧 SurgeActivated
-🟧 DriverLocationUpdated
-...
-
-This is a rich domain. I see at least 3 bounded contexts emerging:
-1. Ride Management (core)
-2. Matching & Dispatch (core)
-3. Pricing & Billing (supporting)
-
-Shall I continue to Phase 2 (timeline ordering)?
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -482,12 +279,6 @@ Shall I continue to Phase 2 (timeline ordering)?
 | (none) | Full DDD session: discovery, event storming, contexts, tactical design |
 | `--strategic` | Strategic design only (bounded contexts, context map, ubiquitous language) |
 | `--tactical` | Tactical design only (aggregates, entities, value objects, events) |
-| `--event-storm` | Facilitated event storming session |
-| `--aggregate <name>` | Design a specific aggregate's internal structure |
-| `--context-map` | Generate or update the bounded context map only |
-| `--language` | Build or update the ubiquitous language glossary |
-| `--scaffold` | Generate directory structure and skeleton code from the domain model |
-| `--validate` | Validate existing domain model against DDD principles |
 
 ## HARD RULES
 
@@ -524,20 +315,6 @@ AUTO-DETECT:
 
 4. Anemic domain model detection:
    # Look for models that are just data bags (getters/setters only, no behavior)
-   # Flag if entity classes have no methods beyond get/set
-
-5. Service layer:
-   find src/ -type f -name "*Service*" -o -name "*UseCase*" -o -name "*Handler*" 2>/dev/null
-   # Detect if business logic lives in services (anemic) vs domain objects (rich)
-
-6. Module/context boundaries:
-   ls -d src/*/ 2>/dev/null
-   # Detect existing module structure that may map to bounded contexts
-
--> Auto-identify if project uses DDD patterns already or is CRUD-based.
--> Auto-detect existing bounded context candidates from module structure.
--> Auto-flag anemic domain models for enrichment.
--> Only ask user about core vs supporting domain classification.
 ```
 
 ## Output Format
@@ -587,15 +364,6 @@ IF same term means different things in different contexts:
   → Document: "'Order' in Ordering = items customer wants to buy. 'Order' in Fulfillment = items to pick and ship."
   → Add anti-corruption layer or published language at the boundary
 
-IF no clear bounded context boundaries emerge:
-  → The domain may not need DDD — check if it is primarily CRUD
-  → If CRUD: suggest simpler architecture, do NOT force DDD patterns
-  → If complex but unclear: run another event storming round focusing on language divergence points
-
-IF existing codebase has anemic domain model:
-  → Do NOT rewrite immediately
-  → Add behavior to domain objects incrementally (one aggregate per sprint)
-  → Track: "Enriched {aggregate} — moved {N} methods from services to domain"
 ```
 
 ## Keep/Discard Discipline
@@ -624,20 +392,3 @@ DO NOT STOP just because:
   - Implementation scaffold is not yet generated (model correctness comes first)
 ```
 
-## Anti-Patterns
-
-- **Do NOT start with the database schema.** Model the domain first. Persistence is derived.
-- **Do NOT create one big aggregate.** One aggregate per transactional boundary. Split if > 4 entities.
-- **Do NOT share domain objects across bounded contexts.** Each context owns its model. Translate at the boundary.
-- **Do NOT use DDD for CRUD.** If the logic is "save, read, delete," DDD adds complexity without value.
-- **Do NOT skip the ubiquitous language.** `processRecord` instead of `placeOrder` creates a mental translation layer.
-- **Do NOT hold references across aggregate boundaries.** Use IDs only. Direct references create hidden coupling.
-- **Do NOT force immediate consistency across aggregates.** Use domain events and eventual consistency.
-- **Do NOT model the entire domain at once.** Start with the core domain. Expand only when complexity justifies it.
-
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run DDD tasks sequentially: domain discovery, then event storming, then tactical design, then scaffold.
-- Use branch isolation per task: `git checkout -b godmode-ddd-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

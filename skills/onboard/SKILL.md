@@ -26,15 +26,7 @@ ls package.json Cargo.toml go.mod pyproject.toml pom.xml Gemfile *.csproj 2>/dev
 # Count files by language
 find . -name "*.ts" -o -name "*.js" -o -name "*.py" -o -name "*.go" -o -name "*.rs" -o -name "*.java" | grep -v node_modules | grep -v .git | head -200
 
-# Find entry points
-find . -name "main.*" -o -name "index.*" -o -name "app.*" -o -name "server.*" | grep -v node_modules | grep -v .git
-
-# Find configuration
-find . -name "*.config.*" -o -name "*.yml" -o -name "*.yaml" -o -name "Dockerfile" -o -name "docker-compose*" | grep -v node_modules | grep -v .git
-
-# Understand project structure
-ls -la
-ls -la src/ 2>/dev/null || ls -la lib/ 2>/dev/null || ls -la app/ 2>/dev/null
+# ... (condensed)
 ```
 
 ```
@@ -151,28 +143,6 @@ Variables:
   - Boolean: is/has/should prefix (isReady, hasPermission)
 
 Functions:
-  - Actions: verb-first (createUser, validateInput, fetchData)
-  - Handlers: handle-prefix (handleSubmit, handleError)
-  - Getters: get-prefix (getUserById, getConfig)
-  - Predicates: is/has/can (isValid, hasAccess, canDelete)
-
-Types/Interfaces:
-  - Types: PascalCase (UserProfile, ApiResponse)
-  - Interfaces: PascalCase, no I-prefix (User not IUser)
-  - Enums: PascalCase with PascalCase members (Status.Active)
-  - Generics: single uppercase (T, K, V) or descriptive (TResult)
-
-API Endpoints:
-  - Style: <REST | RPC | GraphQL | mixed>
-  - Pattern: <kebab-case | camelCase | snake_case>
-  - Versioning: <URL path /v1/ | header | query param | none>
-  - Example: GET /api/v1/user-profiles/:id
-
-Database:
-  - Tables: <snake_case | PascalCase | plural | singular>
-  - Columns: <snake_case | camelCase>
-  - Foreign keys: <table_id pattern>
-  - Indexes: <naming pattern>
 ```
 
 ### Step 5: Dependency Graph
@@ -240,28 +210,6 @@ Stop 2: Configuration (<file>)
 
 Stop 3: Routing (<file>)
   What: How requests are mapped to handlers
-  Key lines: <start>-<end>
-  Note: <middleware chain, auth requirements, versioning>
-
-Stop 4: Core Business Logic (<file>)
-  What: The most important domain logic
-  Key lines: <start>-<end>
-  Note: <key algorithms, business rules, domain concepts>
-
-Stop 5: Data Layer (<file>)
-  What: How data is stored and retrieved
-  Key lines: <start>-<end>
-  Note: <ORM usage, query patterns, migration strategy>
-
-Stop 6: Error Handling (<file>)
-  What: How errors propagate and are reported
-  Key lines: <start>-<end>
-  Note: <error types, logging, user-facing messages>
-
-Stop 7: Testing Pattern (<file>)
-  What: Example of a well-written test in this project
-  Key lines: <start>-<end>
-  Note: <test structure, mocking approach, fixtures>
 ```
 
 ### Step 7: Generate Onboarding Report
@@ -282,18 +230,6 @@ Stop 7: Testing Pattern (<file>)
 │  1. <file> — <why>                                         │
 │  2. <file> — <why>                                         │
 │  3. <file> — <why>                                         │
-│                                                            │
-│  Code tour: <N> stops, ~<M> min reading time               │
-│  Dependencies: <N> runtime, <M> dev                        │
-│  Naming: <convention summary>                              │
-│                                                            │
-│  HEALTH SIGNALS:                                           │
-│  Test coverage: <X>%                                       │
-│  Last commit: <date>                                       │
-│  Open issues: <N>                                          │
-│  Outdated deps: <N>                                        │
-│  Circular deps: <N>                                        │
-└────────────────────────────────────────────────────────────┘
 ```
 
 ### Step 8: Commit and Transition
@@ -312,49 +248,6 @@ Stop 7: Testing Pattern (<file>)
 6. **Key files first.** A new developer shouldn't need to read 500 files. Identify the 7-10 files that explain 80% of the system.
 7. **Code tours beat documentation.** Walking through actual code with commentary is more useful than abstract architecture docs.
 
-## Example Usage
-
-### Onboarding to a new project
-```
-User: /godmode:onboard Walk me through this codebase
-
-Onboard: Scanning project...
-
-PROJECT PROFILE:
-Name: acme-api
-Type: REST API
-Language: TypeScript
-Framework: Express + Prisma
-Size: 247 files, ~18K lines
-Last commit: 2 hours ago
-
-Architecture: Clean Architecture (controllers → services → repositories)
-Data: PostgreSQL via Prisma ORM
-
-KEY FILES (read in this order):
-1. src/server.ts — Express app bootstrap, middleware chain
-2. src/routes/index.ts — All 23 endpoints mapped
-3. src/services/order.service.ts — Core business logic (most complex)
-4. prisma/schema.prisma — 12 data models, relationships
-5. src/middleware/auth.ts — JWT validation, role checking
-
-CODE TOUR: 7 stops, ~25 min reading time
-Starting tour...
-```
-
-### Quick architecture check
-```
-User: /godmode:onboard --quick Just the architecture overview
-
-Onboard: Quick scan...
-
-Express API with Clean Architecture:
-  routes/ → controllers/ → services/ → repositories/ → Prisma → PostgreSQL
-
-Key patterns: dependency injection, repository pattern, middleware chain
-Entry point: src/server.ts
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -362,10 +255,6 @@ Entry point: src/server.ts
 | (none) | Full onboarding — architecture, key files, code tour, dependencies |
 | `--quick` | Quick architecture overview only |
 | `--tour` | Generate code tour only |
-| `--deps` | Dependency graph and analysis only |
-| `--naming` | Naming convention analysis only |
-| `--files` | Key file identification only |
-| `--health` | Project health signals only |
 
 ## HARD RULES
 
@@ -398,16 +287,6 @@ AUTO-DETECT SEQUENCE:
    - grep "express" package.json → Express
    - grep "fastapi\|flask\|django" requirements.txt → Python web
    - grep "gin\|echo\|fiber" go.mod → Go web
-   - grep "actix\|axum\|rocket" Cargo.toml → Rust web
-
-3. Architecture detection:
-   - ls src/api/ src/services/ src/models/ → layered/clean architecture
-   - ls apps/ packages/ → monorepo
-   - ls cmd/ internal/ pkg/ → Go standard layout
-   - ls docker-compose* → multi-service
-   - ls serverless* / template.yaml → serverless
-
-4. Populate PROJECT PROFILE automatically from detection results.
 ```
 
 ## Explicit Loop Protocol
@@ -491,24 +370,7 @@ IF architecture is ambiguous:
 IF test suite fails on clean checkout:
   1. Check for required test databases or services (docker-compose for test deps)
   2. Verify test environment variables are set
-  3. Check for flaky tests (run twice to detect intermittent failures)
-  4. Document the test requirements in the onboarding report
-
-IF repository is too large to analyze fully:
-  1. Focus on the top 20 most-modified files (git log --format="%s" --name-only)
-  2. Analyze entry points and their immediate dependencies only
-  3. Use directory-level analysis instead of file-level for large monorepos
-  4. Document the scope of analysis and recommend further investigation areas
 ```
-
-## Anti-Patterns
-
-- **Do NOT assume architecture from directory names.** Read the files.
-- **Do NOT skip the git history.** Commit patterns reveal what matters.
-- **Do NOT list every file.** Identify the 10-20% that explain 80% of the system.
-- **Do NOT ignore test files.** Tests document expected behavior.
-- **Do NOT generate documentation without reading code.** Verify every claim.
-- **Do NOT assume REST.** Detect the actual protocol from router/handler code.
 
 ## Keep/Discard Discipline
 ```
@@ -537,7 +399,6 @@ DO NOT STOP just because:
   - Some modules lack documentation (note gaps in the report)
 ```
 
-
 ## Onboarding Audit Loop
 
 Systematic protocol for measuring and improving the onboarding experience with quantitative metrics:
@@ -558,200 +419,5 @@ WHILE current_iteration < max_iterations:
 
        a. Clone the repository (fresh, no caches):
           git clone {repo_url} /tmp/godmode-onboard-test
-          CHECKPOINT: clone_time = elapsed()
-
-       b. Install dependencies:
-          Run detected install command (npm ci, pip install, cargo build, etc.)
-          CHECKPOINT: install_time = elapsed()
-
-       c. Run the application:
-          Run detected start/dev command
-          Wait for "ready" signal (listening on port, "compiled successfully", etc.)
-          CHECKPOINT: run_time = elapsed()
-
-       d. Run tests:
-          Run detected test command
-          CHECKPOINT: test_time = elapsed()
-
-       e. Make a trivial change and commit:
-          Edit a comment in a source file
-          Run lint + test to verify nothing broke
-          git commit
-          CHECKPOINT: first_commit_time = elapsed()
-
-       TOTAL_TTFC = first_commit_time
-
-    2. SCORE TTFC:
-       Excellent: < 15 minutes
-       Good:      15-30 minutes
-       Fair:      30-60 minutes
-       Poor:      1-2 hours
-       Failing:   > 2 hours
-
-    3. IDENTIFY bottlenecks:
-       ┌────────────────────┬───────────┬───────────────────────┐
-       │  Step              │  Duration │  Bottleneck?           │
-       ├────────────────────┼───────────┼───────────────────────┤
-       │  Clone             │  <N>s     │  Large repo? LFS?      │
-       │  Install deps      │  <N>s     │  Many deps? No cache?  │
-       │  First run         │  <N>s     │  Build step? DB setup? │
-       │  Test suite        │  <N>s     │  Slow tests? Seeds?    │
-       │  First commit      │  <N>s     │  Pre-commit hooks?     │
-       ├────────────────────┼───────────┼───────────────────────┤
-       │  TOTAL TTFC        │  <N>s     │  Grade: <A-F>          │
-       └────────────────────┴───────────┴───────────────────────┘
-
-    4. RECOMMEND optimizations for each bottleneck:
-       - Clone slow: enable shallow clone instructions, consider sparse checkout
-       - Install slow: add lockfile caching, suggest faster package manager
-       - First run slow: add docker-compose for dependencies, prebuilt containers
-       - Tests slow: suggest --bail for initial run, test splitting
-       - Pre-commit slow: optimize hook pipeline, add lint-staged
-
-  IF phase == "setup_script_validation":
-    1. DETECT setup scripts:
-       - scripts/setup.sh, scripts/bootstrap.sh, Makefile (setup target)
-       - package.json scripts: "setup", "dev:setup", "bootstrap"
-       - docker-compose.yml, devcontainer.json
-       - README.md "Getting Started" section commands
-
-    2. VALIDATE each setup path (on clean environment simulation):
-       FOR each setup_method in detected_methods:
-         a. Parse all commands from the setup method
-         b. FOR each command:
-            - CHECK: command exists on PATH (which {cmd})
-            - CHECK: required env vars are documented (.env.example exists)
-            - CHECK: required services are documented (DB, Redis, etc.)
-            - CHECK: correct OS/arch assumptions (no macOS-only on Linux, etc.)
-            - CHECK: correct permissions (no unnecessary sudo)
-            - CHECK: idempotent (safe to run twice without side effects)
-         c. RUN the full setup sequence
-         d. VERIFY: application starts after setup
-         e. VERIFY: tests pass after setup
-
-    3. SCORE setup quality:
-       [ ] Setup script exists: +2 (vs manual steps only)
-       [ ] Single command setup: +2 (./scripts/setup.sh or make setup)
-       [ ] .env.example provided: +1
-       [ ] Required services documented: +1
-       [ ] Docker-compose for dependencies: +1
-       [ ] Works on macOS: +1
-       [ ] Works on Linux: +1
-       [ ] Idempotent (re-runnable): +1
-       Total: <N>/10
-
-    4. REPORT:
-       SETUP SCRIPT VALIDATION:
-       ┌─────────────────────────────────────────────────────┐
-       │  Setup methods found:       <N>                      │
-       │  Single-command setup:      YES / NO                 │
-       │  .env.example present:      YES / NO                 │
-       │  Services documented:       YES / NO                 │
-       │  Docker support:            YES / NO                 │
-       │  Cross-platform:            YES / NO / PARTIAL       │
-       │  Idempotent:                YES / NO                 │
-       │  Setup score:               <N>/10 (<grade>)         │
-       │  Blocking issues:           <list>                   │
-       └─────────────────────────────────────────────────────┘
-
-  IF phase == "knowledge_gap_detection":
-    1. IDENTIFY implicit knowledge not captured in documentation:
-       - Undocumented environment variables: grep -r 'process.env\|os.environ\|os.Getenv' --include='*.{ts,py,go}' | extract var names | compare against .env.example
-       - Undocumented CLI commands: grep -r 'scripts' package.json | list all script names | check if documented
-       - Undocumented conventions: naming patterns, file placement rules, import conventions
-       - Undocumented architecture decisions: check for docs/adr/ or ARCHITECTURE.md
-       - Undocumented deployment process: check for documented deploy steps
-
-    2. SCORE knowledge capture:
-       env_vars_documented = documented_vars / total_vars * 100
-       scripts_documented = documented_scripts / total_scripts * 100
-       conventions_documented = YES / NO
-       architecture_documented = YES / NO
-       deploy_documented = YES / NO
-
-    3. GENERATE knowledge gap report:
-       KNOWLEDGE GAP ANALYSIS:
-       ┌──────────────────────────┬────────┬────────────────────┐
-       │  Knowledge Area          │ Status │ Gap                 │
-       ├──────────────────────────┼────────┼────────────────────┤
-       │  Environment variables   │ <N>%   │ <N> undocumented    │
-       │  npm/make scripts        │ <N>%   │ <N> undocumented    │
-       │  Naming conventions      │ YES/NO │ <details>           │
-       │  Architecture decisions  │ YES/NO │ <details>           │
-       │  Deployment process      │ YES/NO │ <details>           │
-       │  Testing strategy        │ YES/NO │ <details>           │
-       │  Error handling patterns │ YES/NO │ <details>           │
-       └──────────────────────────┴────────┴────────────────────┘
-
-  IF phase == "ramp_up_curve":
-    1. ESTIMATE developer ramp-up time by complexity tier:
-       Tier 1 — Bug fixes (simple, isolated changes):
-         Estimated time to productive fix: <N> hours after setup
-         Prerequisites: understand file structure + test runner
-
-       Tier 2 — Small features (new endpoint, new component):
-         Estimated time: <N> days after setup
-         Prerequisites: understand architecture + data flow + testing patterns
-
-       Tier 3 — Cross-cutting features (new domain, new integration):
-         Estimated time: <N> weeks after setup
-         Prerequisites: understand domain model + service boundaries + deployment
-
-    2. IDENTIFY ramp-up accelerators and blockers:
-       Accelerators:
-       - [ ] Code tour exists (guided walkthrough of key files)
-       - [ ] Architecture docs exist (ADRs, diagrams)
-       - [ ] Good test examples (tests serve as executable documentation)
-       - [ ] Consistent patterns (predictable code structure)
-       - [ ] Low complexity (few circular dependencies, clear layers)
-
-       Blockers:
-       - [ ] No documentation (tribal knowledge only)
-       - [ ] Inconsistent patterns (different styles in different modules)
-       - [ ] High complexity (deep call chains, circular deps)
-       - [ ] Flaky tests (new developers can't trust the test suite)
-       - [ ] Manual setup steps (error-prone, undocumented)
-
-  IF phase == "onboarding_doc_completeness":
-    1. CHECK for required onboarding documents:
-       REQUIRED:
-       [ ] README.md with project overview and setup steps
-       [ ] CONTRIBUTING.md with development workflow
-       [ ] .env.example with all required environment variables
-       [ ] Architecture overview (ADR, diagram, or ARCHITECTURE.md)
-
-       RECOMMENDED:
-       [ ] Code tour (docs/onboarding/code-tour.md or VS Code code tour)
-       [ ] Troubleshooting guide (common issues and fixes)
-       [ ] Glossary of domain terms
-       [ ] Team contacts and escalation paths
-       [ ] Development environment alternatives (Docker, devcontainer, cloud IDE)
-
-    2. SCORE completeness:
-       required_present = count(required items present) / 4
-       recommended_present = count(recommended items present) / 5
-       overall = (required_present * 0.7) + (recommended_present * 0.3)
-
-    3. REPORT with prioritized action items
-
-  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — Grade: {grade}"
-
-FINAL ONBOARDING AUDIT:
-┌──────────────────────────────────────────────────────────┐
-│  ONBOARDING HEALTH REPORT                                 │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Grade  │ Key Metric                 │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Time to first commit│  <A-F> │  <N> minutes               │
-│  Setup scripts       │  <A-F> │  <N>/10 quality score      │
-│  Knowledge gaps      │  <A-F> │  <N> undocumented items    │
-│  Ramp-up curve       │  <A-F> │  Tier 1: <N> hours         │
-│  Doc completeness    │  <A-F> │  <N>% complete             │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │  <A-F> │  <priority action>         │
-└──────────────────────┴────────┴───────────────────────────┘
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run onboarding tasks sequentially: frontend docs, then backend docs, then infra docs, then shared docs.
-Use branch isolation per task: `git checkout -b godmode-onboard-{task}`, implement, commit, merge back.

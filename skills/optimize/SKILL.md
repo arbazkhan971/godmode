@@ -114,3 +114,24 @@ If your platform lacks `Agent()` or worktree isolation:
 - Same termination logic: target reached, max rounds, diminishing returns.
 - ~3x slower per round but identical results.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Metric command returns non-numeric output | Verify `metric_cmd` outputs exactly one number. Pipe through `tail -1` or `awk` to extract. Re-baseline after fixing. |
+| Guard passes but metric measurement is noisy (>5% variance) | Increase to 10 runs, trim outliers, take median of middle 8. If still noisy, profile to find non-deterministic code paths. |
+| All 3 agents produce regressions | Trigger stuck recovery: re-read all in-scope files, try opposite approach. If 2 stuck rounds in a row, try radical rewrite. |
+| Agent timeout (>5 min) | Kill worktree, mark timeout in TSV. Do not retry same hypothesis. Next round picks new approaches. |
+
+## Success Criteria
+1. Metric improved from baseline with statistical confidence (median of 3+ runs).
+2. All guards pass: `build_cmd && lint_cmd && test_cmd`.
+3. No increase in code complexity for gains under 1%.
+4. Results logged in `.godmode/optimize-results.tsv` with before/after values.
+
+## TSV Logging
+Append to `.godmode/optimize-results.tsv`:
+```
+round	agent	change	metric_before	metric_after	delta_pct	status
+```
+One row per agent per round. Status: kept, discarded, timeout, guard_fail.

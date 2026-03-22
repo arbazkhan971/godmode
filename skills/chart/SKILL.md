@@ -53,12 +53,6 @@ CHART TYPE SELECTION:
 │  Show part-to-whole │  Donut, Stacked area, Marimekko                     │
 │  Show ranking       │  Horizontal bar, Bump chart, Slope graph            │
 │  Show time series   │  Line, Candlestick, Calendar heatmap               │
-│  Show real-time     │  Live line, Gauge, Number card, Sparkline           │
-└─────────────────────┴──────────────────────────────────────────────────────┘
-
-SELECTED: <chart type>
-JUSTIFICATION: <why this chart type best communicates the data story>
-ALTERNATIVES CONSIDERED: <other options and why they were rejected>
 ```
 
 Rules:
@@ -87,23 +81,6 @@ LIBRARY SELECTION:
 ├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
 │  Plotly      │  Scientific/data     │  ~1MB        │  Medium — rich       │
 │              │  analysis, 3D plots  │              │  interactive charts  │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Nivo        │  React, beautiful    │  Varies      │  Low — pre-styled    │
-│              │  defaults, animation │              │  with good defaults  │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Victory     │  React/React Native, │  ~60KB       │  Low — cross-platform│
-│              │  mobile charts       │              │  chart components    │
-├──────────────┼──────────────────────┼──────────────┼──────────────────────┤
-│  Observable  │  Notebooks, quick    │  ~80KB       │  Low — Observable    │
-│  Plot        │  exploration, static │              │  Plot grammar        │
-└──────────────┴──────────────────────┴──────────────┴──────────────────────┘
-
-SELECTED: <library>
-JUSTIFICATION: <why — based on project framework, chart complexity, bundle budget>
-INSTALLATION:
-  npm install <package>
-  # or
-  <CDN link for non-bundled projects>
 ```
 
 ### Step 4: Data Transformation
@@ -137,8 +114,7 @@ function transformData(raw: RawData[]): ChartData {
     .filter(/* remove invalid entries */)
     .map(/* reshape to chart format */)
     .sort(/* order for readability */)
-    .slice(/* limit to top N if needed */);
-}
+# ... (condensed)
 ```
 
 ### Step 5: Chart Implementation
@@ -175,18 +151,7 @@ function createChart(container: HTMLElement, data: ChartData[], options: ChartOp
   const { width, height, margin } = options;
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
-
-  const svg = d3.select(container)
-    .append('svg')
-    .attr('viewBox', `0 0 ${width} ${height}`)
-    .attr('role', 'img')
-    .attr('aria-label', options.ariaLabel);
-
-  const g = svg.append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
-
-  // Scales, axes, data bindingrendering...
-}
+# ... (condensed)
 ```
 
 #### Recharts Implementation Pattern
@@ -197,16 +162,7 @@ function Chart({ data }: { data: ChartData[] }) {
   return (
     <ResponsiveContainer width="100%" height={400}>
       <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="category" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="value" fill="#8884d8" />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-}
+# ... (condensed)
 ```
 
 ### Step 6: Responsive Design
@@ -228,13 +184,6 @@ RESPONSIVE STRATEGY:
 │                  │              │  hover tooltips, brush/zoom enabled       │
 └──────────────────┴──────────────┴──────────────────────────────────────────┘
 
-RESPONSIVE TECHNIQUES:
-- Use viewBox on SVG for automatic scaling (D3)
-- Use ResponsiveContainer wrapper (Recharts)
-- Set responsive: true in chart config (Chart.js)
-- Use autosize: true with Plotly.Plots.resize on window resize (Plotly)
-- Use ResizeObserver for container-query-based responsiveness
-- Test at 320px, 768px, 1024px, 1440px, 1920px
 ```
 
 ### Step 7: Color & Accessibility
@@ -256,25 +205,6 @@ ACCESSIBILITY CHECKLIST:
 │  Text labels minimum 12px font size              │  PASS | FAIL     │
 │  No information conveyed by color alone          │  PASS | FAIL     │
 │  Reduced motion support (@prefers-reduced-motion)│  PASS | FAIL     │
-│  High contrast mode support                      │  PASS | FAIL     │
-└──────────────────────────────────────────────────┴───────────────────┘
-
-COLORBLIND-SAFE PALETTES:
-  Categorical (8 colors):
-    #4E79A7, #F28E2B, #E15759, #76B7B2, #59A14F, #EDC948, #B07AA1, #FF9DA7
-
-  Sequential (single hue):
-    Blues: #deebf7 → #3182bd → #08519c
-    Greens: #e5f5e0 → #31a354 → #006d2c
-
-  Diverging (two hues):
-    Blue-Red: #2166ac → #f7f7f7 → #b2182b
-    Purple-Green: #762a83 → #f7f7f7 → #1b7837
-
-  Tools to verify:
-    - Sim Daltonism (macOS)
-    - Chrome DevTools > Rendering > Emulate vision deficiencies
-    - Coblis color blindness simulator
 ```
 
 ### Step 8: Dashboard Composition
@@ -296,23 +226,6 @@ DASHBOARD PRINCIPLES:
   4. Consistent color encoding across all charts (same color = same category)
   5. Linked interactions — filtering one chart filters all charts
   6. Date range selector affects all charts simultaneously
-  7. Loading states for each chart independently (skeleton screens)
-  8. Error states per chart — one failed chart should not break the dashboard
-
-LAYOUT GRID:
-┌──────────────┬──────────────┬──────────────┬──────────────┐
-│   KPI Card   │   KPI Card   │   KPI Card   │   KPI Card   │
-│   Revenue    │   Users      │   Churn      │   NPS        │
-├──────────────┴──────────────┴──────────────┴──────────────┤
-│                    Primary Chart                          │
-│                  (Revenue over time)                      │
-├──────────────────────────────┬────────────────────────────┤
-│     Supporting Chart 1       │     Supporting Chart 2     │
-│     (Revenue by segment)     │     (Top products)         │
-├──────────────────────────────┴────────────────────────────┤
-│                    Detail Table                           │
-│               (Filterable transaction list)               │
-└──────────────────────────────────────────────────────────┘
 ```
 
 ### Step 9: Performance Optimization
@@ -374,12 +287,6 @@ Library: <library>
 Data points: <N>
 Responsive: <yes — tested at 320px, 768px, 1440px>
 Accessible: <yes — all 12 checks pass>
-
-Next steps:
--> /godmode:a11y — Run full accessibility audit on the dashboard
--> /godmode:perf — Profile chart rendering performance
--> /godmode:visual — Visual regression testing for the chart
--> /godmode:test — Write unit tests for data transformations
 ```
 
 Commit: `"chart: <component> — <chart type>, <library>, <N> data series, responsive + accessible"`
@@ -394,63 +301,6 @@ Commit: `"chart: <component> — <chart type>, <library>, <N> data series, respo
 6. **No misleading visualizations.** Bar charts start at 0. Dual axes are labeled clearly. Truncated axes are flagged.
 7. **Color is not the only channel.** Use patterns, labels, and position in addition to color. Information must be perceivable without color vision.
 
-## Example Usage
-
-### Creating a Dashboard
-```
-User: /godmode:chart Build a revenue dashboard with monthly trends and segment breakdown
-
-Chart: Starting discovery...
-
-VISUALIZATION DISCOVERY:
-Project: Revenue Dashboard
-Data source: /api/v1/analytics/revenue (REST API)
-Data shape: monthly records with revenue, segment, region
-Audience: Executive team
-Goal: Trend (monthly revenue) + Composition (by segment)
-
-CHART TYPE SELECTION:
-- Primary: Line chart (monthly revenue trend with YoY comparison)
-- Secondary: Stacked bar chart (revenue by segment per month)
-- KPI cards: Total revenue, MoM growth, top segment, avg deal size
-
-LIBRARY: Recharts (React project, composable, good defaults)
-
-Building components...
-- RevenueLineChart: trend with annotations for key events
-- SegmentBarChart: stacked bars with drill-down to segment detail
-- KPICards: 4 metric cards with sparklines
-- DashboardLayout: responsive 12-column grid
-
-Accessibility: 12/12 checks PASS
-Responsive: tested at 320px, 768px, 1440px
-Performance: <1000 data points, SVG rendering OK
-
-Dashboard complete. Run /godmode:visual to verify visual regression.
-```
-
-### Creating a Single Chart
-```
-User: /godmode:chart Create a scatter plot showing correlation between response time and error rate
-
-Chart: Scatter plot selected — ideal for showing correlation.
-
-Data transformation:
-- X axis: avg response time (ms)
-- Y axis: error rate (%)
-- Size: request volume
-- Color: service name
-
-Building with D3.js (custom interactions needed)...
-- Brush selection for zooming
-- Tooltip with service details
-- Regression line overlay
-- Quadrant labels (fast+reliable, slow+unreliable, etc.)
-
-Accessibility: data table with sortable columns as alternative
-Responsive: simplified to top-N labeled points on mobile
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -458,13 +308,6 @@ Responsive: simplified to top-N labeled points on mobile
 | (none) | Full chart design and implementation workflow |
 | `--type <chart>` | Force chart type: `bar`, `line`, `scatter`, `heatmap`, `treemap`, `sankey`, `pie`, `area` |
 | `--lib <library>` | Force library: `d3`, `chartjs`, `recharts`, `plotly`, `nivo`, `victory` |
-| `--dashboard` | Design a multi-chart dashboard layout |
-| `--responsive` | Focus on responsive chart design specifically |
-| `--a11y` | Focus on accessibility audit for existing charts |
-| `--palette <name>` | Use a specific color palette: `categorical`, `sequential`, `diverging`, `colorblind` |
-| `--data <file>` | Load data from a file for chart prototyping |
-| `--export <format>` | Export chart as: `svg`, `png`, `pdf` |
-| `--perf` | Profile chart rendering performance |
 
 ## HARD RULES
 
@@ -500,15 +343,6 @@ AUTO-DETECT:
 
 4. Data source:
    # Scan for API clients, GraphQL queries, or static data files
-   grep -r "useQuery\|fetch\|axios\|graphql" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | head -5
-
-5. Bundle budget:
-   grep -i "maxSize\|budget\|bundlesize" package.json .bundlerc* 2>/dev/null
-   # Affects library selection (Chart.js ~60KB vs Plotly ~1MB)
-
--> Auto-select library based on framework + existing dependencies + bundle budget.
--> Auto-extract color palette from design system tokens.
--> Only ask user about data story and audience.
 ```
 
 ## Output Format
@@ -571,14 +405,6 @@ IF chart is too slow (> 500ms render):
 IF colors fail colorblind simulation:
   1. Switch to a verified colorblind-safe palette (e.g., Okabe-Ito, ColorBrewer)
   2. Add patterns or shapes in addition to color differentiation
-  3. Re-test with a colorblind simulator (Coblis, Sim Daltonism)
-  4. Ensure legend text is always visible regardless of color perception
-
-IF chart breaks on mobile:
-  1. Check that the container uses percentage or vw units, not fixed px
-  2. Simplify labels (abbreviate, rotate, or reduce count) for narrow viewports
-  3. Test at 320px width minimum
-  4. Consider a simplified mobile variant for complex charts
 ```
 
 ## Data Visualization Audit Loop
@@ -601,165 +427,7 @@ Phase 1 — Rendering Performance Audit
   FOR EACH chart/visualization in the application:
     1. MEASURE initial render time:
        - Browser DevTools Performance tab → record page load
-       - Identify chart render duration (from data ready to paint complete)
-       - OR use performance.mark/measure around chart initialization
-    2. MEASURE interaction performance:
-       - Hover over data points → measure tooltip latency
-       - Click/brush → measure filter/update response time
-       - Resize window → measure redraw time
-    3. IDENTIFY performance issues:
-       a. SVG with > 1000 nodes → Switch to Canvas or WebGL renderer
-       b. Full re-render on data subset change → Use enter/update/exit pattern (D3)
-          or shouldComponentUpdate/memo (React)
-       c. Tooltip recalculates on every mousemove → Debounce + memoize position calc
-       d. Large dataset not downsampled → Apply LTTB or aggregation
-       e. Multiple charts re-render on shared filter change → Isolate chart state
-       f. Memory grows on repeated updates → Check for detached DOM nodes, uncleaned listeners
-    4. APPLY targeted fix:
-       - (a) → Switch to Chart.js (canvas), use canvas renderer in D3, or deck.gl (WebGL)
-       - (b) → Implement data-join with key function, use React.memo with custom comparator
-       - (c) → Debounce tooltip handler (16ms for 60fps), cache computed positions
-       - (d) → Server-side aggregation, LTTB downsampling, or progressive loading
-       - (e) → Use local state per chart, derive filtered data with useMemo
-       - (f) → Cleanup event listeners on unmount, use ResizeObserver with disconnect
-    5. RE-MEASURE same chart with same dataset
-    6. RECORD:
-       chart | data_points | metric | before_ms | after_ms | technique
-    7. IF performance worsens → REVERT
-
-  RENDERING PERFORMANCE SCORECARD:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Chart             │  Points │  Render │  Tooltip │  Resize │  Grade │
-  ├────────────────────┼─────────┼─────────┼──────────┼─────────┼────────┤
-  │  RevenueLineChart  │  360    │  45ms   │  12ms    │  38ms   │  A     │
-  │  SegmentBarChart   │  120    │  28ms   │  8ms     │  22ms   │  A     │
-  │  ScatterPlot       │  5000   │  380ms  │  45ms    │  210ms  │  B     │
-  │  HeatmapGrid      │  12000  │  890ms  │  120ms   │  450ms  │  D     │
-  │  KPISparklines     │  90     │  15ms   │  N/A     │  12ms   │  A     │
-  └────────────────────┴─────────┴─────────┴──────────┴─────────┴────────┘
-  Grade: A (< 100ms) B (100-500ms) C (500-1000ms) D (> 1000ms)
-
-Phase 2 — Visualization Accessibility Audit
-  target: every chart meets all 12 accessibility checks
-
-  FOR EACH chart/visualization:
-    1. CHECK structural accessibility:
-       a. SVG has role="img" and aria-label with chart description
-       b. Data table alternative exists (hidden or toggle-visible)
-       c. Chart title is a heading element or aria-labelledby reference
-       d. Units and axis labels are announced (not just visual)
-    2. CHECK color accessibility:
-       a. RUN colorblind simulation:
-          Chrome DevTools → Rendering → Emulate vision deficiencies
-          Test: Protanopia, Deuteranopia, Tritanopia, Achromatopsia
-       b. VERIFY: data series distinguishable without color
-          (patterns, shapes, labels, or position provide redundant encoding)
-       c. VERIFY: color contrast >= 3:1 for all data elements against background
-       d. VERIFY: text labels >= 4.5:1 contrast (WCAG AA)
-    3. CHECK keyboard accessibility:
-       a. Can data points receive focus? (tab or arrow key navigation)
-       b. Is focused data point visually highlighted?
-       c. Do tooltips appear on focus (not just hover)?
-       d. Can brush/zoom be operated via keyboard? (if applicable)
-    4. CHECK motion accessibility:
-       a. Does chart respect prefers-reduced-motion?
-       b. If animations exist, can they be disabled?
-       c. No content conveyed only through animation
-
-  ACCESSIBILITY AUDIT TABLE:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Check                              │  Chart1 │  Chart2 │  Chart3  │
-  ├─────────────────────────────────────┼─────────┼─────────┼──────────┤
-  │  SVG role="img" + aria-label        │  PASS   │  FAIL   │  PASS    │
-  │  Data table alternative exists      │  PASS   │  FAIL   │  FAIL    │
-  │  Colorblind-safe palette            │  PASS   │  PASS   │  FAIL    │
-  │  Non-color differentiators          │  PASS   │  FAIL   │  FAIL    │
-  │  Color contrast >= 3:1 (data)       │  PASS   │  PASS   │  PASS    │
-  │  Text contrast >= 4.5:1             │  PASS   │  PASS   │  PASS    │
-  │  Keyboard navigable                 │  FAIL   │  FAIL   │  FAIL    │
-  │  Tooltip on focus                   │  FAIL   │  FAIL   │  FAIL    │
-  │  prefers-reduced-motion respected   │  PASS   │  FAIL   │  PASS    │
-  │  Text labels >= 12px                │  PASS   │  PASS   │  FAIL    │
-  │  Axis labels present and clear      │  PASS   │  PASS   │  PASS    │
-  │  Y-axis starts at 0 (bar charts)    │  N/A    │  PASS   │  N/A     │
-  ├─────────────────────────────────────┼─────────┼─────────┼──────────┤
-  │  TOTAL                              │  9/11   │  5/12   │  5/11    │
-  └─────────────────────────────────────┴─────────┴─────────┴──────────┘
-
-  FOR EACH failing check:
-    1. APPLY fix
-    2. RE-CHECK with same tool/method
-    3. RECORD: chart | check | fix_applied | status
-
-Phase 3 — Visualization Responsiveness Audit
-  target: every chart usable at 320px through 1920px+
-
-  FOR EACH chart at viewports [320, 375, 768, 1024, 1440, 1920]:
-    1. CHECK layout:
-       a. Chart fits within container (no horizontal overflow)
-       b. Aspect ratio maintained or gracefully adapted
-       c. Legend readable (repositioned below on mobile, beside on desktop)
-       d. Axis labels readable (abbreviated, rotated, or reduced on narrow viewports)
-       e. Tick marks appropriate density (fewer ticks on mobile)
-    2. CHECK interaction:
-       a. Touch targets >= 44px for interactive data points
-       b. Tooltip accessible on touch (tap, not just hover)
-       c. Brush/zoom works with touch gestures (if applicable)
-       d. Pinch-to-zoom does not conflict with chart zoom (if applicable)
-    3. CHECK readability:
-       a. Text size >= 12px at all viewports
-       b. Data point size large enough to distinguish
-       c. Overlapping labels resolved (jitter, hide, or rotate)
-    4. IDENTIFY mobile simplification needs:
-       a. Complex chart → simplified version at < 480px?
-       b. Multi-series → show top-N with "show all" toggle?
-       c. Large data table → scrollable with sticky headers?
-
-  RESPONSIVE CHART AUDIT:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Chart             │  320px │  768px │  1024px │  1440px │  Issues  │
-  ├────────────────────┼────────┼────────┼─────────┼─────────┼──────────┤
-  │  RevenueLineChart  │  PASS  │  PASS  │  PASS   │  PASS   │  0       │
-  │  SegmentBarChart   │  FAIL  │  PASS  │  PASS   │  PASS   │  1*      │
-  │  ScatterPlot       │  FAIL  │  FAIL  │  PASS   │  PASS   │  2**     │
-  │  HeatmapGrid      │  FAIL  │  PASS  │  PASS   │  PASS   │  1***    │
-  └────────────────────┴────────┴────────┴─────────┴─────────┴──────────┘
-  * Labels overflow at 320px — need abbreviation
-  ** Touch targets too small; tooltip hover-only
-  *** Horizontal scroll needed at 320px — add scroll indicator
-
-FINAL VISUALIZATION AUDIT REPORT:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Metric                            │  Before   │  After    │ Target │
-├────────────────────────────────────┼───────────┼───────────┼────────┤
-│  Avg initial render (< 1K pts)     │  <N>ms    │  <N>ms    │ < 100ms│
-│  Avg initial render (1K-10K pts)   │  <N>ms    │  <N>ms    │ < 500ms│
-│  Tooltip latency (p95)             │  <N>ms    │  <N>ms    │ < 50ms │
-│  A11y checks passing               │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Data table alternatives           │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Colorblind-safe palettes          │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Keyboard navigable charts         │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Responsive at 320px               │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Touch-friendly interactions       │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  prefers-reduced-motion            │  <N>/<M>  │  <N>/<M>  │ 100%   │
-│  Memory leaks detected             │  <N>      │  0        │ 0      │
-└────────────────────────────────────┴───────────┴───────────┴────────┘
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-Run chart tasks sequentially: data preparation, then chart implementation, then accessibility/responsive.
-Use branch isolation per task: `git checkout -b godmode-chart-{task}`, implement, commit, merge back.
-
-## Anti-Patterns
-
-- **Do NOT use pie charts for more than 5 categories.** Use a bar chart instead.
-- **Do NOT use 3D charts.** They distort data perception and add no information.
-- **Do NOT start bar chart y-axis above zero.** This exaggerates differences.
-- **Do NOT use rainbow color palettes.** They are not perceptually uniform or colorblind-safe.
-- **Do NOT render thousands of SVG nodes.** Use Canvas or WebGL for large datasets.
-- **Do NOT skip the data table alternative.** Charts are invisible to screen readers without one.
-- **Do NOT build charts without responsive behavior.** If it breaks on mobile, it is not done.
-- **Do NOT animate charts for decoration.** Respect prefers-reduced-motion.
 
 ## Keep/Discard Discipline
 ```

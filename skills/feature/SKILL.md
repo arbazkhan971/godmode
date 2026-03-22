@@ -7,995 +7,166 @@ description: Feature flag design, gradual rollouts, A/B testing integration, kil
 
 ## When to Activate
 - User invokes `/godmode:feature`
-- User says "feature flag", "feature toggle", "feature gate", "feature switch"
-- User says "gradual rollout", "percentage rollout", "canary release", "progressive delivery"
-- User says "kill switch", "circuit breaker flag", "emergency disable"
-- User says "A/B test", "experiment", "variant testing", "split test"
-- User says "LaunchDarkly", "Unleash", "Flagsmith", "Split.io", "homegrown flags"
-- User says "flag cleanup", "stale flags", "flag debt", "remove old flags"
-- When `/godmode:deploy` identifies a need for safer rollout mechanisms
-- When `/godmode:release` recommends decoupling deploy from release
-- When `/godmode:test` suggests experiment-driven validation
+- User says "feature flag", "gradual rollout", "kill switch", "A/B test"
+- User says "LaunchDarkly", "Unleash", "Flagsmith", "flag cleanup"
+- When deploying needs safer rollout or decoupling deploy from release
 
 ## Workflow
 
 ### Step 1: Flag Strategy Assessment
-Understand the current state and what flags are needed:
-
 ```
-FLAG STRATEGY ASSESSMENT:
-Project: <name and purpose>
-Current Flag System: None | Homegrown | LaunchDarkly | Unleash | Flagsmith | Split.io | Other
-Flag Count: <existing flags, if any>
-Stale Flags: <flags that should have been cleaned up>
-
-FLAG NEEDS ANALYSIS:
-+--------------------------------------------------------------+
-|  Flag Purpose             | Count | Example                   |
-+--------------------------------------------------------------+
-|  Release flags            | --    | new_checkout_flow         |
-|  Experiment flags         | --    | pricing_page_variant      |
-|  Ops flags (kill switch)  | --    | disable_recommendations   |
-|  Permission flags         | --    | enable_beta_features      |
-+--------------------------------------------------------------+
-
-ENVIRONMENT MATRIX:
-+--------------------------------------------------------------+
-|  Environment   | Flag Source      | Evaluation    | Latency   |
-+--------------------------------------------------------------+
-|  Development   | Local overrides  | Client-side   | 0ms       |
-|  Staging       | Flag service     | Server-side   | <5ms      |
-|  Production    | Flag service     | Server-side   | <5ms      |
-|  Mobile apps   | Flag service     | Client-side   | <50ms     |
-+--------------------------------------------------------------+
-
-DECISION CRITERIA:
-  Team size: <small (1-5) | medium (5-20) | large (20+)>
-  Deploy frequency: <daily | weekly | monthly>
-  Experimentation needs: <none | basic | advanced>
-  Compliance requirements: <audit trail needed? change approval?>
-  Budget: <free/OSS | $500-2K/mo | enterprise>
+FLAG STRATEGY:
+Current System: None | Homegrown | LaunchDarkly | Unleash | Flagsmith | Split.io
+Flag Needs: Release flags | Experiment flags | Ops/kill switches | Permission flags
+Environments: Dev (local overrides) | Staging (server-side) | Prod (server-side) | Mobile (client-side)
+Team size: <small|medium|large>  Experimentation: <none|basic|advanced>
 ```
 
-If the user has not specified their needs, ask: "What types of feature flags do you need -- release toggles for safer deploys, A/B experiments, operational kill switches, or permission-based access? Do you have a flag system already?"
+### Step 2: Flag Types
 
-### Step 2: Flag Type Design
-Define the flag taxonomy and lifecycle for each type:
+**Release (short-lived):** Decouple deploy from release. Default OFF. Lifecycle: CREATE -> INTERNAL -> CANARY 1% -> RAMP 5/25/50/100% -> CLEANUP.
 
+**Experiment (short-lived):** A/B testing with sticky bucketing. Default CONTROL. Lifecycle: CREATE -> CONFIGURE VARIANTS -> RUN -> REACH SIGNIFICANCE -> PICK WINNER -> CLEANUP.
+
+**Ops/Kill Switch (permanent):** Emergency disable. Default ON (feature active). Lifecycle: ALWAYS AVAILABLE -> TRIGGERED DURING INCIDENT -> RESTORED. Examples: disable_recommendations, disable_search, force_maintenance_mode.
+
+**Permission (permanent):** Plan-based access, beta programs. Default OFF. Target by user attributes, plan, org.
+
+### Step 3: Platform Selection
 ```
-FLAG TYPES:
-
-TYPE 1: RELEASE FLAGS (short-lived)
-+--------------------------------------------------------------+
-|  Purpose: Decouple deployment from release                    |
-|  Lifetime: Days to weeks (remove after full rollout)          |
-|  Targeting: Percentage-based, cohort, internal-first          |
-|  Default: OFF (new code hidden until enabled)                 |
-+--------------------------------------------------------------+
-|  Lifecycle:                                                   |
-|  CREATE -> INTERNAL -> CANARY (1%) -> RAMP (5/25/50/100%)    |
-|            -> FULL ROLLOUT -> CLEANUP (remove flag + old code)|
-|                                                               |
-|  Example:                                                     |
-|  {                                                            |
-|    "key": "new_checkout_flow",                                |
-|    "type": "release",                                         |
-|    "description": "New 3-step checkout replacing legacy 5-step"|
-|    "owner": "team-checkout",                                  |
-|    "created": "2026-03-01",                                   |
-|    "expected_cleanup": "2026-04-01",                          |
-|    "rollout": {                                               |
-|      "strategy": "percentage",                                |
-|      "current_percentage": 25,                                |
-|      "stages": [1, 5, 25, 50, 100]                           |
-|    }                                                          |
-|  }                                                            |
-+--------------------------------------------------------------+
-
-TYPE 2: EXPERIMENT FLAGS (short-lived)
-+--------------------------------------------------------------+
-|  Purpose: A/B testing, measure impact of changes              |
-|  Lifetime: Days to weeks (remove after experiment concludes)  |
-|  Targeting: Random assignment with sticky bucketing           |
-|  Default: CONTROL variant                                     |
-+--------------------------------------------------------------+
-|  Lifecycle:                                                   |
-|  CREATE -> CONFIGURE VARIANTS -> RUN EXPERIMENT               |
-|         -> REACH SIGNIFICANCE -> PICK WINNER -> CLEANUP       |
-|                                                               |
-|  Example:                                                     |
-|  {                                                            |
-|    "key": "pricing_page_variant",                             |
-|    "type": "experiment",                                      |
-|    "description": "Test annual vs monthly-first pricing page",|
-|    "owner": "team-growth",                                    |
-|    "hypothesis": "Showing annual pricing first increases ARPU |
-|                   by 10% without reducing conversion",        |
-|    "variants": [                                              |
-|      { "key": "control", "weight": 50, "desc": "Monthly-first" },|
-|      { "key": "treatment", "weight": 50, "desc": "Annual-first" }|
-|    ],                                                         |
-|    "metrics": {                                               |
-|      "primary": "revenue_per_visitor",                        |
-|      "secondary": ["conversion_rate", "plan_mix"],            |
-|      "guardrail": ["bounce_rate", "support_tickets"]          |
-|    },                                                         |
-|    "sample_size": 10000,                                      |
-|    "significance_level": 0.05                                 |
-|  }                                                            |
-+--------------------------------------------------------------+
-
-TYPE 3: OPS FLAGS / KILL SWITCHES (long-lived)
-+--------------------------------------------------------------+
-|  Purpose: Operational control, graceful degradation           |
-|  Lifetime: Permanent (part of system resilience)              |
-|  Targeting: Global (on/off) or per-region                     |
-|  Default: ON (feature active, switch kills it)                |
-+--------------------------------------------------------------+
-|  Lifecycle:                                                   |
-|  CREATE -> ALWAYS AVAILABLE -> TRIGGERED DURING INCIDENT      |
-|         -> RESTORED AFTER INCIDENT (never cleaned up)         |
-|                                                               |
-|  Example:                                                     |
-|  {                                                            |
-|    "key": "disable_recommendations",                          |
-|    "type": "ops",                                             |
-|    "description": "Kill switch for recommendation engine --   |
-|                    disable if ML service is degraded",        |
-|    "owner": "team-platform",                                  |
-|    "default": false,                                          |
-|    "when_enabled": "Recommendations return empty array,       |
-|                     fallback to popular items list"            |
-|  }                                                            |
-|                                                               |
-|  Common kill switches:                                        |
-|  - disable_recommendations (ML service degradation)           |
-|  - disable_search_suggestions (search overload)               |
-|  - disable_email_notifications (email provider outage)        |
-|  - force_maintenance_mode (full system degradation)           |
-|  - disable_external_payments (payment processor outage)       |
-|  - reduce_image_quality (CDN/bandwidth pressure)              |
-+--------------------------------------------------------------+
-
-TYPE 4: PERMISSION FLAGS (long-lived)
-+--------------------------------------------------------------+
-|  Purpose: Entitlements, plan-based access, beta programs      |
-|  Lifetime: Permanent (tied to business logic)                 |
-|  Targeting: User attributes, subscription plan, org           |
-|  Default: OFF (feature gated until entitled)                  |
-+--------------------------------------------------------------+
-|  Lifecycle:                                                   |
-|  CREATE -> GATE BEHIND PLAN/ROLE -> PERMANENT                 |
-|                                                               |
-|  Example:                                                     |
-|  {                                                            |
-|    "key": "enable_advanced_analytics",                        |
-|    "type": "permission",                                      |
-|    "description": "Advanced analytics dashboard for Pro plan",|
-|    "owner": "team-billing",                                   |
-|    "targeting": {                                             |
-|      "rules": [                                               |
-|        { "attribute": "plan", "operator": "in",               |
-|          "values": ["pro", "enterprise"] },                   |
-|        { "attribute": "org_id", "operator": "in",             |
-|          "values": ["beta-org-1", "beta-org-2"] }             |
-|      ]                                                        |
-|    }                                                          |
-|  }                                                            |
-+--------------------------------------------------------------+
-
-FLAG TYPE SELECTION:
-+--------------------------------------------------------------+
-|  Question                           | Flag Type              |
-+--------------------------------------------------------------+
-|  Shipping new code safely?          | Release                |
-|  Measuring impact of a change?      | Experiment             |
-|  Need an emergency off switch?      | Ops / Kill Switch      |
-|  Gating by plan, role, or entitle?  | Permission             |
-+--------------------------------------------------------------+
+< 5 flags, simple              -> Homegrown or Flagsmith OSS
+5-50 flags, team of 5-20       -> Unleash or Flagsmith
+50+ flags, experimentation      -> LaunchDarkly or Split.io
+Strict data residency           -> Self-hosted Unleash/Flagsmith
 ```
 
-### Step 3: SDK & Platform Selection
-Choose and configure the flag evaluation system:
+Server-side evaluation (recommended): sub-ms, full context, rules not exposed. Client-side: works offline, no round-trip, but rules visible.
 
-#### Managed Platforms
-```
-PLATFORM COMPARISON:
-+--------------------------------------------------------------+
-|  Platform      | Strengths           | Pricing     | Best For |
-+--------------------------------------------------------------+
-|  LaunchDarkly  | Enterprise-grade,   | $$$         | Large    |
-|                | streaming updates,  | ~$12/seat/  | teams,   |
-|                | rich targeting,     | mo + MAU    | complex  |
-|                | audit trail         |             | targeting|
-+--------------------------------------------------------------+
-|  Unleash       | Open-source core,   | Free (OSS)  | Teams    |
-|                | self-hosted option, | $80/mo      | wanting  |
-|                | strategy-based,     | (Pro)       | control  |
-|                | simple API          |             | and OSS  |
-+--------------------------------------------------------------+
-|  Flagsmith     | Open-source,        | Free (OSS)  | Startups,|
-|                | self-hosted,        | $45/mo      | small    |
-|                | remote config,      | (SaaS)      | teams,   |
-|                | simple UI           |             | budget   |
-+--------------------------------------------------------------+
-|  Split.io      | Experimentation-    | $$          | Data-    |
-|                | focused, stats      | Custom      | driven   |
-|                | engine, attribution |             | teams    |
-+--------------------------------------------------------------+
-|  Homegrown     | Full control, no    | Engineering | Simple   |
-|                | vendor dependency,  | time only   | needs,   |
-|                | custom logic        |             | small    |
-|                |                     |             | scale    |
-+--------------------------------------------------------------+
-
-PLATFORM SELECTION CRITERIA:
-  < 5 flags, simple on/off         -> Homegrown or Flagsmith OSS
-  5-50 flags, team of 5-20         -> Unleash or Flagsmith
-  50+ flags, experimentation needed -> LaunchDarkly or Split.io
-  Strict data residency / air-gap  -> Unleash or Flagsmith (self-hosted)
-  Enterprise compliance / audit    -> LaunchDarkly
-```
-
-#### SDK Integration Pattern
-```
-SDK INTEGRATION:
-
-SERVER-SIDE EVALUATION (recommended for most cases):
-  Client -> Your Server -> Flag SDK evaluates locally -> Response
-
-  Advantages:
-  - Flag rules never exposed to client
-  - Sub-millisecond evaluation (in-memory)
-  - Full targeting context available (user, org, plan)
-  - Consistent evaluation (no client-side drift)
-
-  PSEUDOCODE (Node.js / LaunchDarkly):
-  import LaunchDarkly from "launchdarkly-node-server-sdk"
-
-  const client = LaunchDarkly.init(process.env.LD_SDK_KEY)
-  await client.waitForInitialization()
-
-  async function isEnabled(flagKey, user):
-    const context = {
-      kind: "user",
-      key: user.id,
-      email: user.email,
-      plan: user.plan,
-      country: user.country,
-      custom: {
-        org_id: user.org_id,
-        created_at: user.created_at
-      }
-    }
-    return await client.variation(flagKey, context, false)  // false = default
-
-  // Usage in route handler
-  app.get("/api/checkout", async (req, res) => {
-    const user = req.user
-    const useNewCheckout = await isEnabled("new_checkout_flow", user)
-
-    if (useNewCheckout):
-      return newCheckoutHandler(req, res)
-    else:
-      return legacyCheckoutHandler(req, res)
-  })
-
-CLIENT-SIDE EVALUATION (mobile apps, SPAs):
-  Flag Service -> Client SDK -> Evaluates from cached ruleset
-
-  Advantages:
-  - Works offline (cached rules)
-  - No server round-trip for flag checks
-  - Real-time updates via streaming/SSE
-
-  Disadvantages:
-  - Flag rules visible in client bundle (security)
-  - Larger SDK payload
-  - Targeting context limited to client-known data
-
-  PSEUDOCODE (React / LaunchDarkly):
-  import { withLDProvider, useFlags } from "launchdarkly-react-client-sdk"
-
-  function CheckoutPage():
-    const { newCheckoutFlow } = useFlags()
-
-    if (newCheckoutFlow):
-      return <NewCheckout />
-    else:
-      return <LegacyCheckout />
-
-  // Wrap app with provider
-  export default withLDProvider({
-    clientSideID: process.env.REACT_APP_LD_CLIENT_ID,
-    context: {
-      kind: "user",
-      key: user.id,
-      plan: user.plan
-    }
-  })(App)
-
-EVALUATION MODE DECISION:
-+--------------------------------------------------------------+
-|  Context                          | Mode                      |
-+--------------------------------------------------------------+
-|  API server, backend service      | Server-side               |
-|  Web SPA (React, Vue, Angular)    | Client-side with proxy    |
-|  Mobile app (iOS, Android)        | Client-side with cache    |
-|  Edge function / CDN worker       | Edge-side (lightweight)   |
-|  Server-rendered pages (Next.js)  | Server-side (SSR)         |
-+--------------------------------------------------------------+
-```
-
-### Step 4: Targeting Rules & Gradual Rollout
-Design precise targeting for controlled releases:
+### Step 4: Targeting & Gradual Rollout
+Rule priority (top to bottom): individual overrides -> employee targeting -> beta segment -> percentage rollout -> default OFF.
 
 ```
-TARGETING RULES:
+ROLLOUT STAGES:
+  Internal (0.1%) 1 day -> Canary (1%) 1-2 days -> Early (5%) 2-3 days
+  -> Expanding (25%) 3-5 days -> Majority (50%) 3-5 days -> Full (100%)
 
-RULE TYPES:
-+--------------------------------------------------------------+
-|  Rule                 | Operator       | Example               |
-+--------------------------------------------------------------+
-|  User ID              | in / not in    | user_id in [123, 456] |
-|  Email                | endsWith       | email endsWith @co.com|
-|  Percentage           | rollout %      | 25% of users          |
-|  Cohort / Segment     | in segment     | segment = "beta_users"|
-|  Geographic           | country in     | country in [US, CA]   |
-|  Device               | platform =     | platform = "ios"      |
-|  Plan / Tier          | plan in        | plan in [pro, ent]    |
-|  Organization         | org_id in      | org_id in [org_123]   |
-|  Date / Time          | after / before | after 2026-04-01      |
-|  Custom attribute     | any operator   | app_version >= 3.2.0  |
-+--------------------------------------------------------------+
-
-TARGETING RULE PRIORITY (evaluated top to bottom):
-  1. Individual user overrides (highest priority)
-     user_id in [admin_1, admin_2] -> ON
-
-  2. Internal / employee targeting
-     email endsWith @ourcompany.com -> ON
-
-  3. Beta segment targeting
-     segment = "beta_users" -> ON
-
-  4. Percentage rollout (general population)
-     25% of remaining users -> ON
-
-  5. Default rule (lowest priority)
-     All others -> OFF
-
-GRADUAL ROLLOUT STRATEGY:
-+--------------------------------------------------------------+
-|  Stage      | %    | Duration | Gate Criteria                  |
-+--------------------------------------------------------------+
-|  Internal   | 0.1% | 1 day   | No errors in logs, team tests  |
-|  Canary     | 1%   | 1-2 days| Error rate < 0.1%, latency ok  |
-|  Early      | 5%   | 2-3 days| No support tickets, metrics ok |
-|  Expanding  | 25%  | 3-5 days| Conversion rate stable         |
-|  Majority   | 50%  | 3-5 days| All metrics within guardrails  |
-|  Full       | 100% | --      | Flag cleanup scheduled         |
-+--------------------------------------------------------------+
-
-ROLLOUT GATE CRITERIA (must pass before advancing):
-  Error rate:     < baseline + 0.1%
-  P95 latency:    < baseline + 10%
-  Conversion:     > baseline - 2%
-  Support tickets: < baseline + 5%
-  Crash rate:     < baseline + 0.05%
-
-PERCENTAGE HASHING (sticky bucketing):
-  The same user must always see the same variant.
-  Do NOT use random assignment per request.
-
-  PSEUDOCODE:
-  function isInRollout(userId, flagKey, percentage):
-    // Deterministic hash: same user + flag always = same bucket
-    const hash = murmur3(`${flagKey}:${userId}`)
-    const bucket = (hash % 10000) / 100  // 0.00 to 99.99
-
-    return bucket < percentage
-
-  PROPERTIES:
-  - Deterministic: user sees same result on every request
-  - Uniform: users evenly distributed across buckets
-  - Independent: different flags hash differently (no correlation)
-  - Ramp-safe: increasing % from 25 to 50 adds new users,
-    existing 25% stay in treatment (no flipping)
+GATE CRITERIA: Error rate < baseline+0.1%, P95 < baseline+10%,
+  Conversion > baseline-2%, Support tickets < baseline+5%
 ```
 
-### Step 5: Kill Switches & Emergency Controls
-Design operational safety mechanisms:
+Sticky bucketing via murmur3 hash: `hash(flagKey:userId) % 10000 / 100`. Same user always sees same variant. Increasing percentage adds new users without flipping existing ones.
 
-```
-KILL SWITCH ARCHITECTURE:
-
-KILL SWITCH REQUIREMENTS:
-  1. Toggle must take effect in < 30 seconds globally
-  2. No deploy required to activate
-  3. Dashboard or CLI accessible by on-call engineer
-  4. Audit trail of who toggled and when
-  5. Automatic rollback trigger (optional)
-
-KILL SWITCH HIERARCHY:
-+--------------------------------------------------------------+
-|  Level          | Scope              | Example                 |
-+--------------------------------------------------------------+
-|  Global         | Entire system      | force_maintenance_mode  |
-|  Service        | One microservice   | disable_payment_service |
-|  Feature        | One feature        | disable_recommendations |
-|  Region         | Geographic scope   | disable_eu_processing   |
-|  Client         | One customer/org   | throttle_org_heavy_user |
-+--------------------------------------------------------------+
-
-IMPLEMENTATION:
-
-// Kill switch middleware
-async function killSwitchMiddleware(req, res, next):
-  // Check global maintenance mode (cached locally, refreshed every 10s)
-  if (await flags.isEnabled("force_maintenance_mode")):
-    return res.status(503).json({
-      error: "Service temporarily unavailable",
-      retry_after: 300
-    })
-
-  // Check feature-level kill switches
-  const featureKillSwitches = [
-    { flag: "disable_recommendations", path: "/api/recommendations" },
-    { flag: "disable_search", path: "/api/search" },
-    { flag: "disable_notifications", path: "/api/notifications" }
-  ]
-
-  for (const ks of featureKillSwitches):
-    if (req.path.startsWith(ks.path) && await flags.isEnabled(ks.flag)):
-      return res.status(200).json({
-        data: getFallbackResponse(ks.path),
-        _degraded: true
-      })
-
-  next()
-
-AUTOMATIC KILL SWITCH TRIGGERS:
-+--------------------------------------------------------------+
-|  Trigger                          | Action                    |
-+--------------------------------------------------------------+
-|  Error rate > 5% for 2 minutes    | Disable feature flag      |
-|  P95 latency > 2x baseline        | Reduce rollout to 0%      |
-|  Dependency health check fails    | Enable kill switch         |
-|  Memory > 90% on flag service     | Fall back to defaults      |
-+--------------------------------------------------------------+
-
-PSEUDOCODE (automatic trigger):
-async function monitorAndKill(flagKey, metrics):
-  const baseline = await getBaseline(flagKey)
-  const current = await getCurrentMetrics(flagKey)
-
-  if (current.error_rate > baseline.error_rate * 2):
-    await flags.disable(flagKey)
-    await alertOncall({
-      severity: "critical",
-      message: `Auto-disabled ${flagKey}: error rate ${current.error_rate}%`,
-      action: "Review and manually re-enable when resolved"
-    })
-
-FALLBACK BEHAVIOR:
-  When flag service is unreachable:
-  1. Use locally cached flag values (last known good)
-  2. Cache TTL: 5 minutes (stale values better than no values)
-  3. If cache expired: use hardcoded defaults (conservative)
-  4. Log warning: "Flag service unreachable, using cached/default values"
-  5. Never crash because the flag service is down
-```
+### Step 5: Kill Switches
+Requirements: effect in <30s, no deploy needed, dashboard/CLI accessible, audit trail. Hierarchy: Global -> Service -> Feature -> Region -> Client. Automatic triggers: error rate >5% for 2min -> disable flag. Fallback: use locally cached values (5min TTL), then hardcoded defaults. Never crash because flag service is down.
 
 ### Step 6: Flag Lifecycle Management
-Manage flags from creation through cleanup:
+Naming: `enable_<feature>` (release), `exp_<name>` (experiment), `disable_<feature>` (ops), `ops_<name>` (ops).
 
-```
-FLAG LIFECYCLE:
+Stale flag detection: release at 100% for >2 weeks, experiment concluded >1 week, not evaluated in >30 days, >90 days without cleanup date. Automate weekly stale flag reminders with cleanup tickets.
 
-+--------------------------------------------------------------+
-|  PHASE 1: CREATE                                              |
-|  Owner defines flag with metadata:                            |
-|  - Key (snake_case, descriptive)                              |
-|  - Type (release | experiment | ops | permission)             |
-|  - Owner (team or individual)                                 |
-|  - Description (what it does, not just the name)              |
-|  - Expected cleanup date (release + experiment flags only)    |
-|  - Jira/Linear ticket link                                    |
-+--------------------------------------------------------------+
-          |
-          v
-+--------------------------------------------------------------+
-|  PHASE 2: CONFIGURE                                           |
-|  Set targeting rules, variants, and defaults:                 |
-|  - Development: ON for all (test new code path)               |
-|  - Staging: ON for all (integration testing)                  |
-|  - Production: OFF (not yet released)                         |
-+--------------------------------------------------------------+
-          |
-          v
-+--------------------------------------------------------------+
-|  PHASE 3: ROLLOUT                                             |
-|  Progressive delivery:                                        |
-|  - Internal employees first                                   |
-|  - Canary 1% -> 5% -> 25% -> 50% -> 100%                    |
-|  - Monitor metrics at each gate                               |
-|  - Pause or rollback if guardrails breached                   |
-+--------------------------------------------------------------+
-          |
-          v
-+--------------------------------------------------------------+
-|  PHASE 4: MEASURE                                             |
-|  For experiment flags:                                        |
-|  - Collect data until statistical significance                |
-|  - Analyze primary, secondary, and guardrail metrics          |
-|  - Document results and decision                              |
-|  For release flags:                                           |
-|  - Confirm metrics stable at 100% rollout                     |
-|  - Wait 1 week at full rollout before cleanup                 |
-+--------------------------------------------------------------+
-          |
-          v
-+--------------------------------------------------------------+
-|  PHASE 5: CLEANUP (critical -- most teams skip this)          |
-|  Remove the flag and dead code:                               |
-|  1. Remove flag checks from code (all branches)               |
-|  2. Remove losing variant code (experiments)                  |
-|  3. Remove old code path (release flags)                      |
-|  4. Delete flag from flag service                             |
-|  5. Remove flag from tests                                    |
-|  6. Update documentation                                      |
-|  Commit: "flag-cleanup: remove <flag_key>, rolled out on <date>"|
-+--------------------------------------------------------------+
+### Step 7: A/B Testing
+1. Define hypothesis and primary metric. 2. Set guardrail metrics (must not regress). 3. Calculate sample size. 4. Configure sticky bucketing variants. 5. Track exposure and conversion events. 6. Wait for significance (p<0.05). Pitfalls: no peeking, adjust for multiple testing, deterministic hashing not random, run full business cycle (7 days).
 
-FLAG NAMING CONVENTION:
-  Pattern: <action>_<feature>_<scope>
-  Examples:
-    enable_new_checkout         (release)
-    exp_pricing_annual_first    (experiment, prefix with exp_)
-    disable_recommendations     (ops/kill switch, use disable_ prefix)
-    enable_advanced_analytics   (permission)
-    ops_force_maintenance       (ops, prefix with ops_)
-
-FLAG HYGIENE DASHBOARD:
-+--------------------------------------------------------------+
-|  Metric                          | Target  | Current          |
-+--------------------------------------------------------------+
-|  Total active flags              | < 100   | <count>          |
-|  Flags older than 30 days        | < 20    | <count>          |
-|  Flags older than 90 days        | 0       | <count>          |
-|  Flags without owner             | 0       | <count>          |
-|  Flags without cleanup date      | 0       | <count>          |
-|  Stale flags (100% for 2+ weeks) | 0       | <count>          |
-+--------------------------------------------------------------+
-
-STALE FLAG DETECTION:
-  A flag is stale when:
-  - Release flag at 100% for > 2 weeks
-  - Experiment flag concluded > 1 week ago
-  - Flag not evaluated in > 30 days
-  - Flag created > 90 days ago without cleanup date
-
-  AUTOMATED CLEANUP REMINDERS:
-  // Weekly cron: detect and alert on stale flags
-  async function detectStaleFlags():
-    const flags = await flagService.listAll()
-    const stale = flags.filter(f =>
-      (f.type === "release" && f.percentage === 100
-        && daysSince(f.last_changed) > 14) ||
-      (f.type === "experiment" && f.status === "concluded"
-        && daysSince(f.concluded_at) > 7) ||
-      (daysSince(f.created_at) > 90 && !f.cleanup_date)
-    )
-
-    for (const flag of stale):
-      await notify(flag.owner, {
-        message: `Flag "${flag.key}" is stale. Please clean up.`,
-        link: `${FLAG_DASHBOARD_URL}/flags/${flag.key}`,
-        ticket: await createCleanupTicket(flag)
-      })
-```
-
-### Step 7: Flag-Driven A/B Testing
-Design experiments with statistical rigor:
-
-```
-A/B TESTING WITH FLAGS:
-
-EXPERIMENT SETUP:
-  1. Define hypothesis (what you expect and why)
-  2. Choose primary metric (one metric that decides winner)
-  3. Choose secondary metrics (supporting evidence)
-  4. Set guardrail metrics (must not regress)
-  5. Calculate required sample size
-  6. Configure flag with variants and weights
-
-SAMPLE SIZE CALCULATION:
-+--------------------------------------------------------------+
-|  Parameter                 | Value    | Meaning               |
-+--------------------------------------------------------------+
-|  Baseline conversion       | 5.0%     | Current rate           |
-|  Minimum detectable effect | 10%      | 5.0% -> 5.5% (rel.)   |
-|  Statistical significance  | 95%      | alpha = 0.05           |
-|  Statistical power         | 80%      | beta = 0.20            |
-|  Required sample per arm   | ~30,000  | 60,000 total           |
-|  Daily traffic             | 10,000   | Unique visitors/day    |
-|  Estimated duration        | 6 days   | To reach sample size   |
-+--------------------------------------------------------------+
-
-VARIANT ASSIGNMENT:
-  // Sticky bucketing: user always sees same variant
-  function assignVariant(userId, experimentKey, variants):
-    const hash = murmur3(`${experimentKey}:${userId}`)
-    const bucket = (hash % 10000) / 100  // 0.00 to 99.99
-
-    let cumulative = 0
-    for (const variant of variants):
-      cumulative += variant.weight
-      if (bucket < cumulative):
-        return variant.key
-
-    return variants[0].key  // Fallback to control
-
-METRICS COLLECTION:
-  // Track exposure events (who saw what)
-  function trackExposure(userId, experimentKey, variant):
-    analytics.track("experiment_exposure", {
-      user_id: userId,
-      experiment: experimentKey,
-      variant: variant,
-      timestamp: Date.now()
-    })
-
-  // Track conversion events
-  function trackConversion(userId, event, properties):
-    analytics.track(event, {
-      user_id: userId,
-      ...properties,
-      timestamp: Date.now()
-    })
-
-ANALYSIS FRAMEWORK:
-+--------------------------------------------------------------+
-|  Metric              | Control  | Treatment | Diff   | Sig?   |
-+--------------------------------------------------------------+
-|  Conversion rate     | 5.0%     | 5.6%      | +12%   | YES    |
-|  Revenue / visitor   | $2.10    | $2.35     | +11.9% | YES    |
-|  Bounce rate (guard) | 32%      | 31%       | -3.1%  | NO     |
-|  Page load time (g)  | 1.2s     | 1.3s      | +8.3%  | NO     |
-+--------------------------------------------------------------+
-|  DECISION: Ship treatment -- primary metric significant,      |
-|  guardrail metrics within acceptable bounds.                  |
-+--------------------------------------------------------------+
-
-COMMON PITFALLS:
-  - Peeking: Do not check results before sample size reached
-  - Multiple testing: Adjust p-value if testing many variants
-  - Selection bias: Use deterministic hashing, not random
-  - Novelty effect: Run for at least 1 full business cycle (7 days)
-  - Interaction effects: Avoid overlapping experiments on same surface
-```
-
-### Step 8: Homegrown Flag System (Database Schema)
-For teams choosing to build instead of buy:
-
-```
-HOMEGROWN FLAG SYSTEM — REQUIRED TABLES:
-  1. feature_flags:      key, type, owner, enabled, archived, cleanup_by, metadata
-  2. flag_rules:         flag_id, priority, attribute, operator, values, variant
-  3. flag_rollouts:      flag_id, percentage, hash_salt (for deterministic bucketing)
-  4. flag_variants:      flag_id, key, weight, payload (for A/B experiments)
-  5. flag_audit_log:     flag_id, action, actor, previous_value, new_value, timestamp
-  6. flag_environments:  flag_id, environment, enabled, overrides
-
-EVALUATION ORDER:
-  1. Get flag from cache (refresh every 30s)
-  2. Check environment override
-  3. Check global enabled/disabled
-  4. Evaluate targeting rules (priority order, first match wins)
-  5. Check percentage rollout (murmur3 hash for deterministic bucketing)
-  6. Default: return disabled
-
-API ENDPOINTS:
-  GET/POST   /api/flags              -- List/create flags
-  PUT/PATCH  /api/flags/:key         -- Update/toggle flag
-  PATCH      /api/flags/:key/rollout -- Update rollout percentage
-  POST       /api/flags/:key/rules   -- Add targeting rule
-  GET        /api/flags/:key/audit   -- Get audit log
-  POST       /api/evaluate           -- Evaluate flags for context
-```
+### Step 8: Homegrown Schema
+Tables: feature_flags, flag_rules, flag_rollouts, flag_variants, flag_audit_log, flag_environments. Evaluation: cache (refresh 30s) -> env override -> global enable -> rules (priority) -> percentage (murmur3) -> default disabled.
 
 ### Step 9: Validation
-Validate the feature flag strategy against best practices:
-
-```
-FEATURE FLAG VALIDATION:
-+--------------------------------------------------------------+
-|  Check                                    | Status             |
-+--------------------------------------------------------------+
-|  Flag types clearly categorized           | PASS | FAIL        |
-|  Naming convention defined and enforced   | PASS | FAIL        |
-|  Owner assigned to every flag             | PASS | FAIL        |
-|  Cleanup date set for release/exp flags   | PASS | FAIL        |
-|  Kill switches defined for critical paths | PASS | FAIL        |
-|  Gradual rollout strategy documented      | PASS | FAIL        |
-|  Sticky bucketing for consistent UX       | PASS | FAIL        |
-|  Fallback behavior when flag service down | PASS | FAIL        |
-|  Audit trail for flag changes             | PASS | FAIL        |
-|  Stale flag detection automated           | PASS | FAIL        |
-|  A/B test statistical rigor defined       | PASS | FAIL        |
-|  Server vs client evaluation decided      | PASS | FAIL        |
-|  Flag evaluation latency < 5ms            | PASS | FAIL        |
-|  No sensitive data in flag targeting rules| PASS | FAIL        |
-+--------------------------------------------------------------+
-
-TECHNICAL DEBT CHECK:
-+--------------------------------------------------------------+
-|  Debt Indicator                   | Threshold | Current       |
-+--------------------------------------------------------------+
-|  Total active flags               | < 100     | <count>       |
-|  Flags without cleanup date       | 0         | <count>       |
-|  Flags older than 90 days         | < 5       | <count>       |
-|  Flags at 100% for > 2 weeks     | 0         | <count>       |
-|  Orphaned flags (no owner)        | 0         | <count>       |
-|  Nested flag dependencies         | 0         | <count>       |
-+--------------------------------------------------------------+
-
-VERDICT: <PASS | NEEDS REVISION>
-```
-
-### Step 10: Artifacts & Commit
-Generate the deliverables:
-
-```
-FEATURE FLAG STRATEGY COMPLETE:
-
-Artifacts:
-- Flag strategy doc: docs/feature-flags/<system>-flag-strategy.md
-- Flag service config: src/lib/flags.ts (or equivalent)
-- Database schema: migrations/create_feature_flags.sql (if homegrown)
-- Kill switch registry: docs/feature-flags/kill-switches.md
-- Flag hygiene dashboard: monitoring/dashboards/feature-flags.json
-- Validation: <PASS | NEEDS REVISION>
-
-Next steps:
--> /godmode:deploy -- Deploy with feature flags for safe rollout
--> /godmode:test -- Write tests for flag-gated code paths
--> /godmode:observe -- Monitor flag evaluation metrics
--> /godmode:analytics -- Set up experiment metrics collection
-```
-
-Commit: `"feature: <system> -- <flag types>, <platform>, <rollout strategy>"`
+Check: types categorized, naming enforced, owner assigned, cleanup dates set, kill switches defined, gradual rollout documented, sticky bucketing, fallback behavior, audit trail, stale detection, evaluation <5ms.
 
 ## Key Behaviors
-
-1. **Flags are temporary by default.** Release and experiment flags must have a cleanup date. A flag that lives forever becomes technical debt that no one understands.
-2. **Decouple deploy from release.** The whole point of feature flags is that deploying code does not mean releasing it to users. Ship dark, enable gradually.
-3. **Kill switches are not optional.** Every critical feature needs an emergency off switch. When the incident happens at 3 AM, toggling a flag is faster than rolling back a deploy.
-4. **Clean up your flags.** A codebase with 500 stale flags is worse than one with no flags. Automate stale flag detection and enforce cleanup within 30 days of full rollout.
-5. **Sticky bucketing is mandatory.** A user must see the same variant on every request. Random assignment per request creates inconsistent UX and invalidates experiments.
-6. **Test both paths.** Every flag creates a branch in your code. Test the on path, the off path, and the transition between them. Do not ship untested code paths.
-7. **Default to off, fail to off.** New flags should default to off. If the flag service is unreachable, serve the safe default (off for new features, on for kill switches).
-8. **Flag evaluation must be fast.** In-memory evaluation with periodic sync. Never call an external service per flag check in the request path.
-
-## Example Usage
-
-### Designing a rollout strategy for a new feature
-```
-User: /godmode:feature Plan a gradual rollout for our new checkout flow
-
-Feature: Assessing rollout strategy...
-
-FLAG DESIGN:
-  Key: enable_new_checkout
-  Type: release
-  Owner: team-checkout
-  Cleanup by: 2026-04-15
-
-ROLLOUT PLAN:
-  Stage 1: Internal employees (email endsWith @ourcompany.com) -- 1 day
-  Stage 2: Canary 1% of users -- 2 days, monitor error rate + latency
-  Stage 3: Ramp to 5% -- 2 days, monitor conversion rate
-  Stage 4: Ramp to 25% -- 3 days, check support ticket volume
-  Stage 5: Ramp to 50% -- 3 days, full metrics review
-  Stage 6: 100% -- hold for 1 week, then clean up flag
-
-KILL SWITCH:
-  Key: disable_new_checkout
-  Fallback: Legacy checkout flow
-  Trigger: Error rate > 2% or P95 latency > 3s
-
-MONITORING:
-  Primary: Checkout conversion rate
-  Secondary: Average order value, cart abandonment rate
-  Guardrail: Error rate, P95 latency, support tickets
-```
-
-### Setting up A/B testing with flags
-```
-User: /godmode:feature Set up an A/B test for our pricing page
-
-Feature: Configuring experiment flag...
-
-EXPERIMENT:
-  Key: exp_pricing_annual_first
-  Type: experiment
-  Hypothesis: Showing annual pricing first will increase ARPU by 10%
-
-VARIANTS:
-  control (50%):   Monthly pricing shown first (current)
-  treatment (50%): Annual pricing shown first (new)
-
-METRICS:
-  Primary: Revenue per visitor
-  Secondary: Conversion rate, plan distribution
-  Guardrail: Bounce rate, support tickets
-
-SAMPLE SIZE: 30,000 per arm (60,000 total)
-DURATION: ~6 days at 10,000 visitors/day
-
-DECISION CRITERIA:
-  Ship treatment if: primary metric significant at p < 0.05
-  AND guardrail metrics within 5% of baseline
-```
-
-### Cleaning up stale flags
-```
-User: /godmode:feature Audit our feature flags for cleanup
-
-Feature: Scanning for stale flags...
-
-STALE FLAG REPORT:
-  Total active flags: 87
-  Flags needing cleanup: 12
-
-  CRITICAL (remove immediately):
-  1. enable_new_dashboard (100% for 45 days, no cleanup date)
-  2. exp_onboarding_v2 (concluded 3 weeks ago, winner: treatment)
-  3. enable_api_v3 (100% for 60 days, old code still in codebase)
-
-  WARNING (schedule cleanup):
-  4. enable_bulk_export (100% for 12 days)
-  5. exp_email_subject_lines (concluded 5 days ago)
-
-  ACTION ITEMS:
-  - Created 5 cleanup tickets in Linear
-  - Estimated effort: 2-4 hours per flag removal
-  - Removing these flags deletes ~1,200 lines of dead code
-```
+1. **Flags are temporary by default.** Cleanup date required for release/experiment flags.
+2. **Decouple deploy from release.** Ship dark, enable gradually.
+3. **Kill switches are not optional.** Every critical feature needs emergency off.
+4. **Clean up flags.** Max 2 weeks at 100% before removal.
+5. **Sticky bucketing is mandatory.** Same user, same variant, every request.
+6. **Test both paths.** On, off, and transition.
+7. **Default to off, fail to off.** Safe defaults when flag service unreachable.
+8. **Flag evaluation must be fast.** In-memory with periodic sync.
 
 ## Flags & Options
 
 | Flag | Description |
 |------|-------------|
-| (none) | Full feature flag strategy design workflow |
-| `--rollout` | Design gradual rollout plan for a feature |
-| `--experiment` | Set up an A/B test experiment with flag |
-| `--killswitch` | Design kill switches for critical features |
-| `--audit` | Audit existing flags for stale/orphaned flags |
-| `--cleanup` | Generate cleanup plan for stale flags |
-| `--schema` | Generate database schema for homegrown flags |
-| `--sdk` | SDK integration guide for chosen platform |
-| `--targeting` | Design targeting rules and segments |
-| `--validate` | Validate feature flag strategy |
-| `--compare` | Compare flag platforms (LD, Unleash, etc.) |
-| `--migrate` | Migrate between flag platforms |
+| `--rollout` | Design gradual rollout plan |
+| `--experiment` | Set up A/B test |
+| `--killswitch` | Design kill switches |
+| `--audit` | Audit for stale/orphaned flags |
+| `--cleanup` | Generate cleanup plan |
+| `--schema` | DB schema for homegrown flags |
 
 ## HARD RULES
-
-1. **NEVER leave release flags at 100% for more than 2 weeks.** A flag at 100% is dead code wrapped in a conditional. Clean it up.
-2. **NEVER nest flag checks.** `if (flagA && flagB && !flagC)` creates 8 possible states that are impossible to test. Keep flags independent.
-3. **NEVER use flags as permanent configuration.** Feature flags are temporary or targeted toggles. Permanent config belongs in config files or environment variables.
-4. **ALWAYS test both the flag-on AND flag-off paths.** The off-path is your fallback during incidents. If it is broken, you have no safety net.
-5. **NEVER evaluate flags in hot loops.** Evaluate once per request and pass the result. Calling the flag service 1000 times per request adds latency.
-6. **NEVER expose server-side targeting rules to clients.** Targeting rules may contain business logic or internal IDs. Use server-side evaluation for sensitive flags.
-7. **NEVER call an experiment winner without sufficient sample size.** Calculate required sample size upfront and wait for statistical significance.
-8. **ALWAYS maintain an audit trail.** Every flag change must record who changed it, when, and the previous value.
+1. **NEVER leave release flags at 100% for >2 weeks.** Clean up.
+2. **NEVER nest flag checks.** Keep flags independent.
+3. **NEVER use flags as permanent config.** Use config files for that.
+4. **ALWAYS test both flag-on AND flag-off paths.**
+5. **NEVER evaluate flags in hot loops.** Once per request.
+6. **NEVER expose server-side targeting rules to clients.**
+7. **NEVER call an experiment winner without sufficient sample size.**
+8. **ALWAYS maintain an audit trail** for every flag change.
 
 ## Auto-Detection
-
-On activation, detect the feature flag context:
-
 ```bash
-# Detect flag platforms
-grep -r "launchdarkly\|unleash\|flagsmith\|split\|statsig\|growthbook\|posthog" package.json 2>/dev/null
-
-# Detect homegrown flags
-grep -rl "featureFlag\|feature_flag\|isEnabled\|isFeatureEnabled\|getFeature" src/ --include="*.ts" --include="*.js" --include="*.py" 2>/dev/null | head -10
-
-# Detect flag config files
-find . -name "*feature*flag*" -o -name "*flags*" -o -name "*toggles*" 2>/dev/null | head -5
-
-# Count existing flags
-grep -roh "FEATURE_[A-Z_]*\|feature\.[a-z._]*\|flag\.[a-z._]*" src/ 2>/dev/null | sort -u | wc -l
+grep -r "launchdarkly\|unleash\|flagsmith\|split\|statsig" package.json
+grep -rl "featureFlag\|isEnabled\|isFeatureEnabled" src/ --include="*.ts" --include="*.py"
 ```
 
 ## Iteration Protocol
-
-For gradual feature rollout with monitoring:
-
 ```
-current_percentage = 0
-rollout_stages = [1, 5, 25, 50, 100]
+FOR EACH rollout stage (1%, 5%, 25%, 50%, 100%):
+  Set percentage -> Monitor metrics for observation window
+  IF degraded: ROLLBACK to previous stage
+  IF stable: advance
+AFTER 100%: Schedule cleanup (max 2 weeks)
+```
 
-WHILE current_percentage < 100:
-  next_stage = rollout_stages[next]
-  1. Set flag percentage to next_stage
-  2. Monitor error rates, latency, and business metrics for observation_window
-  3. Compare treatment vs control groups
-  4. IF metrics degrade beyond threshold: ROLLBACK to previous stage, investigate
-  5. IF metrics stable: advance to next stage
-  current_percentage = next_stage
-  Report: "Rollout at {current_percentage}%: error_rate={rate}, latency_p99={p99}ms, conversion={conv}%"
-
-AFTER 100%:
-  Schedule flag cleanup (max 2 weeks)
-  Remove flag code and dead branches
+## Multi-Agent Dispatch
+```
+Agent 1 (feature-sdk): SDK, evaluation wrapper, defaults
+Agent 2 (feature-code): Flag-gated code, targeting, kill switch
+Agent 3 (feature-ops): Rollout monitoring, lifecycle, cleanup automation
+MERGE ORDER: sdk -> code -> ops
 ```
 
 ## TSV Logging
-After each workflow step, append a row to `.godmode/feature-results.tsv`:
-```
-STEP\tFLAG_NAME\tFLAG_TYPE\tPLATFORM\tSTATUS\tDETAILS
-1\tenable_new_checkout\trelease\tlaunchdarkly\tcreated\tboolean flag, default off
-2\tenable_new_checkout\trelease\tlaunchdarkly\ttargeted\tstaging env + internal users
-3\tenable_new_checkout\trelease\tlaunchdarkly\trollout\t5% → 25% → 50% → 100% over 4 days
-4\tenable_new_checkout\trelease\tlaunchdarkly\tcleaned\tflag removed, dead code deleted
-```
-Print final summary: `Feature flags: {N} created, platform: {provider}. Types: {release/experiment/ops/permission}. Rollout: {current}%. Kill switch: {tested/untested}. Cleanup scheduled: {date}.`
+Log to `.godmode/feature-results.tsv`: `STEP\tFLAG_NAME\tFLAG_TYPE\tPLATFORM\tSTATUS\tDETAILS`
 
 ## Success Criteria
-All of these must be true before marking the task complete:
-1. Flag evaluates correctly in both on and off states (both code paths tested).
-2. Default value is safe (flag off = old behavior, no user impact).
-3. SDK initialization handles failure gracefully (network error → default value, no crash).
-4. Targeting rules work: specific users/segments see the correct variant.
-5. Kill switch tested: flag can be turned off and system reverts to previous behavior within seconds.
-6. Flag cleanup plan exists with a scheduled date (max 2 weeks after 100% rollout).
-7. No flag evaluation in hot loops (evaluated once per request, result passed down).
-8. Audit trail exists: flag changes are logged with who, when, old value, new value.
+1. Flag evaluates correctly in both on/off states.
+2. Default value is safe (off = old behavior).
+3. SDK handles failure gracefully (default value, no crash).
+4. Targeting rules work for specific users/segments.
+5. Kill switch tested — reverts within seconds.
+6. Cleanup plan with scheduled date.
+7. No flag evaluation in hot loops.
+8. Audit trail exists.
 
 ## Error Recovery
 | Failure | Action |
 |---------|--------|
-| SDK initialization fails | Check API key and SDK key (they are different in most providers). Verify network access to provider CDN. Implement fallback: return default value on SDK failure. |
-| Flag not evaluating as expected | Check evaluation context: is `user.id` being passed? Is targeting rule using the correct attribute name? Use provider's evaluation debugger (LaunchDarkly: flag evaluation details, Statsig: diagnostics). |
-| Rollout causing errors | Immediately set flag to 0% (kill switch). Check error logs filtered by `flag=on` cohort. Fix the treatment code path. Resume rollout from 1%. |
-| Stale flags accumulating | Run flag audit: list all flags at 100% for >2 weeks. For each: remove flag code, delete dead branch, archive flag in provider. Automate with a weekly CI check. |
-| Flag evaluation latency | Switch from API-based evaluation to local evaluation (SDK caches rules). Check SDK polling interval. LaunchDarkly: streaming mode. Statsig: local evaluation. |
-| Conflicting flags | Map flag dependencies. If `flag_B` only makes sense when `flag_A` is on, encode this as a prerequisite in the flag system or document in flag description. Never nest `if` checks for independent flags. |
-
-## Multi-Agent Dispatch
-```
-Agent 1 (worktree: feature-sdk): Install SDK, evaluation wrapper, default values
-Agent 2 (worktree: feature-code): Feature-flagged code paths, targeting rules, kill switch
-Agent 3 (worktree: feature-ops): Rollout monitoring, lifecycle tracking, cleanup automation
-MERGE ORDER: sdk -> code -> ops
-```
+| SDK init fails | Check API/SDK key, verify network, implement fallback defaults. |
+| Flag not evaluating | Check evaluation context (user.id passed?), use provider debugger. |
+| Rollout causing errors | Set to 0% immediately, check error logs for flag=on cohort, fix, resume from 1%. |
+| Stale flags accumulating | Run audit, remove flag code, delete dead branches, automate weekly CI check. |
+| Conflicting flags | Map dependencies, encode as prerequisites, never nest if-checks. |
 
 ## Platform Fallback
 Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-feature-{task}`. See `adapters/shared/sequential-dispatch.md`.
 
+## Output Format
+Print: `Feature: {flag_name} at {pct}% rollout. Metrics: error={err}%, latency_p99={lat}ms. Kill switch: {tested|untested}. Status: {DONE|PARTIAL}.`
+
 ## Keep/Discard Discipline
 ```
-After EACH flag rollout stage or experiment milestone:
-  1. MEASURE: Check error rate, latency p99, and business metrics against baseline.
-  2. COMPARE: Is the treatment cohort performing within guardrail thresholds?
-  3. DECIDE:
-     - KEEP if: metrics are within guardrails AND no support ticket spike AND no error increase
-     - DISCARD if: error rate > baseline + 0.1% OR latency > baseline + 10% OR conversion drops > 2%
-  4. COMMIT stage advancement. Roll back percentage to previous stage on discard.
+After EACH flag rollout stage:
+  KEEP if: metrics within guardrails AND no error spike AND kill switch tested
+  DISCARD if: error rate > baseline+0.1% OR latency > baseline+10% OR conversion drops >2%
+  On discard: roll back to previous percentage. Investigate before advancing.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Flag is at 100% and all metrics stable for 7 days (schedule cleanup)
-  - Experiment reached required sample size and significance threshold
-  - User explicitly requests stop
-  - Kill switch tested and fallback verified
-
-DO NOT STOP just because:
-  - A flag is at 100% but cleanup commit has not been made yet (flag cleanup is a separate task)
-  - Experiment shows no significant difference (document null result, then clean up)
+STOP when ALL of:
+  - Flag at 100% with stable metrics for 7 days
+  - Kill switch tested and verified
+  - Cleanup commit scheduled (remove flag code within 2 weeks)
 ```

@@ -101,14 +101,6 @@ RELATIONSHIP MAP:
 ┌──────────────┐                                           1:N    │
 │    User      │                                                  ▼
 │              │                                           ┌──────────────┐
-│ id (PK)      │                                           │   Comment    │
-│ email        │◄──────────────────────────────────────────│              │
-│ name         │         N:1 (author)                      │ id (PK)      │
-│ role         │                                           │ body         │
-│ org_id (FK)  │                                           │ author_id    │
-│ created_at   │                                           │ task_id (FK) │
-└──────────────┘                                           │ created_at   │
-                                                           └──────────────┘
 ```
 
 ### Step 3: Relational Schema Design
@@ -154,16 +146,6 @@ DENORMALIZATION DECISION:
 +----------------------------+-------------------------------------------+
 | Aggregation is expensive   | Counter cache: comment_count on Task      |
 | and frequently needed      | instead of COUNT(*) on every page load    |
-+----------------------------+-------------------------------------------+
-| Cross-service boundary     | Each microservice owns its data; can't    |
-| prevents joins             | join across databases                     |
-+----------------------------+-------------------------------------------+
-
-Do NOT denormalize when:
-[ ] You haven't measured the join performance
-[ ] Write frequency is high (updates must propagate to all copies)
-[ ] Data consistency is critical (financial, medical)
-[ ] The denormalized data changes frequently
 ```
 
 #### 3c: SQL Schema Generation
@@ -175,96 +157,7 @@ CREATE TABLE organizations (
     name        VARCHAR(255) NOT NULL,
     plan        VARCHAR(50) NOT NULL DEFAULT 'free'
                 CHECK (plan IN ('free', 'pro', 'enterprise')),
-    billing_email VARCHAR(255),
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE users (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email       VARCHAR(255) NOT NULL UNIQUE,
-    name        VARCHAR(255) NOT NULL,
-    role        VARCHAR(50) NOT NULL DEFAULT 'member'
-                CHECK (role IN ('owner', 'admin', 'member', 'viewer')),
-    org_id      UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_users_org ON users(org_id);
-CREATE INDEX idx_users_email ON users(email);
-
-CREATE TABLE projects (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        VARCHAR(255) NOT NULL,
-    description TEXT,
-    org_id      UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(org_id, name)  -- No duplicate project names within an org
-);
-CREATE INDEX idx_projects_org ON projects(org_id);
-
-CREATE TABLE tasks (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title       VARCHAR(500) NOT NULL,
-    description TEXT,
-    status      VARCHAR(50) NOT NULL DEFAULT 'todo'
-                CHECK (status IN ('todo', 'in_progress', 'in_review', 'done', 'cancelled')),
-    priority    SMALLINT NOT NULL DEFAULT 2 CHECK (priority BETWEEN 0 AND 4),
-    assignee_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    project_id  UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    due_date    DATE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_tasks_project_status ON tasks(project_id, status);
-CREATE INDEX idx_tasks_assignee ON tasks(assignee_id) WHERE assignee_id IS NOT NULL;
-
-CREATE TABLE comments (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    body        TEXT NOT NULL CHECK (length(body) > 0),
-    author_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    task_id     UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX idx_comments_task_created ON comments(task_id, created_at DESC);
-
--- Many-to-many: tasks <-> tags
-CREATE TABLE tags (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        VARCHAR(100) NOT NULL,
-    color       VARCHAR(7),  -- hex color
-    org_id      UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    UNIQUE(org_id, name)
-);
-
-CREATE TABLE task_tags (
-    task_id     UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
-    tag_id      UUID NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
-    PRIMARY KEY (task_id, tag_id)
-);
-CREATE INDEX idx_task_tags_tag ON task_tags(tag_id);
-
--- Automatic updated_at trigger
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_organizations_updated BEFORE UPDATE ON organizations
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_users_updated BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_projects_updated BEFORE UPDATE ON projects
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_tasks_updated BEFORE UPDATE ON tasks
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_comments_updated BEFORE UPDATE ON comments
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+# ... (condensed)
 ```
 
 ### Step 4: NoSQL Data Modeling
@@ -287,13 +180,6 @@ EMBED vs REFERENCE DECISION:
 +---------------------------+---------------------------+
 | Child rarely changes      | Child changes frequently  |
 | independently             | and independently         |
-+---------------------------+---------------------------+
-| Array is bounded          | Array can grow unbounded  |
-| (max ~100 items)          | (comments, logs, events)  |
-+---------------------------+---------------------------+
-| Data belongs to parent    | Data has its own lifecycle |
-| (address of a user)       | (user of an order)        |
-+---------------------------+---------------------------+
 ```
 
 ```javascript
@@ -303,44 +189,7 @@ EMBED vs REFERENCE DECISION:
   _id: ObjectId("..."),
   orderNumber: "ORD-2025-001",
   customer: {
-    _id: ObjectId("..."),    // Reference to customer collection
-    name: "Jane Doe",        // Denormalized snapshot (point-in-time)
-    email: "jane@example.com"
-  },
-  items: [                   // Embedded (bounded, max ~50 items per order)
-    {
-      productId: ObjectId("..."),
-      name: "Widget Pro",    // Snapshot at time of purchase
-      price: 29.99,          // Snapshot at time of purchase
-      quantity: 2
-    }
-  ],
-  shipping: {                // Embedded (1:1, always read with order)
-    address: "123 Main St",
-    city: "Springfield",
-    state: "IL",
-    zip: "62704",
-    method: "express",
-    trackingNumber: "1Z999AA10123456784"
-  },
-  totals: {
-    subtotal: 59.98,
-    tax: 4.80,
-    shipping: 9.99,
-    total: 74.77
-  },
-  status: "shipped",
-  statusHistory: [           // Embedded (bounded lifecycle, always read together)
-    { status: "placed", at: ISODate("2025-03-01T10:00:00Z") },
-    { status: "paid", at: ISODate("2025-03-01T10:01:00Z") },
-    { status: "shipped", at: ISODate("2025-03-02T14:30:00Z") }
-  ],
-  createdAt: ISODate("2025-03-01T10:00:00Z"),
-  updatedAt: ISODate("2025-03-02T14:30:00Z")
-}
-
-// BAD: Embedding unbounded comments in a document
-// Comments can grow to thousands -- use a separate collection with a reference
+# ... (condensed)
 ```
 
 #### 4b: Key-Value Store (Redis/DynamoDB)
@@ -426,48 +275,6 @@ export const userSchema = z.object({
   name: z.string().min(1).max(255),
   role: z.enum(['owner', 'admin', 'member', 'viewer']),
   orgId: z.string().uuid(),
-  bio: z.string().max(1000).optional(),
-  avatar: z.string().url().optional(),
-  preferences: z.object({
-    theme: z.enum(['light', 'dark', 'system']).default('system'),
-    locale: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/).default('en'),
-    notifications: z.object({
-      email: z.boolean().default(true),
-      push: z.boolean().default(false),
-      digest: z.enum(['daily', 'weekly', 'never']).default('daily'),
-    }).default({}),
-  }).default({}),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-});
-
-// Derived types
-export type User = z.infer<typeof userSchema>;
-
-// Partial schemas for different operations
-export const createUserSchema = userSchema.omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const updateUserSchema = userSchema
-  .omit({ id: true, createdAt: true, updatedAt: true })
-  .partial();
-
-export const userFilterSchema = z.object({
-  role: z.enum(['owner', 'admin', 'member', 'viewer']).optional(),
-  orgId: z.string().uuid().optional(),
-  search: z.string().max(100).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['name', 'email', 'createdAt']).default('createdAt'),
-  sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
-
-export type CreateUser = z.infer<typeof createUserSchema>;
-export type UpdateUser = z.infer<typeof updateUserSchema>;
-export type UserFilter = z.infer<typeof userFilterSchema>;
 ```
 
 #### 6b: JSON Schema
@@ -479,23 +286,7 @@ export type UserFilter = z.infer<typeof userFilterSchema>;
   "type": "object",
   "required": ["email", "name", "role", "orgId"],
   "properties": {
-    "id": {
-      "type": "string",
-      "format": "uuid"
-    },
-    "email": {
-      "type": "string",
-      "format": "email",
-      "maxLength": 255
-    },
-    "name": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 255
-    },
-
-### Step 7: Multi-Tenancy Patterns
-
+# ... (condensed)
 ```
 MULTI-TENANCY STRATEGIES:
 +-------------------+-------------------+-------------------+-------------------+
@@ -555,32 +346,6 @@ Commit: `"schema: design <description> data model"`
 9. **Validation schemas are the single source of truth.** Define the schema once (Zod, Protobuf, Avro), derive types, API docs, and database constraints from it. Never maintain parallel definitions.
 10. **Test schema changes against production-scale data.** A migration that runs in 100ms on dev (1000 rows) may lock the table for 30 minutes in production (10M rows).
 
-## Example Usage
-
-### Designing a schema from scratch
-```
-User: /godmode:schema I'm building a project management tool with orgs, users,
-      projects, tasks, and comments. PostgreSQL.
-
-Schema: Analyzing domain...
-
-DOMAIN: Project management (multi-tenant SaaS)
-Entities: Organization, User, Project, Task, Comment, Tag
-Database: PostgreSQL
-
-Designing 3NF schema with:
-- UUID primary keys (distributed-ready)
-- Row-level security for multi-tenancy
-- Proper indexes for common access patterns (tasks by project+status, comments by task+date)
-- Constraints: CHECK on enums, NOT NULL on required fields, FK with ON DELETE behavior
-
-Files to create:
-- migrations/001_initial_schema.sql   (full DDL)
-- schemas/entities.ts                  (Zod validation schemas)
-- docs/er-diagram.md                   (entity-relationship diagram)
-```
-
-### Choosing between SQL and NoSQL
 ## Flags & Options
 
 | Flag | Description |
@@ -588,29 +353,6 @@ Files to create:
 | (none) | Interactive schema design workflow |
 | `--er` | Generate entity-relationship diagram |
 | `--normalize` | Analyze and normalize an existing schema |
-| `--denormalize` | Evaluate denormalization opportunities with measurements |
-| `--nosql` | Design NoSQL document/key-value/graph model |
-| `--validate` | Generate validation schemas (Zod, JSON Schema, Protobuf, Avro) |
-| `--evolve` | Plan a backward-compatible schema evolution |
-| `--multi-tenant` | Design multi-tenancy schema with isolation strategy |
-| `--audit` | Audit existing schema for issues (missing indexes, constraints, types) |
-| `--compare` | Compare two schema versions and identify breaking changes |
-| `--seed` | Generate seed data for development and testing |
-| `--report` | Generate full schema design report |
-
-## Auto-Detection
-
-```
-AUTO-DETECT SEQUENCE:
-1. Detect ORM/query builder: prisma, drizzle, typeorm, sequelize, sqlalchemy, gorm
-2. Check for existing schema files: prisma/schema.prisma, migrations/, models/, entities/
-3. Detect database type: PostgreSQL, MySQL, MongoDB, SQLite from connection strings/configs
-4. Check for migration tool: prisma migrate, knex, flyway, alembic, goose, dbmate
-5. Detect validation library: zod, joi, yup, class-validator, pydantic, JSON Schema files
-6. Check for existing ERD or schema docs: docs/schema*, docs/erd*, dbdiagram references
-7. Scan for schema issues: grep for VARCHAR(255) overuse, missing indexes on FK columns
-8. Check for seed data: prisma/seed.ts, seeds/, fixtures/, factories/
-```
 
 ## Iterative Schema Design Loop
 
@@ -628,18 +370,6 @@ WHILE entities_remaining is not empty AND current_iteration < max_iterations:
     5. Generate migration file (up + down)
     6. Run migration against dev database
     7. Validate: run the expected queries, check EXPLAIN for index usage
-## Multi-Agent Dispatch
-
-```
-PARALLEL AGENT DISPATCH (3 worktrees):
-  Agent 1 — "schema-tables": table definitions, constraints, indexes, migrations
-  Agent 2 — "schema-validation": Zod/validation schemas derived from DB schema
-  Agent 3 — "schema-seed": seed data, factories, fixtures for dev/test
-
-MERGE ORDER: tables → validation → seed (validation mirrors tables, seed uses both)
-CONFLICT ZONES: migration order numbers, shared type definitions (assign migration sequence first)
-```
-
 ## HARD RULES
 
 ```
@@ -687,36 +417,6 @@ Append one row per session. Create the file with headers on first run.
 8. Validation schema (Zod/JSON Schema/Protobuf) derives from a single source of truth.
 9. Primary keys are surrogate (UUID or auto-increment), never natural keys.
 
-## Error Recovery
-```
-IF user provides no access patterns:
-  → Ask: "What are the 5 most frequent queries? Read-heavy or write-heavy?"
-  → Do NOT design schema until at least 3 access patterns are known
-
-IF EXPLAIN ANALYZE shows sequential scan on an indexed column:
-  → Check: is the index type correct for the query (B-tree vs GIN vs GiST)?
-  → Check: is the planner choosing a different plan due to low row count?
-  → Fix the index or add a hint, re-run EXPLAIN
-
-IF migration fails on production-scale data:
-  → Check: does the migration lock the table? (ALTER TABLE ADD COLUMN with default on old PG)
-  → Split into safe steps: add nullable column → backfill in batches → add NOT NULL constraint
-  → Use CONCURRENTLY for index creation on PostgreSQL
-
-IF schema has circular foreign keys:
-  → Break the cycle: one FK must be nullable or deferred
-  → Document: "Circular FK between {A} and {B} — {A}.{col} is nullable to break cycle"
-
-IF NoSQL document exceeds size limit (16MB MongoDB):
-  → Identify unbounded array causing growth
-  → Extract to separate collection with reference
-  → Add index on the reference field
-
-IF parallel validation/seed agents produce conflicting migration numbers:
-  → Assign migration number sequence before dispatching agents
-  → Convention: Agent 1 gets 001-010, Agent 2 gets 011-020, Agent 3 gets 021-030
-```
-
 ## Schema Migration Safety Loop
 
 Autonomous loop that validates migrations, applies them, verifies correctness, and tests rollback. Every migration is proven safe before committing.
@@ -759,8 +459,6 @@ FOR each migration in migrations:
     FIX the migration
     RETRY up to 3 times
 
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
 ## Keep/Discard Discipline
 ```
 After EACH schema entity or migration:
@@ -786,3 +484,10 @@ DO NOT STOP just because:
   - One entity has a complex migration (finish it)
   - Query performance is "good enough" without checking EXPLAIN
 ```
+## Error Recovery
+| Failure | Action |
+|---------|--------|
+| Schema validation rejects valid data | Check for overly strict constraints. Verify nullable fields. Test with real-world data samples, not just idealized test data. |
+| Schema migration breaks consumers | Use additive-only changes (new fields with defaults). Never remove or rename fields without deprecation period. Version the schema. |
+| Circular references in schema | Break cycle with lazy references or ID-based relationships. Document the relationship direction. |
+| Generated types drift from schema | Automate type generation in CI. Run codegen on every schema change. Never edit generated types manually. |

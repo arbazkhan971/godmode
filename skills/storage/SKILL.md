@@ -36,25 +36,6 @@ STORAGE REQUIREMENTS:
 │    Allowed MIME types: <list>                              │
 │    Authentication: <required | public>                     │
 │                                                           │
-│  Access Patterns:                                         │
-│    Write frequency: <N uploads/day>                        │
-│    Read frequency: <N downloads/day>                       │
-│    Read/Write ratio: <N:1>                                 │
-│    Geographic distribution: <regions>                      │
-│    Latency requirements: <ms for first byte>               │
-│                                                           │
-│  Retention:                                               │
-│    Hot storage: <duration> (frequently accessed)           │
-│    Warm storage: <duration> (occasionally accessed)        │
-│    Cold/archive: <duration> (rarely accessed)              │
-│    Deletion policy: <soft delete | hard delete | retain>   │
-│                                                           │
-│  Compliance:                                              │
-│    Data residency: <regions where data must stay>          │
-│    Encryption: <at-rest | in-transit | both>               │
-│    Audit logging: <required | optional>                    │
-│    GDPR deletion: <required>                               │
-└──────────────────────────────────────────────────────────┘
 ```
 
 ### Step 2: Object Storage Configuration
@@ -77,15 +58,6 @@ S3 BUCKET ARCHITECTURE:
 │      /medium_800x600.<ext>     — Medium size               │
 │      /large_1920x1080.<ext>    — Large size                │
 │    /documents/<uuid>.<ext>     — Documents                 │
-│    /temp/<upload-id>/          — Multipart temp chunks      │
-│                                                           │
-│  Bucket Policy:                                           │
-│  - Deny public access (all 4 block public access settings)│
-│  - Allow CloudFront OAC for read access                   │
-│  - Allow application IAM role for read/write              │
-│  - Enforce SSL (deny non-HTTPS requests)                  │
-│  - Enforce encryption (deny unencrypted uploads)          │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Cross-Provider Comparison
@@ -160,38 +132,6 @@ async function generateUploadUrl(req: Request): Promise<UploadUrlResponse> {
   }
 
   const fileId = crypto.randomUUID();
-  const key = `${req.tenantId}/originals/${fileId}/${sanitizeFilename(filename)}`;
-
-  const presignedUrl = await s3.getSignedUrl('putObject', {
-    Bucket: UPLOAD_BUCKET,
-    Key: key,
-    ContentType: contentType,
-    ContentLength: fileSize,
-    Expires: 3600,                          // 1 hour expiry
-    Metadata: {
-      'uploaded-by': req.userId,
-      'tenant-id': req.tenantId,
-      'original-filename': filename,
-    },
-    Conditions: [
-      ['content-length-range', 1, MAX_FILE_SIZE],
-    ],
-  });
-
-  // Store upload record in database
-  await db.uploads.create({
-    id: fileId,
-    userId: req.userId,
-    tenantId: req.tenantId,
-    filename,
-    contentType,
-    fileSize,
-    key,
-    status: 'pending',
-  });
-
-  return { uploadUrl: presignedUrl, fileId, key };
-}
 ```
 
 #### Multipart Upload (Large Files)
@@ -211,19 +151,6 @@ MULTIPART UPLOAD FLOW:
 │                                                           │
 │  Phase 3: COMPLETE                                        │
 │  - Client sends list of part ETags to server              │
-│  - Server calls CompleteMultipartUpload                    │
-│  - Server validates assembled file (checksum, size)       │
-│  - Server triggers post-upload processing                 │
-│                                                           │
-│  ABORT (on failure or timeout):                           │
-│  - AbortMultipartUpload cleans up partial chunks          │
-│  - Lifecycle rule auto-aborts incomplete uploads > 24h    │
-├──────────────────────────────────────────────────────────┤
-│  Chunk size: 10 MB (balance between retry cost and speed) │
-│  Max concurrent: 5 (avoid browser connection limits)      │
-│  Retry policy: 3 retries per chunk, exponential backoff   │
-│  Progress: (completed chunks / total chunks) * 100        │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Resumable Upload (Unstable Connections)
@@ -243,16 +170,6 @@ RESUMABLE UPLOAD (tus protocol):
 │     [binary chunk data]                                   │
 │     -> 204 No Content, Upload-Offset: <new-offset>        │
 │                                                           │
-│  3. HEAD /uploads/<id>  (resume after disconnect)         │
-│     -> 200 OK, Upload-Offset: <server-offset>            │
-│     Client resumes from server offset                     │
-│                                                           │
-│  Benefits:                                                │
-│  - Survives network disconnects                           │
-│  - Client resumes from last byte received by server       │
-│  - Works on mobile and unstable connections               │
-│  - Open protocol with client libraries for all platforms  │
-└──────────────────────────────────────────────────────────┘
 ```
 
 ### Step 4: Image and Video Processing Pipeline
@@ -275,27 +192,6 @@ PROCESSING STEPS:
      - Scan for malware (ClamAV or commercial scanner)
      - Check dimensions and file size
      - Strip EXIF data (privacy — GPS coordinates, camera info)
-
-  2. GENERATE VARIANTS
-     ┌───────────────────────────────────────────────────┐
-     │  Variant     │ Dimensions  │ Quality │ Format     │
-     │  ─────────────────────────────────────────────── │
-     │  thumbnail   │ 200x200     │ 80%     │ webp, jpg  │
-     │  medium      │ 800x600     │ 85%     │ webp, jpg  │
-     │  large       │ 1920x1080   │ 90%     │ webp, jpg  │
-     │  original    │ (preserved) │ 100%    │ (original) │
-     └───────────────────────────────────────────────────┘
-
-  3. OPTIMIZATION
-     - Convert to WebP (30-50% smaller than JPEG)
-     - Generate AVIF for modern browsers (additional 20% savings)
-     - Preserve original as fallback
-     - Generate blur placeholder (< 1 KB, base64 inline)
-
-  4. SERVE
-     - CDN with Accept header content negotiation
-     - <picture> element with srcset for responsive images
-     - Lazy loading with blur-up placeholder
 ```
 
 ```typescript
@@ -305,39 +201,7 @@ async function processImage(key: string): Promise<ProcessedImage> {
   const image = sharp(original.Body as Buffer);
   const metadata = await image.metadata();
 
-  // Strip EXIF data
-  image.rotate();  // Auto-orient from EXIF, then strip
-
-  const variants = await Promise.all([
-    // Thumbnail
-    image.clone().resize(200, 200, { fit: 'cover' })
-      .webp({ quality: 80 }).toBuffer(),
-    // Medium
-    image.clone().resize(800, 600, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 85 }).toBuffer(),
-    // Large
-    image.clone().resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 90 }).toBuffer(),
-    // Blur placeholder
-    image.clone().resize(20, 20, { fit: 'inside' })
-      .blur(10).webp({ quality: 20 }).toBuffer(),
-  ]);
-
-  // Upload all variants to S3
-  const baseKey = key.replace('/originals/', '/processed/').replace(/\.[^.]+$/, '');
-  await Promise.all([
-    s3.putObject({ Bucket: BUCKET, Key: `${baseKey}/thumb.webp`, Body: variants[0], ContentType: 'image/webp', CacheControl: 'public, max-age=31536000' }).promise(),
-    s3.putObject({ Bucket: BUCKET, Key: `${baseKey}/medium.webp`, Body: variants[1], ContentType: 'image/webp', CacheControl: 'public, max-age=31536000' }).promise(),
-    s3.putObject({ Bucket: BUCKET, Key: `${baseKey}/large.webp`, Body: variants[2], ContentType: 'image/webp', CacheControl: 'public, max-age=31536000' }).promise(),
-  ]);
-
-  return {
-    id: extractFileId(key),
-    original: { key, width: metadata.width, height: metadata.height },
-    variants: { thumb: `${baseKey}/thumb.webp`, medium: `${baseKey}/medium.webp`, large: `${baseKey}/large.webp` },
-    placeholder: `data:image/webp;base64,${variants[3].toString('base64')}`,
-  };
-}
+# ... (condensed)
 ```
 
 #### Video Processing Pipeline
@@ -357,19 +221,6 @@ VIDEO PROCESSING PIPELINE:
 │     ┌──────────────────────────────────────────────────┐  │
 │     │  Preset      │ Resolution │ Bitrate  │ Format    │  │
 │     │  ──────────────────────────────────────────────  │  │
-│     │  720p        │ 1280x720   │ 2.5 Mbps │ H.264/MP4│  │
-│     │  1080p       │ 1920x1080  │ 5 Mbps   │ H.264/MP4│  │
-│     │  4K          │ 3840x2160  │ 15 Mbps  │ H.265/MP4│  │
-│     │  HLS playlist│ Adaptive   │ Variable │ HLS/fMP4 │  │
-│     └──────────────────────────────────────────────────┘  │
-│                                                            │
-│  4. GENERATE ASSETS                                        │
-│     - Thumbnail at 3 different timestamps                  │
-│     - Preview GIF (first 3 seconds, 320px wide)            │
-
-### Step 5: Storage Cost Optimization
-Analyze and reduce storage costs:
-
 ```
 STORAGE COST ANALYSIS:
 ┌──────────────────────────────────────────────────────────┐
@@ -418,39 +269,6 @@ STORAGE COST ANALYSIS:
           "StorageClass": "STANDARD_IA"
         },
         {
-          "Days": 365,
-          "StorageClass": "GLACIER_IR"
-        },
-        {
-          "Days": 730,
-          "StorageClass": "DEEP_ARCHIVE"
-        }
-      ]
-    },
-    {
-      "ID": "cleanup-incomplete-uploads",
-      "Status": "Enabled",
-      "Filter": { "Prefix": "" },
-      "AbortIncompleteMultipartUpload": {
-        "DaysAfterInitiation": 1
-      }
-    },
-    {
-      "ID": "expire-temp-files",
-      "Status": "Enabled",
-      "Filter": { "Prefix": "temp/" },
-      "Expiration": { "Days": 1 }
-    },
-    {
-      "ID": "delete-old-versions",
-      "Status": "Enabled",
-      "Filter": { "Prefix": "" },
-      "NoncurrentVersionExpiration": {
-        "NoncurrentDays": 30
-      }
-    }
-  ]
-}
 ```
 
 ### Step 6: Backup and Replication Strategies
@@ -472,20 +290,6 @@ BACKUP AND REPLICATION STRATEGY:
 │  Purpose: Disaster recovery, regional compliance           │
 │                                                           │
 │  Tier 3: CROSS-ACCOUNT BACKUP                              │
-│  Backup account: <account-id> (separate AWS account)       │
-│  S3 Object Lock: Compliance mode (immutable)               │
-│  Retention: <N> days minimum                               │
-│  Purpose: Protection against account compromise            │
-│                                                           │
-│  Recovery Targets:                                        │
-│  RPO (Recovery Point Objective): <time>                    │
-│  RTO (Recovery Time Objective): <time>                     │
-│                                                           │
-│  Backup Testing:                                          │
-│  Frequency: Monthly restore test                          │
-│  Scope: Random sample of <N> files                        │
-│  Verification: Checksum comparison with originals         │
-└──────────────────────────────────────────────────────────┘
 ```
 
 #### Replication Configuration
@@ -496,39 +300,7 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
   role   = aws_iam_role.replication.arn
 
   rule {
-    id     = "replicate-all"
-    status = "Enabled"
-
-    filter {}  # Replicate everything
-
-    destination {
-      bucket        = aws_s3_bucket.uploads_replica.arn
-      storage_class = "STANDARD_IA"    # Save costs on replica
-
-      encryption_configuration {
-        replica_kms_key_id = aws_kms_key.replica.arn
-      }
-
-      metrics {
-        status = "Enabled"
-        event_threshold {
-          minutes = 15
-        }
-      }
-
-      replication_time {
-        status = "Enabled"
-        time {
-          minutes = 15    # S3 Replication Time Control (RTC)
-        }
-      }
-    }
-
-    delete_marker_replication {
-      status = "Enabled"
-    }
-  }
-}
+# ... (condensed)
 ```
 
 ### Step 7: Commit and Report
@@ -554,42 +326,6 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
 7. **Generate image variants at upload time, not at request time.** On-demand resizing adds latency and compute cost to every request. Pre-generate standard sizes and cache them.
 8. **Test backup restores regularly.** A backup you have never tested restoring is not a backup. Run monthly restore tests on random file samples.
 
-## Example Usage
-
-### Designing a file upload system
-```
-User: /godmode:storage Design file upload for our social media app
-
-Storage: Analyzing requirements...
-
-Application: Social media app (images and short videos)
-Upload types: JPEG, PNG, MP4 (max 60s video)
-Scale: ~50K uploads/day, ~2M views/day
-
-Architecture:
-  1. Client requests presigned URL from API
-  2. Client uploads directly to S3 (multipart for > 10 MB)
-  3. S3 event triggers Lambda processing pipeline
-  4. Lambda validates, scans, and generates variants
-  5. Variants stored in processed/ prefix
-  6. Served via CloudFront CDN
-
-Image variants: thumb (200x200), feed (600x600), full (1200x1200)
-Video variants: 480p, 720p, HLS adaptive streaming
-Blur placeholders: Base64 inline (< 1 KB)
-
-Storage design:
-  Bucket: myapp-prod-media
-  Encryption: SSE-S3
-  Versioning: Enabled
-  Lifecycle: IA after 90 days, Glacier IR after 365 days
-  Replication: CRR to us-west-2
-
-Estimated costs:
-  Storage: $230/month (10 TB, lifecycle-optimized)
-  Requests: $45/month (2M GETs, 50K PUTs)
-  Processing: $60/month (Lambda + MediaConvert)
-  CDN egress: $170/month (2 TB via CloudFront)
 ## Flags & Options
 
 | Flag | Description |
@@ -597,12 +333,6 @@ Estimated costs:
 | (none) | Full storage architecture design and audit |
 | `--upload` | File upload architecture design only |
 | `--process` | Media processing pipeline design only |
-| `--optimize` | Storage cost analysis and optimization |
-| `--backup` | Backup and replication strategy only |
-| `--lifecycle` | Generate lifecycle policies only |
-| `--migrate` | Migrate between storage providers |
-| `--provider <name>` | Target provider (aws, gcp, azure) |
-| `--audit` | Audit current storage for waste and risk |
 
 ## HARD RULES
 
@@ -626,16 +356,7 @@ grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage\|@azure/storage-blob" package.
 
 # Detect existing storage configuration
 grep -rl "S3Client\|S3\|getSignedUrl\|presignedUrl\|Storage\|BlobServiceClient" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
-
-# Detect upload handling
-grep -rl "multer\|busboy\|formidable\|multipart" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
-
-# Detect image processing
-grep -r "sharp\|imagemagick\|jimp\|canvas" package.json 2>/dev/null
-
-# Detect CDN configuration
-ls cdn.* cloudfront.* 2>/dev/null
-grep -r "CloudFront\|cloudflare\|cdn" infra/ terraform/ 2>/dev/null | head -5
+# ... (condensed)
 ```
 
 ## Iteration Protocol
@@ -678,26 +399,6 @@ All of these must be true before marking the task complete:
 | Access denied (403) | Check IAM policy: does the role/user have `s3:PutObject`, `s3:GetObject` on the correct bucket ARN? Check bucket policy for explicit denies. Check VPC endpoint policy if applicable. |
 | CORS error on upload | Verify bucket CORS config allows the origin, method (PUT), and headers (Content-Type, x-amz-*). CORS rules are cached by browsers — test in incognito. |
 | Presigned URL fails | Check clock skew between server and AWS (<15min). Verify signing credentials match the bucket region. Check that the URL hasn't expired. |
-| CDN returns stale content | Invalidate CDN cache: `aws cloudfront create-invalidation`. For future: use content-hashed filenames to avoid cache invalidation entirely. |
-| Image processing OOM | Reduce Sharp concurrency: `sharp.concurrency(1)`. Process large images in a background job, not in the request handler. Set memory limits on the worker. |
-| Upload timeout | For files >100MB, switch to multipart upload. Set appropriate timeout on the client. Implement resumable uploads (tus protocol) for unreliable networks. |
-## Multi-Agent Dispatch
-```
-Agent 1 (worktree: storage-core):
-  - Configure storage bucket with IAM, CORS, lifecycle rules
-  - Build storage client wrapper with upload, download, delete, presign
-  - Set up CDN with origin access control
-
-Agent 2 (worktree: storage-processing):
-  - Implement image processing pipeline (variants, EXIF strip, format conversion)
-  - Add virus scanning integration (ClamAV or cloud-native)
-  - Build video processing if needed (thumbnails, transcoding)
-
-Agent 3 (worktree: storage-api):
-  - Create upload API endpoints (presigned URL generation, upload confirmation)
-  - Implement file metadata tracking in database
-  - Add download endpoints with access control
-
 ## Storage Optimization Audit
 
 Comprehensive audit of access patterns, compression effectiveness, and lifecycle policy coverage:
@@ -718,30 +419,6 @@ ACCESS PATTERN ANALYSIS:
 │  8-30 days       │ <N>              │ <pct>%     │ Should be STD  │
 │  31-90 days      │ <N>              │ <pct>%     │ Should be IA   │
 │  91-365 days     │ <N>              │ <pct>%     │ Should be IA   │
-│  > 365 days      │ <N>              │ <pct>%     │ Should be Glac │
-│  Never accessed  │ <N>              │ <pct>%     │ Delete or Glac │
-└──────────────────────────────────────────────────────────────────┘
-
-  Access pattern checks:
-    1. QUERY S3 Storage Lens / GCS Insights for access frequency per prefix
-    2. IDENTIFY hot prefixes (frequently accessed) vs cold prefixes (rarely accessed)
-    3. IDENTIFY orphaned objects (no DB reference, no recent access)
-    4. MEASURE read/write ratio per prefix
-    5. MAP access patterns to optimal storage class:
-       - Frequent access (daily): S3 Standard / GCS Standard
-       - Infrequent access (monthly): S3 Standard-IA / GCS Nearline
-       - Archive (yearly): S3 Glacier IR / GCS Coldline
-       - Deep archive (compliance): S3 Glacier Deep / GCS Archive
-    6. CALCULATE projected savings from reclassification
-
-  Access pattern anomaly detection:
-    - ALERT if write frequency increases > 50% week-over-week (possible runaway process)
-    - ALERT if read frequency drops > 30% (possible broken CDN or stale cache)
-    - ALERT if storage growth rate exceeds projected budget
-
-## Platform Fallback
-Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
-## Keep/Discard Discipline
 ```
 After EACH storage configuration change:
   1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.
@@ -765,4 +442,14 @@ STOP when ANY of these are true:
 DO NOT STOP just because:
   - Cost optimization is incomplete (lifecycle rules are a start)
   - Video processing is not yet implemented (if not requested)
+```
+## Output Format
+Print: `Storage: {provider} configured. Upload: {presigned|direct}. CDN: {active|none}. Direct access: {blocked|exposed}. Status: {DONE|PARTIAL}.`
+
+## Keep/Discard Discipline
+```
+After EACH storage configuration change:
+  KEEP if: end-to-end test passes AND no access regressions AND cost projection improved
+  DISCARD if: upload fails OR direct bucket access possible OR CORS breaks
+  On discard: revert. Never keep a storage change that exposes the bucket directly.
 ```

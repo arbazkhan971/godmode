@@ -60,29 +60,6 @@ PLATFORM SELECTION:
 │                  │  funnel analysis,        │  EU data residency available │
 │                  │  retention tracking      │                              │
 ├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  PostHog         │  Self-hosted product     │  Self-hosted = full control  │
-│                  │  analytics, session      │  No data leaves your infra   │
-│                  │  replay, feature flags   │  GDPR-friendly by default    │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Plausible       │  Privacy-first web       │  No cookies, no personal     │
-│                  │  analytics, lightweight, │  data, GDPR compliant        │
-│                  │  GDPR-safe by default    │  without consent banner      │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Umami           │  Self-hosted, privacy-   │  Self-hosted, no cookies,    │
-│                  │  first, lightweight,     │  GDPR compliant without      │
-│                  │  open source             │  consent banner              │
-├──────────────────┼──────────────────────────┼──────────────────────────────┤
-│  Google          │  Free, large-scale web   │  Third-party, consent needed │
-│  Analytics 4     │  analytics, marketing    │  Requires cookie banner      │
-│                  │  attribution             │  Privacy concerns            │
-└──────────────────┴──────────────────────────┴──────────────────────────────┘
-
-SELECTED: <platform(s)>
-JUSTIFICATION: <why — based on goals, privacy, budget, features>
-ARCHITECTURE:
-  Collection: <client-side | server-side | hybrid>
-  Routing: <direct | via Segment CDP | custom pipeline>
-  Storage: <platform-managed | self-hosted | data warehouse>
 ```
 
 ### Step 3: Event Taxonomy Design
@@ -104,48 +81,6 @@ EVENT CATALOG:
 │  User Signed Up                 │  Server  │  method, referral_source,    │
 │                                 │          │  plan                        │
 │  User Logged In                 │  Server  │  method, mfa_used            │
-│  User Logged Out                │  Client  │  session_duration            │
-│  Account Deleted                │  Server  │  reason, account_age_days    │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  NAVIGATION EVENTS                                                        │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  Page Viewed                    │  Client  │  page_name, page_path,       │
-│                                 │          │  referrer                    │
-│  Tab Switched                   │  Client  │  tab_name, previous_tab      │
-│  Search Performed               │  Client  │  query, results_count,       │
-│                                 │          │  filters_applied             │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  FEATURE EVENTS                                                           │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  Feature Used                   │  Client  │  feature_name, context       │
-│  <Feature> Created              │  Server  │  <feature-specific props>    │
-│  <Feature> Updated              │  Server  │  <fields changed>            │
-│  <Feature> Deleted              │  Server  │  <reason if captured>        │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  CONVERSION EVENTS                                                        │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  Trial Started                  │  Server  │  plan, source                │
-│  Checkout Started               │  Client  │  plan, billing_cycle         │
-│  Payment Completed              │  Server  │  plan, amount, currency      │
-│  Subscription Upgraded          │  Server  │  from_plan, to_plan          │
-│  Subscription Cancelled         │  Server  │  reason, plan, tenure_days   │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  ENGAGEMENT EVENTS                                                        │
-├─────────────────────────────────┼──────────┼──────────────────────────────┤
-│  Notification Received          │  Client  │  type, channel               │
-│  Notification Clicked           │  Client  │  type, channel               │
-│  Share Initiated                │  Client  │  content_type, method        │
-│  Feedback Submitted             │  Client  │  type, rating, feature       │
-└─────────────────────────────────┴──────────┴──────────────────────────────┘
-
-NAMING RULES:
-  1. Use past tense for completed actions ("Signed Up", not "Sign Up")
-  2. Use <Object> <Action> format consistently
-  3. Never include PII in event properties (no email, name, IP in properties)
-  4. Include timestamp and user_id automatically (via SDK)
-  5. Properties use snake_case
-  6. Boolean properties use is_ prefix (is_first_time, is_premium)
-  7. Enum properties have documented allowed values
 ```
 
 ### Step 4: Event Property Standards
@@ -167,20 +102,6 @@ GLOBAL PROPERTIES (sent with every event):
   experiment_ids: string[] (active A/B test assignments)
 
 USER PROPERTIES (set once, updated on change):
-  plan: "free" | "starter" | "pro" | "enterprise"
-  account_created_at: ISO 8601 datetime
-  company_size: "1-10" | "11-50" | "51-200" | "201-1000" | "1000+"
-  role: string
-  is_admin: boolean
-  feature_flags: string[] (active feature flags)
-
-PROPERTY VALIDATION:
-  - Required properties must not be null or empty
-  - Enum properties must match allowed values
-  - Numeric properties must be within expected ranges
-  - String properties have max length limits
-  - No PII in any property (email, name, phone, IP, address)
-  - No high-cardinality free-text fields (use enums or categories)
 ```
 
 ### Step 5: Implementation
@@ -194,24 +115,7 @@ import { AnalyticsBrowser } from '@segment/analytics-next';
 export const analytics = AnalyticsBrowser.load({
   writeKey: process.env.SEGMENT_WRITE_KEY!,
 });
-
-// Track an event
-export function track(event: string, properties?: Record<string, unknown>) {
-  analytics.track(event, {
-    ...properties,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-// Identify a user
-export function identify(userId: string, traits?: Record<string, unknown>) {
-  analytics.identify(userId, traits);
-}
-
-// Track a page view
-export function page(name: string, properties?: Record<string, unknown>) {
-  analytics.page(name, properties);
-}
+# ... (condensed)
 ```
 
 #### Amplitude Implementation
@@ -222,28 +126,7 @@ import * as amplitude from '@amplitude/analytics-browser';
 export function initAmplitude() {
   amplitude.init(process.env.AMPLITUDE_API_KEY!, {
     defaultTracking: {
-      sessions: true,
-      pageViews: true,
-      formInteractions: false,
-      fileDownloads: false,
-    },
-  });
-}
-
-export function track(event: string, properties?: Record<string, unknown>) {
-  amplitude.track(event, properties);
-}
-
-export function identify(userId: string, traits?: Record<string, unknown>) {
-  amplitude.setUserId(userId);
-  if (traits) {
-    const identifyEvent = new amplitude.Identify();
-    Object.entries(traits).forEach(([key, value]) => {
-      identifyEvent.set(key, value as string);
-    });
-    amplitude.identify(identifyEvent);
-  }
-}
+# ... (condensed)
 ```
 
 #### PostHog Implementation
@@ -254,21 +137,7 @@ import posthog from 'posthog-js';
 export function initPostHog() {
   posthog.init(process.env.POSTHOG_API_KEY!, {
     api_host: process.env.POSTHOG_HOST || 'https://app.posthog.com',
-    capture_pageview: true,
-    capture_pageleave: true,
-    autocapture: false,  // Prefer explicit tracking
-    persistence: 'localStorage',
-    respect_dnt: true,
-  });
-}
-
-export function track(event: string, properties?: Record<string, unknown>) {
-  posthog.capture(event, properties);
-}
-
-export function identify(userId: string, traits?: Record<string, unknown>) {
-  posthog.identify(userId, traits);
-}
+# ... (condensed)
 ```
 
 #### Analytics Abstraction Layer
@@ -279,47 +148,7 @@ interface AnalyticsProvider {
   identify(userId: string, traits?: Record<string, unknown>): void;
   page(name: string, properties?: Record<string, unknown>): void;
 }
-
-class Analytics {
-  private providers: AnalyticsProvider[] = [];
-  private enabled: boolean = true;
-
-  addProvider(provider: AnalyticsProvider) {
-    this.providers.push(provider);
-  }
-
-  track(event: string, properties?: Record<string, unknown>) {
-    if (!this.enabled) return;
-    this.validate(event, properties);
-    this.providers.forEach(p => p.track(event, properties));
-  }
-
-  identify(userId: string, traits?: Record<string, unknown>) {
-    if (!this.enabled) return;
-    this.providers.forEach(p => p.identify(userId, traits));
-  }
-
-  page(name: string, properties?: Record<string, unknown>) {
-    if (!this.enabled) return;
-    this.providers.forEach(p => p.page(name, properties));
-  }
-
-  private validate(event: string, properties?: Record<string, unknown>) {
-    // Validate against event taxonomy
-    // Check for PII in properties
-    // Log warnings for unknown events in development
-    if (process.env.NODE_ENV === 'development') {
-      if (!EVENT_CATALOG.includes(event)) {
-        console.warn(`[Analytics] Unknown event: "${event}". Add it to the event catalog.`);
-      }
-    }
-  }
-
-  disable() { this.enabled = false; }
-  enable() { this.enabled = true; }
-}
-
-export const analytics = new Analytics();
+# ... (condensed)
 ```
 
 ### Step 6: Funnel Analysis Setup
@@ -341,23 +170,6 @@ FUNNEL STEPS:
 │  5   │ Complete onboarding    │ Onboarding Done   │ 50-60%       │
 │  6   │ First core action      │ Feature Used      │ 40-50%       │
 │  7   │ Activation (aha moment)│ Activation Done   │ 30-40%       │
-└──────┴────────────────────────┴───────────────────┴──────────────┘
-
-DROP-OFF ANALYSIS:
-  Biggest drop-off: Step <N> -> Step <N+1> (<pct>% drop)
-  Hypotheses for drop-off:
-    1. <hypothesis — e.g., "Registration form is too long">
-    2. <hypothesis — e.g., "Unclear value proposition at step 3">
-  Recommended actions:
-    1. <action — e.g., "Reduce form fields, add social login">
-    2. <action — e.g., "Add progress indicator and skip option">
-
-INSTRUMENTATION:
-  Each funnel step requires:
-    - Event tracked at the correct trigger point
-    - Properties include funnel_name and step_number
-    - Timestamp for time-between-steps analysis
-    - User properties for segmentation (plan, cohort, source)
 ```
 
 ### Step 7: A/B Test Instrumentation
@@ -379,14 +191,6 @@ VARIANTS:
 ┌───────────┬──────────────────────────────────┬──────────────┐
 │  Variant  │  Description                     │  Traffic %   │
 ├───────────┼──────────────────────────────────┼──────────────┤
-│  Control  │  Current experience (no change)  │  50%         │
-│  Test A   │  <description of change>         │  50%         │
-└───────────┴──────────────────────────────────┴──────────────┘
-
-ASSIGNMENT:
-  Method: <random | deterministic hash of user_id>
-  Sticky: <yes — same user always sees same variant>
-  Exclusions: <users in other active experiments on same surface>
 ```
 
 #### Experiment Implementation
@@ -397,34 +201,7 @@ interface Experiment {
   name: string;
   variants: { id: string; weight: number }[];
   isActive: boolean;
-}
-
-function assignVariant(experiment: Experiment, userId: string): string {
-  // Deterministic assignment based on user ID hash
-  const hash = murmurhash3(userId + experiment.id);
-  const normalized = (hash >>> 0) / 0xFFFFFFFF; // 0-1
-
-  let cumulative = 0;
-  for (const variant of experiment.variants) {
-    cumulative += variant.weight;
-    if (normalized < cumulative) return variant.id;
-  }
-  return experiment.variants[0].id; // fallback to control
-}
-
-// Track experiment exposure
-function trackExposure(experiment: Experiment, variant: string) {
-  analytics.track('Experiment Viewed', {
-    experiment_id: experiment.id,
-    experiment_name: experiment.name,
-    variant_id: variant,
-  });
-}
-
-// PostHog feature flags (built-in A/B testing)
-function getVariant(flagKey: string): string | boolean {
-  return posthog.getFeatureFlag(flagKey);
-}
+# ... (condensed)
 ```
 
 ### Step 8: Analytics Data Modeling
@@ -463,72 +240,6 @@ PRIVACY IMPLEMENTATION:
 ├─────────────────────────────────┼────────────────────────────────────┤
 │  User data deletion             │  API endpoint to delete all data   │
 │                                 │  for a user_id (GDPR Art. 17)     │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Data export                    │  API endpoint to export user data  │
-│                                 │  in machine-readable format        │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Retention limits               │  Auto-delete raw events after      │
-│                                 │  <N> months, keep aggregates       │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Do Not Track (DNT)             │  Respect browser DNT header        │
-│                                 │  (disable all tracking)            │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  IP anonymization               │  Strip or hash IP addresses        │
-│                                 │  before storage                    │
-├─────────────────────────────────┼────────────────────────────────────┤
-│  Cookie-free option             │  Plausible/Umami for cookieless    │
-│                                 │  tracking (no consent needed)      │
-└─────────────────────────────────┴────────────────────────────────────┘
-
-CONSENT IMPLEMENTATION:
-```typescript
-// consent/manager.ts
-type ConsentCategory = 'necessary' | 'analytics' | 'marketing' | 'personalization';
-
-interface ConsentState {
-  [key: string]: boolean;
-}
-
-class ConsentManager {
-  private state: ConsentState = {
-    necessary: true,    // Always true, cannot be disabled
-    analytics: false,   // Requires opt-in
-    marketing: false,   // Requires opt-in
-    personalization: false,
-  };
-
-  grantConsent(category: ConsentCategory) {
-    this.state[category] = true;
-    this.persist();
-    this.onConsentChange(category, true);
-  }
-
-  revokeConsent(category: ConsentCategory) {
-    if (category === 'necessary') return; // Cannot revoke
-    this.state[category] = false;
-    this.persist();
-    this.onConsentChange(category, false);
-  }
-
-  hasConsent(category: ConsentCategory): boolean {
-    return this.state[category] ?? false;
-  }
-
-  private onConsentChange(category: ConsentCategory, granted: boolean) {
-    if (category === 'analytics') {
-      if (granted) {
-        analytics.enable();
-      } else {
-        analytics.disable();
-        // Delete existing analytics cookies
-      }
-    }
-  }
-
-  private persist() {
-    localStorage.setItem('consent', JSON.stringify(this.state));
-  }
-}
 ```
 
 ### Step 10: Validation & Delivery
@@ -550,20 +261,6 @@ ANALYTICS VALIDATION:
 │  DNT/opt-out disables all tracking                   │  PASS | FAIL │
 │  User deletion API works (GDPR compliance)           │  PASS | FAIL │
 │  Events fire on correct triggers (not duplicated)    │  PASS | FAIL │
-│  Debug/dev events are filtered from production       │  PASS | FAIL │
-│  Analytics SDK does not block page load              │  PASS | FAIL │
-│  Bundle size impact is acceptable                    │  PASS | FAIL │
-└──────────────────────────────────────────────────────┴──────────────┘
-
-TESTING:
-  - Use analytics debugger (Segment Debugger, Amplitude Event Explorer, PostHog Toolbar)
-  - Verify events in real-time event stream
-  - Check funnel steps fire in correct order
-  - Verify A/B test assignments are balanced (chi-squared test)
-  - Test consent flow: grant, revoke, and verify tracking stops/starts
-  - Test user data deletion end-to-end
-
-VERDICT: <PASS | NEEDS REVISION>
 ```
 
 ```
@@ -582,14 +279,6 @@ Artifacts:
 Platform: <platform(s)>
 Events tracked: <N> events across <M> categories
 Funnels: <N> funnels defined
-Experiments: <N> A/B tests instrumented
-Privacy: <GDPR compliant | cookieless | consent-based>
-
-Next steps:
--> /godmode:chart — Build dashboards for analytics data
--> /godmode:report — Generate analytics reports
--> /godmode:test — Write tests for event tracking
--> /godmode:secure — Audit analytics for privacy compliance
 ```
 
 Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
@@ -604,40 +293,6 @@ Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 6. **Abstraction layer over vendor lock-in.** Use a unified analytics interface so you can swap providers without touching every component.
 7. **Debug before shipping.** Verify every event fires correctly in a staging environment before deploying to production.
 
-## Example Usage
-
-### Setting Up Product Analytics
-```
-User: /godmode:analytics Set up product analytics for our SaaS app
-
-Analytics: Starting discovery...
-
-ANALYTICS DISCOVERY:
-Project: SaaS project management tool
-Goals: Track activation, measure feature adoption, reduce churn
-Platform: Next.js web app
-Privacy: GDPR compliant (EU customers)
-
-PLATFORM SELECTED: PostHog (self-hosted)
-  - Product analytics + session replay + feature flags
-  - Self-hosted = GDPR compliant, no data leaves your infra
-  - Free tier sufficient for current scale
-
-EVENT TAXONOMY: 24 events across 5 categories
-  Lifecycle: 4 events (signup, login, logout, delete)
-  Navigation: 3 events (page view, search, tab switch)
-  Feature: 8 events (project/task CRUD, comment, share)
-  Conversion: 5 events (trial, checkout, payment, upgrade, cancel)
-  Engagement: 4 events (notification, share, feedback, invite)
-
-FUNNELS: 3 defined
-  1. Onboarding: signup -> create project -> invite member -> first task
-  2. Activation: signup -> 3 projects created within 7 days
-  3. Upgrade: trial start -> feature limit hit -> checkout -> payment
-
-Implementation complete. Verify with /godmode:test.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -645,13 +300,6 @@ Implementation complete. Verify with /godmode:test.
 | (none) | Full analytics design and implementation workflow |
 | `--platform <name>` | Force platform: `segment`, `amplitude`, `mixpanel`, `posthog`, `plausible`, `umami`, `ga4` |
 | `--taxonomy` | Design event taxonomy only (no implementation) |
-| `--funnel <name>` | Design and instrument a specific funnel |
-| `--experiment <name>` | Design and instrument an A/B test |
-| `--audit` | Audit existing analytics implementation for gaps, PII leaks, naming issues |
-| `--privacy` | Focus on privacy compliance (GDPR, CCPA, consent management) |
-| `--migrate <from> <to>` | Migrate analytics from one platform to another |
-| `--validate` | Validate that all events in taxonomy are instrumented and firing |
-| `--data-model` | Design analytics data model for warehouse |
 
 ## Auto-Detection
 
@@ -664,18 +312,6 @@ AUTO-DETECT:
 5. Data warehouse: BigQuery, Snowflake, Redshift configs
 6. Privacy: GDPR/CCPA references, EU deployment regions
 7. Auto-configure: recommend platform or audit existing for gaps
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL ANALYTICS IMPLEMENTATION:
-IF platform_count > 1 OR event_count > 30:
-  Agent 1 (worktree: analytics-taxonomy): event taxonomy, property standards, TypeScript types
-  Agent 2 (worktree: analytics-implementation): abstraction layer, providers, consent integration
-  Agent 3 (worktree: analytics-funnels): funnels, A/B framework, experiment assignment
-  Agent 4 (worktree: analytics-privacy): consent manager, PII audit, data deletion, DNT
-  COORDINATOR validates all events fire correctly, taxonomy is consistent
 ```
 
 ## Output Format
@@ -728,25 +364,7 @@ IF PII is detected in event properties:
 IF consent gate is not working:
   1. Verify the analytics SDK loads only after consent is granted
   2. Test: revoke consent and verify no tracking events fire
-  3. Test: clear cookies/localStorage and verify the consent prompt appears
-  4. Check that the consent state is persisted correctly
-
-IF A/B test shows unbalanced assignment:
-  1. Verify the hash function produces uniform distribution
-  2. Check for off-by-one errors in the variant assignment logic
-  3. Run a chi-squared test on the assignment distribution
-  4. If assignment uses a feature flag service, verify the flag configuration
 ```
-
-## Anti-Patterns
-
-- **Do NOT track events without a taxonomy.** Random event names like "click1" or "user_did_thing" are useless. Design the taxonomy first.
-- **Do NOT include PII in event properties.** Never track email, full name, phone number, or IP address. Use anonymous IDs.
-- **Do NOT track before consent.** In GDPR/CCPA jurisdictions, analytics must not fire until the user grants consent.
-- **Do NOT peek at A/B test results early.** Define sample size, run to completion, then analyze.
-- **Do NOT use auto-capture as sole tracking.** Supplement with explicit, well-named events.
-- **Do NOT create high-cardinality properties.** Categorize instead of storing free-text fields with millions of unique values.
-- **Do NOT couple analytics to business logic.** Use an event bus or middleware.
 
 ## Keep/Discard Discipline
 
@@ -765,8 +383,3 @@ Stop the analytics skill when:
 4. A/B test assignments are deterministic, sticky, and balanced (chi-squared test passes).
 5. No PII exists in any event property (verified by audit scan).
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run analytics tasks sequentially: taxonomy, then implementation, then funnels, then privacy.
-- Use branch isolation per task: `git checkout -b godmode-analytics-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
