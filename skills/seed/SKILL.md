@@ -1531,15 +1531,33 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-seed-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
+## Keep/Discard Discipline
+```
+After EACH seed entity implementation:
+  1. MEASURE: Run seed twice — does the second run produce zero duplicates?
+  2. COMPARE: Are row counts correct, foreign keys valid, no orphaned records?
+  3. DECIDE:
+     - KEEP if: idempotent (re-run safe), batch-inserted, dependency order correct
+     - DISCARD if: unique constraint violation on re-run OR FK errors OR single-row inserts in a loop
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before seeding the next entity.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All entities seeded with idempotent upserts verified (run twice, zero duplicates)
+  - Environment guard prevents accidental production seeding
+  - --reset flag truncates tables in correct dependency order
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Demo environment curation is not complete (dev seeding is higher priority)
+  - Anonymization pipeline is not built (only needed when copying production data)
+```
+
 ## Anti-Patterns
 
-- **Do NOT insert one row at a time in a loop.** Use batch inserts (`createMany`, `bulk_create`, `insert_all`). Inserting 10,000 rows one at a time takes minutes. Batch inserting takes seconds.
-- **Do NOT use auto-increment IDs as stable identifiers in seeds.** IDs change between runs. Use slugs, emails, or external identifiers for upsert matching.
-- **Do NOT seed without a fixed faker seed in development.** Without `faker.seed(42)`, every developer gets different data. Bugs become unreproducible. Screenshots become inconsistent.
-- **Do NOT copy production data without anonymizing it.** Real emails, real names, real payment info in development databases violate privacy laws and create security risks.
-- **Do NOT seed children before parents.** Foreign key constraints will reject the insert. Always seed in dependency order: reference data, then independent entities, then dependent entities.
 - **Do NOT put seed logic in migrations.** Migrations change schema. Seeds populate data. Mixing them makes migrations non-reversible and seeds non-repeatable.
 - **Do NOT use random data for demo environments.** Demo environments need curated, realistic-looking data that tells a story. Random lorem ipsum looks unprofessional.
 - **Do NOT skip cleanup in tests.** Leftover seed data from one test pollutes the next test. Use transaction rollback, truncate, or delete-by-marker after every test.
 - **Do NOT seed the same data in every environment.** Development needs 50 users. Staging needs 5000. Production needs zero fake users. Use environment-specific configs.
-- **Do NOT ignore foreign key constraints during seeding.** If your seed script fails on FK constraints, your dependency order is wrong. Fix the order instead of disabling constraints (except for bulk COPY operations where you re-enable immediately after).

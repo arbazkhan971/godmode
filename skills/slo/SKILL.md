@@ -305,122 +305,18 @@ BUDGET CONSUMPTION PER ALERT:
   Medium (3x for 1d):       consumes 10% of 30-day budget
   Low (1x for 3d):          consumes 10% of 30-day budget
 
-PROMETHEUS ALERTING RULES:
-groups:
-  - name: slo-burn-rate-alerts
-    rules:
-      # Critical: 14.4x burn rate over 1h AND 5m
-      - alert: SLOBurnRateCritical
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[1h]))
-            /
-            sum(rate(http_requests_total[1h]))
-          ) > (14.4 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[5m]))
-            /
-            sum(rate(http_requests_total[5m]))
-          ) > (14.4 * 0.001)
-        for: 2m
-        labels:
-          severity: critical
-          slo: availability
-        annotations:
-          summary: "Critical SLO burn rate: consuming budget 14.4x faster than allowed"
-          description: "At this rate, the entire 30-day error budget will be exhausted in ~2 days."
-          runbook_url: "https://runbooks.example.com/slo-burn-rate-critical"
+PROMETHEUS ALERT PATTERN (per severity):
+  alert: SLOBurnRate<Severity>
+  expr: |
+    (error_rate_over_long_window) > (burn_rate * error_budget_fraction)
+    AND
+    (error_rate_over_short_window) > (burn_rate * error_budget_fraction)
+  for: <stabilization period>
+  labels: severity, slo
+  annotations: summary, runbook_url
 
-      # High: 6x burn rate over 6h AND 30m
-      - alert: SLOBurnRateHigh
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[6h]))
-            /
-            sum(rate(http_requests_total[6h]))
-          ) > (6 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[30m]))
-            /
-            sum(rate(http_requests_total[30m]))
-          ) > (6 * 0.001)
-        for: 5m
-        labels:
-          severity: high
-          slo: availability
-        annotations:
-          summary: "High SLO burn rate: consuming budget 6x faster than allowed"
-          description: "At this rate, the entire 30-day error budget will be exhausted in ~5 days."
-          runbook_url: "https://runbooks.example.com/slo-burn-rate-high"
-
-      # Medium: 3x burn rate over 1d AND 2h
-      - alert: SLOBurnRateMedium
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[1d]))
-            /
-            sum(rate(http_requests_total[1d]))
-          ) > (3 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[2h]))
-            /
-            sum(rate(http_requests_total[2h]))
-          ) > (3 * 0.001)
-        for: 15m
-        labels:
-          severity: medium
-          slo: availability
-        annotations:
-          summary: "Elevated SLO burn rate: consuming budget 3x faster than allowed"
-          runbook_url: "https://runbooks.example.com/slo-burn-rate-medium"
-
-      # Low: 1x burn rate over 3d AND 6h
-      - alert: SLOBurnRateLow
-        expr: |
-          (
-            sum(rate(http_requests_total{code=~"5.."}[3d]))
-            /
-            sum(rate(http_requests_total[3d]))
-          ) > (1 * 0.001)
-          AND
-          (
-            sum(rate(http_requests_total{code=~"5.."}[6h]))
-            /
-            sum(rate(http_requests_total[6h]))
-          ) > (1 * 0.001)
-        for: 30m
-        labels:
-          severity: low
-          slo: availability
-        annotations:
-          summary: "SLO burn rate at budget limit: on track to exhaust budget"
-          runbook_url: "https://runbooks.example.com/slo-burn-rate-low"
-
-LATENCY SLO BURN RATE (same pattern, different SLI):
-      - alert: LatencySLOBurnRateCritical
-        expr: |
-          (
-            1 - (
-              sum(rate(http_request_duration_seconds_bucket{le="0.5"}[1h]))
-              /
-              sum(rate(http_request_duration_seconds_count[1h]))
-            )
-          ) > (14.4 * 0.001)
-          AND
-          (
-            1 - (
-              sum(rate(http_request_duration_seconds_bucket{le="0.5"}[5m]))
-              /
-              sum(rate(http_request_duration_seconds_count[5m]))
-            )
-          ) > (14.4 * 0.001)
-        for: 2m
-        labels:
-          severity: critical
-          slo: latency
+  Availability SLI: sum(rate(http_requests_total{code=~"5.."}[window])) / sum(rate(http_requests_total[window]))
+  Latency SLI: 1 - (sum(rate(bucket{le="threshold"}[window])) / sum(rate(count[window])))
 ```
 
 ### Step 7: Error Budget Policy
@@ -599,81 +495,13 @@ PANEL 5: SLO Compliance History (bar chart, last 12 months)
   - Monthly SLO met/missed
   - Shows trends over time
 
-GRAFANA DASHBOARD JSON (key panels):
-{
-  "panels": [
-    {
-      "title": "Error Budget Remaining",
-      "type": "gauge",
-      "targets": [{
-        "expr": "slo:error_budget_remaining:ratio{service='my-service'}",
-        "legendFormat": "Budget Remaining"
-      }],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "steps": [
-              {"color": "red", "value": 0},
-              {"color": "orange", "value": 0.10},
-              {"color": "yellow", "value": 0.25},
-              {"color": "green", "value": 0.50}
-            ]
-          },
-          "unit": "percentunit",
-          "min": 0,
-          "max": 1
-        }
-      }
-    },
-    {
-      "title": "Burn Rate (1h window)",
-      "type": "timeseries",
-      "targets": [{
-        "expr": "(sum(rate(http_requests_total{code=~'5..', service='my-service'}[1h])) / sum(rate(http_requests_total{service='my-service'}[1h]))) / (1 - 0.999)",
-        "legendFormat": "Burn Rate"
-      }],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "steps": [
-              {"color": "green", "value": 0},
-              {"color": "yellow", "value": 3},
-              {"color": "orange", "value": 6},
-              {"color": "red", "value": 14.4}
-            ]
-          }
-        }
-      }
-    }
-  ]
-}
-
-DATADOG SLO MONITOR:
-  # Create SLO in Datadog
-  slo:
-    name: "My Service Availability"
-    type: monitor
-    description: "99.9% of requests succeed over rolling 30 days"
-    monitor_ids:
-      - <error-rate-monitor-id>
-    thresholds:
-      - target: 99.9
-        timeframe: 30d
-        warning: 99.95
-    tags:
-      - service:my-service
-      - tier:1
-      - team:platform
-
-  # Datadog SLO widget for dashboard
-  widget:
-    type: slo
-    slo_id: <slo-id>
-    show_error_budget: true
-    time_windows:
-      - 7d
-      - 30d
-      - 90d
+KEY QUERIES:
+  Error budget remaining:
+    slo:error_budget_remaining:ratio{service='my-service'}
+  Burn rate (1h):
+    (sum(rate(http_requests_total{code=~'5..'}[1h])) / sum(rate(http_requests_total[1h]))) / (1 - 0.999)
+  Budget thresholds: red < 10%, orange 10-25%, yellow 25-50%, green > 50%
+  Burn rate thresholds: green < 3x, yellow 3-6x, orange 6-14.4x, red > 14.4x
 ```
 
 ### Step 11: SLO Review Cadence
@@ -696,106 +524,25 @@ SLO REVIEW CADENCE:
 |               |           |                  | alignment       |
 +--------------------------------------------------------------+
 
-WEEKLY SLO CHECK TEMPLATE:
-  Date: <date>
-  Service: <name>
-
-  SLO Status:
-  - Availability: <current>% vs <target>% -- <MEETING | MISSING>
-  - Latency (p99): <current>ms vs <target>ms -- <MEETING | MISSING>
-  - Error budget remaining: <N>%
-  - Burn rate trend: <stable | increasing | decreasing>
-
-  Incidents this week:
-  - <incident summary, budget impact>
-
-  Action items:
-  - <what to do before next review>
-
-QUARTERLY SLO REVIEW TEMPLATE:
-  Date: <date>
-  Service: <name>
-  Period: Q<N> <year>
-
-  SLO Compliance:
-  - Months meeting SLO: <N>/3
-  - Average error budget remaining: <N>%
-  - Worst day: <date> -- <budget impact>
-
-  SLO Adjustment Decisions:
-  - Tighten target: YES / NO (if consistently exceeding by large margin)
-  - Loosen target: YES / NO (if consistently missing despite investment)
-  - Add new SLI: YES / NO (if users report issues not caught by SLOs)
-  - Remove SLI: YES / NO (if SLI is not correlated to user experience)
-
-  Reliability Investment:
-  - Budget spent on reliability improvements: <N> person-weeks
-  - ROI: <improvement in budget remaining or incident reduction>
-  - Next quarter priority: <what to invest in>
+WEEKLY CHECK: SLO status, budget remaining, burn rate trend, incidents, action items.
+QUARTERLY REVIEW: compliance rate, budget avg, SLO adjustment decisions, reliability investment.
 
 WHEN TO ADJUST SLOs:
-  TIGHTEN when:
-  - Consistently meeting SLO with > 80% budget remaining (target is too easy)
-  - Users report issues that SLO does not catch (target is not strict enough)
-  - Business criticality increased (service is now Tier 1)
-
-  LOOSEN when:
-  - Consistently missing SLO despite significant reliability investment
-  - Cost of meeting SLO exceeds business value (over-engineering)
-  - The service is being deprecated or scaled down
-
-  LEAVE UNCHANGED when:
-  - Budget consumption is between 30-70% (SLO is well-calibrated)
-  - Team is using error budget policy to balance velocity and reliability
+  TIGHTEN: consistently > 80% budget remaining, or users report uncaught issues.
+  LOOSEN: consistently missing despite investment, or cost exceeds business value.
+  LEAVE UNCHANGED: budget consumption 30-70% (well-calibrated).
 ```
 
-### Step 12: Validation & Artifacts
-Validate the SLO implementation:
+### Step 12: Artifacts & Completion
 
 ```
-SLO VALIDATION CHECKLIST:
-+--------------------------------------------------------------+
-|  Check                                    | Status            |
-+--------------------------------------------------------------+
-|  SLA vs SLO vs SLI distinction is clear   | PASS | FAIL       |
-|  SLIs chosen match service type            | PASS | FAIL       |
-|  SLIs measure user experience, not infra   | PASS | FAIL       |
-|  SLO targets are achievable (not 100%)     | PASS | FAIL       |
-|  SLO is stricter than SLA                  | PASS | FAIL       |
-|  Error budgets calculated correctly         | PASS | FAIL       |
-|  Error budget policy documented            | PASS | FAIL       |
-|  Multi-window burn rate alerts configured  | PASS | FAIL       |
-|  SLO dashboard created and accessible      | PASS | FAIL       |
-|  Composite SLOs defined for user journeys  | PASS | FAIL       |
-|  Release gating uses error budget          | PASS | FAIL       |
-|  SLO review cadence established            | PASS | FAIL       |
-|  Team understands and agrees to SLO targets| PASS | FAIL       |
-|  Stakeholders informed of SLO and policy   | PASS | FAIL       |
-+--------------------------------------------------------------+
-
-VERDICT: <SLO READY | NEEDS WORK (<N> items to fix)>
-```
-
-Generate deliverables:
-
-```
-SLO IMPLEMENTATION COMPLETE:
-
-Artifacts:
-- SLO definitions: docs/slo/<service>-slo.md
-- Error budget policy: docs/slo/error-budget-policy.md
-- Burn rate alert rules: infra/alerts/<service>-slo-burn-rate.yaml
-- Recording rules: infra/prometheus/<service>-slo-recording-rules.yaml
-- SLO dashboard: infra/dashboards/<service>-slo-dashboard.json
-- Release gate config: ci/<service>-slo-release-gate.yaml
-- SLO review template: docs/slo/slo-review-template.md
-- Validation: <SLO READY | NEEDS WORK>
-
-Next steps:
--> /godmode:observe -- Implement monitoring to collect SLI metrics
--> /godmode:reliability -- Broader SRE practices (on-call, runbooks, toil)
--> /godmode:incident -- Incident management for SLO breaches
--> /godmode:ship -- Deploy with SLO-based release gating
+SLO IMPLEMENTATION ARTIFACTS:
+- docs/slo/<service>-slo.md (SLO definitions)
+- docs/slo/error-budget-policy.md (budget policy)
+- infra/alerts/<service>-slo-burn-rate.yaml (alert rules)
+- infra/prometheus/<service>-slo-recording-rules.yaml (recording rules)
+- infra/dashboards/<service>-slo-dashboard.json (dashboard)
+- ci/<service>-slo-release-gate.yaml (release gate)
 ```
 
 Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
@@ -861,24 +608,6 @@ CHECKOUT SERVICE - ERROR BUDGET STATUS:
   POLICY STATUS: Normal velocity with caution (budget 25-50%)
   RECOMMENDATION: Address the deployment issue. Last deploy consumed
     35% of the budget. Improve canary analysis before next deploy.
-```
-
-### Setting up SLO dashboards
-```
-User: /godmode:slo --dashboard Set up Grafana SLO dashboard for our API gateway
-
-SLO: Configuring dashboard...
-
-DASHBOARD: API Gateway SLO Dashboard
-  Panel 1: SLO Summary Table (availability, latency p50, latency p99)
-  Panel 2: Error Budget Remaining (gauge, 30-day rolling)
-  Panel 3: Burn Rate (time series, 24h)
-  Panel 4: Budget Attribution (pie chart)
-  Panel 5: SLO Compliance (12-month bar chart)
-
-  Recording rules: infra/prometheus/api-gateway-slo-recording-rules.yaml
-  Dashboard JSON: infra/dashboards/api-gateway-slo-dashboard.json
-  Alert rules: infra/alerts/api-gateway-slo-burn-rate.yaml
 ```
 
 ## Flags & Options
@@ -1030,15 +759,25 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-slo-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
-## Anti-Patterns
+## Keep/Discard Discipline
+```
+After EACH SLO configuration change:
+  1. MEASURE: Query current SLI values over the last 24 hours.
+  2. COMPARE: Does the SLO target match achievable reliability (current minus margin)?
+  3. DECIDE:
+     - KEEP if SLO target < current reliability AND SLO > SLA AND error budget policy documented.
+     - DISCARD if SLO = 100% OR SLO = SLA OR burn rate alerts fire on resolved problems.
+  4. COMMIT kept changes. Revert discarded thresholds before the next adjustment.
 
-- **Do NOT set SLO = 100%.** A 100% SLO means zero error budget. Zero error budget means you cannot deploy anything. This is mathematically incompatible with shipping software.
-- **Do NOT set SLO = SLA.** If SLO equals SLA, you will breach your contract before you notice the problem. The SLO must be stricter than the SLA. The gap is your safety margin.
-- **Do NOT use averages as SLIs.** "Average latency < 200ms" hides tail latency. Use proportional SLIs: "99% of requests < 200ms". Averages lie.
-- **Do NOT alert on raw error rates without burn rate context.** "Error rate > 1%" tells you nothing about budget impact. A 1% error rate for 5 seconds is noise. A 1% error rate for 6 hours is a crisis. Use burn rates.
-- **Do NOT skip the short window in multi-window alerts.** A long window alone fires on problems that already resolved hours ago. Always require both long AND short windows to trigger.
-- **Do NOT define SLOs without an error budget policy.** An SLO without a policy is just a number on a dashboard. The policy defines what happens when the budget is consumed. Without it, nothing changes when reliability degrades.
-- **Do NOT ignore composite SLOs.** Individual service SLOs can all be green while the user journey is broken. A user does not care that each microservice is 99.9% available if the combined journey is 99.2%.
-- **Do NOT set SLO targets without measuring current reliability first.** If your current availability is 99.5%, setting a 99.99% SLO creates an impossible target. Start from where you are and improve incrementally.
-- **Do NOT review SLOs only after incidents.** By the time an incident triggers a review, the damage is done. Weekly checks and monthly reviews catch budget erosion before it becomes a breach.
-- **Do NOT let SLOs become stale.** Services change, traffic patterns shift, user expectations evolve. Review and adjust SLO targets quarterly. A stale SLO is a useless SLO.
+Never keep an SLO target that is constantly violated — it erodes trust.
+Never keep a burn rate alert without both long AND short windows.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - SLIs defined, SLO targets set, error budgets calculated, burn rate alerts configured, budget policy documented
+  - SLO dashboard live AND release gating configured AND review cadence established
+  - User explicitly requests stop
+  - Max iterations (10) reached
+```

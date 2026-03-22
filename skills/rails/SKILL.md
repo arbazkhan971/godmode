@@ -1,7 +1,7 @@
 ---
 name: rails
 description: |
-  Ruby on Rails mastery skill. Activates when user needs to build, configure, optimize, or debug Rails applications. Covers Rails conventions, ActiveRecord patterns, query optimization, Hotwire (Turbo and Stimulus), background jobs (Sidekiq, Solid Queue), and testing with RSpec and FactoryBot. Provides opinionated guidance following the Rails Way. Triggers on: /godmode:rails, "rails app", "ruby on rails", "activerecord", "hotwire", "turbo", or when the orchestrator detects Ruby/Rails backend work.
+ Ruby on Rails mastery skill. Activates when user needs to build, configure, optimize, or debug Rails applications. Covers Rails conventions, ActiveRecord patterns, query optimization, Hotwire (Turbo and Stimulus), background jobs (Sidekiq, Solid Queue), and testing with RSpec and FactoryBot. Provides opinionated guidance following the Rails Way. Triggers on: /godmode:rails, "rails app", "ruby on rails", "activerecord", "hotwire", "turbo", or when the orchestrator detects Ruby/Rails backend work.
 ---
 
 # Rails — Ruby on Rails Mastery
@@ -37,20 +37,20 @@ Deployment: Docker | Kamal | Heroku | AWS/GCP
 ```
 RAILS SETUP DECISIONS:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Decision                            │  Choice & Justification          │
+│ Decision │ Choice & Justification │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  Full-stack vs API-only              │  Full-stack: Hotwire for interactivity │
-│                                      │  API-only: --api flag, JSON responses  │
-│  Database                            │  PostgreSQL for production ALWAYS │
-│  Background processor                │  Solid Queue (Rails 8 default)   │
-│                                      │  Sidekiq (Redis-backed, battle-tested) │
-│  Real-time                           │  Turbo Streams for live updates  │
-│  Authentication                      │  Rails 8: built-in auth generator│
-│                                      │  Rails 7: Devise or custom       │
-│  JavaScript                          │  Import Maps (simple, no build)  │
-│                                      │  esbuild (if heavy JS needed)    │
-│  CSS                                 │  Tailwind (Rails default)        │
-│  Testing                             │  RSpec + FactoryBot + Capybara   │
+│ Full-stack vs API-only │ Full-stack: Hotwire for interactivity │
+│ │ API-only: --api flag, JSON responses │
+│ Database │ PostgreSQL for production ALWAYS │
+│ Background processor │ Solid Queue (Rails 8 default) │
+│ │ Sidekiq (Redis-backed, battle-tested) │
+│ Real-time │ Turbo Streams for live updates │
+│ Authentication │ Rails 8: built-in auth generator│
+│ │ Rails 7: Devise or custom │
+│ JavaScript │ Import Maps (simple, no build) │
+│ │ esbuild (if heavy JS needed) │
+│ CSS │ Tailwind (Rails default) │
+│ Testing │ RSpec + FactoryBot + Capybara │
 └──────────────────────────────────────┴──────────────────────────────────┘
 ```
 
@@ -66,40 +66,40 @@ Follow the Rails Way rigorously:
 ```
 RAILS CONVENTIONS:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Convention                          │  Rule                            │
+│ Convention │ Rule │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  Model naming                        │  Singular, CamelCase (Order)     │
-│  Table naming                        │  Plural, snake_case (orders)     │
-│  Controller naming                   │  Plural, CamelCase (OrdersController) │
-│  File naming                         │  snake_case (order.rb)           │
-│  Foreign keys                        │  <model>_id (customer_id)        │
-│  Join tables                         │  Alphabetical (labels_orders)    │
-│  Primary keys                        │  id (auto-increment or UUID)     │
-│  Timestamps                          │  created_at, updated_at (auto)   │
-│  Boolean columns                     │  Adjective (active, published)   │
-│  Routes                              │  RESTful resources               │
-│  Partials                            │  _prefix (e.g., _form.html.erb) │
-│  Helpers                             │  Named after controller          │
-│  Concerns                            │  Shared behavior modules         │
+│ Model naming │ Singular, CamelCase (Order) │
+│ Table naming │ Plural, snake_case (orders) │
+│ Controller naming │ Plural, CamelCase (OrdersController) │
+│ File naming │ snake_case (order.rb) │
+│ Foreign keys │ <model>_id (customer_id) │
+│ Join tables │ Alphabetical (labels_orders) │
+│ Primary keys │ id (auto-increment or UUID) │
+│ Timestamps │ created_at, updated_at (auto) │
+│ Boolean columns │ Adjective (active, published) │
+│ Routes │ RESTful resources │
+│ Partials │ _prefix (e.g., _form.html.erb) │
+│ Helpers │ Named after controller │
+│ Concerns │ Shared behavior modules │
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 PROJECT STRUCTURE (standard Rails):
 app/
-├── controllers/          # Request handling
-│   ├── concerns/         # Shared controller behavior
-│   └── api/v1/           # API versioned controllers
-├── models/               # Domain logic + persistence
-│   └── concerns/         # Shared model behavior
-├── views/                # Templates (ERB/Slim/Haml)
-│   └── layouts/          # Application layouts
-├── jobs/                 # Background jobs
-├── mailers/              # Email sending
-├── channels/             # Action Cable channels
-├── services/             # Service objects (app/services/)
-├── queries/              # Query objects (app/queries/)
-├── policies/             # Authorization policies (Pundit)
-├── serializers/          # API serializers (app/serializers/)
-└── components/           # ViewComponents (optional)
+├── controllers/ # Request handling
+│ ├── concerns/ # Shared controller behavior
+│ └── api/v1/ # API versioned controllers
+├── models/ # Domain logic + persistence
+│ └── concerns/ # Shared model behavior
+├── views/ # Templates (ERB/Slim/Haml)
+│ └── layouts/ # Application layouts
+├── jobs/ # Background jobs
+├── mailers/ # Email sending
+├── channels/ # Action Cable channels
+├── services/ # Service objects (app/services/)
+├── queries/ # Query objects (app/queries/)
+├── policies/ # Authorization policies (Pundit)
+├── serializers/ # API serializers (app/serializers/)
+└── components/ # ViewComponents (optional)
 ```
 
 Rules:
@@ -115,109 +115,109 @@ Master the ORM layer:
 ```ruby
 # Model with associations and validations
 class Order < ApplicationRecord
-  # Associations
-  belongs_to :customer
-  has_many :order_items, dependent: :destroy
-  has_many :products, through: :order_items
-  has_one :shipping_address, dependent: :destroy
+ # Associations
+ belongs_to :customer
+ has_many :order_items, dependent: :destroy
+ has_many :products, through: :order_items
+ has_one :shipping_address, dependent: :destroy
 
-  # Validations
-  validates :status, presence: true, inclusion: { in: %w[pending confirmed shipped delivered cancelled] }
-  validates :total_cents, numericality: { greater_than_or_equal_to: 0 }
+ # Validations
+ validates :status, presence: true, inclusion: { in: %w[pending confirmed shipped delivered cancelled] }
+ validates :total_cents, numericality: { greater_than_or_equal_to: 0 }
 
-  # Enums (Rails 7+ syntax)
-  enum :status, {
-    pending: "pending",
-    confirmed: "confirmed",
-    shipped: "shipped",
-    delivered: "delivered",
-    cancelled: "cancelled"
-  }
+ # Enums (Rails 7+ syntax)
+ enum :status, {
+ pending: "pending",
+ confirmed: "confirmed",
+ shipped: "shipped",
+ delivered: "delivered",
+ cancelled: "cancelled"
+ }
 
-  # Scopes — composable, reusable queries
-  scope :recent, -> { order(created_at: :desc) }
-  scope :active, -> { where.not(status: :cancelled) }
-  scope :for_customer, ->(customer_id) { where(customer_id: customer_id) }
-  scope :created_between, ->(start_date, end_date) { where(created_at: start_date..end_date) }
+ # Scopes — composable, reusable queries
+ scope :recent, -> { order(created_at: :desc) }
+ scope :active, -> { where.not(status: :cancelled) }
+ scope :for_customer, ->(customer_id) { where(customer_id: customer_id) }
+ scope :created_between, ->(start_date, end_date) { where(created_at: start_date..end_date) }
 
-  # Callbacks (use sparingly)
-  after_create_commit :send_confirmation_email
-  after_update_commit :broadcast_status_change, if: :saved_change_to_status?
+ # Callbacks (use sparingly)
+ after_create_commit :send_confirmation_email
+ after_update_commit :broadcast_status_change, if: :saved_change_to_status?
 
-  # Custom methods
-  def cancelable?
-    pending? || confirmed?
-  end
+ # Custom methods
+ def cancelable?
+ pending? || confirmed?
+ end
 end
 
 # QUERY OPTIMIZATION — Avoiding N+1 queries
 class OrdersController < ApplicationController
-  # BAD: N+1 — loads customer and items separately for each order
-  # def index
-  #   @orders = Order.all
-  # end
+ # BAD: N+1 — loads customer and items separately for each order
+ # def index
+ # @orders = Order.all
+ # end
 
-  # GOOD: Eager loading with includes
-  def index
-    @orders = Order
-      .includes(:customer, :order_items)     # Prevents N+1
-      .where(customer: current_user)
-      .recent
-      .page(params[:page])
-      .per(25)
-  end
+ # GOOD: Eager loading with includes
+ def index
+ @orders = Order
+.includes(:customer, :order_items) # Prevents N+1
+.where(customer: current_user)
+.recent
+.page(params[:page])
+.per(25)
+ end
 
-  # GOOD: Preload vs Includes vs Eager Load
-  # includes  — smart: uses preload or eager_load depending on conditions
-  # preload   — separate queries (2 queries: orders + customers)
-  # eager_load — single LEFT OUTER JOIN (1 query, wider result set)
+ # GOOD: Preload vs Includes vs Eager Load
+ # includes — smart: uses preload or eager_load depending on conditions
+ # preload — separate queries (2 queries: orders + customers)
+ # eager_load — single LEFT OUTER JOIN (1 query, wider result set)
 
-  # For counting without loading records
-  def stats
-    @total = Order.active.count
-    @revenue = Order.active.sum(:total_cents)
-    # Use pluck for single-column extraction
-    @statuses = Order.distinct.pluck(:status)
-  end
+ # For counting without loading records
+ def stats
+ @total = Order.active.count
+ @revenue = Order.active.sum(:total_cents)
+ # Use pluck for single-column extraction
+ @statuses = Order.distinct.pluck(:status)
+ end
 end
 
 # Query object for complex searches
 class OrderSearchQuery
-  def initialize(scope = Order.all)
-    @scope = scope
-  end
+ def initialize(scope = Order.all)
+ @scope = scope
+ end
 
-  def call(params)
-    @scope
-      .then { |s| params[:status] ? s.where(status: params[:status]) : s }
-      .then { |s| params[:customer_id] ? s.for_customer(params[:customer_id]) : s }
-      .then { |s| params[:min_total] ? s.where("total_cents >= ?", params[:min_total]) : s }
-      .then { |s| params[:since] ? s.where("created_at >= ?", params[:since]) : s }
-      .includes(:customer)
-      .recent
-      .page(params[:page])
-  end
+ def call(params)
+ @scope
+.then { |s| params[:status] ? s.where(status: params[:status]) : s }
+.then { |s| params[:customer_id] ? s.for_customer(params[:customer_id]) : s }
+.then { |s| params[:min_total] ? s.where("total_cents >= ?", params[:min_total]) : s }
+.then { |s| params[:since] ? s.where("created_at >= ?", params[:since]) : s }
+.includes(:customer)
+.recent
+.page(params[:page])
+ end
 end
 ```
 
 ```
 ACTIVERECORD PERFORMANCE PATTERNS:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  When to Use                     │
+│ Pattern │ When to Use │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  includes(:assoc)                    │  Default N+1 prevention          │
-│  preload(:assoc)                     │  Separate queries (large joins)  │
-│  eager_load(:assoc)                  │  Need WHERE on association       │
-│  select(:col1, :col2)               │  Reduce data transfer            │
-│  pluck(:column)                      │  Extract array of values         │
-│  find_each(batch_size: 1000)         │  Process large datasets          │
-│  in_batches(of: 1000)               │  Batch updates/deletes           │
-│  .count / .sum / .average            │  Database-level aggregation      │
-│  counter_cache: true                 │  Avoid COUNT queries             │
-│  strict_loading!                     │  Detect N+1 in development       │
-│  explain                             │  Analyze query execution plan    │
-│  add_index                           │  Every FK + frequent WHERE cols  │
-│  database views                      │  Complex reporting queries       │
+│ includes(:assoc) │ Default N+1 prevention │
+│ preload(:assoc) │ Separate queries (large joins) │
+│ eager_load(:assoc) │ Need WHERE on association │
+│ select(:col1, :col2) │ Reduce data transfer │
+│ pluck(:column) │ Extract array of values │
+│ find_each(batch_size: 1000) │ Process large datasets │
+│ in_batches(of: 1000) │ Batch updates/deletes │
+│.count /.sum /.average │ Database-level aggregation │
+│ counter_cache: true │ Avoid COUNT queries │
+│ strict_loading! │ Detect N+1 in development │
+│ explain │ Analyze query execution plan │
+│ add_index │ Every FK + frequent WHERE cols │
+│ database views │ Complex reporting queries │
 └──────────────────────────────────────┴──────────────────────────────────┘
 ```
 
@@ -235,76 +235,76 @@ Build modern, interactive Rails UIs without heavy JavaScript:
 ```
 HOTWIRE ARCHITECTURE:
 ┌─────────────────────────────────────────────────────────────────┐
-│  Turbo Drive    — SPA-like navigation without JavaScript        │
-│  Turbo Frames   — Update specific page sections independently   │
-│  Turbo Streams  — Real-time updates via WebSocket or HTTP       │
-│  Stimulus       — Sprinkle JavaScript behavior on HTML          │
+│ Turbo Drive — SPA-like navigation without JavaScript │
+│ Turbo Frames — Update specific page sections independently │
+│ Turbo Streams — Real-time updates via WebSocket or HTTP │
+│ Stimulus — Sprinkle JavaScript behavior on HTML │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ```erb
 <!-- Turbo Frame — Independent page section -->
 <%= turbo_frame_tag "order_#{@order.id}" do %>
-  <div class="order-card">
-    <h3><%= @order.title %></h3>
-    <p>Status: <%= @order.status %></p>
-    <%= link_to "Edit", edit_order_path(@order) %>
-  </div>
+ <div class="order-card">
+ <h3><%= @order.title %></h3>
+ <p>Status: <%= @order.status %></p>
+ <%= link_to "Edit", edit_order_path(@order) %>
+ </div>
 <% end %>
 
 <!-- Turbo Stream — Real-time update from controller -->
 <!-- orders_controller.rb -->
 def update
-  @order.update!(order_params)
-  respond_to do |format|
-    format.turbo_stream  # renders update.turbo_stream.erb
-    format.html { redirect_to @order }
-  end
+ @order.update!(order_params)
+ respond_to do |format|
+ format.turbo_stream # renders update.turbo_stream.erb
+ format.html { redirect_to @order }
+ end
 end
 
 <!-- update.turbo_stream.erb -->
 <%= turbo_stream.replace "order_#{@order.id}" do %>
-  <%= render partial: "orders/order", locals: { order: @order } %>
+ <%= render partial: "orders/order", locals: { order: @order } %>
 <% end %>
 
 <!-- Turbo Stream — Broadcast from model (real-time to all viewers) -->
 <!-- order.rb -->
 after_update_commit -> { broadcast_replace_to "orders",
-  partial: "orders/order", locals: { order: self } }
+ partial: "orders/order", locals: { order: self } }
 
 <!-- Stimulus controller — Sprinkle JS behavior -->
 <!-- app/javascript/controllers/search_controller.js -->
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "results"]
-  static values = { url: String }
+ static targets = ["input", "results"]
+ static values = { url: String }
 
-  search() {
-    clearTimeout(this.timeout)
-    this.timeout = setTimeout(() => {
-      fetch(`${this.urlValue}?q=${this.inputTarget.value}`,
-        { headers: { "Accept": "text/vnd.turbo-stream.html" } })
-        .then(r => r.text())
-        .then(html => Turbo.renderStreamMessage(html))
-    }, 300)
-  }
+ search() {
+ clearTimeout(this.timeout)
+ this.timeout = setTimeout(() => {
+ fetch(`${this.urlValue}?q=${this.inputTarget.value}`,
+ { headers: { "Accept": "text/vnd.turbo-stream.html" } })
+.then(r => r.text())
+.then(html => Turbo.renderStreamMessage(html))
+ }, 300)
+ }
 }
 ```
 
 ```
 HOTWIRE DECISION GUIDE:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Need                                │  Use                             │
+│ Need │ Use │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  SPA-like page transitions           │  Turbo Drive (automatic)         │
-│  Update one section on click         │  Turbo Frames                    │
-│  Real-time updates to all viewers    │  Turbo Streams (broadcast)       │
-│  Update page after form submit       │  Turbo Streams (HTTP response)   │
-│  Toggle visibility, dropdowns        │  Stimulus controller             │
-│  Form validation, character count    │  Stimulus controller             │
-│  Complex interactive widget          │  Stimulus + Turbo Frames         │
-│  Full SPA (React/Vue needed)         │  Rails API-only + separate SPA   │
+│ SPA-like page transitions │ Turbo Drive (automatic) │
+│ Update one section on click │ Turbo Frames │
+│ Real-time updates to all viewers │ Turbo Streams (broadcast) │
+│ Update page after form submit │ Turbo Streams (HTTP response) │
+│ Toggle visibility, dropdowns │ Stimulus controller │
+│ Form validation, character count │ Stimulus controller │
+│ Complex interactive widget │ Stimulus + Turbo Frames │
+│ Full SPA (React/Vue needed) │ Rails API-only + separate SPA │
 └──────────────────────────────────────┴──────────────────────────────────┘
 ```
 
@@ -321,33 +321,33 @@ Process long-running tasks asynchronously:
 ```ruby
 # Job definition
 class OrderConfirmationJob < ApplicationJob
-  queue_as :default
-  retry_on ActiveRecord::Deadlocked, wait: 5.seconds, attempts: 3
-  discard_on ActiveJob::DeserializationError
+ queue_as :default
+ retry_on ActiveRecord::Deadlocked, wait: 5.seconds, attempts: 3
+ discard_on ActiveJob::DeserializationError
 
-  def perform(order)
-    OrderConfirmationMailer.with(order: order).confirmation.deliver_now
-    order.update!(confirmation_sent_at: Time.current)
-  end
+ def perform(order)
+ OrderConfirmationMailer.with(order: order).confirmation.deliver_now
+ order.update!(confirmation_sent_at: Time.current)
+ end
 end
 
 # Enqueue
-OrderConfirmationJob.perform_later(order)           # Async
-OrderConfirmationJob.set(wait: 5.minutes).perform_later(order)  # Delayed
-OrderConfirmationJob.set(queue: :high).perform_later(order)     # Priority
+OrderConfirmationJob.perform_later(order) # Async
+OrderConfirmationJob.set(wait: 5.minutes).perform_later(order) # Delayed
+OrderConfirmationJob.set(queue: :high).perform_later(order) # Priority
 ```
 
 ```
 BACKGROUND JOB STRATEGY:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Processor                           │  When to Use                     │
+│ Processor │ When to Use │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  Solid Queue (Rails 8)               │  Default for Rails 8 — DB-backed │
-│                                      │  No Redis dependency, simple     │
-│  Sidekiq                             │  High throughput, Redis-backed   │
-│                                      │  Battle-tested, rich ecosystem   │
-│  Good Job                            │  PostgreSQL-backed, multithreaded│
-│                                      │  Good for Heroku, no Redis      │
+│ Solid Queue (Rails 8) │ Default for Rails 8 — DB-backed │
+│ │ No Redis dependency, simple │
+│ Sidekiq │ High throughput, Redis-backed │
+│ │ Battle-tested, rich ecosystem │
+│ Good Job │ PostgreSQL-backed, multithreaded│
+│ │ Good for Heroku, no Redis │
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 JOB DESIGN RULES:
@@ -360,11 +360,11 @@ JOB DESIGN RULES:
 
 QUEUE PRIORITY:
 ┌──────────┬──────────────┬──────────────────────────────────┐
-│  Queue   │  Priority    │  Examples                         │
+│ Queue │ Priority │ Examples │
 ├──────────┼──────────────┼──────────────────────────────────┤
-│  critical│  Highest     │  Payment processing, alerts       │
-│  default │  Normal      │  Email sending, notifications     │
-│  low     │  Lowest      │  Reports, data exports, cleanup   │
+│ critical│ Highest │ Payment processing, alerts │
+│ default │ Normal │ Email sending, notifications │
+│ low │ Lowest │ Reports, data exports, cleanup │
 └──────────┴──────────────┴──────────────────────────────────┘
 ```
 
@@ -374,131 +374,131 @@ Comprehensive testing strategy:
 ```ruby
 # spec/rails_helper.rb
 RSpec.configure do |config|
-  config.use_transactional_fixtures = true
-  config.include FactoryBot::Syntax::Methods
-  config.include Devise::Test::IntegrationHelpers, type: :request
-  config.include ActiveJob::TestHelper
+ config.use_transactional_fixtures = true
+ config.include FactoryBot::Syntax::Methods
+ config.include Devise::Test::IntegrationHelpers, type: :request
+ config.include ActiveJob::TestHelper
 
-  config.before(:each, type: :system) do
-    driven_by :rack_test
-  end
+ config.before(:each, type: :system) do
+ driven_by :rack_test
+ end
 
-  config.before(:each, :js, type: :system) do
-    driven_by :selenium_chrome_headless
-  end
+ config.before(:each, :js, type: :system) do
+ driven_by :selenium_chrome_headless
+ end
 end
 
 # spec/factories/orders.rb
 FactoryBot.define do
-  factory :order do
-    association :customer
-    status { :pending }
-    total_cents { Faker::Number.between(from: 1000, to: 100_000) }
+ factory :order do
+ association :customer
+ status { :pending }
+ total_cents { Faker::Number.between(from: 1000, to: 100_000) }
 
-    trait :confirmed do
-      status { :confirmed }
-      confirmed_at { Time.current }
-    end
+ trait :confirmed do
+ status { :confirmed }
+ confirmed_at { Time.current }
+ end
 
-    trait :with_items do
-      transient do
-        items_count { 3 }
-      end
+ trait :with_items do
+ transient do
+ items_count { 3 }
+ end
 
-      after(:create) do |order, evaluator|
-        create_list(:order_item, evaluator.items_count, order: order)
-      end
-    end
-  end
+ after(:create) do |order, evaluator|
+ create_list(:order_item, evaluator.items_count, order: order)
+ end
+ end
+ end
 end
 
 # spec/models/order_spec.rb
 RSpec.describe Order, type: :model do
-  describe "validations" do
-    it { is_expected.to validate_presence_of(:status) }
-    it { is_expected.to belong_to(:customer) }
-    it { is_expected.to have_many(:order_items).dependent(:destroy) }
-  end
+ describe "validations" do
+ it { is_expected.to validate_presence_of(:status) }
+ it { is_expected.to belong_to(:customer) }
+ it { is_expected.to have_many(:order_items).dependent(:destroy) }
+ end
 
-  describe "#cancelable?" do
-    it "returns true for pending orders" do
-      order = build(:order, status: :pending)
-      expect(order).to be_cancelable
-    end
+ describe "#cancelable?" do
+ it "returns true for pending orders" do
+ order = build(:order, status: :pending)
+ expect(order).to be_cancelable
+ end
 
-    it "returns false for shipped orders" do
-      order = build(:order, status: :shipped)
-      expect(order).not_to be_cancelable
-    end
-  end
+ it "returns false for shipped orders" do
+ order = build(:order, status: :shipped)
+ expect(order).not_to be_cancelable
+ end
+ end
 
-  describe "scopes" do
-    it ".active excludes cancelled orders" do
-      active = create(:order, status: :confirmed)
-      cancelled = create(:order, status: :cancelled)
+ describe "scopes" do
+ it ".active excludes cancelled orders" do
+ active = create(:order, status: :confirmed)
+ cancelled = create(:order, status: :cancelled)
 
-      expect(Order.active).to include(active)
-      expect(Order.active).not_to include(cancelled)
-    end
-  end
+ expect(Order.active).to include(active)
+ expect(Order.active).not_to include(cancelled)
+ end
+ end
 end
 
 # spec/requests/orders_spec.rb
 RSpec.describe "Orders", type: :request do
-  let(:user) { create(:user) }
-  before { sign_in user }
+ let(:user) { create(:user) }
+ before { sign_in user }
 
-  describe "GET /orders" do
-    it "returns paginated orders" do
-      create_list(:order, 30, customer: user.customer)
-      get orders_path
-      expect(response).to have_http_status(:ok)
-    end
-  end
+ describe "GET /orders" do
+ it "returns paginated orders" do
+ create_list(:order, 30, customer: user.customer)
+ get orders_path
+ expect(response).to have_http_status(:ok)
+ end
+ end
 
-  describe "POST /orders" do
-    let(:valid_params) { { order: { product_ids: [create(:product).id] } } }
+ describe "POST /orders" do
+ let(:valid_params) { { order: { product_ids: [create(:product).id] } } }
 
-    it "creates an order and enqueues confirmation" do
-      expect {
-        post orders_path, params: valid_params
-      }.to change(Order, :count).by(1)
-        .and have_enqueued_job(OrderConfirmationJob)
+ it "creates an order and enqueues confirmation" do
+ expect {
+ post orders_path, params: valid_params
+ }.to change(Order, :count).by(1)
+.and have_enqueued_job(OrderConfirmationJob)
 
-      expect(response).to redirect_to(Order.last)
-    end
-  end
+ expect(response).to redirect_to(Order.last)
+ end
+ end
 end
 
 # spec/system/orders_spec.rb (Capybara)
 RSpec.describe "Order management", type: :system do
-  let(:user) { create(:user) }
-  before { sign_in user }
+ let(:user) { create(:user) }
+ before { sign_in user }
 
-  it "creates an order with Turbo" do
-    visit new_order_path
-    fill_in "Product", with: "Widget"
-    click_button "Create Order"
+ it "creates an order with Turbo" do
+ visit new_order_path
+ fill_in "Product", with: "Widget"
+ click_button "Create Order"
 
-    expect(page).to have_content("Order created successfully")
-    expect(page).to have_css("[data-turbo-frame='orders']")
-  end
+ expect(page).to have_content("Order created successfully")
+ expect(page).to have_css("[data-turbo-frame='orders']")
+ end
 end
 ```
 
 ```
 TESTING STRATEGY:
 ┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Layer                               │  Approach                        │
+│ Layer │ Approach │
 ├──────────────────────────────────────┼──────────────────────────────────┤
-│  Models                              │  RSpec + FactoryBot + Shoulda    │
-│  Controllers/Requests                │  RSpec request specs             │
-│  System/Integration                  │  Capybara + Selenium             │
-│  Services                            │  RSpec unit specs                │
-│  Jobs                                │  ActiveJob::TestHelper           │
-│  Mailers                             │  ActionMailer::TestHelper        │
-│  API                                 │  Request specs + JSON assertions │
-│  Turbo Streams                       │  assert_turbo_stream in requests │
+│ Models │ RSpec + FactoryBot + Shoulda │
+│ Controllers/Requests │ RSpec request specs │
+│ System/Integration │ Capybara + Selenium │
+│ Services │ RSpec unit specs │
+│ Jobs │ ActiveJob::TestHelper │
+│ Mailers │ ActionMailer::TestHelper │
+│ API │ Request specs + JSON assertions │
+│ Turbo Streams │ assert_turbo_stream in requests │
 └──────────────────────────────────────┴──────────────────────────────────┘
 
 TEST HELPERS:
@@ -524,23 +524,23 @@ Verify the Rails application:
 ```
 RAILS VALIDATION:
 ┌──────────────────────────────────────┬──────────┬──────────────────────┐
-│  Check                               │  Status  │  Notes               │
+│ Check │ Status │ Notes │
 ├──────────────────────────────────────┼──────────┼──────────────────────┤
-│  Follows Rails conventions           │  PASS    │  Naming, structure   │
-│  N+1 queries eliminated              │  PASS    │  includes/preload    │
-│  strict_loading in dev               │  PASS    │  Catches lazy loads  │
-│  Database indexes on FKs             │  PASS    │  All foreign keys    │
-│  Background jobs idempotent          │  PASS    │  Safe to retry       │
-│  Hotwire used appropriately          │  PASS    │  Frames + Streams    │
-│  Tests pass (RSpec green)            │  PASS    │  Models + requests   │
-│  FactoryBot factories valid          │  PASS    │  No orphan factories │
-│  Credentials managed properly        │  PASS    │  Rails credentials   │
-│  Database migrations reversible      │  PASS    │  All have down()     │
-│  Strong parameters enforced          │  PASS    │  No mass assignment  │
-│  CSRF protection enabled             │  PASS    │  Turbo compatible    │
-│  Content Security Policy set         │  PASS    │  CSP headers         │
-│  Production config hardened          │  PASS    │  Force SSL, log tags │
-│  Ruby/Rails versions current         │  PASS    │  No EOL versions     │
+│ Follows Rails conventions │ PASS │ Naming, structure │
+│ N+1 queries eliminated │ PASS │ includes/preload │
+│ strict_loading in dev │ PASS │ Catches lazy loads │
+│ Database indexes on FKs │ PASS │ All foreign keys │
+│ Background jobs idempotent │ PASS │ Safe to retry │
+│ Hotwire used appropriately │ PASS │ Frames + Streams │
+│ Tests pass (RSpec green) │ PASS │ Models + requests │
+│ FactoryBot factories valid │ PASS │ No orphan factories │
+│ Credentials managed properly │ PASS │ Rails credentials │
+│ Database migrations reversible │ PASS │ All have down() │
+│ Strong parameters enforced │ PASS │ No mass assignment │
+│ CSRF protection enabled │ PASS │ Turbo compatible │
+│ Content Security Policy set │ PASS │ CSP headers │
+│ Production config hardened │ PASS │ Force SSL, log tags │
+│ Ruby/Rails versions current │ PASS │ No EOL versions │
 └──────────────────────────────────────┴──────────┴──────────────────────┘
 
 VERDICT: <PASS | NEEDS REVISION>
@@ -576,71 +576,52 @@ Before prompting the user, automatically detect Rails project context:
 ```
 AUTO-DETECT SEQUENCE:
 1. Detect Rails version:
-   - Gemfile: gem "rails", "~> 8.0" or specific version
-   - Gemfile.lock: rails version
-   - config/application.rb: Rails version constant
+ - Gemfile: gem "rails", "~> 8.0" or specific version
+ - Gemfile.lock: rails version
+ - config/application.rb: Rails version constant
 2. Detect Ruby version:
-   - .ruby-version file
-   - Gemfile: ruby "3.3.x"
+ -.ruby-version file
+ - Gemfile: ruby "3.3.x"
 3. Detect database:
-   - config/database.yml: adapter field (postgresql, mysql2, sqlite3)
-   - DATABASE_URL environment variable
+ - config/database.yml: adapter field (postgresql, mysql2, sqlite3)
+ - DATABASE_URL environment variable
 4. Detect architecture choices:
-   - config/application.rb: config.api_only? -> API mode
-   - app/views/ presence -> full-stack
-   - app/javascript/controllers/ -> Stimulus installed
-   - Gemfile: turbo-rails, stimulus-rails -> Hotwire
+ - config/application.rb: config.api_only? -> API mode
+ - app/views/ presence -> full-stack
+ - app/javascript/controllers/ -> Stimulus installed
+ - Gemfile: turbo-rails, stimulus-rails -> Hotwire
 5. Detect background job processor:
-   - Gemfile: sidekiq, good_job, solid_queue, delayed_job
-   - config/sidekiq.yml, config/queue.yml presence
+ - Gemfile: sidekiq, good_job, solid_queue, delayed_job
+ - config/sidekiq.yml, config/queue.yml presence
 6. Detect testing framework:
-   - Gemfile: rspec-rails -> RSpec
-   - test/ directory -> Minitest (default)
-   - spec/ directory -> RSpec
-   - Gemfile: factory_bot_rails, shoulda-matchers, capybara
+ - Gemfile: rspec-rails -> RSpec
+ - test/ directory -> Minitest (default)
+ - spec/ directory -> RSpec
+ - Gemfile: factory_bot_rails, shoulda-matchers, capybara
 7. Detect auth strategy:
-   - Gemfile: devise, rodauth-rails, or custom auth
-   - app/models/user.rb: has_secure_password
-   - Rails 8 generated auth: app/controllers/sessions_controller.rb
+ - Gemfile: devise, rodauth-rails, or custom auth
+ - app/models/user.rb: has_secure_password
+ - Rails 8 generated auth: app/controllers/sessions_controller.rb
 8. Detect deployment:
-   - config/deploy.yml -> Kamal
-   - Procfile -> Heroku
-   - Dockerfile -> Docker-based
-   - .platform/ -> AWS Elastic Beanstalk
+ - config/deploy.yml -> Kamal
+ - Procfile -> Heroku
+ - Dockerfile -> Docker-based
+ -.platform/ -> AWS Elastic Beanstalk
 ```
 
-## Multi-Agent Dispatch
+## Keep/Discard Discipline
+Each change either advances the branch or gets reverted.
+- **KEEP**: `bin/rails test` (or `rspec`) passes, no new N+1 queries, migrations reversible.
+- **DISCARD**: Tests fail, Bullet detects new N+1, or migration is irreversible. Revert immediately.
+- **CRASH**: Migration fails mid-run. Write a corrective migration; never edit existing ones.
+- Log every action to `.godmode/rails.tsv` with status.
 
-For large Rails feature development:
-
-```
-PARALLEL AGENTS:
-Agent 1 — Models & Migrations (worktree: rails-models)
-  - Generate models with associations and validations
-  - Create database migrations with proper indexes
-  - Add scopes, enums, and callbacks
-  - Write model specs with FactoryBot
-
-Agent 2 — Controllers & Routes (worktree: rails-controllers)
-  - Generate RESTful controllers with strong params
-  - Configure routes with proper nesting
-  - Add authorization checks
-  - Write request specs
-
-Agent 3 — Views & Hotwire (worktree: rails-views)
-  - Build views with Turbo Frames for interactivity
-  - Add Turbo Streams for real-time updates
-  - Create Stimulus controllers for JS behavior
-  - Write system specs for critical flows
-
-Agent 4 — Jobs & Services (worktree: rails-services)
-  - Extract service objects for complex business logic
-  - Create background jobs with retry policies
-  - Build mailers and notification logic
-  - Write unit specs for services and jobs
-
-MERGE ORDER: Agent 1 first (models/schema), then Agent 2 + 4 in parallel, then Agent 3.
-```
+## Stop Conditions
+- `bin/rails test` or `bundle exec rspec` passes with zero failures.
+- `bin/rails db:migrate:status` shows no pending migrations.
+- All `belongs_to` foreign keys have database indexes.
+- No `default_scope` on any model. No business logic in callbacks.
+- Bullet gem reports zero N+1 alerts.
 
 ## HARD RULES
 
@@ -655,7 +636,7 @@ HARD RULES — NEVER VIOLATE:
 7. ALWAYS add database indexes on all foreign keys and WHERE/ORDER columns.
 8. ALWAYS make migrations reversible — never edit committed migrations.
 9. ALWAYS use strong parameters — no mass assignment vulnerabilities.
-10. NEVER use .all.each for large datasets — use find_each or in_batches.
+10. NEVER use.all.each for large datasets — use find_each or in_batches.
 11. ALWAYS use build over create in factories when DB persistence is not needed.
 12. ALWAYS use request specs over controller specs (Rails recommendation).
 ```
@@ -695,24 +676,6 @@ Writing specs: 45 model specs, 30 request specs, 8 system specs...
 All 15 checks PASS.
 ```
 
-### Optimizing ActiveRecord Queries
-```
-User: /godmode:rails Optimize our slow order listing page
-
-Rails: Analyzing queries...
-
-FINDINGS:
-1. N+1 on Order -> Customer (loading customer name per order)
-2. N+1 on Order -> OrderItems (counting items per order)
-3. Missing index on orders.status column
-4. Full table scan on orders.created_at ordering
-
-FIXES:
-1. Added .includes(:customer) to query
-2. Added counter_cache :order_items_count to OrderItem
-3. Added index on [:status, :created_at]
-4. Query time: 850ms -> 12ms
-```
 
 ## Flags & Options
 
@@ -792,322 +755,31 @@ When errors occur, follow these remediation steps:
 
 ```
 IF tests fail:
-  1. Check test database exists and is migrated (bin/rails db:test:prepare)
-  2. Verify fixtures/factories have valid data and associations
-  3. Check for order-dependent tests (run with --seed to verify)
-  4. Verify that database cleaner strategy is correct (transaction vs truncation)
+ 1. Check test database exists and is migrated (bin/rails db:test:prepare)
+ 2. Verify fixtures/factories have valid data and associations
+ 3. Check for order-dependent tests (run with --seed to verify)
+ 4. Verify that database cleaner strategy is correct (transaction vs truncation)
 
 IF migration fails:
-  1. Check for irreversible migration (add explicit down method)
-  2. Verify column types are compatible with existing data
-  3. Check for lock timeout on large tables (use strong_migrations gem)
-  4. For failed production migration → write a corrective migration, never edit existing ones
+ 1. Check for irreversible migration (add explicit down method)
+ 2. Verify column types are compatible with existing data
+ 3. Check for lock timeout on large tables (use strong_migrations gem)
+ 4. For failed production migration → write a corrective migration, never edit existing ones
 
 IF N+1 queries detected:
-  1. Add includes() or eager_load() to the query
-  2. Use strict_loading! on associations to catch new N+1s
-  3. Verify with Bullet gem in development
-  4. For complex cases, use preloader or custom SQL
+ 1. Add includes() or eager_load() to the query
+ 2. Use strict_loading! on associations to catch new N+1s
+ 3. Verify with Bullet gem in development
+ 4. For complex cases, use preloader or custom SQL
 
 IF Rails upgrade fails:
-  1. Read the upgrade guide for each minor version step
-  2. Fix deprecation warnings one at a time
-  3. Run bin/rails app:update and review each file change
-  4. Update gems one at a time, running tests after each
+ 1. Read the upgrade guide for each minor version step
+ 2. Fix deprecation warnings one at a time
+ 3. Run bin/rails app:update and review each file change
+ 4. Update gems one at a time, running tests after each
 
 IF security vulnerability (bundle audit):
-  1. Update the affected gem to patched version
-  2. If no patch exists, check for workarounds in the advisory
-  3. Add to ignore list only with documented justification and expiry date
+ 1. Update the affected gem to patched version
+ 2. If no patch exists, check for workarounds in the advisory
+ 3. Add to ignore list only with documented justification and expiry date
 ```
-
-## Anti-Patterns
-
-- **Do NOT skip database indexes.** Every `belongs_to` foreign key needs an index. Every column used in WHERE or ORDER BY needs an index.
-- **Do NOT use `default_scope`.** It silently affects every query and is nearly impossible to override cleanly. Use named scopes instead.
-- **Do NOT put business logic in callbacks.** Callbacks create hidden dependencies and make testing painful. Use service objects for complex logic.
-- **Do NOT use `update_attribute`.** It skips validations. Use `update!` or `update` with explicit error handling.
-- **Do NOT write raw SQL without parameterization.** `where("name = '#{params[:name]}'")` is SQL injection. Use `where(name: params[:name])` or `where("name = ?", params[:name])`.
-- **Do NOT test implementation details.** Do not test that a method calls another method. Test the observable behavior and output.
-- **Do NOT use `create` in factories when `build` suffices.** Hitting the database slows down tests. Only `create` when you need persistence.
-- **Do NOT leave N+1 queries in production.** Use Bullet gem and `strict_loading` to catch them in development. Every N+1 is a performance bug.
-
-
-## Rails Optimization Loop
-
-When optimizing an existing Rails application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
-
-### Pass 1: ActiveRecord N+1 Elimination
-
-```
-N+1 DETECTION & ELIMINATION:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Enable detection tools                                  │
-│                                                                   │
-│  # Gemfile                                                       │
-│  gem 'bullet', group: [:development, :test]                      │
-│                                                                   │
-│  # config/environments/development.rb                            │
-│  config.after_initialize do                                      │
-│    Bullet.enable = true                                          │
-│    Bullet.alert = true                                           │
-│    Bullet.bullet_logger = true                                   │
-│    Bullet.console = true                                         │
-│    Bullet.rails_logger = true                                    │
-│    Bullet.add_footer = true                                      │
-│    Bullet.unused_eager_loading_enable = true                     │
-│  end                                                              │
-│                                                                   │
-│  # Enable strict_loading globally in development:                │
-│  # config/environments/development.rb                            │
-│  config.active_record.strict_loading_by_default = true           │
-│                                                                   │
-│  Step 2: Baseline N+1 count per page/endpoint                    │
-│  Run Bullet in test mode and catalog every alert:                │
-│  ┌──────────────────────────┬──────────┬────────────────────┐   │
-│  │  Page / Endpoint         │  N+1s    │  Unused Eager Load │   │
-│  ├──────────────────────────┼──────────┼────────────────────┤   │
-│  │  GET /orders             │  <N>     │  <N>               │   │
-│  │  GET /orders/:id         │  <N>     │  <N>               │   │
-│  │  GET /admin/orders       │  <N>     │  <N>               │   │
-│  │  GET /dashboard          │  <N>     │  <N>               │   │
-│  └──────────────────────────┴──────────┴────────────────────┘   │
-│                                                                   │
-│  Step 3: Fix each N+1 systematically                             │
-│  - includes(:assoc) — default, smart choice (preload or eager)   │
-│  - preload(:assoc) — separate query, better for large joins      │
-│  - eager_load(:assoc) — LEFT JOIN, needed for WHERE on assoc     │
-│  - Also fix unused eager loading (remove unnecessary includes)   │
-│                                                                   │
-│  Step 4: Verify with Bullet — zero alerts remaining              │
-│  Bullet.raise = true  # Fail tests on N+1 detection             │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-```ruby
-# CONCRETE N+1 FIX PATTERNS:
-
-# BAD — N+1 on index page:
-# @orders = Order.all  # then view accesses order.customer.name
-
-# GOOD — eager load what the view needs:
-@orders = Order.includes(:customer, :order_items)
-               .where(user: current_user)
-               .recent
-               .page(params[:page])
-
-# BAD — N+1 in serializer/jbuilder:
-# json.orders @orders do |order|
-#   json.customer_name order.customer.name   # N+1!
-#   json.items_count order.order_items.size   # N+1!
-# end
-
-# GOOD — preload and use counter_cache:
-# In model: belongs_to :order, counter_cache: true
-@orders = Order.includes(:customer)
-               .with_attached_images  # if using ActiveStorage
-
-# GOOD — strict_loading per association:
-class Order < ApplicationRecord
-  has_many :order_items, strict_loading: true  # raises if lazy loaded
-end
-
-# GOOD — strict_loading per query:
-Order.strict_loading.includes(:customer).all
-```
-
-### Pass 2: Eager Loading Strategy
-
-```
-EAGER LOADING STRATEGY:
-┌──────────────────────────────────────────────────────────────────┐
-│  Decision matrix for each association access:                    │
-│                                                                   │
-│  includes(:assoc)                                                │
-│  → Use when: default choice, view/serializer accesses assoc     │
-│  → Behavior: Rails chooses preload or eager_load automatically   │
-│                                                                   │
-│  preload(:assoc)                                                 │
-│  → Use when: loading large associations (many records)           │
-│  → Behavior: 2 separate queries (SELECT * FROM orders;           │
-│              SELECT * FROM items WHERE order_id IN (...))        │
-│  → Benefit: avoids wide JOIN result sets                         │
-│                                                                   │
-│  eager_load(:assoc)                                              │
-│  → Use when: filtering/ordering by association columns           │
-│  → Behavior: single LEFT OUTER JOIN                              │
-│  → Example: Order.eager_load(:customer)                          │
-│                  .where(customers: { vip: true })                │
-│                                                                   │
-│  Counter caches for counts:                                      │
-│  → Add counter_cache: true on belongs_to                         │
-│  → Avoids COUNT(*) queries entirely                              │
-│  → Migration: add_column :orders, :items_count, :integer,        │
-│               default: 0, null: false                            │
-│    Order.find_each { |o| Order.reset_counters(o.id, :items) }   │
-│                                                                   │
-│  Database views for complex aggregations:                        │
-│  → Create a database view for dashboard/report queries           │
-│  → Back it with a read-only ActiveRecord model                   │
-│  → Avoids complex joins and subqueries in application code       │
-│                                                                   │
-│  AUDIT CHECKLIST:                                                │
-│  [ ] Every controller action lists its eager-loaded associations │
-│  [ ] No lazy loading in views (strict_loading enforced in dev)   │
-│  [ ] Counter caches added for all has_many count displays        │
-│  [ ] Complex report queries use database views or raw SQL        │
-│  [ ] Unused eager loads removed (Bullet unused detection)        │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 3: View Rendering Optimization
-
-```
-VIEW RENDERING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Measure rendering time per view                         │
-│  # config/environments/development.rb                            │
-│  config.active_support.notifications = true                      │
-│                                                                   │
-│  # Subscribe to render events:                                   │
-│  ActiveSupport::Notifications.subscribe("render_partial.action_view") do │
-│    |name, start, finish, id, payload|                            │
-│    duration = (finish - start) * 1000                            │
-│    Rails.logger.info "[RENDER] #{payload[:identifier]}: #{duration.round(1)}ms" │
-│  end                                                              │
-│                                                                   │
-│  Step 2: Identify slow partials                                  │
-│  ┌──────────────────────────┬──────────┬────────────────────┐   │
-│  │  Partial                 │  ms/call │  Calls per page    │   │
-│  ├──────────────────────────┼──────────┼────────────────────┤   │
-│  │  _order.html.erb         │  <N>     │  <N> (per item)    │   │
-│  │  _sidebar.html.erb       │  <N>     │  1                 │   │
-│  │  _header.html.erb        │  <N>     │  1                 │   │
-│  └──────────────────────────┴──────────┴────────────────────┘   │
-│                                                                   │
-│  Step 3: Apply view optimization strategies                      │
-│                                                                   │
-│  a) Collection rendering (avoid N partial renders):              │
-│     # BAD — renders partial N times individually:                │
-│     <% @orders.each do |order| %>                                │
-│       <%= render partial: 'order', locals: { order: order } %>  │
-│     <% end %>                                                    │
-│                                                                   │
-│     # GOOD — collection rendering (single render call):         │
-│     <%= render partial: 'order', collection: @orders,            │
-│              cached: true %>                                     │
-│                                                                   │
-│  b) Fragment caching:                                            │
-│     <% cache order do %>                                         │
-│       <%= render partial: 'order', locals: { order: order } %>  │
-│     <% end %>                                                    │
-│                                                                   │
-│  c) Russian doll caching (nested caches):                        │
-│     <% cache [current_user, order] do %>                         │
-│       <% cache order.customer do %>                              │
-│         <%= order.customer.name %>                               │
-│       <% end %>                                                  │
-│     <% end %>                                                    │
-│                                                                   │
-│  d) ViewComponent for complex partials:                          │
-│     # Replace slow ERB partials with ViewComponent objects       │
-│     # Benefits: testable, cacheable, faster than partials        │
-│     class OrderCardComponent < ViewComponent::Base               │
-│       def initialize(order:)                                     │
-│         @order = order                                           │
-│       end                                                        │
-│     end                                                          │
-│                                                                   │
-│  e) Turbo Frame lazy loading:                                    │
-│     # Defer expensive sections to load after initial paint:      │
-│     <%= turbo_frame_tag "order_stats", src: order_stats_path,   │
-│         loading: :lazy do %>                                     │
-│       <p>Loading stats...</p>                                    │
-│     <% end %>                                                    │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 4: Database & Index Audit
-
-```
-DATABASE & INDEX AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Identify missing indexes                                │
-│  # Check all foreign keys have indexes:                          │
-│  ActiveRecord::Base.connection.tables.each do |table|            │
-│    columns = ActiveRecord::Base.connection.columns(table)        │
-│    indexes = ActiveRecord::Base.connection.indexes(table)        │
-│    fk_columns = columns.select { |c| c.name.end_with?('_id') } │
-│    fk_columns.each do |col|                                      │
-│      indexed = indexes.any? { |i| i.columns.include?(col.name) }│
-│      puts "MISSING INDEX: #{table}.#{col.name}" unless indexed  │
-│    end                                                           │
-│  end                                                             │
-│                                                                   │
-│  Step 2: Analyze slow queries                                    │
-│  # Enable slow query logging in PostgreSQL:                      │
-│  # log_min_duration_statement = 100  (100ms threshold)           │
-│  #                                                                │
-│  # Or use rack-mini-profiler in development:                     │
-│  gem 'rack-mini-profiler'                                        │
-│  # Shows query time breakdown per request in browser             │
-│                                                                   │
-│  Step 3: Add composite indexes for common query patterns         │
-│  class AddPerformanceIndexes < ActiveRecord::Migration[7.2]      │
-│    def change                                                     │
-│      add_index :orders, [:status, :created_at]                   │
-│      add_index :orders, [:customer_id, :status]                  │
-│      add_index :order_items, [:order_id, :product_id],           │
-│                unique: true                                       │
-│    end                                                            │
-│  end                                                              │
-│                                                                   │
-│  Step 4: Use EXPLAIN ANALYZE on slow queries                     │
-│  Order.where(status: :active).order(:created_at).explain         │
-│  # Look for: Seq Scan (needs index), Nested Loop (N+1 at DB),   │
-│  #           Sort (add index on ORDER BY column)                 │
-│                                                                   │
-│  Step 5: Audit for missing database-level constraints            │
-│  [ ] All NOT NULL constraints match model validations            │
-│  [ ] Unique indexes exist for uniqueness validations             │
-│  [ ] Foreign key constraints exist for all belongs_to            │
-│  [ ] Check constraints for enum/status columns                   │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-RAILS OPTIMIZATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  N+1 queries (Bullet alerts)│  <N>      │  0        │  FIXED    │
-│  Unused eager loads          │  <N>      │  0        │  FIXED    │
-│  Missing FK indexes          │  <N>      │  0        │  FIXED    │
-│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
-│  Avg queries per page        │  <N>      │  <N>      │  -<N>%    │
-│  View render time (ms)      │  <N>      │  <N>      │  -<N>%    │
-│  Partial renders per page    │  <N>      │  <N>      │  -<N>%    │
-│  Fragment cache hit rate     │  <N>%     │  <N>%     │  +<N>%    │
-│  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
-│  Counter caches added        │  0        │  <N>      │  +<N>     │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- Zero Bullet alerts (N+1 and unused eager loading)
-- strict_loading enabled in development
-- All foreign key columns have database indexes
-- Collection rendering used for all lists (no loop + render partial)
-- Fragment caching on expensive partials
-- Counter caches for all displayed has_many counts
-- p95 response time improved by measurable margin
-
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run Rails tasks sequentially: models/migrations, then controllers/routes, then views/Hotwire, then jobs/services.
-- Use branch isolation per task: `git checkout -b godmode-rails-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

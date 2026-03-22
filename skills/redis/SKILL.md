@@ -31,9 +31,7 @@ Deployment:      <Standalone | Sentinel | Cluster | Managed HA>
 Current role:    <Cache | Queue | Pub/Sub | Session Store | Rate Limiter | Primary Store | Multi-role>
 Data volume:     <keys count, memory usage>
 Throughput:      <ops/sec, read/write ratio>
-Latency target:  <p50, p99 requirements>
-Persistence:     <None | RDB | AOF | Both>
-Client library:  <ioredis | redis-py | Jedis | Lettuce | go-redis | StackExchange.Redis>
+    # ... (condensed)
 Pain points:     <what is driving the need for Redis expertise>
 ```
 
@@ -46,15 +44,7 @@ redis-cli INFO keyspace
 redis-cli INFO stats | grep -E "total_commands|instantaneous_ops|keyspace_hits|keyspace_misses"
 redis-cli INFO replication | grep -E "role|connected_slaves|master_link_status"
 
-# Key count and memory by pattern (use SCAN, never KEYS in production)
-redis-cli --scan --pattern "cache:*" | wc -l
-redis-cli --scan --pattern "session:*" | wc -l
-
-# Slow log
-redis-cli SLOWLOG GET 10
-
-# Memory analysis
-redis-cli MEMORY DOCTOR
+    # ... (condensed)
 redis-cli INFO memory
 ```
 
@@ -71,13 +61,7 @@ SET user:1234:profile '{"name":"Alice","email":"..."}' EX 3600  # Cache with TTL
 INCR api:rate:user:1234:2025-01-15T10                          # Rate counter
 SET lock:order:5678 "owner-uuid" NX EX 30                      # Distributed lock
 MGET user:1:name user:2:name user:3:name                       # Batch fetch
-
-MEMORY: ~90 bytes overhead per key + value size
-        Use MSET/MGET for batch operations (fewer round trips)
-
-ENCODING:
-  - int: values that look like integers (0 bytes overhead)
-  - embstr: strings <= 44 bytes (single allocation)
+    # ... (condensed)
   - raw: strings > 44 bytes (two allocations)
 ```
 
@@ -90,17 +74,7 @@ HSET user:1234 name "Alice" email "alice@example.com" plan "pro" last_login "202
 HGET user:1234 email                                            # Single field
 HMGET user:1234 name email plan                                  # Multiple fields
 HINCRBY user:1234 login_count 1                                  # Atomic field increment
-HGETALL user:1234                                                # All fields (careful with large hashes)
-
-MEMORY OPTIMIZATION:
-  - hash-max-listpack-entries 128  (default)
-  - hash-max-listpack-value 64    (default)
-  When entries <= 128 AND all values <= 64 bytes:
-    Redis uses listpack encoding (~10x more memory-efficient)
-  When exceeded: hashtable encoding (more memory, O(1) access)
-
-PATTERN -- Hash as namespace (memory-efficient for many small values):
-  Instead of: SET user:1:name "Alice", SET user:1:email "..."  (2 keys, ~180 bytes overhead)
+    # ... (condensed)
   Use:        HSET user:1 name "Alice" email "..."              (1 key, ~90 bytes overhead)
 ```
 
@@ -119,13 +93,7 @@ LTRIM user:1234:recent_views 0 49                               # Keep last 50
 
 # Stack (LIFO)
 LPUSH stack:undo '{"action":"delete","item":"..."}'
-LPOP stack:undo
-
-MEMORY: listpack when entries <= 128 AND each <= 64 bytes, else quicklist (doubly-linked list of listpacks)
-
-PATTERNS:
-  Reliable queue:  RPOPLPUSH source dest (atomic move between lists)
-  Blocking queue:  BRPOP (blocks until item available or timeout)
+    # ... (condensed)
   Capped list:     LPUSH + LTRIM (bounded collection)
 ```
 
@@ -161,15 +129,7 @@ ZINCRBY leaderboard 50 "player:alice"                            # Add 50 points
 ZADD events:user:1234 1705334400 "event:login:uuid1"
 ZRANGEBYSCORE events:user:1234 1705248000 1705334400             # Events in time range
 
-# Sliding window rate limiter
-ZADD rate:user:1234 <now_ms> <request_uuid>
-ZREMRANGEBYSCORE rate:user:1234 0 <now_ms - window_ms>
-ZCARD rate:user:1234                                             # Count in window
-
-# Priority queue
-ZADD priority_queue <priority> <task_id>
-ZPOPMIN priority_queue                                           # Dequeue lowest priority
-
+    # ... (condensed)
 MEMORY: listpack when entries <= 128 AND all <= 64 bytes, else skiplist + hashtable
 ```
 
@@ -188,32 +148,7 @@ XGROUP CREATE events:orders order-processors $ MKSTREAM
 # Consumer reads (blocking)
 XREADGROUP GROUP order-processors consumer-1 COUNT 10 BLOCK 5000 STREAMS events:orders >
 
-# Acknowledge processed messages
-XACK events:orders order-processors <message-id>
-
-# Check pending (unacknowledged) messages
-XPENDING events:orders order-processors - + 10
-
-# Claim stuck messages (consumer died without ACK)
-XAUTOCLAIM events:orders order-processors consumer-2 60000 0-0
-# Claims messages pending > 60s from any consumer
-
-# Trim stream (cap at 10K entries or by time)
-XTRIM events:orders MAXLEN ~ 10000
-XTRIM events:orders MINID ~ <timestamp-based-id>
-
-STREAMS vs PUB/SUB vs LISTS:
-+--------------------------------------------------------------+
-|  Feature           | Streams       | Pub/Sub    | Lists       |
-+--------------------------------------------------------------+
-|  Persistence       | Yes           | No         | Yes         |
-|  Consumer groups   | Yes           | No         | No          |
-|  Message replay    | Yes           | No         | No          |
-|  Acknowledgment    | Yes           | No         | Manual      |
-|  Fan-out           | Per group     | All subs   | One consumer|
-|  Backpressure      | Yes (BLOCK)   | No         | Yes (BRPOP) |
-|  Best for          | Event sourcing| Real-time  | Job queues  |
-|                    | Activity logs | Broadcasts | Task queues |
+    # ... (condensed)
 +--------------------------------------------------------------+
 ```
 
@@ -232,12 +167,7 @@ DATA STRUCTURE SELECTION:
 |  Tags / membership           | Set           | tags:<entity>    |
 |  Leaderboard / ranking       | Sorted Set    | lb:<name>        |
 |  Time-series index           | Sorted Set    | ts:<metric>      |
-|  Event log / audit           | Stream        | events:<domain>  |
-|  Pub/Sub broadcast           | Pub/Sub       | channel:<topic>  |
-|  Session store               | Hash          | session:<token>  |
-|  Distributed lock            | String (NX)   | lock:<resource>  |
-|  Geospatial (nearby)         | Geo (sorted)  | geo:<type>       |
-|  Bit flags / bloom           | String (bits) | bits:<name>      |
+    # ... (condensed)
 +--------------------------------------------------------------+
 ```
 
@@ -259,46 +189,7 @@ Code pattern:
     const user = await db.users.findById(id);
     await redis.set(`user:${id}`, JSON.stringify(user), 'EX', 3600);
     return user;
-  }
-
-Pros: Only caches what is actually read, simple
-Cons: Cache miss penalty (extra round trip), stale data until TTL
-
-WRITE-THROUGH:
-1. App writes to database AND Redis simultaneously
-2. Reads always hit cache (no miss penalty)
-
-Code pattern:
-  async function updateUser(id, data) {
-    await db.users.update(id, data);
-    await redis.set(`user:${id}`, JSON.stringify(data), 'EX', 3600);
-  }
-
-Pros: Cache always fresh, no miss penalty on reads
-Cons: Write latency increased, caches data that may never be read
-
-WRITE-BEHIND (Write-Back):
-1. App writes to Redis only
-2. Background process flushes to database asynchronously
-
-Pros: Fastest writes, batch database updates
-Cons: Risk of data loss if Redis crashes before flush, complex
-
-CACHE INVALIDATION PATTERNS:
-+--------------------------------------------------------------+
-|  Pattern          | How                    | When              |
-+--------------------------------------------------------------+
-|  TTL-based        | SET key val EX 3600    | Tolerate staleness|
-|  Event-based      | DELETE key on write    | Strong consistency|
-|  Version-based    | key = user:1:v3        | Immutable cache   |
-|  Tag-based        | Track keys by tag,     | Related entities  |
-|                   | invalidate by tag      |                   |
-+--------------------------------------------------------------+
-
-CACHE KEY DESIGN:
-  Format:    <entity>:<id>[:<field>]   e.g., user:1234:profile
-  Namespace: <service>:<entity>:<id>    e.g., api:user:1234
-  Version:   <entity>:<id>:v<N>         e.g., config:global:v3
+    # ... (condensed)
   Wild:      Never use KEYS for lookup -- use hash tags or secondary index
 ```
 
@@ -318,26 +209,7 @@ SOLUTIONS:
    Only one request queries DB, others wait for cache fill
 
    async function getWithLock(key) {
-     let value = await redis.get(key);
-     if (value) return JSON.parse(value);
-
-     const lockKey = `lock:${key}`;
-     const acquired = await redis.set(lockKey, '1', 'NX', 'EX', 10);
-
-     if (acquired) {
-       value = await fetchFromDB(key);
-       await redis.set(key, JSON.stringify(value), 'EX', 3600);
-       await redis.del(lockKey);
-       return value;
-     }
-
-     // Another process is rebuilding -- wait and retry
-     await sleep(100);
-     return getWithLock(key);
-   }
-
-3. Background refresh (never expire):
-   Keep cache forever, background job refreshes periodically
+    # ... (condensed)
    No stampede possible -- cache always has a value
 ```
 
@@ -359,10 +231,7 @@ RELIABLE QUEUE (with processing list):
 
   -- Recovery: check processing list for stuck tasks
   -- If task has been in processing list > timeout, move back to queue
-
-PRIORITY QUEUE (with sorted sets):
-  ZADD queue:priority <priority_score> <task_json>
-  -- Lower score = higher priority
+    # ... (condensed)
   ZPOPMIN queue:priority  -- Dequeue highest priority
 ```
 
@@ -382,11 +251,7 @@ USE CASES:
   - Live dashboard updates
 
 LIMITATIONS:
-  - Fire-and-forget: no persistence, no replay
-  - No acknowledgment: if subscriber is down, message is lost
-  - No consumer groups: every subscriber gets every message
-  - Memory: messages buffer in publisher if subscriber is slow
-
+    # ... (condensed)
 FOR RELIABLE MESSAGING: Use Streams instead of Pub/Sub
 ```
 
@@ -406,16 +271,7 @@ HGETALL session:<token>
 HSET session:<token> last_active "2025-01-15T12:30:00Z"
 
 # Slide expiration on activity
-EXPIRE session:<token> 86400
-
-# Invalidate session
-DEL session:<token>
-
-# Invalidate all sessions for a user (need secondary index)
-SADD user:1234:sessions <token1> <token2>
--- On "logout everywhere":
-SMEMBERS user:1234:sessions  # Get all tokens
-DEL session:<token1> session:<token2>  # Delete sessions
+    # ... (condensed)
 DEL user:1234:sessions  # Clean up index
 ```
 
@@ -437,36 +293,7 @@ TOPOLOGY:
           +------------+------------+
                        |
               +--------+--------+
-              |                 |
-      +-------v------+  +------v-------+
-      |  Master      |  |  Replica     |
-      |  (read/write)|  |  (read-only) |
-      +--------------+  +--------------+
-
-SENTINEL CONFIGURATION (sentinel.conf):
-sentinel monitor mymaster <master-ip> 6379 2
-  # "2" = quorum: number of sentinels that must agree master is down
-sentinel down-after-milliseconds mymaster 5000
-  # Consider master down after 5s of no response
-sentinel failover-timeout mymaster 60000
-  # Failover timeout: 60s
-sentinel parallel-syncs mymaster 1
-  # Only 1 replica syncs from new master at a time
-
-CLIENT CONNECTION (via Sentinel):
-  // ioredis (Node.js)
-  const redis = new Redis({
-    sentinels: [
-      { host: 'sentinel-1', port: 26379 },
-      { host: 'sentinel-2', port: 26379 },
-      { host: 'sentinel-3', port: 26379 },
-    ],
-    name: 'mymaster',
-  });
-
-RULES:
-- Minimum 3 sentinels for reliable quorum
-- Sentinels on different machines/availability zones
+    # ... (condensed)
 - Quorum = (num_sentinels / 2) + 1 for split-brain prevention
 ```
 
@@ -486,50 +313,7 @@ TOPOLOGY:
 |  |0-5460  |  |5461-   |  |10923-  |       |
 |  |slots   |  |10922   |  |16383   |       |
 |  +---+----+  +---+----+  +---+----+       |
-|      |           |           |             |
-|  +---v----+  +---v----+  +---v----+       |
-|  |Replica |  |Replica |  |Replica |       |
-|  |1a      |  |2a      |  |3a      |       |
-|  +--------+  +--------+  +--------+       |
-+--------------------------------------------+
-
-16384 hash slots distributed across masters
-Key -> CRC16(key) % 16384 -> slot -> node
-
-HASH TAGS (force keys to same slot):
-  {user:1234}:profile  and  {user:1234}:sessions
-  Both hash on "user:1234" -> same slot -> same node
-  Required for multi-key operations (MGET, transactions, Lua)
-
-CLUSTER SETUP:
-  redis-cli --cluster create \
-    node1:6379 node2:6379 node3:6379 \
-    node4:6379 node5:6379 node6:6379 \
-    --cluster-replicas 1
-
-CLUSTER COMMANDS:
-  CLUSTER INFO           # Cluster state and stats
-  CLUSTER NODES          # Node list with slot assignments
-  CLUSTER SLOTS          # Slot-to-node mapping
-  CLUSTER KEYSLOT <key>  # Which slot a key maps to
-
-CLIENT CONNECTION:
-  // ioredis cluster mode
-  const cluster = new Redis.Cluster([
-    { host: 'node1', port: 6379 },
-    { host: 'node2', port: 6379 },
-    { host: 'node3', port: 6379 },
-  ], {
-    redisOptions: { password: 'secret' },
-    scaleReads: 'slave',  // Read from replicas
-    natMap: { ... },      // NAT/Docker port mapping
-  });
-
-CLUSTER LIMITATIONS:
-- Multi-key operations only within same hash slot
-- No multi-database (only db 0)
-- Pub/Sub: messages broadcast to all nodes (network cost)
-- Lua scripts: all keys must be in same slot
+    # ... (condensed)
 - Transactions: all keys must be on same node
 ```
 
@@ -548,16 +332,7 @@ REPLICATION:
 
 REPLICATION MODES:
 +--------------------------------------------------------------+
-|  Mode            | How                     | Trade-off         |
-+--------------------------------------------------------------+
-|  Async (default) | Replica may lag behind  | Best performance  |
-|  WAIT N timeout  | Wait for N replicas     | Stronger durability|
-|                  | to ACK write            | Higher latency    |
-+--------------------------------------------------------------+
-
-EXAMPLE:
-  SET key value
-  WAIT 1 1000  # Wait for 1 replica to ACK within 1000ms
+    # ... (condensed)
                # Returns number of replicas that ACKed
 ```
 
@@ -577,37 +352,7 @@ MEMORY OPTIMIZATION STRATEGIES:
 
 3. TTL on everything:
    Always set expiration. Data without TTL grows forever.
-   SET key value EX 3600  # Always include TTL
-
-4. Compression:
-   Compress large values before storing:
-   SET key (gzip(JSON.stringify(data))) EX 3600
-   Saves 50-80% for large JSON/text values
-
-5. Listpack thresholds (tune for your data):
-   hash-max-listpack-entries 128    # Increase if hashes have more fields
-   hash-max-listpack-value 64      # Increase if values are slightly larger
-   zset-max-listpack-entries 128
-   list-max-listpack-size -2       # -2 = 8KB per listpack node
-
-6. Memory analysis:
-   redis-cli MEMORY USAGE <key>     # Bytes used by specific key
-   redis-cli --bigkeys               # Find largest keys by type
-   redis-cli --memkeys                # Find keys using most memory
-   redis-cli MEMORY DOCTOR            # General memory health check
-
-MEMORY REPORT:
-+--------------------------------------------------------------+
-|  Category            | Memory    | % Total  | Action          |
-+--------------------------------------------------------------+
-|  Strings (cache)     | 2.1 GB    | 42%      | Review TTLs     |
-|  Hashes (sessions)   | 1.4 GB    | 28%      | OK              |
-|  Sorted Sets (LBs)   | 0.8 GB    | 16%      | OK              |
-|  Overhead            | 0.5 GB    | 10%      | Normal          |
-|  Fragmentation       | 0.2 GB    | 4%       | < 1.5 ratio OK  |
-+--------------------------------------------------------------+
-|  Total               | 5.0 GB    | 100%     |                 |
-|  maxmemory           | 6.0 GB    |          | 83% utilized    |
+    # ... (condensed)
 +--------------------------------------------------------------+
 ```
 
@@ -627,21 +372,7 @@ EVICTION POLICIES:
 |                      | used from ALL keys      | based cache    |
 |  volatile-lfu        | LFU only among keys     | Mix + frequency|
 |                      | with TTL set            |                |
-|  allkeys-random      | Random eviction         | Uniform access |
-|  volatile-random     | Random among TTL keys   | Uniform + mix  |
-|  volatile-ttl        | Evict keys with nearest | Short-lived    |
-|                      | TTL first               | data preferred |
-+--------------------------------------------------------------+
-
-RECOMMENDATION:
-- Cache only:       allkeys-lfu (best hit rate for most workloads)
-- Cache + data:     volatile-lfu (only evict keys with TTL)
-- Session store:    volatile-ttl (expire oldest sessions first)
-- Primary store:    noeviction (never lose data silently)
-
-CONFIGURATION:
-maxmemory 6gb
-maxmemory-policy allkeys-lfu
+    # ... (condensed)
 maxmemory-samples 10          # Higher = more accurate LRU/LFU, more CPU
 ```
 
@@ -662,22 +393,7 @@ local limit = tonumber(ARGV[2])
 local now = tonumber(ARGV[3])
 local request_id = ARGV[4]
 
--- Remove expired entries
-redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
-
--- Count current entries
-local current = redis.call('ZCARD', key)
-
-if current < limit then
-    -- Under limit: add request and allow
-    redis.call('ZADD', key, now, request_id)
-    redis.call('PEXPIRE', key, window)
-    return {1, limit - current - 1}  -- allowed, remaining
-else
-    -- Over limit: reject
-    local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
-    local retry_after = window - (now - tonumber(oldest[2]))
-    return {0, retry_after}  -- denied, retry after ms
+    # ... (condensed)
 end
 ```
 
@@ -706,26 +422,7 @@ redis.register_function('acquire_lock', function(keys, args)
     if current == false then
         redis.call('SET', lock_key, owner, 'PX', ttl_ms)
         local token = redis.call('INCR', lock_key .. ':token')
-        return {1, token}  -- acquired, fencing token
-    elseif current == owner then
-        redis.call('PEXPIRE', lock_key, ttl_ms)  -- extend
-        local token = redis.call('GET', lock_key .. ':token')
-        return {1, tonumber(token)}  -- extended, same token
-    else
-        return {0, 0}  -- not acquired
-    end
-end)
-
-redis.register_function('release_lock', function(keys, args)
-    local lock_key = keys[1]
-    local owner = args[1]
-
-    local current = redis.call('GET', lock_key)
-    if current == owner then
-        redis.call('DEL', lock_key)
-        return 1  -- released
-    end
-    return 0  -- not owner
+    # ... (condensed)
 end)
 ```
 
@@ -842,19 +539,7 @@ save 60 10000    # Snapshot after 60s if >= 10000 keys changed
 rdbcompression yes
 rdbchecksum yes
 
-AOF CONFIGURATION:
-appendonly yes
-appendfsync everysec   # fsync every second (good balance)
-  # always:   fsync every write (safest, slowest)
-  # everysec: fsync every second (recommended)
-  # no:       OS decides when to fsync (fastest, risk)
-
-auto-aof-rewrite-percentage 100  # Rewrite when AOF doubles in size
-auto-aof-rewrite-min-size 64mb   # Minimum size before considering rewrite
-
-RECOMMENDATION:
-- Cache only:     RDB (or no persistence)
-- Session store:  AOF (everysec)
+    # ...
 - Primary store:  RDB + AOF
 - Queue/Stream:   AOF (everysec) + replication
 ```
@@ -919,14 +604,6 @@ CACHE DESIGN:
   Eviction: allkeys-lfu (best hit rate)
 
   Data structures:
-  - String: cached JSON responses (SET + EX)
-  - Sorted Set: cache key index by last access (for warm-up)
-
-  Stampede prevention: Distributed lock on cache miss
-  Invalidation: Event-based DELETE on write + TTL fallback
-
-  Expected hit rate: > 95%
-  Memory estimate: 2.1 GB for 500K cached responses
 ```
 
 ### Setting up Redis Cluster
@@ -947,28 +624,6 @@ CLUSTER DESIGN:
   Client: ioredis Cluster mode with scaleReads: 'slave'
   Persistence: RDB + AOF on all nodes
 ```
-
-### Implementing a rate limiter
-```
-User: /godmode:redis Build a rate limiter: 100 req/min per user
-
-Redis: Implementing sliding window...
-
-RATE LIMITER:
-  Data structure: Sorted Set
-  Key: rate:api:<user_id>
-  Score: timestamp (ms)
-  Member: request UUID
-  Window: 60000ms, Limit: 100
-
-  Lua script for atomicity (ZREMRANGEBYSCORE + ZCARD + ZADD)
-  Returns: {allowed: bool, remaining: int, retry_after_ms: int}
-
-  Response headers:
-  X-RateLimit-Limit: 100
-  X-RateLimit-Remaining: <N>
-  X-RateLimit-Reset: <epoch>
-  Retry-After: <seconds> (on 429)
 ```
 
 ## Flags & Options
@@ -985,11 +640,6 @@ RATE LIMITER:
 | `--cluster` | Set up Redis Cluster for horizontal scaling |
 | `--sentinel` | Configure Redis Sentinel for high availability |
 | `--memory` | Analyze and optimize memory usage |
-| `--lua` | Write Lua scripts or Redis Functions |
-| `--lock` | Implement distributed locking |
-| `--streams` | Design event streaming with Redis Streams |
-| `--diagnose` | Run full Redis diagnostic (memory, slowlog, info) |
-| `--persistence` | Configure RDB/AOF persistence |
 
 ## Auto-Detection
 
@@ -1014,18 +664,6 @@ redis_tasks = [list of Redis features to implement/optimize]
 WHILE redis_tasks is not empty AND current_iteration < max_iterations:
     task = redis_tasks.pop(0)
     1. Analyze current data access pattern for this feature
-    2. Choose optimal Redis data structure (String, Hash, Set, Sorted Set, Stream, etc.)
-    3. Implement with proper key naming: {service}:{entity}:{id}:{field}
-    4. Set TTL on every cache key (no immortal keys)
-    5. Add error handling for Redis unavailability (degrade gracefully)
-    6. Test: verify data correctness, TTL expiry, memory usage
-    7. Benchmark: redis-benchmark or custom load test for this pattern
-    8. IF performance target missed → optimize (pipeline, Lua script, structure change)
-    9. IF passing → commit: "redis: implement <feature> (<data structure>)"
-    10. current_iteration += 1
-
-POST-LOOP: Run INFO memory, check fragmentation ratio, verify maxmemory policy
-```
 
 ## Multi-Agent Dispatch
 
@@ -1055,20 +693,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. ALWAYS set maxmemory and maxmemory-policy. An unbounded Redis is a ticking bomb.
 ```
 
-## Anti-Patterns
-
-- **Do NOT use KEYS in production.** KEYS * blocks the entire Redis instance (single-threaded). Use SCAN with a cursor and COUNT hint.
-- **Do NOT store large values (> 100KB).** Large values block Redis during serialization. Compress before storing, or split into smaller keys.
-- **Do NOT use Redis as a primary database without persistence.** If Redis restarts without RDB/AOF, all data is lost. Enable persistence for any data you cannot regenerate.
-- **Do NOT forget TTL on cache keys.** Keys without TTL accumulate until maxmemory forces eviction, which may evict important keys instead.
-- **Do NOT use SELECT (multiple databases).** Redis databases (0-15) share the same memory and single thread. Use key prefixes for namespacing instead.
-- **Do NOT use Pub/Sub for reliable messaging.** Pub/Sub is fire-and-forget. If a subscriber is down, messages are lost. Use Streams for reliable delivery.
-- **Do NOT run O(N) commands on large collections without understanding the cost.** LRANGE 0 -1 on a 1M-element list, SMEMBERS on a 500K set, HGETALL on a 50K-field hash -- all block Redis.
-- **Do NOT use Redis transactions (MULTI/EXEC) expecting rollback.** Redis transactions are not atomic in the ACID sense. All commands execute sequentially, but if one fails, the others still run. Use Lua for true atomicity.
-- **Do NOT ignore memory fragmentation.** mem_fragmentation_ratio > 1.5 wastes 50%+ of allocated memory. Monitor and address with MEMORY PURGE or jemalloc tuning.
-- **Do NOT connect directly from many application instances.** Use connection pooling in your client library. Each Redis connection has overhead, and max_clients has a limit.
-
-
 ## Output Format
 
 After every Redis operation (caching layer setup, data structure implementation, ops configuration), emit a structured result box:
@@ -1083,14 +707,10 @@ After every Redis operation (caching layer setup, data structure implementation,
 │ Memory Est. : ~50MB for 100K sessions               │
 │ Persistence : AOF (appendfsync everysec)            │
 │ Verdict : READY                                     │
-└─────────────────────────────────────────────────────┘
-```
-
-Fields adapt to the operation type. For Cluster operations, add `Slots`, `Replicas`, `Failover`. For Lua scripts, add `Script SHA`, `Idempotent`, `Keys Touched`. Always include `Verdict`: one of READY, NEEDS_TUNING, DEGRADED.
 
 ## TSV Logging
 
-Append one row per Redis operation to `.godmode/redis-ops.tsv`:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	operation	data_structure	key_pattern	ttl	eviction_policy	memory_estimate	persistence	verdict
@@ -1098,8 +718,6 @@ timestamp	operation	data_structure	key_pattern	ttl	eviction_policy	memory_estima
 2026-03-20T14:35:00Z	rate-limiter	SORTED_SET	ratelimit:{ip}	60	noeviction	10MB	none	READY
 2026-03-20T14:40:00Z	pub-sub-migration	STREAM	events:{topic}	-	noeviction	200MB	AOF+RDB	NEEDS_TUNING
 ```
-
-Create the file with the header row on first run. Tab-separated, one row per operation. This log is the audit trail for all Redis decisions.
 
 ## Success Criteria
 
@@ -1115,176 +733,63 @@ Create the file with the header row on first run. Tab-separated, one row per ope
 - `maxmemory-policy` is explicitly set (not default `noeviction` unless intentional)
 - Persistence (RDB or AOF) is enabled for any non-ephemeral data
 
-**NEEDS_TUNING** (any one true):
-- `keyspace_hit_ratio` between 80-90%
-- `mem_fragmentation_ratio` between 1.5 and 2.0
-- Slow log shows commands > 10ms
-- `used_memory` between 70-80% of `maxmemory`
-
-**DEGRADED** (any one true):
-- `keyspace_hit_ratio` < 80%
-- `mem_fragmentation_ratio` > 2.0
-- `rejected_connections` > 0
-- `used_memory` > 90% of `maxmemory`
-- Replication lag > 1s (Sentinel/Cluster)
-- Pub/Sub used for reliable messaging (should be Streams)
-- KEYS command found in application code
-- O(N) commands on collections > 10K elements without SCAN
 
 ## Error Recovery
 
 1. **Memory pressure (used_memory > 90% of maxmemory)**
-   - Run `MEMORY DOCTOR` and `INFO memory` to diagnose.
-   - Check `mem_fragmentation_ratio`: if > 2.0, run `MEMORY PURGE` or restart with jemalloc tuning.
-   - Identify large keys: `redis-cli --bigkeys` or `MEMORY USAGE <key>`.
-   - If eviction is active and hitting important keys, move non-cache data to a separate Redis instance.
-   - If TTLs are missing, audit all SET commands and add EX/PX to cache keys.
-
 2. **Cluster MOVED/ASK errors spike**
-   - Check `CLUSTER INFO` for `cluster_state`. If not `ok`, a resharding or failover is in progress.
-   - Ensure client library handles MOVED redirects (most do automatically).
-   - If resharding, wait for completion. If a node is down, check Sentinel logs and trigger manual failover with `CLUSTER FAILOVER` if needed.
-   - Lua scripts in Cluster: ensure all keys in a script share the same hash slot (use `{hashtag}` prefix).
-
 3. **Replication lag > 1s in Sentinel/Cluster**
-   - Check `INFO replication` on the primary: `repl_backlog_size` may be too small for write volume.
-   - Increase `repl-backlog-size` (default 1MB is often too small for high-write workloads).
-   - Check network between primary and replica. If replica is slow, check `slave-lazy-flush` and disk I/O.
-   - If lag persists, consider reducing write volume or adding read replicas to distribute load.
-
 4. **Connection pool exhaustion (rejected_connections > 0)**
-   - Check `INFO clients`: `connected_clients` vs `maxclients`.
-   - Increase `maxclients` if server resources allow (check file descriptor limits with `ulimit -n`).
-   - Audit application connection pooling: ensure pools are bounded (min/max) and connections are returned after use.
-   - If using Cluster, connections multiply by node count -- size pools accordingly.
 
 ## Cache Optimization Loop
 
-Autonomous loop that improves hit rate, tunes eviction policy, and optimizes memory. Runs until cache health targets are met or max iterations reached.
-
 ```
 CACHE OPTIMIZATION LOOP:
-current_iteration = 0
 max_iterations = 15
 
-// Phase 0: Baseline Capture
-baseline = {
-  hit_rate:          keyspace_hits / (keyspace_hits + keyspace_misses),  // from INFO stats
-  memory_used:       used_memory_human,
-  memory_max:        maxmemory_human,
-  memory_pct:        used_memory / maxmemory * 100,
-  fragmentation:     mem_fragmentation_ratio,
-  eviction_policy:   maxmemory_policy,
-  evicted_keys_24h:  evicted_keys delta over 24h,
-  slowlog_entries:   SLOWLOG LEN,
-  keys_without_ttl:  count_keys_without_ttl(),  // SCAN + TTL check
-  biggest_keys:      run_bigkeys_analysis()
-}
+Phase 0 — Baseline: capture hit_rate, memory_pct, fragmentation, eviction_policy, keys_without_ttl
 
-LOG: "BASELINE: hit_rate={baseline.hit_rate}%, memory={baseline.memory_pct}%, fragmentation={baseline.fragmentation}, eviction={baseline.eviction_policy}"
+WHILE NOT all_targets_met AND iteration < max_iterations:
 
-WHILE current_iteration < max_iterations AND NOT all_targets_met(baseline):
-  current_iteration += 1
+  Phase 1 — Hit Rate Improvement (target >90%):
+    Analyze miss patterns: EVICTED_TOO_EARLY → increase TTL. NEVER_CACHED → add cache-aside.
+    COLD_START → add warm-up on startup. WRONG_EVICTION_POLICY → switch to allkeys-lfu.
 
-  // Phase 1: Hit Rate Improvement
-  IF baseline.hit_rate < 90:
-    // Analyze miss patterns
-    miss_keys = sample_cache_misses(count=100)
-    // Categorize: cold start, evicted too early, never cached, wrong TTL
-    FOR each pattern in miss_patterns:
-      IF pattern == "EVICTED_TOO_EARLY":
-        // Key was cached but evicted before re-access
-        INCREASE TTL for this key pattern
-        LOG: "TTL increased: {key_pattern} from {old_ttl}s to {new_ttl}s"
-      IF pattern == "NEVER_CACHED":
-        // Hot data path not using cache
-        ADD cache-aside for this query
-        LOG: "CACHE ADDED: {key_pattern} for {query_description}"
-      IF pattern == "COLD_START":
-        // After deployment/restart, cache is empty
-        ADD cache warming on startup for top-N keys
-        LOG: "WARM-UP added: {key_pattern} ({count} keys)"
-      IF pattern == "WRONG_EVICTION_POLICY":
-        // LRU evicting frequently-used keys
-        SWITCH to allkeys-lfu
-        LOG: "EVICTION POLICY: switched to allkeys-lfu"
+  Phase 2 — Eviction Policy Tuning:
+    If evicted_keys_24h >1000 AND hit_rate <95: select optimal policy for workload.
+    allkeys-lfu for popularity-based, volatile-lfu for mix, volatile-ttl for sessions.
 
-  // Phase 2: Eviction Policy Tuning
-  IF baseline.evicted_keys_24h > 1000 AND baseline.hit_rate < 95:
-    current_policy = baseline.eviction_policy
-    recommended = select_eviction_policy(workload_type)
-    // allkeys-lfu for popularity-based, volatile-lfu for mix, volatile-ttl for sessions
-    IF recommended != current_policy:
-      SET maxmemory-policy {recommended}
-      LOG: "EVICTION: {current_policy} → {recommended}"
+  Phase 3 — Memory Optimization:
+    Compress STRING values >100KB. Split HASH with >128 entries (exceeds listpack).
+    TRIM SORTED_SET with >100K entries. MEMORY PURGE if fragmentation >1.5.
 
-  // Phase 3: Memory Optimization
-  IF baseline.memory_pct > 80:
-    // Find memory hogs
-    FOR each big_key in baseline.biggest_keys:
-      IF big_key.type == "STRING" AND big_key.size > 100KB:
-        COMPRESS value (gzip before SET)
-        LOG: "COMPRESSED: {big_key.name} from {big_key.size} to ~{compressed_size}"
-      IF big_key.type == "HASH" AND big_key.entries > 128:
-        // Exceeds listpack threshold, using hashtable encoding
-        SPLIT into smaller hashes or review if all fields needed
-      IF big_key.type == "SORTED_SET" AND big_key.entries > 100000:
-        TRIM to bounded size (ZREMRANGEBYRANK)
-
-  IF baseline.fragmentation > 1.5:
-    MEMORY PURGE  // or schedule restart with jemalloc tuning
-    LOG: "DEFRAG: fragmentation {baseline.fragmentation} → running MEMORY PURGE"
-
-  // Phase 4: TTL Hygiene
-  IF baseline.keys_without_ttl > 0:
-    FOR each key_pattern without TTL:
-      IF key is cache data: SET TTL (default 3600s)
-      IF key is session: SET TTL (default 86400s)
-      IF key is permanent reference: SKIP (document as intentional)
-      LOG: "TTL SET: {key_pattern} — {ttl}s"
-
-  // Phase 5: Measure & Keep/Discard
-  new_metrics = capture_redis_metrics()
-  improvement = {
-    hit_rate_delta: new_metrics.hit_rate - baseline.hit_rate,
-    memory_delta: baseline.memory_pct - new_metrics.memory_pct,
-    fragmentation_delta: baseline.fragmentation - new_metrics.fragmentation
-  }
-
-  IF new_metrics.hit_rate >= baseline.hit_rate AND new_metrics.memory_pct <= baseline.memory_pct:
-    KEEP all changes
-    baseline = new_metrics  // update baseline
-    LOG: "KEEP: hit_rate {baseline.hit_rate}% → {new_metrics.hit_rate}%, memory {baseline.memory_pct}% → {new_metrics.memory_pct}%"
-  ELSE:
-    DISCARD changes that caused regression
-    LOG: "DISCARD: regression detected, reverted"
-
-  REPORT: "Iteration {current_iteration}: hit_rate={new_metrics.hit_rate}%, memory={new_metrics.memory_pct}%, fragmentation={new_metrics.fragmentation}"
-
-ON COMPLETION:
-  LOG to .godmode/redis-cache-audit.tsv:
-    timestamp\thit_rate_before\thit_rate_after\tmemory_before_pct\tmemory_after_pct\teviction_policy\tkeys_ttl_fixed\tverdict
-  REPORT: "Cache optimization complete: {current_iteration} iterations, hit_rate: {initial}% → {final}%, memory: {initial_mem}% → {final_mem}%"
-```
-
-### Cache Health Thresholds
-
-```
-CACHE HEALTH THRESHOLDS:
-┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
-│ Metric                               │ HEALTHY      │ NEEDS TUNING │ DEGRADED     │
-├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
-│ Keyspace hit ratio                   │ > 95%        │ 80-95%       │ < 80%        │
-│ Memory utilization                   │ < 70%        │ 70-85%       │ > 85%        │
-│ Fragmentation ratio                  │ 1.0-1.2      │ 1.2-1.5      │ > 1.5        │
-│ Evicted keys / hour                  │ < 100        │ 100-1000     │ > 1000       │
-│ Keys without TTL (cache keys)        │ 0            │ 1-100        │ > 100        │
+    # ...
 │ Slowlog entries / hour               │ < 5          │ 5-20         │ > 20         │
-│ Single key > 100KB                   │ 0            │ 1-5          │ > 5          │
-│ Connected clients / maxclients       │ < 60%        │ 60-80%       │ > 80%        │
-│ Rejected connections                 │ 0            │ 0            │ > 0          │
-│ Pub/Sub used for reliable messaging  │ No           │ --           │ Yes (Streams)│
 └──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
+```
+
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
@@ -1292,3 +797,4 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Run Redis tasks sequentially: caching layer, then data structures (queues/pub-sub/streams), then ops (Sentinel/Cluster config).
 - Use branch isolation per task: `git checkout -b godmode-redis-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+```

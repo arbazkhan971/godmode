@@ -36,6 +36,24 @@ Print: `Test: coverage {start}% → {final}% (target: {target}%). {N} tests adde
 5. Priority: happy_path > error_path > edge_case > integration.
 6. Assert behavior, not implementation details.
 
+## Keep/Discard Discipline
+```
+After EACH test iteration:
+  KEEP if: coverage increased AND all existing tests still pass
+  DISCARD if: coverage did not increase OR existing test broke
+  On discard: git reset --hard HEAD~1. Log reason. Move to next uncovered path.
+  Never keep a test that does not increase coverage or breaks existing tests.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: coverage >= target
+  - budget_exhausted: 50 iterations reached (safety limit)
+  - diminishing_returns: 3 consecutive iterations with < 0.5% gain
+  - stuck: >5 consecutive discards on different paths
+```
+
 ## Iteration Budget
 Stop when FIRST of:
 - Coverage >= target.

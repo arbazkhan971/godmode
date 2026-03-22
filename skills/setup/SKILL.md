@@ -442,6 +442,24 @@ FINAL SETUP VALIDATION:
 └──────────────────────┴────────┴───────────────────────────┘
 ```
 
+## Keep/Discard Discipline
+```
+After EACH command validation:
+  KEEP if: command exits 0 AND produces expected output within timeout
+  DISCARD if: command fails OR times out OR produces no output
+  On discard: ask user for alternative command. Max 3 retries per command, then set to "—".
+  Never keep a command that has not been validated by execution.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: .godmode/config.yaml written, validated, and committed
+  - budget_exhausted: 3 retries per command exhausted
+  - diminishing_returns: user skips remaining optional commands
+  - stuck: >5 command validation failures with no working alternatives
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - Setup itself requires no parallel agents — runs identically on all platforms.

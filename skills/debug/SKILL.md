@@ -67,6 +67,24 @@ NOT vague: "auth is broken"
 ## Output Format
 Print: `Debug: {found} bugs found, {fixed} fixed, {remaining} remaining in {N} iterations. Skipped: {skipped_list}.`
 
+## Keep/Discard Discipline
+```
+After EACH bug investigation:
+  KEEP if: root cause proven with file:line + actual vs expected values
+  DISCARD if: root cause not found after all techniques exhausted
+  On discard: log bug as skipped with reason_stuck. Move to next bug.
+  Never keep an unproven hypothesis as a root cause.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: failing_count == 0 (all bugs fixed or handed off)
+  - budget_exhausted: max iterations reached
+  - diminishing_returns: 3 consecutive bugs produce no fix
+  - stuck: >5 skipped bugs (skipped >= 3 already triggers stop)
+```
+
 ## Rules
 1. Reproduce before investigating. No reproduce = no bug. Run the code, read stdout+stderr, paste the output.
 2. Evidence: file:line + actual vs expected values + reproduce command. Found root cause → `/godmode:fix`.

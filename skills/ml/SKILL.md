@@ -575,14 +575,40 @@ IF bias check reveals fairness violations:
   4. Re-evaluate and document the trade-off between overall accuracy and fairness
 ```
 
+## Keep/Discard Discipline
+```
+After EACH experiment run:
+  1. MEASURE: Evaluate on validation set — primary metric, secondary metrics, bias check.
+  2. COMPARE: Is the improvement over baseline statistically significant (paired bootstrap, p < 0.05)?
+  3. DECIDE:
+     - KEEP if: significant improvement AND bias check passes AND no data leakage detected
+     - DISCARD if: no significant improvement OR bias violation OR data leakage found
+  4. LOG both kept and discarded experiments with full hyperparameters and metrics.
+
+Never promote a model that fails bias checks, regardless of primary metric improvement.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Best model beats baseline by a meaningful, statistically significant margin
+  - Bias check passes for all protected attributes
+  - User explicitly requests stop
+  - 3 consecutive experiments show no improvement (suggest new approach)
+
+DO NOT STOP just because:
+  - A single metric plateaued (check other metrics and error analysis first)
+  - Training takes a long time (schedule it, do not skip it)
+```
+
 ## Anti-Patterns
 
-- **Do NOT skip the baseline.** "Our model has 0.92 F1" means nothing without knowing what a trivial baseline achieves. Always compare.
-- **Do NOT tune on test data.** The test set is sacred. Touch it once, for final evaluation. Use validation set for all tuning.
-- **Do NOT ignore class imbalance.** Accuracy on imbalanced data is misleading. 95% accuracy is trivial when 95% of samples are one class. Use F1, AUC-PR, or balanced accuracy.
-- **Do NOT ship without bias check.** A model that works for most users but fails for a subgroup is a liability. Check fairness metrics.
-- **Do NOT hardcode hyperparameters.** Use configuration files. Hardcoded values are not reproducible, searchable, or comparable.
-- **Do NOT discard failed experiments.** Log them. Tag them as failed. Explain why. They prevent duplicate wasted effort.
+- **Do NOT skip the baseline.** "Our model has 0.92 F1" means nothing without knowing what a trivial baseline achieves.
+- **Do NOT tune on test data.** The test set is sacred. Touch it once for final evaluation.
+- **Do NOT ignore class imbalance.** 95% accuracy is trivial when 95% of samples are one class. Use F1, AUC-PR, or balanced accuracy.
+- **Do NOT ship without bias check.** A model that works for most users but fails for a subgroup is a liability.
+- **Do NOT hardcode hyperparameters.** Use configuration files. Hardcoded values are not reproducible or searchable.
+- **Do NOT discard failed experiments.** Log them with reasons. They prevent duplicate wasted effort.
 
 
 ## ML Pipeline Audit
@@ -666,33 +692,19 @@ Priority fixes:
 ### ML Pipeline Audit Loop
 
 ```
-ML AUDIT ITERATION:
-current_category = 0
 categories = [data_validation, model_metrics, experiment_tracking, pipeline_reliability]
-findings = []
 
-WHILE current_category < len(categories):
-  category = categories[current_category]
-
+FOR each category:
   1. SCAN pipeline for all checks in category
-  2. RECORD status (PASS/FAIL) with evidence for each check
-  3. IDENTIFY root cause for each FAIL
-  4. PRIORITIZE fixes by blast radius (data issues > metric gaps > tracking gaps)
+  2. RECORD status (PASS/FAIL) with evidence
+  3. PRIORITIZE fixes: data issues > metric gaps > tracking gaps
+  4. IF > 3 FAIL items: fix top 3 before moving to next category
 
-  IF category has > 3 FAIL items:
-    HALT "Category {category} has critical gaps. Fix before proceeding."
-    FIX top 3 issues
-    RE-AUDIT category before moving to next
-
-  findings.append({category, pass_count, fail_count, critical_items})
-  current_category += 1
-
-FINAL:
-  GENERATE audit report with all findings
-  CALCULATE audit score: total_pass / total_checks * 100
-  IF audit_score < 80%: "Pipeline NOT production-ready. Address {fail_count} issues."
-  IF audit_score >= 80% AND audit_score < 95%: "Pipeline conditionally ready. Address {critical_count} critical items."
-  IF audit_score >= 95%: "Pipeline production-ready. Schedule next audit in 30 days."
+SCORING:
+  audit_score = total_pass / total_checks * 100
+  < 80%: NOT production-ready
+  80-95%: conditionally ready (fix critical items)
+  >= 95%: production-ready (next audit in 30 days)
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

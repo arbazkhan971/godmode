@@ -153,13 +153,6 @@ Assertion requirements:
   Encryption: Assertions SHOULD be encrypted (AES-256)
 
 SECURITY CHECKLIST:
-- [ ] XML signature validation (prevent signature wrapping attacks)
-- [ ] Assertion expiry validated (NotBefore / NotOnOrAfter)
-- [ ] Audience restriction validated (prevent assertion reuse across SPs)
-- [ ] InResponseTo validated (prevent replay attacks)
-- [ ] XML parser hardened against XXE attacks
-- [ ] RelayState validated (prevent open redirect)
-```
 
 #### Strategy: API Keys
 For machine-to-machine and third-party API access:
@@ -182,20 +175,6 @@ Lifecycle:
   Expiry: Optional expiry date, default no expiry with activity monitoring
 
 Scoping:
-  Per-key permissions: <read-only | read-write | admin>
-  IP allowlist: Optional IP restrictions per key
-  Rate limits: Per-key rate limiting (separate from account limits)
-  Resource scoping: Limit key to specific resources/endpoints
-
-SECURITY CHECKLIST:
-- [ ] Keys transmitted only over HTTPS
-- [ ] Keys sent in Authorization header (not query params — avoid logging)
-- [ ] Key hashed before storage (not reversible)
-- [ ] Key creation logged in audit trail
-- [ ] Unused keys flagged after 90 days of inactivity
-- [ ] Compromised key revocation in < 1 minute
-```
-
 #### Strategy: mTLS (Mutual TLS)
 For zero-trust service-to-service authentication:
 ```
@@ -217,17 +196,6 @@ Certificate lifecycle:
 
 Trust model:
   Root CA: Offline, air-gapped (never used directly)
-  Intermediate CA: Per-environment (dev, staging, prod)
-  Service certificates: Per-service, short-lived
-
-SECURITY CHECKLIST:
-- [ ] Private keys never leave the service (generated in-place)
-- [ ] Certificate chain validated to trusted root
-- [ ] Hostname/SAN verification enforced
-- [ ] Expired/revoked certificates rejected
-- [ ] Certificate transparency logs monitored
-- [ ] Minimum TLS 1.2, prefer TLS 1.3
-```
 
 ### Step 3: Session Management Design
 Design session handling based on the chosen strategy:
@@ -325,27 +293,6 @@ Supported factors:
         Expiry: 15 minutes
         Rate limit: 5 links per hour
 
-Recovery:
-  Recovery codes: 8 codes, 16 characters each, single-use
-  Admin reset: Requires identity verification + audit log entry
-  Backup factor: Secondary MFA method encouraged during enrollment
-
-Step-up authentication:
-  Trigger: Sensitive operations (password change, payment, admin action)
-  Challenge: Re-verify MFA within last 5 minutes
-  Session flag: mfa_step_up_verified_at timestamp
-
-SECURITY CHECKLIST:
-- [ ] TOTP secrets encrypted at rest
-- [ ] Recovery codes hashed (bcrypt/argon2), not stored in plaintext
-- [ ] MFA enrollment requires authenticated session
-- [ ] MFA bypass not possible through API manipulation
-- [ ] Rate limiting on MFA verification attempts
-- [ ] Account lockout after N failed MFA attempts
-- [ ] WebAuthn sign count validated (detect cloned authenticators)
-- [ ] Backup codes invalidated after use
-```
-
 ### Step 5: Passwordless Authentication
 Design passwordless flows if required:
 
@@ -367,21 +314,6 @@ Strategy: WebAuthn / Passkeys (Primary)
   Account recovery: Registered email + recovery codes
 
 Strategy: One-Time Password (OTP)
-  Delivery: Email or SMS
-  Code: 6-digit numeric
-  Expiry: 10 minutes
-  Attempts: 3 per code
-  Rate limit: 5 requests per hour per identifier
-
-SECURITY CHECKLIST:
-- [ ] Magic link tokens are single-use
-- [ ] Expired tokens return clear error (not found vs expired)
-- [ ] Rate limiting on token generation (prevent email bombing)
-- [ ] Token not guessable (256-bit random minimum)
-- [ ] Delivery channel verified before use
-- [ ] Account enumeration prevented (same response for valid/invalid email)
-```
-
 ### Step 6: Token Lifecycle Management
 Design the complete token lifecycle:
 
@@ -458,23 +390,6 @@ Account linking strategy:
     - Email matches existing account -> Link social identity
     - Email is new -> Create account + link social identity
   On subsequent login:
-    - Lookup by provider + provider_user_id -> Return linked account
-
-Social identity storage:
-  Table: social_identities
-  Fields: id, user_id, provider, provider_user_id, email, access_token (encrypted),
-          refresh_token (encrypted), token_expiry, profile_data, created_at, updated_at
-
-SECURITY CHECKLIST:
-- [ ] State parameter validated (CSRF prevention)
-- [ ] Nonce parameter validated (OIDC replay prevention)
-- [ ] Email verified claim checked before account linking
-- [ ] Provider tokens encrypted at rest
-- [ ] Social login tokens have minimal scopes
-- [ ] Account takeover prevention: Require password or MFA to link new provider
-- [ ] Unverified emails from providers are NOT trusted for account linking
-```
-
 ### Step 8: Implementation Artifacts
 Generate the authentication implementation:
 
@@ -586,7 +501,7 @@ AUTH SECURITY HARDENING:
 3. **Token lifecycle is non-negotiable.** Every token must have issuance, validation, refresh, revocation, and cleanup. Missing any stage is a security gap.
 4. **MFA is not optional for production.** At minimum, TOTP support must be available. WebAuthn/passkeys are the recommended primary factor for new applications.
 5. **Social login is account linking, not account creation.** Social providers give you identity signals, not user accounts. Design the linking strategy carefully to prevent account takeover.
-6. **Show the code, not just the design.** Produce implementation artifacts: middleware, controllers, services, models, and tests. Architecture without code is just a diagram.
+6. **Show the code, not the design.** Produce implementation artifacts: middleware, controllers, services, models, and tests. Architecture without code is a diagram.
 7. **Password handling has exactly one right answer.** Argon2id (preferred) or bcrypt with cost factor 12+. No MD5, no SHA-256, no PBKDF2 with low iterations. No exceptions.
 
 ## Example Usage
@@ -704,55 +619,6 @@ WHILE current_flow < len(auth_flows) AND iteration < max_iterations:
       IF oauth_verification:
         CHECK: PKCE required for all authorization code flows
         CHECK: State parameter validated (CSRF prevention)
-        CHECK: Nonce parameter validated (replay prevention)
-        CHECK: Redirect URI uses exact match (no wildcards, no open redirect)
-        CHECK: Authorization codes are single-use
-        CHECK: Client secrets never exposed in frontend code
-        CHECK: Token responses include cache-control: no-store
-
-      IF mfa_flow:
-        CHECK: MFA cannot be bypassed via API manipulation
-        CHECK: Rate limiting on verification attempts
-        CHECK: Recovery codes are hashed, not plaintext
-        CHECK: Step-up auth required for sensitive operations
-
-      IF password_reset:
-        CHECK: Reset token is cryptographically random (256+ bits)
-        CHECK: Reset token expires (15 min max)
-        CHECK: Reset token is single-use
-        CHECK: No user enumeration (same response for valid/invalid email)
-
-      IF social_login:
-        CHECK: Email verified claim checked before account linking
-        CHECK: Unverified emails not trusted for account linking
-        CHECK: Account takeover prevention (require MFA to link new provider)
-
-      IF api_key_handling:
-        CHECK: Keys stored as hashes only (not reversible)
-        CHECK: Keys transmitted only over HTTPS
-        CHECK: Keys sent in Authorization header (not query params)
-        CHECK: Unused keys flagged after 90 days of inactivity
-
-    PHASE 3 — SCORE:
-      Count checks passed vs total for this flow
-      Rate: PASS (all checks pass) | PARTIAL (>= 70% pass) | FAIL (< 70% pass)
-      FOR each failed check: record as finding with severity
-
-    PHASE 4 — RECORD:
-      Log to .godmode/auth-flow-audit.tsv:
-        timestamp	flow_name	checks_passed	checks_total	pass_rate	severity_summary	verdict
-      current_flow += 1
-
-    IF audit reveals undocumented auth flow (e.g., WebSocket auth, webhook signing):
-      Add to auth_flows list for audit
-
-    REPORT: "Flow {current_flow}/{len(auth_flows)}: {flow} — {checks_passed}/{checks_total} checks passed"
-
-STOP CONDITIONS:
-  - All auth flows audited
-  - OR max_iterations reached
-  - OR all flows score PASS and no new flows discovered
-```
 
 ## Keep/Discard Discipline
 
@@ -822,35 +688,6 @@ IF application has multiple surfaces (web + mobile + API):
     - Implement auth controllers (login, register, logout, refresh)
     - Implement MFA enrollment and verification
     - Implement social login callbacks
-    - Add rate limiting and brute force protection
-
-  Agent 3 (worktree: auth-middleware):
-    - Implement authentication middleware (token validation)
-    - Implement authorization middleware (permission checks)
-    - Add CORS, CSRF, and security headers
-    - Implement step-up authentication for sensitive operations
-
-  Agent 4 (worktree: auth-tests):
-    - Write integration tests for all auth flows
-    - Test token lifecycle (issue, refresh, revoke)
-    - Test MFA enrollment and verification
-    - Test security controls (rate limiting, lockout, enumeration prevention)
-
-  COORDINATOR merges all components and runs full auth security audit
-```
-
-## Anti-Patterns
-
-- **Do NOT use symmetric JWT signing (HS256) across multiple services.** If more than one service validates tokens, use RS256 or ES256. Sharing a symmetric secret across services is a single point of compromise.
-- **Do NOT store JWTs in localStorage.** localStorage is accessible to any JavaScript on the page (XSS). Use HttpOnly cookies for refresh tokens and in-memory for access tokens.
-- **Do NOT implement your own crypto.** Use established libraries (jose, jsonwebtoken, passport, next-auth). Rolling your own JWT signing or password hashing will have vulnerabilities.
-- **Do NOT use the OAuth2 implicit grant.** It exposes tokens in URLs and browser history. Use Authorization Code + PKCE for all public clients.
-- **Do NOT trust social provider emails without verification.** If a provider returns an unverified email, do NOT use it for account linking. An attacker can register any email on some providers.
-- **Do NOT skip refresh token rotation.** Without rotation, a stolen refresh token grants permanent access. With rotation, stolen tokens are detected on next legitimate use.
-- **Do NOT use long-lived access tokens instead of refresh tokens.** A 30-day access token is not "simpler" — it is a 30-day window of compromise with no revocation.
-- **Do NOT hardcode secrets.** JWT signing keys, OAuth client secrets, and API keys belong in environment variables or a secrets manager. Never in source code.
-- **Do NOT treat authentication as authorization.** Knowing WHO someone is (authentication) does not tell you WHAT they can do (authorization). Design both. Use `/godmode:rbac` for authorization.
-
 
 ## Output Format
 
@@ -923,8 +760,17 @@ IF token signing key is compromised:
   5. Post-incident: rotate keys on schedule to limit future blast radius
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run auth tasks sequentially: core auth, then endpoints, then middleware, then tests.
-- Use branch isolation per task: `git checkout -b godmode-auth-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All auth flows audited and security checklist items pass
+  - Token lifecycle complete (issuance, validation, refresh, revocation, cleanup)
+  - MFA available for production applications
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Social login is not yet configured (if not requested)
+  - One auth flow has a known limitation documented with mitigation
+```

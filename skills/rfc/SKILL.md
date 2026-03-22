@@ -242,7 +242,7 @@ git commit -m "rfc: RFC-<NNN> — <title> (<status>)"
 
 ## Key Behaviors
 
-1. **"Do Nothing" is always an alternative.** Every RFC must explicitly consider and reject the status quo. If "do nothing" is acceptable, maybe you don't need an RFC.
+1. **"Do Nothing" is always an alternative.** Every RFC must explicitly evaluate and reject the status quo. If "do nothing" is acceptable, you do not need an RFC.
 2. **Evidence, not opinions.** The Problem Statement must include numbers, metrics, or concrete code references. "Our API is slow" is not a problem statement. "P95 latency for /api/users is 2.3s, up from 400ms in Q1" is.
 3. **The Summary is the most important section.** Most reviewers will read only the summary. Make it count.
 4. **Risks must have mitigations.** Listing risks without mitigations is just worry. Every risk should have a concrete response plan.
@@ -413,12 +413,30 @@ IF all reviewers reject:
 ## Anti-Patterns
 
 - **Do NOT write an RFC for trivial changes.** Renaming a variable doesn't need team consensus. RFCs are for decisions that are hard to reverse.
-- **Do NOT skip "Do Nothing."** If you can't articulate why the status quo is unacceptable, maybe the status quo is fine.
+- **Do NOT skip "Do Nothing."** If you can't articulate why the status quo is unacceptable, the status quo is fine.
 - **Do NOT write a 20-page RFC.** If it takes 20 pages to explain, your proposal is too big. Split it into smaller RFCs.
 - **Do NOT present a fait accompli.** An RFC published after the code is written is not a proposal — it's a notification. Write the RFC BEFORE implementation.
 - **Do NOT leave open questions unanswered.** Every open question must be resolved (answered or explicitly deferred) before the RFC can be accepted.
 - **Do NOT ignore rejected RFCs.** A rejected RFC is valuable documentation. It explains why a path was NOT taken, saving future teams from re-exploring it.
 
+
+## Keep/Discard Discipline
+```
+After EACH RFC section draft:
+  KEEP if: section is evidence-based, concise, and actionable
+  DISCARD if: section is vague, lacks evidence, or exceeds page budget
+  On discard: rewrite section with specific evidence and code references.
+  Never keep a section without concrete data or code references.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all RFC sections complete AND committed
+  - budget_exhausted: max 8 iterations across all sections
+  - diminishing_returns: re-edits produce no new information
+  - stuck: >5 section rewrites with no quality improvement
+```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

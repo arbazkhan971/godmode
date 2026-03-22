@@ -1191,19 +1191,36 @@ MONITORING:
 | `--diagnose` | Run full diagnostic (pg_stat, cache hits, bloat, locks) |
 | `--audit` | Complete PostgreSQL health audit |
 
+## Keep/Discard Discipline
+```
+After EACH PostgreSQL optimization:
+  1. MEASURE: Run EXPLAIN (ANALYZE, BUFFERS) on the target query before and after.
+  2. COMPARE: Is execution time lower? Is the plan using the new index/config?
+  3. DECIDE:
+     - KEEP if: query is faster AND no regression on other queries AND cache hit ratio stable or improved
+     - DISCARD if: query regresses OR new index is unused OR config change degrades other workloads
+  4. COMMIT kept changes. DROP INDEX / revert config on discarded changes before the next optimization.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Cache hit ratio > 99% and dead tuple ratio < 10% on all tables
+  - All top-5 queries by total_exec_time are under target latency
+  - Improvement per iteration < 5% (diminishing returns)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Non-critical tables still have unused indexes (address after critical path)
+  - Replication lag monitoring is not yet dashboarded (pg_stat_replication queries suffice)
+```
+
 ## Anti-Patterns
 
-- **Do NOT increase max_connections instead of using a pooler.** Each PostgreSQL connection uses ~10MB of RAM. 1000 connections = 10GB wasted. Use PgBouncer in transaction mode.
-- **Do NOT disable autovacuum.** Ever. If autovacuum is "too slow" or "causing I/O", tune its cost settings per table. Disabling it leads to table bloat, transaction ID wraparound, and eventual database shutdown.
-- **Do NOT use VACUUM FULL in production without a maintenance window.** It takes an exclusive lock on the entire table. Use pg_repack for online table compaction.
 - **Do NOT store large BLOBs in PostgreSQL.** Store files in object storage (S3, GCS) and keep references in the database. Large objects bloat WAL and backups.
-- **Do NOT use JSON when you mean JSONB.** JSON stores text verbatim (slower queries, no indexing). JSONB stores binary (fast queries, GIN indexable). Use JSONB in 99% of cases.
 - **Do NOT partition small tables.** Partitioning adds query planning overhead. Only partition tables exceeding ~50M rows or 10GB.
-- **Do NOT forget the partition key in queries.** Without the partition key in WHERE, PostgreSQL scans all partitions, making partitioning actively harmful.
 - **Do NOT use synchronous replication without understanding the latency impact.** Synchronous commit waits for the replica to confirm, adding network round-trip to every write. Use asynchronous unless you need zero-data-loss guarantees.
-- **Do NOT skip pg_stat_statements.** It is the most important extension for production PostgreSQL. Install it on every instance from day one.
 - **Do NOT tune postgresql.conf randomly.** Use PGTune for initial settings, then profile with pg_stat_statements. Random tuning often makes things worse.
-
 
 ## Output Format
 
@@ -1287,7 +1304,7 @@ IF replication lag spikes:
   2. Check the replica for long-running queries that block replay (hot_standby_feedback)
   3. If network-related: check wal_keep_size is large enough to prevent WAL gap
   4. If CPU-related on replica: check max_parallel_workers on the replica
-  5. If persistent: consider increasing wal_sender_timeout and adding more replicas for read distribution
+  5. If persistent: increase wal_sender_timeout and add more replicas for read distribution
 
 IF connection pool exhaustion occurs:
   1. Check pg_stat_activity for idle-in-transaction connections: SELECT * FROM pg_stat_activity WHERE state = 'idle in transaction'
@@ -1350,7 +1367,7 @@ WHILE current_iteration < max_iterations:
     CREATE INDEX CONCURRENTLY idx_{table}_{sort_cols} ON {table} ({sort_cols});
 
   ELSE IF diagnosis.issue == "NESTED_LOOP_HIGH_ROWS":
-    // Consider: add index on join column, or increase work_mem for hash join
+    // Fix: add index on join column, or increase work_mem for hash join
     IF missing_index_on_join_column:
       CREATE INDEX CONCURRENTLY idx_{table}_{join_col} ON {table} ({join_col});
     ELSE:

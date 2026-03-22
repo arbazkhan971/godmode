@@ -475,38 +475,6 @@ WHILE current_iteration < max_iterations AND quality < target:
   ...
 ```
 
-## Multi-Agent Dispatch
-
-For building complete RAG systems:
-
-```
-PARALLEL AGENTS:
-Agent 1 — Ingestion Pipeline (worktree: rag-ingest)
-  - Build document loaders for all source types
-  - Implement chunking strategy with metadata extraction
-  - Build embedding and indexing pipeline
-
-Agent 2 — Retrieval & Reranking (worktree: rag-retrieval)
-  - Configure vector store with HNSW index
-  - Implement hybrid search (dense + BM25)
-  - Add cross-encoder reranker
-  - Build query preprocessing (expansion, decomposition)
-
-Agent 3 — Generation & Prompting (worktree: rag-generation)
-  - Design context assembly strategy
-  - Build generation prompt with citation support
-  - Implement conversation memory for multi-turn
-  - Add hallucination guardrails
-
-Agent 4 — Evaluation Suite (worktree: rag-eval)
-  - Create golden set of question-answer-context triples
-  - Build evaluation harness (RAGAS metrics)
-  - Create failure analysis reports
-  - Set up regression testing for pipeline changes
-
-MERGE ORDER: Agent 1 first (data), Agent 2 (retrieval), Agent 3 (generation), Agent 4 (eval).
-```
-
 ## HARD RULES
 
 ```
@@ -574,35 +542,6 @@ EVALUATION (50 test queries):
   E2E latency p95: 1.8s
 
 Verdict: PASS — Ready for internal deployment.
-```
-
-### Debugging Retrieval Quality
-```
-User: /godmode:rag --diagnose Users say the chatbot gives wrong answers
-
-RAG: Running retrieval diagnostics...
-
-Sampling 100 recent user queries with thumbs-down feedback...
-
-DIAGNOSIS:
-  Retrieval failures: 34/100
-    - 18: Vocabulary mismatch (users say "PTO" but docs say "paid time off")
-    - 9: Chunk boundary splits relevant content across chunks
-    - 7: Document not in corpus (outdated or missing)
-
-  Generation failures: 22/100
-    - 12: Too many chunks, relevant info buried in noise
-    - 6: Contradicting information from different doc versions
-    - 4: Question ambiguous, multiple valid interpretations
-
-Recommended fixes:
-  1. Add synonym expansion for domain terms (PTO -> paid time off)
-  2. Increase chunk overlap from 50 to 128 tokens
-  3. Add 7 missing documents to corpus
-  4. Reduce retrieved chunks from 10 to 5 with reranker
-  5. Add doc version filtering (prefer latest)
-
-Estimated improvement: +15-20% answer accuracy
 ```
 
 ## Flags & Options
@@ -695,28 +634,41 @@ IF reindexing fails or produces inconsistent results:
   4. Validate chunk count matches expected (documents * avg_chunks_per_doc)
 ```
 
-## Auto-Detection
-
-```
-AUTO-DETECT SEQUENCE:
-1. Detect vector store: grep for pinecone, weaviate, chroma, pgvector, qdrant, milvus in package.json or requirements.txt
-2. Detect embedding models: grep for openai, cohere, sentence-transformers, voyageai in dependencies
-3. Detect RAG frameworks: grep for langchain, llamaindex, haystack, semantic-kernel in dependencies
-4. Detect document sources: check for PDF loaders, web scrapers, database connectors
-5. Detect existing evaluation: check for ragas, deepeval, promptfoo configs
-6. Auto-configure: match pipeline recommendations to detected stack
-```
-
 ## Anti-Patterns
 
-- **Do NOT skip chunking design.** Default chunking (500 chars, no overlap) is almost always wrong. Spend time on chunking strategy — it is the highest-impact decision.
-- **Do NOT use vector search alone.** Pure dense retrieval misses exact keyword matches. Hybrid search with BM25 catches what embeddings miss.
-- **Do NOT retrieve without reranking.** Bi-encoder retrieval (vector search) is fast but imprecise. A cross-encoder reranker on top-N results significantly improves quality.
-- **Do NOT stuff the entire context window.** More retrieved chunks is not better. Irrelevant chunks dilute the signal and confuse the model. Retrieve less, rerank more.
-- **Do NOT ignore chunk boundaries.** A relevant sentence split across two chunks may never be retrieved. Use overlap and respect natural document boundaries.
-- **Do NOT evaluate end-to-end only.** Measure retrieval quality and generation quality separately. You cannot fix generation if the problem is retrieval.
-- **Do NOT launch without hallucination measurement.** A RAG system that confidently makes things up is a liability. Measure hallucination rate and set a hard threshold.
-- **Do NOT use the same embedding model for everything.** Code, legal text, medical text, and casual conversation have different embedding needs. Test domain-specific models.
+- **Do NOT skip chunking design.** Default chunking (500 chars, no overlap) is almost always wrong. Chunking strategy is the highest-impact decision.
+- **Do NOT use vector search alone.** Hybrid search with BM25 catches exact keyword matches that embeddings miss.
+- **Do NOT retrieve without reranking.** A cross-encoder reranker on top-N results dramatically improves precision.
+- **Do NOT stuff the entire context window.** Irrelevant chunks dilute the signal. Retrieve less, rerank more.
+- **Do NOT ignore chunk boundaries.** Use overlap and respect natural document boundaries.
+- **Do NOT evaluate end-to-end only.** Measure retrieval and generation quality separately.
+- **Do NOT launch without hallucination measurement.** Measure hallucination rate and set a hard threshold.
+
+## Keep/Discard Discipline
+```
+After EACH RAG pipeline change:
+  1. MEASURE: Run the golden set evaluation (hit_rate, faithfulness, hallucination_rate).
+  2. COMPARE: Did the target metric improve? Did hallucination rate increase?
+  3. DECIDE:
+     - KEEP if: target metric improved AND hallucination rate did not increase
+     - DISCARD if: hallucination rate increased OR no metric improved
+  4. COMMIT kept changes. Revert discarded changes before the next iteration.
+
+Never keep a change that increases hallucination rate, even if retrieval metrics improve.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Recall@10 >= 80%, faithfulness >= 90%, hallucination rate < 5%
+  - Two consecutive iterations produce < 2% improvement on any metric
+  - End-to-end latency meets application requirements
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - One data source has lower quality (fix that source separately)
+  - Embedding cost seems high (optimize cost after quality targets are met)
+```
 
 
 ## RAG Optimization Loop
@@ -836,7 +788,5 @@ FINAL:
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run RAG tasks sequentially: ingestion pipeline, then retrieval/reranking, then generation/prompting, then evaluation suite.
-- Use branch isolation per task: `git checkout -b godmode-rag-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run RAG tasks sequentially: ingestion pipeline, then retrieval/reranking, then generation/prompting, then evaluation suite.
+Use branch isolation per task: `git checkout -b godmode-rag-{task}`, implement, commit, merge back.

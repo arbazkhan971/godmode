@@ -289,6 +289,24 @@ Think: problem — in-app notification feed with unread count and mark-as-read.
 (proceeds immediately)
 ```
 
+## Keep/Discard Discipline
+```
+After EACH approach evaluation:
+  KEEP if: approach passes disqualification criteria AND has testable success criteria
+  DISCARD if: approach violates constraints OR touches >30 files OR has no testable criteria
+  On discard: log rejection reason. If all approaches disqualified, tell user to narrow scope.
+  Never keep an approach that contradicts explicit constraints.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: spec.md written, validated, and committed
+  - budget_exhausted: 3 approaches evaluated (max)
+  - diminishing_returns: user accepts recommendation on first pass
+  - stuck: >5 validation failures on spec (paths, syntax, length)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - The think skill requires no parallel agents — it runs identically on all platforms.

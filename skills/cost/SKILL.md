@@ -469,7 +469,7 @@ STOP the loop when ANY of these are true:
   - Max iterations (20) reached
 
 DO NOT STOP just because:
-  - One category has no savings (other categories might)
+  - One category has no savings (other categories can)
   - Reserved instance analysis is complex (still do the analysis)
 ```
 

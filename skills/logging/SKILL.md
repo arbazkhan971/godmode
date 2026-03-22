@@ -68,28 +68,7 @@ LOG LEVEL STRATEGY:
 │  INFO   │ Normal operations that are     │ Server started     │
 │         │ significant business events.   │ User signed up     │
 │         │ What you'd want in production. │ Order completed    │
-│         │                                │ Deploy finished    │
-│         │                                │ Config loaded      │
-│  ─────────────────────────────────────────────────────────── │
-│  DEBUG  │ Detailed diagnostic info for   │ SQL query text     │
-│         │ troubleshooting. Disabled in   │ HTTP request/resp  │
-│         │ production unless investigating│ Cache hit/miss     │
-│         │ a specific issue.              │ Function entry/exit│
-│         │                                │ Variable values    │
-│  ─────────────────────────────────────────────────────────── │
-│  TRACE  │ Very fine-grained. Individual  │ Loop iterations    │
-│         │ steps within an algorithm.     │ Wire-level protocol│
-│         │ Almost never enabled.          │ Byte-level parsing │
-└──────────────────────────────────────────────────────────────┘
-
-PRODUCTION LOG LEVELS:
-  Default: INFO (business events + errors)
-  Debugging: DEBUG for specific service/module (not globally!)
-  Incident: WARN threshold lowered temporarily
-
-RULES:
-  1. If it wakes someone up at 3am, it's ERROR or FATAL
-  2. If it's "interesting but handled", it's WARN
+    # ... (additional patterns follow same structure)
   3. If you'd want to see it in a dashboard, it's INFO
   4. If you only need it while debugging, it's DEBUG
   5. Never log at ERROR level for expected conditions (404, validation failure)
@@ -120,19 +99,7 @@ STRUCTURED (GOOD):
     "environment": "production",
     "requestId": "req_abc123",
     "traceId": "trace_def456",
-    "userId": "usr_789",
-    "orderId": "ord_12345",
-    "amount": 99.99,
-    "gateway": "stripe",
-    "errorCode": "card_declined",
-    "declineReason": "insufficient_funds",
-    "duration_ms": 1523
-  }
-
-Benefits:
-  - Machine-parseable — direct ingestion into ELK/Loki/CloudWatch
-  - Searchable by any field (orderId, userId, errorCode)
-  - Aggregatable (group by errorCode, gateway)
+    # ...
   - Filterable (environment=production AND level=error)
   - PII fields identifiable and redactable
 ```
@@ -163,80 +130,7 @@ const logger = pino({
       method: req.method,
       url: req.url,
       headers: {
-        'user-agent': req.headers['user-agent'],
-        'content-type': req.headers['content-type'],
-        // Explicitly list allowed headers — don't log all
-      },
-    }),
-    res: (res) => ({
-      statusCode: res.statusCode,
-    }),
-  },
-
-  // Redaction of sensitive fields
-  redact: {
-    paths: [
-      'password',
-      'req.headers.authorization',
-      'req.headers.cookie',
-      'creditCard',
-      'ssn',
-      'token',
-      '*.password',
-      '*.creditCard',
-      '*.ssn',
-    ],
-    censor: '[REDACTED]',
-  },
-
-  // Pretty print in development only
-  transport: process.env.NODE_ENV === 'development'
-    ? { target: 'pino-pretty', options: { colorize: true } }
-    : undefined,
-});
-
-// Create child logger with request context
-function createRequestLogger(req) {
-  return logger.child({
-    requestId: req.id,
-    traceId: req.headers['x-trace-id'] || req.id,
-    userId: req.user?.id,
-    method: req.method,
-    path: req.path,
-  });
-}
-
-// Express middleware to attach logger to request
-function requestLoggerMiddleware(req, res, next) {
-  req.log = createRequestLogger(req);
-  const startTime = process.hrtime.bigint();
-
-  res.on('finish', () => {
-    const duration = Number(process.hrtime.bigint() - startTime) / 1e6;
-    const logData = {
-      statusCode: res.statusCode,
-      duration_ms: Math.round(duration * 100) / 100,
-      contentLength: res.getHeader('content-length'),
-    };
-
-    if (res.statusCode >= 500) {
-      req.log.error(logData, 'Request completed with server error');
-    } else if (res.statusCode >= 400) {
-      req.log.warn(logData, 'Request completed with client error');
-    } else {
-      req.log.info(logData, 'Request completed');
-    }
-  });
-
-  next();
-}
-
-// Usage in route handlers
-app.post('/api/orders', asyncHandler(async (req, res) => {
-  req.log.info({ items: req.body.items?.length }, 'Creating order');
-
-  const order = await orderService.create(req.body, req.user);
-
+    # ... (additional patterns follow same structure)
   req.log.info({ orderId: order.id, total: order.total }, 'Order created');
 
   res.status(201).json(order);
@@ -269,102 +163,7 @@ func Setup(service, environment, version string) *slog.Logger {
             }
             return a
         },
-    })
-
-    return slog.New(handler).With(
-        slog.String("service", service),
-        slog.String("environment", environment),
-        slog.String("version", version),
-    )
-}
-
-var sensitiveFields = map[string]bool{
-    "password": true, "token": true, "authorization": true,
-    "creditCard": true, "ssn": true, "cookie": true,
-}
-
-func isSensitive(key string) bool {
-    return sensitiveFields[key]
-}
-
-// Context-aware logging: embed logger in context
-type contextKey string
-const loggerKey contextKey = "logger"
-
-func WithContext(ctx context.Context, l *slog.Logger) context.Context {
-    return context.WithValue(ctx, loggerKey, l)
-}
-
-func FromContext(ctx context.Context) *slog.Logger {
-    if l, ok := ctx.Value(loggerKey).(*slog.Logger); ok {
-        return l
-    }
-    return slog.Default()
-}
-
-// Middleware to create request-scoped logger
-func RequestLoggerMiddleware(baseLogger *slog.Logger) func(http.Handler) http.Handler {
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            requestID := r.Header.Get("X-Request-ID")
-            if requestID == "" {
-                requestID = uuid.New().String()
-            }
-
-            traceID := r.Header.Get("X-Trace-ID")
-            if traceID == "" {
-                traceID = requestID
-            }
-
-            reqLogger := baseLogger.With(
-                slog.String("requestId", requestID),
-                slog.String("traceId", traceID),
-                slog.String("method", r.Method),
-                slog.String("path", r.URL.Path),
-                slog.String("remoteAddr", anonymizeIP(r.RemoteAddr)),
-            )
-
-            ctx := WithContext(r.Context(), reqLogger)
-            r = r.WithContext(ctx)
-
-            wrapped := &responseWriter{ResponseWriter: w, statusCode: 200}
-            start := time.Now()
-
-            next.ServeHTTP(wrapped, r)
-
-            duration := time.Since(start)
-            logAttrs := []slog.Attr{
-                slog.Int("statusCode", wrapped.statusCode),
-                slog.Float64("duration_ms", float64(duration.Microseconds())/1000),
-            }
-
-            if wrapped.statusCode >= 500 {
-                reqLogger.LogAttrs(r.Context(), slog.LevelError, "Request completed with server error", logAttrs...)
-            } else if wrapped.statusCode >= 400 {
-                reqLogger.LogAttrs(r.Context(), slog.LevelWarn, "Request completed with client error", logAttrs...)
-            } else {
-                reqLogger.LogAttrs(r.Context(), slog.LevelInfo, "Request completed", logAttrs...)
-            }
-        })
-    }
-}
-
-// Usage in handlers
-func CreateOrderHandler(w http.ResponseWriter, r *http.Request) {
-    log := FromContext(r.Context())
-
-    log.Info("Creating order", slog.Int("itemCount", len(req.Items)))
-
-    order, err := orderService.Create(r.Context(), req)
-    if err != nil {
-        log.Error("Failed to create order", slog.String("error", err.Error()))
-        HandleError(w, r, err)
-        return
-    }
-
-    log.Info("Order created",
-        slog.String("orderId", order.ID),
-        slog.Float64("total", order.Total),
+    # ... (additional patterns follow same structure)
     )
 
     json.NewEncoder(w).Encode(order)
@@ -397,76 +196,7 @@ structlog.configure(
     ),
     context_class=dict,
     logger_factory=structlog.PrintLoggerFactory(),
-    cache_logger_on_first_use=True,
-)
-
-# PII redaction processor
-SENSITIVE_FIELDS = {"password", "token", "authorization", "credit_card",
-                    "ssn", "cookie", "secret"}
-
-def redact_sensitive_fields(logger, method_name, event_dict):
-    for key in list(event_dict.keys()):
-        if key.lower() in SENSITIVE_FIELDS:
-            event_dict[key] = "[REDACTED]"
-    return event_dict
-
-# Create base logger
-logger = structlog.get_logger(
-    service=os.getenv("SERVICE_NAME", "my-service"),
-    environment=os.getenv("ENV", "development"),
-    version=os.getenv("APP_VERSION", "unknown"),
-)
-
-# FastAPI middleware for request-scoped logging
-from starlette.middleware.base import BaseHTTPMiddleware
-
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
-        trace_id = request.headers.get("x-trace-id", request_id)
-
-        # Bind request context to structlog context vars
-        structlog.contextvars.clear_contextvars()
-        structlog.contextvars.bind_contextvars(
-            request_id=request_id,
-            trace_id=trace_id,
-            method=request.method,
-            path=str(request.url.path),
-        )
-
-        start_time = time.time()
-
-        try:
-            response = await call_next(request)
-            duration_ms = (time.time() - start_time) * 1000
-
-            log_data = {
-                "status_code": response.status_code,
-                "duration_ms": round(duration_ms, 2),
-            }
-
-            if response.status_code >= 500:
-                logger.error("Request completed with server error", **log_data)
-            elif response.status_code >= 400:
-                logger.warning("Request completed with client error", **log_data)
-            else:
-                logger.info("Request completed", **log_data)
-
-            response.headers["X-Request-ID"] = request_id
-            return response
-
-        except Exception as exc:
-            duration_ms = (time.time() - start_time) * 1000
-            logger.error("Request failed with exception",
-                         error=str(exc), duration_ms=round(duration_ms, 2))
-            raise
-
-# Usage
-@app.post("/api/orders")
-async def create_order(request: CreateOrderRequest):
-    logger.info("Creating order", item_count=len(request.items))
-
-    order = await order_service.create(request)
+    # ... (additional patterns follow same structure)
 
     logger.info("Order created", order_id=order.id, total=order.total)
 
@@ -497,21 +227,7 @@ Flow:
     │               X-Request-ID: req_001 │           │
     │               X-Trace-ID: trace_xyz │           │
     │               X-Span-ID: span_aaa   │           │
-    │                        │            │           │
-    │                        │ New span:  │           │
-    │                        │ spanId=span_bbb        │
-    │                        │ parentSpanId=span_aaa  │
-    │                        │ traceId=trace_xyz (same│
-    │                        └──Headers──→│           │
-    │                                     │           │
-    │                                     │ New span: │
-    │                                     │ span_ccc  │
-
-Log correlation:
-  Every log line from every service includes traceId.
-  Searching by traceId shows the complete request journey.
-
-  Service A log: { "traceId": "trace_xyz", "message": "Received order" }
+    # ...
   Service B log: { "traceId": "trace_xyz", "message": "Charging payment" }
   Service A log: { "traceId": "trace_xyz", "message": "Order confirmed" }
 ```
@@ -542,48 +258,7 @@ class TracedHttpClient {
   async request(url, options, context) {
     const childSpanId = generateId('span');
 
-    const headers = {
-      ...options.headers,
-      'X-Request-ID': context.requestId,
-      'X-Trace-ID': context.traceId,
-      'X-Span-ID': childSpanId,
-    };
-
-    const start = Date.now();
-    this.logger.debug('Outbound request', {
-      url,
-      method: options.method || 'GET',
-      traceId: context.traceId,
-      spanId: childSpanId,
-      parentSpanId: context.spanId,
-    });
-
-    try {
-      const response = await fetch(url, { ...options, headers });
-      const duration = Date.now() - start;
-
-      this.logger.info('Outbound request completed', {
-        url,
-        statusCode: response.status,
-        duration_ms: duration,
-        traceId: context.traceId,
-        spanId: childSpanId,
-      });
-
-      return response;
-    } catch (error) {
-      const duration = Date.now() - start;
-      this.logger.error('Outbound request failed', {
-        url,
-        error: error.message,
-        duration_ms: duration,
-        traceId: context.traceId,
-        spanId: childSpanId,
-      });
-      throw error;
-    }
-  }
-}
+    # ... (additional patterns follow same structure)
 
 function generateId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -611,16 +286,7 @@ const sdk = new NodeSDK({
         requestHook: (span, request) => {
           span.setAttribute('http.request_id', request.headers['x-request-id']);
         },
-      },
-      '@opentelemetry/instrumentation-express': { enabled: true },
-      '@opentelemetry/instrumentation-pg': { enabled: true },
-      '@opentelemetry/instrumentation-redis': { enabled: true },
-    }),
-  ],
-});
-
-sdk.start();
-
+    # ...
 // Logs automatically include trace context (traceId, spanId)
 // from the active OpenTelemetry span
 ```
@@ -684,69 +350,7 @@ const redactor = {
     if (!value || typeof value !== 'string') return value;
     // Anonymize last octet (IPv4) or last 80 bits (IPv6)
     const parts = value.split('.');
-    if (parts.length === 4) {
-      parts[3] = '0';
-      return parts.join('.');
-    }
-    return '[ANONYMIZED_IP]';
-  },
-
-  name(value) {
-    if (!value || typeof value !== 'string') return value;
-    return value.split(' ')
-      .map(part => part[0] + '***')
-      .join(' ');
-  },
-
-  token(value) {
-    if (!value || typeof value !== 'string') return value;
-    if (value.length <= 8) return '[REDACTED]';
-    return value.slice(0, 4) + '...[TRUNCATED]';
-  },
-};
-
-// Deep redaction for objects
-function redactObject(obj, fieldRules) {
-  if (!obj || typeof obj !== 'object') return obj;
-
-  const result = Array.isArray(obj) ? [...obj] : { ...obj };
-
-  for (const [key, value] of Object.entries(result)) {
-    const lowerKey = key.toLowerCase();
-
-    // Check explicit rules
-    if (fieldRules[lowerKey]) {
-      result[key] = fieldRules[lowerKey](value);
-      continue;
-    }
-
-    // Auto-detect by field name
-    if (lowerKey.includes('password') || lowerKey.includes('secret')) {
-      result[key] = '[REDACTED]';
-    } else if (lowerKey.includes('email')) {
-      result[key] = redactor.email(value);
-    } else if (lowerKey.includes('phone') || lowerKey.includes('mobile')) {
-      result[key] = redactor.phone(value);
-    } else if (lowerKey.includes('card') || lowerKey.includes('cvv')) {
-      result[key] = '[REDACTED]';
-    } else if (lowerKey.includes('ssn') || lowerKey.includes('national_id')) {
-      result[key] = '[REDACTED]';
-    } else if (lowerKey.includes('token') || lowerKey.includes('authorization')) {
-      result[key] = redactor.token(value);
-    } else if (typeof value === 'object') {
-      result[key] = redactObject(value, fieldRules);
-    }
-  }
-
-  return result;
-}
-
-// Pino redaction config (alternative: built-in redact option)
-const pinoRedactPaths = [
-  'password', '*.password',
-  'creditCard', '*.creditCard',
-  'ssn', '*.ssn',
-  'req.headers.authorization',
+    # ... (additional patterns follow same structure)
   'req.headers.cookie',
   'token', '*.token',
   'secret', '*.secret',
@@ -781,25 +385,7 @@ Application → stdout (JSON) → Filebeat → Logstash → Elasticsearch → Ki
                             └─────┬──────┘
                                   ↓
                             ┌─────────────┐
-                            │Elasticsearch│
-                            │  - Index    │
-                            │  - Search   │
-                            │  - Aggregate│
-                            └─────┬──────┘
-                                  ↓
-                            ┌─────────────┐
-                            │   Kibana    │
-                            │  - Dashboards│
-                            │  - Alerts   │
-                            │  - Explore  │
-                            └─────────────┘
-
-Logstash filter example:
-  filter {
-    json { source => "message" }
-    if [level] == "error" {
-      mutate { add_tag => ["error"] }
-    }
+    # ... (additional patterns follow same structure)
     if [userId] {
       mutate { add_field => { "[@metadata][index]" => "logs-user-activity" } }
     }
@@ -832,43 +418,7 @@ Application → stdout (JSON) → Promtail → Loki → Grafana
                                   ↓
                             ┌─────────────┐
                             │  Grafana    │
-                            │  - Explore  │
-                            │  - Dashboard│
-                            │  - Alerts   │
-                            └─────────────┘
-
-Why Loki over ELK:
-  - Indexes labels only (not full text) — much cheaper storage
-  - Prometheus-like label model — familiar if you use Prometheus
-  - Integrates natively with Grafana dashboards
-  - Lower operational overhead
-
-Promtail config:
-  scrape_configs:
-    - job_name: kubernetes
-      kubernetes_sd_configs:
-        - role: pod
-      pipeline_stages:
-        - json:
-            expressions:
-              level: level
-              service: service
-              requestId: requestId
-        - labels:
-            level:
-            service:
-        - timestamp:
-            source: timestamp
-            format: RFC3339Nano
-
-LogQL queries:
-  # All errors from checkout service
-  {service="checkout-api", level="error"}
-
-  # Errors with specific requestId
-  {service=~".+"} |= "req_abc123"
-
-  # Error rate over time
+    # ... (additional patterns follow same structure)
   rate({level="error"}[5m])
 
   # Top 10 error messages
@@ -901,22 +451,7 @@ CloudWatch Insights query examples:
 
   # Trace a specific request
   fields @timestamp, service, message
-  | filter traceId = "trace_xyz"
-  | sort @timestamp asc
-
-CloudWatch agent config:
-  {
-    "logs": {
-      "logs_collected": {
-        "files": {
-          "collect_list": [
-            {
-              "file_path": "/var/log/app/*.log",
-              "log_group_name": "/app/my-service",
-              "log_stream_name": "{instance_id}",
-              "retention_in_days": 30
-            }
-          ]
+    # ... (additional patterns follow same structure)
         }
       }
     }
@@ -1221,42 +756,13 @@ CONFLICT RESOLUTION: core branch owns logger config, others depend on it
 - **From `/godmode:secure`:** Security audit requires PII redaction in logs
 - **From `/godmode:incident`:** Post-mortem reveals insufficient logging → improve with `/godmode:logging`
 
-## Anti-Patterns
-
-```
-LOGGING ANTI-PATTERNS:
-┌──────────────────────────────────────────────────────────────┐
-│  Anti-Pattern              │ Why It's Dangerous              │
-│  ─────────────────────────────────────────────────────────── │
-│  console.log in production │ Unstructured, no levels, no     │
-│                            │ context, can't search/aggregate │
-│  Log and forget            │ Logs go to stdout but nobody    │
-│                            │ reads them or sets up alerts    │
-│  Log everything at ERROR   │ Alert fatigue — real errors     │
-│                            │ buried in noise                 │
-│  Log sensitive data        │ PII in logs = compliance risk   │
-│                            │ and potential data breach       │
-│  String interpolation      │ Can't parse, can't search by   │
-│  for structured data       │ field, can't aggregate          │
-│  Log at every function     │ Massive volume, mostly useless  │
-│  entry/exit                │ noise — log at boundaries only  │
-│  Synchronous file writes   │ Blocks the event loop / thread  │
-│                            │ pool under high throughput      │
-│  No correlation IDs        │ Can't trace a request across    │
-│                            │ services during an incident     │
-│  Different log formats     │ Can't build unified dashboards  │
-│  per service               │ or search across services       │
-│  No retention policy       │ Disk fills up or costs explode  │
-│                            │ in cloud log storage            │
-└──────────────────────────────────────────────────────────────┘
-```
-
-
 ## Output Format
 Print on completion: `Logging: {service_count} services configured. Format: structured JSON. Levels: {level_config}. Correlation: {correlation_status}. PII: {pii_status}. Retention: {retention_policy}. Verdict: {verdict}.`
 
 ## TSV Logging
-Log every logging configuration step to `.godmode/logging-results.tsv`:
+
+Log every invocation to `.godmode/` as TSV. Create on first run.
+
 ```
 iteration	task	services_configured	format	correlation_ids	pii_redacted	retention_days	status
 1	core_setup	4	structured_json	yes	yes	30	configured
@@ -1264,7 +770,6 @@ iteration	task	services_configured	format	correlation_ids	pii_redacted	retention
 3	correlation	4	structured_json	verified	yes	30	verified
 4	pipeline	1	aggregator	n/a	n/a	90	configured
 ```
-Columns: iteration, task, services_configured, format, correlation_ids, pii_redacted, retention_days, status(configured/migrated/verified/failed).
 
 ## Success Criteria
 - All services use structured JSON logging (no `console.log` or `print` statements).
@@ -1277,6 +782,7 @@ Columns: iteration, task, services_configured, format, correlation_ids, pii_reda
 - Consistent log format across all services (same field names, same structure).
 
 ## Error Recovery
+
 - **Logs are unstructured after migration**: Search for remaining `console.log`, `print()`, `fmt.Println` calls. Replace with the structured logger. Use lint rules to prevent regression (`no-console` ESLint rule).
 - **Correlation IDs missing in some logs**: Check middleware ordering — correlation ID middleware must run before any handler that logs. Verify the logger context is propagated to all layers (service, repository, etc.).
 - **Log volume too high (cost explosion)**: Audit log levels — production should not use DEBUG. Sample high-volume events instead of logging every one. Filter out health check logs at the aggregator level.

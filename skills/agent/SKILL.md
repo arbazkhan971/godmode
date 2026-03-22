@@ -498,25 +498,19 @@ Verdict: PASS — Agent meets all targets.
 ```
 User: /godmode:agent Build a multi-agent system for code review
 
-Agent: Starting discovery...
-
-ARCHITECTURE: Multi-Agent (Collaboration + Review)
+Agent: ARCHITECTURE: Multi-Agent (Collaboration + Review)
 
 AGENT ROSTER:
-  1. Coordinator — Decomposes PR into review areas, assigns to specialists
-  2. Security Reviewer — Checks for vulnerabilities, injection, auth issues
-  3. Performance Reviewer — Identifies N+1 queries, memory leaks, bottlenecks
-  4. Style Reviewer — Checks conventions, naming, documentation
-  5. Test Reviewer — Evaluates test coverage, edge cases, test quality
-  6. Synthesizer — Combines reviews into unified feedback with priority ranking
-
-Communication: Coordinator -> Specialists -> Synthesizer (pipeline, not mesh)
-Conflict resolution: Synthesizer ranks by severity, deduplicates findings
+  1. Coordinator — Decomposes PR, assigns to specialists
+  2. Security Reviewer — Vulnerabilities, injection, auth
+  3. Performance Reviewer — N+1 queries, memory leaks
+  4. Style Reviewer — Conventions, naming, documentation
+  5. Test Reviewer — Coverage, edge cases, test quality
+  6. Synthesizer — Combines reviews, ranks by severity
 
 EVALUATION (30 test PRs):
-  Finding recall: 87% (catches 87% of known issues)
-  False positive rate: 12%
-  Avg review time: 30 seconds (vs 15 min human review)
+  Finding recall: 87%, False positive rate: 12%
+  Avg review time: 30s (vs 15 min human)
 ```
 
 ## Flags & Options
@@ -654,13 +648,39 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-agent-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
+## Keep/Discard Discipline
+```
+After EACH agent change (prompt edit, tool addition, guardrail update):
+  1. MEASURE: Run evaluation suite — task completion rate, safety violations, avg steps.
+  2. COMPARE: Did the change improve the target metric without introducing regressions?
+  3. DECIDE:
+     - KEEP if: completion rate maintained or improved AND safety violations = 0 AND no new failure modes
+     - DISCARD if: safety violation detected OR completion rate dropped OR new failure mode introduced
+  4. COMMIT kept changes. Revert discarded changes before the next iteration.
+
+Never keep a change that introduces any safety violation, regardless of completion rate improvement.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Agent completes target tasks end-to-end with correct output on 3+ test inputs
+  - Safety violation rate = 0% across all test cases including adversarial inputs
+  - All guardrails (max steps, cost budget, confirmation gates) verified working
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Completion rate is below 100% on edge cases (document them, iterate later)
+  - A single tool has high error rate (fix the tool, not the agent)
+```
+
 ## Anti-Patterns
 
-- **Do NOT build agents without guardrails.** An unbounded agent will loop forever, burn tokens, and potentially take destructive actions. Define limits before writing code.
-- **Do NOT give agents tools they do not need.** More tools means more confusion. The agent must choose the right tool from the inventory. Fewer, well-designed tools beat many vague tools.
-- **Do NOT skip trajectory evaluation.** A correct final answer from a broken reasoning process is a ticking time bomb. It will fail on the next slightly different input.
-- **Do NOT let agents take irreversible actions without confirmation.** Delete, send, deploy, pay — these require human approval. Always.
-- **Do NOT ignore cost.** Agent loops can be expensive. A 50-step agent with GPT-4 costs real money. Track tokens per task and set budgets.
-- **Do NOT build multi-agent systems when a single agent suffices.** Multi-agent adds coordination complexity, communication overhead, and debugging difficulty. Start with one agent. Add more only when one cannot handle the task.
-- **Do NOT hardcode agent behavior.** The system prompt, tool inventory, and guardrails should be configurable. Hardcoded behavior cannot be tuned or A/B tested.
-- **Do NOT deploy without observability.** If you cannot see every step the agent took, you cannot debug failures, detect safety violations, or improve performance.
+- **Do NOT build agents without guardrails.** Define limits (max steps, cost budget, confirmation gates) before writing capabilities.
+- **Do NOT give agents tools they do not need.** Fewer well-designed tools beat many vague tools.
+- **Do NOT skip trajectory evaluation.** A correct answer from a broken reasoning path will fail on the next different input.
+- **Do NOT let agents take irreversible actions without confirmation.** Delete, send, deploy, pay require human approval.
+- **Do NOT ignore cost.** Track tokens per task and set budgets. Agent loops with large models are expensive.
+- **Do NOT build multi-agent systems when a single agent suffices.** Start with one agent. Add more only when one cannot handle the task.
+- **Do NOT hardcode agent behavior.** System prompt, tool inventory, and guardrails should be configurable.
+- **Do NOT deploy without observability.** If you cannot trace every step, you cannot debug failures.

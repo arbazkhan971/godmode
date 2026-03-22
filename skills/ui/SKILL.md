@@ -468,7 +468,7 @@ PATTERN VIOLATIONS:
 4. **Consistency over cleverness.** Every component should follow the same patterns: same prop naming, same file structure, same composition approach. Predictability is a feature.
 5. **CSS architecture is a team decision.** Pick one approach and use it everywhere. Mixing CSS Modules with styled-components with Tailwind creates cognitive overhead and maintenance burden.
 6. **Composition over configuration.** Prefer `<Card><Card.Header>Title</Card.Header></Card>` over `<Card title="Title" headerVariant="bold">`. Composition is more flexible and easier to type.
-7. **Document the "why" not just the "what."** Component docs should explain when to use a component and when NOT to. "Use Button for actions, use Link for navigation" prevents misuse.
+7. **Document the "why" not the "what."** Component docs should explain when to use a component and when NOT to. "Use Button for actions, use Link for navigation" prevents misuse.
 
 ## Example Usage
 
@@ -664,18 +664,6 @@ IF TypeScript errors block build:
   4. Run `tsc --noEmit` to verify zero errors before commit
 ```
 
-## Anti-Patterns
-
-- **Do NOT mix CSS approaches.** CSS Modules in some components, styled-components in others, and Tailwind in a third creates maintenance chaos. Pick one and standardize.
-- **Do NOT skip TypeScript types for props.** `any` props are not a component API. Every prop needs a type, a description, and a default value where appropriate.
-- **Do NOT create God components.** A component with 30 props and 500 lines is not a component, it is an application. Break it down into smaller, composable pieces.
-- **Do NOT use hardcoded values.** `color: #333` instead of `color: var(--color-text-primary)` means the next design update will miss this component. Use tokens.
-- **Do NOT skip Storybook for "simple" components.** A "simple" Label component still has variants, states, and edge cases. It still needs documentation. Write the story.
-- **Do NOT couple UI components to business logic.** A Button should not know about API calls. A DataTable should not know about user permissions. Pass data and callbacks via props.
-- **Do NOT ignore mobile-first design.** Building desktop-first and then "fixing" mobile is 3x more work than starting mobile-first. Design for the smallest viewport first.
-- **Do NOT use inline styles for component internals.** Inline styles bypass the cascade, cannot be themed, cannot be responsive, and cannot be overridden by consumers. Use your chosen CSS approach.
-
-
 ## Component Library Audit Loop
 
 Autoresearch-grade iterative audit for UI component library quality. Measures consistency scoring, design token coverage, and component completeness through structured, metrics-driven cycles.
@@ -727,145 +715,31 @@ Phase 1 — Consistency Scoring
   │  ...           │  ...   │  ...   │  ...  │  ...  │  ... │  ...       │
   ├────────────────┼────────┼────────┼───────┼──────┼──────┼────────────┤
   │  LIBRARY AVG   │        │        │       │      │      │  <N>/100   │
-  └────────────────┴────────┴────────┴───────┴──────┴──────┴────────────┘
 
-  TARGET: Library average >= 85, no component below 70
-  FIX PRIORITY: lowest-scoring components first
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH component fix or token replacement:
+  1. MEASURE: Run visual regression test — does the component look the same?
+  2. VERIFY: Storybook renders without errors, axe-core shows zero violations.
+  3. DECIDE:
+     - KEEP if: visual output unchanged AND no accessibility regressions AND tests pass
+     - DISCARD if: visual regression detected OR new a11y violation OR build breaks
+  4. COMMIT kept changes. Revert discarded changes before next component.
 
-Phase 2 — Design Token Coverage Audit
-  target: >= 95% of all visual values reference design tokens
-
-  SCAN METHODOLOGY:
-  1. EXTRACT all visual values from component styles:
-     - Colors (hex, rgb, hsl, oklch)
-     - Spacing (margin, padding, gap — px/rem values)
-     - Typography (font-size, font-weight, line-height, font-family)
-     - Borders (border-width, border-radius, border-color)
-     - Shadows (box-shadow, text-shadow)
-     - Z-index (any numeric z-index value)
-     - Transitions (duration, easing)
-  2. CLASSIFY each value:
-     a. Token reference (var(--token-*), theme.spacing.*, etc.) → COMPLIANT
-     b. Hardcoded value (#333, 16px, 1.5rem) → VIOLATION
-     c. Functional value (100%, auto, inherit, 0) → EXEMPT
-  3. CALCULATE coverage:
-     coverage_pct = (compliant + exempt) / total_values * 100
-
-  TOKEN COVERAGE BY CATEGORY:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Category      │  Total Values │  Tokenized │  Hardcoded │  Coverage │
-  ├────────────────┼───────────────┼────────────┼────────────┼───────────┤
-  │  Colors        │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Spacing       │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Typography    │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Borders       │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Shadows       │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Z-index       │  <N>          │  <N>       │  <N>       │  <N>%     │
-  │  Transitions   │  <N>          │  <N>       │  <N>       │  <N>%     │
-  ├────────────────┼───────────────┼────────────┼────────────┼───────────┤
-  │  OVERALL       │  <N>          │  <N>       │  <N>       │  <N>%     │
-  └────────────────┴───────────────┴────────────┴────────────┴───────────┘
-
-  FOR EACH hardcoded value:
-    1. IDENTIFY the file and line
-    2. FIND the matching design token (or create one if missing)
-    3. REPLACE hardcoded value with token reference
-    4. VERIFY visual output unchanged
-
-  TOKEN VIOLATION REMEDIATION:
-  current_iteration = 0
-  max_iterations = 8
-
-  WHILE token_coverage < 95% AND current_iteration < max_iterations:
-    1. SORT violations by frequency (most common hardcoded value first)
-    2. BATCH fix: replace top 10 most-frequent hardcoded values with tokens
-    3. RUN visual regression test (Storybook visual snapshots or Chromatic)
-    4. IF regressions → revert, investigate, fix individually
-    5. RECORD:
-       file | property | hardcoded_value | token_reference | visual_regression
-    6. RE-SCAN token coverage
-    7. current_iteration += 1
-
-Phase 3 — Component Completeness Audit
-  Verify the library has all components needed by the application:
-
-  COMPONENT COMPLETENESS MATRIX:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Category        │  Expected Components          │  Status          │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Primitives      │  Button, Input, Label, Badge  │  <N>/<N> present │
-  │                  │  Avatar, Icon, Text, Divider  │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Form Controls   │  Select, Checkbox, Radio,     │  <N>/<N> present │
-  │                  │  Switch, Slider, DatePicker   │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Feedback        │  Toast, Alert, Progress,      │  <N>/<N> present │
-  │                  │  Spinner, Skeleton            │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Overlays        │  Modal, Drawer, Popover,      │  <N>/<N> present │
-  │                  │  Tooltip, ContextMenu         │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Navigation      │  Tabs, Breadcrumb, Pagination │  <N>/<N> present │
-  │                  │  Sidebar, Navbar, Menu        │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Data Display    │  Table, DataTable, Card,      │  <N>/<N> present │
-  │                  │  List, Accordion, Tree        │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  Layout          │  Stack, Grid, Container,      │  <N>/<N> present │
-  │                  │  AspectRatio, ScrollArea      │                  │
-  ├──────────────────┼───────────────────────────────┼──────────────────┤
-  │  TOTAL           │  <N> expected                 │  <N>/<N> (<N>%)  │
-  └──────────────────┴───────────────────────────────┴──────────────────┘
-
-  FOR EACH missing component:
-    1. ASSESS: is this component actually used in the application?
-       - Scan codebase for the pattern (e.g., inline modal implementation)
-       - If found → component is needed, add to build queue
-       - If not found → component is aspirational, deprioritize
-    2. PRIORITIZE by usage frequency:
-       - Used in 5+ places → HIGH priority (extract into shared component)
-       - Used in 2-4 places → MEDIUM priority
-       - Used in 1 place → LOW priority (may not need shared component)
-
-FINAL COMPONENT LIBRARY REPORT:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Metric                            │  Before   │  After    │ Target │
-├────────────────────────────────────┼───────────┼───────────┼────────┤
-│  Library avg consistency score     │  <N>/100  │  <N>/100  │ >= 85  │
-│  Components below 70              │  <N>      │  0        │ 0      │
-│  Design token coverage             │  <N>%     │  <N>%     │ >= 95% │
-│  Hardcoded values remaining        │  <N>      │  <N>      │ < 10   │
-│  Component completeness            │  <N>%     │  <N>%     │ >= 90% │
-│  Storybook story coverage          │  <N>%     │  <N>%     │ 100%   │
-│  Test coverage (component files)   │  <N>%     │  <N>%     │ >= 80% │
-│  Accessibility violations (axe)    │  <N>      │  0        │ 0      │
-└────────────────────────────────────┴───────────┴───────────┴────────┘
+Never keep a token replacement that changes visual output without explicit approval.
 ```
 
-### Component Library Audit TSV Logging
-
-Append one row per audit action to `.godmode/ui-audit.tsv`:
-
+## Stop Conditions
 ```
-timestamp	project	phase	component	metric	before	after	technique	status
-2024-01-15T10:30:00Z	my-app	consistency	DataTable	score	35	78	add-types+story+test	improved
-2024-01-15T10:45:00Z	my-app	tokens	Card.module.css	coverage	72%	98%	replace-hardcoded	improved
-2024-01-15T11:00:00Z	my-app	completeness	Toast	present	no	yes	created-component	added
-```
+STOP when ANY of these are true:
+  - All components render in Storybook without errors
+  - Design token coverage >= 95% (no hardcoded visual values)
+  - Zero accessibility violations from axe-core
+  - User explicitly requests stop
 
-### Component Library Audit Hard Rules
-
+DO NOT STOP just because:
+  - One component has a low consistency score (fix it)
+  - Storybook docs are incomplete for low-priority components
 ```
-1. NEVER score a component above 70 if it has zero tests. Tests are not optional for shared components.
-2. NEVER accept hardcoded colors or spacing in shared components. Every visual value must reference a design token.
-3. ALWAYS run visual regression tests after batch-replacing hardcoded values with tokens.
-4. NEVER add a component to the shared library without a Storybook story. Undocumented components are unused components.
-5. ALWAYS audit token coverage after adding new components. New components are the most likely source of hardcoded values.
-6. Log every audit finding in TSV format for tracking quality improvements across releases.
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run UI tasks sequentially: primitive components, then composite components, then layout/tokens.
-- Use branch isolation per task: `git checkout -b godmode-ui-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

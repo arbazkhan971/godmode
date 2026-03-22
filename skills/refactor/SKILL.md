@@ -481,13 +481,39 @@ IF refactoring scope is too large (> 30 dependents):
 
 ## Anti-Patterns
 
-- **Do NOT refactor without tests.** Refactoring untested code is rewriting code while hoping nothing breaks. Write tests first.
-- **Do NOT combine refactoring with feature work.** Refactoring changes structure; features change behavior. Mixing them makes failures impossible to diagnose.
-- **Do NOT do "big bang" refactors.** A 50-file commit that "reorganizes everything" is un-reviewable and un-revertable. Small steps.
-- **Do NOT rename for style preference alone.** Renaming `getData` to `fetchData` because you prefer "fetch" is noise, not refactoring. Rename when the current name is misleading.
-- **Do NOT refactor without impact analysis.** "I'll just move this function" and then discovering 30 files break is preventable with 2 minutes of analysis.
-- **Do NOT ignore failing tests.** "The tests were probably wrong anyway" is never true during refactoring. If tests fail, your transformation changed behavior. Fix it or revert.
+- **Do NOT refactor without tests.** Refactoring untested code is rewriting while hoping nothing breaks. Write tests first.
+- **Do NOT combine refactoring with feature work.** Structure changes and behavior changes in one commit make failures impossible to diagnose.
+- **Do NOT do "big bang" refactors.** A 50-file commit is un-reviewable and un-revertable. Small steps.
+- **Do NOT rename for style preference alone.** Rename only when the current name is misleading.
+- **Do NOT refactor without impact analysis.** 2 minutes of grep prevents 30 broken files.
+- **Do NOT ignore failing tests.** If tests fail during refactoring, your transformation changed behavior. Revert.
 
+
+## Keep/Discard Discipline
+```
+After EACH refactoring transformation:
+  1. MEASURE: Run full test suite — do all tests pass? Did coverage decrease?
+  2. COMPARE: Did cyclomatic or cognitive complexity decrease?
+  3. DECIDE:
+     - KEEP if: tests pass AND complexity reduced AND coverage maintained or increased
+     - DISCARD if: tests fail OR both complexity metrics unchanged/increased OR coverage dropped
+  4. COMMIT kept changes. REVERT discarded changes immediately — do not debug forward.
+
+Never keep a refactoring that decreases test coverage.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All target modules below complexity thresholds (cyclomatic <= 10, cognitive <= 15)
+  - Test count and coverage are same or higher than before
+  - Zero dead code detected
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Non-target modules still have high complexity (scope to what was requested)
+  - A single transformation was discarded (try a different pattern)
+```
 
 ## Refactoring Complexity Reduction Loop
 

@@ -811,15 +811,11 @@ POST-LOOP: Capacity plan for 6-month and 12-month projected growth
 ```
 
 ## Multi-Agent Dispatch
-
 ```
-PARALLEL AGENT DISPATCH (3 worktrees):
-  Agent 1 — "scale-app": application-level scaling (stateless services, connection pools, caching)
-  Agent 2 — "scale-data": database scaling (read replicas, sharding, indexes, query optimization)
-  Agent 3 — "scale-infra": infrastructure scaling (auto-scaling, load balancers, CDN, queue workers)
-
-MERGE ORDER: data → app → infra (data changes may affect app config, infra wraps both)
-CONFLICT ZONES: connection strings, environment configs (define shared config first)
+Agent 1 (scale-app): Stateless services, connection pools, caching
+Agent 2 (scale-data): Read replicas, sharding, indexes, query optimization
+Agent 3 (scale-infra): Auto-scaling, load balancers, CDN, queue workers
+MERGE ORDER: data -> app -> infra
 ```
 
 ## HARD RULES
@@ -903,249 +899,29 @@ IF read replica lag causes stale reads in user-facing features:
   → Set circuit breaker: if lag > threshold, route all reads to primary temporarily
 ```
 
-## Anti-Patterns
-
-- **Do NOT scale without measuring.** "We need more servers" without knowing the bottleneck leads to wasted money. Profile first: CPU, memory, I/O, network, database.
-- **Do NOT keep state in application instances.** In-memory sessions, local file uploads, and instance-specific caches prevent horizontal scaling. Externalize everything.
-- **Do NOT set pool sizes to maximum.** A 500-connection pool per instance with 20 instances = 10,000 connections. Databases cannot handle this. Use proxies and right-size pools.
-- **Do NOT auto-scale without cooldown.** Without cooldown periods, auto-scaling flaps: scale up, load drops, scale down, load spikes, repeat. Set appropriate stabilization windows.
-- **Do NOT cache everything.** Caching data with 5% hit rate wastes memory and adds invalidation complexity. Cache the working set (hot data) only.
-- **Do NOT skip load testing.** A scaling plan that has not been load-tested is a guess. Test at 2x projected peak before relying on it.
-- **Do NOT ignore cost.** Scaling from 4 to 40 instances is a 10x cost increase. Always calculate the cost impact and compare with alternative approaches (caching, optimization).
-- **Do NOT rate-limit without communication.** Users need clear rate limit headers, meaningful error messages, and documentation. A bare 429 with no context is hostile.
-
-
-## Scalability Audit Loop
-
-Structured audit loop for bottleneck detection, load test correlation, and capacity verification:
-
+## Keep/Discard Discipline
 ```
-SCALABILITY AUDIT LOOP:
-
-current_iteration = 0
-max_iterations = 12
-audit_queue = [
-    "bottleneck_detection",
-    "load_test_correlation",
-    "auto_scaling_verification",
-    "connection_pool_analysis",
-    "cache_effectiveness",
-    "rate_limit_adequacy",
-    "database_scaling_health",
-    "capacity_runway_check"
-]
-findings = []
-
-WHILE audit_queue is not empty AND current_iteration < max_iterations:
-    current_iteration += 1
-    audit_aspect = audit_queue.pop(0)
-
-    1. MEASURE current metrics for {audit_aspect}
-    2. COMPARE against scaling thresholds
-    3. CORRELATE with load test results (if available)
-    4. CLASSIFY: SCALES | APPROACHING LIMIT | BOTTLENECK
-    5. IF BOTTLENECK: generate specific scaling action with cost estimate
-    6. IF new concerns surface: audit_queue.append(concern)
-    7. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
-
-FINAL: Scalability health report with bottleneck map and action plan
+After EACH scaling change (instance count, pool size, cache config, rate limit):
+  1. MEASURE: Run load test at 2x projected peak — latency p50/p99, error rate, throughput.
+  2. COMPARE: Did capacity improve by >= 20%? Did cost stay within budget?
+  3. DECIDE:
+     - KEEP if: throughput improved >= 20% AND error rate did not increase AND cost is justified
+     - DISCARD if: improvement < 20% (wrong bottleneck) OR error rate increased OR cost exceeds budget
+  4. COMMIT kept changes. Revert discarded changes and re-profile to find the real bottleneck.
 ```
 
-### Bottleneck Detection
-
+## Stop Conditions
 ```
-BOTTLENECK DETECTION PROTOCOL:
-┌──────────────────────────────────────────────────────────────┐
-│  Step 1: Resource Saturation Scan                              │
-│  Identify which resource is exhausted first under load         │
-├──────────────────────────────────────────────────────────────┤
-│  Resource        │ Current │ Peak   │ Capacity │ Headroom    │
-├──────────────────┼─────────┼────────┼──────────┼─────────────┤
-│  CPU (app tier)  │ <N>%    │ <N>%   │ 100%     │ <N>%        │
-│  Memory (app)    │ <N> GB  │ <N> GB │ <N> GB   │ <N>%        │
-│  Network (app)   │ <N> Mbps│ <N>Mbps│ <N> Mbps │ <N>%        │
-│  DB CPU          │ <N>%    │ <N>%   │ 100%     │ <N>%        │
-│  DB connections  │ <N>     │ <N>    │ <max>    │ <N>%        │
-│  DB IOPS         │ <N>     │ <N>    │ <max>    │ <N>%        │
-│  DB disk         │ <N> GB  │ —      │ <N> GB   │ <N>%        │
-│  Cache memory    │ <N> GB  │ <N> GB │ <N> GB   │ <N>%        │
-│  Cache conn      │ <N>     │ <N>    │ <max>    │ <N>%        │
-│  Queue depth     │ <N>     │ <N>    │ <max>    │ <N>%        │
-│  External API    │ <N> RPS │ <N>RPS │ <limit>  │ <N>%        │
-├──────────────────┴─────────┴────────┴──────────┴─────────────┤
-│  BOTTLENECK: <resource with lowest headroom>                   │
-│  (This is the resource that will be exhausted first under      │
-│  increasing load. Scale THIS component, not others.)           │
-├──────────────────────────────────────────────────────────────┤
-│  Step 2: Bottleneck Classification                             │
-├──────────────────────────────────────────────────────────────┤
-│  Type                │ Indicators               │ Action       │
-├──────────────────────┼──────────────────────────┼──────────────┤
-│  CPU-bound           │ CPU > 80%, low I/O wait  │ Scale up or  │
-│                      │ CPU-intensive code paths  │ optimize code│
-│  Memory-bound        │ OOM kills, swap usage,   │ Scale up,    │
-│                      │ GC pressure              │ reduce alloc │
-│  I/O-bound (disk)    │ High IOPS, disk latency  │ Faster disk, │
-│                      │ > 5ms, I/O wait          │ caching      │
-│  I/O-bound (network) │ Connection limits,       │ Connection   │
-│                      │ timeout errors           │ pooling, CDN │
-│  Database-bound      │ Slow queries, lock wait, │ Read replicas│
-│                      │ connection exhaustion    │ query opt.   │
-│  External API-bound  │ Rate limited, timeouts,  │ Caching,     │
-│                      │ quota exhaustion         │ circuit break│
-│  Queue-bound         │ Growing depth, consumer  │ More workers,│
-│                      │ lag increasing           │ batch process│
-└──────────────────────┴──────────────────────────┴──────────────┘
+STOP when ANY of these are true:
+  - System handles target RPS at SLA (p99 < threshold, error rate < 1%)
+  - Load test at 2x projected peak passes
+  - Capacity runway > 6 months at projected growth rate
+  - User explicitly requests stop
 
-BOTTLENECK MEASUREMENT COMMANDS:
-  # CPU and memory
-  top -b -n 1 | head -20                      # system overview
-  kubectl top pods -n <namespace>              # K8s pod resources
-
-  # Database
-  SELECT * FROM pg_stat_activity WHERE state = 'active';  # active queries
-  SELECT * FROM pg_stat_user_tables ORDER BY seq_scan DESC LIMIT 10;  # table scans
-  EXPLAIN ANALYZE <slow-query>;                # query plan
-
-  # Connection pools
-  SHOW POOL STATUS;                            # PgBouncer
-  SELECT count(*) FROM pg_stat_activity;       # PostgreSQL connections
-
-  # Cache
-  redis-cli info stats | grep -E "hits|misses" # Redis hit rate
-  redis-cli info memory                        # Redis memory usage
-
-  # Queue depth
-  rabbitmqctl list_queues name messages         # RabbitMQ
-  kafka-consumer-groups --bootstrap-server <broker> --describe --group <group>  # Kafka lag
+DO NOT STOP just because:
+  - One component is near capacity but not the bottleneck (document it for future reference)
+  - Cost optimization is pending (scaling correctness first, cost optimization second)
 ```
 
-### Load Test Correlation
-
-```
-LOAD TEST CORRELATION:
-┌──────────────────────────────────────────────────────────────┐
-│  Correlate load test results with production metrics to       │
-│  validate scaling decisions with real data.                   │
-├──────────────────────────────────────────────────────────────┤
-│                                                                │
-│  LOAD TEST RESULTS:                                            │
-│  ┌────────────┬──────────┬──────────┬──────────┬─────────┐   │
-│  │ Load Level │ RPS      │ p50 (ms) │ p99 (ms) │ Err Rate│   │
-│  ├────────────┼──────────┼──────────┼──────────┼─────────┤   │
-│  │ Baseline   │ <N>      │ <N>      │ <N>      │ <N>%    │   │
-│  │ 2x         │ <N>      │ <N>      │ <N>      │ <N>%    │   │
-│  │ 5x         │ <N>      │ <N>      │ <N>      │ <N>%    │   │
-│  │ 10x        │ <N>      │ <N>      │ <N>      │ <N>%    │   │
-│  │ Breaking   │ <N>      │ <N>      │ <N>      │ <N>%    │   │
-│  └────────────┴──────────┴──────────┴──────────┴─────────┘   │
-│                                                                │
-│  RESOURCE CORRELATION (at each load level):                    │
-│  ┌────────────┬──────┬──────┬──────┬──────┬──────┐           │
-│  │ Load Level │ CPU  │ Mem  │ DB   │ Cache│ Queue│           │
-│  │            │ (%)  │ (%)  │ conn │ hit% │ depth│           │
-│  ├────────────┼──────┼──────┼──────┼──────┼──────┤           │
-│  │ Baseline   │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
-│  │ 2x         │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
-│  │ 5x         │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
-│  │ 10x        │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
-│  │ Breaking   │ <N>  │ <N>  │ <N>  │ <N>  │ <N>  │           │
-│  └────────────┴──────┴──────┴──────┴──────┴──────┘           │
-│                                                                │
-│  CORRELATION ANALYSIS:                                         │
-│  - Breaking point: <N> RPS (where errors > 1% or p99 > SLA)  │
-│  - First resource saturated: <resource> at <N> RPS             │
-│  - Latency inflection point: <N> RPS (where p99 doubles)      │
-│  - Linear scaling range: <baseline> to <N> RPS                 │
-│  - Sub-linear range: <N> to <breaking> RPS                     │
-│                                                                │
-│  SCALING PREDICTION:                                           │
-│  Current capacity: <N> RPS at SLA                              │
-│  After scaling action: <predicted N> RPS at SLA                │
-│  Confidence: HIGH (tested) | MEDIUM (modeled) | LOW (guessed)  │
-│                                                                │
-│  LOAD TEST vs PRODUCTION DELTA:                                │
-│  ┌────────────────────┬──────────┬────────────┬──────────┐   │
-│  │ Metric             │ Load Test│ Production │ Delta    │   │
-│  ├────────────────────┼──────────┼────────────┼──────────┤   │
-│  │ p50 latency        │ <N> ms   │ <N> ms     │ <N>%     │   │
-│  │ p99 latency        │ <N> ms   │ <N> ms     │ <N>%     │   │
-│  │ Error rate          │ <N>%     │ <N>%       │ <N>%     │   │
-│  │ Throughput ceiling  │ <N> RPS  │ <N> RPS    │ <N>%     │   │
-│  └────────────────────┴──────────┴────────────┴──────────┘   │
-│  NOTE: If delta > 20%, load test environment may not          │
-│  reflect production accurately. Investigate differences.       │
-└──────────────────────────────────────────────────────────────┘
-
-LOAD TEST TOOLS:
-  - k6: scripted load tests with JavaScript
-  - Locust: Python-based distributed load testing
-  - Gatling: Scala/Java, detailed reports
-  - wrk2: constant-throughput HTTP benchmarking
-  - vegeta: HTTP load testing with constant rate
-
-LOAD TEST TEMPLATE (k6):
-  import http from 'k6/http';
-  import { check, sleep } from 'k6';
-
-  export const options = {
-    stages: [
-      { duration: '2m', target: 100 },   // ramp to baseline
-      { duration: '5m', target: 100 },   // hold baseline
-      { duration: '2m', target: 500 },   // ramp to 5x
-      { duration: '5m', target: 500 },   // hold 5x
-      { duration: '2m', target: 1000 },  // ramp to 10x
-      { duration: '5m', target: 1000 },  // hold 10x
-      { duration: '2m', target: 0 },     // ramp down
-    ],
-    thresholds: {
-      http_req_duration: ['p(99)<500'],   // p99 < 500ms
-      http_req_failed: ['rate<0.01'],     // error rate < 1%
-    },
-  };
-```
-
-### Scalability Health Scorecard
-
-```
-SCALABILITY HEALTH SCORECARD:
-┌──────────────────────────────────────────────────────────────┐
-│  Dimension                    │ Score (1-10) │ Weight│ Total  │
-├───────────────────────────────┼──────────────┼───────┼────────┤
-│  Bottleneck identification    │ <score>      │ 0.20  │ <N>    │
-│  (known, measured, documented)│              │       │        │
-│  Headroom to target           │ <score>      │ 0.20  │ <N>    │
-│  (how much capacity vs target)│              │       │        │
-│  Auto-scaling maturity        │ <score>      │ 0.15  │ <N>    │
-│  (policies, cooldown, tested) │              │       │        │
-│  Database scaling             │ <score>      │ 0.15  │ <N>    │
-│  (replicas, pooling, split)   │              │       │        │
-│  Caching effectiveness        │ <score>      │ 0.10  │ <N>    │
-│  (hit rate, working set)      │              │       │        │
-│  Load test coverage           │ <score>      │ 0.10  │ <N>    │
-│  (tested at 2x peak, correlated│             │       │        │
-│  with production metrics)     │              │       │        │
-│  Capacity planning            │ <score>      │ 0.10  │ <N>    │
-│  (runway dates, growth model) │              │       │        │
-├───────────────────────────────┼──────────────┼───────┼────────┤
-│  OVERALL SCALABILITY          │              │       │ <total>│
-│  Rating: EXCELLENT (8+) | GOOD (6-8) | AT RISK (4-6) |      │
-│           CRITICAL (<4)                                       │
-├──────────────────────────────────────────────────────────────┤
-│  BOTTLENECK MAP (ordered by proximity to saturation):         │
-│  1. <component>: <resource> at <N>% — runway: <N> months     │
-│  2. <component>: <resource> at <N>% — runway: <N> months     │
-│  3. <component>: <resource> at <N>% — runway: <N> months     │
-├──────────────────────────────────────────────────────────────┤
-│  RECOMMENDED SCALING ACTIONS (by impact/cost):                │
-│  1. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
-│  2. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
-│  3. <action> — impact: +<N>% capacity, cost: +$<N>/mo        │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run scaling tasks sequentially: application layer, then data layer, then infrastructure layer.
-- Use branch isolation per task: `git checkout -b godmode-scale-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-scale-{task}`. See `adapters/shared/sequential-dispatch.md`.

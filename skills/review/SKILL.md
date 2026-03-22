@@ -44,8 +44,26 @@ Print: `Review: {verdict} ({score}/10). {must_fix} MUST-FIX, {should_fix} SHOULD
 ## TSV Logging
 Append `.godmode/review-log.tsv`: timestamp, scope, category, severity, file_line, description, status(open/auto-fixed/deferred).
 
+## Keep/Discard Discipline
+```
+After EACH review finding:
+  KEEP if: finding has file:line + severity + concrete fix
+  DISCARD if: finding is vague, lacks code evidence, or duplicates existing finding
+  On discard: remove finding from report. Log reason in review-log.tsv.
+  Never keep a finding without a concrete suggested fix.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all 4 agents completed and findings merged
+  - budget_exhausted: max 3 re-review iterations reached
+  - diminishing_returns: re-review found 0 new issues
+  - stuck: >5 vague findings discarded without actionable replacements
+```
+
 ## Rules
-1. Every finding: file:line + suggested fix (code). No vague feedback like 'consider improving' or 'could be better'.
+1. Every finding: file:line + suggested fix (code). No vague feedback like 'improve' or 'could be better'.
 2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Review against spec + tests, not personal style. No bikeshedding.
 3. Auto-fix only safe changes. Never auto-fix logic, public APIs, or security-related code.
 

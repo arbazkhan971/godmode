@@ -548,7 +548,6 @@ Rules:
 - **Named chunks off in prod** — prevents route names leaking into production bundles
 
 ### Step 8: Testing with Jasmine/Karma and Jest
-Set up comprehensive testing:
 
 ```
 TESTING STRATEGY:
@@ -560,211 +559,15 @@ TESTING STRATEGY:
 │  Integration     │  TestBed          │  Service + store flows       │
 │  E2E             │  Playwright       │  Critical user journeys      │
 └──────────────────┴───────────────────┴──────────────────────────────┘
-```
 
-#### Jest Configuration (Recommended over Karma)
-```typescript
-// jest.config.ts
-import type { Config } from 'jest';
-
-const config: Config = {
-  preset: 'jest-preset-angular',
-  setupFilesAfterSetup: ['<rootDir>/setup-jest.ts'],
-  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/e2e/'],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  coverageThreshold: {
-    global: {
-      statements: 80,
-      branches: 70,
-      functions: 80,
-      lines: 80,
-    },
-  },
-  moduleNameMapper: {
-    '^@core/(.*)$': '<rootDir>/src/app/core/$1',
-    '^@shared/(.*)$': '<rootDir>/src/app/shared/$1',
-    '^@features/(.*)$': '<rootDir>/src/app/features/$1',
-    '^@models/(.*)$': '<rootDir>/src/app/models/$1',
-  },
-};
-
-export default config;
-```
-
-#### Component Testing Pattern
-```typescript
-// features/user/user-profile.component.spec.ts
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { UserProfileComponent } from './user-profile.component';
-import type { User } from '@models/user.model';
-
-describe('UserProfileComponent', () => {
-  let component: UserProfileComponent;
-  let fixture: ComponentFixture<UserProfileComponent>;
-
-  const mockUser: User = {
-    id: '1',
-    firstName: 'Jane',
-    lastName: 'Doe',
-    email: 'jane@test.com',
-    avatar: '/img/jane.png',
-  };
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [UserProfileComponent],  // Standalone component
-      providers: [provideRouter([])],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(UserProfileComponent);
-    component = fixture.componentInstance;
-  });
-
-  it('should create', () => {
-    fixture.componentRef.setInput('user', mockUser);
-    fixture.detectChanges();
-    expect(component).toBeTruthy();
-  });
-
-  it('should display user full name', () => {
-    fixture.componentRef.setInput('user', mockUser);
-    fixture.detectChanges();
-    const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Jane Doe');
-  });
-
-  it('should show edit button when editable', () => {
-    fixture.componentRef.setInput('user', mockUser);
-    fixture.componentRef.setInput('editable', true);
-    fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('button');
-    expect(button).toBeTruthy();
-    expect(button.textContent).toContain('Edit');
-  });
-
-  it('should emit edit event with user data', () => {
-    fixture.componentRef.setInput('user', mockUser);
-    fixture.componentRef.setInput('editable', true);
-    fixture.detectChanges();
-
-    const editSpy = jest.spyOn(component.edit, 'emit');
-    const button = fixture.nativeElement.querySelector('button');
-    button.click();
-
-    expect(editSpy).toHaveBeenCalledWith(mockUser);
-  });
-});
-```
-
-#### Service Testing Pattern
-```typescript
-// core/services/product.service.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { ProductService } from './product.service';
-
-describe('ProductService', () => {
-  let service: ProductService;
-  let httpMock: HttpTestingController;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        ProductService,
-      ],
-    });
-    service = TestBed.inject(ProductService);
-    httpMock = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    httpMock.verify();  // Ensure no outstanding requests
-  });
-
-  it('should fetch all products', () => {
-    const mockProducts = [{ id: '1', name: 'Widget' }];
-
-    service.getAll().subscribe((products) => {
-      expect(products).toEqual(mockProducts);
-    });
-
-    const req = httpMock.expectOne('/api/products');
-    expect(req.request.method).toBe('GET');
-    req.flush(mockProducts);
-  });
-
-  it('should handle HTTP errors', () => {
-    service.getAll().subscribe({
-      error: (err) => {
-        expect(err.status).toBe(500);
-      },
-    });
-
-    const req = httpMock.expectOne('/api/products');
-    req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-  });
-});
-```
-
-#### NgRx Store Testing
-```typescript
-// store/products/products.effects.spec.ts
-import { TestBed } from '@angular/core/testing';
-import { provideMockActions } from '@ngrx/effects/testing';
-import { provideMockStore } from '@ngrx/store/testing';
-import { Observable, of, throwError } from 'rxjs';
-import { ProductEffects } from './products.effects';
-import { ProductActions } from './products.actions';
-import { ProductService } from '@core/services/product.service';
-
-describe('ProductEffects', () => {
-  let effects: ProductEffects;
-  let actions$: Observable<any>;
-  let productService: jest.Mocked<ProductService>;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        ProductEffects,
-        provideMockActions(() => actions$),
-        provideMockStore(),
-        {
-          provide: ProductService,
-          useValue: { getAll: jest.fn() },
-        },
-      ],
-    });
-
-    effects = TestBed.inject(ProductEffects);
-    productService = TestBed.inject(ProductService) as jest.Mocked<ProductService>;
-  });
-
-  it('should load products successfully', (done) => {
-    const products = [{ id: '1', name: 'Widget' }];
-    productService.getAll.mockReturnValue(of(products));
-    actions$ = of(ProductActions.loadProducts());
-
-    effects.loadProducts$.subscribe((action) => {
-      expect(action).toEqual(ProductActions.loadProductsSuccess({ products }));
-      done();
-    });
-  });
-
-  it('should handle load failure', (done) => {
-    productService.getAll.mockReturnValue(throwError(() => new Error('Network error')));
-    actions$ = of(ProductActions.loadProducts());
-
-    effects.loadProducts$.subscribe((action) => {
-      expect(action).toEqual(ProductActions.loadProductsFailure({ error: 'Network error' }));
-      done();
-    });
-  });
-});
+KEY TESTING RULES:
+- Use jest-preset-angular for Jest setup (faster than Karma)
+- Standalone components: import the component directly in TestBed.configureTestingModule
+- Set inputs with fixture.componentRef.setInput() (signal inputs, Angular 17+)
+- Always call httpMock.verify() in afterEach for HTTP tests
+- NgRx effects: use provideMockActions + provideMockStore
+- OnPush components: trigger change detection explicitly in tests
+- Coverage thresholds: statements 80%, branches 70%, functions 80%, lines 80%
 ```
 
 ### Step 9: Validation
@@ -895,37 +698,16 @@ Starting with Phase 1...
 
 ## Auto-Detection
 
-Before prompting the user, automatically detect Angular project context:
-
 ```
 AUTO-DETECT SEQUENCE:
-1. Detect Angular version:
-   - Read @angular/core version from package.json
-   - Determine: < 14 (legacy), 14-16 (mixed), 17+ (modern/standalone-ready)
-2. Detect architecture style:
-   - Count .module.ts files → NgModule-based
-   - Check for standalone: true in components → Standalone
-   - Mixed if both patterns detected
-3. Detect state management:
-   - grep for '@ngrx/store' → NgRx
-   - grep for '@ngxs/store' → NGXS
-   - grep for 'signal(' in components → Signals
-   - None detected → Services + RxJS (or none)
-4. Detect build system:
-   - angular.json → Angular CLI
-   - nx.json → Nx workspace
-   - Check builder: application (esbuild) vs browser (webpack)
-5. Detect testing setup:
-   - grep for 'jest-preset-angular' → Jest
-   - Check karma.conf.js → Karma
-   - Check for playwright or cypress configs → E2E
-6. Detect SSR:
-   - grep for '@angular/ssr' or '@nguniversal' → SSR configured
-7. Detect UI library:
-   - grep for '@angular/material', 'primeng', 'ng-bootstrap', '@taiga-ui'
-8. Detect TypeScript strictness:
-   - Check tsconfig.json for "strict": true
-9. Auto-configure recommendations based on detected version and patterns
+1. Angular version: @angular/core in package.json (<14 legacy, 14-16 mixed, 17+ standalone)
+2. Architecture: count .module.ts (NgModule) vs standalone: true (Standalone)
+3. State: @ngrx/store (NgRx), @ngxs/store (NGXS), signal() (Signals)
+4. Build: angular.json (CLI), nx.json (Nx), builder type (esbuild vs webpack)
+5. Testing: jest-preset-angular (Jest), karma.conf.js (Karma), playwright/cypress (E2E)
+6. SSR: @angular/ssr or @nguniversal
+7. UI library: @angular/material, primeng, ng-bootstrap, @taiga-ui
+8. TypeScript: tsconfig.json strict mode
 ```
 
 ## Output Format
@@ -952,19 +734,6 @@ Append one TSV row to `.godmode/angular.tsv` after each invocation:
 ```
 timestamp	project	action	components_count	services_count	modules_count	tests_status	build_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | component | service | module | optimize | test | audit | upgrade
-- `components_count`: number of components created or modified
-- `services_count`: number of services created or modified
-- `modules_count`: number of modules created or modified (0 for standalone)
-- `tests_status`: passing | failing | skipped | none
-- `build_status`: passing | failing | not-checked
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -1018,19 +787,28 @@ IF RxJS memory leaks:
   3. Use shareReplay({ bufferSize: 1, refCount: true }) for shared observables
 ```
 
-## Anti-Patterns
+## Keep/Discard Discipline
+```
+After EACH Angular architecture change:
+  1. MEASURE: Run ng build AND ng test --no-watch --browsers=ChromeHeadless.
+  2. COMPARE: Does the build pass with zero errors? Do all tests pass?
+  3. DECIDE:
+     - KEEP if build passes AND tests pass AND no Default change detection AND no any types.
+     - DISCARD if build fails OR tests fail OR new Default change detection introduced.
+  4. COMMIT kept changes. Revert discarded changes before the next iteration.
 
-- **Do NOT use Default change detection.** OnPush is mandatory. Default change detection runs on every event, timer, and HTTP response in the entire app.
-- **Do NOT subscribe without unsubscribing.** Every `.subscribe()` without `takeUntilDestroyed()` or `async` pipe is a memory leak waiting to happen.
-- **Do NOT put logic in components.** Components render views. Services hold logic. Effects handle side effects. This is not optional.
-- **Do NOT use `any` type.** Every `any` is a bug you will find in production instead of at compile time. Use `unknown` and narrow.
-- **Do NOT nest subscriptions.** Use RxJS operators (`switchMap`, `concatMap`, `forkJoin`) instead of subscribing inside a subscribe callback.
-- **Do NOT import entire RxJS.** Import specific operators. `import { map } from 'rxjs'` not `import * as rxjs`.
-- **Do NOT eager-load feature routes.** Lazy-load with `loadChildren` or `loadComponent`. Your initial bundle should be the shell only.
-- **Do NOT skip DI.** Instantiating services with `new` defeats Angular's DI system, breaks testing, and creates singletons you can't control.
-- **Do NOT use jQuery or direct DOM manipulation.** Use Angular's template syntax, Renderer2, or ElementRef if absolutely necessary.
-- **Do NOT mix state management approaches randomly.** Pick one approach per scope (signals for local, service/NgRx for global) and be consistent.
+Never keep a component that uses Default change detection.
+Never keep a subscription without cleanup (takeUntilDestroyed or async pipe).
+```
 
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - ng build passes AND ng test passes AND all components use OnPush AND all routes lazy-loaded
+  - Zero any types AND all subscriptions have cleanup AND strict TypeScript enabled
+  - User explicitly requests stop
+  - Max iterations (10) reached
+```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

@@ -314,7 +314,7 @@ WHILE current_iteration < max_iterations:
     2. CHECK README freshness:
        IF significant feature added (>100 lines, new entry point):
          check if README.md was modified in this branch
-         IF NOT: WARN — "Significant feature added. Consider updating README."
+         IF NOT: WARN — "Significant feature added. Update README."
 
     3. SCORE:
        [ ] API docs match code: {YES/NO/N/A}
@@ -414,6 +414,24 @@ DECISION:
   IF all PASS: → proceed to /godmode:ship or /godmode:finish (PR/merge)
   IF any FAIL: → BLOCK. Fix failures first, re-run verification.
   IF only WARN: → proceed with acknowledgment. Warnings logged.
+```
+
+## Keep/Discard Discipline
+```
+After EACH finalization attempt:
+  KEEP if: all guard checks pass AND outcome is one of MERGE/PR/KEEP/DISCARD
+  DISCARD if: any guard check fails OR post-merge tests fail on main
+  On discard: git revert HEAD (for merges) or re-run /godmode:fix. Log failure reason.
+  Never merge a branch with failing guards.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: branch finalized (MERGED, PR created, KEPT, or DISCARDED)
+  - budget_exhausted: guard suite re-run 3 times with no improvement
+  - diminishing_returns: same guard failure persists after /godmode:fix
+  - stuck: >5 failed finalization attempts
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

@@ -494,33 +494,6 @@ AUTO-DETECT SEQUENCE:
    - Event broker present → event-driven components exist
 ```
 
-## Multi-Agent Dispatch
-
-For comprehensive architecture analysis of large systems:
-
-```
-PARALLEL ARCHITECTURE ANALYSIS:
-IF system has multiple services OR team_size > 10:
-  Agent 1 (worktree: arch-patterns):
-    - Evaluate architecture patterns against requirements
-    - Build comparison matrix with weighted scoring
-    - Produce recommendation with justification
-
-  Agent 2 (worktree: arch-diagrams):
-    - Generate C4 Level 1 (System Context) diagram
-    - Generate C4 Level 2 (Container) diagram
-    - Generate C4 Level 3 (Component) for key containers
-    - Generate bounded context map
-
-  Agent 3 (worktree: arch-quality):
-    - Analyze quality attributes (scalability, reliability, security)
-    - Identify architectural risks and mitigations
-    - Evaluate operational complexity
-    - Assess team fit for recommended architecture
-
-  COORDINATOR merges into unified architecture document + ADR
-```
-
 ## Output Format
 Print on completion:
 ```
@@ -577,13 +550,39 @@ IF C4 diagram generation fails (complex topology):
 
 ## Anti-Patterns
 
-- **Do NOT recommend microservices by default.** Microservices are a solution to organizational scaling, not a default. Most systems should start as a modular monolith.
-- **Do NOT skip the requirements gathering.** "What architecture should I use?" without knowing team size, scale, and constraints is unanswerable. Ask.
-- **Do NOT produce diagrams without explanation.** Every diagram must have accompanying text explaining the key decisions and trade-offs it represents.
-- **Do NOT present one option.** Even for seemingly obvious choices, the comparison matrix documents why alternatives were rejected. This prevents revisiting the decision later.
-- **Do NOT conflate architecture patterns with implementation patterns.** Microservices is an architecture pattern. Repository is an implementation pattern. They operate at different levels.
-- **Do NOT ignore the team.** A technically perfect architecture that the team cannot build or operate is a failed architecture. Always factor in team experience.
-- **Do NOT design for theoretical scale.** Design for 10x your current needs, not 1000x. You can re-architect when you have 1000x problems (and 1000x revenue to fund it).
+- **Do NOT recommend microservices by default.** Most systems should start as a modular monolith.
+- **Do NOT skip requirements gathering.** Architecture without team size, scale, and constraints is guesswork.
+- **Do NOT produce diagrams without explanation.** Every diagram needs text explaining key decisions.
+- **Do NOT present one option.** The comparison matrix documents why alternatives were rejected.
+- **Do NOT conflate architecture and implementation patterns.** Microservices is architecture-level. Repository is implementation-level.
+- **Do NOT ignore the team.** A perfect architecture the team cannot operate is a failed architecture.
+- **Do NOT design for theoretical scale.** Design for 10x current needs, not 1000x.
+
+## Keep/Discard Discipline
+```
+After EACH architecture decision:
+  1. MEASURE: Score the decision against the weighted comparison matrix.
+  2. COMPARE: Does the recommended pattern score highest? Are trade-offs documented honestly?
+  3. DECIDE:
+     - KEEP if: pattern scores highest in weighted matrix AND team can operate it
+     - DISCARD if: pattern does not match team size/operational maturity OR scores below alternatives
+  4. Record the decision in an ADR with Context, Decision, and Consequences sections.
+
+Never keep an architecture recommendation that the team cannot build or operate.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - At least 3 patterns compared in weighted matrix with clear winner
+  - C4 Level 1 and Level 2 diagrams produced
+  - ADR created with Context, Decision, and Consequences
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - C4 Level 3/4 diagrams are not yet produced (Level 1+2 are sufficient for decisions)
+  - The user prefers a pattern that scored lower (document it in the ADR with risks)
+```
 
 
 ## Architecture Review Loop
@@ -769,7 +768,5 @@ ACTION ITEMS: Top 3 highest-impact fixes ordered by effort/impact ratio.
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run architecture tasks sequentially: patterns, then diagrams, then quality attributes.
-- Use branch isolation per task: `git checkout -b godmode-architect-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run architecture tasks sequentially: patterns, then diagrams, then quality attributes.
+Use branch isolation per task: `git checkout -b godmode-architect-{task}`, implement, commit, merge back.

@@ -212,32 +212,6 @@ package-lock.json
         "noConsoleLog": "warn"
       },
       "style": {
-        "useConst": "error",
-        "noVar": "error"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100,
-    "lineEnding": "lf"
-  },
-  "javascript": {
-    "formatter": {
-      "semicolons": "always",
-      "quoteStyle": "single",
-      "trailingCommas": "all",
-      "arrowParentheses": "always"
-    }
-  },
-  "files": {
-    "ignore": ["dist/", "build/", "node_modules/", "coverage/"]
-  }
-}
-```
-
 #### Ruff (Python)
 
 ```toml
@@ -359,39 +333,6 @@ module.exports = {
             data: { name: node.property.name || node.property.value },
           });
         }
-      },
-    };
-  },
-};
-```
-
-#### Ruff Custom Plugin (via ruff plugin system)
-```python
-# For Ruff, custom rules require contributing to Ruff or using flake8 plugins.
-# Alternative: Use a custom flake8 plugin alongside Ruff.
-
-# flake8_custom_rules/no_print.py
-import ast
-from typing import Generator
-
-class NoPrintChecker:
-    name = 'no-print'
-    version = '1.0.0'
-
-    def __init__(self, tree: ast.AST) -> None:
-        self.tree = tree
-
-    def run(self) -> Generator:
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name) and node.func.id == 'print':
-                    yield (
-                        node.lineno,
-                        node.col_offset,
-                        'P001 Use logger instead of print()',
-                        type(self),
-                    )
-```
 
 ### Step 5: Auto-Fix Strategies
 Maximize automated fixes to reduce manual work:
@@ -424,34 +365,6 @@ AUTO-FIX STRATEGY:
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": "explicit",
-      "source.organizeImports": "explicit"
-    }
-  },
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff",
-    "editor.codeActionsOnSave": {
-      "source.fixAll.ruff": "explicit",
-      "source.organizeImports.ruff": "explicit"
-    }
-  },
-  "[go]": {
-    "editor.defaultFormatter": "golang.go",
-    "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit"
-    }
-  },
-  "editor.rulers": [100],
-  "files.trimTrailingWhitespace": true,
-  "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true
-}
-```
-
-#### Batch Auto-Fix
-```bash
 # Fix all existing violations in one pass
 # TypeScript/JavaScript
 npx eslint . --fix
@@ -605,7 +518,6 @@ CODING STANDARDS:
 ```
 
 #### .editorconfig (Universal)
-```ini
 # .editorconfig
 root = true
 
@@ -677,35 +589,6 @@ INITIAL FIX:
 
 Commits:
   1. "lint: configure ESLint 9 + Prettier for TypeScript React"
-  2. "lint: add Husky + lint-staged pre-commit hooks"
-  3. "lint: auto-fix 287 existing violations"
-```
-
-### Migrating from ESLint + Prettier to Biome
-```
-User: /godmode:lint Migrate our project from ESLint + Prettier to Biome
-
-Lint: Analyzing current configuration...
-
-MIGRATION PLAN:
-  Current: ESLint (47 rules) + Prettier
-  Target: Biome
-  Rule mapping: 41/47 rules have Biome equivalents
-  Unmapped: 6 rules (React-specific, will use ESLint for those)
-
-STEPS:
-  1. Install Biome, create biome.json with equivalent rules
-  2. Run Biome on codebase, fix formatting differences
-  3. Remove ESLint + Prettier configs and deps
-  4. Update pre-commit hooks and CI
-  5. Update VS Code settings
-
-RESULT:
-  Lint time: 12.3s (ESLint) -> 0.18s (Biome) — 68x faster
-  Config files: 3 (.eslintrc, .prettierrc, .prettierignore) -> 1 (biome.json)
-  Rules enforced: 47 -> 41 (Biome) + 6 (ESLint for React)
-```
-
 ## HARD RULES
 1. NEVER debate formatting in code reviews — configure the formatter, automate it, and never discuss it again.
 2. NEVER enable all lint rules at once on an existing codebase — start with recommended, add rules incrementally.
@@ -839,18 +722,6 @@ Agent 2 (worktree: lint-python):
   - Output: Ruff config + auto-fixed violations
 
 Agent 3 (worktree: lint-hooks):
-  - Pre-commit hooks + CI integration
-  - Scope: .husky/, .pre-commit-config.yaml, .github/workflows/
-  - Output: Husky/lint-staged config + CI lint job
-
-Agent 4 (worktree: lint-editor):
-  - Editor integration + .editorconfig
-  - Scope: .vscode/, .editorconfig
-  - Output: VS Code settings, EditorConfig, format-on-save
-
-MERGE ORDER: ts → python → hooks → editor
-CONFLICT RESOLUTION: each agent owns its language config files exclusively
-```
 
 ## Flags & Options
 
@@ -866,18 +737,6 @@ CONFLICT RESOLUTION: each agent owns its language config files exclusively
 | `--audit` | Count violations without fixing |
 | `--strict` | Enable strictest rule set |
 | `--style-guide` | Generate style guide document |
-
-## Anti-Patterns
-
-- **Do NOT debate formatting in code reviews.** Configure the formatter, automate it, and never discuss tabs vs spaces again. The tool decides.
-- **Do NOT enable all rules at once.** Adding 200 rules to an existing codebase is overwhelming. Start with recommended, add rules incrementally.
-- **Do NOT lint in CI without linting locally.** If developers discover violations only in CI, the feedback loop is 10 minutes instead of 1 second. Lint locally first.
-- **Do NOT use `eslint-disable` as a strategy.** A file full of `// eslint-disable-next-line` comments is worse than no linting. Fix the code or adjust the rule.
-- **Do NOT run the full linter in pre-commit.** Lint only staged files. Running the full linter makes commits take 30 seconds, and developers will skip the hook.
-- **Do NOT skip the formatter.** Linting without formatting is half the job. Formatting eliminates 80% of style-related review comments.
-- **Do NOT keep warnings around.** Warnings are noise that developers learn to ignore. Either promote to error or remove the rule.
-- **Do NOT configure linting without team agreement.** Rules imposed without consensus will be circumvented. Discuss, agree, then automate.
-
 
 ## Output Format
 Print on completion: `Lint: {tool} configured with {rule_count} rules. Violations: {before_count} → {after_count} ({auto_fixed} auto-fixed, {manual} manual). Pre-commit: {hooks_status}. Verdict: {verdict}.`
@@ -910,8 +769,5 @@ Columns: iteration, rule_group, violations_before, auto_fixed, manual_remaining,
 - **Migration breaks existing CI**: Run the linter in warning mode first (`--max-warnings=999`), fix violations incrementally, then tighten to `--max-warnings=0`.
 - **Team disagrees on rules**: Use the recommended preset as the baseline. Only discuss additions or overrides. Document the decision in a team ADR. Automate enforcement so the debate only happens once.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run lint tasks sequentially: TypeScript linting, then Python linting, then hooks, then editor config.
-- Use branch isolation per task: `git checkout -b godmode-lint-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.

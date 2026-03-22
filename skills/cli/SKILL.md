@@ -637,13 +637,39 @@ AUTO-DETECT:
 -> Only ask user about distribution targets if ambiguous.
 ```
 
+## Keep/Discard Discipline
+```
+After EACH command implementation or output format change:
+  1. MEASURE: Run integration tests — does the command produce correct output, exit codes, and stderr/stdout separation?
+  2. COMPARE: Does the change improve UX without breaking existing callers (scripts, CI)?
+  3. DECIDE:
+     - KEEP if: tests pass AND --json output is valid AND exit codes are correct AND --help is present
+     - DISCARD if: tests fail OR backwards-incompatible change OR output breaks pipe usage
+  4. COMMIT kept changes. Revert discarded changes before implementing the next command.
+
+Never ship a command that breaks existing scripts relying on its output format.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All planned commands implemented with passing tests and help text
+  - Shell completions generated for bash and zsh
+  - Distribution configured for at least one package manager
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - man pages are not yet generated (ship first, add man pages later)
+  - Only one distribution channel is configured (one is enough to ship)
+```
+
 ## Iteration Protocol
 ```
 WHILE cli implementation is incomplete:
   1. REVIEW — check current state: which commands exist, which are missing, test results
   2. IMPLEMENT — pick next command/feature from the plan, implement with tests
   3. TEST — run test suite: unit tests for parsing, integration tests for command output
-  4. VERIFY — manually run the command with sample input, check exit codes, stderr/stdout separation
+  4. VERIFY — run the command with sample input, check exit codes, stderr/stdout separation
   IF tests pass AND command works: commit, move to next command
   IF tests fail: fix, re-test (max 3 attempts), then ask user if stuck
 STOP: all planned commands implemented, tests pass, help text complete, distribution configured
@@ -710,11 +736,11 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 
 ## Anti-Patterns
 
-- **Do NOT print help on no arguments if the tool has a default action.** If `tool` with no args should do something useful, do that. Only show help when the user explicitly asks or when the input is ambiguous.
-- **Do NOT require global installation.** Support npx/bunx (Node.js), pipx (Python), cargo install (Rust), or go install (Go) for one-shot usage without polluting global state.
-- **Do NOT hardcode colors.** Check NO_COLOR environment variable, terminal capability (isatty), and provide --no-color flag. Respect the user's terminal preferences.
-- **Do NOT swallow errors silently.** If a command fails, exit with non-zero code and print a clear error message to stderr. Callers (scripts, CI) depend on exit codes.
-- **Do NOT break backwards compatibility in minor versions.** CLI tools are APIs for scripts. Changing flag names, output format, or behavior without a major version bump breaks automation.
-- **Do NOT make interactive prompts mandatory.** Support non-interactive mode (--yes, --no-input) for CI/CD and scripting. Interactive prompts should be enhancements, not requirements.
-- **Do NOT ignore stdin.** If your tool processes data, accept pipe input: `cat file | tool process` and `tool process < file` should work.
-- **Do NOT forget man pages.** For tools distributed via Homebrew or system packages, man pages are expected. Generate them from your help text.
+- **Do NOT print help on no arguments if the tool has a default action.** Only show help when the user explicitly asks or when input is ambiguous.
+- **Do NOT require global installation.** Support npx/bunx, pipx, cargo install, or go install for one-shot usage.
+- **Do NOT hardcode colors.** Check NO_COLOR, isatty, and provide --no-color flag.
+- **Do NOT swallow errors silently.** Exit with non-zero code and print a clear error to stderr.
+- **Do NOT break backwards compatibility in minor versions.** CLI tools are APIs for scripts. Changing flags or output format without a major version bump breaks automation.
+- **Do NOT make interactive prompts mandatory.** Support --yes / --no-input for CI/CD and scripting.
+- **Do NOT ignore stdin.** Accept pipe input: `cat file | tool process` should work.
+- **Do NOT forget man pages.** For Homebrew or system packages, generate man pages from help text.

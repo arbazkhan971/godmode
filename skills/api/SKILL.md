@@ -554,14 +554,40 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 
 ## Anti-Patterns
 
-- **Do NOT design APIs around database tables.** APIs expose resources, not tables. Aggregate data for the consumer's use case.
-- **Do NOT use verbs in URLs.** `/api/v1/getUsers` is wrong. `GET /api/v1/users` is right. The HTTP method IS the verb.
-- **Do NOT return different error formats from different endpoints.** One error schema for the entire API. No exceptions.
-- **Do NOT skip pagination.** Every list endpoint must paginate. "We'll only have a few items" is how you get 10-second responses in production.
-- **Do NOT embed sensitive data in URLs.** Query parameters end up in logs. Put tokens in headers, not query strings.
-- **Do NOT design without consumers in mind.** An API designed in isolation will be redesigned when the first consumer tries to use it.
-- **Do NOT generate a spec and skip validation.** Generated specs often have issues. Always validate with tooling.
-- **Do NOT version reactively.** Version from the start. Adding versioning later means breaking existing consumers.
+- **Do NOT design APIs around database tables.** APIs expose resources, not tables.
+- **Do NOT use verbs in URLs.** `GET /api/v1/users` is right. The HTTP method IS the verb.
+- **Do NOT return different error formats from different endpoints.** One error schema for the entire API.
+- **Do NOT skip pagination.** Every list endpoint must paginate.
+- **Do NOT embed sensitive data in URLs.** Query parameters end up in logs.
+- **Do NOT design without consumers in mind.** An API designed in isolation will be redesigned.
+- **Do NOT generate a spec and skip validation.** Always validate with tooling.
+- **Do NOT version reactively.** Version from the start.
+
+## Keep/Discard Discipline
+```
+After EACH API design change:
+  1. MEASURE: Run spectral/redocly lint on the OpenAPI spec. Run oasdiff for breaking changes.
+  2. COMPARE: Does the spec validate with 0 errors? Are there 0 breaking changes?
+  3. DECIDE:
+     - KEEP if: spec validates AND 0 breaking changes AND all quality checks pass
+     - DISCARD if: spec has validation errors OR breaking changes detected
+  4. COMMIT kept changes. Revert discarded changes before the next resource.
+
+Never keep a breaking change — add new fields additively instead.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - OpenAPI spec validates with 0 errors
+  - All list endpoints have pagination, all mutations have validation
+  - Rate limiting and auth defined for every endpoint
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Mock server is not yet generated (spec is the source of truth)
+  - One endpoint lacks example responses (add it, but spec is functional)
+```
 
 ## Output Format
 
@@ -656,34 +682,6 @@ ON COMPLETION:
   VALIDATE full spec (0 errors, 0 warnings)
   GENERATE documentation artifact
   REPORT: "{N} resources, {M} endpoints, spec valid, commit ready"
-```
-
-## Multi-Agent Dispatch
-
-```
-PARALLEL API AGENTS:
-When designing an API with multiple resource domains:
-
-Agent 1 (worktree: api-spec):
-  - Design full OpenAPI spec (paths, schemas, components, security)
-  - Define shared error schema, pagination schema, auth schemes
-  - Add examples for every endpoint
-  - Run spec validation (spectral lint, 0 errors)
-
-Agent 2 (worktree: api-impl):
-  - Implement route handlers for all endpoints
-  - Wire up auth middleware, pagination helpers, error handlers
-  - Add request validation (Zod, Joi, Pydantic, etc.)
-  - Add rate limiting middleware
-
-Agent 3 (worktree: api-tests):
-  - Write integration tests for all endpoints (happy path + error cases)
-  - Test pagination, filtering, sorting on list endpoints
-  - Test auth (valid, expired, missing token)
-  - Test rate limiting headers and 429 responses
-
-MERGE: Spec merges first. Implementation rebases onto spec.
-  Tests rebase onto implementation. Final: run full test suite.
 ```
 
 ## API Design Audit Loop
@@ -792,17 +790,6 @@ THRESHOLDS:
 - Spec validation: 0 errors, 0 warnings (spectral/redocly)
 ```
 
-### Audit TSV Log
-
-Append to `.godmode/api-audit.tsv` after every audit loop:
-
-```
-Fields: timestamp\tspec_file\titerations\tissues_found\tissues_fixed\tbreaking_changes_caught\tvalidation_errors_fixed\tverdict
-Example: 2025-07-15T10:30:00Z\tdocs/api/openapi.yaml\t3\t7\t7\t2\t5\tPASS
-```
-
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run API tasks sequentially: spec design, then implementation, then tests.
-- Use branch isolation per task: `git checkout -b godmode-api-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run API tasks sequentially: spec design, then implementation, then tests.
+Use branch isolation per task: `git checkout -b godmode-api-{task}`, implement, commit, merge back.

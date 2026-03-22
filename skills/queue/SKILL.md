@@ -153,80 +153,27 @@ const bulkQueue = new Queue('bulk-processing', {
   },
 });
 
-// Add jobs with priority
-await emailQueue.add('send-welcome', { userId: '123', email: 'user@example.com' }, {
-  priority: 1,   // 1 = highest priority
-  delay: 0,      // Process immediately
-});
-
-await emailQueue.add('send-digest', { userId: '123' }, {
-  priority: 10,  // Lower priority
-  delay: 3600000, // Delay 1 hour
-});
-
-// Scheduled/recurring jobs
-await emailQueue.add('daily-digest', {}, {
-  repeat: { pattern: '0 9 * * *' }, // Every day at 9 AM
-});
+// Jobs: add with priority (1=highest), delay (ms), repeat (cron pattern)
 ```
 
-#### Kafka Architecture (Event Streaming)
+#### Kafka Configuration
 ```
-KAFKA TOPOLOGY:
-┌──────────────────────────────────────────────────────────┐
-│  Topic: order-events                                      │
-│  Partitions: 6 (keyed by order_id for ordering)           │
-│  Replication: 3 (min ISR: 2)                              │
-│  Retention: 7 days                                        │
-│  Compaction: disabled (event log, not state)               │
-│                                                           │
-│  Producers:                                               │
-│    Order Service → order.created, order.updated,           │
-│                    order.cancelled, order.completed         │
-│                                                           │
-│  Consumer Groups:                                         │
-│    payment-service (6 consumers, 1 per partition)          │
-│    inventory-service (3 consumers, 2 partitions each)      │
-│    analytics-service (1 consumer, all partitions)          │
-│    notification-service (2 consumers, 3 partitions each)   │
-└──────────────────────────────────────────────────────────┘
+KAFKA TOPIC DESIGN:
+  Partitions: keyed by entity_id for ordering (6 typical)
+  Replication: 3 (min ISR: 2 for durability)
+  Retention: 7 days (event log), compaction for state topics
+  Consumer groups: 1 consumer per partition for max parallelism
 ```
 
-#### Celery Architecture (Python)
-```python
-from celery import Celery
-from celery.schedules import crontab
-
-app = Celery('tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/1')
-
-app.conf.update(
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='UTC',
-    task_acks_late=True,                # Ack after completion (at-least-once)
-    worker_prefetch_multiplier=1,       # One task at a time per worker
-    task_reject_on_worker_lost=True,    # Requeue if worker crashes
-    task_default_retry_delay=60,        # 60s default retry delay
-    task_max_retries=5,
-    task_routes={
-        'tasks.send_email': {'queue': 'high-priority'},
-        'tasks.generate_report': {'queue': 'bulk'},
-        'tasks.process_image': {'queue': 'default'},
-    },
-)
-
-# Scheduled tasks (celery beat)
-app.conf.beat_schedule = {
-    'cleanup-expired-sessions': {
-        'task': 'tasks.cleanup_sessions',
-        'schedule': crontab(minute=0, hour='*/6'),  # Every 6 hours
-    },
-    'daily-digest': {
-        'task': 'tasks.send_daily_digest',
-        'schedule': crontab(minute=0, hour=9),  # 9 AM daily
-    },
-}
+#### Celery Configuration (Python)
+```
+KEY CELERY SETTINGS:
+  task_acks_late=True           # At-least-once delivery
+  worker_prefetch_multiplier=1  # One task at a time per worker
+  task_reject_on_worker_lost=True  # Requeue on worker crash
+  task_max_retries=5            # Max retry attempts
+  task_routes: route tasks to priority queues (high-priority, default, bulk)
+  beat_schedule: crontab-based recurring tasks via celery beat
 ```
 
 ### Step 3: Retry Strategy & Dead Letter Handling
@@ -268,78 +215,22 @@ Non-retryable errors (fail immediately):
 
 #### Dead Letter Queue Design
 ```
-DEAD LETTER QUEUE (DLQ):
-┌──────────────────────────────────────────────────────────┐
-│  DLQ Configuration                                        │
-│  ─────────────────────────────────────────────────────── │
-│  Queue name:     <original-queue>-dlq                     │
-│  Retention:      30 days                                  │
-│  Max size:       100,000 messages                         │
-│  Alert:          When DLQ depth > 100                     │
-│  Review cadence: Daily automated report                   │
-│                                                           │
-│  DLQ Message Format:                                      │
-│  {                                                        │
-│    "original_queue": "email",                             │
-│    "job_id": "job-uuid-123",                              │
-│    "job_name": "send-welcome",                            │
-│    "payload": { ... },                                    │
-│    "attempts": 5,                                         │
-│    "first_failed_at": "2025-03-15T10:30:00Z",            │
-│    "last_failed_at": "2025-03-15T10:35:16Z",             │
-│    "errors": [                                            │
-│      { "attempt": 1, "error": "ECONNREFUSED", "at": ..},│
-│      { "attempt": 2, "error": "ECONNREFUSED", "at": ..},│
-│      { "attempt": 3, "error": "ETIMEDOUT", "at": ..},   │
-│      { "attempt": 4, "error": "ETIMEDOUT", "at": ..},   │
-│      { "attempt": 5, "error": "ETIMEDOUT", "at": ..}    │
-│    ]                                                      │
-│  }                                                        │
-│                                                           │
-│  DLQ Processing Options:                                  │
-│    1. Replay: Re-enqueue to original queue                │
-│    2. Replay with fix: Modify payload, re-enqueue         │
-│    3. Skip: Mark as acknowledged (will not process)       │
-│    4. Escalate: Create incident ticket                    │
-└──────────────────────────────────────────────────────────┘
+DLQ CONFIGURATION:
+  Queue name: <original-queue>-dlq
+  Retention: 30 days, max 100K messages
+  Alert: DLQ depth > 100, review daily
+  Message fields: original_queue, job_id, payload, attempts, errors[], timestamps
+  Processing: Replay | Replay with fix | Skip | Escalate to incident
 ```
 
-#### Retry Implementation (BullMQ)
-```typescript
-// Worker with retry-aware error handling
-const worker = new Worker('email', async (job) => {
-  try {
-    const result = await sendEmail(job.data);
-    return result;
-  } catch (error) {
-    // Classify error as retryable or not
-    if (isNonRetryable(error)) {
-      // Move directly to DLQ — do not retry
-      await deadLetterQueue.add('failed-email', {
-        originalJob: job.data,
-        jobId: job.id,
-        error: error.message,
-        attempts: job.attemptsMade,
-      });
-      return; // Do not throw — prevents retry
-    }
-    // Retryable error — throw to trigger BullMQ retry
-    throw error;
-  }
-}, {
-  connection,
-  concurrency: 10,
-  limiter: {
-    max: 100,    // Max 100 jobs
-    duration: 1000, // Per second (rate limit: 100/sec)
-  },
-});
-
-function isNonRetryable(error: Error): boolean {
-  const nonRetryableCodes = ['VALIDATION_ERROR', 'AUTH_FAILED', 'NOT_FOUND'];
-  return nonRetryableCodes.includes((error as any).code)
-    || (error as any).statusCode >= 400 && (error as any).statusCode < 500;
-}
+#### Retry Implementation Pattern
+```
+RETRY-AWARE WORKER:
+1. In the worker handler, wrap processing in try/catch
+2. On error: classify as retryable or non-retryable
+   - Non-retryable (4xx, validation, auth): send to DLQ, return without throwing
+   - Retryable (5xx, timeout, connection): throw to trigger BullMQ built-in retry
+3. Configure worker with concurrency limit and rate limiter
 ```
 
 ### Step 4: Delivery Guarantees & Idempotency
@@ -368,58 +259,14 @@ DELIVERY GUARANTEES:
 └──────────────────────────────────────────────────────────┘
 ```
 
-#### Idempotency Implementation
-```typescript
-// Idempotency key pattern for exactly-once semantics
-class IdempotentJobProcessor {
-  constructor(private redis: Redis, private ttl: number = 86400) {}
-
-  async process(jobId: string, handler: () => Promise<any>): Promise<any> {
-    const idempotencyKey = `idempotent:${jobId}`;
-
-    // Check if already processed
-    const existing = await this.redis.get(idempotencyKey);
-    if (existing) {
-      return JSON.parse(existing); // Return cached result
-    }
-
-    // Acquire lock to prevent concurrent processing
-    const lock = await this.redis.set(
-      `lock:${idempotencyKey}`, '1', 'EX', 300, 'NX'
-    );
-    if (!lock) {
-      throw new Error('Job is being processed by another worker');
-    }
-
-    try {
-      const result = await handler();
-
-      // Store result with TTL for deduplication window
-      await this.redis.set(idempotencyKey, JSON.stringify(result), 'EX', this.ttl);
-
-      return result;
-    } finally {
-      await this.redis.del(`lock:${idempotencyKey}`);
-    }
-  }
-}
-
-// Usage in worker
-const idempotent = new IdempotentJobProcessor(redis);
-
-const worker = new Worker('payments', async (job) => {
-  return idempotent.process(job.id!, async () => {
-    // This handler runs at most once per job ID
-    const charge = await stripe.charges.create({
-      amount: job.data.amount,
-      currency: job.data.currency,
-      customer: job.data.customerId,
-      idempotency_key: job.id, // Stripe-level idempotency too
-    });
-    await db.orders.update(job.data.orderId, { paymentId: charge.id, status: 'paid' });
-    return { chargeId: charge.id };
-  });
-}, { connection });
+#### Idempotency Pattern
+```
+IDEMPOTENCY IMPLEMENTATION:
+1. Check Redis for key `idempotent:{jobId}` — if exists, return cached result
+2. Acquire distributed lock `lock:idempotent:{jobId}` with NX + TTL (300s)
+3. If lock acquired: run handler, store result with TTL (24h), release lock
+4. If lock not acquired: another worker is processing — throw and retry later
+5. For payment jobs: pass job.id as Stripe/provider idempotency_key too
 ```
 
 ### Step 5: Priority Queues & Rate Limiting
@@ -550,72 +397,22 @@ BACKPRESSURE HANDLING:
 ```
 
 #### Graceful Shutdown Pattern
-```typescript
-// Graceful shutdown for workers
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-
-  // Stop accepting new jobs
-  await worker.pause();
-
-  // Wait for current jobs to complete (with timeout)
-  const shutdownTimeout = setTimeout(() => {
-    console.error('Graceful shutdown timed out, forcing exit');
-    process.exit(1);
-  }, 30000);
-
-  await worker.close();
-  clearTimeout(shutdownTimeout);
-
-  console.log('Worker shut down gracefully');
-  process.exit(0);
-});
+```
+SIGTERM HANDLER:
+1. On SIGTERM: call worker.pause() — stop accepting new jobs
+2. Set shutdown timeout (30s) — force exit if current job does not complete
+3. Call worker.close() — wait for current job to finish
+4. Clear timeout, exit 0
 ```
 
-#### Circuit Breaker for Downstream Dependencies
-```typescript
-class CircuitBreaker {
-  private failures = 0;
-  private lastFailureTime = 0;
-  private state: 'closed' | 'open' | 'half-open' = 'closed';
-
-  constructor(
-    private threshold: number = 5,
-    private resetTimeout: number = 30000,
-  ) {}
-
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
-    if (this.state === 'open') {
-      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
-        this.state = 'half-open';
-      } else {
-        throw new Error('Circuit breaker is open — downstream unavailable');
-      }
-    }
-
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (error) {
-      this.onFailure();
-      throw error;
-    }
-  }
-
-  private onSuccess() {
-    this.failures = 0;
-    this.state = 'closed';
-  }
-
-  private onFailure() {
-    this.failures++;
-    this.lastFailureTime = Date.now();
-    if (this.failures >= this.threshold) {
-      this.state = 'open';
-    }
-  }
-}
+#### Circuit Breaker Pattern
+```
+CIRCUIT BREAKER (for downstream dependencies):
+States: CLOSED → OPEN → HALF-OPEN → CLOSED
+- CLOSED: forward all requests. On failure: increment counter.
+- OPEN (threshold reached): reject all requests. After resetTimeout: move to HALF-OPEN.
+- HALF-OPEN: allow one request. On success: CLOSED. On failure: OPEN.
+Config: threshold=5 failures, resetTimeout=30s.
 ```
 
 ### Step 7: Job Scheduling & Recurring Tasks
@@ -931,17 +728,6 @@ MERGE: Core merges first. Workers rebase onto core.
   Monitoring rebases onto workers. Final: end-to-end job lifecycle test.
 ```
 
-## Anti-Patterns
-
-- **Do NOT process long tasks in request handlers.** Anything over 500ms belongs in a background job. Users should not stare at a loading spinner while you generate a PDF.
-- **Do NOT retry without backoff.** Immediate retries hammer a failing dependency. Use exponential backoff with jitter. Always.
-- **Do NOT ignore the dead letter queue.** An empty DLQ is healthy. A growing DLQ is an incident. Monitor it, alert on it, process it.
-- **Do NOT assume jobs run exactly once.** At-least-once is the common guarantee. Your handler WILL be called twice for the same job during failures. Make it idempotent.
-- **Do NOT share worker pools across priorities.** A 10,000-job bulk export should not block password reset emails. Use separate queues and separate workers for different priorities.
-- **Do NOT store large payloads in the queue.** Queues are for metadata and references, not 50MB files. Store the file in S3/storage, put the URL in the job payload.
-- **Do NOT skip graceful shutdown.** Killing a worker mid-job corrupts state and causes double-processing. Handle SIGTERM, finish current work, then exit.
-- **Do NOT use polling intervals shorter than your processing time.** If jobs take 5 seconds to process, polling every 100ms wastes CPU. Match polling to workload characteristics.
-
 ## Output Format
 
 ```
@@ -1013,6 +799,29 @@ ERROR RECOVERY — QUEUE:
    → Scale worker concurrency or add worker instances. Check if job processing time has increased (dependency slowdown). Add backpressure to producers if needed.
 6. Connection to broker lost:
    → Implement automatic reconnection with backoff. Use connection pooling. Add health check endpoint that verifies broker connectivity. Alert on connection failures.
+```
+
+## Keep/Discard Discipline
+```
+After EACH queue configuration change:
+  1. MEASURE: Check queue depth trend, processing rate, error rate, P95 latency.
+  2. COMPARE: Is queue depth stable or decreasing? Is error rate below threshold?
+  3. DECIDE:
+     - KEEP if queue depth stable AND error rate < 1% AND P95 latency < target AND DLQ not growing.
+     - DISCARD if queue depth growing OR error rate spiked OR DLQ growing after change.
+  4. COMMIT kept changes. Revert discarded changes before the next tuning pass.
+
+Never keep a concurrency change without observing metrics for at least 5 minutes under load.
+Never keep a retry strategy without exponential backoff and jitter.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All long tasks (>500ms) in queues AND retry with backoff AND DLQ configured AND idempotent handlers
+  - Queue depth stable AND error rate < 1% AND graceful shutdown implemented AND monitoring active
+  - User explicitly requests stop
+  - Max iterations (4) reached
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

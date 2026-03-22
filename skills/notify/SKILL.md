@@ -1664,13 +1664,33 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-notify-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
+## Keep/Discard Discipline
+```
+After EACH notification channel implementation:
+  1. MEASURE: Send a test notification end-to-end — does it arrive on the target device/channel?
+  2. COMPARE: Are preferences respected, quiet hours honored, idempotency enforced?
+  3. DECIDE:
+     - KEEP if: notification delivered, preferences checked, delivery status tracked
+     - DISCARD if: notification not received OR preferences bypassed OR duplicate sends detected
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before implementing the next channel.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All requested channels deliver successfully with preference checks
+  - Quiet hours enforced for non-security notifications (timezone-aware)
+  - Idempotency prevents duplicate sends on event replay
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Marketing digest batching is not yet implemented (deliver individually first)
+  - Analytics dashboards are not configured (delivery tracking is sufficient)
+```
+
 ## Anti-Patterns
 
-- **Do NOT send notifications directly from business logic.** Always go through the notification service. Direct sends bypass preferences, quiet hours, rate limiting, and tracking. The notification service is the single source of truth.
-- **Do NOT ignore stale push tokens.** Invalid tokens accumulate fast. FCM and APNs return specific error codes for invalid tokens. Handle them immediately. Stale tokens waste resources and skew delivery metrics.
-- **Do NOT send SMS without opt-in consent.** TCPA violations carry fines of $500-$1,500 per message. Marketing SMS requires prior express written consent. Even transactional SMS needs prior express consent.
-- **Do NOT treat all notifications as equal priority.** Security alerts must always be delivered immediately. Marketing can be batched. Without priority levels, users get notification fatigue and disable everything.
-- **Do NOT skip idempotency checks.** Event systems can replay. Queues can retry. Without idempotency keys, users receive duplicate notifications — the fastest way to lose trust.
-- **Do NOT batch security notifications.** Login alerts, 2FA codes, and password reset notifications must be immediate. Never put security notifications in a digest queue. They are time-sensitive and safety-critical.
-- **Do NOT ignore timezone in quiet hours.** A quiet-hours check that uses server time instead of user timezone is worse than no quiet hours at all. Always store and use the user's timezone.
-- **Do NOT use a single queue for all channels.** If your SMS provider has an outage, it must not block push notifications. Use separate queues per channel with independent retry logic and circuit breakers.
+- **Do NOT send notifications directly from business logic.** Always route through the notification service — direct sends bypass preferences, quiet hours, and tracking.
+- **Do NOT batch security notifications.** Login alerts, 2FA codes, and password resets must be immediate. Never put them in a digest queue.
+- **Do NOT ignore timezone in quiet hours.** A quiet-hours check using server time instead of user timezone is worse than no quiet hours. Always store and use the user's timezone.
+- **Do NOT use a single queue for all channels.** An SMS provider outage must not block push notifications. Use separate queues per channel with independent retry logic.

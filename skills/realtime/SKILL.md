@@ -1081,17 +1081,36 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 10. EVERY connection must have an idle timeout. No immortal connections.
 ```
 
+## Keep/Discard Discipline
+```
+After EACH realtime feature implementation:
+  1. MEASURE: Simulate connection drop — does the client reconnect and recover state?
+  2. COMPARE: Is latency < 100ms p95, message ordering preserved, presence accurate?
+  3. DECIDE:
+     - KEEP if: reconnection restores rooms + replays missed messages AND no ghost users in presence
+     - DISCARD if: messages lost on reconnect OR presence flickers OR memory leak per connection
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before implementing the next feature.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All requested features work (chat, presence, typing, or notifications)
+  - Reconnection with state recovery verified (rooms + missed messages)
+  - Multi-instance delivery works via Redis pub/sub (if scaling required)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Load testing at 10x peak is not yet complete (functional correctness first)
+  - Binary protocol optimization is not done (JSON is acceptable for most use cases)
+```
+
 ## Anti-Patterns
 
-- **Do NOT use WebSocket when SSE suffices.** If data flows only from server to client, SSE is simpler, auto-reconnects, works through HTTP/2, and needs no special proxy config. WebSocket adds complexity for no benefit.
-- **Do NOT skip authentication on WebSocket connect.** An unauthenticated WebSocket is an open door. Validate the token during the handshake and reject before upgrade.
-- **Do NOT broadcast to all connections in a loop.** Use rooms/channels (Socket.io rooms, Redis pub/sub channels). Iterating over all connections and filtering is O(n) per message and does not scale.
-- **Do NOT store connection state in application memory.** Server instances restart, scale, and crash. Store presence in Redis, store messages in a database. The WebSocket server should be stateless except for active connections.
-- **Do NOT send every keystroke over the wire.** Debounce typing events (2-3 second intervals) and batch document changes. Sending every character creates unnecessary network traffic and server load.
-- **Do NOT forget sticky sessions when scaling WebSocket.** WebSocket is a stateful connection. If a client's requests hit different servers, the handshake fails. Configure sticky sessions (IP hash or cookie-based) in your load balancer.
-- **Do NOT implement your own CRDT for production.** Use Yjs or Automerge. CRDT implementations are subtle and error-prone. The edge cases around concurrent edits, deletions, and undo will take months to get right.
-- **Do NOT ignore connection limits.** Each WebSocket connection consumes memory and a file descriptor. Set per-instance connection limits, monitor connection counts, and auto-scale based on connections, not CPU.
-
+- **Do NOT use WebSocket when SSE suffices.** If data flows only from server to client, SSE is simpler, auto-reconnects, and needs no special proxy config.
+- **Do NOT broadcast to all connections in a loop.** Use rooms/channels. Iterating over all connections and filtering is O(n) per message and does not scale.
+- **Do NOT implement your own CRDT for production.** Use Yjs or Automerge. CRDT edge cases around concurrent edits, deletions, and undo take months to get right.
+- **Do NOT ignore connection limits.** Each WebSocket connection consumes memory and a file descriptor. Set per-instance limits and auto-scale based on connections, not CPU.
 
 ## Output Format
 
@@ -1174,341 +1193,103 @@ When optimizing an existing realtime system, run this systematic audit loop. Eac
 
 ```
 CONNECTION MANAGEMENT AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Measure connection health metrics                       │
-│                                                                   │
-│  Metrics to track:                                               │
-│  - Active connections (current count per server instance)        │
-│  - Connection churn rate (connects + disconnects per minute)     │
-│  - Connection duration (median, p95 — how long clients stay)    │
-│  - Connection errors (handshake failures, unexpected closes)     │
-│  - File descriptor usage (connections consume FDs)               │
-│                                                                   │
-│  // Instrument connection lifecycle:                             │
-│  io.on('connection', (socket) => {                               │
-│    metrics.gauge('ws.connections.active', io.engine.clientsCount);│
-│    metrics.increment('ws.connections.opened');                    │
-│    const connectedAt = Date.now();                               │
-│                                                                   │
-│    socket.on('disconnect', (reason) => {                         │
-│      const duration = Date.now() - connectedAt;                  │
-│      metrics.gauge('ws.connections.active', io.engine.clientsCount); │
-│      metrics.increment('ws.connections.closed');                  │
-│      metrics.histogram('ws.connection.duration_ms', duration);   │
-│      metrics.increment(`ws.disconnect.reason.${reason}`);        │
-│    });                                                            │
-│                                                                   │
-│    socket.on('error', (err) => {                                │
-│      metrics.increment('ws.connections.errors');                  │
-│      logger.error('WebSocket error', { socketId: socket.id, err }); │
-│    });                                                            │
-│  });                                                              │
-│                                                                   │
-│  Step 2: Connection limit management                             │
-│  ┌──────────────────────────────┬────────────────────────────┐  │
-│  │  Resource                    │  Limits & Actions           │  │
-│  ├──────────────────────────────┼────────────────────────────┤  │
-│  │  Max connections per instance│  Set based on memory:       │  │
-│  │                              │  ~10K for 512MB, ~50K for 2GB│ │
-│  │  Max connections per user    │  Limit to 3-5 (multi-tab)  │  │
-│  │  Max rooms per connection    │  Limit to prevent memory    │  │
-│  │                              │  bloat from room metadata   │  │
-│  │  Max message size            │  Set maxHttpBufferSize      │  │
-│  │                              │  (default 1MB, tune down)   │  │
-│  │  File descriptors (ulimit)  │  Set to 2x max connections  │  │
-│  └──────────────────────────────┴────────────────────────────┘  │
-│                                                                   │
-│  Step 3: Heartbeat tuning                                        │
-│  - pingInterval: 25000 (25s) — how often to ping client         │
-│  - pingTimeout: 20000 (20s) — how long to wait for pong         │
-│  - Too short → unnecessary traffic, mobile battery drain         │
-│  - Too long → stale connections, ghost users in presence         │
-│  - Recommendation: 25s interval, 20s timeout for web apps       │
-│  - Mobile: 60s interval, 30s timeout (save battery)              │
-│                                                                   │
-│  Step 4: Stale connection cleanup                                │
-│  // Periodic cleanup of connections that missed heartbeats:      │
-│  setInterval(() => {                                             │
-│    for (const [id, socket] of io.of('/').sockets) {             │
-│      if (!socket.connected) {                                    │
-│        socket.disconnect(true);                                  │
-│        metrics.increment('ws.connections.stale_cleaned');        │
-│      }                                                           │
-│    }                                                              │
-│  }, 60_000);                                                      │
-└──────────────────────────────────────────────────────────────────┘
+  Step 1: Measure — track active connections, churn rate, duration (median, p95),
+    errors, and file descriptor usage per instance.
+    Instrument: emit metrics on connect, disconnect, and error events.
+
+  Step 2: Connection limits
+    Max per instance: ~10K (512MB) / ~50K (2GB)
+    Max per user: 3-5 (multi-tab)
+    Max message size: tune maxHttpBufferSize (default 1MB)
+    File descriptors (ulimit): 2x max connections
+
+  Step 3: Heartbeat tuning
+    Web apps: pingInterval=25s, pingTimeout=20s
+    Mobile: pingInterval=60s, pingTimeout=30s
+
+  Step 4: Stale cleanup — periodic sweep (60s) disconnects sockets where !connected
 ```
 
 ### Pass 2: Message Ordering & Delivery Audit
 
 ```
-MESSAGE ORDERING & DELIVERY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Verify message ordering guarantees                      │
-│                                                                   │
-│  Ordering analysis per channel/room:                             │
-│  ┌──────────────────────────┬──────────┬──────────────────────┐ │
-│  │  Channel Type            │  Ordering │  Guarantee           │ │
-│  ├──────────────────────────┼──────────┼──────────────────────┤ │
-│  │  Chat messages           │  Required │  Per-room sequential │ │
-│  │  Typing indicators       │  Not req. │  Best-effort         │ │
-│  │  Presence updates        │  Not req. │  Last-write-wins     │ │
-│  │  Collaborative edits     │  Required │  Causal ordering     │ │
-│  │  Notifications           │  Preferred│  Timestamp-ordered   │ │
-│  │  Live feed updates       │  Required │  Sequence numbers    │ │
-│  └──────────────────────────┴──────────┴──────────────────────┘ │
-│                                                                   │
-│  Step 2: Implement ordering where required                       │
-│                                                                   │
-│  // Pattern: Sequence numbers for ordered delivery               │
-│  interface OrderedMessage {                                      │
-│    seq: number;        // Monotonically increasing per channel   │
-│    channelId: string;                                            │
-│    payload: unknown;                                             │
-│    timestamp: number;                                            │
-│  }                                                                │
-│                                                                   │
-│  // Server: assign sequence numbers                              │
-│  const channelSeq = new Map<string, number>();                   │
-│  function getNextSeq(channelId: string): number {                │
-│    const current = channelSeq.get(channelId) ?? 0;              │
-│    const next = current + 1;                                     │
-│    channelSeq.set(channelId, next);                              │
-│    return next;                                                   │
-│  }                                                                │
-│                                                                   │
-│  // Client: detect gaps and request missing messages             │
-│  let lastSeq = 0;                                                │
-│  socket.on('message', (msg: OrderedMessage) => {                │
-│    if (msg.seq > lastSeq + 1) {                                 │
-│      // Gap detected — request missing messages                  │
-│      socket.emit('request-history', {                            │
-│        channelId: msg.channelId,                                 │
-│        fromSeq: lastSeq + 1,                                    │
-│        toSeq: msg.seq - 1,                                      │
-│      });                                                          │
-│    }                                                              │
-│    lastSeq = msg.seq;                                            │
-│    processMessage(msg);                                          │
-│  });                                                              │
-│                                                                   │
-│  Step 3: Delivery guarantee patterns                             │
-│  ┌──────────────────────────────┬────────────────────────────┐  │
-│  │  Guarantee                   │  Implementation             │  │
-│  ├──────────────────────────────┼────────────────────────────┤  │
-│  │  At-most-once (fire & forget)│  Default WebSocket send    │  │
-│  │  At-least-once (with retry)  │  ACK + client retry queue  │  │
-│  │  Exactly-once (idempotent)  │  ACK + server dedup by ID  │  │
-│  └──────────────────────────────┴────────────────────────────┘  │
-│                                                                   │
-│  // ACK pattern for at-least-once delivery:                      │
-│  socket.emit('message', payload, (ack) => {                     │
-│    if (ack.status === 'ok') {                                    │
-│      // Server confirmed receipt — remove from retry queue       │
-│    }                                                              │
-│  });                                                              │
-│                                                                   │
-│  Step 4: Message persistence for replay                          │
-│  - Persist messages to database/Redis for reconnection replay    │
-│  - On reconnect, client sends lastSeq → server replays missed   │
-│  - Set retention window (e.g., 24h for chat, 1h for live feed)  │
-│  - Use Redis Streams for ordered, persistent message queues      │
-└──────────────────────────────────────────────────────────────────┘
+MESSAGE ORDERING & DELIVERY:
+  Ordering by channel type:
+    Chat messages: Required (per-room sequential via sequence numbers)
+    Typing/presence: Not required (best-effort / last-write-wins)
+    Collaborative edits: Required (causal ordering via CRDT)
+    Notifications/feeds: Preferred (timestamp-ordered with sequence numbers)
+
+  Sequence number pattern:
+    Server assigns monotonically increasing seq per channel.
+    Client tracks lastSeq, detects gaps, requests history for missed range.
+
+  Delivery guarantees:
+    At-most-once: default WebSocket send (fire & forget)
+    At-least-once: ACK callback + client retry queue
+    Exactly-once: ACK + server dedup by message ID
+
+  Persistence: store messages in DB/Redis Streams for reconnection replay.
+    Retention: 24h for chat, 1h for live feeds.
 ```
 
 ### Pass 3: Reconnection Strategy Audit
 
 ```
-RECONNECTION STRATEGY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Audit current reconnection behavior                     │
-│                                                                   │
-│  Test scenarios:                                                 │
-│  [ ] Server restart — client reconnects and rejoins rooms        │
-│  [ ] Network interruption (WiFi → 4G) — seamless recovery       │
-│  [ ] Token expiry during session — refresh and reconnect         │
-│  [ ] Server at max connections — client gets clear error         │
-│  [ ] Multiple quick disconnects — backoff prevents thundering herd│
-│                                                                   │
-│  Step 2: Implement robust reconnection                           │
-│                                                                   │
-│  // Client-side reconnection with exponential backoff + jitter:  │
-│  class ReconnectionManager {                                     │
-│    private attempt = 0;                                          │
-│    private maxAttempts = 10;                                     │
-│    private baseDelay = 1000;    // 1 second                      │
-│    private maxDelay = 30000;    // 30 seconds                    │
-│    private jitterFactor = 0.5;                                   │
-│                                                                   │
-│    getDelay(): number {                                          │
-│      const exponential = Math.min(                               │
-│        this.baseDelay * Math.pow(2, this.attempt),               │
-│        this.maxDelay                                             │
-│      );                                                           │
-│      const jitter = exponential * this.jitterFactor * Math.random(); │
-│      this.attempt++;                                             │
-│      return exponential + jitter;                                │
-│    }                                                              │
-│                                                                   │
-│    reset(): void { this.attempt = 0; }                           │
-│    canRetry(): boolean { return this.attempt < this.maxAttempts; }│
-│  }                                                                │
-│                                                                   │
-│  Step 3: State recovery on reconnect                             │
-│                                                                   │
-│  // Server: reconnection handler                                 │
-│  socket.on('reconnect-state', async (data) => {                 │
-│    const { lastSeq, rooms, userId } = data;                     │
-│                                                                   │
-│    // 1. Re-authenticate (token might have refreshed)            │
-│    const user = await verifyToken(socket.handshake.auth.token); │
-│                                                                   │
-│    // 2. Rejoin rooms                                            │
-│    for (const room of rooms) {                                   │
-│      if (await checkRoomAccess(user.id, room)) {                │
-│        socket.join(room);                                        │
-│      }                                                           │
-│    }                                                              │
-│                                                                   │
-│    // 3. Replay missed messages                                  │
-│    const missed = await getMessagesSince(rooms, lastSeq);        │
-│    socket.emit('replay', missed);                                │
-│                                                                   │
-│    // 4. Update presence                                         │
-│    await updatePresence(user.id, 'online');                      │
-│  });                                                              │
-│                                                                   │
-│  Step 4: Socket.io specific configuration                        │
-│  // Server:                                                      │
-│  const io = new Server(httpServer, {                             │
-│    connectionStateRecovery: {                                    │
-│      maxDisconnectionDuration: 2 * 60 * 1000,  // 2 minutes     │
-│      skipMiddlewares: false,  // Re-run auth on reconnect        │
-│    },                                                             │
-│  });                                                              │
-│  // Socket.io 4.6+ handles room rejoin and missed event replay  │
-│  // automatically within the disconnection duration window       │
-│                                                                   │
-│  RECONNECTION CHECKLIST:                                         │
-│  [ ] Exponential backoff with jitter implemented                 │
-│  [ ] Max retry limit prevents infinite reconnection loops        │
-│  [ ] Auth token refreshed before reconnect attempt               │
-│  [ ] Room membership restored on successful reconnect            │
-│  [ ] Missed messages replayed in order on reconnect              │
-│  [ ] Presence updated on reconnect (online) and disconnect       │
-│  [ ] UI shows connection status to user (connected/reconnecting) │
-│  [ ] Offline queue: messages sent while disconnected are queued  │
-│  [ ] Queued messages sent in order after successful reconnect    │
-└──────────────────────────────────────────────────────────────────┘
+RECONNECTION CHECKLIST:
+  [ ] Exponential backoff with jitter (base=1s, max=30s, maxAttempts=10)
+  [ ] Auth token refreshed before reconnect attempt
+  [ ] Room membership restored on successful reconnect
+  [ ] Missed messages replayed in order (client sends lastSeq)
+  [ ] Presence updated on reconnect (online) and disconnect
+  [ ] UI shows connection status (connected / reconnecting / offline)
+  [ ] Offline queue: messages sent while disconnected queued and sent on reconnect
+  [ ] Socket.io 4.6+: use connectionStateRecovery for automatic room rejoin
+
+  Test scenarios:
+  [ ] Server restart — client reconnects and rejoins rooms
+  [ ] Network switch (WiFi → 4G) — seamless recovery
+  [ ] Token expiry during session — refresh and reconnect
+  [ ] Multiple quick disconnects — backoff prevents thundering herd
 ```
 
 ### Pass 4: Scaling & Load Testing Audit
 
 ```
-SCALING & LOAD TESTING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Test multi-instance message delivery                    │
-│                                                                   │
-│  // Verify Redis pub/sub adapter works across instances:         │
-│  Test scenario:                                                  │
-│  1. Client A connects to Instance 1, joins room "chat:123"      │
-│  2. Client B connects to Instance 2, joins room "chat:123"      │
-│  3. Client A sends message → Client B receives it               │
-│  4. Client B sends message → Client A receives it               │
-│                                                                   │
-│  If messages are NOT crossing instances:                         │
-│  - Verify Redis pub/sub adapter is configured on ALL instances   │
-│  - Check Redis connectivity from each instance                   │
-│  - Verify REDIS_URL is the same across all instances             │
-│  - Check for Redis cluster mode (requires cluster-aware adapter) │
-│                                                                   │
-│  Step 2: Connection distribution and sticky sessions             │
-│  - WebSocket requires sticky sessions for HTTP upgrade           │
-│  - Load balancer must route same client to same instance         │
-│  ┌──────────────────────────┬────────────────────────────────┐  │
-│  │  Load Balancer           │  Sticky Session Config          │  │
-│  ├──────────────────────────┼────────────────────────────────┤  │
-│  │  Nginx                   │  ip_hash; in upstream block     │  │
-│  │  AWS ALB                 │  Stickiness enabled on target   │  │
-│  │                          │  group (duration = conn life)   │  │
-│  │  HAProxy                 │  balance source; in backend     │  │
-│  │  Kubernetes              │  service.spec.sessionAffinity:  │  │
-│  │                          │  ClientIP                       │  │
-│  └──────────────────────────┴────────────────────────────────┘  │
-│                                                                   │
-│  Step 3: Load testing with Artillery or k6                       │
-│  // artillery.yml:                                               │
-│  config:                                                         │
-│    target: "ws://api.example.com"                                │
-│    phases:                                                       │
-│      - duration: 60                                              │
-│        arrivalRate: 100     # 100 new connections per second     │
-│    engines:                                                      │
-│      socketio-v3:                                                │
-│        transports: ["websocket"]                                 │
-│  scenarios:                                                      │
-│    - engine: socketio-v3                                         │
-│      flow:                                                       │
-│        - emit:                                                   │
-│            channel: "join-room"                                  │
-│            data: "load-test-room"                                │
-│        - think: 2                                                │
-│        - loop:                                                   │
-│          - emit:                                                 │
-│              channel: "message"                                  │
-│              data: "test message {{ $randomString() }}"          │
-│          - think: 5                                              │
-│          count: 10                                               │
-│                                                                   │
-│  Step 4: Scaling metrics and thresholds                          │
-│  ┌──────────────────────────────┬────────────────────────────┐  │
-│  │  Metric                      │  Scale-up Trigger           │  │
-│  ├──────────────────────────────┼────────────────────────────┤  │
-│  │  Connections per instance    │  > 80% of max capacity     │  │
-│  │  Memory usage per instance   │  > 70% of limit            │  │
-│  │  Message delivery latency    │  p99 > 200ms               │  │
-│  │  CPU usage per instance      │  > 60% sustained           │  │
-│  │  Redis pub/sub lag           │  > 100ms behind             │  │
-│  └──────────────────────────────┴────────────────────────────┘  │
-│                                                                   │
-│  SCALING CHECKLIST:                                              │
-│  [ ] Multi-instance tested with Redis adapter                    │
-│  [ ] Sticky sessions configured on load balancer                 │
-│  [ ] Load test passes at 2x expected peak connections            │
-│  [ ] Auto-scaling rules based on connection count (not just CPU) │
-│  [ ] Graceful connection drain on instance shutdown              │
-│  [ ] Connection migration plan for rolling deploys               │
-└──────────────────────────────────────────────────────────────────┘
+SCALING AUDIT:
+  Multi-instance test:
+    Client A on Instance 1, Client B on Instance 2, same room → verify cross-instance delivery.
+    If failing: check Redis pub/sub adapter on ALL instances, verify REDIS_URL matches.
+
+  Sticky sessions (required for WebSocket):
+    Nginx: ip_hash | AWS ALB: target group stickiness | HAProxy: balance source
+    Kubernetes: service.spec.sessionAffinity: ClientIP
+
+  Load test with Artillery/k6: 100 new connections/sec for 60s, each sends 10 messages.
+
+  Scale-up triggers:
+    Connections > 80% capacity | Memory > 70% | Delivery p99 > 200ms | CPU > 60%
+
+  CHECKLIST:
+  [ ] Multi-instance delivery verified with Redis adapter
+  [ ] Sticky sessions configured on load balancer
+  [ ] Load test passes at 2x expected peak connections
+  [ ] Auto-scaling based on connection count (not just CPU)
+  [ ] Graceful connection drain on instance shutdown
 ```
 
 ### Optimization Loop Summary
 
 ```
 REALTIME OPTIMIZATION REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  Connection churn rate (/min)│  <N>      │  <N>      │  -<N>%    │
-│  Stale/ghost connections     │  <N>      │  0        │  FIXED    │
-│  Message delivery latency p99│  <N>ms    │  <N>ms    │  -<N>%    │
-│  Message ordering violations │  <N>      │  0        │  FIXED    │
-│  Missed messages on reconnect│  <N>      │  0        │  FIXED    │
-│  Reconnection success rate   │  <N>%     │  >99%     │  +<N>%    │
-│  Multi-instance delivery     │  UNTESTED │  PASSING  │  VERIFIED │
-│  Max concurrent connections  │  <N>      │  <N>      │  tested   │
-│  Memory per connection (KB)  │  <N>      │  <N>      │  -<N>%    │
-│  Connection drain on deploy  │  NO       │  YES      │  FIXED    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- Zero stale/ghost connections (heartbeat + cleanup working)
-- Message ordering guaranteed where required (sequence numbers)
-- Reconnection with state recovery working (rooms + missed messages)
-- Multi-instance delivery verified with Redis pub/sub
-- Load tested at 2x expected peak connections
-- Sticky sessions configured and verified
-- Graceful connection drain on deploy
-- UI displays connection status to user
+  Metric                       │  Before  │  After   │  Target
+  Connection churn rate (/min) │  <N>     │  <N>     │  Minimal
+  Stale/ghost connections      │  <N>     │  0       │  Zero
+  Message delivery p99 (ms)    │  <N>     │  <N>     │  < 200ms
+  Message ordering violations  │  <N>     │  0       │  Zero
+  Reconnection success rate    │  <N>%    │  >99%    │  > 99%
+  Multi-instance delivery      │  ?       │  PASSING │  Verified
+  Connection drain on deploy   │  NO      │  YES     │  Required
 
 VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```

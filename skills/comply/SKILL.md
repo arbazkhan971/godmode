@@ -547,6 +547,24 @@ IF audit trail data is lost or corrupted:
   5. File an incident report and notify compliance stakeholders
 ```
 
+## Keep/Discard Discipline
+```
+After EACH compliance finding:
+  KEEP if: finding references specific regulation article AND points to actual code (file:line)
+  DISCARD if: finding is theoretical (no code evidence) OR duplicates an existing finding
+  On discard: log discard reason. Do not count toward compliance gap totals.
+  Never keep a finding without a specific regulation article reference.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all applicable regulations fully assessed and report generated
+  - budget_exhausted: max iterations across all regulations
+  - diminishing_returns: 3 consecutive regulation checks produce 0 new findings
+  - stuck: >5 findings discarded for lack of code evidence
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run compliance tasks sequentially: scope definition, then per-regulation checks (GDPR, HIPAA, SOC2, PCI-DSS), then audit trail validation, then license compliance.

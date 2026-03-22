@@ -281,22 +281,6 @@ ROLE HIERARCHY DESIGN:
 │                                                              │
 │  Constraint rules:                                           │
 │  - Separation of duties: user cannot hold role A AND role B  │
-│  - Maximum role count: user can hold at most N roles         │
-│  - Prerequisite roles: role A requires role B first          │
-│  - Temporal constraints: role expires after time period       │
-│  - Cardinality: at most N users can hold a specific role     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Role assignment workflow:
-  1. Request: User or admin requests role assignment
-  2. Validate: Check constraints (separation of duties, prerequisites)
-  3. Approve: Auto-approve (within policy) or require approval workflow
-  4. Assign: Create user_role record with scope and expiry
-  5. Audit: Log assignment with who, what, when, why, approved_by
-  6. Notify: Inform user of new role and permissions
-  7. Review: Periodic access review (quarterly recommended)
-```
 
 ### Step 4: Resource-Based Access Control
 Design resource-level permissions:
@@ -324,29 +308,6 @@ Resource-level sharing:
     id, resource_type, resource_id, grantee_type (user | team | role),
     grantee_id, permission (read | write | admin), granted_by,
     granted_at, expires_at, revoked_at
-
-  Share operations:
-    GRANT: Owner adds permission for another user/team
-    REVOKE: Owner removes previously granted permission
-    TRANSFER: Owner transfers ownership to another user
-    RESTRICT: Admin overrides to limit access regardless of grants
-
-Field-level access control:
-  For sensitive fields within a resource:
-  ┌────────────────────┬──────────┬──────────┬──────────────┐
-  │ Field              │ Viewer   │ Member   │ Admin        │
-  ├────────────────────┼──────────┼──────────┼──────────────┤
-  │ name               │ READ     │ READ     │ READ/WRITE   │
-  │ email              │ HIDDEN   │ READ     │ READ/WRITE   │
-  │ phone              │ HIDDEN   │ HIDDEN   │ READ/WRITE   │
-  │ salary             │ HIDDEN   │ HIDDEN   │ READ         │
-  │ ssn                │ HIDDEN   │ HIDDEN   │ HIDDEN       │
-  └────────────────────┴──────────┴──────────┴──────────────┘
-
-  Implementation: Response filtering middleware that strips fields
-  based on the requester's effective permissions.
-```
-
 ### Step 5: Permission Inheritance & Delegation
 Design how permissions flow through the hierarchy:
 
@@ -388,28 +349,6 @@ DELEGATION MODEL:
        Example: Editor can grant viewer access, but not editor access
 
     2. IMPERSONATION: Admin acts as another user (for support)
-       Constraint: Requires super_admin or support_admin role
-       Constraint: All actions logged as "admin acting as user"
-       Constraint: Time-limited (max 1 hour per session)
-       Audit: Both admin and target user IDs logged
-
-    3. TEMPORARY ELEVATION: User requests temporary higher permissions
-       Flow: Request -> Approval -> Time-limited grant -> Auto-revoke
-       Example: Developer requests prod access for 2 hours to debug
-       Constraint: Requires approval from role holder or admin
-       Audit: Elevation reason, approver, duration, actions taken
-
-    4. API KEY DELEGATION: Service acts on behalf of user
-       Scope: API key inherits user's permissions (or subset)
-       Constraint: Key cannot exceed granting user's permissions
-       Audit: Actions attributed to both key and user
-
-  Delegation constraints:
-    - Maximum delegation depth: 2 (A delegates to B, B cannot delegate further)
-    - Delegation expiry: Required (no permanent delegations)
-    - Revocation: Delegator can revoke at any time
-    - Cascade: Revoking delegation revokes all sub-delegations
-```
 
 ### Step 6: Policy Engine Design
 Design the authorization decision engine:
@@ -447,40 +386,6 @@ Evaluation algorithm:
     if allows.length > 0:
       return { decision: ALLOW, reason: allows[0].reason, policy: allows[0].id }
 
-    // 3. Check role-based permissions (with hierarchy traversal)
-    roles = getUserRoles(subject, resource.scope)
-    effectivePermissions = resolveRoleHierarchy(roles)
-    if effectivePermissions.includes(resource.type + ":" + action):
-      return { decision: ALLOW, reason: "role-based", role: roles }
-
-    // 4. Check relationship-based access
-    if hasRelationship(subject, resource, action):
-      return { decision: ALLOW, reason: "relationship-based" }
-
-    // 5. Default deny
-    return { decision: DENY, reason: "no matching policy (default deny)" }
-
-Performance requirements:
-  Authorization check latency: < 5ms at p99
-  Policy evaluation: Cache compiled policies in memory
-  Role resolution: Cache user roles with 60-second TTL
-  Relationship lookups: Index-optimized queries, < 10ms
-  Batch operations: Support bulk permission checks for list views
-
-Middleware integration:
-  // Express/Koa style
-  app.get("/projects/:id", authenticate, authorize("projects:read"), handler)
-  app.put("/projects/:id", authenticate, authorize("projects:update"), handler)
-  app.delete("/projects/:id", authenticate, authorize("projects:delete"), handler)
-
-  // Decorator style (NestJS, Python)
-  @RequirePermission("projects:read")
-  async getProject(id) { ... }
-
-  // Programmatic check
-  if (await can(user, "delete", project)) { ... }
-```
-
 ### Step 7: Audit Logging for Access Decisions
 Design comprehensive audit logging:
 
@@ -517,39 +422,6 @@ Audit log schema:
   }
 
 Log levels by event:
-┌──────────────────────────────────────┬────────────┬─────────┐
-│ Event                                │ Log Level  │ Alert   │
-├──────────────────────────────────────┼────────────┼─────────┤
-│ Normal access (ALLOW)                │ INFO       │ No      │
-│ Access denied (DENY)                 │ WARN       │ No      │
-│ Repeated denials (same user, 5+)     │ ERROR      │ YES     │
-│ Privilege escalation attempt         │ ERROR      │ YES     │
-│ Admin impersonation started          │ WARN       │ YES     │
-│ Role assignment / revocation         │ INFO       │ No      │
-│ Permission delegation                │ INFO       │ No      │
-│ Bulk data access                     │ WARN       │ Monitor │
-│ Access from unusual IP/location      │ WARN       │ Monitor │
-│ Access outside business hours        │ WARN       │ Monitor │
-│ Super_admin action                   │ WARN       │ YES     │
-└──────────────────────────────────────┴────────────┴─────────┘
-
-Audit log requirements:
-  - Immutable: Append-only storage (no updates, no deletes)
-  - Tamper-resistant: Cryptographic hash chain or write-once storage
-  - Retention: Minimum 1 year (or per compliance requirement)
-  - Searchable: Query by user, resource, action, time range, decision
-  - Real-time: Stream to SIEM for alerting (Splunk, Datadog, ELK)
-  - Separated: Audit logs stored separately from application logs
-  - No PII: Log user IDs, not names or emails (join at query time)
-
-Access review automation:
-  Periodic reports (quarterly recommended):
-    - Users with no activity in 90 days -> Flag for deactivation
-    - Users with admin roles who haven't used admin features -> Flag for downgrade
-    - Resources with no access in 180 days -> Flag for archive
-    - Permissions granted but never used -> Flag for revocation
-    - Unusual access patterns -> Flag for investigation
-```
 
 ### Step 8: Implementation Artifacts
 Generate the authorization implementation:
@@ -567,18 +439,6 @@ IMPLEMENTATION ARTIFACTS:
 │ src/auth/services/role-resolver   │ Role hierarchy resolution │
 │ src/auth/services/audit-logger    │ Access decision audit log │
 │ src/auth/controllers/roles        │ CRUD for roles            │
-│ src/auth/controllers/permissions  │ Permission management     │
-│ src/auth/controllers/grants       │ Resource sharing/grants   │
-│ src/auth/controllers/delegation   │ Permission delegation     │
-│ migrations/create_roles_tables    │ Database schema migration │
-│ migrations/create_audit_tables    │ Audit log table migration │
-│ seeds/default_roles               │ Default role + permission │
-│ tests/auth/authorization/         │ Authorization tests       │
-│ tests/auth/audit/                 │ Audit logging tests       │
-│ docs/auth/access-control-model.md │ Authorization documentation│
-└──────────────────────────────────────────────────────────────┘
-```
-
 ### Step 9: Access Control Report
 
 ```
@@ -600,21 +460,6 @@ IMPLEMENTATION ARTIFACTS:
 │    Grant delegation: <enabled/disabled>                      │
 │    Impersonation: <enabled/disabled>                         │
 │    Temporary elevation: <enabled/disabled>                   │
-│                                                             │
-│  Audit logging:                                             │
-│    All decisions logged: <YES/NO>                           │
-│    Alert rules configured: <N>                              │
-│    Retention period: <N months/years>                        │
-│    SIEM integration: <YES/NO>                               │
-│                                                             │
-│  Verdict: <PRODUCTION READY | NEEDS WORK | INCOMPLETE>      │
-├────────────────────────────────────────────────────────────┤
-│  REMAINING WORK:                                            │
-│  1. <item>                                                  │
-│  2. <item>                                                  │
-└────────────────────────────────────────────────────────────┘
-```
-
 ### Step 10: Commit and Transition
 1. Save architecture as `docs/auth/<feature>-access-control.md`
 2. Commit: `"rbac: <feature> — <model> with <N> roles, <N> permissions"`
@@ -647,23 +492,6 @@ WHILE current_resource < len(resources) AND iteration < max_iterations:
             CHECK: Does this permission grant more access than needed? (read vs read+write)
             IF unused for 90+ days AND not a break-glass permission:
               FLAG as EXCESSIVE — recommend revocation
-            IF grants broader access than documented responsibilities:
-              FLAG as OVERPRIVILEGED — recommend narrowing
-
-        PHASE 3 — CROSS-VALIDATE:
-          CHECK: Separation of duties constraints respected (no role holds conflicting perms)
-          CHECK: No role escalation path exists (roleA -> roleB -> unintended permissions)
-          CHECK: Delegation chains do not exceed max depth (2)
-          CHECK: All temporary elevations have expiry dates set
-
-    current_resource += 1
-    REPORT: "Resource {current_resource}/{len(resources)}: {role_count} roles audited, {excessive_count} excessive permissions found"
-
-STOP CONDITIONS:
-  - All resources × all roles audited
-  - OR max_iterations reached
-  - OR zero EXCESSIVE/OVERPRIVILEGED flags for 3 consecutive resources
-```
 
 ## Least-Privilege Verification Protocol
 
@@ -686,9 +514,6 @@ FOR each user/service account:
 SEVERITY RATINGS:
   CRITICAL: Service account with wildcard (*) permissions in production
   HIGH: User with admin role who has not used admin features in 90+ days
-  MEDIUM: Role has permissions beyond documented responsibilities
-  LOW: Permission granted but used fewer than 3 times in 90 days
-```
 
 ## Keep/Discard Discipline
 
@@ -755,22 +580,6 @@ Agent 2 — Policy Engine & Middleware (worktree: rbac-engine)
   - Build policy evaluation engine (RBAC/ABAC/ReBAC)
   - Create authorization middleware for all routes
   - Implement field-level access control
-  - Add resource ownership checks
-
-Agent 3 — Audit & Compliance (worktree: rbac-audit)
-  - Design audit log schema (immutable, tamper-resistant)
-  - Implement audit logging for all authorization decisions
-  - Build access review reports
-  - Configure alerting for suspicious patterns
-
-Agent 4 — Admin & Delegation (worktree: rbac-admin)
-  - Build role management API (CRUD for roles/permissions)
-  - Implement delegation and sharing flows
-  - Build impersonation with audit trail
-  - Create admin UI for permission management
-
-MERGE ORDER: Agent 1 first (schema), Agent 2 (engine), then Agent 3 + 4 in parallel.
-```
 
 ## HARD RULES
 
@@ -798,7 +607,7 @@ HARD RULES — NEVER VIOLATE:
 4. **Audit everything.** Every authorization decision — ALLOW and DENY — must be logged with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
 5. **Roles are not permissions.** Roles are collections of permissions assigned to users. Permissions are fine-grained actions on resources. Check permissions in code, not roles. `if (can(user, "delete", project))` is correct. `if (user.role === "admin")` is fragile.
 6. **Resource ownership matters.** The owner of a resource should always have full control. Ownership is a relationship, not a role. Combine RBAC (role-based) with resource ownership (relationship-based) for practical systems.
-7. **Test authorization, not just authentication.** Write tests that verify: users CAN access what they should, users CANNOT access what they should not, permission changes take effect, and audit logs are generated.
+7. **Test authorization, not authentication.** Write tests that verify: users CAN access what they should, users CANNOT access what they should not, permission changes take effect, and audit logs are generated.
 
 ## Example Usage
 
@@ -883,19 +692,6 @@ ReBAC EXTENSION:
 | `--test` | Generate authorization test suite |
 | `--matrix` | Generate permission matrix visualization |
 
-## Anti-Patterns
-
-- **Do NOT check roles in application code.** `if (user.role === "admin")` breaks when you add new roles. Check permissions: `if (can(user, "delete", resource))`. Roles map to permissions; code checks permissions.
-- **Do NOT create a "god mode" role that bypasses all checks.** Even super_admin should go through the policy engine. The policy engine ALLOWS everything for super_admin, but the decision is still logged and auditable.
-- **Do NOT implement authorization in the frontend only.** Frontend hides UI elements for usability. Backend enforces permissions for security. Every API endpoint must check authorization server-side.
-- **Do NOT use string concatenation for permission checks.** `user.permissions.includes("admin")` matches "billing_admin" too. Use exact matching or structured permission objects.
-- **Do NOT skip audit logging for ALLOW decisions.** Logging only denials misses the most important information: what data was accessed by whom. Both ALLOW and DENY decisions must be logged.
-- **Do NOT grant permanent admin access.** Temporary elevation with auto-expiry is safer. If someone needs admin access "just in case," they do not need admin access.
-- **Do NOT copy another application's role structure.** Your roles should reflect YOUR application's resources and actions. A generic admin/user/viewer hierarchy rarely fits real-world requirements without customization.
-- **Do NOT forget multi-tenancy isolation.** In a multi-tenant system, EVERY query must be scoped by tenant_id. A missing tenant filter is a data breach, not a bug.
-- **Do NOT allow permission escalation through delegation.** A user must not be able to delegate permissions they do not hold. Validate delegation requests against the delegator's effective permissions.
-
-
 ## Output Format
 
 Every RBAC invocation must produce a structured report:
@@ -970,8 +766,17 @@ IF audit logging fails or loses events:
   5. File an incident report — unlogged authorization is a compliance violation
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run RBAC tasks sequentially: permission model/schema, then policy engine/middleware, then audit/compliance, then admin/delegation.
-- Use branch isolation per task: `git checkout -b godmode-rbac-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All resources have defined permissions and role mappings
+  - Default deny enforced on every endpoint
+  - Audit logging covers all ALLOW and DENY decisions
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - One role has complex inheritance (resolve it)
+  - Audit logging works for denials only (must log allows too)
+```

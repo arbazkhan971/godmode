@@ -1310,17 +1310,36 @@ IF governance model is mismatched:
   4. Document the governance change and communicate to contributors
 ```
 
+## Keep/Discard Discipline
+```
+After EACH community health file is created or updated:
+  1. MEASURE: Does the file render correctly, pass YAML validation, and follow project conventions?
+  2. COMPARE: Does the health score improve? Are all links valid?
+  3. DECIDE:
+     - KEEP if: file is valid, renders correctly, and improves the repository health score
+     - DISCARD if: YAML syntax error OR broken links OR file duplicates existing content
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before creating the next file.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All critical files present (LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
+  - Issue and PR templates configured with blank issues disabled
+  - No secrets found in the repository (grep audit passes)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Automation workflows (stale bot, welcome bot) are not yet configured
+  - Governance document is not yet written (only needed for 10+ contributor projects)
+```
+
 ## Anti-Patterns
 
-- **Do NOT open source without a LICENSE.** Code without a license is not open source. It is "all rights reserved" by default. Always include a license file.
-- **Do NOT skip the Code of Conduct.** It sets expectations for behavior and provides enforcement mechanisms. Communities without CoCs attract toxicity.
-- **Do NOT use blank issue templates.** Unstructured issues waste maintainer time. Structured templates get actionable reports.
-- **Do NOT ignore security disclosures.** Public vulnerability reports before fixes are ready are dangerous. Always provide a private reporting channel.
 - **Do NOT neglect contributor experience.** If setup takes more than 15 minutes, you will lose contributors. Make onboarding frictionless.
 - **Do NOT over-govern small projects.** A solo project does not need a steering committee. Match governance to project size.
 - **Do NOT let issues rot.** Stale, untriaged issues signal an abandoned project. Use automation and regular triage sessions.
 - **Do NOT merge without review.** Even maintainers should get code reviewed. Four eyes catch what two miss.
-
 
 ## Open Source Audit
 

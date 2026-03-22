@@ -83,6 +83,24 @@ After skill completes, print: `Godmode: {skill} complete. Next: {next_skill_or_d
 8. Multi-agent: ≤5 agents/round, `isolation: "worktree"`. Each agent sees only task.files. Merge sequentially. Test after each. Conflict → discard, re-queue.
 9. Chain: `think → plan → [predict] → build → test → fix → review → optimize → secure → ship`. [predict] optional but recommended.
 
+## Keep/Discard Discipline
+```
+All iterative skills follow this discipline:
+  KEEP if: metric improved AND guard (build_cmd && lint_cmd && test_cmd) passed
+  DISCARD if: metric worsened OR guard failed
+  On discard: git reset --hard HEAD~1. Log discard in session-log.tsv.
+  Decisions are atomic — commit before verify, revert if verify fails.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: spec/goal fully achieved
+  - budget_exhausted: max iterations hit
+  - diminishing_returns: last 3 iterations each < 1% improvement
+  - stuck: >5 consecutive discards
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - **Rule 8 (multi-agent):** Execute tasks sequentially in the current session instead of dispatching parallel agents. One task at a time, commit after each.

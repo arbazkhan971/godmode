@@ -534,15 +534,41 @@ All of these must be true before marking the task complete:
 | Pseudo-loc shows truncation | Increase container width or switch to flexible layout. Pseudo-loc pads ~30% which matches German expansion. Fix all truncation before real translation. |
 | Resource file has merge conflicts | Use flat key structure (dot-notation) instead of nested JSON. Flat keys produce fewer merge conflicts. Resolve conflicts key-by-key. |
 
+## Keep/Discard Discipline
+```
+After EACH batch of string extractions or formatting fixes:
+  1. MEASURE: Run pseudo-localization test — any truncation, overlap, or layout breakage?
+  2. COMPARE: Are there fewer hardcoded strings than before? Does the build pass?
+  3. DECIDE:
+     - KEEP if: pseudo-loc passes AND build succeeds AND no raw keys visible to users
+     - DISCARD if: layout breaks OR build fails OR placeholders are corrupted
+  4. COMMIT kept changes. Fix discarded changes before the next batch.
+
+Never merge string extractions that break placeholder integrity ({name}, {{count}}).
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Zero hardcoded user-visible strings remain (grep returns no matches)
+  - Pseudo-localization test passes with no truncation or layout breakage
+  - All date/number/currency formatting uses Intl API with locale parameter
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - RTL support is partial (ship LTR locales first, RTL in next pass)
+  - Translation coverage is below 100% (extraction and formatting are the priority)
+```
+
 ## Anti-Patterns
 
-- **Do NOT concatenate strings for sentences.** `greeting + name + suffix` breaks in every language with different word order. Use ICU MessageFormat with placeholders.
-- **Do NOT use simple if/else for plurals.** English has 2 plural forms. Arabic has 6. Polish has 4. Use CLDR plural rules through your i18n library.
-- **Do NOT assume text direction.** Even in LTR apps, user-generated content may contain RTL text. Handle bidirectional text.
-- **Do NOT hardcode date/number formats.** `MM/DD/YYYY` is wrong everywhere except the US. Use `Intl.DateTimeFormat` with the user's locale.
-- **Do NOT use string length for UI constraints.** German text is ~30% longer than English. Chinese text may be 50% shorter. Test with real translations or pseudo-localization padding.
-- **Do NOT skip context for translators.** "Save" can mean "save to disk" or "save money." Without context, translators guess wrong.
-- **Do NOT treat missing translations as acceptable.** A fallback to English in a Japanese UI is a bug. Track translation coverage as a metric.
+- **Do NOT concatenate strings for sentences.** Word order differs across languages. Use ICU MessageFormat with placeholders.
+- **Do NOT use simple if/else for plurals.** English has 2 forms. Arabic has 6. Use CLDR plural rules through your i18n library.
+- **Do NOT assume text direction.** Even in LTR apps, user-generated content may contain RTL text.
+- **Do NOT hardcode date/number formats.** `MM/DD/YYYY` is wrong everywhere except the US. Use `Intl.DateTimeFormat`.
+- **Do NOT use string length for UI constraints.** German is ~30% longer than English. Test with pseudo-localization.
+- **Do NOT skip context for translators.** "Save" can mean "save to disk" or "save money." Translators need context.
+- **Do NOT treat missing translations as acceptable.** A fallback to English in a Japanese UI is a bug.
 
 
 ## I18n Audit Loop
@@ -615,35 +641,17 @@ LOCALE TESTING AUDIT:
       7. VERIFY sorting works correctly (e.g., German umlauts, Japanese kana order)
 
 RTL SUPPORT AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Issues Found    │
-├──────────────────────────────────────────────────────────────────┤
-│  dir="rtl" set on <html> tag       │ PASS|FAIL│ <implementation>│
-│  CSS logical properties used        │ PASS|FAIL│ <N> violations  │
-│    (no margin-left, padding-right)  │          │                 │
-│  text-align: start (not left)       │ PASS|FAIL│ <N> violations  │
-│  float: inline-start (not left)     │ PASS|FAIL│ <N> violations  │
-│  Flexbox uses logical order         │ PASS|FAIL│ <N> violations  │
-│  Icons mirrored correctly           │ PASS|FAIL│ <N> issues      │
-│    (arrows reversed, checkmarks NOT)│          │                 │
-│  Form inputs accept RTL text entry  │ PASS|FAIL│ <test results>  │
-│  Progress indicators reversed       │ PASS|FAIL│ <N> issues      │
-│  Breadcrumbs reversed               │ PASS|FAIL│ <test results>  │
-│  Tables readable in RTL             │ PASS|FAIL│ <test results>  │
-│  Scrollbar on correct side          │ PASS|FAIL│ <test results>  │
-│  Mixed LTR/RTL content (brand names,│ PASS|FAIL│ <bidi test>     │
-│    URLs, code snippets)             │          │                 │
-│  No overlapping elements in RTL     │ PASS|FAIL│ <visual test>   │
-└──────────────────────────────────────────────────────────────────┘
+  Checks: dir="rtl" on <html>, CSS logical properties, text-align: start,
+  float: inline-start, flexbox logical order, icon mirroring (arrows reversed,
+  checkmarks NOT), form RTL input, progress indicators, breadcrumbs,
+  tables, scrollbar, mixed LTR/RTL content, no overlapping elements.
 
   RTL violation scan:
-    1. GREP for directional CSS properties:
-       margin-left, margin-right, padding-left, padding-right,
-       text-align: left, text-align: right, float: left, float: right,
-       left:, right: (in positioning), border-left, border-right
+    1. GREP for directional CSS: margin-left/right, padding-left/right,
+       text-align: left/right, float: left/right, border-left/right
     2. COUNT violations per file
-    3. GENERATE replacement map (margin-left -> margin-inline-start, etc.)
-    4. PRIORITIZE by page importance (landing page > settings page)
+    3. GENERATE replacement map (margin-left -> margin-inline-start)
+    4. PRIORITIZE by page importance (landing page > settings)
 
 AUDIT ITERATION PROTOCOL:
 current_pass = 0

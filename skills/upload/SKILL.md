@@ -1581,15 +1581,33 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-upload-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
+## Keep/Discard Discipline
+```
+After EACH upload pipeline component:
+  1. MEASURE: Upload a test file end-to-end — does it pass validation, processing, and CDN serving?
+  2. COMPARE: Is EXIF stripped, virus scan passed, variants generated, cache headers correct?
+  3. DECIDE:
+     - KEEP if: file accessible via CDN with correct headers AND validation rejects bad files AND metadata in DB
+     - DISCARD if: processing fails silently OR malicious file passes validation OR EXIF data leaks
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before implementing the next component.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - End-to-end upload works (presign -> upload -> process -> serve via CDN)
+  - Validation rejects invalid types by magic bytes (not just extension)
+  - Virus scanning blocks malicious files before public access
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Video transcoding is not yet implemented (image pipeline is higher priority)
+  - Cleanup cron is not yet running (implement after core pipeline works)
+```
+
 ## Anti-Patterns
 
-- **Do NOT proxy file uploads through your API server.** Use presigned URLs. Your server should never be a data pipe between client and storage — it wastes compute, adds latency, and creates a single point of failure.
-- **Do NOT trust the Content-Type header or file extension.** Always inspect magic bytes to determine the real file type. A file named `photo.jpg` with PHP inside it is an attack, not an image.
-- **Do NOT serve uploaded files without virus scanning.** Even images can contain malware. Scan every file before making it accessible. If the scanner is down, quarantine the file — do not skip the scan.
-- **Do NOT serve images with EXIF data intact.** GPS coordinates, device identifiers, and timestamps are embedded in photos. Strip EXIF before storing processed variants.
-- **Do NOT resize images on every request.** Pre-generate variants at upload time and cache them with immutable headers. On-demand resizing has unpredictable latency and cost.
 - **Do NOT skip the blur placeholder.** Without LQIP, users see a blank space or layout shift while images load. A 20x20 base64 image costs almost nothing and significantly improves perceived performance.
-- **Do NOT let incomplete uploads accumulate.** S3 multipart uploads that are never completed still cost money. Add lifecycle rules to abort them after 24 hours. Run a cleanup cron for stale DB records.
 - **Do NOT store upload metadata only in S3 tags or object metadata.** Use a database as the source of truth. S3 metadata is hard to query, and you need to filter, sort, and aggregate uploads for cleanup, analytics, and serving.
 - **Do NOT generate video thumbnails only at the start of the video.** The first frame is often black or a logo. Generate thumbnails at 10%, 50%, and 90% of duration and pick the best one (highest contrast/entropy).
 - **Do NOT skip adaptive bitrate streaming for video.** Serving a single quality forces mobile users to buffer or desktop users to watch low quality. HLS with multiple quality levels adapts automatically.

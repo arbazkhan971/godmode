@@ -663,81 +663,26 @@ ON code review:
 ## Iterative Route Build Protocol
 
 ```
-WHEN building multiple routes for a Next.js application:
+FOR EACH route in route_plan:
+  1. CREATE route directory + page.tsx, determine rendering strategy (SSG/ISR/SSR/Streaming)
+  2. IMPLEMENT data fetching, ADD loading.tsx + error.tsx boundaries
+  3. PUSH 'use client' to smallest leaf components only
+  4. AUDIT: no 'use client' on page/layout, no useEffect+fetch, next/image with sizes, Metadata API
+  5. FIX issues before proceeding. Every 5 routes: run build to catch errors.
 
-current_route = 0
-total_routes = len(route_plan)
-built_routes = []
-audit_issues = []
-
-WHILE current_route < total_routes:
-  route = route_plan[current_route]
-
-  1. CREATE route directory and page.tsx
-  2. DETERMINE rendering strategy (SSG/ISR/SSR/Streaming)
-  3. IMPLEMENT data fetching (Server Component fetch / Server Action)
-  4. ADD loading.tsx skeleton for routes with data fetching
-  5. ADD error.tsx boundary (as 'use client' component)
-  6. PUSH 'use client' to smallest leaf components only
-  7. AUDIT:
-     - No 'use client' on page.tsx or layout.tsx
-     - No useEffect+fetch when Server Component fetch works
-     - next/image used for all images with sizes prop
-     - Metadata API used (not manual <head>)
-
-  IF audit_issues_found:
-    audit_issues.append({route: route.path, issues: issues})
-    FIX issues before proceeding
-
-  built_routes.append(route)
-  current_route += 1
-
-  IF current_route % 5 == 0:
-    REPORT "{current_route}/{total_routes} routes built"
-    RUN build to check for type errors and build failures
-
-FINAL:
-  RUN full Next.js best practices audit
-  REPORT: "{len(built_routes)} routes, {N} Server Components, {M} Client Components"
-  MEASURE: build time, bundle size, Lighthouse scores
+POST-LOOP: Full audit, report route counts, measure build time + bundle size + Lighthouse.
 ```
 
 ## Multi-Agent Dispatch
 
 ```
-WHEN building a large Next.js application with many route groups:
+PARALLEL AGENTS (4 worktrees):
+  Agent 1 — marketing-routes: (marketing)/ group, SSG/ISR, SEO metadata
+  Agent 2 — app-routes: (app)/ group, SSR + auth middleware, Server Actions
+  Agent 3 — api-layer: route handlers, webhooks, tRPC/REST
+  Agent 4 — shared-components: UI components, providers, image/font/script optimization
 
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (marketing-routes):
-    - Build (marketing)/ route group (home, about, pricing, blog)
-    - SSG/ISR rendering strategy
-    - SEO metadata, Open Graph tags
-    - Output: app/(marketing)/ routes
-
-  Agent 2 (app-routes):
-    - Build (app)/ route group (dashboard, settings, workspace)
-    - SSR rendering with auth middleware
-    - Server Actions for mutations
-    - Output: app/(app)/ routes
-
-  Agent 3 (api-layer):
-    - Build route handlers (app/api/)
-    - Webhook handlers, external integrations
-    - tRPC or REST API setup
-    - Output: app/api/ route handlers
-
-  Agent 4 (shared-components):
-    - Build shared UI components (nav, sidebar, footer)
-    - Configure providers (theme, auth, query client)
-    - Optimize images, fonts, scripts
-    - Output: components/ + providers + optimization config
-
-MERGE:
-  - Verify all route groups use shared layout correctly
-  - Verify no 'use client' on pages or layouts
-  - Run full build and check for bundle size regressions
-  - Run Lighthouse on key routes
+MERGE: Verify layouts, no 'use client' on pages, full build, Lighthouse audit.
 ```
 
 ## HARD RULES
@@ -850,180 +795,27 @@ WHEN middleware causes redirect loops:
   4. Fix the condition or add the target path to matcher exclusions.
 ```
 
-## Anti-Patterns
-
-- **Do NOT add 'use client' to page.tsx or layout.tsx.** This opts the entire tree out of server rendering. Push client boundaries to the smallest leaf components.
-- **Do NOT fetch data in layouts that should refresh on navigation.** Layouts persist across navigations. If data should refresh, fetch it in the page component.
-- **Do NOT use `useEffect` + `fetch` when a Server Component fetch would work.** Server Components eliminate client-server waterfalls. Only use client-side fetching for real-time or user-triggered data.
-- **Do NOT create API routes to fetch data for your own UI.** Server Components can query databases directly. Route handlers are for external consumers and webhooks.
-- **Do NOT skip `loading.tsx` for routes with data fetching.** Users see a blank screen while data loads. Always provide loading UI.
-- **Do NOT ignore the `sizes` prop on responsive images.** Without `sizes`, Next.js cannot select the right image variant, causing oversized downloads.
-- **Do NOT put heavy JavaScript in middleware.** Middleware runs on every request at the Edge. Keep it under 1MB and avoid Node.js-specific APIs.
-- **Do NOT manually manage `<head>` tags.** Use the Metadata API (`generateMetadata`, `metadata` export) for SEO — it handles deduplication and streaming.
-
-
-## SSR/SSG Optimization Loop
-
-Autoresearch-grade iterative optimization for Next.js rendering performance. Run this loop after initial implementation to drive measurable improvements in TTFB, hydration cost, and page load speed.
-
+## Keep/Discard Discipline
 ```
-SSR/SSG OPTIMIZATION PROTOCOL:
+After EACH Next.js optimization:
+  1. MEASURE: Run next build, measure TTFB per route, check hydration payload size.
+  2. COMPARE: Is TTFB lower or equal? Is hydration payload smaller? Does build pass?
+  3. DECIDE:
+     - KEEP if TTFB improved AND build passes AND no 'use client' on page/layout.
+     - DISCARD if TTFB worsened OR build failed OR content freshness degraded.
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
 
-Phase 1 — TTFB Measurement & Reduction
-  target_ttfb = < 200ms (p75)
-  current_iteration = 0
-  max_iterations = 8
-
-  WHILE measured_ttfb > target_ttfb AND current_iteration < max_iterations:
-    1. MEASURE TTFB per route:
-       npx lighthouse <url> --only-categories=performance --output=json
-       Parse: audits['server-response-time'].numericValue
-       OR use web-vitals library for field measurement:
-         onTTFB((metric) => log(metric.value))
-    2. IDENTIFY the slowest routes (rank by p75 TTFB)
-    3. CLASSIFY root cause for each slow route:
-       a. Sequential data fetching (waterfall queries)
-       b. Uncached database queries
-       c. Missing revalidation strategy (always SSR, never cached)
-       d. Heavy middleware processing
-       e. Large Server Component tree serialization
-       f. Cold start on serverless platform
-    4. APPLY targeted fix:
-       - (a) → Parallelize with Promise.all or add Suspense boundaries for streaming
-       - (b) → Add React cache() wrapper, or use unstable_cache with tags
-       - (c) → Switch from force-dynamic to ISR: { next: { revalidate: N } }
-       - (d) → Narrow middleware matcher, move logic to server components
-       - (e) → Break into smaller Server Components with Suspense boundaries
-       - (f) → Use edge runtime where possible, reduce bundle, keep connections warm
-    5. RE-MEASURE same routes
-    6. RECORD:
-       route | cause | fix | ttfb_before_ms | ttfb_after_ms | rendering_strategy
-    7. IF ttfb_after >= ttfb_before → REVERT fix
-    8. current_iteration += 1
-
-  TTFB RESULTS TABLE:
-  ┌──────────────────────────────────────────────────────────────────┐
-  │  Route              │  Strategy  │  TTFB Before  │  TTFB After  │
-  ├──────────────────────────────────────────────────────────────────┤
-  │  /                  │  SSG       │  <N>ms        │  <N>ms       │
-  │  /dashboard         │  SSR→ISR   │  <N>ms        │  <N>ms       │
-  │  /products/[slug]   │  ISR       │  <N>ms        │  <N>ms       │
-  │  /search            │  Streaming │  <N>ms        │  <N>ms       │
-  └──────────────────────────────────────────────────────────────────┘
-
-Phase 2 — Hydration Audit
-  target: hydration time < 100ms, hydration payload < 128 KB (uncompressed RSC payload)
-
-  WHILE hydration metrics exceed targets:
-    1. MEASURE hydration cost:
-       - Browser DevTools Performance tab → record page load
-       - Identify "Hydration" marker duration
-       - Measure RSC payload size: Network tab → filter __rsc → sum transfer sizes
-       - Use React DevTools Profiler in production build to measure hydration render time
-    2. AUDIT client component boundaries:
-       - List every file with 'use client' directive
-       - For each: is the client boundary pushed to the leaf? Or is it too high in the tree?
-       - Calculate: total JS sent for client components (client-reference-manifest)
-    3. IDENTIFY hydration cost drivers:
-       a. 'use client' too high in the component tree (entire subtree becomes client JS)
-       b. Large serialized props from Server → Client components
-       c. Client components that could be Server Components (no interactivity)
-       d. Unnecessary hydration of below-fold content
-       e. Large third-party libraries included in client bundle
-    4. APPLY targeted fix:
-       - (a) → Extract interactive parts into smaller leaf client components
-       - (b) → Reduce prop payloads; fetch data in child Server Components instead
-       - (c) → Remove 'use client' directive, convert to Server Component
-       - (d) → Wrap below-fold sections in Suspense, lazy-load client components
-       - (e) → Dynamic import with next/dynamic + ssr: false for client-only libs
-    5. RE-MEASURE hydration time and payload
-    6. RECORD:
-       component | issue | fix | hydration_ms_before | hydration_ms_after | payload_delta_kb
-    7. IF metrics worsen → REVERT
-
-  HYDRATION AUDIT RESULTS:
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │  Metric                       │  Before    │  After     │  Target    │
-  ├───────────────────────────────┼────────────┼────────────┼────────────┤
-  │  Hydration time               │  <N>ms     │  <N>ms     │  < 100ms   │
-  │  RSC payload size             │  <N> KB    │  <N> KB    │  < 128 KB  │
-  │  Client components            │  <N>       │  <N>       │  Minimize  │
-  │  'use client' at leaf level   │  <N>/<M>   │  <N>/<M>   │  100%      │
-  │  Client JS (gzipped)          │  <N> KB    │  <N> KB    │  < 150 KB  │
-  │  Below-fold lazy-loaded       │  YES/NO    │  YES/NO    │  YES       │
-  └───────────────────────────────┴────────────┴────────────┴────────────┘
-
-Phase 3 — Rendering Strategy Audit
-  For every route, verify the rendering strategy is optimal:
-
-  FOR EACH route in app/:
-    1. CURRENT strategy: <SSG | ISR | SSR | Streaming | Client>
-    2. DATA characteristics:
-       - Static content? → SSG (generateStaticParams)
-       - Changes hourly/daily? → ISR (revalidate: N)
-       - Per-user/per-request? → SSR with Suspense streaming
-       - Real-time? → Client-side with SWR/React Query in server shell
-    3. RECOMMENDED strategy: <based on data characteristics>
-    4. IF current != recommended:
-       a. Apply the migration
-       b. Measure TTFB before/after
-       c. Verify content freshness meets requirements
-       d. IF TTFB improves AND freshness is acceptable → KEEP
-       e. ELSE → REVERT
-
-  RENDERING STRATEGY MAP:
-  ┌────────────────────────────────────────────────────────────────────────┐
-  │  Route              │  Current    │  Recommended  │  TTFB (ms)  │ OK? │
-  ├────────────────────────────────────────────────────────────────────────┤
-  │  /                  │  SSG        │  SSG          │  <N>        │  Y  │
-  │  /blog/[slug]       │  SSR        │  ISR (3600)   │  <N>→<N>    │  Y  │
-  │  /dashboard         │  SSR        │  Streaming    │  <N>→<N>    │  Y  │
-  │  /products/[id]     │  SSG        │  ISR (60)     │  <N>        │  Y  │
-  │  /search            │  SSR        │  SSR+Suspense │  <N>→<N>    │  Y  │
-  └────────────────────────────────────────────────────────────────────────┘
-
-CONVERGENCE CRITERIA:
-  - All routes have TTFB < 200ms (p75)
-  - Hydration time < 100ms
-  - Client JS < 150 KB gzipped
-  - Every 'use client' is at leaf level
-  - Rendering strategy matches data characteristics for every route
-  OR max 8 iterations per phase (report remaining gaps)
-
-FINAL REPORT:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Metric                       │  Start     │  Final     │  Target    │
-├───────────────────────────────┼────────────┼────────────┼────────────┤
-│  Avg TTFB (p75)               │  <N>ms     │  <N>ms     │  < 200ms   │
-│  Hydration time               │  <N>ms     │  <N>ms     │  < 100ms   │
-│  Client JS (gzipped)          │  <N> KB    │  <N> KB    │  < 150 KB  │
-│  Lighthouse Performance       │  <N>       │  <N>       │  >= 90     │
-│  Routes on optimal strategy   │  <N>/<M>   │  <N>/<M>   │  100%      │
-│  Suspense boundaries          │  <N>       │  <N>       │  Per slow  │
-│  Client components at leaf    │  <N>%      │  <N>%      │  100%      │
-└───────────────────────────────┴────────────┴────────────┴────────────┘
+Never keep a rendering strategy change that makes content unacceptably stale.
+Never measure TTFB in dev mode — always use production build.
 ```
 
-### SSR/SSG Optimization TSV Logging
-
-Append one row per optimization action to `.godmode/nextjs-optimization.tsv`:
-
+## Stop Conditions
 ```
-timestamp	project	phase	route	metric	before	after	technique	status
-2024-01-15T10:30:00Z	storefront	ttfb	/products/[slug]	ttfb_ms	680	120	isr-revalidate-60	improved
-2024-01-15T10:45:00Z	storefront	hydration	/dashboard	hydration_ms	240	85	leaf-client-split	improved
-2024-01-15T11:00:00Z	storefront	strategy	/blog/[slug]	rendering	ssr	isr_3600	strategy-migration	improved
-```
-
-### SSR/SSG Optimization Hard Rules
-
-```
-1. NEVER measure TTFB in dev mode. Always use production build: `next build && next start`.
-2. NEVER add 'use client' higher than necessary to "fix" a hydration issue. Push client boundaries to leaves.
-3. ALWAYS measure both lab (Lighthouse) and field (web-vitals) TTFB. They can diverge significantly.
-4. ALWAYS verify content freshness after switching from SSR to ISR. Stale content for critical pages is worse than slow TTFB.
-5. NEVER exceed 8 iterations per phase. If targets are not met, report the gap and recommend infrastructure changes (CDN, edge functions, database proximity).
-6. Log every optimization action in TSV format for reproducibility and rollback capability.
+STOP when ANY of these are true:
+  - All routes TTFB < 200ms (p75) AND hydration < 100ms AND client JS < 150KB gzipped
+  - All 'use client' at leaf level AND rendering strategy matches data characteristics per route
+  - User explicitly requests stop
+  - Max iterations (8) per phase reached
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

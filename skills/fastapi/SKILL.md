@@ -59,20 +59,7 @@ app/
 │   └── customer.py
 ├── services/
 │   ├── __init__.py
-│   ├── order_service.py    # Business logic
-│   └── payment_service.py
-├── repositories/
-│   ├── __init__.py
-│   └── order_repo.py       # Data access layer
-├── core/
-│   ├── __init__.py
-│   ├── security.py         # JWT, password hashing
-│   ├── exceptions.py       # Custom exceptions + handlers
-│   └── middleware.py        # Custom middleware
-├── db/
-│   ├── __init__.py
-│   ├── session.py          # Async engine + session factory
-│   └── migrations/         # Alembic migrations
+    # ... (additional patterns follow same structure)
 └── tests/
     ├── conftest.py          # Fixtures (client, DB, factories)
     ├── test_orders.py
@@ -114,68 +101,7 @@ class OrderCreate(OrderBase):
     customer_id: UUID
     items: list["OrderItemCreate"] = Field(..., min_length=1, max_length=100)
 
-    @field_validator("items")
-    @classmethod
-    def validate_unique_products(cls, v: list["OrderItemCreate"]) -> list["OrderItemCreate"]:
-        product_ids = [item.product_id for item in v]
-        if len(product_ids) != len(set(product_ids)):
-            raise ValueError("Duplicate products in order")
-        return v
-
-# Update schema (partial updates)
-class OrderUpdate(BaseModel):
-    notes: str | None = None
-    status: OrderStatus | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def check_at_least_one_field(cls, data: dict) -> dict:
-        if not any(v is not None for v in data.values()):
-            raise ValueError("At least one field must be provided")
-        return data
-
-# Response schema
-class OrderResponse(OrderBase):
-    id: UUID
-    status: OrderStatus
-    total: Decimal = Field(..., decimal_places=2)
-    customer: "CustomerSummary"
-    items: list["OrderItemResponse"]
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-# Paginated response
-class PaginatedResponse[T](BaseModel):
-    data: list[T]
-    total: int
-    page: int
-    per_page: int
-    pages: int
-
-    @property
-    def has_next(self) -> bool:
-        return self.page < self.pages
-
-# Item schemas
-class OrderItemCreate(BaseModel):
-    product_id: UUID
-    quantity: int = Field(..., gt=0, le=1000)
-
-class OrderItemResponse(BaseModel):
-    id: UUID
-    product_id: UUID
-    product_name: str
-    quantity: int
-    unit_price: Decimal
-    subtotal: Decimal
-
-    model_config = ConfigDict(from_attributes=True)
-
-# Lightweight summary for nested responses
-class CustomerSummary(BaseModel):
-    id: UUID
+    # ... (additional patterns follow same structure)
     name: str
     email: EmailStr
 
@@ -235,71 +161,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 # Type alias for cleaner signatures
 DbSession = Annotated[AsyncSession, Depends(get_db)]
 
-# Auth dependency
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: DbSession,
-) -> User:
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
-    user = await db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    return user
-
-CurrentUser = Annotated[User, Depends(get_current_user)]
-
-# Role-based access dependency
-def require_role(*roles: str):
-    async def check_role(user: CurrentUser) -> User:
-        if user.role not in roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
-            )
-        return user
-    return check_role
-
-AdminUser = Annotated[User, Depends(require_role("admin"))]
-
-# Service dependency with repository injection
-class OrderService:
-    def __init__(self, db: DbSession) -> None:
-        self.db = db
-        self.repo = OrderRepository(db)
-
-    async def create_order(self, data: OrderCreate, user: User) -> Order:
-        order = Order(**data.model_dump(), customer_id=user.customer_id)
-        self.db.add(order)
-        await self.db.flush()
-        return order
-
-    async def get_orders(self, user: User, page: int, per_page: int) -> PaginatedResponse[OrderResponse]:
-        return await self.repo.list_paginated(
-            filters={"customer_id": user.customer_id},
-            page=page,
-            per_page=per_page,
-        )
-
-# Dependency factory
-async def get_order_service(db: DbSession) -> OrderService:
-    return OrderService(db)
-
-OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]
-
-# Usage in endpoint
-@router.get("/orders", response_model=PaginatedResponse[OrderResponse])
-async def list_orders(
-    service: OrderServiceDep,
-    user: CurrentUser,
+    # ... (additional patterns follow same structure)
     page: int = Query(1, ge=1),
     per_page: int = Query(25, ge=1, le=100),
 ) -> PaginatedResponse[OrderResponse]:
@@ -357,85 +219,7 @@ async_session_factory = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
-)
-
-# Base model
-class Base(DeclarativeBase):
-    pass
-
-class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
-# Model definition (SQLAlchemy 2.0 declarative style)
-class Order(Base, TimestampMixin):
-    __tablename__ = "orders"
-    __table_args__ = (
-        Index("idx_orders_customer_status", "customer_id", "status"),
-    )
-
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    customer_id: Mapped[UUID] = mapped_column(ForeignKey("customers.id"), index=True)
-    status: Mapped[str] = mapped_column(String(20), default="pending")
-    total_cents: Mapped[int] = mapped_column(default=0)
-    notes: Mapped[str | None] = mapped_column(String(500))
-
-    # Relationships
-    customer: Mapped["Customer"] = relationship(back_populates="orders", lazy="selectin")
-    items: Mapped[list["OrderItem"]] = relationship(
-        back_populates="order", cascade="all, delete-orphan", lazy="selectin"
-    )
-
-# Repository pattern for data access
-class OrderRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
-
-    async def get_by_id(self, order_id: UUID) -> Order | None:
-        return await self.session.get(Order, order_id)
-
-    async def list_paginated(
-        self,
-        filters: dict,
-        page: int = 1,
-        per_page: int = 25,
-    ) -> PaginatedResponse[OrderResponse]:
-        query = select(Order)
-
-        # Apply filters dynamically
-        for key, value in filters.items():
-            if value is not None:
-                query = query.where(getattr(Order, key) == value)
-
-        # Count total
-        count_query = select(func.count()).select_from(query.subquery())
-        total = (await self.session.execute(count_query)).scalar_one()
-
-        # Paginate
-        query = query.offset((page - 1) * per_page).limit(per_page)
-        query = query.order_by(Order.created_at.desc())
-
-        result = await self.session.execute(query)
-        orders = result.scalars().all()
-
-        return PaginatedResponse(
-            data=[OrderResponse.model_validate(o) for o in orders],
-            total=total,
-            page=page,
-            per_page=per_page,
-            pages=(total + per_page - 1) // per_page,
-        )
-
-    async def create(self, data: OrderCreate) -> Order:
-        order = Order(**data.model_dump(exclude={"items"}))
-        order.items = [OrderItem(**item.model_dump()) for item in data.items]
-        self.session.add(order)
-        await self.session.flush()
-        return order
-
-    async def bulk_update_status(self, ids: list[UUID], status: str) -> int:
+    # ... (additional patterns follow same structure)
         result = await self.session.execute(
             update(Order).where(Order.id.in_(ids)).values(status=status)
         )
@@ -496,64 +280,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 
 # ARQ worker tasks
-async def process_payment(ctx: dict, order_id: str) -> dict:
-    """Process payment in background with retry."""
-    db = ctx["db"]
-    payment_service = ctx["payment_service"]
-
-    order = await db.get(Order, order_id)
-    result = await payment_service.charge(order.total_cents)
-
-    if result.success:
-        order.status = "confirmed"
-        order.payment_id = result.transaction_id
-        await db.commit()
-        return {"status": "success", "transaction_id": result.transaction_id}
-
-    raise Exception(f"Payment failed: {result.error}")
-
-# ARQ worker settings
-class WorkerSettings:
-    functions = [process_payment]
-    redis_settings = RedisSettings.from_dsn(settings.redis_url)
-    max_tries = 3
-    retry_delay = 10  # seconds
-
-# WebSocket endpoint
-class ConnectionManager:
-    def __init__(self) -> None:
-        self.active_connections: dict[str, list[WebSocket]] = {}
-
-    async def connect(self, websocket: WebSocket, channel: str) -> None:
-        await websocket.accept()
-        self.active_connections.setdefault(channel, []).append(websocket)
-
-    async def disconnect(self, websocket: WebSocket, channel: str) -> None:
-        self.active_connections.get(channel, []).remove(websocket)
-
-    async def broadcast(self, channel: str, message: dict) -> None:
-        for connection in self.active_connections.get(channel, []):
-            try:
-                await connection.send_json(message)
-            except Exception:
-                await self.disconnect(connection, channel)
-
-manager = ConnectionManager()
-
-@router.websocket("/ws/orders/{customer_id}")
-async def order_updates(websocket: WebSocket, customer_id: str):
-    await manager.connect(websocket, f"orders:{customer_id}")
-    try:
-        while True:
-            data = await websocket.receive_text()
-            # Handle incoming messages (ping, subscribe to specific orders)
-    except WebSocketDisconnect:
-        await manager.disconnect(websocket, f"orders:{customer_id}")
-
-# Broadcast from service layer
-async def notify_order_update(order: Order) -> None:
-    await manager.broadcast(f"orders:{order.customer_id}", {
-        "type": "order_updated",
+    # ... (additional patterns follow same structure)
         "order_id": str(order.id),
         "status": order.status,
         "updated_at": order.updated_at.isoformat(),
@@ -615,137 +342,7 @@ async def engine():
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
-
-@pytest.fixture
-async def db_session(engine) -> AsyncGenerator[AsyncSession, None]:
-    session_factory = async_sessionmaker(engine, expire_on_commit=False)
-    async with session_factory() as session:
-        yield session
-        await session.rollback()
-
-@pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    app = create_app()
-
-    async def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
-        yield ac
-
-@pytest.fixture
-def auth_headers(user: User) -> dict[str, str]:
-    token = create_access_token(data={"sub": str(user.id)})
-    return {"Authorization": f"Bearer {token}"}
-
-@pytest.fixture
-async def user(db_session: AsyncSession) -> User:
-    user = User(email="test@example.com", name="Test User", role="user")
-    db_session.add(user)
-    await db_session.flush()
-    return user
-
-@pytest.fixture
-async def order(db_session: AsyncSession, user: User) -> Order:
-    order = Order(customer_id=user.customer_id, status="pending", total_cents=5000)
-    db_session.add(order)
-    await db_session.flush()
-    return order
-
-# test_orders.py — Endpoint tests
-import pytest
-from httpx import AsyncClient
-
-pytestmark = pytest.mark.anyio
-
-async def test_list_orders_returns_paginated_results(
-    client: AsyncClient,
-    auth_headers: dict,
-    order: Order,
-):
-    response = await client.get("/api/v1/orders", headers=auth_headers)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["total"] >= 1
-    assert data["page"] == 1
-    assert len(data["data"]) >= 1
-    assert data["data"][0]["id"] == str(order.id)
-
-async def test_create_order_returns_201(
-    client: AsyncClient,
-    auth_headers: dict,
-    product: Product,
-):
-    payload = {
-        "items": [{"product_id": str(product.id), "quantity": 2}],
-        "notes": "Test order",
-    }
-
-    response = await client.post("/api/v1/orders", json=payload, headers=auth_headers)
-
-    assert response.status_code == 201
-    data = response.json()
-    assert data["status"] == "pending"
-    assert data["notes"] == "Test order"
-
-async def test_create_order_validates_empty_items(
-    client: AsyncClient,
-    auth_headers: dict,
-):
-    response = await client.post(
-        "/api/v1/orders",
-        json={"items": []},
-        headers=auth_headers,
-    )
-
-    assert response.status_code == 422  # Validation error
-
-async def test_get_order_returns_404_for_nonexistent(
-    client: AsyncClient,
-    auth_headers: dict,
-):
-    response = await client.get(
-        "/api/v1/orders/00000000-0000-0000-0000-000000000000",
-        headers=auth_headers,
-    )
-
-    assert response.status_code == 404
-
-async def test_unauthenticated_request_returns_401(client: AsyncClient):
-    response = await client.get("/api/v1/orders")
-    assert response.status_code == 401
-
-# test_services.py — Unit tests
-async def test_order_service_creates_order(db_session: AsyncSession, user: User):
-    service = OrderService(db_session)
-    data = OrderCreate(
-        customer_id=user.customer_id,
-        items=[OrderItemCreate(product_id=product_id, quantity=2)],
-    )
-
-    order = await service.create_order(data, user)
-
-    assert order.id is not None
-    assert order.status == "pending"
-    assert len(order.items) == 1
-
-# test_schemas.py — Pydantic validation tests
-def test_order_create_rejects_duplicate_products():
-    with pytest.raises(ValueError, match="Duplicate products"):
-        OrderCreate(
-            customer_id=uuid4(),
-            items=[
-                OrderItemCreate(product_id=product_id, quantity=1),
-                OrderItemCreate(product_id=product_id, quantity=2),  # Same product
-            ],
-        )
+    # ... (additional patterns follow same structure)
 
 def test_order_update_requires_at_least_one_field():
     with pytest.raises(ValueError, match="At least one field"):
@@ -1012,24 +609,11 @@ Notes: <one-line summary>
 
 ## TSV Logging
 
-Append one TSV row to `.godmode/fastapi.tsv` after each invocation:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	project	action	files_count	endpoints_count	models_count	migrations_count	tests_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | endpoint | model | schema | service | optimize | test | audit | upgrade
-- `files_count`: number of files created or modified
-- `endpoints_count`: number of API endpoints created or modified
-- `models_count`: number of SQLAlchemy models or Pydantic schemas created or modified
-- `migrations_count`: number of Alembic migrations generated
-- `tests_status`: passing | failing | skipped | none
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -1050,316 +634,84 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 
 ## Error Recovery
 
-When errors occur, follow these remediation steps:
-
-```
 IF mypy/pyright fails:
   1. Fix type errors in order: models → schemas → services → routers
-  2. Add return type annotations to all functions
-  3. Replace Any with proper types or TypeVar
-  4. Check that SQLAlchemy models use Mapped[] type annotations
-
 IF tests fail:
   1. Verify test database is configured and accessible
-  2. Check that async test fixtures use @pytest.fixture with async support
-  3. Verify httpx.AsyncClient is configured with the correct app and base_url
-  4. Check that database transactions are rolled back between tests
-
 IF Alembic migration errors:
   1. Multiple heads → run `alembic merge heads` to create merge migration
-  2. Migration fails → check that SQL is compatible with target database
-  3. Autogenerate misses changes → verify models are imported in env.py
-  4. Downgrade fails → verify down_revision chain is correct
-
 IF async/blocking issues:
   1. Replace `requests` with `httpx.AsyncClient`
-  2. Replace sync file I/O with `aiofiles`
-  3. Use `run_in_executor` for unavoidable blocking calls
-  4. Check that lazy loading is not used on async SQLAlchemy relationships
-
 IF dependency injection errors:
   1. Verify all Depends() functions have correct signatures
-  2. Check that generator dependencies use `yield` and proper cleanup
-  3. Verify scoped dependencies (request-scoped sessions) are not cached globally
-```
-
-## Anti-Patterns
-
-- **Do NOT use sync database drivers.** `psycopg2` blocks the event loop. Use `asyncpg` with `postgresql+asyncpg://` connection strings.
-- **Do NOT return SQLAlchemy models directly.** Use Pydantic response schemas. Models carry ORM state that will break serialization and leak internals.
-- **Do NOT import database sessions as module globals.** Use `Depends(get_db)` for request-scoped sessions. Global sessions cause concurrency bugs.
-- **Do NOT skip input validation.** Pydantic schemas with `Field()` constraints catch bad data before it reaches your service layer.
-- **Do NOT block the event loop.** CPU-intensive work (image processing, ML inference) must run in a thread pool (`run_in_executor`) or separate worker process.
-- **Do NOT use `lazy` loading on async relationships.** Use `selectin` or `joined` loading strategy. Lazy loading triggers synchronous queries in an async context.
-- **Do NOT hardcode configuration.** Use `pydantic-settings` with `.env` files. Every configurable value must come from environment variables.
-- **Do NOT skip Alembic migrations.** FastAPI + SQLAlchemy needs explicit schema management. Never use `metadata.create_all()` in production.
-
 
 ## FastAPI Optimization Loop
 
-When optimizing an existing FastAPI application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
-
-### Pass 1: Async Audit
-
 ```
-ASYNC AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Identify blocking calls in async endpoints              │
-│                                                                   │
-│  BLOCKING CALL DETECTION — scan for these in async functions:    │
-│  ┌──────────────────────────────────┬────────────────────────┐  │
-│  │  Blocking Pattern                │  Async Replacement      │  │
-│  ├──────────────────────────────────┼────────────────────────┤  │
-│  │  import requests                 │  httpx.AsyncClient      │  │
-│  │  requests.get() / .post()       │  await client.get()     │  │
-│  │  open() / read() / write()      │  aiofiles.open()        │  │
-│  │  time.sleep()                   │  asyncio.sleep()        │  │
-│  │  subprocess.run()               │  asyncio.create_subprocess │
-│  │  psycopg2 (sync driver)        │  asyncpg                │  │
-│  │  pymongo (sync)                 │  motor                  │  │
-│  │  redis-py (sync)               │  redis.asyncio          │  │
-│  │  smtplib.send()                │  aiosmtplib             │  │
-│  │  boto3 (sync)                  │  aiobotocore            │  │
-│  └──────────────────────────────────┴────────────────────────┘  │
-│                                                                   │
-│  Step 2: Audit def vs async def                                  │
-│  - async def: MUST NOT contain any blocking calls               │
-│  - def: runs in threadpool (OK for blocking, but limited)        │
-│  - If endpoint is def (sync) and does only I/O → convert to     │
-│    async def with async libraries                                │
-│  - If endpoint is async def and calls sync library → either:     │
-│    a) Replace with async library (preferred)                     │
-│    b) Use run_in_executor() for unavoidable sync calls           │
-│                                                                   │
-│  Step 3: Event loop health measurement                           │
-│  import asyncio, time                                             │
-│                                                                   │
-│  async def monitor_event_loop():                                 │
-│      while True:                                                  │
-│          start = time.monotonic()                                │
-│          await asyncio.sleep(0.1)                                │
-│          lag = time.monotonic() - start - 0.1                    │
-│          if lag > 0.05:  # 50ms lag threshold                    │
-│              logger.warning(f"Event loop lag: {lag*1000:.0f}ms") │
-│          await asyncio.sleep(1)                                  │
-│                                                                   │
-│  Step 4: Async generator audit                                   │
-│  - Verify all Depends() with yield clean up properly             │
-│  - Check that async context managers use async with              │
-│  - Verify background tasks don't hold request-scoped resources   │
-└──────────────────────────────────────────────────────────────────┘
-```
+FASTAPI OPTIMIZATION PASSES:
 
-```python
-# CONCRETE ASYNC FIX PATTERNS:
+Pass 1 — Async Audit:
+  1. Scan for blocking calls in async endpoints: requests→httpx, open→aiofiles,
+     time.sleep→asyncio.sleep, psycopg2→asyncpg, pymongo→motor, redis-py→redis.asyncio
+  2. Convert sync endpoints doing only I/O to async def with async libraries
+  3. Offload CPU-intensive work to run_in_executor or ProcessPoolExecutor
+  4. Monitor event loop lag (alert if >50ms)
 
-# BAD — blocking HTTP call in async endpoint:
-@router.get("/data")
-async def get_data():
-    response = requests.get("https://api.example.com/data")  # BLOCKS EVENT LOOP
-    return response.json()
+Pass 2 — Dependency Injection Audit:
+  1. Catalog all Depends() — verify scope (request vs app), caching, cleanup
+  2. Fix: pool connections instead of creating per-request, cache I/O results
+  3. Flatten deeply nested Depends() chains
+  4. Add try/finally cleanup to all yield dependencies
 
-# GOOD — async HTTP call:
-@router.get("/data")
-async def get_data():
-    async with httpx.AsyncClient() as client:
-        response = await client.get("https://api.example.com/data")
-    return response.json()
+Pass 3 — Response Time:
+  1. Baseline with timing middleware (X-Process-Time-ms header)
+  2. Optimize DB queries: selectin/joined loading, load_only(), indexes
+  3. Use ORJSONResponse as default response class for faster serialization
+  4. Use asyncio.gather() for independent async calls
+  5. Add Redis cache for computed results, HTTP cache headers for clients
 
-# BAD — CPU-intensive work in async endpoint:
-@router.post("/process")
-async def process_image(file: UploadFile):
-    data = await file.read()
-    result = heavy_image_processing(data)  # BLOCKS EVENT LOOP
-    return {"result": result}
+Pass 4 — Startup & Shutdown:
+  1. Initialize all shared resources in lifespan context manager
+  2. Clean up all resources on shutdown (close clients, dispose engines)
+  3. No module-level resource creation
+  4. Configure uvicorn --timeout-graceful-shutdown 30
 
-# GOOD — offload to threadpool:
-import asyncio
-from concurrent.futures import ProcessPoolExecutor
-
-pool = ProcessPoolExecutor(max_workers=4)
-
-@router.post("/process")
-async def process_image(file: UploadFile):
-    data = await file.read()
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(pool, heavy_image_processing, data)
-    return {"result": result}
-```
-
-### Pass 2: Dependency Injection Audit
-
-```
-DEPENDENCY INJECTION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Catalog all dependencies                                │
-│  List every Depends() used across the application:               │
-│  ┌──────────────────────────┬──────────┬─────────┬────────────┐ │
-│  │  Dependency              │  Scope   │  Cached │  Cleanup   │ │
-│  ├──────────────────────────┼──────────┼─────────┼────────────┤ │
-│  │  get_db                  │  request │  no     │  yes/yield │ │
-│  │  get_current_user        │  request │  no     │  no        │ │
-│  │  get_settings            │  app     │  yes    │  no        │ │
-│  │  get_redis               │  app     │  yes    │  yes       │ │
-│  │  rate_limiter            │  request │  no     │  no        │ │
-│  └──────────────────────────┴──────────┴─────────┴────────────┘ │
-│                                                                   │
-│  Step 2: Identify performance anti-patterns                      │
-│  - Dependencies creating new connections per request → use pool  │
-│  - Dependencies doing I/O that could be cached → add caching    │
-│  - Deeply nested Depends() chains → flatten where possible       │
-│  - Missing cleanup in yield dependencies → add try/finally       │
-│                                                                   │
-│  Step 3: Optimize dependency chains                              │
-│  # BAD — new DB connection per request:                          │
-│  async def get_db():                                              │
-│      engine = create_async_engine(DB_URL)  # New engine per call!│
-│      async with AsyncSession(engine) as session:                 │
-│          yield session                                            │
-│                                                                   │
-│  # GOOD — reuse engine from app state:                           │
-│  async def get_db():                                              │
-│      async with async_session_factory() as session:              │
-│          try:                                                     │
-│              yield session                                        │
-│              await session.commit()                               │
-│          except Exception:                                        │
-│              await session.rollback()                             │
-│              raise                                                │
-│                                                                   │
-│  Step 4: Sub-dependency deduplication                            │
-│  - FastAPI caches dependency results within a single request     │
-│  - If Depends(get_db) is used by multiple sub-dependencies,     │
-│    they all receive the same session (by default — use_cache=True)│
-│  - Set use_cache=False only when you need independent instances  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 3: Response Time Optimization
-
-```
-RESPONSE TIME OPTIMIZATION:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Baseline response times                                 │
-│  Use middleware to measure endpoint latency:                     │
-│                                                                   │
-│  @app.middleware("http")                                         │
-│  async def timing_middleware(request: Request, call_next):       │
-│      start = time.perf_counter()                                │
-│      response = await call_next(request)                        │
-│      duration = (time.perf_counter() - start) * 1000            │
-│      response.headers["X-Process-Time-ms"] = f"{duration:.1f}" │
-│      logger.info("request", path=request.url.path,              │
-│                  method=request.method, duration_ms=duration)    │
-│      return response                                             │
-│                                                                   │
-│  Step 2: Identify slow endpoints                                │
-│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
-│  │  Endpoint                │  p50(ms) │  p99(ms) │  Action    ││
-│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
-│  │  GET /api/orders         │  <N>     │  <N>     │  optimize  ││
-│  │  POST /api/orders        │  <N>     │  <N>     │  check     ││
-│  │  GET /api/reports/:id    │  <N>     │  <N>     │  cache     ││
-│  └──────────────────────────┴──────────┴──────────┴────────────┘│
-│                                                                   │
-│  Step 3: Apply optimizations per endpoint                        │
-│  a) Database query optimization:                                 │
-│     - Add selectin/joined loading strategies on relationships    │
-│     - Use .options(load_only(...)) for column subset             │
-│     - Add database indexes on filter/sort columns                │
-│     - Use server-side cursors for large result sets              │
-│                                                                   │
-│  b) Response serialization optimization:                         │
-│     - Use model_config = ConfigDict(from_attributes=True) on    │
-│       response schemas (avoids manual dict construction)         │
-│     - Use ORJSONResponse for faster JSON serialization:          │
-│       from fastapi.responses import ORJSONResponse               │
-│       app = FastAPI(default_response_class=ORJSONResponse)       │
-│     - Avoid deeply nested response schemas on list endpoints     │
-│                                                                   │
-│  c) Concurrent I/O:                                              │
-│     - Use asyncio.gather() for independent async calls:          │
-│       user, orders = await asyncio.gather(                       │
-│           get_user(user_id), get_orders(user_id)                │
-│       )                                                           │
-│     - Use asyncio.TaskGroup() (Python 3.11+) for structured     │
-│       concurrency with proper error handling                     │
-│                                                                   │
-│  d) Caching:                                                     │
-│     - In-memory TTL cache for hot config/reference data          │
-│     - Redis cache for computed results (reports, aggregations)   │
-│     - HTTP cache headers for client-side caching                 │
-│     - @lru_cache for app-scoped dependencies (settings, config) │
-│                                                                   │
-│  Step 4: Connection pool tuning                                  │
-│  engine = create_async_engine(                                   │
-│      DATABASE_URL,                                               │
-│      pool_size=20,            # concurrent connections           │
-│      max_overflow=10,         # burst capacity                   │
-│      pool_timeout=30,         # wait for connection              │
-│      pool_recycle=1800,       # recycle connections every 30min  │
-│      pool_pre_ping=True,      # verify connection is alive      │
-│  )                                                                │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 4: Startup & Shutdown Audit
-
-```
-STARTUP & SHUTDOWN AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Startup lifespan:                                               │
-│  @asynccontextmanager                                            │
-│  async def lifespan(app: FastAPI):                               │
-│      # Startup: initialize shared resources ONCE                 │
-│      app.state.db_engine = create_async_engine(DB_URL)          │
-│      app.state.redis = await aioredis.from_url(REDIS_URL)       │
-│      app.state.http_client = httpx.AsyncClient(timeout=10)      │
-│      yield                                                        │
-│      # Shutdown: clean up all resources                          │
-│      await app.state.http_client.aclose()                       │
-│      await app.state.redis.close()                               │
-│      await app.state.db_engine.dispose()                        │
-│                                                                   │
-│  Audit checklist:                                                │
-│  [ ] All shared resources initialized in lifespan startup        │
-│  [ ] All resources properly closed in lifespan shutdown           │
-│  [ ] No module-level resource creation (connections, clients)    │
-│  [ ] Background tasks cancelled on shutdown                      │
-│  [ ] Health check endpoint returns 503 during shutdown           │
-│  [ ] Uvicorn configured with graceful shutdown timeout:          │
-│      uvicorn app:app --timeout-graceful-shutdown 30              │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-FASTAPI OPTIMIZATION REPORT:
+OPTIMIZATION REPORT:
 ┌──────────────────────────────┬───────────┬───────────┬───────────┐
 │  Metric                      │  Before   │  After    │  Δ        │
 ├──────────────────────────────┼───────────┼───────────┼───────────┤
 │  Blocking calls in async     │  <N>      │  0        │  FIXED    │
-│  Event loop lag (p99 ms)     │  <N>      │  <N>      │  -<N>%    │
 │  Avg response time (ms)     │  <N>      │  <N>      │  -<N>%    │
 │  p99 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
-│  DB pool utilization (%)    │  <N>      │  <N>      │  tuned    │
-│  Dependency chain depth      │  <N>      │  <N>      │  flattened│
-│  Startup time (ms)          │  <N>      │  <N>      │  -<N>%    │
 │  Shutdown cleanup verified   │  NO       │  YES      │  FIXED    │
-│  ORJSONResponse enabled      │  NO       │  YES      │  +<N>%    │
 └──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- Zero blocking calls in async endpoints
-- Event loop lag p99 < 50ms
-- All dependencies use connection pooling (no per-request connections)
-- Lifespan properly initializes and cleans up all shared resources
-- ORJSONResponse used as default response class
-- Response times improved by measurable margin on targeted endpoints
-
 VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
+
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
+```
+
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

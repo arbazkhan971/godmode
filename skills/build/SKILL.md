@@ -46,6 +46,24 @@ Agent discovers it needs file X not in task.files:
 → Orchestrator amends scope or discards task.
 → Agent does NOT touch files outside scope.
 
+## Keep/Discard Discipline
+```
+After EACH agent merge:
+  KEEP if: build_cmd && lint_cmd && test_cmd all pass after merge
+  DISCARD if: any check fails OR merge conflict
+  On discard: git reset --hard HEAD~1. Re-queue task in next round with narrower scope.
+  Never keep a merge that breaks any guard check.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all tasks in plan completed and guards pass
+  - budget_exhausted: max rounds reached (tasks * 2)
+  - diminishing_returns: 3 consecutive rounds with 0 tasks merged
+  - stuck: >5 consecutive discards across rounds
+```
+
 ## Rules
 1. One task per agent. Commit message: `feat({module}): {task.title}`. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = discard.

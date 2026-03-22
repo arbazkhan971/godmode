@@ -231,28 +231,6 @@ SCHEMA VALIDATION COMPARISON:
 ├──────────────┼───────────────────────────────────────────────────────┤
 │  ArkType      │ Runtime-optimized, TypeScript syntax                  │
 │               │ Bundle: ~20KB min+gzip                                │
-│               │ Best for: Performance-critical validation              │
-│               │ Strengths: Fastest runtime, TypeScript-like syntax    │
-├──────────────┼───────────────────────────────────────────────────────┤
-│  io-ts        │ Functional programming style, fp-ts ecosystem         │
-│               │ Bundle: ~5KB min+gzip                                 │
-│               │ Best for: FP codebases, Either-based error handling   │
-│               │ Strengths: Composable, functional patterns            │
-└──────────────┴───────────────────────────────────────────────────────┘
-
-RECOMMENDATION DECISION TREE:
-  New TypeScript project?
-    YES → Zod (best type inference, largest ecosystem)
-  Bundle size critical (< 5KB budget)?
-    YES → Valibot (tree-shakeable, modular)
-  Using Formik for forms?
-    YES → Yup (native Formik integration)
-  Node.js backend with complex rules?
-    YES → Joi (most validation rules) or Zod (better TypeScript)
-  FP codebase with fp-ts?
-    YES → io-ts (native Either, composable)
-```
-
 ### Step 4: Schema-First Development with Zod
 Define schemas that serve as both runtime validators and TypeScript types:
 
@@ -421,124 +399,6 @@ function processOrder(order: Order) {
 ```typescript
 // ─── Result Type ─────────────────────────────────────────────
 type Result<T, E = Error> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
-
-function ok<T>(value: T): Result<T, never> {
-  return { ok: true, value };
-}
-
-function err<E>(error: E): Result<never, E> {
-  return { ok: false, error };
-}
-
-// Usage
-type UserError =
-  | { code: 'NOT_FOUND'; userId: string }
-  | { code: 'INVALID_EMAIL'; email: string }
-  | { code: 'DUPLICATE'; field: string; value: string };
-
-async function createUser(input: CreateUserRequest): Promise<Result<User, UserError>> {
-  const existing = await db.users.findByEmail(input.email);
-  if (existing) {
-    return err({ code: 'DUPLICATE', field: 'email', value: input.email });
-  }
-
-  const user = await db.users.create(input);
-  return ok(user);
-}
-
-// Caller must handle both cases
-const result = await createUser(input);
-if (result.ok) {
-  // TypeScript knows: result.value is User
-  return res.status(201).json(result.value);
-} else {
-  // TypeScript knows: result.error is UserError
-  switch (result.error.code) {
-    case 'NOT_FOUND':
-      return res.status(404).json({ error: result.error.userId });
-    case 'INVALID_EMAIL':
-      return res.status(400).json({ error: result.error.email });
-    case 'DUPLICATE':
-      return res.status(409).json({ error: `${result.error.field} already exists` });
-  }
-}
-```
-
-#### Type Guard Functions
-```typescript
-// ─── Type Guards ─────────────────────────────────────────────
-// Custom type guards for runtime narrowing
-function isUser(value: unknown): value is User {
-  return UserSchema.safeParse(value).success;
-}
-
-function isApiError(error: unknown): error is { code: string; message: string } {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as Record<string, unknown>).code === 'string' &&
-    typeof (error as Record<string, unknown>).message === 'string'
-  );
-}
-
-// Assertion functions (TypeScript 3.7+)
-function assertDefined<T>(value: T | null | undefined, name: string): asserts value is T {
-  if (value === null || value === undefined) {
-    throw new Error(`Expected ${name} to be defined, got ${value}`);
-  }
-}
-
-// Usage
-const user = await db.users.find(id);
-assertDefined(user, `user with id ${id}`);
-// TypeScript knows: user is User (not User | null)
-console.log(user.name); // safe
-```
-
-#### Branded Types for Domain Safety
-```typescript
-// ─── Branded Types ───────────────────────────────────────────
-// Prevent mixing up primitive types that represent different things
-
-declare const __brand: unique symbol;
-type Brand<T, B> = T & { [__brand]: B };
-
-type UserId = Brand<string, 'UserId'>;
-type OrderId = Brand<string, 'OrderId'>;
-type Email = Brand<string, 'Email'>;
-type Cents = Brand<number, 'Cents'>;
-type Dollars = Brand<number, 'Dollars'>;
-
-// Constructor functions with validation
-function UserId(value: string): UserId {
-  if (!value.match(/^usr_[a-z0-9]{20}$/)) {
-    throw new Error(`Invalid UserId format: ${value}`);
-  }
-  return value as UserId;
-}
-
-function Cents(value: number): Cents {
-  if (!Number.isInteger(value) || value < 0) {
-    throw new Error(`Cents must be a non-negative integer, got ${value}`);
-  }
-  return value as Cents;
-}
-
-// Now TypeScript prevents accidental mixing
-function getUser(id: UserId): Promise<User> { ... }
-function getOrder(id: OrderId): Promise<Order> { ... }
-
-const userId = UserId('usr_abc123...');
-const orderId = OrderId('ord_xyz789...');
-
-getUser(userId);   // OK
-getUser(orderId);  // TYPE ERROR: OrderId is not assignable to UserId
-```
-
 ### Step 6: Runtime Type Checking Strategy
 Define where and how to validate at runtime:
 
@@ -560,20 +420,6 @@ RUNTIME VALIDATION BOUNDARIES:
 │             │                                                  │
 │             ▼                                                  │
 │  ┌──────────────────────┐                                     │
-│  │  Database Layer       │ ← VALIDATE on read (untrusted data) │
-│  └──────────┬───────────┘                                     │
-│             │                                                  │
-│             ▼                                                  │
-│  ┌──────────────────────┐                                     │
-│  │  External API Client  │ ← VALIDATE responses (untrusted)    │
-│  └──────────────────────┘                                     │
-│                                                               │
-│  RULE: Validate at boundaries, trust within boundaries.        │
-│  RULE: Every piece of data entering your system gets validated.│
-│  RULE: Data inside your system is trusted (typed, validated).  │
-└──────────────────────────────────────────────────────────────┘
-```
-
 ### Step 7: Schema-First Development Workflow
 Design the data model before writing business logic:
 
@@ -600,39 +446,6 @@ export const UserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100),
   role: z.enum(['admin', 'member', 'viewer']),
-  createdAt: z.date(),
-});
-
-// Types derived from schema
-export type User = z.infer<typeof UserSchema>;
-export type CreateUser = z.infer<typeof CreateUserSchema>;
-export type UpdateUser = z.infer<typeof UpdateUserSchema>;
-
-// Request schemas derived from entity schema
-export const CreateUserSchema = UserSchema.omit({ id: true, createdAt: true });
-export const UpdateUserSchema = UserSchema.partial().omit({ id: true, createdAt: true });
-
-// Response schema with computed fields
-export const UserResponseSchema = UserSchema.extend({
-  displayName: z.string(),
-  avatarUrl: z.string().url().nullable(),
-});
-
-// Test data factory derived from schema
-import { faker } from '@faker-js/faker';
-
-export function buildUser(overrides: Partial<User> = {}): User {
-  return {
-    id: faker.string.uuid(),
-    email: faker.internet.email(),
-    name: faker.person.fullName(),
-    role: faker.helpers.arrayElement(['admin', 'member', 'viewer'] as const),
-    createdAt: faker.date.past(),
-    ...overrides,
-  };
-}
-```
-
 ### Step 8: Commit and Transition
 1. Commit tsconfig changes: `"type: <project> — enable TypeScript strict mode (<phase>)"`
 2. Commit schema library: `"type: <project> — add Zod schemas for <domain>"`
@@ -779,17 +592,6 @@ AFTER all phases:
   Report improvement delta
 ```
 
-## Anti-Patterns
-
-- **Do NOT write types and schemas separately.** If you have a TypeScript interface AND a Zod schema for the same entity, they will drift apart. Derive the type from the schema.
-- **Do NOT validate inside business logic.** Validate at the boundary (API handler, database read). Inside service functions, trust the types.
-- **Do NOT use `as` casts to silence errors.** `as unknown as User` is not type safety — it is hiding bugs. Fix the actual type mismatch.
-- **Do NOT use `@ts-ignore` instead of fixing types.** Every `@ts-ignore` is a ticking time bomb. Use `@ts-expect-error` only when there is a genuine compiler limitation, and add a comment explaining why.
-- **Do NOT skip `noUncheckedIndexedAccess`.** Without it, `array[0]` returns `T` instead of `T | undefined`. This is the single flag that catches the most real bugs.
-- **Do NOT use `any` for "I'll type this later."** Use `unknown` instead. `unknown` is safe (requires narrowing), `any` is unsafe (bypasses all checking).
-- **Do NOT over-validate.** Validating the same data at every function call is wasteful. Validate once at the boundary, then trust the types.
-- **Do NOT create overly complex union types.** If a discriminated union has 15 variants and each handler is trivial, the type complexity is not paying for itself. Keep types proportional to the problem.
-
 ## Output Format
 Print on completion: `Type: safety score {before}/100 → {after}/100 (grade: {grade}). any count: {before_any} → {after_any}. Strict mode: {strict_status}. Runtime validation: {validation_status}. Schemas: {schema_count}.`
 
@@ -885,24 +687,5 @@ Agent 2 (worktree: type-schemas):
   - Scope: src/schemas/, src/types/
   - Output: Schema library + inferred types
 
-Agent 3 (worktree: type-validation):
-  - Add runtime validation middleware at API boundaries
-  - Validate environment variables at startup
-  - Scope: src/middleware/, src/config/
-  - Output: Validation middleware + env validation
-
-Agent 4 (worktree: type-eliminate-any):
-  - Replace all remaining `any` with proper types
-  - Remove `@ts-ignore` directives
-  - Scope: all .ts/.tsx files
-  - Output: Zero-any codebase
-
-MERGE ORDER: strict → schemas → validation → eliminate-any
-CONFLICT RESOLUTION: schemas branch owns type definitions; strict branch owns tsconfig
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run type safety tasks sequentially: strict mode, then schemas, then validation, then eliminate-any.
-- Use branch isolation per task: `git checkout -b godmode-type-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.

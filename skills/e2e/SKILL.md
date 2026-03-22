@@ -546,7 +546,7 @@ CROSS-BROWSER ISSUES FOUND:
 
 1. **Page objects are mandatory.** Never put selectors directly in test files. Page objects make tests readable and locators maintainable.
 2. **Test user journeys, not pages.** E2E tests should simulate real user flows (login, add to cart, checkout), not individual page checks.
-3. **Stability over speed.** A fast E2E suite that fails randomly is worse than a slow suite that's reliable. Fix flakiness before adding more tests.
+3. **Stability over speed.** A fast E2E suite that fails randomly is worse than a slow reliable suite. Fix flakiness before adding tests.
 4. **Use auto-waiting.** Modern frameworks (Playwright, Cypress) auto-wait for elements. Never use `sleep()` or `waitForTimeout()`.
 5. **Test data isolation.** Each test creates its own data and cleans up after itself. Never rely on data from another test.
 6. **Fail with context.** Screenshots, videos, and traces on failure are essential for debugging. Configure them in CI.
@@ -625,10 +625,36 @@ Applying fixes... All 3 tests now pass consistently (10/10 runs).
 4. **Never put selectors directly in test files.** All locators live in Page Object classes. Tests call page object methods only.
 5. **Never skip flaky test investigation.** A flaky test is either fixed or deleted within 48 hours. No `test.skip()` without a linked issue.
 
+## Keep/Discard Discipline
+```
+After EACH new test spec or flakiness fix:
+  1. MEASURE: Run the test 10 times — what is the pass rate?
+  2. COMPARE: Is it stable (100% pass rate over 10 runs)?
+  3. DECIDE:
+     - KEEP if: 100% pass rate over 10 runs AND no timing-dependent waits
+     - DISCARD if: pass rate < 100% OR test uses sleep/waitForTimeout
+  4. COMMIT kept tests. Delete or rewrite discarded tests before adding more.
+
+Never merge a test with < 100% pass rate — flaky tests erode trust in the entire suite.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All critical user flows have E2E coverage with 100% pass rate
+  - Cross-browser matrix passes (chromium, firefox, webkit)
+  - User explicitly requests stop
+  - Max iterations (10) reached — report remaining uncovered flows
+
+DO NOT STOP just because:
+  - Non-critical flows lack coverage (cover critical paths first)
+  - A single browser has a known platform bug (annotate and continue)
+```
+
 ## Loop Protocol
 
 ```
-test_flow_queue = detect_untested_user_flows()  // e.g., [login, checkout, settings, search]
+test_flow_queue = detect_untested_user_flows()
 current_iteration = 0
 
 WHILE test_flow_queue is not empty:
@@ -703,12 +729,12 @@ AUTO-DETECT E2E testing context:
 ## Anti-Patterns
 
 - **Do NOT use CSS selectors as locators.** `div.class > span:nth-child(3)` breaks on any DOM change. Use `data-testid`, `getByRole`, or `getByLabel`.
-- **Do NOT test implementation details.** E2E tests verify user behavior, not internal state. Don't assert on Redux store or component props.
-- **Do NOT write E2E tests for everything.** E2E tests are slow and expensive. Use them for critical user journeys. Use unit/integration tests for logic.
+- **Do NOT test implementation details.** E2E tests verify user behavior, not internal state. Do not assert on Redux store or component props.
+- **Do NOT write E2E tests for everything.** E2E tests are slow. Use them for critical user journeys. Use unit/integration tests for logic.
 - **Do NOT skip test data cleanup.** Leftover test data causes cascading failures. Always clean up in afterEach or use isolated test databases.
-- **Do NOT ignore flaky tests.** A flaky test erodes trust in the entire suite. Fix or delete flaky tests immediately.
+- **Do NOT ignore flaky tests.** A flaky test erodes trust in the entire suite. Fix or delete flaky tests within 48 hours.
 - **Do NOT use hard-coded waits.** `sleep(5000)` is never the answer. Use assertion-based waits that resolve as soon as the condition is met.
-- **Do NOT run E2E tests only locally.** E2E tests must run in CI against a real browser. Local-only E2E tests provide false confidence.
+- **Do NOT run E2E tests only locally.** E2E tests must run in CI against a real browser. Local-only tests provide false confidence.
 
 
 ## Output Format

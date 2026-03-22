@@ -456,21 +456,6 @@ Manual fix required for 4 issues.
 Verdict: FAIL — 1 CRITICAL, 2 HIGH findings require remediation.
 ```
 
-### Component-level audit
-```
-User: /godmode:a11y --component DatePicker
-
-A11y: Auditing DatePicker component...
-
-Keyboard: Arrow keys navigate dates, Enter selects, Escape closes
-Screen reader: Announces "Date picker, March 2026, selected date: March 19"
-Contrast: All text meets AA ratio
-
-FINDING 1: Missing aria-label on navigation buttons
-Severity: HIGH
-...
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -509,39 +494,6 @@ AUTO-DETECT SEQUENCE:
    - Jest? → can use jest-axe
    - Playwright/Cypress? → can use axe integration
 6. Count components and pages in scope automatically
-```
-
-## Multi-Agent Dispatch
-
-For large applications, parallelize the audit across WCAG principles:
-
-```
-PARALLEL AUDIT DISPATCH:
-IF component_count > 20 OR page_count > 5:
-  Agent 1 (worktree: a11y-perceivable):
-    - WCAG 1.x Perceivable checks
-    - Color contrast deep dive
-    - Alt text audit across all images
-    - Media accessibility (captions, transcripts)
-
-  Agent 2 (worktree: a11y-operable):
-    - WCAG 2.x Operable checks
-    - Keyboard navigation audit for all interactive flows
-    - Focus management and tab order
-    - Touch target sizing
-
-  Agent 3 (worktree: a11y-understandable-robust):
-    - WCAG 3.x Understandable checks
-    - WCAG 4.x Robust checks
-    - Screen reader testing
-    - ARIA validation and semantic HTML audit
-
-  Agent 4 (worktree: a11y-autofix):
-    - Run automated scanners (axe, pa11y, lighthouse)
-    - Apply auto-fixes for straightforward issues
-    - Generate remediation code for complex issues
-
-  COORDINATOR merges findings, deduplicates, ranks by severity
 ```
 
 ## HARD RULES
@@ -634,13 +586,39 @@ IF ARIA fix causes screen reader regression:
 
 ## Anti-Patterns
 
-- **Do NOT rely solely on automated tools.** Axe and Pa11y miss keyboard traps, reading order issues, and context-dependent problems. Automated = necessary but not sufficient.
-- **Do NOT add ARIA to fix semantic HTML problems.** Use the right HTML element first. `<nav>` instead of `<div role="navigation">`. `<button>` instead of `<span role="button">`.
-- **Do NOT hide content with display:none and expect screen readers to read it.** Use visually-hidden CSS class for screen-reader-only content.
-- **Do NOT use color alone to convey meaning.** "Red fields are required" fails for colorblind users. Add text, icons, or patterns.
-- **Do NOT skip keyboard testing because "nobody uses keyboard."** Screen reader users, motor-impaired users, power users, and users with broken trackpads all use keyboards.
-- **Do NOT treat accessibility as a post-launch fix.** Retrofitting is 10x harder than building accessibly from the start. Audit during development, not after.
-- **Do NOT assume automated 100/100 Lighthouse score means accessible.** Lighthouse checks ~40 rules. WCAG has hundreds of success criteria. A high score is good but not proof of accessibility.
+- **Do NOT rely solely on automated tools.** Automated tools catch 30-40% of issues. Manual testing is mandatory.
+- **Do NOT add ARIA to fix semantic HTML problems.** Use `<button>` not `<div role="button">`. ARIA is a patch.
+- **Do NOT hide content with display:none and expect screen readers to read it.** Use visually-hidden CSS class.
+- **Do NOT use color alone to convey meaning.** Add text, icons, or patterns.
+- **Do NOT skip keyboard testing.** Screen reader users, motor-impaired users, and power users all use keyboards.
+- **Do NOT treat accessibility as a post-launch fix.** Retrofitting is 10x harder than building accessibly from the start.
+- **Do NOT assume 100/100 Lighthouse score means accessible.** Lighthouse checks ~40 rules. WCAG has hundreds.
+
+## Keep/Discard Discipline
+```
+After EACH accessibility fix:
+  1. MEASURE: Re-run axe-core and manual check on the fixed component.
+  2. COMPARE: Did the violation count decrease? Did any new violations appear?
+  3. DECIDE:
+     - KEEP if: target violation fixed AND no new violations introduced
+     - DISCARD if: fix introduced new violations OR broke existing functionality
+  4. COMMIT kept changes. Revert discarded changes before fixing the next issue.
+
+Never keep a fix that introduces a keyboard trap or removes screen reader access.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Zero CRITICAL and zero HIGH violations remain
+  - Lighthouse accessibility score >= 95
+  - All WCAG 2.1 AA criteria have status PASS or N/A
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - MEDIUM or LOW findings remain (document them with remediation plan)
+  - One automated tool still shows warnings (verify manually)
+```
 
 
 ## Accessibility Audit Loop
@@ -805,31 +783,6 @@ FINAL ACCESSIBILITY AUDIT REPORT:
 └────────────────────────────────────┴───────────┴───────────┴────────────┘
 ```
 
-### Accessibility Audit TSV Logging
-
-Append one row per finding to `.godmode/a11y-audit.tsv`:
-
-```
-timestamp	project	page	wcag_criterion	severity	element	tool	finding	fix	status
-2024-01-15T10:30:00Z	my-app	/login	2.1.2	CRITICAL	.modal	manual	keyboard_trap	focus-trap-added	fixed
-2024-01-15T10:35:00Z	my-app	/form	1.4.3	HIGH	.placeholder	axe	contrast_2.8	color_updated	fixed
-2024-01-15T10:40:00Z	my-app	/dashboard	4.1.2	HIGH	.toggle	nvda	role_missing	role=switch_added	fixed
-```
-
-### Accessibility Audit Hard Rules
-
-```
-1. NEVER mark accessibility as PASS based solely on automated tools. Automated tools catch 30-40% of issues. Manual testing with screen readers is mandatory.
-2. NEVER skip screen reader testing. VoiceOver (macOS/iOS) and NVDA (Windows) are both free. Use them.
-3. ALWAYS test at least 2 screen reader + browser combinations before marking PASS.
-4. NEVER accept "Low contrast is okay for disabled elements" as an excuse for failing contrast on active elements.
-5. ALWAYS add axe-core to the CI pipeline. Accessibility regressions must be caught before merge.
-6. NEVER ship with keyboard traps. A user who cannot Tab away from an element is completely blocked.
-7. Log every finding in TSV format with WCAG criterion mapping for compliance documentation.
-```
-
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run accessibility audits sequentially: perceivable, then operable, then understandable/robust, then autofix.
-- Use branch isolation per task: `git checkout -b godmode-a11y-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run accessibility audits sequentially: perceivable, then operable, then understandable/robust, then autofix.
+Use branch isolation per task: `git checkout -b godmode-a11y-{task}`, implement, commit, merge back.

@@ -431,7 +431,7 @@ MODEL MONITORING DASHBOARD:
 1. **Never deploy without a readiness check.** A model that passes evaluation can still fail in production. Check latency, resource usage, error handling, and fallback behavior.
 2. **Shadow mode before live traffic.** When possible, run new models in shadow mode first — they receive real traffic but their responses are not returned to users. Compare against champion silently.
 3. **Canary before full rollout.** Start with 1-5% traffic. Watch error rates and latency. Only increase if stable.
-4. **Monitor continuously, not just at deploy time.** Drift happens gradually. Set up alerts for degradation, not just outages.
+4. **Monitor continuously, not at deploy time.** Drift happens gradually. Set up alerts for degradation, not outages.
 5. **Automate retraining, but gate deployment.** Retraining can be automated. Deployment should require validation gate (A/B test or human review).
 6. **Keep rollback instant.** Always maintain the previous champion model ready to serve. Rollback should take seconds, not minutes.
 
@@ -602,22 +602,6 @@ DISPATCH parallel agents in worktrees:
     - Set up alerting thresholds
     - Output: monitoring configs + dashboards
 
-  Agent 3 (ab-test-setup):
-    - Configure A/B test routing
-    - Define success criteria and guardrails
-    - Output: traffic routing config + test definition
-
-  Agent 4 (retraining-pipeline):
-    - Set up automated retraining triggers
-    - Configure data pipeline for fresh training data
-    - Output: retraining pipeline config
-
-MERGE:
-  - Verify serving config aligns with monitoring expectations
-  - Verify A/B test routes match serving endpoints
-  - Verify retraining pipeline outputs are compatible with serving format
-```
-
 ## HARD RULES
 
 ```
@@ -717,16 +701,6 @@ IF model serving crashes under load:
   4. Fall back to the fallback strategy (simpler model or rules-based system)
 ```
 
-## Anti-Patterns
-
-- **Do NOT deploy without benchmarking latency.** A model that takes 2 seconds per request will destroy your user experience and infrastructure budget. Benchmark first.
-- **Do NOT skip canary deployment.** Sending 100% of traffic to a new model on day one is gambling. Start small.
-- **Do NOT ignore drift.** A model trained on last year's data will perform poorly on this year's inputs. Monitor and retrain.
-- **Do NOT retrain without validation.** Automated retraining is powerful but dangerous. Always validate the new model before promoting it.
-- **Do NOT serve without a fallback.** When the model fails (and it will), have a graceful degradation path — a simpler model, a rules-based fallback, or a "we're processing your request" message.
-- **Do NOT conflate model version with code version.** Model v3.2 might run on serving code v1.8. Track both independently. A model update and a serving code update should be separate deployments.
-
-
 ## MLOps Audit
 
 Comprehensive audit of model serving, experimentation, and monitoring infrastructure:
@@ -768,89 +742,31 @@ A/B TESTING AUDIT:
 │  Early stopping criteria set        │ PASS|FAIL│ <criteria>      │
 │  No peeking before sample size met  │ PASS|FAIL│ <policy>        │
 │  Statistical test pre-registered    │ PASS|FAIL│ <test type>     │
-│  Results validated with significance│ PASS|FAIL│ <alpha level>   │
-│  Shadow mode tested before live     │ PASS|FAIL│ <shadow results>│
-│  Experiment metadata logged         │ PASS|FAIL│ <tracking tool> │
-│  Historical experiment results      │ PASS|FAIL│ <archive>       │
-│    archived and searchable          │          │                 │
-└──────────────────────────────────────────────────────────────────┘
 
-DRIFT DETECTION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Feature drift monitoring active    │ PASS|FAIL│ <PSI/KS tool>   │
-│  Prediction distribution monitored  │ PASS|FAIL│ <dashboard>     │
-│  Concept drift detection enabled    │ PASS|FAIL│ <metric decay>  │
-│  Drift thresholds defined per feat  │ PASS|FAIL│ <threshold doc> │
-│  Alerts fire on drift detection     │ PASS|FAIL│ <alert channel> │
-│  Drift triggers retraining pipeline │ PASS|FAIL│ <trigger config>│
-│  Reference distribution versioned   │ PASS|FAIL│ <training dist> │
-│  Drift reports generated weekly     │ PASS|FAIL│ <report cadence>│
-│  Label drift tracked (if labels     │ PASS|FAIL│ <label monitor> │
-│    available with delay)            │          │                 │
-│  Ground truth feedback loop exists  │ PASS|FAIL│ <feedback mech> │
-│  Seasonal patterns accounted for    │ PASS|FAIL│ <seasonal adj>  │
-│  Data quality checks on live input  │ PASS|FAIL│ <validation>    │
-└──────────────────────────────────────────────────────────────────┘
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH deployment phase (shadow, canary, ramp):
+  1. MEASURE: Compare error rate and latency against champion baseline.
+  2. VERIFY: Drift monitoring shows no anomalies, fallback tested.
+  3. DECIDE:
+     - KEEP if: error rate <= champion * 1.05 AND latency within SLA AND no drift alerts
+     - DISCARD if: error rate exceeds champion by >5% OR latency exceeds SLA OR drift detected
+  4. Promote kept phases to next traffic level. Roll back discarded phases immediately.
 
-RETRAINING PIPELINE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Retraining trigger defined         │ PASS|FAIL│ <schedule/drift>│
-│  Fresh data pipeline validated      │ PASS|FAIL│ <data checks>   │
-│  Champion-challenger comparison     │ PASS|FAIL│ <comparison log>│
-│  Automated validation gate exists   │ PASS|FAIL│ <gate config>   │
-│  Retrained model bias-checked       │ PASS|FAIL│ <fairness check>│
-│  Retraining artifacts versioned     │ PASS|FAIL│ <model registry>│
-│  Retraining duration tracked        │ PASS|FAIL│ <SLA metrics>   │
-│  Cooldown between retraining runs   │ PASS|FAIL│ <cooldown hrs>  │
-└──────────────────────────────────────────────────────────────────┘
-
-AUDIT VERDICT: <PASS | NEEDS WORK — <N> items to fix>
-Priority fixes:
-  1. <highest priority finding>
-  2. <second priority finding>
-  3. <third priority finding>
+Never promote a canary that degrades any guardrail metric.
 ```
 
-### MLOps Audit Loop
-
+## Stop Conditions
 ```
-MLOPS AUDIT ITERATION:
-audit_areas = [serving, ab_testing, drift_detection, retraining_pipeline]
-current_area = 0
-total_pass = 0
-total_fail = 0
+STOP when ANY of these are true:
+  - Model deployed with canary and stable at 100% traffic for 24h
+  - Drift monitoring configured with alerting thresholds
+  - Rollback tested and completes in < 5 minutes
+  - User explicitly requests stop
 
-WHILE current_area < len(audit_areas):
-  area = audit_areas[current_area]
-
-  1. RUN all checks for the area against live infrastructure
-  2. COLLECT evidence for each check (screenshots, logs, configs)
-  3. SCORE: count PASS vs FAIL per area
-  4. FOR each FAIL:
-     - CLASSIFY severity: CRITICAL (data loss, wrong predictions) | HIGH (degraded serving) | MEDIUM (missing monitoring)
-     - RECOMMEND fix with estimated effort (hours)
-
-  IF area has any CRITICAL failures:
-    BLOCK "Critical failure in {area}: {description}. Fix immediately before proceeding."
-
-  total_pass += area.pass_count
-  total_fail += area.fail_count
-  current_area += 1
-
-FINAL:
-  audit_score = total_pass / (total_pass + total_fail) * 100
-  REPORT: "MLOps audit score: {audit_score}%. {total_pass} passed, {total_fail} failed."
-  IF audit_score < 70%: "MLOps infrastructure NOT production-grade. Prioritize {critical_count} critical items."
-  IF audit_score >= 70% AND audit_score < 90%: "MLOps infrastructure functional but gaps remain."
-  IF audit_score >= 90%: "MLOps infrastructure production-grade. Schedule next audit in 60 days."
+DO NOT STOP just because:
+  - A/B test is still running (wait for minimum sample size)
+  - Retraining pipeline is not yet automated (manual retraining is acceptable initially)
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run MLOps tasks sequentially: serving setup, then monitoring setup, then A/B test setup.
-- Use branch isolation per task: `git checkout -b godmode-mlops-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

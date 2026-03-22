@@ -125,78 +125,17 @@ Custom analyzers:
   exact_analyzer:     keyword + lowercase (for exact match filters)
 ```
 
-#### Elasticsearch Mapping Example
-```json
-{
-  "mappings": {
-    "properties": {
-      "title": {
-        "type": "text",
-        "analyzer": "search_analyzer",
-        "fields": {
-          "autocomplete": {
-            "type": "text",
-            "analyzer": "autocomplete_analyzer",
-            "search_analyzer": "standard"
-          },
-          "exact": {
-            "type": "keyword",
-            "normalizer": "lowercase_normalizer"
-          }
-        }
-      },
-      "description": {
-        "type": "text",
-        "analyzer": "search_analyzer"
-      },
-      "category": {
-        "type": "keyword"
-      },
-      "price": {
-        "type": "scaled_float",
-        "scaling_factor": 100
-      },
-      "tags": {
-        "type": "keyword"
-      },
-      "created_at": {
-        "type": "date"
-      },
-      "location": {
-        "type": "geo_point"
-      }
-    }
-  },
-  "settings": {
-    "number_of_shards": 1,
-    "number_of_replicas": 1,
-    "analysis": {
-      "analyzer": {
-        "search_analyzer": {
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": ["lowercase", "stop", "stemmer", "synonym_filter"]
-        },
-        "autocomplete_analyzer": {
-          "type": "custom",
-          "tokenizer": "standard",
-          "filter": ["lowercase", "edge_ngram_filter"]
-        }
-      },
-      "filter": {
-        "edge_ngram_filter": {
-          "type": "edge_ngram",
-          "min_gram": 1,
-          "max_gram": 20
-        },
-        "synonym_filter": {
-          "type": "synonym",
-          "synonyms_path": "analysis/synonyms.txt"
-        }
-      }
-    }
-  }
-}
+#### Elasticsearch Mapping Rules
+```
+MAPPING KEY DECISIONS:
+- Text fields: use multi-fields (text for search + keyword for exact + autocomplete sub-field)
+- Searchable text: custom search_analyzer (standard + lowercase + stop + stemmer + synonyms)
+- Autocomplete: autocomplete_analyzer (standard + lowercase + edge_ngram 1-20)
+- Filter/sort fields: keyword type (category, status, brand)
+- Numeric fields: scaled_float for prices (scaling_factor: 100)
+- Dates: date type for created_at, updated_at
+- Geo: geo_point for location-based search
+- Settings: start with 1 shard, 1 replica. Scale shards at 10M+ docs.
 ```
 
 #### PostgreSQL FTS Setup
@@ -403,45 +342,14 @@ Highlight: Bold matched prefix in suggestions
 }
 ```
 
-#### Client-Side Autocomplete Pattern
-```typescript
-// Debounced autocomplete with abort controller
-class SearchAutocomplete {
-  private controller: AbortController | null = null;
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-  async suggest(query: string): Promise<Suggestion[]> {
-    // Cancel previous in-flight request
-    if (this.controller) {
-      this.controller.abort();
-    }
-
-    // Minimum character threshold
-    if (query.length < 2) {
-      return [];
-    }
-
-    // Debounce
-    return new Promise((resolve) => {
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(async () => {
-        this.controller = new AbortController();
-        try {
-          const response = await fetch(`/api/search/suggest?q=${encodeURIComponent(query)}`, {
-            signal: this.controller.signal,
-          });
-          const data = await response.json();
-          resolve(data.suggestions);
-        } catch (err) {
-          if (err instanceof DOMException && err.name === 'AbortError') {
-            resolve([]); // Request was cancelled, ignore
-          }
-          throw err;
-        }
-      }, 250);
-    });
-  }
-}
+#### Client-Side Autocomplete Rules
+```
+1. Debounce input (200-300ms) — do not fire on every keystroke
+2. Cancel previous in-flight request with AbortController
+3. Minimum 2 characters before triggering search
+4. On AbortError: silently ignore (request was superseded)
+5. Max 5-8 suggestions displayed
+6. Highlight matched prefix in results
 ```
 
 ### Step 5: Faceted Search & Filtering
@@ -756,39 +664,20 @@ Commit: search: relevance-tuning — 32 synonyms, field boosting, recency+popula
 ## Auto-Detection
 
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect search engine: elasticsearch, opensearch, meilisearch, algolia, typesense in configs/deps
-2. Check for PostgreSQL FTS: grep for tsvector, to_tsvector, plainto_tsquery in migrations/models
-3. Detect data size: estimate document count from DB schema or seed data
-4. Check for existing search: grep for /search, /api/search, searchController, searchService
-5. Detect client SDK: @elastic/elasticsearch, meilisearch, algoliasearch in package.json
-6. Check for autocomplete: grep for suggest, completion, typeahead, autocomplete
-7. Scan for relevance config: synonyms.txt, stopwords.txt, custom analyzers, boost configs
-8. Check for search analytics: grep for zero-result tracking, click-through tracking
+AUTO-DETECT: search engine (elasticsearch/meilisearch/algolia/typesense in deps), PostgreSQL FTS
+(tsvector in migrations), data size estimate, existing search endpoints (/search, /api/search),
+client SDK in package.json, autocomplete config, synonyms/stopwords files, search analytics.
 ```
 
 ## Iterative Search Implementation Loop
 
 ```
-current_iteration = 0
-max_iterations = 10
-search_tasks = [index_setup, mapping, ingestion, query_logic, relevance_tuning, autocomplete, facets]
-
-WHILE search_tasks is not empty AND current_iteration < max_iterations:
-    task = search_tasks.pop(0)
-    1. IF index_setup: create index with proper settings (shards, replicas, analyzers)
-    2. IF mapping: define field types, analyzers, multi-fields for each searchable entity
-    3. IF ingestion: build indexing pipeline (bulk index, incremental updates, delete sync)
-    4. IF query_logic: implement search endpoint with proper query DSL (match, multi_match, bool)
-    5. IF relevance_tuning: test with relevance suite, adjust boosting, add synonyms
-    6. IF autocomplete: implement suggestion/completion with prefix matching
-    7. IF facets: add aggregations for filter categories
-    8. Test: run relevance test suite (precision@10, NDCG@10, zero-result rate)
-    9. IF metrics below target → adjust analysis, boosting, or synonyms
-    10. IF passing → commit: "search: implement <task> (precision@10: X, zero-result: Y%)"
-    11. current_iteration += 1
-
-POST-LOOP: Benchmark search latency at p50/p95/p99, verify < 200ms p95
+TASKS (in order): index_setup → mapping → ingestion → query_logic → relevance_tuning → autocomplete → facets
+FOR EACH task:
+  1. Implement the task
+  2. Test with relevance suite (precision@10, NDCG@10, zero-result rate)
+  3. If metrics below target → adjust. If passing → commit.
+POST-LOOP: Benchmark latency p50/p95/p99, verify < 200ms p95.
 ```
 
 ## Multi-Agent Dispatch
@@ -818,18 +707,6 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 9. Autocomplete must respond in < 100ms. If slower, use a dedicated suggestion index.
 10. EVERY aggregation must be paired with a filter. match_all + aggregation on full index = slow.
 ```
-
-## Anti-Patterns
-
-- **Do NOT add Elasticsearch for 10,000 documents.** PostgreSQL FTS or Meilisearch handles small datasets with far less operational overhead. Elasticsearch is for millions to billions.
-- **Do NOT skip relevance testing.** "Search works" is not "search is good." Build a test suite with expected results for common queries and measure precision/recall/NDCG.
-- **Do NOT use high fuzziness without prefix length.** Fuzziness 2 with prefix length 0 turns "cat" into every 3-letter word. Always require at least 2 exact prefix characters.
-- **Do NOT put user IDs in search queries for personalization.** Personalization happens in the ranking layer (function_score), not in the query DSL. Mixing them kills caching.
-- **Do NOT ignore zero-result queries.** They are the single most valuable signal for improving search. Track them, review them weekly, and add synonyms or fix data.
-- **Do NOT reindex in production without a plan.** Use index aliases, create the new index alongside the old one, swap the alias atomically. Never reindex in place.
-- **Do NOT forget to sanitize search input.** Search queries can contain special characters that break query parsers. Escape or strip reserved characters before sending to the engine.
-- **Do NOT use match_all with expensive aggregations.** Aggregations on the entire index are slow. Always pair aggregations with a filtered query to reduce the working set.
-
 
 ## Output Format
 
@@ -904,148 +781,27 @@ ERROR RECOVERY — SEARCH:
    → Check shard allocation (unassigned shards). Verify disk space on nodes. Check replica count vs available nodes. For red: identify missing primary shards and restore from snapshot.
 ```
 
-## Search Relevance Optimization Loop
-
-Autonomous loop that tunes queries, adjusts analyzer config, and measures recall/precision. Runs until relevance targets are met or max iterations reached. Never guesses -- measures everything.
-
+## Keep/Discard Discipline
 ```
-SEARCH RELEVANCE OPTIMIZATION LOOP:
-current_iteration = 0
-max_iterations = 20
-relevance_test_suite = load_relevance_tests()
-// Format: [{query: "wireless keyboard", expected_top_5: ["prod-123", "prod-456", ...]}, ...]
-// Minimum 20 test queries covering: common, long-tail, misspellings, zero-result candidates
+After EACH search relevance change:
+  1. MEASURE: Run relevance test suite — NDCG@10, Precision@10, zero-result rate.
+  2. COMPARE: Is NDCG@10 >= previous AND Precision@10 >= previous?
+  3. DECIDE:
+     - KEEP if both metrics held or improved.
+     - DISCARD if either metric regressed.
+  4. COMMIT kept changes. Revert discarded changes before the next tuning pass.
 
-// Phase 0: Baseline Measurement
-baseline = run_relevance_suite(relevance_test_suite)
-// Metrics: NDCG@10, Precision@10, Recall@10, MRR, zero-result rate
-LOG: "BASELINE: NDCG@10={baseline.ndcg}, P@10={baseline.precision}, Recall@10={baseline.recall}, zero_result={baseline.zero_result_pct}%"
-
-WHILE current_iteration < max_iterations AND NOT targets_met(baseline):
-  current_iteration += 1
-
-  // Phase 1: Zero-Result Query Analysis
-  zero_result_queries = get_zero_result_queries(last_7_days, min_volume=10)
-  // Sort by frequency descending
-  FOR each query in zero_result_queries[:10]:  // top 10 by volume
-    root_cause = diagnose_zero_result(query)
-    IF root_cause == "MISSING_SYNONYM":
-      ADD synonym pair to synonyms.txt
-      LOG: "SYNONYM added: {query.term} → {synonym}"
-    IF root_cause == "MISSING_DATA":
-      FLAG for data team: "Product data missing for query '{query.term}'"
-    IF root_cause == "ANALYZER_TOO_STRICT":
-      ADD fuzziness or edge_ngram for this field
-      LOG: "ANALYZER relaxed: {field} — added fuzziness AUTO"
-    IF root_cause == "WRONG_FIELD_MAPPING":
-      FIX field mapping (keyword → text, or add multi-field)
-      LOG: "MAPPING fixed: {field} — changed to text with keyword sub-field"
-
-  // Phase 2: Field Boost Tuning
-  // Test different boost weights for title, description, tags, etc.
-  boost_configs = [
-    {title: 3, tags: 2, description: 1},         // current
-    {title: 5, tags: 2, description: 1},         // more title weight
-    {title: 3, tags: 3, description: 1},         // more tags weight
-    {title: 4, tags: 2, description: 1, sku: 5}  // exact match on SKU
-  ]
-
-  best_config = baseline.boost_config
-  best_ndcg = baseline.ndcg
-
-  FOR each config in boost_configs:
-    result = run_relevance_suite(relevance_test_suite, boost=config)
-    IF result.ndcg > best_ndcg:
-      best_ndcg = result.ndcg
-      best_config = config
-      LOG: "BOOST improved: config={config} → NDCG={result.ndcg}"
-
-  APPLY best_config
-
-  // Phase 3: Analyzer Tuning
-  analyzer_checks = {
-    stemming_correct:     stemmer_matches_language(),
-    stopwords_appropriate: stopword_list_not_removing_meaningful_terms(),
-    // e.g., "the" is a stopword, but "The North Face" should not lose "The"
-    synonym_quality:       synonyms_improve_recall_without_hurting_precision(),
-    ngram_config:          edge_ngram_min=2_max=10_for_autocomplete(),
-    char_filters:          html_strip_and_punctuation_handling()
-  }
-
-  FOR each check in analyzer_checks:
-    IF check.status == FAIL:
-      FIX analyzer configuration
-      LOG: "ANALYZER fixed: {check.name}"
-
-  // Phase 4: Function Score Tuning (ranking signals beyond text match)
-  IF engine_supports_function_score:
-    ranking_signals = {
-      recency:    decay_function(field="updated_at", scale="30d", decay=0.5),
-      popularity: log1p(field="view_count", factor=0.1),
-      rating:     field_value_factor(field="avg_rating", modifier="log1p"),
-      freshness:  script_score("doc['created_at'] > now-7d ? 1.2 : 1.0")
-    }
-    // Test each signal independently
-    FOR each signal in ranking_signals:
-      result_with = run_relevance_suite(relevance_test_suite, add_signal=signal)
-      result_without = run_relevance_suite(relevance_test_suite, without_signal=signal)
-      IF result_with.ndcg > result_without.ndcg:
-        KEEP signal
-        LOG: "SIGNAL kept: {signal.name} — NDCG {result_without.ndcg} → {result_with.ndcg}"
-      ELSE:
-        DISCARD signal
-        LOG: "SIGNAL discarded: {signal.name} — no improvement"
-
-  // Phase 5: Measure & Keep/Discard
-  new_metrics = run_relevance_suite(relevance_test_suite)
-  improvement = {
-    ndcg_delta: new_metrics.ndcg - baseline.ndcg,
-    precision_delta: new_metrics.precision - baseline.precision,
-    zero_result_delta: baseline.zero_result_pct - new_metrics.zero_result_pct
-  }
-
-  IF new_metrics.ndcg >= baseline.ndcg AND new_metrics.precision >= baseline.precision:
-    KEEP all changes
-    baseline = new_metrics
-    LOG: "KEEP: NDCG {baseline.ndcg} → {new_metrics.ndcg}, zero_result {baseline.zero_result_pct}% → {new_metrics.zero_result_pct}%"
-  ELSE:
-    DISCARD changes that caused regression
-    LOG: "DISCARD: regression on NDCG or precision, reverted"
-
-  REPORT: "Iteration {current_iteration}: NDCG@10={new_metrics.ndcg}, P@10={new_metrics.precision}, zero_result={new_metrics.zero_result_pct}%, synonyms={synonym_count}"
-
-ON COMPLETION:
-  LOG to .godmode/search-relevance-audit.tsv:
-    timestamp\tindex\titerations\tndcg_before\tndcg_after\tprecision_before\tprecision_after\tzero_result_before\tzero_result_after\tsynonyms_added\tverdict
-  REPORT: "Search relevance optimization complete: {current_iteration} iterations, NDCG: {initial} → {final}, zero-result: {initial_zr}% → {final_zr}%"
+Never keep a synonym or boost change that reduces NDCG@10.
+Never deploy without running the full relevance test suite.
 ```
 
-### Relevance Metrics Reference
-
+## Stop Conditions
 ```
-SEARCH RELEVANCE TARGETS:
-┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
-│ Metric                               │ GOOD         │ ACCEPTABLE   │ POOR         │
-├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
-│ NDCG@10 (ranking quality)            │ > 0.85       │ 0.70-0.85    │ < 0.70       │
-│ Precision@10 (relevance of top 10)   │ > 0.80       │ 0.60-0.80    │ < 0.60       │
-│ Recall@100 (coverage)                │ > 0.95       │ 0.80-0.95    │ < 0.80       │
-│ MRR (first relevant result rank)     │ > 0.70       │ 0.50-0.70    │ < 0.50       │
-│ Zero-result rate                     │ < 3%         │ 3-8%         │ > 8%         │
-│ Click-through rate                   │ > 30%        │ 20-30%       │ < 20%        │
-│ Mean click position                  │ < 3          │ 3-5          │ > 5          │
-│ Search exit rate                     │ < 15%        │ 15-25%       │ > 25%        │
-│ Autocomplete accept rate             │ > 40%        │ 25-40%       │ < 25%        │
-│ Search latency P95                   │ < 100ms      │ 100-300ms    │ > 300ms      │
-│ Autocomplete latency P95             │ < 50ms       │ 50-100ms     │ > 100ms      │
-│ Relevance test suite size            │ > 50 queries │ 20-50        │ < 20         │
-└──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
-
-IMPROVEMENT THRESHOLDS:
-- Stop iterating if NDCG improvement < 0.01 per iteration (diminishing returns)
-- Never deploy a change that reduces NDCG@10 (hard gate)
-- Synonym additions: test that they improve recall without hurting precision
-- Boost changes: test with full relevance suite, not individual queries
+STOP when ANY of these are true:
+  - NDCG@10 >= 0.85 AND zero-result rate < 3% AND search P95 < 200ms
+  - NDCG improvement < 0.01 per iteration (diminishing returns)
+  - User explicitly requests stop
+  - Max iterations (10) reached
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

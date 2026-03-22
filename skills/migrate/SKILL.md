@@ -739,272 +739,32 @@ All of these must be true before marking the task complete:
 
 ## Anti-Patterns
 
-- **Do NOT generate migrations without detecting the tool first.** Generating a Prisma migration in a Django project is worse than doing nothing.
-- **Do NOT apply migrations without rollback testing.** If the DOWN migration doesn't work, you have no escape hatch in production.
-- **Do NOT combine unrelated changes.** "Add user role AND drop legacy_payments table" in one migration makes independent rollback impossible.
-- **Do NOT skip the backward compatibility check.** "It's just adding a column" -- even ADD COLUMN can break if the ORM expects a specific column order or if the default value causes a table rewrite on MySQL.
-- **Do NOT rename or drop columns without the expand-contract pattern.** Direct renames break every running instance that references the old name.
-- **Do NOT ignore lock duration on large tables.** An ALTER TABLE that locks a 100M-row table for 10 minutes is a 10-minute production outage.
-- **Do NOT create migrations with timestamps that collide.** When multiple developers create migrations simultaneously, use conflict detection (Alembic heads, Rails migration version uniqueness).
-- **Do NOT put business logic in migrations.** Migrations change schema. If you need complex data transformations, create a separate data migration with its own rollback.
-- **Do NOT forget to update seeds and fixtures.** A migration that adds a NOT NULL column will break every test fixture and seed file that doesn't include the new column.
-- **Do NOT assume the database is empty.** Always account for existing data when generating migrations. A NOT NULL column without a default will fail on a table with rows.
+- **Do NOT generate migrations without detecting the tool first.** Prisma migration in a Django project is worse than nothing.
+- **Do NOT apply migrations without rollback testing.** No escape hatch in production.
+- **Do NOT combine unrelated changes.** Independent rollback requires independent files.
+- **Do NOT skip backward compatibility checks.** Even ADD COLUMN can break on MySQL table rewrites.
+- **Do NOT rename or drop columns without expand-contract.** Direct renames break running instances.
+- **Do NOT ignore lock duration on large tables.** 10-minute table lock = 10-minute outage.
+- **Do NOT put business logic in migrations.** Use separate data migrations for complex transformations.
+- **Do NOT forget to update seeds and fixtures.** NOT NULL columns break fixtures missing the new column.
+- **Do NOT assume the database is empty.** Always account for existing data.
 
+## Keep/Discard Discipline
 
-## Migration Safety Loop
+After each migration pass, evaluate:
+- **KEEP** if: UP applies cleanly on a database with existing data, DOWN fully reverses the UP (zero schema diff), row counts preserved, application starts and passes tests, lock duration within acceptable range.
+- **DISCARD** if: DOWN migration fails, data loss detected, NOT NULL without DEFAULT on populated table, backward-incompatible change without expand-contract pattern, or lock duration exceeds 5 seconds on large table without user confirmation.
+- Test the full cycle (UP -> verify -> DOWN -> verify -> UP) before committing.
+- Revert immediately if rollback test fails — a migration without working rollback is not shippable.
 
-Rigorous backup-apply-verify-rollback_test protocol for zero-data-loss migrations:
+## Stop Conditions
 
-```
-MIGRATION SAFETY LOOP:
-current_iteration = 0
-max_iterations = 5
-safety_phases = [backup, apply, verify, rollback_test, production_readiness]
-
-WHILE current_iteration < max_iterations:
-  phase = safety_phases[current_iteration]
-  current_iteration += 1
-
-  IF phase == "backup":
-    PURPOSE: Ensure a restorable backup exists before any schema change.
-
-    1. DETERMINE backup strategy based on database:
-       PostgreSQL:
-         pg_dump -Fc --file=backup_{timestamp}.dump {database_name}
-         Verify: pg_restore --list backup_{timestamp}.dump | head -5
-
-       MySQL:
-         mysqldump --single-transaction --routines --triggers {database_name} > backup_{timestamp}.sql
-         Verify: head -20 backup_{timestamp}.sql | grep "Dump completed"
-
-       SQLite:
-         cp {database_file} {database_file}.backup_{timestamp}
-         Verify: sqlite3 {database_file}.backup_{timestamp} "SELECT count(*) FROM sqlite_master;"
-
-       MongoDB:
-         mongodump --db={database_name} --out=backup_{timestamp}/
-         Verify: mongorestore --dryRun --dir=backup_{timestamp}/{database_name}
-
-    2. VERIFY backup integrity:
-       [ ] Backup file exists and is non-empty
-       [ ] Backup file size is reasonable (>= expected data size)
-       [ ] Backup can be listed/inspected without errors
-       [ ] Backup timestamp recorded in migration log
-
-    3. RECORD backup location:
-       BACKUP_FILE = backup_{timestamp}.dump
-       BACKUP_SIZE = {N} MB
-       BACKUP_TABLES = {N}
-       RESTORE_CMD = "pg_restore --clean --dbname={db} {backup_file}"
-
-    4. IF backup fails:
-       HALT — "Cannot proceed with migration without backup."
-       DIAGNOSE: disk space, permissions, database connectivity
-       NEVER proceed without a verified backup
-
-  IF phase == "apply":
-    PURPOSE: Apply the migration with full observability and abort-on-error.
-
-    1. PRE-APPLY state snapshot:
-       FOR each affected table:
-         row_count_before = SELECT COUNT(*) FROM {table}
-         sample_before = SELECT * FROM {table} LIMIT 5
-         schema_before = describe table (pg: \d {table}, mysql: DESCRIBE {table})
-       Record: pre_apply_state = { table: { row_count, sample, schema } }
-
-    2. APPLY migration:
-       SET statement_timeout / lock_timeout if supported:
-         SET statement_timeout = '300s';   -- PostgreSQL
-         SET lock_wait_timeout = 300;      -- MySQL
-
-       RUN migration command (tool-specific):
-         Prisma:   npx prisma migrate deploy
-         Django:   python manage.py migrate
-         Rails:    bin/rails db:migrate
-         Alembic:  alembic upgrade head
-         Knex:     npx knex migrate:latest
-         Flyway:   flyway migrate
-         Raw SQL:  psql -f {migration_file}
-
-       Capture: exit code, stdout, stderr, duration
-
-    3. IF migration fails:
-       a. Record failure: migration_name, error_message, duration
-       b. CHECK database state: is it in a partial state?
-       c. IF partial: attempt tool-specific cleanup
-       d. REPORT: "Migration FAILED after {duration}. Error: {message}"
-       e. DO NOT proceed to verify — go directly to rollback
-
-    4. POST-APPLY state snapshot:
-       FOR each affected table:
-         row_count_after = SELECT COUNT(*) FROM {table}
-         sample_after = SELECT * FROM {table} LIMIT 5
-         schema_after = describe table
-
-  IF phase == "verify":
-    PURPOSE: Confirm migration produced the expected result without data loss.
-
-    1. SCHEMA VERIFICATION:
-       FOR each expected schema change:
-         [ ] New columns exist with correct type and default
-         [ ] New indexes exist
-         [ ] New constraints are active
-         [ ] Removed columns/tables are gone
-         [ ] Renamed items have new names
-
-    2. DATA PRESERVATION:
-       FOR each affected table:
-         [ ] row_count_after >= row_count_before (no data loss)
-         [ ] IF row_count differs: explain why (expected inserts/deletes)
-         [ ] sample_after contains expected transformations
-         [ ] NULL values handled correctly (defaults applied)
-
-    3. APPLICATION COMPATIBILITY:
-       [ ] Application starts without errors
-       [ ] Application connects to database successfully
-       [ ] Key queries execute without errors (smoke test)
-       [ ] API endpoints respond correctly
-       [ ] ORM client regenerated (if applicable: prisma generate, typeorm)
-
-    4. PERFORMANCE CHECK:
-       FOR each affected table with >100K rows:
-         [ ] Query plans not degraded (EXPLAIN ANALYZE on key queries)
-         [ ] New indexes being used (not sequential scans)
-         [ ] No unexpected table locks held
-
-    5. REPORT:
-       MIGRATION VERIFICATION:
-       ┌──────────────────────────────────────┬──────────┐
-       │  Check                               │  Status  │
-       ├──────────────────────────────────────┼──────────┤
-       │  Schema matches expected             │  OK/FAIL │
-       │  Data preserved (row counts)         │  OK/FAIL │
-       │  Data transformed correctly          │  OK/FAIL │
-       │  Application starts                  │  OK/FAIL │
-       │  Key queries work                    │  OK/FAIL │
-       │  Performance acceptable              │  OK/FAIL │
-       │  ORM client updated                  │  OK/FAIL │
-       └──────────────────────────────────────┴──────────┘
-
-    6. IF any verification fails:
-       HALT — "Migration applied but verification failed."
-       RECOMMEND: rollback or manual intervention
-       DO NOT mark migration as successful
-
-  IF phase == "rollback_test":
-    PURPOSE: Prove the rollback works BEFORE you need it in production.
-
-    1. APPLY DOWN migration:
-       RUN rollback command (tool-specific):
-         Prisma:   npx prisma migrate reset (dev only) or manual DOWN SQL
-         Django:   python manage.py migrate {app} {previous_migration}
-         Rails:    bin/rails db:rollback STEP=1
-         Alembic:  alembic downgrade -1
-         Knex:     npx knex migrate:rollback
-         Flyway:   flyway undo (if available) or manual DOWN SQL
-         Raw SQL:  psql -f {down_migration_file}
-
-    2. VERIFY rollback:
-       FOR each affected table:
-         row_count_rollback = SELECT COUNT(*) FROM {table}
-         schema_rollback = describe table
-         [ ] schema_rollback == schema_before (exact match)
-         [ ] row_count_rollback == row_count_before (no data loss)
-
-    3. RE-APPLY UP migration:
-       RUN migration command again (same as apply phase)
-       [ ] Migration applies cleanly a second time (idempotency)
-       [ ] All verify checks pass again
-
-    4. REPORT:
-       ROLLBACK TEST:
-       ┌──────────────────────────────────────┬──────────┐
-       │  Check                               │  Status  │
-       ├──────────────────────────────────────┼──────────┤
-       │  DOWN migration succeeds             │  OK/FAIL │
-       │  Schema restored to pre-migration    │  OK/FAIL │
-       │  Data preserved after rollback       │  OK/FAIL │
-       │  RE-APPLY UP succeeds                │  OK/FAIL │
-       │  Idempotent (same result)            │  OK/FAIL │
-       └──────────────────────────────────────┴──────────┘
-
-    5. IF rollback fails:
-       CRITICAL — "Rollback does not work. This migration has NO safety net."
-       OPTIONS:
-       a. Fix the DOWN migration and re-test
-       b. Accept the risk (document explicitly, require sign-off)
-       c. Rewrite the migration with a safer approach
-
-  IF phase == "production_readiness":
-    PURPOSE: Final checklist before applying the migration to production.
-
-    1. PRODUCTION MIGRATION CHECKLIST:
-       PRE-REQUISITES:
-       [ ] Migration tested in dev environment (full cycle: up → verify → down → up)
-       [ ] Migration tested in staging environment (against production-like data)
-       [ ] Backup strategy documented and tested
-       [ ] Rollback command documented and tested
-       [ ] Lock duration estimated for all DDL operations
-       [ ] Application code compatible with BOTH old and new schema (expand phase)
-       [ ] Team notified of planned migration window
-       [ ] Monitoring alerts configured
-
-       DURING MIGRATION:
-       [ ] Take backup immediately before applying
-       [ ] Apply migration with timeout guards
-       [ ] Verify schema and data immediately after
-       [ ] Monitor error rates for 15 minutes
-       [ ] Keep rollback command ready (copy-pasteable)
-
-       POST-MIGRATION:
-       [ ] Confirm application is healthy (health check, error rates)
-       [ ] Confirm key user flows work (manual or automated smoke test)
-       [ ] Remove expand-phase dual-write code (after contract phase)
-       [ ] Update documentation (schema docs, API docs if affected)
-       [ ] Archive backup (retain for 7 days minimum)
-
-    2. GENERATE production runbook:
-       MIGRATION RUNBOOK: {migration_name}
-       ┌──────────────────────────────────────────────────────┐
-       │  Step 1: Take backup                                  │
-       │  $ {backup_command}                                   │
-       │  Expected: backup file created, {N} MB                │
-       │                                                       │
-       │  Step 2: Apply migration                              │
-       │  $ {apply_command}                                    │
-       │  Expected: migration applied in < {N} seconds         │
-       │                                                       │
-       │  Step 3: Verify                                       │
-       │  $ {verify_commands}                                  │
-       │  Expected: all tables have correct schema + data      │
-       │                                                       │
-       │  Step 4: Monitor (15 minutes)                         │
-       │  $ {health_check_command}                             │
-       │  Expected: 200 OK, error rate < baseline              │
-       │                                                       │
-       │  IF ANYTHING FAILS — ROLLBACK:                        │
-       │  $ {rollback_command}                                 │
-       │  $ {verify_rollback_command}                          │
-       │  $ {restore_backup_command} (if rollback insufficient)│
-       └──────────────────────────────────────────────────────┘
-
-  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | FAIL | BLOCKED}"
-
-FINAL MIGRATION SAFETY ASSESSMENT:
-┌──────────────────────────────────────────────────────────┐
-│  MIGRATION SAFETY SUMMARY                                 │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Status │ Details                    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Backup              │ DONE   │ {N} MB, verified           │
-│  Apply               │ DONE   │ Applied in {N}s            │
-│  Verify              │ PASS   │ Schema + data correct      │
-│  Rollback test       │ PASS   │ Down + re-up clean         │
-│  Production ready    │ READY  │ Runbook generated          │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │ SAFE   │ Ready for production       │
-└──────────────────────┴────────┴───────────────────────────┘
-```
+Stop the migrate skill when:
+1. UP migration applies cleanly and DOWN migration fully reverses it (verified by schema diff = zero).
+2. Application code compiles and all tests pass with the new schema.
+3. Row counts and sample data preserved after migration (no data loss).
+4. Seed files and test fixtures updated for new columns/tables.
+5. Lock duration estimated and documented for tables > 1M rows.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

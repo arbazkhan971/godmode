@@ -196,31 +196,6 @@ START: What kind of state is this?
 │         time-travel debugging, or team is already familiar
 │       - Zustand: simpler API, less boilerplate, good devtools
 │
-└── Cross-component communication (sibling, distant)?
-    └── Use: Event bus (tiny), Zustand (small), Redux (large)
-        - AVOID prop drilling through more than 2 levels
-
-COMPARISON MATRIX:
-┌──────────────────────┬────────┬─────────┬───────┬───────────┬───────┐
-│ Criteria             │ Context│ Zustand │ Jotai │ Redux TK  │ RQ    │
-├──────────────────────┼────────┼─────────┼───────┼───────────┼───────┤
-│ Bundle size          │ 0 KB   │ ~1 KB   │ ~2 KB │ ~11 KB    │ ~13KB │
-│ Boilerplate          │ Low    │ Low     │ Low   │ Medium    │ Low   │
-│ DevTools             │ Basic  │ Good    │ Good  │ Excellent │ Excel │
-│ Server Components    │ Yes    │ No*     │ No*   │ No*       │ Yes   │
-│ Learning curve       │ Low    │ Low     │ Low   │ Medium    │ Low   │
-│ Async state          │ Poor   │ Manual  │ Good  │ RTK Query │ Excel │
-│ Computed/derived     │ Manual │ Good    │ Excel │ Reselect  │ N/A   │
-│ Middleware           │ No     │ Yes     │ No    │ Yes       │ N/A   │
-│ Persistence          │ Manual │ Plugin  │ Plugin│ Plugin    │ Built │
-└──────────────────────┴────────┴─────────┴───────┴───────────┴───────┘
-* = needs 'use client' wrapper
-
-ANTI-PATTERN: Do NOT put everything in global state.
-  Most "global state" is actually server state (use React Query)
-  or URL state (use search params). True global client state is rare.
-```
-
 ### Step 4: Performance Optimization
 Apply targeted performance optimizations:
 
@@ -361,58 +336,6 @@ CONCURRENT FEATURES:
 
 2. useDeferredValue — Defer re-rendering of expensive content:
   function SearchResults({ query }) {
-    const deferredQuery = useDeferredValue(query)
-    const isStale = query !== deferredQuery
-
-    return (
-      <div style={{ opacity: isStale ? 0.7 : 1 }}>
-        <ExpensiveResultList query={deferredQuery} />
-      </div>
-    )
-  }
-
-3. useOptimistic — Optimistic UI updates:
-  function MessageThread({ messages, sendMessage }) {
-    const [optimisticMessages, addOptimistic] = useOptimistic(
-      messages,
-      (state, newMessage) => [...state, { ...newMessage, sending: true }]
-    )
-
-    async function handleSend(formData) {
-      const message = { text: formData.get('text'), id: crypto.randomUUID() }
-      addOptimistic(message)               // Show immediately
-      await sendMessage(message)            // Send to server
-    }
-
-    return (
-      <div>
-        {optimisticMessages.map(msg => (
-          <Message key={msg.id} {...msg} />
-        ))}
-        <form action={handleSend}>
-          <input name="text" />
-          <button>Send</button>
-        </form>
-      </div>
-    )
-  }
-
-4. use() hook — Suspend on promises and context:
-  // Read a promise (suspends until resolved)
-  function UserProfile({ userPromise }) {
-    const user = use(userPromise)   // Suspends component until promise resolves
-    return <div>{user.name}</div>
-  }
-
-  // Read context conditionally
-  function Theme({ isDark }) {
-    if (isDark) {
-      const theme = use(DarkThemeContext)
-      return <div style={theme}>...</div>
-    }
-    return <div>Light mode</div>
-  }
-```
 
 ### Step 6: Testing with React Testing Library
 Design the testing strategy:
@@ -672,14 +595,6 @@ WHILE components_remaining is not empty AND current_iteration < max_iterations:
     3. Run type check: npx tsc --noEmit
     4. Run tests: npx vitest run --reporter=verbose <component-path>
     5. IF tests fail → revert, diagnose, adjust approach
-    6. IF tests pass → commit: "react: <pattern> — <component>"
-    7. current_iteration += 1
-    8. Log: "Iteration {current_iteration}: {component} — DONE"
-
-IF components_remaining is not empty:
-    REPORT: "{len(components_remaining)} components remain — continue with /godmode:react"
-```
-
 ## Multi-Agent Dispatch
 
 For large React projects with 50+ components across features:
@@ -696,19 +611,6 @@ Agent 2 — "react-features":
   Worktree: .worktrees/react-features
   Task: Restructure feature modules (extract hooks, split concerns)
   Scope: src/features/**
-
-Agent 3 — "react-state":
-  Worktree: .worktrees/react-state
-  Task: Migrate state management (context → Zustand, add React Query)
-  Scope: src/stores/**, src/hooks/use*Query*
-
-Agent 4 — "react-tests":
-  Worktree: .worktrees/react-tests
-  Task: Write RTL integration tests for all features
-  Scope: src/**/*.test.tsx
-
-MERGE ORDER: components → state → features → tests
-```
 
 ## HARD RULES
 
@@ -804,18 +706,6 @@ WHEN state management causes infinite loops:
   3. If derived state, replace useEffect with useMemo or inline computation.
 ```
 
-## Anti-Patterns
-
-- **Do NOT put everything in global state.** Most "global state" is server state (React Query), URL state (search params), or form state (React Hook Form). True global client state is rare.
-- **Do NOT scatter memo/useMemo/useCallback everywhere.** These have a cost. Use them only when React DevTools Profiler shows measured performance issues.
-- **Do NOT test implementation details.** Testing `useState` values, internal methods, or snapshot testing complex components creates brittle tests that break on every refactor.
-- **Do NOT use `useEffect` for derived state.** If a value can be computed from props or state, compute it during render. `useMemo` if expensive, inline if cheap.
-- **Do NOT prop-drill through more than 2 levels.** Use composition (children), custom hooks, or lightweight state management.
-- **Do NOT create one massive context for everything.** Split contexts by update frequency. Theme context (rare updates) should not share a provider with cursor position (frequent updates).
-- **Do NOT skip error boundaries.** An uncaught error in one widget should not crash the entire app. Wrap features in error boundaries.
-- **Do NOT ignore TypeScript.** Enable strict mode. Type your props, hooks, and context. Generic components (`DataTable<T>`) prevent runtime errors.
-
-
 ## Component Optimization Loop
 
 Autoresearch-grade iterative optimization for React component performance. Run this loop after initial implementation to drive measurable improvements in re-render count, bundle size, and Lighthouse score.
@@ -867,94 +757,31 @@ Phase 2 — Bundle Size Optimization
           lodash → lodash-es or native methods
           chart.js full → @chartjs/auto
        c. Unused code? → Remove dead imports, audit barrel files
-       d. Above-fold only? → Code-split with lazy() + Suspense
-       e. Polyfill not needed? → Update browserslist, remove core-js
-    4. REBUILD and MEASURE delta:
-       chunk | size_before_kb | size_after_kb | technique
-    5. VERIFY no regressions: run test suite, spot-check features
-    6. IF size_after >= size_before → REVERT (optimization ineffective)
 
-  METRICS TABLE:
-  ┌──────────────────────────────────────────────────────────────────┐
-  │  Metric                  │  Before    │  After     │  Target     │
-  ├──────────────────────────┼────────────┼────────────┼─────────────┤
-  │  Initial JS (gzipped)    │  <N> KB    │  <N> KB    │  < 200 KB   │
-  │  Largest chunk           │  <N> KB    │  <N> KB    │  < 100 KB   │
-  │  Total chunks            │  <N>       │  <N>       │  —          │
-  │  Tree-shaking effective  │  YES/NO    │  YES/NO    │  YES        │
-  │  Unused JS (Lighthouse)  │  <N> KB    │  <N> KB    │  < 50 KB    │
-  └──────────────────────────┴────────────┴────────────┴─────────────┘
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH component refactor or optimization:
+  1. MEASURE: Run tsc --noEmit and vitest — zero errors, all tests pass?
+  2. PROFILE: React DevTools Profiler — did re-render count decrease?
+  3. DECIDE:
+     - KEEP if: type checker passes AND tests pass AND render count improved (or unchanged)
+     - DISCARD if: type errors introduced OR tests fail OR render count increased
+  4. COMMIT kept changes. Revert discarded changes before next component.
 
-Phase 3 — Lighthouse Score Loop
-  targets:
-    Performance: >= 90
-    Accessibility: >= 95
-    Best Practices: >= 95
-    SEO: >= 90
-
-  WHILE any_score < target:
-    1. RUN: npx lighthouse <url> --output=json --output-path=./lh-report.json
-    2. PARSE scores and failing audits
-    3. PRIORITIZE fixes by score impact (weight * potential improvement)
-    4. FOR EACH failing audit (top 5 by impact):
-       - LCP > 2.5s → Preload LCP image, inline critical CSS, optimize server response
-       - CLS > 0.1 → Add width/height to images, reserve space for dynamic content
-       - INP > 200ms → Break long tasks, defer non-critical handlers
-       - Unused JS → Code-split, remove dead code, lazy-load below fold
-       - Render-blocking resources → Defer non-critical CSS/JS, inline critical path
-       - Image optimization → Convert to WebP/AVIF, add srcset+sizes
-       - Missing accessibility → Add alt text, labels, ARIA, contrast fixes
-    5. APPLY fix
-    6. RE-RUN Lighthouse on same page
-    7. RECORD:
-       audit | score_before | score_after | technique
-    8. IF score_after < score_before → REVERT
-
-  CONVERGENCE CRITERIA:
-    All 4 Lighthouse categories meet targets
-    OR max 10 iterations reached (report remaining gaps)
-
-  FINAL REPORT:
-  ┌──────────────────────────────────────────────────────────────────┐
-  │  Category         │  Start Score  │  Final Score  │  Target      │
-  ├──────────────────────────────────────────────────────────────────┤
-  │  Performance      │  <N>          │  <N>          │  >= 90       │
-  │  Accessibility    │  <N>          │  <N>          │  >= 95       │
-  │  Best Practices   │  <N>          │  <N>          │  >= 95       │
-  │  SEO              │  <N>          │  <N>          │  >= 90       │
-  ├──────────────────────────────────────────────────────────────────┤
-  │  LCP              │  <N>s         │  <N>s         │  < 2.5s      │
-  │  INP              │  <N>ms        │  <N>ms        │  < 200ms     │
-  │  CLS              │  <N>          │  <N>          │  < 0.1       │
-  │  Bundle (gzip)    │  <N> KB       │  <N> KB       │  < 200 KB    │
-  │  Wasted renders   │  <N>          │  <N>          │  0           │
-  └──────────────────────────────────────────────────────────────────┘
+Never keep an optimization that has no measured improvement.
 ```
 
-### Optimization Loop TSV Logging
-
-Append one row per optimization action to `.godmode/react-optimization.tsv`:
-
+## Stop Conditions
 ```
-timestamp	project	phase	target_component	metric	before	after	technique	status
-2024-01-15T10:30:00Z	my-app	rerender	BoardColumn	render_count	12	2	split-context	improved
-2024-01-15T10:45:00Z	my-app	bundle	vendor-chunk	size_kb	187	94	tree-shaking	improved
-2024-01-15T11:00:00Z	my-app	lighthouse	/dashboard	performance	72	91	lcp-preload+codesplit	target_met
-```
+STOP when ANY of these are true:
+  - tsc --noEmit passes with zero errors
+  - All tests pass and no unnecessary re-renders measured
+  - Architecture audit (Step 7) shows PASS on all applicable checks
+  - User explicitly requests stop
 
-### Optimization Hard Rules
-
+DO NOT STOP just because:
+  - Bundle size is not yet optimal (that is a separate optimization pass)
+  - One component has a complex refactor remaining (finish it)
 ```
-1. NEVER optimize without profiling first. React DevTools Profiler for re-renders, bundle analyzer for size, Lighthouse for scores.
-2. NEVER add React.memo/useMemo/useCallback without a measured before/after. Each has overhead.
-3. ALWAYS revert optimizations that show no measurable improvement or cause regressions.
-4. ALWAYS re-run the full test suite after each optimization pass.
-5. NEVER exceed 10 iterations per phase. If targets are not met, report the gap and recommend architectural changes.
-6. Log every optimization action in TSV format for reproducibility and auditability.
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run React tasks sequentially: components, then features, then state management, then tests.
-- Use branch isolation per task: `git checkout -b godmode-react-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

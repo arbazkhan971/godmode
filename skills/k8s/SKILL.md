@@ -652,14 +652,14 @@ CONFLICT RESOLUTION: manifests branch is source of truth for base templates
 
 ## Anti-Patterns
 
-- **Do NOT deploy without resource limits.** Unbounded pods will consume all node resources and starve other workloads.
-- **Do NOT skip health probes.** Without probes, Kubernetes sends traffic to broken pods and never restarts hung processes.
-- **Do NOT use `latest` image tag.** You cannot rollback to `latest` because you do not know what version it was. Pin versions.
-- **Do NOT put secrets in environment variables in plain manifests.** Use Kubernetes Secrets, sealed-secrets, or external-secrets-operator.
-- **Do NOT set CPU limits equal to requests.** This causes CPU throttling even when the node has spare capacity. Set limits at 2-3x requests.
-- **Do NOT ignore pod evictions.** Evictions mean resource pressure. Investigate and fix the root cause.
-- **Do NOT run as root in containers.** Use `securityContext.runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
-- **Do NOT deploy straight to production.** Validate in dev/staging first. Use canary deployments for high-risk changes.
+- **Do NOT deploy without resource limits.** Unbounded pods starve other workloads.
+- **Do NOT skip health probes.** Without probes, K8s sends traffic to broken pods.
+- **Do NOT use `latest` image tag.** You cannot rollback to `latest`. Pin versions.
+- **Do NOT put secrets in plain manifests.** Use Kubernetes Secrets or external-secrets-operator.
+- **Do NOT set CPU limits equal to requests.** This causes throttling with spare node capacity. Set limits at 2-3x requests.
+- **Do NOT ignore pod evictions.** Evictions mean resource pressure. Investigate the root cause.
+- **Do NOT run as root in containers.** Use `runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
+- **Do NOT deploy straight to production.** Validate in dev/staging first.
 
 
 ## Output Format

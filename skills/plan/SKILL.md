@@ -143,7 +143,7 @@ Plan: decomposed into 9 tasks.
 Plan: arranged into 4 rounds (max parallelism: 3).
 Plan: validation passed — 9 tasks, 14 files, 0 conflicts.
 Plan: wrote .godmode/plan.yaml (9 tasks, 4 rounds, 14 files).
-Plan: >10 tasks — consider /godmode:predict before /godmode:build.
+Plan: >10 tasks — run /godmode:predict before /godmode:build.
 ```
 
 Final output line:
@@ -289,7 +289,7 @@ WHILE current_iteration < max_iterations:
           1 file: XS (< 30 min)
           2-3 files: S (30-60 min)
           4-5 files: M (1-2 hours)
-          >5 files: L (2-4 hours) — consider splitting
+          >5 files: L (2-4 hours) — split
 
        b. Lines of code (estimated):
           < 50 lines: XS
@@ -452,6 +452,24 @@ FINAL PLAN RIGOR ASSESSMENT:
 ├──────────────────────┼────────┼───────────────────────────┤
 │  Overall             │ READY  │ Proceed to /godmode:build  │
 └──────────────────────┴────────┴───────────────────────────┘
+```
+
+## Keep/Discard Discipline
+```
+After EACH plan validation:
+  KEEP if: YAML parses AND no circular deps AND no file overlaps AND all paths valid
+  DISCARD if: validation fails on any check
+  On discard: fix the failing validation item. Re-validate. Max 3 attempts per issue.
+  Never keep a plan with circular dependencies or invalid file paths.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: plan.yaml written, validated, and committed
+  - budget_exhausted: >20 tasks (split into phases instead)
+  - diminishing_returns: decomposition produces no new independent tasks
+  - stuck: >5 validation failures with no resolution
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

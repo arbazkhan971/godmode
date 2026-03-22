@@ -630,39 +630,6 @@ FIX:
   Speedup: ~100x (501 queries -> 1 query)
 ```
 
-### Analyzing a MongoDB query
-```
-User: /godmode:query This MongoDB aggregation pipeline is crawling
-
-Query: Running explain...
-
-db.events.aggregate([
-  { $match: { type: "click", timestamp: { $gte: ISODate("2025-01-01") } } },
-  { $group: { _id: "$userId", clickCount: { $sum: 1 } } },
-  { $sort: { clickCount: -1 } },
-  { $limit: 100 }
-]).explain("executionStats")
-
-ANALYSIS:
-Stage:               COLLSCAN (full collection scan)
-Documents examined:  45,000,000
-Documents matched:   1,200,000
-Execution time:      28,400ms
-
-FIX: Create compound index
-db.events.createIndex({ type: 1, timestamp: 1, userId: 1 })
-
-After index:
-Stage:               IXSCAN
-Documents examined:  1,200,000 (only matching docs)
-Execution time:      1,200ms
-
-Speedup: 23x (28.4s -> 1.2s)
-
-For further improvement, consider a pre-aggregated collection
-(materialized view pattern) if this runs frequently.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -684,17 +651,41 @@ For further improvement, consider a pre-aggregated collection
 
 ## Anti-Patterns
 
-- **Do NOT optimize without measuring.** "This query should be faster with an index" is a hypothesis. Run EXPLAIN ANALYZE before and after to prove it.
-- **Do NOT add indexes blindly.** Every index has a write cost. Check if the query runs frequently enough to justify the overhead.
-- **Do NOT ignore the ORM layer.** The prettiest SQL in the world doesn't help if the ORM generates N+1 queries around it.
-- **Do NOT use SELECT * in production queries.** Fetch only the columns you need. This enables index-only scans and reduces I/O.
-- **Do NOT use OFFSET for deep pagination.** OFFSET 100000 scans and discards 100,000 rows. Use keyset/cursor pagination.
-- **Do NOT apply functions to indexed columns in WHERE clauses.** `WHERE YEAR(created_at) = 2025` cannot use an index on `created_at`. Use range conditions instead.
-- **Do NOT create single-column indexes for every column.** Think about query patterns and create composite indexes that serve multiple queries.
-- **Do NOT forget to update statistics after bulk data changes.** Stale statistics lead to bad query plans.
-- **Do NOT assume an index helps without checking selectivity.** An index on a boolean column with 50/50 distribution won't help much.
-- **Do NOT optimize queries in isolation.** Consider the full workload. An optimization that helps one query but hurts ten others is a net negative.
-- **Do NOT skip the write-side impact.** Report the INSERT/UPDATE/DELETE overhead of every new index.
+- **Do NOT optimize without measuring.** Run EXPLAIN ANALYZE before and after to prove improvement.
+- **Do NOT add indexes blindly.** Every index has a write cost. Justify the overhead.
+- **Do NOT ignore the ORM layer.** Fix N+1 patterns at the application level.
+- **Do NOT use SELECT * in production queries.** Fetch only needed columns.
+- **Do NOT use OFFSET for deep pagination.** Use keyset/cursor pagination.
+- **Do NOT apply functions to indexed columns in WHERE clauses.** Use range conditions.
+- **Do NOT create single-column indexes for every column.** Design composite indexes for query patterns.
+- **Do NOT skip the write-side impact.** Report INSERT/UPDATE/DELETE overhead of every new index.
+
+## Keep/Discard Discipline
+```
+After EACH query optimization:
+  1. MEASURE: Run EXPLAIN ANALYZE on the optimized query. Record execution time and rows scanned.
+  2. COMPARE: Did execution time improve? Did rows scanned decrease?
+  3. DECIDE:
+     - KEEP if: execution time improved AND test suite passes AND write overhead is acceptable
+     - DISCARD if: query correctness changed OR write overhead exceeds read benefit OR no measurable improvement
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
+
+Never keep an index that is not used by any production query pattern.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Query time meets target latency (default: < 50ms)
+  - No sequential scans on tables > 10K rows
+  - All N+1 patterns eliminated
+  - Improvement < 10% in last iteration (diminishing returns)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - One rarely-run query is still slow (optimize if latency-critical, skip if not)
+  - Write overhead increased slightly (document the trade-off)
+```
 
 ## Output Format
 
@@ -772,36 +763,6 @@ ERROR RECOVERY — QUERY:
    → Check for low selectivity (index scan reads most of the table). Consider partial index. Check for implicit type casting preventing index use.
 ```
 
-## Multi-Agent Dispatch
-
-```
-PARALLEL QUERY OPTIMIZATION AGENTS:
-When optimizing queries across multiple tables or services:
-
-Agent 1 (worktree: query-analysis):
-  - Run EXPLAIN ANALYZE on all identified slow queries
-  - Document current execution plans and row estimates
-  - Identify missing indexes, sequential scans, N+1 patterns
-  - Produce prioritized list of optimizations by impact
-
-Agent 2 (worktree: query-indexes):
-  - Create recommended indexes (CONCURRENTLY where supported)
-  - Remove unused indexes (check pg_stat_user_indexes or equivalent)
-  - Add composite indexes for multi-column predicates
-  - Measure write overhead of new indexes
-
-Agent 3 (worktree: query-rewrites):
-  - Rewrite inefficient queries (subquery → JOIN, OFFSET → keyset)
-  - Fix ORM-level N+1 with eager loading / DataLoaders
-  - Add query count regression tests for critical paths
-  - Update EXPLAIN baselines in documentation
-
-MERGE: Analysis merges first. Indexes and rewrites merge independently.
-  Final: run full EXPLAIN ANALYZE comparison, verify all improvements.
-```
-
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run query optimization tasks sequentially: analysis, then index changes, then query rewrites.
-- Use branch isolation per task: `git checkout -b godmode-query-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run query optimization tasks sequentially: analysis, then index changes, then query rewrites.
+Use branch isolation per task: `git checkout -b godmode-query-{task}`, implement, commit, merge back.

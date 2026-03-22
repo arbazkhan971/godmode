@@ -641,101 +641,24 @@ IF package.json has no "engines" field AND is a library:
 ## Iterative Dependency Management Protocol
 
 ```
-WHEN performing a full dependency audit and cleanup:
-
-phases = ["audit_security", "check_outdated", "remove_unused", "deduplicate", "verify_build"]
-current_phase = 0
-total_phases = len(phases)
-changes_made = []
-
-WHILE current_phase < total_phases:
-  phase = phases[current_phase]
-
-  IF phase == "audit_security":
-    1. RUN {manager} audit
-    2. FOR each CRITICAL/HIGH vulnerability:
-       - Check if direct or transitive dependency
-       - IF direct: update to fixed version
-       - IF transitive: update parent OR add override
-       - IF no fix available: assess actual exploitability
-    3. VERIFY: 0 critical, 0 high vulnerabilities
-    changes_made.append(fixes)
-
-  IF phase == "check_outdated":
-    1. RUN {manager} outdated
-    2. CATEGORIZE: patch updates, minor updates, major updates
-    3. APPLY patch updates (safe)
-    4. APPLY minor updates (test after)
-    5. FLAG major updates for manual review
-    changes_made.append(updates)
-
-  IF phase == "remove_unused":
-    1. RUN depcheck to find unused dependencies
-    2. VERIFY each "unused" dependency isn't used dynamically
-    3. REMOVE confirmed unused packages
-    changes_made.append(removals)
-
-  IF phase == "deduplicate":
-    1. RUN {manager} dedupe
-    2. CHECK for duplicate packages in lock file
-    3. RESOLVE duplicates via version alignment
-    changes_made.append(dedup_results)
-
-  IF phase == "verify_build":
-    1. DELETE node_modules and lock file
-    2. RUN fresh install
-    3. RUN build
-    4. RUN tests
-    IF build_or_tests_fail:
-      ROLLBACK last changes
-      REPORT "Build verification failed. Rolling back."
-
-  current_phase += 1
-  REPORT "Phase {current_phase}/{total_phases}: {phase} complete"
-
-FINAL:
-  REPORT dependency health: vulnerabilities, outdated, unused, duplicates
-  REPORT total changes made
+PHASES (run in order):
+  1. audit_security: Run audit, fix critical/high (direct: update, transitive: update parent or override)
+  2. check_outdated: Run outdated, apply patch (safe), apply minor (test after), flag major for review
+  3. remove_unused: Run depcheck, verify not dynamically imported, remove confirmed unused
+  4. deduplicate: Run dedupe, resolve version alignment
+  5. verify_build: Delete node_modules + lock, fresh install, build, test. Rollback on failure.
 ```
 
 ## Multi-Agent Dispatch
 
 ```
-WHEN setting up a monorepo with workspace configuration:
+PARALLEL AGENTS (4 worktrees):
+  Agent 1 — workspace-structure: package dirs, workspace config, package.json files
+  Agent 2 — dependency-audit: security audit, outdated, unused, deduplicate
+  Agent 3 — publish-config: ESM/CJS exports, tsup/unbuild, changesets, prepublishOnly
+  Agent 4 — ci-pipeline: Turborepo/Nx pipeline, selective builds, remote caching
 
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (workspace-structure):
-    - Create package directories (apps/, packages/)
-    - Configure workspace protocol references
-    - Set up pnpm-workspace.yaml or equivalent
-    - Output: directory structure + package.json files
-
-  Agent 2 (dependency-audit):
-    - Run security audit across all packages
-    - Identify outdated dependencies
-    - Find and remove unused dependencies
-    - Deduplicate shared dependencies
-    - Output: audit report + fixed package.json files
-
-  Agent 3 (publish-config):
-    - Configure package.json exports (ESM/CJS dual)
-    - Set up tsup/unbuild for library builds
-    - Configure changesets for versioning
-    - Set up prepublishOnly scripts
-    - Output: build configs + publish-ready package.json
-
-  Agent 4 (ci-pipeline):
-    - Configure Turborepo/Nx task pipeline
-    - Set up selective builds in CI
-    - Configure remote caching
-    - Output: turbo.json + CI workflow
-
-MERGE:
-  - Verify workspace references resolve correctly
-  - Verify all packages build and test
-  - Verify publish dry-run succeeds for public packages
-  - Run full audit: 0 critical/high vulnerabilities
+MERGE: Verify workspace refs resolve, all packages build+test, publish dry-run passes.
 ```
 
 ## HARD RULES
@@ -837,210 +760,27 @@ IF npm publish fails:
   4. Check the files field in package.json (needed files must be included)
 ```
 
-## Anti-Patterns
-
-- **Do NOT use `npm install` in CI/CD.** Use `npm ci` (or `pnpm install --frozen-lockfile`). `install` can update the lock file, causing non-reproducible builds.
-- **Do NOT omit lock files from version control.** Without a committed lock file, every install can produce different dependency versions. This causes "works on my machine" bugs.
-- **Do NOT mix package managers.** Having both `package-lock.json` and `yarn.lock` in the same repo means no one knows which one is authoritative. Pick one and delete the others.
-- **Do NOT use `npm audit fix --force` blindly.** Force-fixing can introduce breaking changes by jumping major versions. Review each fix individually.
-- **Do NOT ignore peer dependency warnings.** Peer dependency conflicts indicate version incompatibilities that will cause runtime errors. Resolve them properly.
-- **Do NOT publish without `--dry-run` first.** npm publish is irreversible (within 72 hours with unpublish, but consumers may already depend on it). Always verify contents first.
-- **Do NOT install everything as a regular dependency.** Build tools, test frameworks, and linters belong in `devDependencies`. Production images should not include dev packages.
-- **Do NOT use `*` or `latest` as version ranges.** Always specify semver ranges. `*` means any version, which will eventually break your build when a breaking change is published.
-
-
-## Dependency Audit Loop
-
-Comprehensive, iterative protocol for vulnerability scanning, bundle size impact analysis, and dependency update strategy:
-
+## Keep/Discard Discipline
 ```
-DEPENDENCY AUDIT LOOP:
-current_iteration = 0
-max_iterations = 6
-audit_phases = [vulnerability_scan, bundle_size_impact, outdated_analysis, unused_detection, license_compliance, update_strategy]
+After EACH dependency change:
+  1. MEASURE: Run npm audit, npm test, npm run build.
+  2. COMPARE: Are critical/high vulns = 0 AND build passes AND tests pass?
+  3. DECIDE:
+     - KEEP if audit clean AND build green AND tests pass.
+     - DISCARD if new vulnerability introduced OR build fails OR test fails.
+  4. COMMIT kept changes. Revert discarded changes before the next fix.
 
-WHILE current_iteration < max_iterations:
-  phase = audit_phases[current_iteration]
-  current_iteration += 1
+Never keep a version bump that introduces a critical or high vulnerability.
+Never keep a dependency override without documenting the reason and a removal date.
+```
 
-  IF phase == "vulnerability_scan":
-    1. RUN security audit:
-       npm audit --json > /tmp/audit-results.json  # or pnpm audit / yarn audit
-       Parse: total advisories, by severity (critical, high, moderate, low, info)
-
-    2. FOR each vulnerability (CRITICAL and HIGH first):
-       a. IDENTIFY: package name, version, advisory ID, CVE if available
-       b. CLASSIFY: direct dependency or transitive?
-          npm ls {vulnerable_package} — trace the dependency chain
-       c. ASSESS exploitability:
-          - Is the vulnerable code path reachable in our application?
-          - Is the vulnerability relevant to our context (server vs browser)?
-          - What is the attack vector? (network, local, requires auth?)
-       d. DETERMINE fix:
-          - Direct dep: npm install {package}@latest (if fix available)
-          - Transitive: update parent package OR add override
-          - No fix: document risk, set calendar reminder, check weekly
-       e. VERIFY fix:
-          - npm audit after fix — confirm advisory resolved
-          - npm test — confirm no regressions from version change
-
-    3. REPORT:
-       VULNERABILITY SCAN:
-       ┌──────────────────────────────────────────────────────┐
-       │  Total advisories:    <N>                             │
-       │  Critical:            <N> (target: 0)                 │
-       │  High:                <N> (target: 0)                 │
-       │  Moderate:            <N>                             │
-       │  Low:                 <N>                             │
-       │  Fixed this session:  <N>                             │
-       │  Unfixable (no patch):  <N> (documented)              │
-       │  Supply chain risk:   LOW / MEDIUM / HIGH             │
-       └──────────────────────────────────────────────────────┘
-
-  IF phase == "bundle_size_impact":
-    1. MEASURE current bundle size:
-       - npm run build (or detected build command)
-       - Measure output size: du -sh dist/ or parse webpack/vite stats
-       - If available: npx bundlesize or npx size-limit
-
-    2. FOR each production dependency, estimate size contribution:
-       - npx bundle-phobia {package} (or use bundlephobia.com API)
-       - Identify the largest dependencies by minified + gzipped size
-       - Check for lighter alternatives (e.g., dayjs vs moment, lodash-es vs lodash)
-
-    3. GENERATE bundle impact table:
-       BUNDLE SIZE IMPACT:
-       ┌──────────────────────┬───────────┬───────────┬────────────────┐
-       │  Package             │  Min+Gzip │  % Bundle │  Alternative    │
-       ├──────────────────────┼───────────┼───────────┼────────────────┤
-       │  react-dom           │  42 KB    │  28%      │  preact (3 KB)  │
-       │  moment              │  18 KB    │  12%      │  dayjs (2 KB)   │
-       │  lodash              │  25 KB    │  17%      │  lodash-es      │
-       │  axios               │  5 KB     │  3%       │  fetch (native) │
-       │  <other>             │  <N> KB   │  <N>%     │  <alt or none>  │
-       ├──────────────────────┼───────────┼───────────┼────────────────┤
-       │  Total bundle        │  <N> KB   │  100%     │                 │
-       │  Target              │  <N> KB   │           │                 │
-       └──────────────────────┴───────────┴───────────┴────────────────┘
-
-    4. RECOMMEND size reductions:
-       - Replace heavy dependencies with lighter alternatives
-       - Enable tree shaking (ensure ESM imports, sideEffects: false)
-       - Lazy-load non-critical dependencies
-       - Move server-only deps to devDependencies if SSR not used
-
-  IF phase == "outdated_analysis":
-    1. CHECK for outdated packages:
-       npm outdated --json > /tmp/outdated-results.json
-
-    2. CATEGORIZE updates by risk:
-       PATCH updates (safe — bug fixes only):
-         - List all packages with patch updates available
-         - Action: auto-update, low risk
-
-       MINOR updates (generally safe — new features, no breaking changes):
-         - List all packages with minor updates available
-         - Action: update, run tests, verify
-
-       MAJOR updates (breaking changes — require migration):
-         - List all packages with major updates available
-         - FOR each: check changelog for breaking changes
-         - Action: plan migration, allocate time, update one at a time
-
-    3. GENERATE update plan:
-       OUTDATED PACKAGES:
-       ┌──────────────────┬──────────┬──────────┬──────────┬──────────┐
-       │  Package         │  Current │  Wanted  │  Latest  │  Risk    │
-       ├──────────────────┼──────────┼──────────┼──────────┼──────────┤
-       │  express         │  4.18.2  │  4.18.3  │  4.19.0  │  PATCH   │
-       │  typescript      │  5.2.0   │  5.3.0   │  5.4.0   │  MINOR   │
-       │  next            │  13.5.0  │  13.5.6  │  14.1.0  │  MAJOR   │
-       └──────────────────┴──────────┴──────────┴──────────┴──────────┘
-
-  IF phase == "unused_detection":
-    1. SCAN for unused dependencies:
-       npx depcheck --json > /tmp/depcheck-results.json
-
-    2. FOR each "unused" dependency:
-       - VERIFY it's truly unused (depcheck has false positives):
-         - Check for dynamic imports: import('{package}')
-         - Check for CLI usage in scripts: grep in package.json scripts
-         - Check for config references: webpack/vite/babel plugins
-         - Check for type-only imports: import type { X } from '{package}'
-       - IF confirmed unused: mark for removal
-       - IF false positive: add to depcheck ignore list
-
-    3. REPORT:
-       UNUSED DEPENDENCIES:
-       - Confirmed unused (safe to remove): <list>
-       - Suspected unused (verify manually): <list>
-       - Estimated size savings: <N> KB from node_modules
-       - Estimated install time savings: <N> seconds
-
-  IF phase == "license_compliance":
-    1. SCAN all dependency licenses:
-       npx license-checker --json > /tmp/license-results.json
-
-    2. CHECK for incompatible licenses:
-       ALLOWED: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
-       REVIEW REQUIRED: LGPL-2.1, LGPL-3.0, MPL-2.0
-       BLOCKED: GPL-2.0, GPL-3.0, AGPL-3.0 (for proprietary projects)
-       UNKNOWN: packages without declared license
-
-    3. REPORT any compliance issues
-
-  IF phase == "update_strategy":
-    1. DEFINE update cadence based on project type:
-       Application:
-         - Security patches: apply immediately (same day)
-         - Patch updates: weekly batch
-         - Minor updates: bi-weekly or monthly batch
-         - Major updates: quarterly planning, one at a time
-
-       Library:
-         - Be conservative — your updates affect consumers
-         - Pin major versions, allow minor/patch ranges
-         - Test against multiple versions of key peer deps
-         - Document minimum and maximum supported versions
-
-    2. CONFIGURE automated updates:
-       - Dependabot: .github/dependabot.yml with grouped updates
-       - Renovate: renovate.json with auto-merge for patch updates
-       - Schedule: security daily, patch weekly, minor monthly
-
-    3. GENERATE update configuration:
-       # .github/dependabot.yml
-       version: 2
-       updates:
-         - package-ecosystem: "npm"
-           directory: "/"
-           schedule:
-             interval: "weekly"
-           groups:
-             production-dependencies:
-               patterns: ["*"]
-               exclude-patterns: ["@types/*"]
-             dev-dependencies:
-               dependency-type: "development"
-           open-pull-requests-limit: 10
-
-  REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS ATTENTION}"
-
-FINAL DEPENDENCY HEALTH:
-┌──────────────────────────────────────────────────────────┐
-│  DEPENDENCY AUDIT SUMMARY                                 │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Phase               │ Grade  │ Key Metric                 │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Vulnerability scan  │  <A-F> │  <N> critical/high         │
-│  Bundle size impact  │  <A-F> │  <N> KB total              │
-│  Outdated analysis   │  <A-F> │  <N> packages outdated     │
-│  Unused detection    │  <A-F> │  <N> unused packages       │
-│  License compliance  │  <A-F> │  <N> issues                │
-│  Update strategy     │  <A-F> │  Automated: YES/NO         │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │  <A-F> │  <priority action>         │
-└──────────────────────┴────────┴───────────────────────────┘
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Zero critical/high vulnerabilities AND lock file committed AND CI uses frozen install
+  - No unused dependencies AND no duplicate packages AND semver ranges on all deps
+  - User explicitly requests stop
+  - Max iterations (6) reached
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

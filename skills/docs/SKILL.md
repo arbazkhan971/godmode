@@ -470,14 +470,40 @@ IF runbook commands fail:
   4. Never publish a runbook without executing every command in it
 ```
 
+## Keep/Discard Discipline
+```
+After EACH documentation batch:
+  1. MEASURE: Run link check — are all internal references valid? Does doc match current code?
+  2. COMPARE: Did coverage increase? Are stale docs reduced?
+  3. DECIDE:
+     - KEEP if: all links resolve AND doc matches current code behavior AND coverage increased
+     - DISCARD if: broken links OR doc contradicts code OR describes deleted functions
+  4. COMMIT kept changes. Fix discarded docs before the next batch.
+
+Never merge documentation that references functions or endpoints that no longer exist.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All public functions/endpoints have descriptions, parameters, and error cases
+  - Zero broken internal links
+  - No stale docs (doc modification date >= code modification date)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Private/internal functions lack docs (public API is the priority)
+  - Runbooks are not yet created (code docs come first)
+```
+
 ## Anti-Patterns
 
-- **Do NOT write documentation without reading the code.** Generated docs that don't match the code are worse than no docs at all.
-- **Do NOT document private internals extensively.** Focus on public APIs and interfaces. Internal code changes frequently; documenting it creates maintenance burden.
-- **Do NOT copy function names as descriptions.** "`getUserById` — Gets a user by ID" adds zero value. Describe what it actually does: "`getUserById` — Fetches user profile from PostgreSQL, returns null if not found or if user is soft-deleted."
-- **Do NOT skip error documentation.** Callers need to know what can go wrong. Document every thrown error and when it occurs.
-- **Do NOT generate docs and forget.** Documentation rots faster than code. Use `--audit` regularly to catch staleness.
-- **Do NOT write runbooks from memory.** Run the actual commands, verify they work, then document them. A runbook with a wrong command is dangerous.
+- **Do NOT write documentation without reading the code.** Docs that contradict code are worse than no docs.
+- **Do NOT document private internals extensively.** Focus on public APIs. Internal code changes frequently.
+- **Do NOT copy function names as descriptions.** "`getUserById` — Gets a user by ID" adds zero value. Describe actual behavior.
+- **Do NOT skip error documentation.** Callers need to know what can go wrong.
+- **Do NOT generate docs and forget.** Documentation rots faster than code. Audit regularly.
+- **Do NOT write runbooks from memory.** Run every command first. A runbook with a wrong command is dangerous.
 
 
 ## Documentation Audit Loop
@@ -611,52 +637,20 @@ WHILE current_iteration < max_iterations:
        └─────────────────────────────────────────────────────┘
 
   IF phase == "link_integrity":
-    1. SCAN all documentation files for internal links:
-       - Markdown links: [text](./path) and [text](#anchor)
-       - Image references: ![alt](./image.png)
-       - Code references: `path/to/file.ts` or backtick code refs
-
-    2. VERIFY each link target exists:
-       FOR each link in all_links:
-         IF link is file reference: test -f {resolved_path}
-         IF link is anchor reference: grep -q "^#{anchor}" {file}
-         IF link is URL: skip (external link checking is optional)
-
-    3. REPORT:
-       LINK INTEGRITY:
-       - Total internal links: <N>
-       - Valid links: <N>
-       - Broken links: <N>
-         - {file}:{line} → {broken_target} (MISSING)
-         - {file}:{line} → {broken_target} (MOVED to {new_path})
+    1. SCAN all docs for internal links (markdown links, image refs, code refs)
+    2. VERIFY each target exists (file reference: test -f; anchor: grep heading)
+    3. REPORT broken links with file:line and suggested fix (MISSING or MOVED)
 
   IF phase == "freshness_enforcement":
-    1. DEFINE freshness policy:
-       - API docs: must be updated within 7 days of endpoint changes
-       - README: must be updated within 14 days of major feature changes
-       - Code docs (JSDoc/docstrings): must match current function signature
-       - Runbooks: must be reviewed quarterly (90 days)
-       - Architecture docs (ADRs): no staleness requirement (historical)
+    Freshness policy:
+      API docs: within 7 days of endpoint changes
+      README: within 14 days of feature changes
+      Code docs: must match current function signature
+      Runbooks: reviewed quarterly (90 days)
+      ADRs: no staleness requirement (historical)
 
-    2. CHECK each doc against policy:
-       FOR each doc_file:
-         last_updated = git log -1 --format="%aI" -- {doc_file}
-         related_code_files = find code files referenced by this doc
-         latest_code_change = max(git log -1 --format="%aI" -- {f} for f in related_code_files)
-         freshness_gap = latest_code_change - last_updated
-
-         IF freshness_gap > policy_threshold:
-           violations.append({ doc_file, gap_days, policy_threshold })
-
-    3. GENERATE freshness report with actionable items:
-       FRESHNESS VIOLATIONS:
-       ┌──────────────────────┬──────────┬────────────┬───────────┐
-       │  Doc File            │ Gap      │ Policy     │ Priority  │
-       ├──────────────────────┼──────────┼────────────┼───────────┤
-       │  docs/api/users.md   │ 23 days  │ 7 days     │ HIGH      │
-       │  README.md           │ 18 days  │ 14 days    │ MEDIUM    │
-       │  runbooks/deploy.md  │ 112 days │ 90 days    │ HIGH      │
-       └──────────────────────┴──────────┴────────────┴───────────┘
+    FOR each doc, compare git modification date against related code files.
+    Flag violations exceeding policy threshold.
 
   REPORT: "Phase {current_iteration}/{max_iterations}: {phase} — {PASS | NEEDS ATTENTION}"
 

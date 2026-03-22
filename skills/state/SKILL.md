@@ -400,138 +400,29 @@ export const removeItemAtom = atom(null, (get, set, productId: string) => {
 
 ### Step 5: Server State with React Query
 
-#### 5a: Query Key Design
-
-```typescript
-// lib/query-keys.ts
-export const queryKeys = {
-  users: {
-    all: ['users'] as const,
-    lists: () => [...queryKeys.users.all, 'list'] as const,
-    list: (filters: UserFilters) =>
-      [...queryKeys.users.lists(), filters] as const,
-    details: () => [...queryKeys.users.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.users.details(), id] as const,
-  },
-  products: {
-    all: ['products'] as const,
-    lists: () => [...queryKeys.products.all, 'list'] as const,
-    list: (filters: ProductFilters) =>
-      [...queryKeys.products.lists(), filters] as const,
-    details: () => [...queryKeys.products.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.products.details(), id] as const,
-    infinite: (filters: ProductFilters) =>
-      [...queryKeys.products.all, 'infinite', filters] as const,
-  },
-  orders: {
-    all: ['orders'] as const,
-    list: (params: OrderParams) =>
-      [...queryKeys.orders.all, 'list', params] as const,
-    detail: (id: string) => [...queryKeys.orders.all, 'detail', id] as const,
-  },
-} as const;
+#### 5a: Query Key Factory
+```
+QUERY KEY PATTERN:
+  Create a query key factory object per entity:
+    entity.all → ['entity']
+    entity.lists() → ['entity', 'list']
+    entity.list(filters) → ['entity', 'list', filters]
+    entity.detail(id) → ['entity', 'detail', id]
+  Use `as const` for type safety. Hierarchical keys enable targeted invalidation.
 ```
 
-#### 5b: Query Hook with Caching
-
-```typescript
-// hooks/use-users.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-keys';
-import { api } from '@/lib/api';
-
-export function useUser(userId: string) {
-  return useQuery({
-    queryKey: queryKeys.users.detail(userId),
-    queryFn: () => api.users.getById(userId),
-    staleTime: 5 * 60 * 1000,        // Consider fresh for 5 minutes
-    gcTime: 30 * 60 * 1000,           // Keep in cache for 30 minutes
-    retry: 2,
-    enabled: !!userId,                 // Don't fetch if no userId
-  });
-}
-
-export function useUsers(filters: UserFilters) {
-  return useQuery({
-    queryKey: queryKeys.users.list(filters),
-    queryFn: () => api.users.list(filters),
-    staleTime: 2 * 60 * 1000,
-    placeholderData: (previousData) => previousData, // Keep previous while fetching
-  });
-}
-
-export function useUpdateUser() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: { id: string; updates: Partial<User> }) =>
-      api.users.update(data.id, data.updates),
-    onSuccess: (updatedUser) => {
-      // Update the specific user cache
-      queryClient.setQueryData(
-        queryKeys.users.detail(updatedUser.id),
-        updatedUser,
-      );
-      // Invalidate lists (they might be sorted/filtered differently)
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.users.lists(),
-      });
-    },
-  });
-}
+#### 5b: Query/Mutation Hook Rules
 ```
+QUERY HOOKS:
+  - Set staleTime (how long data is fresh, e.g., 5 min) and gcTime (cache retention, e.g., 30 min)
+  - Use enabled to conditionally fetch (e.g., enabled: !!userId)
+  - Use placeholderData: (prev) => prev to avoid layout shift during refetch
 
-#### 5c: Optimistic Updates
-
-```typescript
-// hooks/use-toggle-favorite.ts
-export function useToggleFavorite() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (productId: string) => api.products.toggleFavorite(productId),
-
-    // Optimistic update: update UI immediately before server responds
-    onMutate: async (productId) => {
-      // Cancel outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.products.detail(productId),
-      });
-
-      // Snapshot the previous value (for rollback)
-      const previousProduct = queryClient.getQueryData<Product>(
-        queryKeys.products.detail(productId),
-      );
-
-      // Optimistically update the cache
-      queryClient.setQueryData<Product>(
-        queryKeys.products.detail(productId),
-        (old) =>
-          old ? { ...old, isFavorite: !old.isFavorite } : old,
-      );
-
-      // Return context with the snapshot
-      return { previousProduct };
-    },
-
-    // On error, roll back to the previous value
-    onError: (_err, productId, context) => {
-      if (context?.previousProduct) {
-        queryClient.setQueryData(
-          queryKeys.products.detail(productId),
-          context.previousProduct,
-        );
-      }
-    },
-
-    // After success or error, refetch to ensure server/client sync
-    onSettled: (_data, _error, productId) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.products.detail(productId),
-      });
-    },
-  });
-}
+MUTATION HOOKS:
+  - onSuccess: update specific cache with setQueryData + invalidate lists
+  - For optimistic updates: onMutate → cancel queries, snapshot previous, update cache
+  - onError → rollback to snapshot
+  - onSettled → invalidate to re-sync with server
 ```
 
 ### Step 6: State Machine Design
@@ -554,99 +445,18 @@ Do NOT use a state machine when:
 [ ] Form state (form libraries handle this better)
 ```
 
-#### 6b: XState Machine Example
+#### 6b: XState Machine Pattern
 
 ```typescript
-// machines/checkout.machine.ts
-import { createMachine, assign } from 'xstate';
-
-interface CheckoutContext {
-  shippingAddress: ShippingAddress | null;
-  paymentMethod: PaymentMethod | null;
-  orderSummary: OrderSummary | null;
-  error: string | null;
-}
-
-type CheckoutEvent =
-  | { type: 'SUBMIT_SHIPPING'; address: ShippingAddress }
-  | { type: 'SUBMIT_PAYMENT'; payment: PaymentMethod }
-  | { type: 'CONFIRM_ORDER' }
-  | { type: 'BACK' }
-  | { type: 'RETRY' }
-  | { type: 'CANCEL' };
-
-export const checkoutMachine = createMachine({
-  id: 'checkout',
-  initial: 'shipping',
-  context: {
-    shippingAddress: null,
-    paymentMethod: null,
-    orderSummary: null,
-    error: null,
-  } satisfies CheckoutContext,
-  states: {
-    shipping: {
-      on: {
-        SUBMIT_SHIPPING: {
-          target: 'payment',
-          actions: assign({
-            shippingAddress: (_, event) => event.address,
-          }),
-        },
-        CANCEL: 'cancelled',
-      },
-    },
-    payment: {
-      on: {
-        SUBMIT_PAYMENT: {
-          target: 'review',
-          actions: assign({
-            paymentMethod: (_, event) => event.payment,
-          }),
-        },
-        BACK: 'shipping',
-        CANCEL: 'cancelled',
-      },
-    },
-    review: {
-      on: {
-        CONFIRM_ORDER: 'submitting',
-        BACK: 'payment',
-        CANCEL: 'cancelled',
-      },
-    },
-    submitting: {
-      invoke: {
-        src: 'submitOrder',
-        onDone: {
-          target: 'success',
-          actions: assign({
-            orderSummary: (_, event) => event.data,
-          }),
-        },
-        onError: {
-          target: 'error',
-          actions: assign({
-            error: (_, event) => event.data?.message ?? 'Order failed',
-          }),
-        },
-      },
-    },
-    success: {
-      type: 'final',
-    },
-    error: {
-      on: {
-        RETRY: 'submitting',
-        BACK: 'review',
-        CANCEL: 'cancelled',
-      },
-    },
-    cancelled: {
-      type: 'final',
-    },
-  },
-});
+// machines/checkout.machine.ts — XState v5 pattern
+// States: shipping → payment → review → submitting → success | error | cancelled
+// Each state defines: allowed transitions (on), side effects (actions), async work (invoke)
+// Key rules:
+//   - Type context and events explicitly
+//   - Use assign() for context mutations
+//   - Use invoke for async (API calls) with onDone/onError
+//   - Mark terminal states with type: 'final'
+//   - Allow BACK and CANCEL from every non-terminal state
 ```
 
 ### Step 7: State Persistence and Hydration
@@ -677,110 +487,26 @@ PERSISTENCE STRATEGY:
 
 #### 7b: SSR Hydration Pattern
 
-```typescript
-// Zustand with SSR hydration (Next.js)
-// stores/app.store.ts
-import { create } from 'zustand';
-
-interface AppState {
-  theme: 'light' | 'dark';
-  locale: string;
-  setTheme: (theme: 'light' | 'dark') => void;
-  setLocale: (locale: string) => void;
-}
-
-export const useAppStore = create<AppState>()((set) => ({
-  theme: 'light',
-  locale: 'en',
-  setTheme: (theme) => set({ theme }),
-  setLocale: (locale) => set({ locale }),
-}));
-
-// Server component passes initial state
-// app/layout.tsx
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = cookies().get('theme')?.value ?? 'light';
-  const locale = headers().get('accept-language')?.split(',')[0] ?? 'en';
-
-  return (
-    <StoreHydrator initialState={{ theme, locale }}>
-      {children}
-    </StoreHydrator>
-  );
-}
-
-// components/store-hydrator.tsx
-'use client';
-import { useRef } from 'react';
-import { useAppStore } from '@/stores/app.store';
-
-export function StoreHydrator({
-  initialState,
-  children,
-}: {
-  initialState: Partial<ReturnType<typeof useAppStore.getState>>;
-  children: React.ReactNode;
-}) {
-  const initialized = useRef(false);
-  if (!initialized.current) {
-    useAppStore.setState(initialState);
-    initialized.current = true;
-  }
-  return <>{children}</>;
-}
+```
+SSR HYDRATION RULES:
+1. Server component reads initial state (cookies, headers, DB)
+2. Pass initial state to a client StoreHydrator component
+3. StoreHydrator calls useStore.setState(initialState) once via useRef guard
+4. Never read persisted state during SSR — restore in useEffect only
+5. Add hasHydrated flag to prevent flash of default content
 ```
 
 #### 7c: Cache Synchronization
 
-```typescript
-// Real-time cache sync with WebSocket + React Query
-// lib/realtime-sync.ts
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-keys';
-
-export function useRealtimeSync() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL!);
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-
-      switch (message.type) {
-        case 'ORDER_UPDATED':
-          // Update specific order in cache
-          queryClient.setQueryData(
-            queryKeys.orders.detail(message.payload.id),
-            message.payload,
-          );
-          // Invalidate order lists (re-fetch to get correct ordering)
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.orders.all,
-            exact: false,
-          });
-          break;
-
-        case 'NOTIFICATION':
-          // Invalidate notification cache to trigger re-fetch
-          queryClient.invalidateQueries({
-            queryKey: ['notifications'],
-          });
-          break;
-
-        case 'BULK_UPDATE':
-          // For large changes, just invalidate everything in the scope
-          queryClient.invalidateQueries({
-            queryKey: [message.payload.entity],
-          });
-          break;
-      }
-    };
-
-    return () => ws.close();
-  }, [queryClient]);
-}
+```
+REALTIME CACHE SYNC PATTERN (WebSocket + React Query):
+1. Open WebSocket in a useEffect hook
+2. On message, switch on event type:
+   - Single entity update: queryClient.setQueryData(key, payload)
+   - List invalidation: queryClient.invalidateQueries({ queryKey })
+   - Bulk update: invalidate entire entity scope
+3. Clean up WebSocket on unmount
+4. Use query key factory for consistent key references
 ```
 
 ### Step 8: Report and Transition
@@ -1031,15 +757,25 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-state-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
-## Anti-Patterns
+## Keep/Discard Discipline
+```
+After EACH state architecture change:
+  1. MEASURE: Run test suite + React DevTools Profiler (or equivalent) for re-render count.
+  2. COMPARE: Did re-renders decrease or stay equal? Do all tests pass?
+  3. DECIDE:
+     - KEEP if tests pass AND no new re-render regressions AND no full-store subscriptions.
+     - DISCARD if tests fail OR re-render count increased OR new derived state stored.
+  4. COMMIT kept changes. Revert discarded changes before the next iteration.
 
-- **Do NOT put server data in Redux/Zustand/Pinia.** API data is server state. It belongs in React Query/SWR/Apollo. These tools handle caching, staleness, refetching, and garbage collection. Redux does not.
-- **Do NOT store derived state.** If `totalPrice` can be computed from `items`, compute it in a selector. Storing it creates sync bugs.
-- **Do NOT use Context for frequently-changing state.** React Context re-renders ALL consumers on ANY change. Use Zustand, Jotai, or Signals for state that changes often.
-- **Do NOT subscribe to the entire store.** `useStore()` re-renders on every state change. Always use selectors: `useStore((s) => s.count)`.
-- **Do NOT put form state in global stores.** Form state is local. Use React Hook Form or similar. Only persist form drafts if explicitly needed.
-- **Do NOT use optimistic updates without rollback.** If the server rejects the mutation, the UI must revert. Always implement onError rollback.
-- **Do NOT mix state management paradigms randomly.** Pick one client state library and one server state library. Do not use Redux AND Zustand AND Jotai in the same project.
-- **Do NOT persist sensitive data in localStorage.** Auth tokens in localStorage are vulnerable to XSS. Use httpOnly cookies for auth.
-- **Do NOT ignore hydration mismatches.** Server-rendered HTML must match the first client render. Use `useEffect` for client-only state to avoid hydration errors.
-- **Do NOT create a store for every component.** Stores are for shared state. If only one component uses the state, use local `useState`.
+Never keep a state change that introduces full-store subscriptions.
+Never keep an optimistic update without a tested rollback path.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Server state and client state separated AND all subscriptions use selectors AND tests pass
+  - No derived state stored AND no sensitive data in localStorage AND hydration is clean
+  - User explicitly requests stop
+  - Max iterations (10) reached
+```

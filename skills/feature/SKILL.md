@@ -677,257 +677,35 @@ COMMON PITFALLS:
 ```
 
 ### Step 8: Homegrown Flag System (Database Schema)
-Design a self-hosted feature flag system when vendor solutions are not needed:
+For teams choosing to build instead of buy:
 
 ```
-HOMEGROWN FLAG SYSTEM:
+HOMEGROWN FLAG SYSTEM — REQUIRED TABLES:
+  1. feature_flags:      key, type, owner, enabled, archived, cleanup_by, metadata
+  2. flag_rules:         flag_id, priority, attribute, operator, values, variant
+  3. flag_rollouts:      flag_id, percentage, hash_salt (for deterministic bucketing)
+  4. flag_variants:      flag_id, key, weight, payload (for A/B experiments)
+  5. flag_audit_log:     flag_id, action, actor, previous_value, new_value, timestamp
+  6. flag_environments:  flag_id, environment, enabled, overrides
 
-DATABASE SCHEMA (PostgreSQL):
-
--- Flag definitions
-CREATE TABLE feature_flags (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    key             VARCHAR(255) UNIQUE NOT NULL,
-    name            VARCHAR(255) NOT NULL,
-    description     TEXT,
-    type            VARCHAR(50) NOT NULL CHECK (type IN
-                      ('release', 'experiment', 'ops', 'permission')),
-    owner           VARCHAR(255) NOT NULL,
-    enabled         BOOLEAN NOT NULL DEFAULT false,
-    archived        BOOLEAN NOT NULL DEFAULT false,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    cleanup_by      DATE,
-    metadata        JSONB DEFAULT '{}'
-);
-
--- Targeting rules per flag
-CREATE TABLE flag_rules (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    flag_id         UUID NOT NULL REFERENCES feature_flags(id),
-    priority        INTEGER NOT NULL,  -- Lower = higher priority
-    attribute       VARCHAR(255) NOT NULL,  -- user_id, email, plan, country
-    operator        VARCHAR(50) NOT NULL,   -- in, not_in, equals, contains,
-                                            -- starts_with, ends_with, gte, lte
-    values          JSONB NOT NULL,         -- ["val1", "val2"]
-    variant         VARCHAR(255) DEFAULT 'on',  -- Which variant to serve
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Percentage rollout configuration
-CREATE TABLE flag_rollouts (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    flag_id         UUID NOT NULL REFERENCES feature_flags(id) UNIQUE,
-    percentage      INTEGER NOT NULL CHECK (percentage BETWEEN 0 AND 100),
-    hash_salt       VARCHAR(255) NOT NULL,  -- For deterministic bucketing
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Experiment variants
-CREATE TABLE flag_variants (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    flag_id         UUID NOT NULL REFERENCES feature_flags(id),
-    key             VARCHAR(255) NOT NULL,
-    description     TEXT,
-    weight          INTEGER NOT NULL CHECK (weight BETWEEN 0 AND 100),
-    payload         JSONB DEFAULT '{}',  -- Variant-specific config
-    UNIQUE(flag_id, key)
-);
-
--- Audit log (who changed what, when)
-CREATE TABLE flag_audit_log (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    flag_id         UUID NOT NULL REFERENCES feature_flags(id),
-    action          VARCHAR(50) NOT NULL,  -- created, enabled, disabled,
-                                           -- rule_added, percentage_changed,
-                                           -- archived, deleted
-    actor           VARCHAR(255) NOT NULL,
-    previous_value  JSONB,
-    new_value       JSONB,
-    timestamp       TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- Environment overrides (dev, staging, prod)
-CREATE TABLE flag_environments (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    flag_id         UUID NOT NULL REFERENCES feature_flags(id),
-    environment     VARCHAR(50) NOT NULL,  -- development, staging, production
-    enabled         BOOLEAN NOT NULL DEFAULT false,
-    overrides       JSONB DEFAULT '{}',    -- Environment-specific config
-    UNIQUE(flag_id, environment)
-);
-
-CREATE INDEX idx_flags_key ON feature_flags(key) WHERE NOT archived;
-CREATE INDEX idx_flags_type ON feature_flags(type);
-CREATE INDEX idx_rules_flag ON flag_rules(flag_id);
-CREATE INDEX idx_audit_flag ON flag_audit_log(flag_id);
-CREATE INDEX idx_audit_time ON flag_audit_log(timestamp);
-CREATE INDEX idx_env_flag ON flag_environments(flag_id);
-
-EVALUATION ENGINE:
-
-async function evaluateFlag(flagKey, context):
-  // Step 1: Get flag (from cache, refresh every 30s)
-  const flag = await getCachedFlag(flagKey)
-  if (!flag || flag.archived): return { enabled: false, variant: null }
-
-  // Step 2: Check environment override
-  const envOverride = flag.environments[context.environment]
-  if (envOverride && envOverride.enabled !== undefined):
-    if (!envOverride.enabled): return { enabled: false, variant: null }
-
-  // Step 3: Check if flag is globally enabled
-  if (!flag.enabled): return { enabled: false, variant: null }
-
-  // Step 4: Evaluate targeting rules (priority order)
-  const rules = flag.rules.sort((a, b) => a.priority - b.priority)
-  for (const rule of rules):
-    if (matchesRule(rule, context)):
-      return { enabled: true, variant: rule.variant }
-
-  // Step 5: Check percentage rollout
-  if (flag.rollout):
-    const bucket = murmur3(`${flag.rollout.hash_salt}:${context.user_id}`)
-    const pct = (bucket % 10000) / 100
-    if (pct < flag.rollout.percentage):
-      return { enabled: true, variant: "on" }
-
-  // Step 6: Default -- not targeted
-  return { enabled: false, variant: null }
-
-function matchesRule(rule, context):
-  const value = context[rule.attribute]
-  switch (rule.operator):
-    case "in":        return rule.values.includes(value)
-    case "not_in":    return !rule.values.includes(value)
-    case "equals":    return value === rule.values[0]
-    case "contains":  return value?.includes(rule.values[0])
-    case "gte":       return value >= rule.values[0]
-    case "lte":       return value <= rule.values[0]
-    case "ends_with": return value?.endsWith(rule.values[0])
-    default:          return false
-
-CACHING LAYER:
-  // In-memory cache with periodic refresh
-  let flagCache = new Map()
-  let lastRefresh = 0
-
-  async function getCachedFlag(key):
-    if (Date.now() - lastRefresh > 30000):  // Refresh every 30s
-      const flags = await db.query("SELECT * FROM feature_flags WHERE NOT archived")
-      flagCache = new Map(flags.map(f => [f.key, f]))
-      // Also load rules, rollouts, variants, environments
-      lastRefresh = Date.now()
-
-    return flagCache.get(key)
+EVALUATION ORDER:
+  1. Get flag from cache (refresh every 30s)
+  2. Check environment override
+  3. Check global enabled/disabled
+  4. Evaluate targeting rules (priority order, first match wins)
+  5. Check percentage rollout (murmur3 hash for deterministic bucketing)
+  6. Default: return disabled
 
 API ENDPOINTS:
-  GET    /api/flags                    -- List all flags
-  POST   /api/flags                    -- Create flag
-  GET    /api/flags/:key               -- Get flag details
-  PUT    /api/flags/:key               -- Update flag
-  PATCH  /api/flags/:key/toggle        -- Enable/disable
-  PATCH  /api/flags/:key/rollout       -- Update rollout percentage
-  POST   /api/flags/:key/rules         -- Add targeting rule
-  DELETE /api/flags/:key/rules/:id     -- Remove targeting rule
-  GET    /api/flags/:key/audit         -- Get audit log
-  POST   /api/evaluate                 -- Evaluate flags for context
-  DELETE /api/flags/:key               -- Archive flag
+  GET/POST   /api/flags              -- List/create flags
+  PUT/PATCH  /api/flags/:key         -- Update/toggle flag
+  PATCH      /api/flags/:key/rollout -- Update rollout percentage
+  POST       /api/flags/:key/rules   -- Add targeting rule
+  GET        /api/flags/:key/audit   -- Get audit log
+  POST       /api/evaluate           -- Evaluate flags for context
 ```
 
-### Step 9: Server-Side vs Client-Side Evaluation
-Choose the right evaluation model:
-
-```
-EVALUATION MODELS:
-
-SERVER-SIDE EVALUATION:
-+--------------------------------------------------------------+
-|  Flag rules stored and evaluated on your server               |
-|  Client sends user context -> server evaluates -> returns     |
-|  boolean or variant                                           |
-+--------------------------------------------------------------+
-
-  Request flow:
-  Client -> API Server -> Flag SDK (in-memory) -> Result
-                              |
-                              v
-                     Flag Service (sync every 30s)
-
-  Advantages:
-  - Rules never exposed to client (security)
-  - Full context available (DB lookups for targeting)
-  - Sub-millisecond evaluation (in-process)
-  - No additional client-side bundle size
-
-  Disadvantages:
-  - Every flag check requires server round-trip (for SPAs)
-  - Server must be available for evaluation
-
-  Best for: APIs, server-rendered pages, backend services
-
-CLIENT-SIDE EVALUATION:
-+--------------------------------------------------------------+
-|  Flag rules shipped to client, evaluated locally              |
-|  Flag service sends ruleset -> client SDK caches and          |
-|  evaluates locally per user context                           |
-+--------------------------------------------------------------+
-
-  Request flow:
-  Flag Service -> Client SDK (cached ruleset) -> Local evaluation
-                       |
-                       v
-              Real-time updates via SSE/WebSocket
-
-  Advantages:
-  - No server round-trip for flag checks
-  - Works offline (cached rules)
-  - Real-time updates (streaming)
-  - Reduces server load
-
-  Disadvantages:
-  - Flag rules visible in client (security concern)
-  - Limited targeting context (only client-known attributes)
-  - Larger SDK payload
-
-  Best for: Mobile apps, SPAs, client-heavy applications
-
-HYBRID (recommended for web apps):
-+--------------------------------------------------------------+
-|  Server evaluates during SSR / API responses                  |
-|  Client SDK handles real-time updates for interactive flags   |
-+--------------------------------------------------------------+
-
-  Implementation:
-  1. Server renders initial page with flags evaluated server-side
-  2. Client SDK bootstraps from server-provided values (no flicker)
-  3. Client SDK connects to streaming for real-time updates
-  4. Interactive flags (UI experiments) evaluated client-side
-  5. Business logic flags evaluated server-side
-
-  // Next.js example (hybrid)
-  export async function getServerSideProps(context):
-    const user = await getUser(context.req)
-    const flags = await flagClient.allFlagsState(user)
-
-    return {
-      props: {
-        flags: flags.toJSON(),  // Pass to client for bootstrap
-        user: user
-      }
-    }
-
-  // Client-side: bootstrap from server values, then stream updates
-  const LDProvider = await asyncWithLDProvider({
-    clientSideID: process.env.NEXT_PUBLIC_LD_CLIENT_ID,
-    context: userContext,
-    options: {
-      bootstrap: pageProps.flags  // No flicker on initial load
-    }
-  })
-```
-
-### Step 10: Validation
+### Step 9: Validation
 Validate the feature flag strategy against best practices:
 
 ```
@@ -966,7 +744,7 @@ TECHNICAL DEBT CHECK:
 VERDICT: <PASS | NEEDS REVISION>
 ```
 
-### Step 11: Artifacts & Commit
+### Step 10: Artifacts & Commit
 Generate the deliverables:
 
 ```
@@ -1189,38 +967,35 @@ All of these must be true before marking the task complete:
 
 ## Multi-Agent Dispatch
 ```
-Agent 1 (worktree: feature-sdk):
-  - Install and configure flag SDK (client + server)
-  - Implement evaluation wrapper with default values and error handling
-  - Set up flag definitions in provider dashboard or local config
-
-Agent 2 (worktree: feature-code):
-  - Implement feature-flagged code paths (treatment + control)
-  - Add targeting rules and percentage rollout configuration
-  - Build kill switch mechanism
-
-Agent 3 (worktree: feature-ops):
-  - Create rollout monitoring dashboard (error rate by variant)
-  - Implement flag lifecycle tracking (created, active, stale, archived)
-  - Write cleanup automation (detect stale flags in CI)
-
+Agent 1 (worktree: feature-sdk): Install SDK, evaluation wrapper, default values
+Agent 2 (worktree: feature-code): Feature-flagged code paths, targeting rules, kill switch
+Agent 3 (worktree: feature-ops): Rollout monitoring, lifecycle tracking, cleanup automation
 MERGE ORDER: sdk -> code -> ops
-CONFLICT ZONES: SDK initialization, feature-flagged components, flag configuration
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run feature flag tasks sequentially: SDK setup, then flag implementation, then rollout config, then monitoring.
-- Use branch isolation per task: `git checkout -b godmode-feature-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-feature-{task}`. See `adapters/shared/sequential-dispatch.md`.
 
-## Anti-Patterns
+## Keep/Discard Discipline
+```
+After EACH flag rollout stage or experiment milestone:
+  1. MEASURE: Check error rate, latency p99, and business metrics against baseline.
+  2. COMPARE: Is the treatment cohort performing within guardrail thresholds?
+  3. DECIDE:
+     - KEEP if: metrics are within guardrails AND no support ticket spike AND no error increase
+     - DISCARD if: error rate > baseline + 0.1% OR latency > baseline + 10% OR conversion drops > 2%
+  4. COMMIT stage advancement. Roll back percentage to previous stage on discard.
+```
 
-- **Do NOT leave flags forever.** A release flag at 100% for months is dead code wrapped in a conditional. Clean it up within 2 weeks of full rollout.
-- **Do NOT nest flag checks.** `if (flagA && flagB && !flagC)` creates 8 possible states that are impossible to test and reason about. Keep flags independent.
-- **Do NOT use flags as config.** Feature flags are for temporary or targeted toggles. Permanent configuration belongs in config files or environment variables, not the flag system.
-- **Do NOT skip the off path.** If you only test the flag-on path, the flag-off path (your fallback) may be broken when you need it most -- during an incident.
-- **Do NOT evaluate flags in hot loops.** Evaluate once per request and pass the result down. Calling the flag service 1000 times per request adds latency and creates dependency risk.
-- **Do NOT expose server-side flag rules to clients.** Targeting rules may contain business logic, internal user IDs, or pricing strategies. Use server-side evaluation for sensitive flags.
-- **Do NOT run experiments without sufficient sample size.** Calling a winner after 200 users is statistical noise. Calculate required sample size upfront and wait for significance.
-- **Do NOT forget the audit trail.** When an incident happens and a flag was changed, you need to know who changed it, when, and what the previous value was.
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Flag is at 100% and all metrics stable for 7 days (schedule cleanup)
+  - Experiment reached required sample size and significance threshold
+  - User explicitly requests stop
+  - Kill switch tested and fallback verified
+
+DO NOT STOP just because:
+  - A flag is at 100% but cleanup commit has not been made yet (flag cleanup is a separate task)
+  - Experiment shows no significant difference (document null result, then clean up)
+```

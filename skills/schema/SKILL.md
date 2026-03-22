@@ -348,96 +348,6 @@ EMBED vs REFERENCE DECISION:
 ```
 KEY-VALUE DESIGN PATTERNS:
 +----------------------+-----------------------------+------------------------------+
-| Pattern              | Key Structure               | Value                        |
-+----------------------+-----------------------------+------------------------------+
-| Cache-aside          | cache:user:{userId}         | JSON serialized user object  |
-| Session              | session:{sessionId}         | JSON session data, TTL 24h   |
-| Rate limit           | ratelimit:{ip}:{endpoint}   | Counter, TTL = window        |
-| Leaderboard          | leaderboard:{gameId}        | Sorted set (ZADD/ZRANGE)     |
-| Queue                | queue:{name}                | List (LPUSH/BRPOP)           |
-| Pub/Sub              | channel:{topic}             | Published messages           |
-| Distributed lock     | lock:{resource}             | Owner ID, TTL = lease        |
-| Feature flag         | feature:{flagName}          | JSON: { enabled, rules }     |
-+----------------------+-----------------------------+------------------------------+
-
-KEY NAMING CONVENTIONS:
-- Use colons as separators: entity:id:field
-- Keep keys short but readable
-- Include version for cache keys: cache:v2:user:{id}
-- Use TTL on everything (no orphaned keys)
-```
-
-#### 4c: Graph Database (Neo4j)
-
-```cypher
-// Graph model for social network / permissions
-// Nodes: User, Organization, Project, Role
-// Relationships: MEMBER_OF, OWNS, HAS_ACCESS, REPORTS_TO
-
-CREATE (u:User {id: "user-1", name: "Alice", email: "alice@example.com"})
-CREATE (o:Organization {id: "org-1", name: "Acme Corp"})
-CREATE (p:Project {id: "proj-1", name: "Website Redesign"})
-CREATE (r:Role {name: "admin"})
-
-CREATE (u)-[:MEMBER_OF {since: date("2024-01-15")}]->(o)
-CREATE (u)-[:HAS_ACCESS {role: "admin"}]->(p)
-CREATE (o)-[:OWNS]->(p)
-
-// Query: Who has access to this project and through which path?
-MATCH path = (u:User)-[*1..3]->(p:Project {id: "proj-1"})
-RETURN u.name, [r IN relationships(path) | type(r)] AS access_path
-
-// Query: Find all projects a user can access (direct or through org membership)
-MATCH (u:User {id: "user-1"})-[:HAS_ACCESS|MEMBER_OF*1..2]->(p:Project)
-RETURN DISTINCT p.name
-```
-
-#### 4d: Time-Series (TimescaleDB/InfluxDB)
-
-```sql
--- TimescaleDB: metrics storage
-CREATE TABLE metrics (
-    time        TIMESTAMPTZ NOT NULL,
-    metric_name TEXT NOT NULL,
-    tags        JSONB NOT NULL DEFAULT '{}',
-    value       DOUBLE PRECISION NOT NULL
-);
-
--- Convert to hypertable (TimescaleDB)
-SELECT create_hypertable('metrics', 'time');
-
--- Compression policy (older data gets compressed)
-ALTER TABLE metrics SET (
-    timescaledb.compress,
-    timescaledb.compress_segmentby = 'metric_name',
-    timescaledb.compress_orderby = 'time DESC'
-);
-SELECT add_compression_policy('metrics', INTERVAL '7 days');
-
--- Retention policy (drop data older than 90 days)
-SELECT add_retention_policy('metrics', INTERVAL '90 days');
-
--- Continuous aggregate (pre-computed hourly rollup)
-CREATE MATERIALIZED VIEW metrics_hourly
-WITH (timescaledb.continuous) AS
-SELECT
-    time_bucket('1 hour', time) AS bucket,
-    metric_name,
-    tags,
-    AVG(value) AS avg_value,
-    MIN(value) AS min_value,
-    MAX(value) AS max_value,
-    COUNT(*) AS sample_count
-FROM metrics
-GROUP BY bucket, metric_name, tags;
-
--- Refresh policy
-SELECT add_continuous_aggregate_policy('metrics_hourly',
-    start_offset => INTERVAL '3 hours',
-    end_offset   => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour'
-);
-```
 
 ### Step 5: Schema Evolution and Migrations
 
@@ -583,125 +493,6 @@ export type UserFilter = z.infer<typeof userFilterSchema>;
       "minLength": 1,
       "maxLength": 255
     },
-    "role": {
-      "type": "string",
-      "enum": ["owner", "admin", "member", "viewer"]
-    },
-    "orgId": {
-      "type": "string",
-      "format": "uuid"
-    },
-    "preferences": {
-      "type": "object",
-      "properties": {
-        "theme": {
-          "type": "string",
-          "enum": ["light", "dark", "system"],
-          "default": "system"
-        },
-        "locale": {
-          "type": "string",
-          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
-          "default": "en"
-        }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}
-```
-
-#### 6c: Protobuf Schema
-
-```protobuf
-// proto/user/v1/user.proto
-syntax = "proto3";
-package user.v1;
-
-import "google/protobuf/timestamp.proto";
-
-enum Role {
-  ROLE_UNSPECIFIED = 0;
-  ROLE_OWNER = 1;
-  ROLE_ADMIN = 2;
-  ROLE_MEMBER = 3;
-  ROLE_VIEWER = 4;
-}
-
-enum Theme {
-  THEME_UNSPECIFIED = 0;
-  THEME_LIGHT = 1;
-  THEME_DARK = 2;
-  THEME_SYSTEM = 3;
-}
-
-message UserPreferences {
-  Theme theme = 1;
-  string locale = 2;
-  NotificationPreferences notifications = 3;
-}
-
-message NotificationPreferences {
-  bool email = 1;
-  bool push = 2;
-  string digest = 3;  // "daily", "weekly", "never"
-}
-
-message User {
-  string id = 1;
-  string email = 2;
-  string name = 3;
-  Role role = 4;
-  string org_id = 5;
-  optional string bio = 6;
-  optional string avatar_url = 7;
-  UserPreferences preferences = 8;
-  google.protobuf.Timestamp created_at = 9;
-  google.protobuf.Timestamp updated_at = 10;
-}
-
-message CreateUserRequest {
-  string email = 1;
-  string name = 2;
-  Role role = 3;
-  string org_id = 4;
-}
-
-message CreateUserResponse {
-  User user = 1;
-}
-```
-
-#### 6d: Avro Schema (Event Streaming)
-
-```json
-{
-  "type": "record",
-  "name": "UserCreated",
-  "namespace": "com.example.events.user.v1",
-  "doc": "Emitted when a new user is created",
-  "fields": [
-    {"name": "id", "type": "string", "doc": "UUID of the created user"},
-    {"name": "email", "type": "string"},
-    {"name": "name", "type": "string"},
-    {"name": "role", "type": {"type": "enum", "name": "Role", "symbols": ["OWNER", "ADMIN", "MEMBER", "VIEWER"]}},
-    {"name": "orgId", "type": "string"},
-    {"name": "bio", "type": ["null", "string"], "default": null},
-    {"name": "createdAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
-    {"name": "metadata", "type": {
-      "type": "record",
-      "name": "EventMetadata",
-      "fields": [
-        {"name": "eventId", "type": "string"},
-        {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
-        {"name": "version", "type": "int", "default": 1},
-        {"name": "source", "type": "string"}
-      ]
-    }}
-  ]
-}
-```
 
 ### Step 7: Multi-Tenancy Patterns
 
@@ -724,15 +515,6 @@ MULTI-TENANCY STRATEGIES:
 SHARED SCHEMA WITH ROW-LEVEL SECURITY:
 -- PostgreSQL RLS example
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY tenant_isolation ON tasks
-    USING (org_id = current_setting('app.current_org_id')::uuid);
-
--- Application sets tenant context per request:
-SET app.current_org_id = '<org-uuid>';
--- All queries now automatically filtered by tenant
-```
-
 ### Step 8: Report and Transition
 
 ```
@@ -799,24 +581,6 @@ Files to create:
 ```
 
 ### Choosing between SQL and NoSQL
-```
-User: /godmode:schema Should I use PostgreSQL or MongoDB for this?
-
-Schema: Let me analyze your access patterns...
-
-Access pattern analysis:
-- Complex queries with joins (reports, dashboards)     -> Favors PostgreSQL
-- Hierarchical data (nested comments, threaded replies) -> Favors MongoDB
-- ACID transactions required (payments, inventory)      -> Favors PostgreSQL
-- Schema evolves frequently (startup, MVP phase)        -> Favors MongoDB
-- Full-text search needed                               -> Either (PostgreSQL GIN or MongoDB Atlas Search)
-
-RECOMMENDATION: PostgreSQL
-Rationale: Your core operations require joins and transactions. The hierarchical
-data (comments) can be handled with recursive CTEs or JSONB columns. Schema
-evolution is manageable with proper migration tooling.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -864,14 +628,6 @@ WHILE entities_remaining is not empty AND current_iteration < max_iterations:
     5. Generate migration file (up + down)
     6. Run migration against dev database
     7. Validate: run the expected queries, check EXPLAIN for index usage
-    8. IF query plan shows sequential scan on indexed column → fix index
-    9. IF migration fails → fix schema, re-generate
-    10. IF passing → commit: "schema: add/evolve <entity> (<columns>, <indexes>)"
-    11. current_iteration += 1
-
-POST-LOOP: Generate ERD, validate all foreign keys have indexes, check for orphan tables
-```
-
 ## Multi-Agent Dispatch
 
 ```
@@ -961,20 +717,6 @@ IF parallel validation/seed agents produce conflicting migration numbers:
   → Convention: Agent 1 gets 001-010, Agent 2 gets 011-020, Agent 3 gets 021-030
 ```
 
-## Anti-Patterns
-
-- **Do NOT design schemas without knowing access patterns.** A beautifully normalized schema that requires 8 joins for the most common query is a bad schema.
-- **Do NOT use strings for enumerated values without constraints.** Use CHECK constraints or enum types. "actve" (typo) should be rejected by the database.
-- **Do NOT store money as floating point.** Use DECIMAL/NUMERIC or store as integer cents. `0.1 + 0.2 !== 0.3` in float.
-- **Do NOT use TIMESTAMP without time zone.** Always use TIMESTAMPTZ. "March 15, 2025 3:00 PM" means nothing without a time zone.
-- **Do NOT embed unbounded arrays in documents.** A MongoDB document with 10,000 comments will exceed the 16MB limit and destroy write performance. Use references for unbounded collections.
-- **Do NOT skip foreign keys for "performance."** The performance cost of foreign keys is negligible. The cost of orphaned data is enormous.
-- **Do NOT use natural keys as primary keys.** Emails change. Usernames change. Phone numbers change. SSNs get reissued. Use surrogate keys (UUID or auto-increment).
-- **Do NOT create migrations that lock tables in production.** Adding a column with a default value locks the table in older PostgreSQL versions. Use ALTER TABLE ... ADD COLUMN ... DEFAULT ... (PG 11+ is safe).
-- **Do NOT maintain parallel schema definitions.** If you have a Zod schema AND a Prisma schema AND a JSON Schema that all describe the same entity, they will drift. Pick one source of truth and derive the rest.
-- **Do NOT ignore soft delete implications.** If you use `deleted_at` for soft deletes, every query needs a `WHERE deleted_at IS NULL` filter. Consider using a partial index or a view.
-
-
 ## Schema Migration Safety Loop
 
 Autonomous loop that validates migrations, applies them, verifies correctness, and tests rollback. Every migration is proven safe before committing.
@@ -1016,76 +758,31 @@ FOR each migration in migrations:
     DIAGNOSE error (constraint violation, syntax, lock timeout)
     FIX the migration
     RETRY up to 3 times
-    IF still failing: ABORT this migration, move to next
 
-  // Phase 3: Verify Post-Apply
-  verify_checks = {
-    schema_matches_orm:     introspect_db_matches_orm_schema(),
-    // prisma db pull, sqlacodegen, etc.
-    indexes_exist:          all_expected_indexes_present(),
-    constraints_enforced:   insert_invalid_data_is_rejected(),
-    query_plans_valid:      explain_analyze_key_queries_use_indexes(),
-    no_sequential_scans:    no_seq_scan_on_indexed_columns()
-  }
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH schema entity or migration:
+  1. MEASURE: Run migration up+down — does it apply and rollback cleanly?
+  2. VERIFY: EXPLAIN ANALYZE key queries — do indexes get used?
+  3. DECIDE:
+     - KEEP if: migration applies cleanly AND rollback works AND query plans use indexes
+     - DISCARD if: migration locks table >5s OR rollback fails OR query plan shows seq scan on indexed column
+  4. COMMIT kept changes. Revert discarded changes before the next entity.
 
-  FOR each check in verify_checks:
-    IF check.status == FAIL:
-      LOG: "VERIFY fail: {check.name} — fixing"
-      FIX: add missing index, correct constraint, update ORM schema
-
-  // Phase 4: Rollback Test
-  rollback_result = run_migration_down(migration, target="test_db")
-  IF rollback_result.failed:
-    LOG: "ROLLBACK BROKEN: {migration.name} — down migration fails"
-    FIX the down migration
-    RETRY rollback
-
-  // Phase 5: Re-apply to confirm idempotence
-  reapply_result = run_migration_up(migration, target="test_db")
-  IF reapply_result.failed:
-    LOG: "RE-APPLY BROKEN: migration is not idempotent"
-    FIX: add IF NOT EXISTS guards
-
-  // Phase 6: Keep/Discard
-  IF all(static_checks) AND apply_result.ok AND all(verify_checks) AND rollback_result.ok AND reapply_result.ok:
-    KEEP migration
-    LOG: "MIGRATION SAFE: {migration.name} — apply OK, verify OK, rollback OK, re-apply OK"
-  ELSE:
-    DISCARD changes, revert to pre-migration state
-    LOG: "MIGRATION UNSAFE: {migration.name} — {failure_reason}"
-
-  REPORT: "Migration {current_iteration}/{len(migrations)}: {migration.name} — {SAFE|UNSAFE}"
-
-ON COMPLETION:
-  LOG to .godmode/schema-migration-audit.tsv:
-    timestamp\tmigration_name\tstatic_checks\tapply_ok\tverify_ok\trollback_ok\treapply_ok\tverdict
-  REPORT: "Schema migration safety complete: {safe_count}/{total} migrations verified safe"
+Never keep a schema change that breaks an existing query plan or locks a production table.
 ```
 
-### Migration Safety Thresholds
-
+## Stop Conditions
 ```
-MIGRATION SAFETY THRESHOLDS:
-┌──────────────────────────────────────┬──────────────┬────────────────────────────┐
-│ Check                                │ Required     │ Notes                      │
-├──────────────────────────────────────┼──────────────┼────────────────────────────┤
-│ Up migration succeeds                │ YES          │ Must apply cleanly         │
-│ Down migration succeeds              │ YES          │ Must be reversible         │
-│ Up-down-up cycle passes              │ YES          │ Proves idempotence         │
-│ No exclusive table locks             │ YES          │ Unless maintenance window  │
-│ CREATE INDEX CONCURRENTLY            │ YES          │ Never plain CREATE INDEX   │
-│ FK columns have indexes              │ YES          │ Missing = slow JOINs       │
-│ TIMESTAMPTZ not TIMESTAMP            │ YES          │ Time zones always matter   │
-│ No FLOAT for money                   │ YES          │ Use NUMERIC or int cents   │
-│ ORM schema matches DB                │ YES          │ No drift allowed           │
-│ EXPLAIN ANALYZE shows index usage    │ YES          │ For key query patterns     │
-│ Migration runs in < 30s on test data │ RECOMMENDED  │ > 30s = needs batching     │
-│ Migration runs in < 5min on prod     │ RECOMMENDED  │ > 5min = schedule window   │
-└──────────────────────────────────────┴──────────────┴────────────────────────────┘
-```
+STOP when ANY of these are true:
+  - All entities have migrations with verified up+down scripts
+  - All FK columns have indexes and EXPLAIN shows index usage
+  - Validation schema matches database schema (single source of truth)
+  - User explicitly requests stop
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run schema tasks sequentially: table definitions, then validation schemas, then seed data.
-- Use branch isolation per task: `git checkout -b godmode-schema-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+DO NOT STOP just because:
+  - One entity has a complex migration (finish it)
+  - Query performance is "good enough" without checking EXPLAIN
+```

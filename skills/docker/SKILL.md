@@ -516,7 +516,7 @@ MULTI-PLATFORM BUILDS:
 2. **Layer caching is the first optimization.** Before anything else, ensure dependency installation is cached separately from source code changes. This alone saves minutes per build.
 3. **Security is not optional.** Every image runs as non-root, has a .dockerignore, and passes vulnerability scanning. Secrets never appear in build layers.
 4. **Compose is for development.** Docker Compose is the standard for local development environments. Production uses Kubernetes or managed container services.
-5. **Size matters.** Smaller images deploy faster, start faster, and have fewer vulnerabilities. Target the smallest base image that works for your runtime.
+5. **Smaller images are faster and safer.** They deploy faster, start faster, and have fewer vulnerabilities. Target the smallest base image that works for your runtime.
 6. **BuildKit is the default.** Always use BuildKit features (cache mounts, secret mounts, heredocs). They exist to solve real problems.
 7. **.dockerignore before Dockerfile.** Create the .dockerignore first. A missing .dockerignore is the most common cause of bloated images and leaked secrets.
 
@@ -706,14 +706,14 @@ SYNC point: All agents complete
 
 ## Anti-Patterns
 
-- **Do NOT use `latest` tag for base images.** Pin to a specific version (e.g., `node:20.11-alpine`). `latest` is unpredictable and breaks reproducibility.
-- **Do NOT copy everything with `COPY . .` as the first instruction.** Copy dependency files first, install, then copy source. Otherwise every source change invalidates the dependency cache.
-- **Do NOT run as root in production.** Always add a non-root user with USER instruction. Root in containers is root on the host if the container escapes.
-- **Do NOT store secrets in ENV or COPY them into the image.** Use BuildKit secret mounts or runtime environment variables. Secrets in layers are visible in `docker history`.
-- **Do NOT use ADD when COPY suffices.** ADD has URL fetch and tar extraction side effects. Use COPY for simple file copying.
-- **Do NOT skip .dockerignore.** Without it, your entire project directory (including .git, node_modules, .env) is sent as build context.
-- **Do NOT use docker-compose in production.** Docker Compose is a development tool. Use Kubernetes, ECS, or a managed container platform for production.
-- **Do NOT ignore vulnerability scan results.** A "ship anyway" attitude toward CRITICAL CVEs is a security incident waiting to happen.
+- **Do NOT use `latest` tag.** Pin to a specific version. `latest` is unpredictable and breaks reproducibility.
+- **Do NOT `COPY . .` first.** Copy dependency files, install, then copy source. Otherwise every source change busts the cache.
+- **Do NOT run as root in production.** Root in containers is root on the host if the container escapes.
+- **Do NOT store secrets in ENV or COPY.** Use BuildKit secret mounts. Secrets in layers are visible in `docker history`.
+- **Do NOT use ADD when COPY suffices.** ADD has URL fetch and tar extraction side effects.
+- **Do NOT skip .dockerignore.** Without it, .git, node_modules, and .env are sent as build context.
+- **Do NOT use docker-compose in production.** Use Kubernetes or a managed container platform.
+- **Do NOT ignore vulnerability scan results.** "Ship anyway" toward CRITICAL CVEs is a security incident waiting to happen.
 
 
 ## Output Format

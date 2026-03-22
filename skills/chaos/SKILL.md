@@ -452,7 +452,7 @@ If unexpected impact detected:
 2. **Start small, increase blast radius.** Begin with single-request failures in development. Only run production chaos after validating in staging.
 3. **Always have a rollback.** Before injecting any failure, verify you can undo it instantly. Test the rollback before the injection.
 4. **Monitor everything.** Open dashboards before starting. You need to see the impact in real time to learn and to trigger rollback if needed.
-5. **Failures are findings, not failures.** If the system breaks during chaos testing, that's a success — you found a problem before users did.
+5. **Breakage is a finding.** If the system breaks during chaos testing, you found a problem before users did.
 6. **Production chaos requires ceremony.** Never run production chaos experiments casually. Game days need planning, approval, and incident response readiness.
 7. **Document surprises.** The most valuable chaos engineering outcomes are the unexpected behaviors — things the team didn't know could happen.
 
@@ -655,12 +655,38 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 - Use branch isolation per task: `git checkout -b godmode-chaos-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
+## Keep/Discard Discipline
+```
+After EACH chaos experiment:
+  1. MEASURE: Did the system recover to steady state after rollback? What was the recovery time?
+  2. COMPARE: Did the hypothesis hold? Were there surprises?
+  3. DECIDE:
+     - KEEP findings if: experiment ran to completion AND monitoring captured the impact AND system recovered
+     - DISCARD results if: rollback failed (results are unreliable) OR monitoring was not active during injection
+  4. COMMIT experiment results. Create backlog items for every surprise finding.
+
+Never declare a system "resilient" based on an experiment where monitoring was not active.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All planned experiments executed and results documented
+  - System recovers to steady state within target RTO for all failure domains
+  - User explicitly requests stop
+  - A rollback fails (investigate before running more experiments)
+
+DO NOT STOP just because:
+  - Some failure domains scored C instead of A (document and prioritize fixes)
+  - Production experiments are not yet approved (complete staging experiments first)
+```
+
 ## Anti-Patterns
 
-- **Do NOT inject failures without monitoring.** If you can't observe the impact, you can't learn from the experiment. Set up monitoring first.
+- **Do NOT inject failures without monitoring.** If you cannot observe the impact, you cannot learn from the experiment.
 - **Do NOT skip the hypothesis.** "Let's see what happens" is not chaos engineering. Predict the outcome, then verify.
-- **Do NOT start in production.** Start in development, graduate to staging, then production. Each environment validates different properties.
-- **Do NOT run chaos without a rollback plan.** If you can't undo the injection in under 30 seconds, you're not ready to run the experiment.
-- **Do NOT test during peak traffic.** Production chaos experiments should run during low-traffic periods with the team on standby.
-- **Do NOT treat chaos as a one-time event.** Resilience degrades over time as code changes. Run chaos experiments regularly (monthly minimum).
-- **Do NOT ignore findings.** Every surprise discovered during chaos testing should become a backlog item. A finding without a fix is wasted effort.
+- **Do NOT start in production.** Start in development, graduate to staging, then production.
+- **Do NOT run chaos without a rollback plan.** If you cannot undo the injection in under 30 seconds, you are not ready.
+- **Do NOT test during peak traffic.** Production chaos runs during low-traffic periods with the team on standby.
+- **Do NOT treat chaos as a one-time event.** Resilience degrades as code changes. Run experiments monthly.
+- **Do NOT ignore findings.** Every surprise should become a backlog item. A finding without a fix is wasted effort.

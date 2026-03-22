@@ -122,17 +122,6 @@ EOF
 npx husky add .husky/commit-msg 'npx --no -- commitlint --edit "$1"'
 ```
 
-#### Commitizen Setup (Interactive Commits)
-```bash
-# Install Commitizen
-npm install --save-dev commitizen cz-conventional-changelog
-
-# Configure
-npx commitizen init cz-conventional-changelog --save-dev --save-exact
-
-# Usage: `npx cz` or `npm run commit` instead of `git commit`
-```
-
 ### Step 3: Keep a Changelog Format
 Generate or update CHANGELOG.md following the Keep a Changelog standard:
 
@@ -510,33 +499,7 @@ npm install <package>@1
 - [Discord](https://discord.gg/<invite>)
 ```
 
-### Step 8: Changelog Entry Generation
-For each change, generate a properly formatted entry:
-
-```
-CHANGELOG ENTRY FORMAT:
-
-Single entry:
-  - <Imperative verb> <what changed> (<reason/impact>) (#<PR>)
-
-Examples:
-  - Add streaming response support for real-time data (#256)
-  - Change createClient() to accept options object instead of positional args (#234)
-  - Fix memory leak in connection pool during timeout (#278)
-  - Remove deprecated `legacyMode` option (#301)
-  - Deprecate `client.headers` property in favor of `client.getHeaders()` (#289)
-  - Fix security issue in token refresh flow (CVE-2026-12345) (#310)
-
-QUALITY CHECKLIST:
-- [ ] Entry describes the change from the user's perspective
-- [ ] Entry starts with imperative verb (Add, Change, Fix, Remove, Deprecate)
-- [ ] Entry references the PR or issue number
-- [ ] Breaking changes are clearly marked
-- [ ] Security fixes reference the CVE
-- [ ] Entry is one line (details go in PR description, not changelog)
-```
-
-### Step 9: Commit and Transition
+### Step 8: Commit and Transition
 
 ```
 1. If setting up Conventional Commits:
@@ -609,28 +572,6 @@ Generated CHANGELOG.md entry:
 - Reduce JSON serialization overhead by 25% (#157)
 
 Changelog updated. Ready for /godmode:ship.
-```
-
-### Set up auto-generated changelogs
-```
-User: /godmode:changelog --setup
-
-Changelog: Setting up Conventional Commits and auto-changelog...
-
-Installed:
-  - @commitlint/cli + @commitlint/config-conventional
-  - commitizen + cz-conventional-changelog
-  - release-please GitHub Action
-
-Created:
-  - commitlint.config.js
-  - .husky/commit-msg (commitlint hook)
-  - .github/workflows/release-please.yml
-  - CHANGELOG.md (initial)
-
-All future commits will be validated against Conventional Commits format.
-Use `npx cz` for interactive commit creation.
-Changelogs will be auto-generated on release.
 ```
 
 ### Write migration guide
@@ -813,11 +754,36 @@ IF release-please or standard-version produces wrong version:
 
 ## Anti-Patterns
 
-- **Do NOT use git log as a changelog.** A list of commit messages is not a changelog. Changelogs summarize user-visible changes, not implementation details.
-- **Do NOT ship breaking changes without a migration guide.** Users will file issues instead of reading code. Save everyone time by writing the guide.
-- **Do NOT skip the unreleased section.** Changes should be documented as they are merged, not retroactively at release time.
-- **Do NOT mix audiences.** Developer release notes and user-facing release notes serve different purposes. Write both when needed.
-- **Do NOT forget PR/issue references.** Every changelog entry should link to the PR for context. "Fixed a bug" is not helpful.
-- **Do NOT backdate entries.** The release date is when the version was published, not when the code was written.
-- **Do NOT include internal changes.** Refactoring, test additions, and CI changes are invisible to users and do not belong in a public changelog.
-- **Do NOT version without Semantic Versioning.** If your project claims to use SemVer, follow it strictly. Breaking changes in patch releases destroy trust.
+- **Do NOT use git log as a changelog.** Changelogs summarize user-visible changes, not implementation details.
+- **Do NOT ship breaking changes without a migration guide.**
+- **Do NOT skip the unreleased section.** Document changes as they merge, not retroactively.
+- **Do NOT mix audiences.** Developer and user-facing release notes serve different purposes.
+- **Do NOT forget PR/issue references.** Every entry must link to the PR for context.
+- **Do NOT backdate entries.** The release date is when the version was published.
+- **Do NOT include internal changes.** Refactoring, tests, and CI are invisible to users.
+
+## Keep/Discard Discipline
+```
+After EACH changelog generation or update:
+  1. MEASURE: Verify all commits since last release are categorized. Count entries.
+  2. COMPARE: Does every user-visible change have an entry? Are PR references present?
+  3. DECIDE:
+     - KEEP if: all user-visible changes documented AND version number follows SemVer
+     - DISCARD if: internal-only changes included OR version number is incorrect
+  4. COMMIT kept changes. Revert discarded changes before regenerating.
+
+Never include refactor, test, or ci commits in user-facing changelogs.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All commits since last release are categorized
+  - Every user-visible change has a changelog entry with PR reference
+  - Breaking changes have migration steps documented
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Some commits are freeform (manually categorize them)
+  - The commit convention is inconsistent (recommend commitlint for future commits)
+```

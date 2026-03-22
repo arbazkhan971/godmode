@@ -271,39 +271,6 @@ export function identify(userId: string, traits?: Record<string, unknown>) {
 }
 ```
 
-#### Privacy-Respecting Analytics (Plausible/Umami)
-```typescript
-// analytics/plausible.ts — no cookies, no consent needed
-export function trackPageview() {
-  // Plausible auto-tracks pageviews via script tag
-  // Custom events:
-  if (window.plausible) {
-    window.plausible('pageview');
-  }
-}
-
-export function trackEvent(name: string, props?: Record<string, string>) {
-  if (window.plausible) {
-    window.plausible(name, { props });
-  }
-}
-
-// Installation: add to <head>
-// <script defer data-domain="yourdomain.com" src="https://plausible.io/js/script.js"></script>
-```
-
-```typescript
-// analytics/umami.ts — self-hosted, no cookies
-export function trackEvent(name: string, data?: Record<string, unknown>) {
-  if (window.umami) {
-    window.umami.track(name, data);
-  }
-}
-
-// Installation: add to <head>
-// <script defer src="https://your-umami.com/script.js" data-website-id="<id>"></script>
-```
-
 #### Analytics Abstraction Layer
 ```typescript
 // analytics/index.ts — unified interface
@@ -460,91 +427,21 @@ function getVariant(flagKey: string): string | boolean {
 }
 ```
 
-#### Results Analysis Framework
-```
-EXPERIMENT RESULTS:
-Experiment: <name>
-Duration: <start> — <end>
-Total participants: <N> (Control: <N>, Test: <N>)
-
-PRIMARY METRIC:
-┌───────────┬──────────────┬──────────────┬──────────────┐
-│  Variant  │  Conversions │  Rate        │  vs Control  │
-├───────────┼──────────────┼──────────────┼──────────────┤
-│  Control  │  <N>/<total> │  <pct>%      │  —           │
-│  Test A   │  <N>/<total> │  <pct>%      │  <+/- pct>%  │
-└───────────┴──────────────┴──────────────┴──────────────┘
-
-STATISTICAL SIGNIFICANCE:
-  p-value: <value>
-  Confidence interval: [<lower>, <upper>]
-  Significant: <YES | NO> (alpha = 0.05)
-  Power: <achieved power>
-
-SECONDARY METRICS (guardrails):
-  <metric 1>: Control <value> vs Test <value> — <OK | DEGRADED>
-  <metric 2>: Control <value> vs Test <value> — <OK | DEGRADED>
-
-SEGMENT ANALYSIS:
-  <segment 1>: <direction and magnitude of effect>
-  <segment 2>: <direction and magnitude of effect>
-
-RECOMMENDATION: <SHIP IT | ITERATE | KILL IT>
-  Rationale: <evidence-based reasoning>
-```
-
 ### Step 8: Analytics Data Modeling
-Design the data model for analytics storage and querying:
 
 ```
-DATA MODEL:
-┌─────────────────────────────────────────────────────────────────────┐
-│                        EVENTS TABLE                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│  event_id       UUID (primary key)                                  │
-│  event_name     VARCHAR(100) (indexed)                              │
-│  user_id        VARCHAR(100) (indexed)                              │
-│  anonymous_id   VARCHAR(100)                                        │
-│  session_id     VARCHAR(100)                                        │
-│  timestamp      TIMESTAMP (partitioned by day)                      │
-│  properties     JSONB                                               │
-│  context        JSONB (device, browser, OS, locale)                 │
-│  received_at    TIMESTAMP                                           │
-└─────────────────────────────────────────────────────────────────────┘
+DATA MODEL (3 core tables):
+  EVENTS: event_id (PK), event_name (indexed), user_id (indexed), session_id,
+          timestamp (partitioned by day), properties (JSONB), context (JSONB)
+  USERS:  user_id (PK), traits (JSONB), first_seen, last_seen, event_count
+  SESSIONS: session_id (PK), user_id (indexed), started_at, ended_at,
+            duration_sec, entry_page, exit_page, device_type, utm_*
 
-┌─────────────────────────────────────────────────────────────────────┐
-│                        USERS TABLE                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│  user_id        VARCHAR(100) (primary key)                          │
-│  traits         JSONB (plan, role, company, created_at)             │
-│  first_seen     TIMESTAMP                                           │
-│  last_seen      TIMESTAMP                                           │
-│  event_count    INTEGER                                             │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                        SESSIONS TABLE                               │
-├─────────────────────────────────────────────────────────────────────┤
-│  session_id     VARCHAR(100) (primary key)                          │
-│  user_id        VARCHAR(100) (indexed)                              │
-│  started_at     TIMESTAMP                                           │
-│  ended_at       TIMESTAMP                                           │
-│  duration_sec   INTEGER                                             │
-│  event_count    INTEGER                                             │
-│  entry_page     VARCHAR(500)                                        │
-│  exit_page      VARCHAR(500)                                        │
-│  device_type    VARCHAR(20)                                         │
-│  utm_source     VARCHAR(100)                                        │
-│  utm_medium     VARCHAR(100)                                        │
-│  utm_campaign   VARCHAR(100)                                        │
-└─────────────────────────────────────────────────────────────────────┘
-
-QUERIES (common analytics queries):
+COMMON QUERIES:
   - DAU/WAU/MAU: COUNT(DISTINCT user_id) WHERE timestamp >= <period>
   - Retention: cohort analysis grouping by first_seen week
   - Funnel: sequential event matching with time constraints
   - Feature adoption: COUNT(DISTINCT user_id) WHERE event_name = '<feature>'
-  - Session duration: AVG(duration_sec) grouped by cohort/segment
 ```
 
 ### Step 9: Privacy & Consent
@@ -741,28 +638,6 @@ FUNNELS: 3 defined
 Implementation complete. Verify with /godmode:test.
 ```
 
-### Implementing A/B Testing
-```
-User: /godmode:analytics Set up an A/B test for the new onboarding flow
-
-Analytics: Designing experiment...
-
-EXPERIMENT: new-onboarding-flow-v2
-Hypothesis: Simplified 3-step onboarding will increase activation by 15%
-Primary metric: Activation rate (3 projects in 7 days)
-Guardrail: Session duration (should not decrease)
-
-Variants:
-  Control (50%): Current 6-step onboarding
-  Test A (50%): New 3-step onboarding
-
-Sample size needed: 2,400 users per variant
-Estimated duration: 3 weeks at current signup rate
-
-Instrumented with PostHog feature flags.
-Run /godmode:report --type experiment when complete.
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -780,96 +655,46 @@ Run /godmode:report --type experiment when complete.
 
 ## Auto-Detection
 
-Before prompting the user, automatically detect the analytics landscape:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect existing analytics SDKs:
-   - grep for '@segment/analytics', 'amplitude', 'mixpanel', 'posthog', 'plausible', 'umami'
-   - Check for gtag.js, analytics.js, GA4 measurement ID
-2. Detect framework and platform:
-   - React/Next.js → check for app router vs pages router (affects page tracking)
-   - Vue/Nuxt → check for vue-router integration
-   - Mobile → check for React Native, Flutter, Swift, Kotlin analytics SDKs
-3. Detect existing event tracking:
-   - grep for '.track(', '.capture(', 'analytics.track', 'gtag('
-   - Count existing tracked events and categorize them
-4. Detect consent management:
-   - grep for 'cookie-consent', 'cookiebot', 'onetrust', 'consent'
-   - Check for consent banners in HTML templates
-5. Detect data warehouse:
-   - Check for BigQuery, Snowflake, Redshift configs in codebase or infra
-6. Detect privacy requirements:
-   - Check for GDPR/CCPA references in docs or code
-   - Check deployment regions (EU → GDPR likely required)
-7. Auto-configure:
-   - No analytics → recommend platform based on framework and privacy needs
-   - Existing analytics → audit for taxonomy consistency and gaps
+AUTO-DETECT:
+1. SDKs: grep for '@segment/analytics', 'amplitude', 'mixpanel', 'posthog', 'plausible', 'umami', gtag.js
+2. Framework: React/Next.js (app vs pages router), Vue/Nuxt, Mobile SDKs
+3. Existing events: grep for '.track(', '.capture(', 'analytics.track', 'gtag('
+4. Consent: grep for 'cookie-consent', 'cookiebot', 'onetrust'
+5. Data warehouse: BigQuery, Snowflake, Redshift configs
+6. Privacy: GDPR/CCPA references, EU deployment regions
+7. Auto-configure: recommend platform or audit existing for gaps
 ```
 
 ## Multi-Agent Dispatch
 
-For large-scale analytics implementations across multiple surfaces:
-
 ```
 PARALLEL ANALYTICS IMPLEMENTATION:
 IF platform_count > 1 OR event_count > 30:
-  Agent 1 (worktree: analytics-taxonomy):
-    - Design complete event taxonomy
-    - Define property standards and validation rules
-    - Create event catalog documentation
-    - Build TypeScript types for all events
-
-  Agent 2 (worktree: analytics-implementation):
-    - Implement analytics abstraction layer
-    - Add provider-specific integrations
-    - Instrument all events from the taxonomy
-    - Add consent management integration
-
-  Agent 3 (worktree: analytics-funnels):
-    - Design conversion funnels
-    - Instrument A/B test framework
-    - Set up experiment assignment logic
-    - Create funnel visualization configs
-
-  Agent 4 (worktree: analytics-privacy):
-    - Implement consent manager
-    - Audit all events for PII
-    - Add data deletion API endpoint
-    - Verify DNT/opt-out behavior
-    - Test consent gate end-to-end
-
+  Agent 1 (worktree: analytics-taxonomy): event taxonomy, property standards, TypeScript types
+  Agent 2 (worktree: analytics-implementation): abstraction layer, providers, consent integration
+  Agent 3 (worktree: analytics-funnels): funnels, A/B framework, experiment assignment
+  Agent 4 (worktree: analytics-privacy): consent manager, PII audit, data deletion, DNT
   COORDINATOR validates all events fire correctly, taxonomy is consistent
 ```
 
 ## Output Format
 
-After each analytics skill invocation, emit a structured report:
-
 ```
 ANALYTICS IMPLEMENTATION REPORT:
-┌──────────────────────────────────────────────────────┐
-│  Platform            │  <Segment | Amplitude | PostHog | etc> │
-│  Events tracked      │  <N> across <M> categories     │
-│  Funnels defined     │  <N>                           │
-│  Experiments         │  <N> A/B tests instrumented    │
-│  Privacy model       │  <GDPR compliant | cookieless | consent-based> │
-│  Consent gate        │  WORKING / NOT TESTED / N/A    │
-│  PII audit           │  CLEAN / <N> violations found  │
-│  DNT respected       │  YES / NO                      │
-│  Bundle impact       │  +<N> KB (analytics SDK)       │
-│  Verdict             │  PASS | NEEDS REVISION         │
-└──────────────────────────────────────────────────────┘
+  Platform: <Segment | Amplitude | PostHog | etc>
+  Events tracked: <N> across <M> categories
+  Funnels defined: <N>
+  Experiments: <N> A/B tests instrumented
+  Privacy model: <GDPR compliant | cookieless | consent-based>
+  PII audit: CLEAN | <N> violations found
+  Verdict: PASS | NEEDS REVISION
 ```
 
 ## TSV Logging
 
-Log every analytics implementation action for tracking:
-
 ```
 timestamp	skill	action	platform	events	funnels	privacy_model	status
-2026-03-20T14:00:00Z	analytics	implement	posthog	24	3	gdpr_compliant	pass
-2026-03-20T14:30:00Z	analytics	audit	posthog	24	3	gdpr_compliant	2_pii_violations
 ```
 
 ## Success Criteria
@@ -915,151 +740,30 @@ IF A/B test shows unbalanced assignment:
 
 ## Anti-Patterns
 
-- **Do NOT track events without a taxonomy.** Random event names like "click1", "button_pressed", "user_did_thing" are useless. Design the taxonomy first.
-- **Do NOT include PII in event properties.** Never track email, full name, phone number, or IP address in analytics events. Use anonymous IDs.
-- **Do NOT track before consent.** In GDPR/CCPA jurisdictions, analytics must not fire until the user has granted consent. No exceptions.
-- **Do NOT peek at A/B test results early.** Running statistical tests repeatedly inflates the false positive rate. Define the sample size, run to completion, then analyze.
-- **Do NOT use auto-capture as your only tracking.** Auto-captured clicks and page views lack semantic meaning. Supplement with explicit, well-named events.
-- **Do NOT create high-cardinality properties.** Properties like "search_query" with millions of unique values bloat storage and slow queries. Categorize instead.
-- **Do NOT couple analytics to business logic.** Analytics tracking should be a side effect, not interleaved with core logic. Use an event bus or middleware.
-- **Do NOT ship analytics without testing.** Verify events fire correctly, properties are populated, funnels work end-to-end, and consent gates function properly.
+- **Do NOT track events without a taxonomy.** Random event names like "click1" or "user_did_thing" are useless. Design the taxonomy first.
+- **Do NOT include PII in event properties.** Never track email, full name, phone number, or IP address. Use anonymous IDs.
+- **Do NOT track before consent.** In GDPR/CCPA jurisdictions, analytics must not fire until the user grants consent.
+- **Do NOT peek at A/B test results early.** Define sample size, run to completion, then analyze.
+- **Do NOT use auto-capture as sole tracking.** Supplement with explicit, well-named events.
+- **Do NOT create high-cardinality properties.** Categorize instead of storing free-text fields with millions of unique values.
+- **Do NOT couple analytics to business logic.** Use an event bus or middleware.
 
+## Keep/Discard Discipline
 
-## Analytics Audit
+After each analytics implementation pass, evaluate:
+- **KEEP** if: event fires correctly in debugger, property values match schema, no PII detected, funnel step order verified, A/B assignment is deterministic and sticky.
+- **DISCARD** if: event name violates taxonomy convention, property contains PII, consent gate bypassed, duplicate events detected, or auto-capture used as sole tracking method.
+- Run validation checklist (Step 10) before committing. Any FAIL means fix before merge.
+- Revert tracking code that introduces PII or breaks consent flow immediately — do not defer.
 
-Comprehensive audit of analytics implementation for event coverage, funnel completeness, and data quality:
+## Stop Conditions
 
-```
-ANALYTICS AUDIT:
-Project: <project name>
-Platform: <analytics platform>
-Audit date: <date>
-Total events in taxonomy: <N>
-Total events instrumented: <N>
-
-EVENT COVERAGE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  All taxonomy events instrumented   │ PASS|FAIL│ <N>/<M> events  │
-│  All user-facing pages tracked      │ PASS|FAIL│ <N>/<M> pages   │
-│  All conversion actions tracked     │ PASS|FAIL│ <N>/<M> actions │
-│  All error states tracked           │ PASS|FAIL│ <error events>  │
-│  All feature interactions tracked   │ PASS|FAIL│ <feature events>│
-│  No orphan events (fired but not    │ PASS|FAIL│ <orphan count>  │
-│    in taxonomy)                     │          │                 │
-│  No phantom events (in taxonomy but │ PASS|FAIL│ <phantom count> │
-│    never fired in production)       │          │                 │
-│  Event naming follows convention    │ PASS|FAIL│ <violations>    │
-│  All required properties populated  │ PASS|FAIL│ <null % check>  │
-│  No PII in any event properties     │ PASS|FAIL│ <PII scan>      │
-│  Server-side events validated       │ PASS|FAIL│ <server events> │
-│    (not just client-side)           │          │                 │
-│  Cross-platform consistency         │ PASS|FAIL│ <web vs mobile> │
-│    (same events on all platforms)   │          │                 │
-└──────────────────────────────────────────────────────────────────┘
-
-  Event coverage gap analysis:
-    1. COMPARE taxonomy to production event stream (last 30 days)
-    2. LIST events in taxonomy but never fired: these are dead or broken
-    3. LIST events in production but not in taxonomy: these are rogue events
-    4. CHECK each user journey: can you reconstruct the full path from events?
-    5. CHECK each feature: is adoption measurable from existing events?
-
-FUNNEL ANALYSIS AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Funnel            │ Steps │ Tracked │ Drop-off │ Actionable?    │
-├──────────────────────────────────────────────────────────────────┤
-│  Onboarding        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-│  Activation        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-│  Conversion        │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-│  Upgrade/upsell    │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-│  Retention         │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-│  Churn prevention  │ <N>   │ ALL|PARTIAL│ <worst>│ <YES|NO>      │
-└──────────────────────────────────────────────────────────────────┘
-
-  Funnel audit checks:
-    FOR each funnel:
-      1. Verify all steps fire in correct order (no missing intermediate steps)
-      2. Verify timestamps are sequential (step N+1 always after step N)
-      3. Measure time between steps (identify where users stall)
-      4. Segment by cohort (new vs returning, plan type, acquisition source)
-      5. CHECK: does the biggest drop-off have a clear hypothesis and planned fix?
-      6. CHECK: is the funnel definition still accurate? (product changes may have altered the flow)
-
-  Missing funnels check:
-    - Is there a funnel for every business KPI? If not, which KPIs lack funnel instrumentation?
-    - Is there a funnel for every onboarding path? (web signup, mobile signup, invite flow, SSO)
-    - Is there a funnel for feature discovery -> adoption -> power usage for key features?
-
-DATA QUALITY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Event volume is stable day-to-day  │ PASS|FAIL│ <volume chart>  │
-│    (no unexplained drops or spikes) │          │                 │
-│  Null/empty property rate < 5%      │ PASS|FAIL│ <null % report> │
-│  Duplicate event rate < 1%          │ PASS|FAIL│ <dedup check>   │
-│  Event timestamps are accurate      │ PASS|FAIL│ <clock skew>    │
-│    (no future dates, no stale)      │          │                 │
-│  User ID stitching is correct       │ PASS|FAIL│ <identity merge>│
-│    (anonymous -> authenticated)     │          │                 │
-│  Session boundaries are correct     │ PASS|FAIL│ <session logic> │
-│    (30 min inactivity timeout)      │          │                 │
-│  Bot/crawler traffic filtered       │ PASS|FAIL│ <filter rules>  │
-│  Ad blocker impact measured         │ PASS|FAIL│ <server vs client│
-│                                     │          │  discrepancy %>  │
-│  Data latency acceptable            │ PASS|FAIL│ <event -> query> │
-│    (events queryable within N min)  │          │                 │
-│  Historical data integrity          │ PASS|FAIL│ <backfill check>│
-│  Property enum values match spec    │ PASS|FAIL│ <enum audit>    │
-│  High-cardinality props identified  │ PASS|FAIL│ <cardinality>   │
-│    and categorized                  │          │                 │
-└──────────────────────────────────────────────────────────────────┘
-
-  Data quality monitoring:
-    - SET UP daily volume alert: page if event count drops > 20% from 7-day average
-    - SET UP property quality check: alert if null rate exceeds threshold per event
-    - SET UP duplicate detection: flag events with identical user+event+timestamp within 1s
-    - TRACK server-side vs client-side event count ratio: divergence indicates tracking loss
-
-AUDIT VERDICT: <PASS — analytics are reliable | NEEDS WORK — <N> issues found>
-Priority fixes:
-  1. <highest impact gap>
-  2. <second priority gap>
-  3. <third priority gap>
-```
-
-### Analytics Audit Loop
-
-```
-ANALYTICS AUDIT ITERATION:
-audit_areas = [event_coverage, funnel_analysis, data_quality]
-current_area = 0
-
-WHILE current_area < len(audit_areas):
-  area = audit_areas[current_area]
-
-  1. COLLECT evidence for all checks (query production data, inspect code, verify dashboards)
-  2. SCORE each check as PASS or FAIL
-  3. FOR each FAIL:
-     - QUANTIFY impact (e.g., "15% of conversions are unmeasured", "funnel drop-off cause unknown")
-     - ESTIMATE fix effort (hours)
-     - PRIORITIZE by business impact
-
-  current_area += 1
-
-FINAL:
-  coverage_score = events_instrumented / events_in_taxonomy * 100
-  funnel_score = funnels_fully_tracked / funnels_defined * 100
-  quality_score = quality_checks_passed / quality_checks_total * 100
-  overall = (coverage_score + funnel_score + quality_score) / 3
-
-  REPORT: "Analytics audit: coverage={coverage_score}%, funnels={funnel_score}%, quality={quality_score}%"
-  IF overall < 70%: "Analytics are unreliable for decision-making. Fix critical gaps before running experiments."
-  IF overall >= 70% AND < 90%: "Analytics are functional but have blind spots."
-  IF overall >= 90%: "Analytics are comprehensive. Schedule next audit in 90 days."
-```
+Stop the analytics skill when:
+1. All events in the taxonomy are instrumented and verified in the analytics debugger.
+2. All defined funnels fire steps in correct order with no gaps.
+3. Consent gate blocks tracking before user grants consent (GDPR jurisdictions).
+4. A/B test assignments are deterministic, sticky, and balanced (chi-squared test passes).
+5. No PII exists in any event property (verified by audit scan).
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

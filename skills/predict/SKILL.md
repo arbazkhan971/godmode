@@ -159,7 +159,7 @@ timestamp	feature	persona	verdict	confidence	risk_count	top_risk	mitigation	gate
 ## Error Recovery
 - **If `.godmode/spec.md` does not exist:** Ask the user for a text description of the proposal. If they provide one, evaluate that directly. If not, recommend `/godmode:think` first and stop.
 - **If a persona produces vague findings (no file:line):** Retry that finding with explicit instruction: "Specify file:line and concrete mitigation." Max 2 retries. If still vague, mark as "incomplete" in output and TSV. Do not gate on incomplete findings.
-- **If all personas agree (3 YES or 3 NO):** Flag as potential groupthink. Print: "WARNING: unanimous verdict. Consider: is the proposal obviously good/bad, or are we missing edge cases?" Still proceed with the gate result.
+- **If all personas agree (3 YES or 3 NO):** Flag as potential groupthink. Print: "WARNING: unanimous verdict. Evaluate: is the proposal obviously good/bad, or are we missing edge cases?" Still proceed with the gate result.
 - **If the codebase is new (no existing files referenced in spec):** Personas evaluate against the proposed architecture only. Technical Architect focuses on design patterns. Security Researcher focuses on planned auth/data flow. Release Lead focuses on deployment strategy. Note in output: "greenfield evaluation — risks are architectural, not code-specific."
 - **If confidence scores vary widely (stddev > 2.5):** Print: "HIGH VARIANCE: personas disagree significantly. Review individual assessments carefully." Report each persona's reasoning.
 
@@ -249,6 +249,24 @@ Note: greenfield evaluation — risks are architectural, not code-specific.
 Meta-expert synthesis: 5 validated risks, 0 incomplete. 1 critical from Release Lead.
 Gate: REVISE → next: /godmode:think (1 critical risk, 0 NO votes)
 Predict: Gate: REVISE. Verdicts: 2Y 1R 0N. Validated risks: 5. Incomplete: 0.
+```
+
+## Keep/Discard Discipline
+```
+After EACH persona finding:
+  KEEP if: finding has file:line + concrete mitigation + at least 1 persona rates EXPLOITABLE
+  DISCARD if: finding lacks file:line after 2 retries OR all personas rate NOT_EXPLOITABLE
+  On discard: mark finding as "incomplete" — exclude from gate calculation.
+  Never gate on incomplete or unverifiable findings.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all 3 personas produced verdicts and gate result computed
+  - budget_exhausted: max 2 retries per vague finding exhausted
+  - diminishing_returns: re-evaluation produces 0 new findings
+  - stuck: >5 findings discarded as incomplete with no actionable replacements
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

@@ -294,23 +294,11 @@ USE WHEN:
 - Temporary data loss is acceptable
 ```
 
-#### Invalidation Strategy Decision Matrix
 ```
 INVALIDATION DECISION:
-+--------------------------------------------------------------+
-|  Requirement                  | Strategy                      |
-+--------------------------------------------------------------+
-|  Simple, low write volume     | TTL-based                     |
-|  Strong consistency needed    | Write-through                 |
-|  High write throughput        | Write-behind                  |
-|  Event system already exists  | Event-based + TTL fallback    |
-|  Multiple cache layers        | Event-based (propagate)       |
-|  Low tolerance for staleness  | Write-through + short TTL     |
-+--------------------------------------------------------------+
-
-RECOMMENDED DEFAULT:
-  Cache-aside + TTL + event-based invalidation
-  (covers most cases with good consistency and simplicity)
+  Simple/low writes: TTL-based | Strong consistency: Write-through
+  High write throughput: Write-behind | Event system exists: Event-based + TTL fallback
+  RECOMMENDED DEFAULT: Cache-aside + TTL + event-based invalidation
 ```
 
 ### Step 4: Redis Configuration
@@ -384,112 +372,24 @@ REDIS DATA STRUCTURES:
 +--------------------------------------------------------------+
 ```
 
-### Step 5: Memcached Configuration
-Configure Memcached for simple, high-throughput caching:
+### Step 5: Memcached vs Redis
 
 ```
-MEMCACHED CONFIGURATION:
-
-WHEN TO USE MEMCACHED OVER REDIS:
-- Simple key-value caching only (no data structures)
-- Multi-threaded performance needed
-- Horizontal scaling with consistent hashing
-- Cache-only workload (no persistence needed)
-
-DEPLOYMENT:
-  Nodes: 3+ (no replication -- hash distributes keys)
-  Memory per node: 4GB
-  Connection limit: 1024 per node
-  Max item size: 1MB (default, increase if needed)
-
-CLIENT CONFIG (consistent hashing):
-  servers: ["cache-1:11211", "cache-2:11211", "cache-3:11211"]
-  hash_algorithm: ketama         # Consistent hashing
-  distribution: consistent       # Minimize redistribution on node add/remove
-  connect_timeout: 1s
-  send_timeout: 500ms
-  recv_timeout: 500ms
-  retry_timeout: 5s
-  pool_size: 20
-
-MEMCACHED vs REDIS:
-+--------------------------------------------------------------+
-|  Feature           | Memcached        | Redis                 |
-+--------------------------------------------------------------+
-|  Data structures   | String only      | Strings, hashes,      |
-|                    |                  | lists, sets, sorted   |
-|                    |                  | sets, streams, etc.   |
-|  Threading         | Multi-threaded   | Single-threaded*      |
-|  Persistence       | None             | RDB + AOF             |
-|  Replication       | None             | Master-replica        |
-|  Clustering        | Client-side hash | Server-side slots     |
-|  Memory efficiency | Better for       | Better for complex    |
-|                    | simple strings   | data types            |
-|  Pub/Sub           | No               | Yes                   |
-|  Scripting         | No               | Lua scripts           |
-|  Best for          | Simple cache     | Cache + data store    |
-+--------------------------------------------------------------+
-* Redis 7+ has I/O threading for network operations
+USE MEMCACHED WHEN: simple key-value only, multi-threaded perf needed, no persistence
+USE REDIS WHEN: data structures needed, persistence, pub/sub, replication, Lua scripting
+Both: consistent hashing for distribution, connection pooling, 1s connect timeout
 ```
 
 ### Step 6: Varnish / CDN Configuration
 Configure edge caching for HTTP responses:
 
 ```
-VARNISH CONFIGURATION (HTTP Accelerator):
-
-VCL (Varnish Configuration Language):
-vcl 4.1;
-
-backend default {
-    .host = "127.0.0.1";
-    .port = "8080";
-    .connect_timeout = 3s;
-    .first_byte_timeout = 10s;
-    .between_bytes_timeout = 5s;
-    .probe = {
-        .url = "/healthz";
-        .interval = 5s;
-        .timeout = 2s;
-        .threshold = 3;
-    }
-}
-
-sub vcl_recv {
-    # Only cache GET and HEAD requests
-    if (req.method != "GET" && req.method != "HEAD") {
-        return (pass);
-    }
-
-    # Do not cache authenticated requests
-    if (req.http.Authorization || req.http.Cookie ~ "session_id") {
-        return (pass);
-    }
-
-    # Strip tracking query parameters
-    set req.url = regsuball(req.url, "[?&](utm_[a-z]+|fbclid|gclid)=[^&]*", "");
-
-    return (hash);
-}
-
-sub vcl_backend_response {
-    # Default TTL
-    set beresp.ttl = 5m;
-
-    # Cache 404s briefly
-    if (beresp.status == 404) {
-        set beresp.ttl = 1m;
-    }
-
-    # Do not cache 5xx errors
-    if (beresp.status >= 500) {
-        set beresp.uncacheable = true;
-        return (deliver);
-    }
-
-    # Grace period: serve stale while revalidating
-    set beresp.grace = 1h;
-}
+VARNISH/CDN KEY RULES:
+  - Only cache GET/HEAD requests
+  - Do not cache authenticated requests (Authorization header, session cookies)
+  - Strip tracking params (utm_*, fbclid, gclid) before cache key
+  - Do not cache 5xx errors
+  - Set grace period for stale-while-revalidate (1h recommended)
 
 CDN CACHE HEADERS:
 +--------------------------------------------------------------+
@@ -643,45 +543,16 @@ STAMPEDE PREVENTION SELECTION:
 ```
 
 ### Step 8: Cache Monitoring & Observability
-Instrument cache metrics for operational visibility:
 
 ```
-CACHE METRICS:
-+--------------------------------------------------------------+
-|  Metric                    | Type      | Alert Threshold       |
-+--------------------------------------------------------------+
-|  cache_hit_total           | Counter   | --                    |
-|  cache_miss_total          | Counter   | --                    |
-|  cache_hit_ratio           | Gauge     | < 80% (warning)       |
-|                            |           | < 60% (critical)      |
-|  cache_latency_seconds     | Histogram | P95 > 10ms            |
-|  cache_eviction_total      | Counter   | > 100/min             |
-|  cache_memory_bytes        | Gauge     | > 85% capacity        |
-|  cache_connection_count    | Gauge     | > 80% max connections |
-|  cache_key_count           | Gauge     | Trend monitoring      |
-|  cache_stampede_count      | Counter   | > 0 (investigate)     |
-|  cache_error_total         | Counter   | > 0 (alert)           |
-+--------------------------------------------------------------+
+CACHE METRICS TO TRACK:
+  cache_hit_ratio (Gauge): alert < 80% warning, < 60% critical
+  cache_latency_seconds (Histogram): alert P95 > 10ms
+  cache_eviction_total (Counter): alert > 100/min
+  cache_memory_bytes (Gauge): alert > 85% capacity
+  cache_error_total (Counter): alert > 0
 
-CACHE DASHBOARD:
-+--------------------------------------------------------------+
-|  ROW 1: Hit Rates                                             |
-|  +------------------+ +------------------+ +----------------+ |
-|  | Overall Hit Rate | | Hit Rate by Layer| | Hit Rate Trend | |
-|  |     94.2%        | | CDN: 97%         | | ====-------    | |
-|  |                  | | App: 91%         | |                | |
-|  +------------------+ +------------------+ +----------------+ |
-|                                                               |
-|  ROW 2: Latency                                               |
-|  +------------------+ +------------------+ +----------------+ |
-|  | Cache P50: 0.5ms | | Cache P95: 3ms   | | DB P50: 15ms   | |
-|  +------------------+ +------------------+ +----------------+ |
-|                                                               |
-|  ROW 3: Resource Usage                                        |
-|  +------------------+ +------------------+ +----------------+ |
-|  | Memory: 2.8/4 GB | | Keys: 1.2M       | | Evictions: 5/m | |
-|  +------------------+ +------------------+ +----------------+ |
-+--------------------------------------------------------------+
+DASHBOARD: hit rate (overall + per layer), latency (cache vs DB), memory/keys/evictions
 ```
 
 ### Step 9: Validation
@@ -772,27 +643,6 @@ ESTIMATED IMPACT:
   DB QPS: 8,500 -> ~680 (92% reduction)
 ```
 
-### Troubleshooting low cache hit rates
-```
-User: /godmode:cache Our Redis hit rate is only 45%, help
-
-Cache: Investigating low hit rate...
-
-DIAGNOSIS:
-  1. 60% of keys have TTL < 30s (too short for access pattern)
-  2. Key pattern uses user_id -- creates 500K unique keys
-  3. Memory at 95% -- LRU eviction removing keys before access
-  4. No cache warming -- cold start after deploys drops hit rate
-
-RECOMMENDATIONS:
-  1. Increase TTL on product keys: 30s -> 5m (data changes hourly)
-  2. Remove user_id from cache keys for public data
-  3. Increase Redis memory from 2GB to 4GB
-  4. Add cache warming job: pre-populate top 1000 products on deploy
-
-Expected hit rate after fixes: 88-92%
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -812,49 +662,42 @@ Expected hit rate after fixes: 88-92%
 
 ## Auto-Detection
 
-Before prompting the user, automatically detect caching context:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect existing cache infrastructure:
-   - grep for 'redis', 'ioredis', 'node-redis', 'redis-py' → Redis
-   - grep for 'memcached', 'memjs' → Memcached
-   - Check docker-compose.yml for redis/memcached services
-   - Check for ElastiCache, MemoryStore, Upstash configs
-2. Detect CDN configuration:
-   - Check for cloudflare, cloudfront, fastly configs
-   - grep for 'Cache-Control', 's-maxage', 'Surrogate-Key' in response headers
-   - Check for Varnish VCL files
-3. Detect current caching patterns:
-   - grep for '.get(', '.set(', '.setex(' in service/controller code
-   - grep for 'cache-aside', 'write-through' in comments or docs
-   - Check for cache utility modules (src/lib/cache, src/utils/cache)
-4. Detect cache key patterns:
-   - Extract key patterns from redis.get/set calls
-   - Check for consistent naming convention
-5. Detect performance signals:
-   - Check for slow query logs or N+1 detection
-   - Check for database connection pool size (high = possible cache opportunity)
-6. Detect cache monitoring:
-   - grep for cache_hit, cache_miss metrics
-   - Check for Redis INFO monitoring
-7. Auto-configure:
-   - No cache → assess hot paths and recommend cache layer
-   - Redis exists but no monitoring → flag monitoring gap
-   - No TTLs on keys → flag as HIGH issue
-   - No stampede prevention → flag for high-QPS endpoints
+1. Cache infra: grep for redis, ioredis, memcached; check docker-compose
+2. CDN: cloudflare, cloudfront, fastly configs; Cache-Control headers
+3. Patterns: grep for .get(, .set(, .setex( in service code
+4. Key naming: extract patterns from redis calls, check consistency
+5. Monitoring: grep for cache_hit, cache_miss metrics
+6. Auto-configure: no cache → recommend; no monitoring → flag; no TTLs → HIGH issue
 ```
 
 ## Anti-Patterns
 
-- **Do NOT cache without a TTL.** A key without expiry lives forever, serving increasingly stale data until memory fills up and eviction kicks in randomly.
-- **Do NOT update cache on write.** Update creates race conditions between concurrent writers. Delete on write and let the next read repopulate.
-- **Do NOT cache everything.** Caching data that changes every second or is accessed once wastes memory. Cache high-read, low-write data.
-- **Do NOT ignore cache stampedes.** A popular key expiring under high load will cascade into a database outage. Use mutex locks or probabilistic refresh.
-- **Do NOT treat cache as a primary data store.** Cache is ephemeral. If Redis restarts, your application must still work by falling back to the database.
-- **Do NOT skip monitoring.** A cache with unknown hit rate and no eviction alerts is a production incident waiting to happen.
-- **Do NOT cache sensitive data without encryption.** User tokens, PII, and payment data in plaintext Redis is a security vulnerability. Encrypt or do not cache.
-- **Do NOT use inconsistent key naming.** Keys like "prod_123", "product:123", and "PRODUCT-123" in the same system make debugging and invalidation impossible. Pick a convention and enforce it.
+- **Do NOT cache without a TTL.** Keys without expiry serve stale data until eviction kicks in randomly.
+- **Do NOT update cache on write.** Delete on write. Updates create race conditions.
+- **Do NOT cache everything.** Cache high-read, low-write data only.
+- **Do NOT ignore cache stampedes.** Use mutex locks or probabilistic refresh for hot keys.
+- **Do NOT treat cache as primary data store.** Application must work without cache (just slower).
+- **Do NOT skip monitoring.** Unknown hit rate = production incident waiting to happen.
+- **Do NOT cache sensitive data without encryption.** Plaintext PII in Redis is a vulnerability.
+- **Do NOT use inconsistent key naming.** Pick a convention (`entity:id:field`) and enforce it.
+
+## Keep/Discard Discipline
+
+After each caching pass, evaluate:
+- **KEEP** if: every cached key has a TTL, invalidation strategy defined per key pattern, stampede prevention on hot keys, cache-aside pattern uses delete-on-write, hit rate monitoring configured, graceful degradation to DB when cache is down.
+- **DISCARD** if: keys without TTL detected, cache updated instead of deleted on write, no stampede prevention for high-QPS endpoints, sensitive data cached without encryption, or hit rate below 60%.
+- Measure hit rate before and after changes. Revert if hit rate decreases.
+- Audit key patterns with SCAN periodically to enforce naming conventions.
+
+## Stop Conditions
+
+Stop the cache skill when:
+1. Every cached key has a TTL set.
+2. Invalidation strategy is defined and implemented for each key pattern.
+3. Stampede prevention is in place for high-traffic keys.
+4. Cache hit rate monitoring and eviction alerts are configured.
+5. Application degrades gracefully (falls back to DB) when cache is unavailable.
 
 ## Output Format
 
@@ -931,55 +774,21 @@ ERROR RECOVERY — CACHE:
 ## Explicit Loop Protocol
 
 ```
-CACHE KEY DESIGN LOOP:
-current_iteration = 0
-cacheable_entities = detect_high_read_entities()  // e.g., [users, products, sessions, config]
-
-WHILE current_iteration < len(cacheable_entities) AND NOT user_says_stop:
-  entity = cacheable_entities[current_iteration]
-  current_iteration += 1
-
-  1. Identify read/write ratio for this entity
-  2. Design key pattern: <entity>:<id>[:<field>]
-  3. Set TTL based on staleness tolerance
-  4. Choose invalidation strategy (TTL-only, event-based, write-through)
-  5. Add stampede prevention if entity is high-traffic
-  6. Implement cache-aside wrapper (get from cache → miss → get from DB → set cache)
-  7. Add cache hit/miss metrics for this key pattern
-  8. REPORT: "Entity {current_iteration}/{total}: {name} — TTL: {N}s, invalidation: {strategy}, stampede: {prevention}"
-
-ON COMPLETION:
-  Configure memory limits and eviction policy
-  Set up monitoring dashboard (hit rate, eviction rate, memory usage)
-  REPORT: "{N} key patterns, avg TTL: {M}s, invalidation: {strategy}, monitoring: configured"
+FOR each cacheable entity (detect high-read entities):
+  1. Identify read/write ratio, design key pattern, set TTL
+  2. Choose invalidation (TTL-only, event-based, write-through)
+  3. Add stampede prevention if high-traffic
+  4. Implement cache-aside wrapper, add hit/miss metrics
+ON COMPLETION: Configure memory limits, eviction policy, monitoring dashboard
 ```
 
 ## Multi-Agent Dispatch
 
 ```
-PARALLEL CACHE AGENTS:
-When designing caching across multiple layers or domains:
-
-Agent 1 (worktree: cache-design):
-  - Identify all cacheable entities and access patterns
-  - Design key patterns with consistent naming convention
-  - Set TTLs and invalidation strategies per entity
-  - Document cache warming strategy for cold starts
-
-Agent 2 (worktree: cache-infra):
-  - Configure Redis/Memcached (memory, eviction, persistence)
-  - Implement cache-aside wrappers with stampede prevention
-  - Add connection pooling and circuit breaker
-  - Set up CDN/Varnish layer if applicable
-
-Agent 3 (worktree: cache-monitoring):
-  - Add cache hit/miss/eviction metrics (Prometheus/StatsD)
-  - Create monitoring dashboard (hit rate, latency, memory)
-  - Configure alerts (hit rate < threshold, eviction spike, connection errors)
-  - Write cache invalidation integration tests
-
-MERGE: Design merges first. Infra rebases onto design.
-  Monitoring rebases onto infra. Final: verify hit rates with load test.
+Agent 1 (cache-design): key patterns, TTLs, invalidation strategies, warming strategy
+Agent 2 (cache-infra): Redis/Memcached config, cache-aside wrappers, stampede prevention, CDN
+Agent 3 (cache-monitoring): hit/miss metrics, dashboards, alerts, invalidation tests
+MERGE: design -> infra -> monitoring. Verify hit rates with load test.
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

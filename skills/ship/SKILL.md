@@ -439,6 +439,24 @@ FINAL SHIPPING READINESS:
 └──────────────────────┴────────┴───────────────────────────┘
 ```
 
+## Keep/Discard Discipline
+```
+After EACH ship action:
+  KEEP if: post-ship verification passes (CI green, health check OK, release visible)
+  DISCARD if: verification fails OR rollback triggered
+  On discard: execute rollback_cmd immediately. Log rolled-back status in ship-results.tsv.
+  Never keep a ship action that fails post-ship verification.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: ship completed and post-ship verification passed
+  - budget_exhausted: 3 rounds of /godmode:fix failed to resolve blocking checks
+  - diminishing_returns: same check keeps failing after fix attempts
+  - stuck: >5 pre-ship checklist failures with no progress
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - The ship skill is inherently sequential (checklist → dry-run → ship → verify), so no parallel dispatch is needed.

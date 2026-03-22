@@ -310,69 +310,6 @@ default:
   before_script:
     - npm ci --cache .npm --prefer-offline
 
-lint:
-  extends: .node-setup
-  stage: lint
-  script:
-    - npm run format:check
-    - npm run lint
-    - npm run type-check
-
-test:
-  extends: .node-setup
-  stage: test
-  parallel: 3
-  services:
-    - postgres:16
-    - redis:7
-  variables:
-    POSTGRES_PASSWORD: test
-    POSTGRES_DB: test
-    DATABASE_URL: "postgres://postgres:test@postgres:5432/test"
-    REDIS_URL: "redis://redis:6379"
-  script:
-    - npm test -- --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
-  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
-  artifacts:
-    reports:
-      junit: junit.xml
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage/cobertura-coverage.xml
-
-build:
-  stage: build
-  image: docker:24
-  services:
-    - docker:24-dind
-  script:
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  only:
-    - main
-
-deploy-staging:
-  stage: deploy
-  script:
-    - echo "Deploying to staging"
-  environment:
-    name: staging
-    url: https://staging.example.com
-  only:
-    - main
-
-deploy-production:
-  stage: deploy
-  script:
-    - echo "Deploying to production"
-  environment:
-    name: production
-    url: https://api.example.com
-  when: manual
-  only:
-    - main
-```
-
 ### Step 4: Caching Strategies
 Optimize pipeline speed with intelligent caching:
 
@@ -748,18 +685,6 @@ AUTO-DETECT:
 -> Only ask user about deploy target if not detectable.
 ```
 
-## Anti-Patterns
-
-- **Do NOT install dependencies without caching.** Running `npm install` from scratch on every build wastes minutes. Cache with lockfile hash.
-- **Do NOT run all tests serially.** If your test suite takes over 3 minutes, shard it across parallel workers.
-- **Do NOT skip security scanning.** Dependency audits and container scanning catch vulnerabilities before they reach production.
-- **Do NOT deploy to production without a staging gate.** Staging is where you catch deployment issues. Skipping it means finding them in production.
-- **Do NOT use `latest` for action versions.** Pin to specific versions or SHA digests. `uses: actions/checkout@latest` can break without warning.
-- **Do NOT echo secrets in pipeline logs.** Mask sensitive values. Use `::add-mask::` in GitHub Actions. Never `echo $SECRET` for debugging.
-- **Do NOT run pipelines without timeouts.** A single hung test can block deployments for hours and waste compute budget.
-- **Do NOT build the same thing twice.** If lint and test both need `npm ci`, share the setup via a composite action or job dependency.
-- **Do NOT ignore flaky tests.** A test that passes "most of the time" erodes confidence in the entire pipeline. Fix or quarantine it.
-
 ## Output Format
 Print on completion: `CI/CD: {stage_count} stages, {job_count} jobs. Build: {build_time}. Test: {test_time}. Deploy: {deploy_target}. Cache: {cache_status}. Verdict: {verdict}.`
 
@@ -854,24 +779,5 @@ Agent 2 (worktree: cicd-test):
   - Scope: .github/workflows/, test config files
   - Output: Parallelized test pipeline
 
-Agent 3 (worktree: cicd-security):
-  - Security scanning (dependency audit, SAST, container scan)
-  - Secret management configuration
-  - Scope: .github/workflows/, security config
-  - Output: Security scanning pipeline
-
-Agent 4 (worktree: cicd-deploy):
-  - Deployment pipeline (staging gate, production deploy)
-  - Environment configuration
-  - Scope: .github/workflows/, deployment config
-  - Output: Deployment pipeline with staging gate
-
-MERGE ORDER: build → test → security → deploy
-CONFLICT RESOLUTION: each agent owns its pipeline stage exclusively
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run CI/CD tasks sequentially: build optimization, then test setup, then security scanning, then deployment pipeline.
-- Use branch isolation per task: `git checkout -b godmode-cicd-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.

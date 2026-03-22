@@ -29,22 +29,7 @@ CSS approach: <Tailwind/CSS Modules/SCSS/CSS-in-JS>
 
 Target devices:
   Mobile (portrait):   320px - 480px
-  Mobile (landscape):  481px - 767px
-  Tablet (portrait):   768px - 1023px
-  Tablet (landscape):  1024px - 1279px
-  Desktop:             1280px - 1535px
-  Large desktop:       1536px+
-
-Strategy: <mobile-first / desktop-first / intrinsic>
-Current state: <responsive / partially responsive / desktop-only>
-
-Key layouts:
-  - Navigation: <hamburger/sidebar/topbar>
-  - Content grid: <1-col mobile, 2-col tablet, 3-col desktop>
-  - Data tables: <scroll/stack/hide columns>
-  - Forms: <single column / multi-column>
-  - Images: <fluid / art direction / srcset>
-
+    # ... (condensed)
 Issues detected: <N>
 ```
 
@@ -60,21 +45,7 @@ LAYOUT STRATEGY COMPARISON:
 │ Fluid         │ Percentage/relative units │ Simple layouts, text-heavy    │
 │               │ Scales continuously       │ Content sites, blogs          │
 │               │                          │                               │
-│ Adaptive      │ Fixed layouts per         │ Complex apps with specific    │
-│               │ breakpoint, snaps at      │ layouts per device category   │
-│               │ each breakpoint           │                               │
-│               │                          │                               │
-│ Intrinsic     │ Components define own     │ Component libraries, design   │
-│               │ responsive behavior via   │ systems, reusable layouts     │
-│               │ container queries + clamp │                               │
-│               │                          │                               │
-│ Mobile-first  │ Base = mobile, add        │ Content-first sites, most     │
-│               │ complexity with min-width │ web apps, progressive         │
-│               │                          │ enhancement                   │
-│               │                          │                               │
-│ Desktop-first │ Base = desktop, simplify  │ Admin dashboards, enterprise  │
-│               │ with max-width            │ tools primarily used on       │
-│               │                          │ desktop                       │
+    # ... (condensed)
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -87,38 +58,7 @@ LAYOUT STRATEGY COMPARISON:
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
-}
-
-/* Base styles: mobile (< 640px) */
-.container {
-  width: 100%;
-  padding-inline: var(--spacing-4);
-  margin-inline: auto;
-}
-
-/* Small screens and up */
-@media (min-width: 640px) {
-  .container { max-width: 640px; }
-}
-
-/* Medium screens and up */
-@media (min-width: 768px) {
-  .container { max-width: 768px; }
-}
-
-/* Large screens and up */
-@media (min-width: 1024px) {
-  .container { max-width: 1024px; }
-}
-
-/* Extra large screens and up */
-@media (min-width: 1280px) {
-  .container { max-width: 1280px; }
-}
-
-/* 2XL screens and up */
-@media (min-width: 1536px) {
-  .container { max-width: 1536px; }
+    # ... (condensed)
 }
 ```
 
@@ -131,20 +71,7 @@ LAYOUT STRATEGY COMPARISON:
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: var(--spacing-6);
-}
-
-/* Tablet and below: stack */
-@media (max-width: 1023px) {
-  .sidebar-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Mobile: tighten spacing */
-@media (max-width: 767px) {
-  .sidebar-layout {
-    gap: var(--spacing-3);
-  }
+    # ... (condensed)
 }
 ```
 
@@ -170,35 +97,7 @@ Implement responsive grid layouts:
     "chart"
     "table"
     "sidebar";
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 768px) {
-  .dashboard {
-    grid-template-areas:
-      "header  header"
-      "stats   stats"
-      "chart   sidebar"
-      "table   sidebar";
-    grid-template-columns: 1fr 300px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .dashboard {
-    grid-template-areas:
-      "header  header   header"
-      "stats   stats    sidebar"
-      "chart   chart    sidebar"
-      "table   table    sidebar";
-    grid-template-columns: 1fr 1fr 320px;
-  }
-}
-
-.dashboard__header  { grid-area: header; }
-.dashboard__stats   { grid-area: stats; }
-.dashboard__chart   { grid-area: chart; }
-.dashboard__table   { grid-area: table; }
+    # ... (condensed)
 .dashboard__sidebar { grid-area: sidebar; }
 ```
 
@@ -246,23 +145,7 @@ Implement component-level responsive design:
     flex-direction: row;
     align-items: center;
     gap: var(--spacing-4);
-  }
-
-  .card__image {
-    width: 200px;
-    flex-shrink: 0;
-  }
-}
-
-/* When container is wider than 600px, add extra details */
-@container card (min-width: 600px) {
-  .card__meta {
-    display: flex;
-    gap: var(--spacing-2);
-  }
-
-  .card__actions {
-    margin-left: auto;
+    # ...
   }
 }
 ```
@@ -327,27 +210,7 @@ Essential Flexbox patterns for responsive layouts:
 }
 
 .nav__menu {
-  flex-basis: 100%;
-  display: none;
-}
-
-.nav__menu[data-open="true"] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
-
-@media (min-width: 768px) {
-  .nav__toggle {
-    display: none;
-  }
-
-  .nav__menu {
-    display: flex;
-    flex-direction: row;
-    flex-basis: auto;
-    gap: var(--spacing-4);
-  }
+    # ... (condensed)
 }
 ```
 
@@ -372,18 +235,7 @@ Essential Flexbox patterns for responsive layouts:
 }
 
 .layout__sidebar {
-  padding: var(--spacing-4);
-  background: var(--color-surface);
-}
-
-@media (min-width: 1024px) {
-  .layout__main {
-    flex-direction: row;
-  }
-
-  .layout__sidebar {
-    width: 280px;
-    flex-shrink: 0;
+    # ...
   }
 }
 ```
@@ -491,14 +343,7 @@ Optimize images for every viewport:
   <!-- Desktop: full width, landscape -->
   <source
     srcset="hero-desktop-1200.jpg 1200w, hero-desktop-1600.jpg 1600w, hero-desktop-2400.jpg 2400w"
-    sizes="60vw"
-  />
-  <img
-    src="hero-desktop-1200.jpg"
-    alt="Team collaboration workspace"
-    loading="eager"
-    fetchpriority="high"
-  />
+    # ... (condensed)
 </picture>
 ```
 
@@ -531,15 +376,7 @@ Optimize images for every viewport:
 @media (min-width: 1280px) {
   .hero {
     background-image: url('hero-desktop.jpg');
-    aspect-ratio: 21 / 9;
-  }
-}
-
-/* Serve high-DPI images to retina displays */
-@media (min-resolution: 2dppx) {
-  .hero {
-    background-image: url('hero-mobile@2x.jpg');
-  }
+    # ... (condensed)
 }
 ```
 
@@ -564,75 +401,7 @@ Ensure content prints well:
   .breadcrumb,
   .pagination,
   .social-share,
-  button:not(.print-button),
-  [role="navigation"],
-  [role="complementary"],
-  .no-print {
-    display: none !important;
-  }
-
-  /* Show full URLs for links */
-  a[href^="http"]::after {
-    content: " (" attr(href) ")";
-    font-size: 0.8em;
-    font-weight: normal;
-    color: #666 !important;
-  }
-
-  /* Internal links: don't show URL */
-  a[href^="#"]::after,
-  a[href^="/"]::after {
-    content: none;
-  }
-
-  /* Page breaks */
-  h1, h2, h3 {
-    page-break-after: avoid;
-    break-after: avoid;
-  }
-
-  table, figure, img {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Ensure images fit the page */
-  img {
-    max-width: 100% !important;
-    height: auto !important;
-  }
-
-  /* Tables */
-  table {
-    border-collapse: collapse;
-    width: 100%;
-  }
-
-  th, td {
-    border: 1px solid #ddd !important;
-    padding: 8px;
-  }
-
-  thead {
-    display: table-header-group; /* Repeat header on each page */
-  }
-
-  /* Page margins */
-  @page {
-    margin: 2cm;
-    size: A4;
-  }
-
-  @page :first {
-    margin-top: 3cm; /* Extra top margin on first page */
-  }
-
-  /* Content area takes full width */
-  .main-content {
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
+    # ... (condensed)
 }
 ```
 
@@ -658,58 +427,7 @@ Handle differences between touch, mouse, and stylus input:
     height: 32px;
   }
 }
-
-/* Coarse pointer (touch, motion controllers) */
-@media (pointer: coarse) {
-  .button {
-    padding: var(--spacing-3) var(--spacing-5);
-    min-height: 44px; /* WCAG 2.5.5 Target Size */
-  }
-
-  /* No hover on touch — use tap interactions */
-  .tooltip-trigger:hover .tooltip {
-    display: none; /* Disable hover tooltips on touch */
-  }
-
-  /* Larger hit targets required */
-  .icon-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  /* Add touch-friendly spacing between tappable elements */
-  .button-group {
-    gap: var(--spacing-3);
-  }
-
-  .list-item--interactive {
-    padding: var(--spacing-3) var(--spacing-4);
-  }
-}
-
-/* Any hover capability (mouse or stylus) */
-@media (hover: hover) {
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  .link:hover {
-    text-decoration: underline;
-  }
-}
-
-/* No hover capability (pure touch) */
-@media (hover: none) {
-  .card {
-    /* Remove hover-dependent visual affordances */
-    transition: none;
-  }
-
-  /* Use active state instead of hover for feedback */
-  .link:active {
-    opacity: 0.7;
-  }
+    # ... (condensed)
 }
 ```
 
@@ -732,14 +450,7 @@ Handle differences between touch, mouse, and stylus input:
 }
 
 /* Prevent text selection on interactive elements */
-.draggable {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-/* Prevent double-tap zoom on interactive elements */
-.interactive-element {
-  touch-action: manipulation;
+    # ... (condensed)
 }
 ```
 
@@ -793,20 +504,7 @@ Handle tables that don't fit on small screens:
 }
 
 .table-wrapper::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 40px;
-  background: linear-gradient(to right, transparent, var(--color-surface));
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.2s;
-}
-
-/* Hide fade when scrolled to end (JS toggles this class) */
-.table-wrapper--scrolled-end::after {
+    # ...
   opacity: 0;
 }
 ```
@@ -830,15 +528,7 @@ Handle tables that don't fit on small screens:
   .responsive-table td {
     display: flex;
     justify-content: space-between;
-    padding: var(--spacing-1) 0;
-    border: none;
-  }
-
-  .responsive-table td::before {
-    content: attr(data-label);
-    font-weight: var(--font-weight-semibold);
-    margin-right: var(--spacing-2);
-  }
+    # ... (condensed)
 }
 ```
 
@@ -862,42 +552,7 @@ RESPONSIVE DESIGN AUDIT:
 │ Viewport Testing                                              │
 │   320px (small mobile):  PASS / FAIL (<N> issues)             │
 │   375px (iPhone):        PASS / FAIL (<N> issues)             │
-│   768px (tablet):        PASS / FAIL (<N> issues)             │
-│   1024px (laptop):       PASS / FAIL (<N> issues)             │
-│   1280px (desktop):      PASS / FAIL (<N> issues)             │
-│   1536px (large):        PASS / FAIL (<N> issues)             │
-│                                                               │
-│ Common Issues                                                 │
-│   Horizontal overflow: <N> pages                              │
-│   Text too small (< 16px on mobile): <N> elements             │
-│   Touch targets too small (< 44px): <N> elements              │
-│   Images not responsive: <N> images                           │
-│   Fixed widths breaking layout: <N> elements                  │
-│   Hidden content on mobile: <N> elements (verify intentional) │
-│                                                               │
-│ Images                                                        │
-│   Using srcset: <N>/<N> images                                │
-│   Art direction (<picture>): <N>/<N> hero images              │
-│   Modern formats (avif/webp): YES / NO                        │
-│   Lazy loading: <N>/<N> below-fold images                     │
-│                                                               │
-│ Typography                                                    │
-│   Fluid type: YES / NO                                        │
-│   Readable at 320px: YES / NO                                 │
-│   No horizontal scroll at 200% zoom: YES / NO                 │
-│                                                               │
-│ Print                                                         │
-│   Print stylesheet: YES / NO                                  │
-│   Non-essential elements hidden: YES / NO                     │
-│   Links show URLs: YES / NO                                   │
-│                                                               │
-│ Touch / Pointer                                               │
-│   Touch targets >= 44px: YES / NO                             │
-│   Hover-dependent features have alternatives: YES / NO        │
-│   Pointer media queries used: YES / NO                        │
-│                                                               │
-│ Verdict: RESPONSIVE / PARTIALLY RESPONSIVE / DESKTOP-ONLY     │
-│ Score: <N>/100                                                │
+    # ... (condensed)
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -925,7 +580,7 @@ Scoring:
 4. **Fluid typography eliminates breakpoints.** `clamp(1rem, 0.9rem + 0.5vw, 1.125rem)` scales smoothly between mobile and desktop. No media queries needed for type. Fewer breakpoints means less code and fewer edge cases.
 5. **Images are the biggest responsive problem.** An unoptimized 2400px hero image on a 320px phone wastes bandwidth. Use `srcset` for resolution switching, `<picture>` for art direction, and modern formats (avif, webp) with fallbacks.
 6. **Touch targets must be at least 44x44px.** WCAG 2.5.5 requires minimum 44x44 CSS pixels. On touch devices, users cannot aim a 1px cursor. Buttons, links, and interactive elements must be large enough to tap without mis-tapping.
-7. **Print is a viewport too.** If users might print the content (articles, invoices, reports, documentation), add a print stylesheet. Hide navigation, show link URLs, control page breaks, and ensure readability in black and white.
+7. **Print is a viewport too.** If users will print the content (articles, invoices, reports, documentation), add a print stylesheet. Hide navigation, show link URLs, control page breaks, and ensure readability in black and white.
 
 ## Example Usage
 
@@ -947,21 +602,6 @@ Layouts:
 
 Building responsive layouts...
   Created: DashboardLayout with CSS Grid areas
-  Created: StatsGrid with auto-fit minmax pattern
-  Created: ChartSection with container queries
-  Created: ResponsiveTable with scroll + stack patterns
-  Created: MobileNav with hamburger toggle
-  Added: Fluid typography scale
-  Added: Print stylesheet for report export
-
-Viewport testing:
-  320px: PASS
-  768px: PASS
-  1280px: PASS
-  1536px: PASS
-
-Score: 88/100 (RESPONSIVE)
-Remaining: Add srcset to dashboard chart images.
 ```
 
 ### Audit an existing site
@@ -982,8 +622,6 @@ Score: 52/100 (PARTIALLY RESPONSIVE)
 
 Priority fixes:
 1. Wrap checkout table in scrollable container or use stack pattern
-2. Increase footer link padding to meet 44px minimum
-3. Add srcset and sizes to hero image
 ```
 
 ## Flags & Options
@@ -1011,9 +649,6 @@ AUTO-DETECT SEQUENCE:
 4. Detect preprocessor: .scss, .less, .styl files, postcss.config
 5. Check for responsive images: grep for srcset, sizes, <picture> in templates/JSX
 6. Detect viewport meta tag: grep for viewport in index.html, _document, layout
-7. Check for container queries: grep for @container, container-type in CSS
-8. Scan for fluid typography: grep for clamp(, calc( in font-size declarations
-```
 
 ## Iterative Responsive Implementation Loop
 
@@ -1025,18 +660,6 @@ pages_remaining = [list of pages/components to make responsive]
 WHILE pages_remaining is not empty AND current_iteration < max_iterations:
     page = pages_remaining.pop(0)
     1. Audit at 5 viewports: 320px, 375px, 768px, 1024px, 1440px
-    2. Identify issues: overflow, touch targets < 44px, fixed widths, missing srcset
-    3. Fix layout: convert fixed widths to fluid (%, vw, fr, minmax)
-    4. Fix typography: convert px to rem, add clamp() for fluid scaling
-    5. Fix images: add srcset + sizes, lazy loading, aspect-ratio
-    6. Fix interactions: ensure all hover states have tap alternatives
-    7. Re-audit at all 5 viewports + 2 in-between sizes
-    8. IF issues remain → fix and re-audit
-    9. IF clean → commit: "responsive: <page> — fluid layout + images + typography"
-    10. current_iteration += 1
-
-POST-LOOP: Run Lighthouse mobile audit, verify no horizontal overflow at any width 320-1440
-```
 
 ## Multi-Agent Dispatch
 
@@ -1080,14 +703,10 @@ RESPONSIVE AUDIT REPORT:
 │  Touch targets      │  <N> below 44px / <N> fixed     │
 │  CLS score          │  <N> (target < 0.1)             │
 │  Typography         │  fluid (clamp): YES / NO        │
-│  Horizontal scroll  │  NONE / <N> pages with overflow │
-│  Verdict            │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
-```
 
 ## TSV Logging
 
-Log every responsive audit action for tracking:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	skill	page	viewport	issue_type	element	before	after	status
@@ -1109,191 +728,70 @@ The responsive skill is complete when ALL of the following are true:
 
 ## Error Recovery
 
-```
 IF horizontal overflow detected at a specific viewport:
   1. Use browser DevTools "Toggle device toolbar" at the failing width
-  2. Inspect elements with outline: `* { outline: 1px solid red; }` to find the overflowing element
-  3. Common culprits: fixed-width elements, uncontained images, pre-formatted text, tables
-  4. Fix with: max-width: 100%, overflow-x: hidden (on the specific element, not body), or responsive table wrapper
-
 IF images cause layout shift (CLS > 0.1):
   1. Add explicit width and height attributes to all <img> and <video> elements
-  2. Use aspect-ratio CSS property as a fallback
-  3. For dynamic images (user uploads), use a placeholder with the correct aspect ratio
-  4. Re-measure CLS with Lighthouse after each fix
-
 IF touch targets are too small on mobile:
   1. Increase the clickable area with padding (not just the visible size)
-  2. Use min-height: 44px and min-width: 44px on interactive elements
-  3. For inline links in text, increase line-height and padding
-  4. Test on a real touch device, not just browser DevTools
-
 IF typography breaks at extreme viewports:
   1. Replace fixed font-size values with clamp(min, preferred, max)
-  2. Example: font-size: clamp(1rem, 2.5vw, 2rem)
-  3. Test at 320px (text must be readable) and 2560px (text must not be enormous)
-  4. Verify text wraps properly and does not overflow containers
-```
-
-## Anti-Patterns
-
-- **Do NOT use px for font sizes.** Pixel font sizes do not scale with user preferences. Use `rem` for consistent scaling with the root font size, and `clamp()` for fluid scaling across viewports.
-- **Do NOT hide content on mobile as a responsive strategy.** If content matters, it should be available on every device. If it does not matter, remove it on all devices. "Hide on mobile" usually means "we did not design for mobile."
-- **Do NOT use `@media (max-width)` in a mobile-first codebase.** Mixing min-width and max-width creates overlapping breakpoints and specificity battles. Pick one direction (min-width for mobile-first) and stick with it.
-- **Do NOT rely on hover for essential interactions.** Touch devices have no hover. If a dropdown menu only opens on hover, touch users cannot access it. Every hover interaction needs a tap/click alternative.
-- **Do NOT use fixed pixel widths for layout containers.** `width: 960px` breaks on any viewport narrower than 960px. Use `max-width` with percentage or viewport units for fluid containers.
-- **Do NOT serve the same image to all viewports.** A 2400px image on a 320px phone wastes bandwidth and slows the page. Use `srcset`, `sizes`, and `<picture>` for resolution and art direction.
-- **Do NOT test only on one viewport.** Responsive bugs hide between breakpoints. Test at 320px, 375px, 768px, 1024px, 1280px, and 1536px at minimum. Test in between breakpoints too.
-- **Do NOT use viewport units (vw) for font sizes without clamp().** `font-size: 5vw` creates text that is unreadably small on phones and absurdly large on ultrawide monitors. Always constrain with `clamp(min, preferred, max)`.
-
 
 ## Responsive Audit Loop
 
-Autoresearch-grade iterative audit for responsive design quality. Run this loop after initial implementation to ensure comprehensive breakpoint coverage, touch target compliance, and device-consistent UX.
-
 ```
 RESPONSIVE AUDIT PROTOCOL:
+max_iterations = 10
+viewports = [320, 375, 414, 480, 640, 768, 1024, 1280, 1440, 1536, 1920, 2560]
 
-Phase 1 — Breakpoint Coverage Audit
-  viewports = [320, 375, 414, 480, 640, 768, 1024, 1280, 1440, 1536, 1920, 2560]
-  current_iteration = 0
-  max_iterations = 10
+Phase 1 — Breakpoint Coverage:
+  FOR EACH page at EACH viewport:
+    Check: horizontal overflow, text truncation, image overflow, navigation usability,
+           content readability (>=14px, <=80ch), interactive element reachability,
+           layout integrity, whitespace proportionality.
+    Score each page. Target: 100% pass rate. Fix 320px failures first.
 
-  FOR EACH page/route in the application:
-    FOR EACH viewport in viewports:
-      1. RENDER the page at {viewport}px width
-      2. CHECK for:
-         a. Horizontal overflow (content extends beyond viewport)
-         b. Text truncation or overlap
-         c. Images overflowing container
-         d. Navigation usability (hamburger present? links accessible?)
-         e. Content readability (text size >= 14px, line length <= 80ch)
-         f. Interactive element reachability (buttons, links, inputs visible)
-         g. Layout integrity (columns collapse correctly, no overlapping)
-         h. Whitespace proportionality (padding/margins scale appropriately)
-      3. IF any check fails:
-         RECORD: page | viewport | check | element | description
-      4. Score the page:
-         Pass rate = checks_passed / total_checks
+Phase 2 — Touch Target Sizing:
+  Scan all interactive elements at mobile viewports (320px, 375px, 414px).
+  Measure tappable area (element + padding, excluding margin).
+  >=44x44px = PASS (AAA). >=24x24px = WARN (AA). <24x24px = FAIL.
+  Fix with padding, min-height/min-width, or ::after pseudo-element for expanded hit area.
 
-  BREAKPOINT COVERAGE MATRIX:
-  ┌────────────────────────────────────────────────────────────────────────────┐
-  │  Page        │ 320 │ 375 │ 414 │ 768 │ 1024 │ 1280 │ 1440 │ 1920 │ Score │
-  ├──────────────┼─────┼─────┼─────┼─────┼──────┼──────┼──────┼──────┼───────┤
-  │  /home       │  P  │  P  │  P  │  P  │   P  │   P  │   P  │   P  │ 100%  │
-  │  /dashboard  │  F  │  F  │  P  │  P  │   P  │   P  │   P  │   P  │  75%  │
-  │  /settings   │  P  │  P  │  P  │  F  │   P  │   P  │   P  │   P  │  88%  │
-  │  /data-table │  F  │  F  │  F  │  P  │   P  │   P  │   P  │   P  │  63%  │
-  └──────────────┴─────┴─────┴─────┴─────┴──────┴──────┴──────┴──────┴───────┘
-  P = Pass, F = Fail
-
-  TARGET: 100% pass rate across all pages and viewports
-  FIX PRIORITY: failures at 320px first (most constrained), then work up
-
-Phase 2 — Touch Target Sizing Audit
-  target: ALL interactive elements >= 44x44 CSS pixels (WCAG 2.5.5 Level AAA)
-  minimum: ALL interactive elements >= 24x24 CSS pixels (WCAG 2.5.8 Level AA)
-
-  FOR EACH page, scan at mobile viewports (320px, 375px, 414px):
-    1. IDENTIFY all interactive elements:
-       - Buttons, links, inputs, selects, checkboxes, radio buttons
-       - Custom interactive components (toggles, sliders, tabs, accordions)
-       - Close/dismiss buttons (modals, toasts, drawers)
-       - Pagination and navigation controls
-    2. MEASURE each element's tappable area:
-       - Computed size = element dimensions + padding
-       - Exclude margin (not part of tap target)
-       - Account for ::before/::after pseudo-elements that extend hit area
-    3. CLASSIFY:
-       a. >= 44x44px → PASS (AAA)
-       b. >= 24x24px but < 44px → WARN (AA only, upgrade recommended)
-       c. < 24x24px → FAIL (below AA minimum)
-    4. FOR EACH FAIL/WARN:
-       - Record: element | selector | current_size | target_size
-       - Fix: increase padding, min-height/min-width, or use ::after for expanded hit area
-       - Verify: re-measure after fix
-
-  TOUCH TARGET AUDIT TABLE:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Element                  │  Current Size  │  Target   │  Status        │
-  ├───────────────────────────┼────────────────┼───────────┼────────────────┤
-  │  .nav-link                │  36x20px       │  44x44px  │  FAIL → FIXED  │
-  │  .close-btn              │  16x16px       │  44x44px  │  FAIL → FIXED  │
-  │  .pagination-item         │  28x28px       │  44x44px  │  WARN → FIXED  │
-  │  .checkbox-label          │  44x44px       │  44x44px  │  PASS          │
-  │  .inline-link (in text)   │  auto x 20px   │  24x24px  │  WARN          │
-  └───────────────────────────┴────────────────┴───────────┴────────────────┘
-
-  EXPANDED HIT AREA TECHNIQUE:
-  ```css
-  /* Expand tap target without changing visual size */
-  .small-button {
-    position: relative;
-  }
-  .small-button::after {
-    content: '';
-    position: absolute;
-    inset: -12px;  /* Expands hit area by 12px in each direction */
-  }
-  ```
-
-Phase 3 — Responsive Regression Loop
-  Run after every responsive fix to ensure no regressions:
-
-  FOR EACH fix applied:
-    1. RE-TEST the fixed page at ALL viewports (not just the failing one)
-    2. CHECK adjacent pages that share components
-    3. RUN CLS measurement:
-       npx lighthouse <url> --only-categories=performance --output=json
-       Parse: audits['cumulative-layout-shift'].numericValue
-       Target: CLS < 0.1
-    4. CHECK print stylesheet (if applicable):
-       - Print preview at each page
-       - Verify: no clipped content, no background images, URLs shown for links
-    5. RUN visual comparison:
-       - Screenshot at each viewport before and after fix
-       - Diff: no unintended visual changes
-    6. IF regression detected → REVERT fix, try alternative approach
-
-  RESPONSIVE AUDIT CONVERGENCE:
-  ┌──────────────────────────────────────────────────────────────────┐
-  │  Metric                        │  Before  │  After   │  Target  │
-  ├────────────────────────────────┼──────────┼──────────┼──────────┤
-  │  Breakpoint pass rate          │  <N>%    │  <N>%    │  100%    │
-  │  Touch targets >= 44px         │  <N>%    │  <N>%    │  100%    │
-  │  Touch targets >= 24px (AA)    │  <N>%    │  <N>%    │  100%    │
-  │  Horizontal overflow pages     │  <N>     │  0       │  0       │
-  │  CLS score (worst page)        │  <N>     │  <N>     │  < 0.1   │
-  │  Fluid typography (clamp)      │  <N>%    │  <N>%    │  100%    │
-  │  Responsive images (srcset)    │  <N>%    │  <N>%    │  100%    │
-  │  Print stylesheet quality      │  <N>/10  │  <N>/10  │  >= 8    │
-  └────────────────────────────────┴──────────┴──────────┴──────────┘
+Phase 3 — Regression Loop:
+  After every fix: re-test at ALL viewports (not just the failing one).
+    # ...
+│  Responsive images (srcset)    │  <N>%    │  <N>%    │  100%    │
+└────────────────────────────────┴──────────┴──────────┴──────────┘
 ```
 
-### Responsive Audit TSV Logging
-
-Append one row per audit finding to `.godmode/responsive-audit.tsv`:
-
+## Keep/Discard Discipline
 ```
-timestamp	project	page	viewport	check	element	before	after	status
-2024-01-15T10:30:00Z	my-app	/dashboard	320px	overflow	.data-table	overflow-x	scroll-wrapper	fixed
-2024-01-15T10:35:00Z	my-app	/settings	375px	touch_target	.close-btn	16x16px	44x44px	fixed
-2024-01-15T10:40:00Z	my-app	/home	all	cls	.hero-img	0.23	0.04	fixed
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
 ```
 
-### Responsive Audit Hard Rules
 
+## Stop Conditions
 ```
-1. NEVER mark responsive as "done" without testing at 320px. The smallest viewport reveals the most issues.
-2. NEVER fix a responsive bug at one viewport without checking ALL viewports for regressions.
-3. ALWAYS measure touch targets on actual mobile devices, not just browser DevTools. DevTools can misrepresent tap target geometry.
-4. NEVER use overflow-x: hidden on <body> or <html> to "fix" horizontal overflow. Find and fix the overflowing element.
-5. ALWAYS test between breakpoints (e.g., 500px, 900px), not just at defined breakpoints. Bugs hide in the gaps.
-6. Log every responsive finding in TSV format for tracking regressions across releases.
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
 ```
+
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run responsive tasks sequentially: layout (Grid/Flexbox), then media (images/video), then typography.
 - Use branch isolation per task: `git checkout -b godmode-responsive-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+```

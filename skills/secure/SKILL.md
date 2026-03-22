@@ -167,6 +167,18 @@ IF audit exceeds max_iterations without full coverage:
   4. Recommend follow-up audit for uncovered areas
 ```
 
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all OWASP Top 10 + all STRIDE categories tested across all boundaries
+  - budget_exhausted: max_iterations reached (hard cap)
+  - diminishing_returns: 3 consecutive boundaries produce zero findings AND coverage > 80%
+  - stuck: >5 discarded findings with no actionable replacements
+```
+
+## Output Format
+Print: `Skill: OWASP {tested}/10, STRIDE {tested}/6. {before} findings → {after} confirmed ({delta}%). {kept} kept, {discarded} discarded. Status: {DONE|PARTIAL}.`
+
 ## Rules
 1. Every finding: file:line + exploit steps + proof (curl command, test case, or code path). No theoretical risks.
 2. Cover all OWASP Top 10 × 4 personas = 40 test cases minimum. Use real payloads. Critical/High before Med/Low.

@@ -431,38 +431,6 @@ WHILE onboard_steps is not empty AND current_iteration < 7:
 OUTPUT: Onboarding report with all sections populated from verified data.
 ```
 
-## Multi-Agent Dispatch
-
-For large monorepos or multi-service projects, dispatch parallel agents:
-
-```
-MULTI-AGENT ONBOARDING:
-Dispatch 2-4 agents in parallel worktrees for monorepo/multi-service projects.
-
-Agent 1 (worktree: onboard-frontend):
-  - Scan frontend app structure, routing, state management
-  - Identify key components and data flow
-  - Document frontend-specific conventions
-
-Agent 2 (worktree: onboard-backend):
-  - Scan API routes, services, data models
-  - Map database schema and ORM usage
-  - Document backend-specific patterns
-
-Agent 3 (worktree: onboard-infra):
-  - Analyze CI/CD, Docker, Kubernetes, IaC
-  - Map deployment topology
-  - Document infrastructure conventions
-
-Agent 4 (worktree: onboard-shared):
-  - Analyze shared libraries, types, configs
-  - Map cross-service dependencies
-  - Document API contracts between services
-
-MERGE: Combine into single onboarding report ordered by reading priority.
-CONFLICT ZONES: None (read-only operation, separate documentation sections).
-```
-
 ## Output Format
 
 After each onboarding skill invocation, emit a structured report:
@@ -535,12 +503,39 @@ IF repository is too large to analyze fully:
 
 ## Anti-Patterns
 
-- **Do NOT assume architecture from directory names.** A folder called "services" might contain anything. Read the files.
-- **Do NOT skip the git history.** File creation dates, modification frequency, and commit patterns reveal what matters.
-- **Do NOT list every file.** The goal is to identify the 10-20% of files that explain 80% of the system. Be selective.
-- **Do NOT ignore test files.** Tests document expected behavior. A good test file is often the best documentation.
-- **Do NOT generate documentation without reading code.** Every claim in the onboarding report must be verified against actual source code.
-- **Do NOT assume REST.** The project might use GraphQL, gRPC, WebSockets, or CLI patterns. Detect, don't assume.
+- **Do NOT assume architecture from directory names.** Read the files.
+- **Do NOT skip the git history.** Commit patterns reveal what matters.
+- **Do NOT list every file.** Identify the 10-20% that explain 80% of the system.
+- **Do NOT ignore test files.** Tests document expected behavior.
+- **Do NOT generate documentation without reading code.** Verify every claim.
+- **Do NOT assume REST.** Detect the actual protocol from router/handler code.
+
+## Keep/Discard Discipline
+```
+After EACH onboarding step:
+  1. MEASURE: Verify output contains no "<placeholder>" text. Confirm file paths and function names exist.
+  2. COMPARE: Does the step add actionable information for a new developer?
+  3. DECIDE:
+     - KEEP if: all claims verified against source code AND output is populated with real data
+     - DISCARD if: output contains unverified claims OR placeholder text remains
+  4. COMMIT kept outputs. Re-run discarded steps with corrected analysis.
+
+Never include unverified file paths or architectural claims in the onboarding report.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Architecture identified and verified against source code
+  - Key files (7-10) documented with reading order
+  - Code tour has at least 5 stops covering entry point through test pattern
+  - Development setup verified (build + test from clean checkout)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - The repo is large (focus on the 20 most-modified files)
+  - Some modules lack documentation (note gaps in the report)
+```
 
 
 ## Onboarding Audit Loop
@@ -758,7 +753,5 @@ FINAL ONBOARDING AUDIT:
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run onboarding tasks sequentially: frontend docs, then backend docs, then infra docs, then shared docs.
-- Use branch isolation per task: `git checkout -b godmode-onboard-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run onboarding tasks sequentially: frontend docs, then backend docs, then infra docs, then shared docs.
+Use branch isolation per task: `git checkout -b godmode-onboard-{task}`, implement, commit, merge back.

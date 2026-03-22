@@ -89,64 +89,7 @@ class Order extends Model
     }
 
     public function items(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
-
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(Product::class, 'order_items')
-            ->withPivot('quantity', 'unit_price')
-            ->withTimestamps();
-    }
-
-    public function shippingAddress(): HasOne
-    {
-        return $this->hasOne(ShippingAddress::class);
-    }
-
-    // Scopes — composable query constraints
-    public function scopeActive(Builder $query): void
-    {
-        $query->whereNot('status', OrderStatus::Cancelled);
-    }
-
-    public function scopeRecent(Builder $query): void
-    {
-        $query->orderByDesc('created_at');
-    }
-
-    public function scopeForCustomer(Builder $query, int $customerId): void
-    {
-        $query->where('customer_id', $customerId);
-    }
-
-    public function scopeCreatedBetween(Builder $query, Carbon $start, Carbon $end): void
-    {
-        $query->whereBetween('created_at', [$start, $end]);
-    }
-
-    // Accessors & Mutators (Laravel 11 attribute syntax)
-    protected function totalDollars(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->total_cents / 100,
-            set: fn (float $value) => ['total_cents' => (int) ($value * 100)],
-        );
-    }
-
-    // Business logic
-    public function isCancelable(): bool
-    {
-        return in_array($this->status, [OrderStatus::Pending, OrderStatus::Confirmed]);
-    }
-}
-
-// Enum for status (PHP 8.1+ backed enum)
-enum OrderStatus: string
-{
-    case Pending = 'pending';
-    case Confirmed = 'confirmed';
+    # ... (additional patterns follow same structure)
     case Shipped = 'shipped';
     case Delivered = 'delivered';
     case Cancelled = 'cancelled';
@@ -194,19 +137,7 @@ class OrderController extends Controller
 }
 
 // API Resource (never expose models directly)
-class OrderResource extends JsonResource
-{
-    public function toArray(Request $request): array
-    {
-        return [
-            'id' => $this->id,
-            'status' => $this->status->value,
-            'total' => $this->total_dollars,
-            'items_count' => $this->items_count,
-            'customer' => new CustomerResource($this->whenLoaded('customer')),
-            'items' => OrderItemResource::collection($this->whenLoaded('items')),
-            'created_at' => $this->created_at->toISOString(),
-        ];
+    # ...
     }
 }
 ```
@@ -247,61 +178,7 @@ class StripePaymentGateway implements PaymentGateway
         try {
             $intent = $this->stripe->paymentIntents->create([
                 'amount' => $amountCents,
-                'currency' => $currency,
-                'metadata' => $metadata,
-            ]);
-            return PaymentResult::success($intent->id);
-        } catch (StripeException $e) {
-            $this->logger->error('Payment failed', ['error' => $e->getMessage()]);
-            return PaymentResult::failure($e->getMessage());
-        }
-    }
-}
-
-// Service Provider binding
-namespace App\Providers;
-
-class PaymentServiceProvider extends ServiceProvider
-{
-    public function register(): void
-    {
-        $this->app->bind(PaymentGateway::class, function ($app) {
-            return new StripePaymentGateway(
-                stripe: new StripeClient(config('services.stripe.secret')),
-                logger: $app->make(LoggerInterface::class),
-            );
-        });
-    }
-}
-
-// Action class (single-responsibility service)
-namespace App\Actions;
-
-class CreateOrder
-{
-    public function __construct(
-        private readonly PaymentGateway $payment,
-        private readonly OrderRepository $orders,
-    ) {}
-
-    public function execute(CreateOrderDTO $dto): Order
-    {
-        return DB::transaction(function () use ($dto) {
-            $order = $this->orders->create($dto);
-
-            $payment = $this->payment->charge(
-                amountCents: $order->total_cents,
-                currency: 'usd',
-                metadata: ['order_id' => $order->id],
-            );
-
-            if ($payment->failed()) {
-                throw new PaymentFailedException($payment->error);
-            }
-
-            $order->markAsConfirmed($payment->transactionId);
-            OrderConfirmed::dispatch($order);
-
+    # ... (additional patterns follow same structure)
             return $order;
         });
     }
@@ -359,72 +236,7 @@ class ProcessOrderPayment implements ShouldQueue
         if ($result->failed()) {
             $this->fail(new PaymentFailedException($result->error));
             return;
-        }
-
-        $this->order->markAsConfirmed($result->transactionId);
-        OrderConfirmed::dispatch($this->order);
-    }
-
-    public function failed(Throwable $exception): void
-    {
-        Log::error('Payment processing failed', [
-            'order_id' => $this->order->id,
-            'error' => $exception->getMessage(),
-        ]);
-        $this->order->markAsFailed();
-        Notification::send($this->order->customer, new PaymentFailedNotification($this->order));
-    }
-
-    public function middleware(): array
-    {
-        return [
-            new RateLimited('payments'),
-            new WithoutOverlapping($this->order->id),
-        ];
-    }
-}
-
-// Event + Listener pattern
-class OrderConfirmed
-{
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public function __construct(
-        public readonly Order $order,
-    ) {}
-}
-
-// Listener
-class SendOrderConfirmationEmail implements ShouldQueue
-{
-    public function handle(OrderConfirmed $event): void
-    {
-        Mail::to($event->order->customer)
-            ->queue(new OrderConfirmationMail($event->order));
-    }
-}
-
-// Broadcasting for real-time
-class OrderStatusUpdated implements ShouldBroadcast
-{
-    use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    public function __construct(
-        public readonly Order $order,
-    ) {}
-
-    public function broadcastOn(): array
-    {
-        return [
-            new PrivateChannel("orders.{$this->order->customer_id}"),
-        ];
-    }
-
-    public function broadcastWith(): array
-    {
-        return [
-            'order_id' => $this->order->id,
-            'status' => $this->order->status->value,
+    # ... (additional patterns follow same structure)
             'updated_at' => $this->order->updated_at->toISOString(),
         ];
     }
@@ -493,46 +305,7 @@ class AuthController extends Controller
         $user = Auth::user();
         $token = $user->createToken(
             name: $request->device_name ?? 'api-token',
-            abilities: $this->getAbilitiesForUser($user),
-            expiresAt: now()->addDays(30),
-        );
-
-        return response()->json([
-            'token' => $token->plainTextToken,
-            'expires_at' => $token->accessToken->expires_at,
-        ]);
-    }
-}
-
-// Authorization with Gates and Policies
-class OrderPolicy
-{
-    public function view(User $user, Order $order): bool
-    {
-        return $user->id === $order->customer_id
-            || $user->hasRole('admin');
-    }
-
-    public function update(User $user, Order $order): bool
-    {
-        return $user->id === $order->customer_id
-            && $order->isCancelable();
-    }
-
-    public function delete(User $user, Order $order): bool
-    {
-        return $user->hasRole('admin');
-    }
-}
-
-// Controller using policy
-class OrderController extends Controller
-{
-    public function update(UpdateOrderRequest $request, Order $order): JsonResponse
-    {
-        $this->authorize('update', $order);
-
-        $order->update($request->validated());
+    # ... (additional patterns follow same structure)
 
         return new OrderResource($order);
     }
@@ -587,68 +360,7 @@ describe('Order', function () {
 });
 
 // Pest test — API endpoint
-describe('Orders API', function () {
-    beforeEach(function () {
-        $this->user = User::factory()->create();
-        Sanctum::actingAs($this->user, ['orders:read', 'orders:write']);
-    });
-
-    it('lists orders for the authenticated user', function () {
-        Order::factory()->count(3)->create(['customer_id' => $this->user->customer_id]);
-        Order::factory()->count(2)->create(); // Other user's orders
-
-        $response = $this->getJson('/api/v1/orders');
-
-        $response->assertOk()
-            ->assertJsonCount(3, 'data')
-            ->assertJsonStructure(['data' => [['id', 'status', 'total', 'created_at']]]);
-    });
-
-    it('creates an order and dispatches confirmation job', function () {
-        Queue::fake();
-        $product = Product::factory()->create();
-
-        $response = $this->postJson('/api/v1/orders', [
-            'items' => [['product_id' => $product->id, 'quantity' => 2]],
-        ]);
-
-        $response->assertCreated()
-            ->assertJsonPath('data.status', 'pending');
-
-        Queue::assertPushed(ProcessOrderPayment::class);
-    });
-
-    it('returns 403 when updating another user\'s order', function () {
-        $otherOrder = Order::factory()->create();
-
-        $this->putJson("/api/v1/orders/{$otherOrder->id}", ['status' => 'confirmed'])
-            ->assertForbidden();
-    });
-});
-
-// Pest test — Job
-describe('ProcessOrderPayment', function () {
-    it('charges the payment gateway and confirms the order', function () {
-        Event::fake();
-        $order = Order::factory()->create(['status' => OrderStatus::Pending]);
-        $gateway = Mockery::mock(PaymentGateway::class);
-        $gateway->shouldReceive('charge')
-            ->once()
-            ->andReturn(PaymentResult::success('txn_123'));
-
-        (new ProcessOrderPayment($order))->handle($gateway);
-
-        expect($order->fresh()->status)->toBe(OrderStatus::Confirmed);
-        Event::assertDispatched(OrderConfirmed::class);
-    });
-
-    it('marks order as failed when payment fails', function () {
-        Notification::fake();
-        $order = Order::factory()->create();
-        $gateway = Mockery::mock(PaymentGateway::class);
-        $gateway->shouldReceive('charge')
-            ->andReturn(PaymentResult::failure('Card declined'));
-
+    # ... (additional patterns follow same structure)
         $job = new ProcessOrderPayment($order);
         expect(fn () => $job->handle($gateway))->toThrow(PaymentFailedException::class);
     });
@@ -966,24 +678,11 @@ Notes: <one-line summary>
 
 ## TSV Logging
 
-Append one TSV row to `.godmode/laravel.tsv` after each invocation:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | model | controller | service | policy | optimize | test | audit | upgrade
-- `files_count`: number of files created or modified
-- `models_count`: number of Eloquent models created or modified
-- `controllers_count`: number of controllers created or modified
-- `migrations_count`: number of migrations generated
-- `tests_status`: passing | failing | skipped | none
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -1004,366 +703,87 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 
 ## Error Recovery
 
-When errors occur, follow these remediation steps:
-
-```
 IF php artisan test fails:
   1. Check that test database is configured in phpunit.xml
-  2. Verify RefreshDatabase or DatabaseTransactions trait is used
-  3. Check that factories produce valid model instances
-  4. Verify that environment-specific config is mocked in tests
-
 IF migration fails:
   1. Check for column type conflicts with existing data
-  2. Verify foreign key references exist before adding constraints
-  3. For large tables, use batched operations to avoid lock timeouts
-  4. Never edit deployed migrations — create new corrective migrations
-
 IF N+1 query detected (preventLazyLoading):
   1. Add with() eager loading to the query
-  2. Use withCount() for count-only relationships
-  3. Use load() for conditional post-query loading
-  4. Verify with Laravel Debugbar that query count decreased
-
 IF queue job fails:
   1. Check that job class is serializable (no closures, no unserializable properties)
-  2. Verify queue connection is configured and running
-  3. Add retry logic with backoff: $backoff = [60, 300, 900]
-  4. Implement failed() method for error notification
-
 IF authorization errors:
   1. Verify Policy is registered in AuthServiceProvider
-  2. Check that Gate definitions match the method signatures
-  3. Verify middleware is applied to route groups
-  4. Test with actingAs() in feature tests
-```
-
-## Anti-Patterns
-
-- **Do NOT return Eloquent models from controllers.** Use API Resources. Models carry hidden state, relationships, and database details that should never leak to the API.
-- **Do NOT put business logic in controllers.** Controllers receive a request and return a response. Business logic belongs in Action classes or Service classes.
-- **Do NOT use `$guarded = []`.** Explicitly define `$fillable` on every model. Mass assignment vulnerabilities are real.
-- **Do NOT skip Form Requests.** Inline validation in controllers is unmaintainable. Form Requests are reusable, testable, and self-documenting.
-- **Do NOT process heavy work synchronously.** Email, PDF generation, payment processing, and external API calls must be queued.
-- **Do NOT ignore `preventLazyLoading`.** Enable it in development. Every N+1 query is a production performance bug waiting to happen.
-- **Do NOT hardcode configuration.** Use `.env` variables and `config()` helper. Never reference `env()` outside of config files.
-- **Do NOT skip authorization.** Every endpoint must check Policies or Gates. An unauthorized endpoint is a security vulnerability, not a missing feature.
-
 
 ## Laravel Optimization Loop
 
-When optimizing an existing Laravel application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
-
-### Pass 1: Eloquent Query Optimization
+Run this systematic audit when optimizing an existing Laravel application:
 
 ```
-ELOQUENT QUERY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Enable query detection tools                            │
-│                                                                   │
-│  # AppServiceProvider::boot()                                    │
-│  if ($this->app->isLocal()) {                                    │
-│      Model::preventLazyLoading();          // Catch N+1          │
-│      Model::preventSilentlyDiscardingAttributes(); // Catch typos│
-│      Model::preventAccessingMissingAttributes();   // Catch nulls│
-│      DB::listen(function (QueryExecuted $query) {                │
-│          if ($query->time > 100) {                               │
-│              Log::warning('Slow query', [                        │
-│                  'sql' => $query->sql,                           │
-│                  'time' => $query->time,                         │
-│                  'bindings' => $query->bindings,                 │
-│              ]);                                                  │
-│          }                                                       │
-│      });                                                         │
-│  }                                                               │
-│                                                                   │
-│  # Or use Laravel Debugbar:                                      │
-│  composer require barryvdh/laravel-debugbar --dev                │
-│                                                                   │
-│  Step 2: Baseline query count per endpoint                       │
-│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
-│  │  Endpoint                │  Queries │  Time(ms)│  N+1?      ││
-│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
-│  │  GET /api/orders         │  <N>     │  <N>     │  YES/NO    ││
-│  │  GET /api/orders/:id     │  <N>     │  <N>     │  YES/NO    ││
-│  │  GET /dashboard          │  <N>     │  <N>     │  YES/NO    ││
-│  └──────────────────────────┴──────────┴──────────┴────────────┘│
-│                                                                   │
-│  Step 3: Fix N+1 and inefficient query patterns                  │
-│                                                                   │
-│  # BAD — N+1 on relationship access:                             │
-│  $orders = Order::all();                                         │
-│  foreach ($orders as $order) {                                   │
-│      echo $order->customer->name;  // 1 query per order          │
-│  }                                                               │
-│                                                                   │
-│  # GOOD — eager load with constrained columns:                   │
-│  $orders = Order::with(['customer:id,name,email',                │
-│                         'items:id,order_id,product_id,quantity']) │
-│      ->active()                                                  │
-│      ->recent()                                                  │
-│      ->paginate(25);                                             │
-│                                                                   │
-│  # GOOD — withCount for relationship counts:                     │
-│  $orders = Order::withCount('items')                             │
-│      ->withSum('items', 'quantity')                              │
-│      ->paginate(25);                                             │
-│  // Access: $order->items_count, $order->items_sum_quantity      │
-│                                                                   │
-│  # GOOD — withWhereHas for filter + eager load combo:            │
-│  $orders = Order::withWhereHas('items', function ($q) {          │
-│      $q->where('product_id', $productId);                        │
-│  })->get();                                                      │
-│                                                                   │
-│  # GOOD — subquery selects for computed columns:                 │
-│  $orders = Order::addSelect([                                    │
-│      'last_payment_at' => Payment::select('created_at')          │
-│          ->whereColumn('order_id', 'orders.id')                  │
-│          ->latest()                                              │
-│          ->limit(1),                                             │
-│  ])->get();                                                      │
-│                                                                   │
-│  Step 4: Bulk operation optimization                             │
-│  - Replace create() loops with insert() / upsert()              │
-│  - Replace update() loops with batch update queries              │
-│  - Use chunk() or chunkById() for large dataset processing      │
-│  - Use cursor() or lazy() for memory-efficient iteration         │
-└──────────────────────────────────────────────────────────────────┘
-```
+LARAVEL OPTIMIZATION PASSES:
 
-### Pass 2: Queue Processing Optimization
+Pass 1 — Eloquent Query Optimization:
+  1. Enable Model::preventLazyLoading() in AppServiceProvider::boot()
+  2. Baseline query count per endpoint with Debugbar
+  3. Fix N+1: add with(), withCount(), withWhereHas() for eager loading
+  4. Replace create() loops with insert()/upsert() for bulk operations
+  5. Use chunk()/chunkById() for large dataset processing
 
-```
-QUEUE PROCESSING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Catalog all queued jobs                                 │
-│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
-│  │  Job                     │  Queue   │  Avg Time│  Retries   ││
-│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
-│  │  SendOrderConfirmation   │  default │  <N>ms   │  3         ││
-│  │  ProcessPayment          │  high    │  <N>ms   │  5         ││
-│  │  GenerateReport          │  low     │  <N>ms   │  1         ││
-│  │  SyncInventory           │  default │  <N>ms   │  3         ││
-│  └──────────────────────────┴──────────┴──────────┴────────────┘│
-│                                                                   │
-│  Step 2: Queue configuration optimization                        │
-│  # config/queue.php — tune for workload:                         │
-│  'connections' => [                                              │
-│      'redis' => [                                                │
-│          'driver' => 'redis',                                    │
-│          'connection' => 'default',                              │
-│          'queue' => env('REDIS_QUEUE', 'default'),               │
-│          'retry_after' => 90,     // Must exceed max job runtime │
-│          'block_for' => 5,        // Long-polling interval       │
-│          'after_commit' => true,  // Only dispatch after DB commit│
-│      ],                                                          │
-│  ],                                                              │
-│                                                                   │
-│  Step 3: Job design optimization                                 │
-│  class ProcessPayment implements ShouldQueue                     │
-│  {                                                               │
-│      use Dispatchable, InteractsWithQueue, Queueable,            │
-│          SerializesModels;                                       │
-│                                                                   │
-│      public $tries = 5;                                          │
-│      public $maxExceptions = 3;                                  │
-│      public $timeout = 60;                                       │
-│      public $backoff = [60, 300, 900];  // Exponential backoff   │
-│                                                                   │
-│      public function uniqueId(): string                          │
-│      {                                                           │
-│          return $this->order->id;   // Prevent duplicate jobs    │
-│      }                                                           │
-│                                                                   │
-│      public function retryUntil(): DateTime                      │
-│      {                                                           │
-│          return now()->addHours(24); // Hard deadline             │
-│      }                                                           │
-│                                                                   │
-│      public function middleware(): array                         │
-│      {                                                           │
-│          return [                                                 │
-│              new WithoutOverlapping($this->order->id),           │
-│              (new ThrottlesExceptions(3, 5))->backoff(60),       │
-│          ];                                                      │
-│      }                                                           │
-│                                                                   │
-│      public function failed(Throwable $e): void                  │
-│      {                                                           │
-│          // Notify team, update order status to failed           │
-│      }                                                           │
-│  }                                                               │
-│                                                                   │
-│  Step 4: Worker process optimization                             │
-│  # Horizon configuration (Redis queue dashboard):                │
-│  php artisan horizon:install                                     │
-│                                                                   │
-│  # Optimal worker commands:                                      │
-│  php artisan queue:work --queue=high,default,low --tries=3       │
-│      --timeout=60 --memory=128 --sleep=3                         │
-│                                                                   │
-│  # Scale workers per queue priority:                             │
-│  'environments' => [                                             │
-│      'production' => [                                           │
-│          'supervisor-high' => ['queue' => ['high'], 'processes' => 4], │
-│          'supervisor-default' => ['queue' => ['default'], 'processes' => 2], │
-│          'supervisor-low' => ['queue' => ['low'], 'processes' => 1], │
-│      ],                                                          │
-│  ],                                                              │
-│                                                                   │
-│  AUDIT CHECKLIST:                                                │
-│  [ ] All jobs have explicit $tries, $timeout, and $backoff       │
-│  [ ] All payment/critical jobs have uniqueId() to prevent dupes  │
-│  [ ] All jobs have failed() method for error notification        │
-│  [ ] after_commit is true on queue connection (no orphan jobs)   │
-│  [ ] Queue depth monitored — alert if > threshold                │
-│  [ ] Dead letter queue inspected daily for stuck jobs            │
-│  [ ] Job batching used for bulk operations (Bus::batch())        │
-└──────────────────────────────────────────────────────────────────┘
-```
+Pass 2 — Queue Processing:
+  1. Catalog all queued jobs with queue, avg time, retries
+  2. Set explicit $tries, $timeout, $backoff on every job
+  3. Add uniqueId() to prevent duplicate jobs, failed() for error notification
+  4. Enable after_commit on queue connection
+  5. Scale workers per queue priority with Horizon
 
-### Pass 3: Cache Strategy Optimization
+Pass 3 — Cache Strategy:
+  1. Identify cacheable data with TTL and invalidation rules
+  2. Use Cache::remember() for expensive queries, cache tags for group invalidation
+  3. Add Model observers for automatic cache invalidation on writes
+  4. Enable config:cache, route:cache, view:cache, event:cache in production
 
-```
-CACHE STRATEGY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Identify cacheable data                                 │
-│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
-│  │  Data                    │  TTL     │  Layer   │  Invalidate││
-│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
-│  │  App config/settings     │  1 hour  │  Config  │  On deploy ││
-│  │  User permissions        │  5 min   │  Redis   │  On change ││
-│  │  Product catalog         │  15 min  │  Redis   │  On update ││
-│  │  Dashboard aggregations  │  1 min   │  Redis   │  Time-based││
-│  │  Static page content     │  1 day   │  File    │  On publish││
-│  └──────────────────────────┴──────────┴──────────┴────────────┘│
-│                                                                   │
-│  Step 2: Implement cache patterns                                │
-│                                                                   │
-│  # Pattern: remember() for simple caching                        │
-│  $stats = Cache::remember('dashboard:stats', 60, function () {  │
-│      return [                                                    │
-│          'orders_today' => Order::whereDate('created_at', today())→count(), │
-│          'revenue_today' => Order::whereDate('created_at', today())→sum('total'), │
-│      ];                                                          │
-│  });                                                             │
-│                                                                   │
-│  # Pattern: cache tags for group invalidation                    │
-│  Cache::tags(['orders', 'customer:'.$customerId])                │
-│      ->remember("orders:customer:{$customerId}", 300, fn() =>   │
-│          Order::where('customer_id', $customerId)->get()         │
-│      );                                                          │
-│  // Invalidate all orders cache:                                 │
-│  Cache::tags('orders')->flush();                                 │
-│                                                                   │
-│  # Pattern: Model observer for automatic invalidation            │
-│  class OrderObserver                                             │
-│  {                                                               │
-│      public function saved(Order $order): void                   │
-│      {                                                           │
-│          Cache::tags(['orders', "customer:{$order->customer_id}"])│
-│              ->flush();                                          │
-│      }                                                           │
-│  }                                                               │
-│                                                                   │
-│  # Pattern: Route-level caching                                  │
-│  Route::middleware('cache.headers:public;max_age=300')           │
-│      ->get('/api/products', [ProductController::class, 'index']);│
-│                                                                   │
-│  Step 3: Cache driver selection                                  │
-│  ┌──────────────────────────┬────────────────────────────────┐  │
-│  │  Driver                  │  Use Case                       │  │
-│  ├──────────────────────────┼────────────────────────────────┤  │
-│  │  Redis                   │  Default for production         │  │
-│  │  File                    │  Development / low-traffic      │  │
-│  │  Database                │  When Redis unavailable         │  │
-│  │  Array                   │  Testing only (per-request)     │  │
-│  │  Memcached              │  Legacy / specific use cases    │  │
-│  └──────────────────────────┴────────────────────────────────┘  │
-│                                                                   │
-│  AUDIT CHECKLIST:                                                │
-│  [ ] Redis configured as default cache driver in production      │
-│  [ ] All expensive queries wrapped in Cache::remember()          │
-│  [ ] Cache tags used for group invalidation (not flush-all)      │
-│  [ ] Model observers handle cache invalidation on writes         │
-│  [ ] Cache key naming is consistent: "type:identifier:field"     │
-│  [ ] TTLs are appropriate (not too long, not too short)          │
-│  [ ] Config caching enabled: php artisan config:cache            │
-│  [ ] Route caching enabled: php artisan route:cache              │
-│  [ ] View caching enabled: php artisan view:cache                │
-│  [ ] Event caching enabled: php artisan event:cache              │
-└──────────────────────────────────────────────────────────────────┘
-```
+Pass 4 — Database & Index Audit:
+  1. Find missing indexes on foreign key columns
+  2. Add composite indexes for common query patterns
+  3. Run EXPLAIN ANALYZE on slow queries
+  4. Run php artisan optimize for production
 
-### Pass 4: Database & Index Audit
-
-```
-DATABASE & INDEX AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Identify missing indexes                                │
-│  # Run in tinker:                                                │
-│  collect(DB::select("SELECT table_name, column_name              │
-│    FROM information_schema.columns                               │
-│    WHERE column_name LIKE '%_id'                                 │
-│    AND table_schema = DATABASE()"))                               │
-│    ->each(function ($col) {                                      │
-│        $indexes = collect(DB::select("SHOW INDEX FROM {$col->table_name}")) │
-│            ->pluck('Column_name')->toArray();                    │
-│        if (!in_array($col->column_name, $indexes)) {            │
-│            echo "MISSING INDEX: {$col->table_name}.{$col->column_name}\n"; │
-│        }                                                         │
-│    });                                                           │
-│                                                                   │
-│  Step 2: Add composite indexes for common query patterns         │
-│  Schema::table('orders', function (Blueprint $table) {           │
-│      $table->index(['status', 'created_at']);                    │
-│      $table->index(['customer_id', 'status']);                   │
-│      $table->unique(['order_id', 'product_id'], 'order_product');│
-│  });                                                             │
-│                                                                   │
-│  Step 3: Query plan analysis                                     │
-│  DB::select('EXPLAIN ANALYZE SELECT * FROM orders               │
-│    WHERE status = ? ORDER BY created_at DESC LIMIT 25',          │
-│    ['active']);                                                   │
-│  // Look for: full table scans, missing indexes, sort operations │
-│                                                                   │
-│  Step 4: Optimize Artisan commands                               │
-│  php artisan optimize          # Cache config, routes, views     │
-│  php artisan config:cache      # Merge config into single file   │
-│  php artisan route:cache       # Serialize routes                │
-│  php artisan view:cache        # Precompile Blade templates      │
-│  php artisan event:cache       # Cache event/listener discovery  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-LARAVEL OPTIMIZATION REPORT:
+OPTIMIZATION REPORT:
 ┌──────────────────────────────┬───────────┬───────────┬───────────┐
 │  Metric                      │  Before   │  After    │  Δ        │
 ├──────────────────────────────┼───────────┼───────────┼───────────┤
 │  N+1 violations              │  <N>      │  0        │  FIXED    │
 │  Avg queries per endpoint    │  <N>      │  <N>      │  -<N>%    │
-│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
-│  Missing FK indexes          │  <N>      │  0        │  FIXED    │
-│  Queue job failure rate      │  <N>%     │  <N>%     │  -<N>%    │
-│  Queue depth (peak)          │  <N>      │  <N>      │  -<N>%    │
 │  Cache hit rate              │  <N>%     │  <N>%     │  +<N>%    │
-│  Config/route/view cached    │  NO       │  YES      │  FIXED    │
 │  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
 └──────────────────────────────┴───────────┴───────────┴───────────┘
 
-PASS CRITERIA:
-- Zero N+1 violations (preventLazyLoading enforced)
-- All foreign key columns have database indexes
-- All jobs have explicit retry policies and failure handlers
-- Cache strategy documented with TTL and invalidation rules
-- Artisan optimization commands run (config:cache, route:cache, view:cache)
-- p95 response time improved by measurable margin
-
 VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
+
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
+```
+
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

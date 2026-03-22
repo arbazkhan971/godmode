@@ -678,12 +678,12 @@ CONFLICT RESOLUTION: each agent writes to its own results subdirectory
 
 ## Anti-Patterns
 
-- **Do NOT load test production without coordination.** Unannounced load tests against production are indistinguishable from DDoS attacks. Coordinate with the team.
-- **Do NOT test without think time.** Real users pause between requests. Tests without think time simulate unrealistic scenarios and overestimate capacity.
-- **Do NOT ignore tail latency.** If P50 is 50ms but P99 is 5s, 1 in 100 users has a terrible experience. Optimize the tail.
-- **Do NOT compare single runs.** One run with P95=200ms and another with P95=180ms is noise, not improvement. Run multiple times and use statistics.
-- **Do NOT test with empty databases.** Performance on 100 rows is meaningless. Test with production-scale data volumes.
-- **Do NOT skip warm-up.** Cold starts, empty caches, and JIT compilation make the first minutes of a test unrepresentative. Include a warm-up phase and exclude it from metrics.
+- **Do NOT load test production without coordination.** Unannounced load tests are indistinguishable from DDoS attacks.
+- **Do NOT test without think time.** Real users pause between requests. No think time overestimates capacity.
+- **Do NOT ignore tail latency.** If P50 is 50ms but P99 is 5s, 1 in 100 users has a terrible experience.
+- **Do NOT compare single runs.** One run with P95=200ms and another with P95=180ms is noise. Run 5+ times.
+- **Do NOT test with empty databases.** Performance on 100 rows is meaningless. Use production-scale data.
+- **Do NOT skip warm-up.** Cold starts and JIT compilation make the first minutes unrepresentative.
 
 
 ## Output Format

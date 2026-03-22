@@ -1017,51 +1017,13 @@ DO NOT STOP just because:
   - The orchestrator config is not yet wired up (core pipeline logic is the priority)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler pipeline approach:
-  - Python script with cron before Airflow DAG (for single-source, single-target, daily batch)
-  - SQL transforms (dbt) before Python transforms (for analytics pipelines)
-  - Batch before streaming (if SLA allows daily or hourly freshness)
-  - Upsert before SCD Type 2 (unless you genuinely need historical tracking)
-  - Single pipeline script before multi-step orchestrated DAG (for <3 stages)
-  - Built-in database features (materialized views, partitioning) before external compute engines
-```
-
 ## Multi-Agent Dispatch
-
-For complex multi-source pipelines, dispatch parallel agents:
-
 ```
-MULTI-AGENT PIPELINE BUILD:
-Dispatch 2-4 agents in parallel worktrees.
-
-Agent 1 (worktree: pipeline-extract):
-  - Build extractors for each source (API, DB, files)
-  - Implement watermarking for incremental extraction
-  - Add retry logic with exponential backoff
-  - Write extraction unit tests
-
-Agent 2 (worktree: pipeline-transform):
-  - Build pure transformation functions
-  - Implement schema validation at each boundary
-  - Create data quality check suite
-  - Write transformation unit tests
-
-Agent 3 (worktree: pipeline-load):
-  - Implement loading strategies (upsert, swap, append, SCD2)
-  - Build reconciliation queries
-  - Set up dead-letter queue for rejected records
-  - Write loading integration tests
-
-Agent 4 (worktree: pipeline-orchestrate):
-  - Create orchestrator config (Airflow DAG / Dagster / dbt)
-  - Set up monitoring and alerting
-  - Implement logging for each stage
-  - Write end-to-end integration test
-
+Agent 1 (pipeline-extract): Extractors, watermarking, retry logic
+Agent 2 (pipeline-transform): Pure transforms, schema validation, quality checks
+Agent 3 (pipeline-load): Loading strategies (upsert/swap/append), reconciliation, DLQ
+Agent 4 (pipeline-orchestrate): Orchestrator config, monitoring, e2e tests
 MERGE ORDER: extract -> transform -> load -> orchestrate
-CONFLICT ZONES: Schema definitions, config files, shared utility functions
 ```
 
 ## Auto-Detection
@@ -1086,22 +1048,6 @@ AUTO-DETECT:
    - Great Expectations, dbt tests, Soda, custom validation
 6. Set: PIPELINE SCOPE with detected sources, targets, and framework.
 ```
-
-## Anti-Patterns
-
-- **Do NOT build a pipeline without a data flow diagram.** "Just read from A and write to B" leads to data quality nightmares. Map the full flow first.
-- **Do NOT skip data quality checks.** "The source data is clean" is never true. Validate at every boundary.
-- **Do NOT make transformations non-idempotent.** If running the pipeline twice doubles the data, you will have a very bad day during your first backfill.
-- **Do NOT put business logic in SQL transformations without tests.** dbt models and SQL transforms need tests just like application code. Use schema tests, data tests, and freshness checks.
-- **Do NOT silently drop records.** Every rejected record must go to a dead-letter queue with context. Silent data loss is the hardest bug to find.
-- **Do NOT ignore schema evolution.** Sources change schemas without warning. Your pipeline should detect schema changes and fail loudly rather than loading corrupted data.
-- **Do NOT skip reconciliation.** "The pipeline succeeded" means the code ran without errors. It does not mean the data is correct. Reconcile source and target counts.
-- **Do NOT over-engineer simple flows.** A cron job running a Python script is a valid pipeline. Not everything needs Airflow, Spark, and a data lake.
-- **Do NOT under-engineer complex flows.** A 500-line bash script with nested cron jobs is not a pipeline. It's a liability. Use proper orchestration.
-- **Do NOT forget about backfill from the start.** The first thing that happens after launching a pipeline is "can you load the last 2 years of data?" Design for backfill from day one.
-- **Do NOT mix batch and streaming without understanding the trade-offs.** Streaming adds complexity. If your SLA is "data available by next morning," batch is simpler and cheaper.
-- **Do NOT hardcode connection strings.** Use environment variables or a secrets manager. A pipeline with hardcoded credentials will eventually be committed to version control.
-
 
 ## Output Format
 Print on completion: `Pipeline: {stage_count} stages ({extract}/{transform}/{load}). Records: {source_count} → {target_count} ({reject_count} rejected). Duration: {duration}. Quality: {quality_score}%. Verdict: {verdict}.`
@@ -1135,8 +1081,5 @@ Columns: iteration, stage, source, target, records_in, records_out, records_reje
 - **Backfill fails midway**: Ensure backfill is resumable (checkpoint-based). Process in date-range batches. Log the last successful checkpoint for restart.
 - **Connection timeout to source/target**: Implement retry with exponential backoff. Check connection pool configuration. Verify network connectivity and credentials.
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run data pipeline tasks sequentially: extract, then transform, then load, then orchestrate.
-- Use branch isolation per task: `git checkout -b godmode-pipeline-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-pipeline-{task}`. See `adapters/shared/sequential-dispatch.md`.

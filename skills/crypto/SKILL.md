@@ -244,44 +244,14 @@ ENCRYPTION AT REST CHECKLIST:
 - [ ] Key material zeroed from memory after use
 ```
 
-#### Database-Level Encryption
 ```
-DATABASE ENCRYPTION:
-┌──────────────────────────────────────────────────────────────┐
-│  Level               │ What it Protects       │ Against       │
-├──────────────────────────────────────────────────────────────┤
-│  TDE (Transparent    │ Data files on disk     │ Physical theft│
-│  Data Encryption)    │ Backups, logs          │ Disk access   │
-│                                                              │
-│  Column encryption   │ Specific sensitive     │ DB admin abuse│
-│  (application-side)  │ fields (SSN, CC#)      │ SQL injection │
-│                                                              │
-│  Connection TLS      │ Data in transit to DB  │ Network sniff │
-├──────────────────────────────────────────────────────────────┤
-│  RECOMMENDATION:                                             │
-│  Use ALL THREE layers:                                       │
-│  - TDE for at-rest protection of entire database             │
-│  - Column encryption for sensitive fields (defense in depth) │
-│  - TLS for all database connections                          │
-└──────────────────────────────────────────────────────────────┘
+DATABASE ENCRYPTION — USE ALL THREE LAYERS:
+  TDE: at-rest protection (data files, backups) — against physical theft
+  Column encryption: sensitive fields (SSN, CC#) — against DB admin abuse, SQL injection
+  Connection TLS: data in transit to DB — against network sniffing
 
-PostgreSQL TDE:
-  # pg_hba.conf — enforce TLS
-  hostssl all all 0.0.0.0/0 scram-sha-256
-
-  # postgresql.conf
-  ssl = on
-  ssl_cert_file = 'server.crt'
-  ssl_key_file = 'server.key'
-  ssl_ca_file = 'ca.crt'
-  ssl_min_protocol_version = 'TLSv1.2'
-
-MySQL TDE:
-  # Enable tablespace encryption
-  ALTER TABLE sensitive_data ENCRYPTION='Y';
-
-  # Require TLS for connections
-  ALTER USER 'app_user'@'%' REQUIRE SSL;
+  PostgreSQL: hostssl in pg_hba.conf, ssl = on, ssl_min_protocol_version = 'TLSv1.2'
+  MySQL: ALTER TABLE ... ENCRYPTION='Y'; ALTER USER ... REQUIRE SSL;
 ```
 
 ### Step 4: Encryption in Transit
@@ -326,41 +296,14 @@ TLS CONFIGURATION:
 ```
 
 ```nginx
-# Nginx TLS hardening
-server {
-    listen 443 ssl http2;
-
-    # Certificates
-    ssl_certificate /etc/nginx/ssl/fullchain.pem;
-    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-
-    # Protocol versions
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    # Cipher suites (TLS 1.2 — TLS 1.3 ciphers are automatic)
-    ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;  # Let client prefer (for TLS 1.3)
-
-    # ECDH curve
-    ssl_ecdh_curve X25519:secp256r1:secp384r1;
-
-    # Session resumption
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;  # Disable for forward secrecy
-
-    # OCSP stapling
-    ssl_stapling on;
-    ssl_stapling_verify on;
-    ssl_trusted_certificate /etc/nginx/ssl/chain.pem;
-    resolver 1.1.1.1 8.8.8.8 valid=300s;
-
-    # Security headers
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-}
+# Nginx TLS hardening (key settings)
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-AES128-GCM-SHA256;
+ssl_prefer_server_ciphers off;
+ssl_ecdh_curve X25519:secp256r1:secp384r1;
+ssl_session_tickets off;  # Forward secrecy
+ssl_stapling on;
+add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 ```
 
 ```
@@ -405,44 +348,6 @@ async function verifyPassword(password, hash) {
   // Returns: true/false
   // Constant-time comparison built in
 }
-```
-
-```javascript
-// Node.js — bcrypt (FALLBACK)
-const bcrypt = require('bcrypt');
-
-async function hashPassword(password) {
-  const saltRounds = 12; // Cost factor: 2^12 = 4096 iterations
-  return bcrypt.hash(password, saltRounds);
-  // Returns: $2b$12$<salt><hash>
-}
-
-async function verifyPassword(password, hash) {
-  return bcrypt.compare(password, hash);
-  // Constant-time comparison built in
-}
-```
-
-```python
-# Python — Argon2 (RECOMMENDED)
-from argon2 import PasswordHasher
-
-ph = PasswordHasher(
-    time_cost=3,        # 3 iterations
-    memory_cost=65536,  # 64 MB
-    parallelism=4,      # 4 threads
-    hash_len=32,        # 256-bit output
-    salt_len=16         # 128-bit salt
-)
-
-def hash_password(password: str) -> str:
-    return ph.hash(password)
-
-def verify_password(password: str, hash: str) -> bool:
-    try:
-        return ph.verify(hash, password)
-    except argon2.exceptions.VerifyMismatchError:
-        return False
 ```
 
 ```
@@ -566,57 +471,14 @@ JWT SECURITY CHECKLIST:
 ```
 
 #### Digital Signatures
-```
-DIGITAL SIGNATURE IMPLEMENTATION:
-```
-
-```javascript
-// Ed25519 digital signatures (Node.js)
-const crypto = require('crypto');
-
-// Generate key pair
-const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
-
-// Sign data
-function sign(data) {
-  const signature = crypto.sign(null, Buffer.from(data), privateKey);
-  return signature.toString('base64');
-}
-
-// Verify signature
-function verify(data, signature) {
-  return crypto.verify(
-    null,
-    Buffer.from(data),
-    publicKey,
-    Buffer.from(signature, 'base64')
-  );
-}
-```
 
 ```
 SIGNATURE USE CASES:
-┌──────────────────────────────────────────────────────────────┐
-│  Use Case              │ Algorithm  │ Implementation          │
-├──────────────────────────────────────────────────────────────┤
-│  API request signing   │ HMAC-SHA256│ Sign request body +     │
-│                        │            │ timestamp + nonce       │
-│  Document signing      │ Ed25519 or │ Sign document hash,     │
-│                        │ RSA-PSS    │ store signature separate│
-│  Code/artifact signing │ RSA-PSS    │ cosign, sigstore, GPG   │
-│  Container signing     │ cosign     │ Sign image digest       │
-│  Webhook verification  │ HMAC-SHA256│ Verify sender identity  │
-│  Git commit signing    │ GPG/SSH    │ Prove author identity   │
-└──────────────────────────────────────────────────────────────┘
-
-API REQUEST SIGNING PATTERN:
-  1. Collect: HTTP method + path + timestamp + body hash + nonce
-  2. Canonical string: METHOD\nPATH\nTIMESTAMP\nBODY_HASH\nNONCE
-  3. Signature: HMAC-SHA256(canonical_string, shared_secret)
-  4. Header: Authorization: HMAC-SHA256 KeyId=<id>, Signature=<sig>,
-             Timestamp=<ts>, Nonce=<nonce>
-  5. Verify: Recreate canonical string, verify HMAC, check timestamp
-             freshness (within 5 minutes), check nonce uniqueness
+  API request signing:    HMAC-SHA256 (sign method+path+timestamp+body_hash+nonce)
+  Document signing:       Ed25519 or RSA-PSS (sign document hash)
+  Code/artifact signing:  RSA-PSS (cosign, sigstore, GPG)
+  Webhook verification:   HMAC-SHA256 (verify sender identity)
+  Git commit signing:     GPG/SSH (prove author identity)
 ```
 
 ### Step 7: Key Management
@@ -676,31 +538,14 @@ KEY MANAGEMENT LIFECYCLE:
 ```
 
 ```
-KMS INTEGRATION PATTERNS:
-┌──────────────────────────────────────────────────────────────┐
-│  Provider         │ Encrypt/Decrypt    │ Key Generation       │
-├──────────────────────────────────────────────────────────────┤
-│  AWS KMS          │ kms.encrypt()      │ kms.generateDataKey()│
-│                   │ kms.decrypt()      │ AES-256 via KMS      │
-│                                                              │
-│  GCP Cloud KMS    │ client.encrypt()   │ client.encrypt()     │
-│                   │ client.decrypt()   │ with key ring        │
-│                                                              │
-│  Azure Key Vault  │ client.encrypt()   │ client.createKey()   │
-│                   │ client.decrypt()   │ RSA or EC keys       │
-│                                                              │
-│  HashiCorp Vault  │ vault kv put       │ vault write transit/ │
-│                   │ vault kv get       │ encrypt              │
-│                                                              │
-│  PATTERN: Envelope encryption via KMS                        │
-│  1. Call KMS generateDataKey() -> plaintext DEK + encrypted  │
-│     DEK                                                      │
-│  2. Encrypt data with plaintext DEK (AES-256-GCM)           │
-│  3. Store encrypted data + encrypted DEK                     │
-│  4. Discard plaintext DEK from memory                        │
-│  5. To decrypt: Call KMS decrypt(encrypted DEK) -> plaintext │
-│     DEK -> decrypt data                                      │
-└──────────────────────────────────────────────────────────────┘
+KMS PROVIDERS: AWS KMS | GCP Cloud KMS | Azure Key Vault | HashiCorp Vault
+
+ENVELOPE ENCRYPTION VIA KMS:
+  1. Call KMS generateDataKey() -> plaintext DEK + encrypted DEK
+  2. Encrypt data with plaintext DEK (AES-256-GCM)
+  3. Store encrypted data + encrypted DEK
+  4. Discard plaintext DEK from memory
+  5. To decrypt: KMS decrypt(encrypted DEK) -> plaintext DEK -> decrypt data
 ```
 
 ### Step 8: Cryptographic Implementation Report
@@ -799,39 +644,8 @@ Password policy:
 ### Configuring TLS
 ```
 User: /godmode:crypto Harden our Nginx TLS configuration
-
-Crypto: Analyzing current TLS config...
-
-CURRENT: TLS 1.0-1.2, weak ciphers, no HSTS
-TARGET: TLS 1.2-1.3, strong ciphers only, HSTS with preload
-
-Changes:
-  ssl_protocols TLSv1.2 TLSv1.3;
-  ssl_ciphers <AEAD-only suite>;
-  ssl_prefer_server_ciphers off;
-  HSTS: max-age=63072000; includeSubDomains; preload
-  OCSP stapling: enabled
-  Session tickets: disabled (forward secrecy)
-
-Expected SSL Labs grade: A+
-```
-
-### Encrypting sensitive database fields
-```
-User: /godmode:crypto Encrypt SSN and credit card fields in our database
-
-Crypto: Implementing field-level encryption...
-
-Strategy: Envelope encryption with AWS KMS
-  KEK: AWS KMS key (arn:aws:kms:region:account:key/key-id)
-  DEK: Unique per-record, AES-256-GCM
-
-Implementation:
-  src/crypto/field-encryptor.ts — encrypt/decrypt with envelope pattern
-  Database migration: Add encrypted columns, migrate existing data
-  Search: Blind index (HMAC of original value) for exact-match queries
-
-Key rotation: New KEK version, re-wrap DEKs (no data re-encryption)
+Crypto: TLS 1.2-1.3 only, AEAD ciphers, HSTS with preload, OCSP stapling,
+  session tickets disabled. Expected SSL Labs grade: A+
 ```
 
 ## Flags & Options
@@ -867,36 +681,13 @@ Key rotation: New KEK version, re-wrap DEKs (no data re-encryption)
 
 ## Auto-Detection
 
-On activation, automatically detect cryptographic context:
-
 ```
-AUTO-DETECT:
-1. Existing crypto usage:
-   grep -r "crypto\|encrypt\|decrypt\|hash\|bcrypt\|argon2\|jwt\|jose" src/ --include="*.ts" --include="*.py" --include="*.go" -l 2>/dev/null
-
-2. Password handling:
-   grep -ri "password\|passwd\|bcrypt\|argon2\|scrypt\|pbkdf2" src/ -l 2>/dev/null
-   # Detect current hashing algorithm and parameters
-
-3. JWT usage:
-   grep -ri "jsonwebtoken\|jose\|jwt\|bearer" src/ -l 2>/dev/null
-   # Detect algorithm, key type, expiration settings
-
-4. TLS configuration:
-   ls nginx.conf /etc/nginx/conf.d/*.conf 2>/dev/null
-   grep -ri "ssl_protocols\|ssl_ciphers\|tls" nginx.conf 2>/dev/null
-
-5. Key management:
-   grep -ri "kms\|vault\|secret.manager\|key.vault" src/ 2>/dev/null
-   # Detect if KMS is already integrated
-
-6. Weak crypto indicators:
-   grep -ri "md5\|sha1\|des\|ecb\|Math.random\|PKCS1v1.5" src/ -l 2>/dev/null
-   # Flag immediately for remediation
-
--> Auto-identify what needs implementation vs what needs upgrading.
--> Auto-detect weak crypto for immediate remediation.
--> Only ask user about compliance requirements if not detectable.
+1. Crypto usage: grep for crypto, encrypt, decrypt, hash, bcrypt, argon2, jwt, jose
+2. Password handling: grep for password, bcrypt, argon2, scrypt, pbkdf2
+3. JWT: grep for jsonwebtoken, jose, jwt, bearer
+4. TLS: check nginx.conf for ssl_protocols, ssl_ciphers
+5. Key management: grep for kms, vault, secret.manager
+6. Weak crypto: grep for md5, sha1, des, ecb, Math.random — flag for immediate remediation
 ```
 
 ## Output Format
@@ -979,13 +770,29 @@ IF IV/nonce reuse is detected:
 
 ## Anti-Patterns
 
-- **Do NOT implement your own cryptographic primitives.** Do not write your own AES, SHA, or ECDSA. Use established libraries. "Rolling your own crypto" is the most common source of cryptographic vulnerabilities.
-- **Do NOT use ECB mode.** ECB mode encrypts identical plaintext blocks to identical ciphertext blocks, leaking patterns. Use GCM or CTR with authentication.
-- **Do NOT use MD5 or SHA-1 for anything security-related.** Both have known collision attacks. Use SHA-256 minimum for hashing. Use Argon2id for passwords.
-- **Do NOT reuse IVs/nonces.** A single nonce reuse with AES-GCM breaks authentication and can leak the key. Use random 96-bit IVs for GCM.
-- **Do NOT use Math.random() or similar non-cryptographic RNGs for security.** Use crypto.randomBytes (Node.js), secrets module (Python), crypto/rand (Go).
-- **Do NOT store encryption keys alongside encrypted data.** The key and the data must be in different storage systems. An attacker who gets the database should not also get the keys.
-- **Do NOT encrypt passwords.** Encryption is reversible. Use one-way hashing (Argon2id, bcrypt). There is no legitimate reason to decrypt a user's password.
-- **Do NOT use short HMAC keys.** HS256 JWT signing requires a 256-bit (32-byte) key minimum. "secret" as an HMAC key is not a key, it is a vulnerability.
-- **Do NOT skip authenticated encryption.** Encryption without authentication (AES-CBC without HMAC) is vulnerable to padding oracle attacks. Always use AEAD (GCM, ChaCha20-Poly1305).
-- **Do NOT hardcode cryptographic parameters.** Algorithm, key length, and iteration counts should be configurable for future upgrades without code changes.
+- **Do NOT implement your own cryptographic primitives.** Use audited libraries only.
+- **Do NOT use ECB mode.** It leaks patterns. Use GCM or ChaCha20-Poly1305.
+- **Do NOT use MD5 or SHA-1 for security.** Use SHA-256 minimum. Use Argon2id for passwords.
+- **Do NOT reuse IVs/nonces.** A single reuse with AES-GCM breaks authentication.
+- **Do NOT use Math.random() for security.** Use crypto.randomBytes, secrets module, or crypto/rand.
+- **Do NOT store keys alongside encrypted data.** Keys and data must be in different systems.
+- **Do NOT encrypt passwords.** Hash them with Argon2id or bcrypt. Encryption is reversible.
+- **Do NOT use short HMAC keys.** HS256 requires 256-bit (32-byte) key minimum.
+- **Do NOT skip authenticated encryption.** AES-CBC without HMAC is vulnerable to padding oracle.
+
+## Keep/Discard Discipline
+
+After each crypto implementation pass, evaluate:
+- **KEEP** if: authenticated encryption used (GCM or ChaCha20-Poly1305), unique IV per operation verified, passwords hashed with Argon2id/bcrypt, keys stored in KMS/Vault, key version tracked with encrypted data, no instances of MD5/SHA-1/DES/ECB in security-critical code.
+- **DISCARD** if: IV/nonce reuse detected, passwords encrypted instead of hashed, Math.random() used for tokens/keys, keys stored in source code, or AES-CBC without HMAC authentication.
+- Run SSL Labs test for TLS changes (target A+ grade). Revert TLS changes that score below A.
+- Treat IV/nonce reuse as a security incident requiring immediate key rotation.
+
+## Stop Conditions
+
+Stop the crypto skill when:
+1. All encryption uses authenticated AEAD (AES-256-GCM or ChaCha20-Poly1305) with unique IVs.
+2. Passwords hashed with Argon2id (m=65536, t=3, p=4) or bcrypt (cost >= 12).
+3. JWT verifies algorithm, issuer, audience, and expiration explicitly.
+4. TLS 1.2+ enforced with HSTS enabled and forward secrecy via ECDHE.
+5. No instances of MD5, SHA-1, DES, 3DES, RC4, or ECB in security-critical code.

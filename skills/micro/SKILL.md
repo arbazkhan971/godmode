@@ -812,36 +812,12 @@ IF len(failed_validations) > 0:
 ```
 
 ## Multi-Agent Dispatch
-
 ```
-WHEN designing a large microservice system (5+ services):
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (service-design):
-    - Design bounded contexts and service boundaries
-    - Define entity ownership per service
-    - Output: service-catalog.md
-
-  Agent 2 (communication-design):
-    - Design inter-service communication patterns
-    - Define event schemas and API contracts
-    - Output: communication-contracts.md
-
-  Agent 3 (infrastructure):
-    - Configure service mesh (Istio/Linkerd)
-    - Design resilience patterns (circuit breakers, retries)
-    - Output: k8s/mesh/ configs
-
-  Agent 4 (saga-design):
-    - Design saga workflows for distributed transactions
-    - Define compensating actions
-    - Output: saga-definitions.md
-
-MERGE: Validate all agents' outputs are consistent
-  - Service names match across all documents
-  - Event names in communication match saga definitions
-  - Mesh configs reference correct service names
+Agent 1 (service-design): Bounded contexts, entity ownership -> service-catalog.md
+Agent 2 (communication-design): Inter-service patterns, event schemas -> contracts.md
+Agent 3 (infrastructure): Service mesh, resilience patterns -> k8s/mesh/ configs
+Agent 4 (saga-design): Saga workflows, compensating actions -> saga-definitions.md
+MERGE: Validate service names, event names, and mesh configs are consistent
 ```
 
 ## HARD RULES
@@ -870,18 +846,6 @@ MERGE: Validate all agents' outputs are consistent
 8. NEVER create a service with fewer than 2 bounded context entities.
    That is a nano-service, not a microservice.
 ```
-
-## Anti-Patterns
-
-- **Do NOT decompose by technical layer.** A "database service", "logging service", or "auth library as a service" creates distributed coupling without business value. Decompose by business domain.
-- **Do NOT share databases between services.** A shared database is a distributed monolith. Every read from another service's tables is a hidden dependency.
-- **Do NOT use synchronous calls for everything.** Chains of synchronous HTTP calls create cascading failure paths. One slow service takes down the entire chain.
-- **Do NOT skip the modular monolith step.** Extracting services from a messy monolith gives you a distributed mess. Modularize first, then extract.
-- **Do NOT create nano-services.** A service that does one trivial thing (e.g., "email validation service") adds network overhead, operational burden, and no business value.
-- **Do NOT use distributed transactions (2PC).** Two-phase commit does not scale and creates tight coupling. Use sagas with compensating actions.
-- **Do NOT ignore data ownership.** If you cannot clearly state which service owns which data, your service boundaries are wrong.
-- **Do NOT deploy without a service mesh.** Manual circuit breakers, retries, and mTLS in every service is unsustainable. Use infrastructure-level solutions.
-
 
 ## Output Format
 
@@ -1055,130 +1019,29 @@ FOR EACH BOUNDARY VIOLATION:
   Effort: <S|M|L|XL>
 ```
 
-### API Contract Testing
-
+## Keep/Discard Discipline
 ```
-API CONTRACT TESTING:
-┌──────────────────────────────────────────────────────────────┐
-│  Contract testing ensures that service-to-service interfaces  │
-│  remain compatible as services evolve independently.          │
-├──────────────────────────────────────────────────────────────┤
-│                                                                │
-│  CONSUMER-DRIVEN CONTRACT TESTING (Pact / Specmatic):         │
-│                                                                │
-│  Consumer side (who calls the API):                            │
-│  1. Define expected request/response pairs (contract)          │
-│  2. Test consumer code against mock provider (contract mock)   │
-│  3. Publish contract to broker (Pact Broker / schema registry) │
-│                                                                │
-│  Provider side (who serves the API):                           │
-│  1. Pull consumer contracts from broker                        │
-│  2. Replay consumer expectations against real provider         │
-│  3. Verify all consumer contracts are satisfied                │
-│  4. IF verification fails: provider MUST NOT deploy            │
-│                                                                │
-│  CI INTEGRATION:                                               │
-│  - Consumer PR: run consumer tests against contract mocks      │
-│  - Provider PR: pull ALL consumer contracts, verify against    │
-│    provider changes before merge                               │
-│  - Can-I-Deploy: check broker before deployment to verify      │
-│    all consumers and providers are compatible                  │
-├──────────────────────────────────────────────────────────────┤
-│                                                                │
-│  CONTRACT MATRIX:                                              │
-│  ┌────────────────┬──────────────┬──────────┬─────────────┐   │
-│  │ Consumer       │ Provider     │ Contract │ Status      │   │
-│  ├────────────────┼──────────────┼──────────┼─────────────┤   │
-│  │ order-service  │ product-svc  │ REST v1  │ VERIFIED    │   │
-│  │ order-service  │ payment-svc  │ gRPC v2  │ VERIFIED    │   │
-│  │ web-frontend   │ order-svc    │ REST v1  │ BREAKING    │   │
-│  │ mobile-app     │ order-svc    │ REST v1  │ VERIFIED    │   │
-│  │ notification   │ user-svc     │ gRPC v1  │ VERIFIED    │   │
-│  └────────────────┴──────────────┴──────────┴─────────────┘   │
-│                                                                │
-│  BREAKING CHANGE DETECTION:                                    │
-│  When a provider changes its API:                              │
-│  - Added field: SAFE (backward compatible)                     │
-│  - Removed required field: BREAKING                            │
-│  - Changed field type: BREAKING                                │
-│  - Changed endpoint path: BREAKING                             │
-│  - Added required parameter: BREAKING                          │
-│  - Changed status code: BREAKING                               │
-│                                                                │
-│  TOOLS:                                                        │
-│  - Pact: consumer-driven contracts (any language)              │
-│  - Specmatic: contract-as-code from OpenAPI specs              │
-│  - Protolock: protobuf backward compatibility checking         │
-│  - openapi-diff: OpenAPI schema comparison                     │
-│  - buf: protobuf lint, breaking change detection               │
-│                                                                │
-│  SCHEMA COMPATIBILITY COMMANDS:                                │
-│  # OpenAPI diff                                                │
-│  openapi-diff old-spec.yaml new-spec.yaml --fail-on-incomp    │
-│                                                                │
-│  # Protobuf breaking change detection                          │
-│  buf breaking --against .git#branch=main                       │
-│                                                                │
-│  # Pact verification                                           │
-│  pact-verifier --provider-base-url=http://localhost:8080 \     │
-│    --pact-broker-base-url=https://pact-broker.example.com      │
-└──────────────────────────────────────────────────────────────┘
-
-API CONTRACT AUDIT CHECKLIST:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                                    │ Status            │
-├───────────────────────────────────────────┼───────────────────┤
-│  All service APIs have schema definitions │ PASS | FAIL       │
-│  (OpenAPI, Protobuf, GraphQL SDL)         │                   │
-├───────────────────────────────────────────┼───────────────────┤
-│  Consumer-driven contract tests exist     │ PASS | FAIL       │
-│  for all critical service interactions    │                   │
-├───────────────────────────────────────────┼───────────────────┤
-│  Breaking change detection runs in CI     │ PASS | FAIL       │
-├───────────────────────────────────────────┼───────────────────┤
-│  Contract broker/registry is configured   │ PASS | FAIL       │
-├───────────────────────────────────────────┼───────────────────┤
-│  Can-I-Deploy check before each deploy    │ PASS | FAIL       │
-├───────────────────────────────────────────┼───────────────────┤
-│  API versioning strategy defined          │ PASS | FAIL       │
-│  (URL path, header, content negotiation)  │                   │
-├───────────────────────────────────────────┼───────────────────┤
-│  Deprecation policy documented            │ PASS | FAIL       │
-│  (how long deprecated APIs are supported) │                   │
-├───────────────────────────────────────────┼───────────────────┤
-│  All events have registered schemas       │ PASS | FAIL       │
-│  with compatibility mode enforced         │                   │
-└───────────────────────────────────────────┴───────────────────┘
+After EACH service boundary definition or communication pattern change:
+  1. MEASURE: Validate boundary — is data ownership exclusive? Can the service deploy independently?
+  2. COMPARE: Does the decomposition reduce coupling vs the previous architecture?
+  3. DECIDE:
+     - KEEP if: boundary passes all validation checks AND single-team ownership AND independent deployability
+     - DISCARD if: shared database detected OR circular dependency created OR service requires cross-team coordination to deploy
+  4. COMMIT kept boundary definitions. Merge back with adjacent context on discard.
 ```
 
-### Microservice Health Scorecard
-
+## Stop Conditions
 ```
-MICROSERVICE HEALTH SCORECARD:
-┌──────────────────────────────────────────────────────────────┐
-│  Dimension                    │ Score (1-10) │ Weight│ Total  │
-├───────────────────────────────┼──────────────┼───────┼────────┤
-│  Service boundary clarity     │ <score>      │ 0.20  │ <N>    │
-│  Data ownership (no shared DB)│ <score>      │ 0.15  │ <N>    │
-│  API contract coverage        │ <score>      │ 0.15  │ <N>    │
-│  Independent deployability    │ <score>      │ 0.15  │ <N>    │
-│  Resilience patterns          │ <score>      │ 0.10  │ <N>    │
-│  (circuit breakers, retries)  │              │       │        │
-│  Observability                │ <score>      │ 0.10  │ <N>    │
-│  (tracing, logging, metrics)  │              │       │        │
-│  Communication patterns       │ <score>      │ 0.10  │ <N>    │
-│  (async preferred, sync justified)│          │       │        │
-│  Operational maturity         │ <score>      │ 0.05  │ <N>    │
-│  (health checks, graceful shutdown)│         │       │        │
-├───────────────────────────────┼──────────────┼───────┼────────┤
-│  OVERALL HEALTH               │              │       │ <total>│
-│  Rating: EXCELLENT (8+) | GOOD (6-8) | NEEDS WORK (4-6) |   │
-│           CRITICAL (<4)                                       │
-└──────────────────────────────────────────────────────────────┘
+STOP when ANY of these are true:
+  - All service boundaries validated (exclusive data ownership, independent deploy, single team)
+  - Communication patterns defined for all service interactions
+  - Saga workflows defined for all cross-service transactions
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Service mesh is not yet configured (design is the priority; infra follows)
+  - Contract tests are not yet written (document contracts first, test second)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run microservice tasks sequentially: service design, then communication design, then infrastructure.
-- Use branch isolation per task: `git checkout -b godmode-micro-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-micro-{task}`. See `adapters/shared/sequential-dispatch.md`.

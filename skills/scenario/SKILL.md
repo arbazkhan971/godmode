@@ -500,6 +500,24 @@ FINAL SCENARIO TESTING SUMMARY:
 └──────────────────────┴────────┴───────────────────────────┘
 ```
 
+## Keep/Discard Discipline
+```
+After EACH scenario test generation:
+  KEEP if: test is syntactically valid AND uses real code paths AND follows ARRANGE/ACT/ASSERT
+  DISCARD if: test has syntax errors after 2 fix attempts OR references nonexistent code
+  On discard: log scenario as NO_TEST with reason. Do not write stub tests.
+  Never keep a test skeleton with TODOs or placeholder assertions.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all 12 dimensions explored AND all HIGH+ scenarios have tests
+  - budget_exhausted: max iterations across all dimensions
+  - diminishing_returns: 3 consecutive dimensions produce 0 HIGH+ scenarios
+  - stuck: >5 test generation failures with no runnable output
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 This skill does not dispatch parallel agents, so no sequential translation is needed.
 All analysis runs in the current session. Test generation uses the detected test framework.

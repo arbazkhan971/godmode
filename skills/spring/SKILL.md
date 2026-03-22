@@ -432,22 +432,6 @@ CROSS-CUTTING CONCERNS:
 └── Secrets (Vault / K8s Secrets) — Secret management
 ```
 
-```
-RESILIENCE PATTERNS:
-┌──────────────────────────────────────┬──────────────────────────────────┐
-│  Pattern                             │  Implementation                  │
-├──────────────────────────────────────┼──────────────────────────────────┤
-│  Circuit Breaker                     │  Resilience4j @CircuitBreaker    │
-│  Retry                               │  Resilience4j @Retry             │
-│  Rate Limiter                        │  Resilience4j @RateLimiter       │
-│  Bulkhead                            │  Resilience4j @Bulkhead          │
-│  Time Limiter                        │  Resilience4j @TimeLimiter       │
-│  Fallback                            │  Method-level fallback handlers  │
-│  Saga                                │  Orchestration or choreography   │
-│  Outbox                              │  Transactional outbox pattern    │
-└──────────────────────────────────────┴──────────────────────────────────┘
-```
-
 ### Step 7: Testing Strategy
 Test at every layer:
 
@@ -654,19 +638,6 @@ Writing tests (MockMvc + TestContainers)...
 All 15 checks PASS.
 ```
 
-### Configuring Spring Security
-```
-User: /godmode:spring Set up OAuth2 resource server with JWT
-
-Spring: Configuring JWT-based security...
-
-Security chain: JWT validation at /api/** endpoints
-Public endpoints: /actuator/health, /api/v1/auth/login
-Role mapping: JWT claims -> Spring authorities
-CORS: Configured for frontend origin
-Tests: MockMvc with jwt() post-processor
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -695,30 +666,6 @@ Tests: MockMvc with jwt() post-processor
 7. **ALWAYS test against the production database type.** Use TestContainers, not H2 compatibility mode.
 8. **NEVER expose actuator endpoints (`/env`, `/heapdump`, `/beans`)** in production without authentication. Restrict to `health`, `info`, `metrics`, `prometheus`.
 
-## Auto-Detection
-
-On activation, detect the Spring Boot project context:
-
-```bash
-# Detect Spring Boot version and starters
-cat pom.xml build.gradle build.gradle.kts 2>/dev/null | grep -E "spring-boot|springBoot"
-
-# Detect language (Java vs Kotlin)
-find src/ -name "*.kt" -o -name "*.java" 2>/dev/null | head -5
-
-# Detect existing configuration
-ls src/main/resources/application*.yml src/main/resources/application*.properties 2>/dev/null
-
-# Detect security configuration
-grep -rl "SecurityFilterChain\|WebSecurityConfigurerAdapter\|EnableWebSecurity" src/ 2>/dev/null
-
-# Detect test framework
-grep -rl "TestContainers\|@SpringBootTest\|@WebMvcTest\|@DataJpaTest" src/ 2>/dev/null | head -5
-
-# Detect migration tool
-ls src/main/resources/db/migration/* src/main/resources/db/changelog/* 2>/dev/null
-```
-
 ## Output Format
 
 End every Spring skill invocation with this summary block:
@@ -743,20 +690,6 @@ Append one TSV row to `.godmode/spring.tsv` after each invocation:
 ```
 timestamp	project	action	files_count	entities_count	controllers_count	migrations_count	tests_status	build_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | entity | controller | service | repository | optimize | test | audit | upgrade
-- `files_count`: number of files created or modified
-- `entities_count`: number of JPA entities created or modified
-- `controllers_count`: number of controllers created or modified
-- `migrations_count`: number of Flyway/Liquibase migrations created
-- `tests_status`: passing | failing | skipped | none
-- `build_status`: passing | failing | not-checked
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -812,19 +745,41 @@ IF dependency injection errors:
 
 ## Anti-Patterns
 
-- **Do NOT leave OSIV enabled.** `spring.jpa.open-in-view: true` is the default and it is wrong. It silently loads data in the view layer, hiding N+1 queries.
-- **Do NOT use `ddl-auto: update` in production.** Hibernate DDL generation is for prototyping. Use Flyway or Liquibase.
-- **Do NOT use `@Autowired` on fields.** Use constructor injection. It makes dependencies explicit and testing straightforward.
-- **Do NOT return JPA entities from controllers.** Use DTOs or projections. Entities carry persistence state that should never leak to the API.
-- **Do NOT catch exceptions in every controller.** Use `@ControllerAdvice` with `@ExceptionHandler` for centralized error handling.
-- **Do NOT use `WebSecurityConfigurerAdapter`.** It is removed in Spring Security 6. Use `SecurityFilterChain` beans.
-- **Do NOT test against H2 when deploying to PostgreSQL.** Use TestContainers for database-specific behavior.
-- **Do NOT ignore Actuator security.** Exposed `/actuator/env` or `/actuator/heapdump` in production leaks secrets and memory.
+- **Do NOT leave OSIV enabled.** It silently loads data in the view layer, hiding N+1 queries.
+- **Do NOT use `ddl-auto: update` in production.** Use Flyway or Liquibase.
+- **Do NOT use `@Autowired` on fields.** Use constructor injection.
+- **Do NOT return JPA entities from controllers.** Use DTOs or projections.
+- **Do NOT catch exceptions in every controller.** Use `@ControllerAdvice` for centralized error handling.
+- **Do NOT use `WebSecurityConfigurerAdapter`.** Use `SecurityFilterChain` beans.
+- **Do NOT test against H2 when deploying to PostgreSQL.** Use TestContainers.
+- **Do NOT ignore Actuator security.** Exposed `/actuator/env` or `/actuator/heapdump` leaks secrets.
 
+## Keep/Discard Discipline
+```
+After EACH Spring Boot configuration or code change:
+  1. MEASURE: Run `./gradlew build` (or `./mvnw verify`). Check test results.
+  2. COMPARE: Do all tests pass? Does the application start without errors?
+  3. DECIDE:
+     - KEEP if: build passes AND tests pass AND no deprecated API warnings introduced
+     - DISCARD if: build fails OR tests fail OR N+1 queries detected in logs
+  4. COMMIT kept changes. Revert discarded changes before the next modification.
+
+Never keep a change that enables OSIV or introduces field injection.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All 15 validation checks pass (OSIV disabled, ddl-auto:validate, etc.)
+  - Build and tests pass (`./gradlew build` or `./mvnw verify` green)
+  - Actuator endpoints are secured for production
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Test coverage is below target (log it, address separately)
+  - One non-critical deprecation warning remains (document it)
+```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Replace `Agent("task")` → run the task inline in the current conversation
-- Replace `EnterWorktree` → use `git stash` + work in current directory
-- Replace `TodoWrite` → track progress with numbered comments in chat
-- All Spring Boot conventions, patterns, and quality checks still apply identically
+Run Spring Boot tasks inline in the current conversation.
+All Spring Boot conventions, patterns, and quality checks apply identically.

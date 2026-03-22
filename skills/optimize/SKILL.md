@@ -76,6 +76,27 @@ Exceeded → kill worktree, mark status=timeout in results.tsv, discard, move on
 Do NOT extend. Do NOT retry the same hypothesis. Next round picks new hypotheses.
 ```
 
+## Keep/Discard Discipline
+```
+After EACH agent round:
+  KEEP if: metric improved AND guard (test_cmd && lint_cmd && build_cmd) passed
+  DISCARD if: metric worsened OR guard failed
+  On discard: git reset --hard HEAD~1. Log discard reason in results.tsv.
+  On guard failure: discard is terminal — rework counts against the 2-rework cap.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: metric meets or exceeds target
+  - budget_exhausted: max_rounds reached
+  - diminishing_returns: 3 consecutive keeps each < 1% improvement
+  - stuck: >5 consecutive discards
+```
+
+## Output Format
+Print: `Skill: {metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} discarded. Status: {DONE|PARTIAL}.`
+
 ## Rules
 1. Metric must be a shell command that outputs a single number. No subjective assessment.
 2. One change per agent per round. Max 3 agents. Only winner kept.

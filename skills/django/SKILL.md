@@ -64,47 +64,7 @@ project/
 │   │   ├── models.py           # User model, Profile
 │   │   ├── managers.py         # Custom managers (UserManager)
 │   │   ├── admin.py            # Admin configuration
-│   │   ├── serializers.py      # DRF serializers
-│   │   ├── views.py            # Views or ViewSets
-│   │   ├── urls.py             # App-level URL patterns
-│   │   ├── permissions.py      # Custom DRF permissions
-│   │   ├── signals.py          # Signal handlers (post_save, etc.)
-│   │   ├── tasks.py            # Celery tasks
-│   │   ├── services.py         # Business logic (not in views!)
-│   │   ├── selectors.py        # Query logic (complex reads)
-│   │   ├── tests/
-│   │   │   ├── __init__.py
-│   │   │   ├── test_models.py
-│   │   │   ├── test_views.py
-│   │   │   ├── test_services.py
-│   │   │   └── factories.py   # Factory Boy factories
-│   │   └── migrations/
-│   │       └── 0001_initial.py
-│   │
-│   ├── products/
-│   │   ├── ...                 # Same structure as users
-│   │   └── migrations/
-│   │
-│   └── core/                   # Shared utilities
-│       ├── models.py           # Abstract base models (TimeStamped, etc.)
-│       ├── permissions.py      # Shared permission classes
-│       ├── pagination.py       # Custom pagination classes
-│       ├── exceptions.py       # Custom exception handler
-│       └── middleware.py       # Custom middleware
-│
-├── templates/                  # Project-level templates (if full-stack)
-│   ├── base.html
-│   └── components/
-├── static/                     # Static files (CSS, JS, images)
-└── requirements/
-    ├── base.txt
-    ├── development.txt
-    └── production.txt
-
-APP DESIGN RULES:
-- Each app handles ONE domain concept (users, products, orders)
-- Apps should be loosely coupled — minimal cross-app imports
-- Business logic goes in services.py, NOT in views or serializers
+    # ... (additional patterns follow same structure)
 - Complex read queries go in selectors.py
 - Use signals sparingly — prefer explicit service calls
 - Abstract base models in core/ for shared fields (created_at, updated_at)
@@ -139,122 +99,7 @@ DRF ARCHITECTURE PATTERNS:
           model = User
           fields = ['email', 'password', 'first_name', 'last_name']
 
-      def create(self, validated_data):
-          return User.objects.create_user(**validated_data)
-
-  class UserDetailSerializer(serializers.ModelSerializer):
-      posts_count = serializers.IntegerField(read_only=True)
-      recent_activity = ActivitySerializer(many=True, read_only=True)
-
-      class Meta:
-          model = User
-          fields = ['id', 'email', 'full_name', 'posts_count',
-                    'recent_activity', 'created_at']
-
-  # Nested serializer with write support
-  class OrderSerializer(serializers.ModelSerializer):
-      items = OrderItemSerializer(many=True)
-
-      class Meta:
-          model = Order
-          fields = ['id', 'customer', 'items', 'total', 'status']
-
-      def create(self, validated_data):
-          items_data = validated_data.pop('items')
-          order = Order.objects.create(**validated_data)
-          OrderItem.objects.bulk_create([
-              OrderItem(order=order, **item) for item in items_data
-          ])
-          return order
-
-2. ViewSets — Standard CRUD with routing:
-
-  class UserViewSet(viewsets.ModelViewSet):
-      queryset = User.objects.all()
-      permission_classes = [IsAuthenticated]
-      filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-      filterset_fields = ['is_active', 'role']
-      search_fields = ['email', 'first_name', 'last_name']
-      ordering_fields = ['created_at', 'email']
-      ordering = ['-created_at']
-
-      def get_serializer_class(self):
-          if self.action == 'create':
-              return UserCreateSerializer
-          if self.action in ['retrieve', 'me']:
-              return UserDetailSerializer
-          return UserSerializer
-
-      def get_queryset(self):
-          qs = super().get_queryset()
-          if self.action == 'retrieve':
-              qs = qs.annotate(posts_count=Count('posts'))
-              qs = qs.prefetch_related('recent_activity')
-          return qs
-
-      @action(detail=False, methods=['get'])
-      def me(self, request):
-          serializer = self.get_serializer(request.user)
-          return Response(serializer.data)
-
-      @action(detail=True, methods=['post'])
-      def deactivate(self, request, pk=None):
-          user = self.get_object()
-          user_service.deactivate(user, performed_by=request.user)
-          return Response(status=status.HTTP_204_NO_CONTENT)
-
-3. Router configuration:
-
-  # urls.py
-  from rest_framework.routers import DefaultRouter
-
-  router = DefaultRouter()
-  router.register('users', UserViewSet, basename='user')
-  router.register('products', ProductViewSet, basename='product')
-  router.register('orders', OrderViewSet, basename='order')
-
-  urlpatterns = [
-      path('api/v1/', include(router.urls)),
-      path('api/v1/auth/', include('apps.auth.urls')),
-  ]
-
-4. Custom permissions:
-
-  class IsOwnerOrAdmin(permissions.BasePermission):
-      def has_object_permission(self, request, view, obj):
-          if request.user.is_staff:
-              return True
-          return obj.owner == request.user
-
-  class IsReadOnly(permissions.BasePermission):
-      def has_permission(self, request, view):
-          return request.method in permissions.SAFE_METHODS
-
-5. Pagination:
-
-  # config/settings/base.py
-  REST_FRAMEWORK = {
-      'DEFAULT_PAGINATION_CLASS': 'apps.core.pagination.CursorPagination',
-      'PAGE_SIZE': 20,
-      'DEFAULT_AUTHENTICATION_CLASSES': [
-          'rest_framework_simplejwt.authentication.JWTAuthentication',
-      ],
-      'DEFAULT_PERMISSION_CLASSES': [
-          'rest_framework.permissions.IsAuthenticated',
-      ],
-      'DEFAULT_THROTTLE_CLASSES': [
-          'rest_framework.throttling.AnonRateThrottle',
-          'rest_framework.throttling.UserRateThrottle',
-      ],
-      'DEFAULT_THROTTLE_RATES': {
-          'anon': '100/hour',
-          'user': '1000/hour',
-      },
-      'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
-  }
-
-SERIALIZER RULES:
-- NEVER put business logic in serializers — use services
+    # ... (additional patterns follow same structure)
 - Use separate serializers for create/update vs read
 - Always specify fields explicitly — never use fields = '__all__'
 - Use select_related/prefetch_related in get_queryset to avoid N+1
@@ -289,144 +134,7 @@ app/
 │   ├── service.py
 │   └── repository.py
 │
-└── core/
-    ├── security.py         # JWT, password hashing
-    ├── exceptions.py       # Custom exception handlers
-    └── middleware.py        # CORS, logging, timing middleware
-
-PYDANTIC MODELS (schemas.py):
-
-  from pydantic import BaseModel, EmailStr, Field
-  from datetime import datetime
-
-  # Base schema — shared fields
-  class UserBase(BaseModel):
-      email: EmailStr
-      first_name: str = Field(min_length=1, max_length=50)
-      last_name: str = Field(min_length=1, max_length=50)
-
-  # Create schema — input validation
-  class UserCreate(UserBase):
-      password: str = Field(min_length=8, max_length=128)
-
-  # Update schema — all fields optional
-  class UserUpdate(BaseModel):
-      email: EmailStr | None = None
-      first_name: str | None = Field(None, min_length=1, max_length=50)
-      last_name: str | None = Field(None, min_length=1, max_length=50)
-
-  # Response schema — what the API returns
-  class UserResponse(UserBase):
-      id: int
-      is_active: bool
-      created_at: datetime
-
-      model_config = ConfigDict(from_attributes=True)
-
-  # List response with pagination
-  class PaginatedResponse[T](BaseModel):
-      items: list[T]
-      total: int
-      page: int
-      page_size: int
-      has_next: bool
-
-DEPENDENCY INJECTION:
-
-  from fastapi import Depends, HTTPException, status
-  from fastapi.security import OAuth2PasswordBearer
-
-  oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
-
-  # Database session dependency
-  async def get_db() -> AsyncGenerator[AsyncSession, None]:
-      async with async_session() as session:
-          try:
-              yield session
-              await session.commit()
-          except Exception:
-              await session.rollback()
-              raise
-
-  # Current user dependency (composable)
-  async def get_current_user(
-      token: str = Depends(oauth2_scheme),
-      db: AsyncSession = Depends(get_db),
-  ) -> User:
-      payload = decode_jwt(token)
-      user = await db.get(User, payload["sub"])
-      if not user or not user.is_active:
-          raise HTTPException(status_code=401, detail="Invalid credentials")
-      return user
-
-  # Role-based dependency (factory pattern)
-  def require_role(*roles: str):
-      async def dependency(user: User = Depends(get_current_user)):
-          if user.role not in roles:
-              raise HTTPException(status_code=403, detail="Insufficient permissions")
-          return user
-      return dependency
-
-  # Pagination dependency
-  async def get_pagination(
-      page: int = Query(1, ge=1),
-      page_size: int = Query(20, ge=1, le=100),
-  ) -> dict:
-      return {"offset": (page - 1) * page_size, "limit": page_size, "page": page}
-
-ROUTER (router.py):
-
-  from fastapi import APIRouter, Depends, Query, Path, status
-  from fastapi.responses import StreamingResponse
-
-  router = APIRouter(prefix="/users", tags=["users"])
-
-  @router.get("/", response_model=PaginatedResponse[UserResponse])
-  async def list_users(
-      pagination: dict = Depends(get_pagination),
-      search: str | None = Query(None, min_length=1),
-      is_active: bool | None = None,
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(get_current_user),
-  ):
-      return await user_service.list_users(
-          db, pagination=pagination, search=search, is_active=is_active
-      )
-
-  @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-  async def create_user(
-      data: UserCreate,
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(require_role("admin")),
-  ):
-      return await user_service.create_user(db, data)
-
-  @router.get("/{user_id}", response_model=UserResponse)
-  async def get_user(
-      user_id: int = Path(ge=1),
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(get_current_user),
-  ):
-      user = await user_service.get_user(db, user_id)
-      if not user:
-          raise HTTPException(status_code=404, detail="User not found")
-      return user
-
-  @router.patch("/{user_id}", response_model=UserResponse)
-  async def update_user(
-      user_id: int,
-      data: UserUpdate,
-      db: AsyncSession = Depends(get_db),
-      current_user: User = Depends(require_role("admin")),
-  ):
-      return await user_service.update_user(db, user_id, data)
-
-  # Mount router in main.py:
-  app.include_router(users.router, prefix="/api/v1")
-
-FASTAPI RULES:
-- Pydantic models for ALL input validation — never trust raw request data
-- Dependencies compose — build complex auth/permissions from simple deps
+    # ... (additional patterns follow same structure)
 - Use async everywhere — async def for endpoints, async SQLAlchemy, async httpx
 - response_model strips extra fields — prevents data leakage
 - Use Path/Query/Body validators for all parameters
@@ -965,24 +673,11 @@ Notes: <one-line summary>
 
 ## TSV Logging
 
-Append one TSV row to `.godmode/django.tsv` after each invocation:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	project	action	files_count	models_count	views_count	migrations_count	tests_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | model | view | serializer | service | optimize | test | audit | upgrade
-- `files_count`: number of files created or modified
-- `models_count`: number of Django models created or modified
-- `views_count`: number of views/viewsets created or modified
-- `migrations_count`: number of migrations generated
-- `tests_status`: passing | failing | skipped | none
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -1003,286 +698,85 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 
 ## Error Recovery
 
-When errors occur, follow these remediation steps:
-
-```
 IF manage.py check fails:
   1. Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS)
-  2. Fix WARNING issues (missing CSRF, session configuration)
-  3. Run with --deploy flag to catch production-specific issues
-  4. Verify DATABASES configuration is correct
-
 IF tests fail:
   1. Check that test database can be created (permissions)
-  2. Verify fixtures and factory data are consistent
-  3. Check for ordering-dependent tests (use TransactionTestCase if needed)
-  4. Verify that test settings override is correct (TEST_RUNNER, DATABASES)
-
 IF migration errors:
   1. Conflicting migrations → run makemigrations --merge
-  2. Migration dependency error → check that app dependencies are correct
-  3. Data migration fails → add RunPython.noop as reverse_code
-  4. Circular dependency → split the migration or use RunSQL
-
 IF N+1 query detected:
   1. Add select_related() for ForeignKey/OneToOne traversals
-  2. Add prefetch_related() for ManyToMany/reverse FK traversals
-  3. Use Prefetch() objects for filtered prefetches
-  4. Enable django-debug-toolbar or Bullet to verify fix
-
 IF serializer/validation errors:
   1. Check that all required fields have defaults or are provided
-  2. Verify nested serializer depth and read_only settings
-  3. Check that unique_together constraints are handled in validate()
-  4. Verify that file upload fields use proper parsers
-```
-
-## Anti-Patterns
-
-- **Do NOT put business logic in views or serializers.** Views handle HTTP, serializers handle validation. Business rules belong in service functions that can be tested independently.
-- **Do NOT use `fields = '__all__'` in serializers.** You will accidentally expose sensitive fields (passwords, tokens, internal IDs). Explicitly list every field.
-- **Do NOT ignore N+1 queries.** Django ORM is lazy — every attribute access on a related object triggers a query. Use `select_related` and `prefetch_related` everywhere.
-- **Do NOT skip database indexes.** Add indexes on every field used in `filter()`, `order_by()`, or `WHERE` clauses. Partial indexes for common query patterns.
-- **Do NOT use the default User model.** Always create a custom user model with `AbstractUser` at project start. Changing later requires a database migration nightmare.
-- **Do NOT handle auth in every view.** Use DRF permission classes or FastAPI dependencies. Auth logic scattered across views is unmaintainable and insecure.
-- **Do NOT use synchronous HTTP calls in async views.** Use `httpx.AsyncClient` instead of `requests`. Synchronous calls block the event loop in ASGI.
-- **Do NOT skip admin customization.** Default admin with just `admin.site.register(Model)` is useless at scale. Invest in list_display, search, filters, and actions — your operations team will thank you.
-
 
 ## Django Optimization Loop
 
-When optimizing an existing Django application, run this systematic audit loop. Each pass targets a specific performance dimension with measurable before/after metrics.
-
-### Pass 1: Query Count & N+1 Audit
-
 ```
-QUERY COUNT AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Instrument query logging                                │
-│                                                                   │
-│  # settings/development.py                                       │
-│  LOGGING = {                                                     │
-│      'loggers': {                                                │
-│          'django.db.backends': {                                 │
-│              'level': 'DEBUG',                                   │
-│              'handlers': ['console'],                            │
-│          },                                                      │
-│      },                                                          │
-│  }                                                               │
-│                                                                   │
-│  # Or use django-debug-toolbar (preferred):                      │
-│  INSTALLED_APPS += ['debug_toolbar']                             │
-│  MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware') │
-│                                                                   │
-│  Step 2: Baseline query count per endpoint                       │
-│  ┌──────────────────────────┬──────────┬──────────┬────────────┐│
-│  │  Endpoint                │  Queries │  Time(ms)│  N+1?      ││
-│  ├──────────────────────────┼──────────┼──────────┼────────────┤│
-│  │  GET /api/orders/        │  <N>     │  <N>     │  YES/NO    ││
-│  │  GET /api/orders/:id/    │  <N>     │  <N>     │  YES/NO    ││
-│  │  GET /api/users/         │  <N>     │  <N>     │  YES/NO    ││
-│  │  GET /admin/orders/      │  <N>     │  <N>     │  YES/NO    ││
-│  └──────────────────────────┴──────────┴──────────┴────────────┘│
-│                                                                   │
-│  Step 3: Fix N+1 patterns                                        │
-│  - Add select_related() for ForeignKey / OneToOneField traversals│
-│  - Add prefetch_related() for ManyToMany / reverse FK traversals │
-│  - Use Prefetch() objects for filtered or annotated prefetches   │
-│  - Add only()/defer() to exclude unused heavy fields (TextField) │
-│                                                                   │
-│  Step 4: Verify reduction                                        │
-│  - Re-run baseline: every endpoint should show reduced queries   │
-│  - Target: list endpoints <= 3-5 queries regardless of page size │
-│  - Target: detail endpoints <= 2-3 queries regardless of depth   │
-└──────────────────────────────────────────────────────────────────┘
-```
+DJANGO OPTIMIZATION PASSES:
 
-```python
-# CONCRETE N+1 FIX PATTERNS:
+Pass 1 — Query Count & N+1 Audit:
+  1. Instrument with django-debug-toolbar or DB logging
+  2. Baseline query count per endpoint
+  3. Fix N+1: select_related() for FK, prefetch_related() for M2M/reverse FK
+  4. Use Prefetch() objects for filtered prefetches, annotate() for counts
+  5. Target: list endpoints <=3-5 queries, detail <=2-3 queries
 
-# BAD — N+1 on ForeignKey:
-orders = Order.objects.all()
-for order in orders:
-    print(order.customer.name)  # 1 query per order
+Pass 2 — Query Efficiency:
+  1. Add indexes on every field in filter()/order_by()
+  2. Add partial indexes for common query patterns (condition=Q(...))
+  3. Use .values()/.only()/.defer() to reduce data loading
+  4. Replace .save() loops with bulk_create()/bulk_update()
+  5. Use .exists() instead of .count() > 0
 
-# GOOD — select_related (single JOIN):
-orders = Order.objects.select_related('customer').all()
+Pass 3 — Middleware Audit:
+  1. Time each middleware's overhead per request
+  2. Remove unused middleware (LocaleMiddleware if single language, GZipMiddleware if proxied)
+  3. Remove SessionMiddleware + CsrfViewMiddleware for API-only with token auth
+  4. Add short-circuit for health check endpoints
 
-# BAD — N+1 on reverse FK / ManyToMany:
-orders = Order.objects.all()
-for order in orders:
-    print(order.items.count())  # 1 query per order
+Pass 4 — Cache Strategy:
+  1. Cache expensive query results with Django cache framework
+  2. Use @cache_page for read-heavy public views
+  3. Use signal-based invalidation (post_save → cache.delete)
+  4. Set SESSION_ENGINE to cache backend, CACHES to Redis
 
-# GOOD — prefetch_related (2 queries total):
-orders = Order.objects.prefetch_related('items').all()
-
-# GOOD — annotate count at DB level (1 query):
-orders = Order.objects.annotate(items_count=Count('items'))
-
-# BAD — Prefetch with filtering triggers extra queries:
-# GOOD — Use Prefetch object for filtered prefetches:
-from django.db.models import Prefetch
-orders = Order.objects.prefetch_related(
-    Prefetch('items', queryset=OrderItem.objects.filter(active=True))
-)
-
-# DJANGO-AUTO-PREFETCH:
-# pip install django-auto-prefetch
-# Inherit from auto_prefetch.Model instead of models.Model
-# Automatically adds select_related/prefetch_related where needed
-```
-
-### Pass 2: Query Efficiency Audit
-
-```
-QUERY EFFICIENCY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check 1: Missing database indexes                               │
-│  Run: python manage.py inspectdb | grep -i "index"              │
-│  - Every ForeignKey field must have db_index=True (default)      │
-│  - Every field in filter() / order_by() needs an index           │
-│  - Composite indexes for multi-column WHERE clauses              │
-│  - Partial indexes for common query patterns:                    │
-│    class Meta:                                                    │
-│        indexes = [                                                │
-│            Index(fields=['status', 'created_at'],                │
-│                  name='active_orders_idx',                        │
-│                  condition=Q(status='active')),                   │
-│        ]                                                          │
-│                                                                   │
-│  Check 2: Slow query identification                              │
-│  - Enable pg_stat_statements on PostgreSQL                       │
-│  - Identify queries > 100ms                                      │
-│  - Run EXPLAIN ANALYZE on slow queries:                          │
-│    from django.db import connection                               │
-│    qs = Order.objects.filter(status='active').order_by('-created_at') │
-│    print(qs.query)                                                │
-│    # Then run EXPLAIN ANALYZE in psql                             │
-│                                                                   │
-│  Check 3: Unnecessary data loading                               │
-│  - Use .values() or .values_list() for aggregation endpoints     │
-│  - Use .only('field1', 'field2') for known field subsets         │
-│  - Use .defer('large_text_field') to skip heavy columns          │
-│  - Use .count() instead of len(queryset) for counting            │
-│  - Use .exists() instead of .count() > 0 for existence checks   │
-│                                                                   │
-│  Check 4: Bulk operations audit                                  │
-│  - Replace loops of .save() with bulk_create() / bulk_update()   │
-│  - Use .update() for mass field updates instead of loop + save   │
-│  - Use .delete() queryset method instead of loop + delete        │
-│  - Use iterator() or chunk processing for large result sets:     │
-│    Order.objects.filter(old=True).iterator(chunk_size=2000)      │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 3: Middleware Audit
-
-```
-MIDDLEWARE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: List current middleware stack                            │
-│  - Print MIDDLEWARE from settings                                │
-│  - Time each middleware's process_request + process_response     │
-│                                                                   │
-│  Step 2: Middleware overhead measurement                         │
-│  import time                                                      │
-│  class TimingMiddleware:                                          │
-│      def __init__(self, get_response):                           │
-│          self.get_response = get_response                        │
-│      def __call__(self, request):                                │
-│          start = time.perf_counter()                             │
-│          response = self.get_response(request)                   │
-│          duration = (time.perf_counter() - start) * 1000         │
-│          response['X-Request-Duration-ms'] = f'{duration:.1f}'   │
-│          return response                                          │
-│                                                                   │
-│  Step 3: Audit each middleware                                   │
-│  ┌──────────────────────────────┬────────┬───────────────────┐  │
-│  │  Middleware                   │ ms/req │ Action            │  │
-│  ├──────────────────────────────┼────────┼───────────────────┤  │
-│  │  SecurityMiddleware          │  <N>   │ KEEP (required)   │  │
-│  │  SessionMiddleware           │  <N>   │ KEEP / REMOVE*    │  │
-│  │  CsrfViewMiddleware         │  <N>   │ KEEP / REMOVE*    │  │
-│  │  AuthenticationMiddleware   │  <N>   │ KEEP              │  │
-│  │  Custom middleware X         │  <N>   │ OPTIMIZE / REMOVE │  │
-│  └──────────────────────────────┴────────┴───────────────────┘  │
-│  * Remove SessionMiddleware + CsrfViewMiddleware for API-only   │
-│    projects using token auth (JWT, API keys)                     │
-│                                                                   │
-│  Step 4: Middleware optimization actions                         │
-│  - Remove unused middleware (e.g., LocaleMiddleware if single    │
-│    language, GZipMiddleware if handled by reverse proxy)         │
-│  - Move expensive middleware after auth (skip for unauthed)      │
-│  - Add short-circuit for health check endpoints:                 │
-│    if request.path == '/health':                                 │
-│        return JsonResponse({'status': 'ok'})                     │
-│  - Cache middleware results where possible (e.g., permission     │
-│    lookups per request)                                           │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 4: Cache Strategy Audit
-
-```
-CACHE STRATEGY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Layer 1: Database query caching                                 │
-│  - Identify repeated identical queries across requests           │
-│  - Use Django cache framework for expensive query results:       │
-│    from django.core.cache import cache                           │
-│    key = f'user_orders_{user_id}'                                │
-│    orders = cache.get(key)                                       │
-│    if orders is None:                                            │
-│        orders = list(Order.objects.filter(user_id=user_id))      │
-│        cache.set(key, orders, timeout=300)                       │
-│                                                                   │
-│  Layer 2: View-level caching                                    │
-│  - @cache_page(60 * 15) for read-heavy public views             │
-│  - Use cache_control() decorator for HTTP caching headers        │
-│  - Use Vary header for user-specific cached responses            │
-│                                                                   │
-│  Layer 3: Template fragment caching                              │
-│  - {% cache 300 sidebar request.user.id %} for partial caching  │
-│                                                                   │
-│  Layer 4: Session and auth caching                               │
-│  - SESSION_ENGINE = 'django.contrib.sessions.backends.cache'     │
-│  - CACHES default backend = 'django.core.cache.backends.redis.RedisCache' │
-│                                                                   │
-│  Cache invalidation strategy:                                    │
-│  - Signal-based: post_save/post_delete → cache.delete(key)      │
-│  - Time-based: TTL appropriate to data freshness requirements    │
-│  - Version-based: include model updated_at in cache key          │
-│  - NEVER rely on cache alone — always have a DB fallback         │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-DJANGO OPTIMIZATION REPORT:
+OPTIMIZATION REPORT:
 ┌──────────────────────────────┬───────────┬───────────┬───────────┐
 │  Metric                      │  Before   │  After    │  Δ        │
 ├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  Avg queries per list endpoint│  <N>     │  <N>      │  -<N>%    │
-│  Avg queries per detail endpoint│ <N>    │  <N>      │  -<N>%    │
 │  N+1 violations              │  <N>      │  0        │  FIXED    │
 │  Missing indexes             │  <N>      │  0        │  FIXED    │
-│  Slow queries (>100ms)       │  <N>      │  <N>      │  -<N>%    │
 │  Middleware overhead (ms/req)│  <N>      │  <N>      │  -<N>%    │
 │  Cache hit rate              │  <N>%     │  <N>%     │  +<N>%    │
 │  p95 response time (ms)     │  <N>      │  <N>      │  -<N>%    │
 └──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- Zero N+1 violations remaining
-- All filterable/sortable fields indexed
-- List endpoints <= 5 queries regardless of page size
-- Middleware stack reviewed, unused middleware removed
-- Cache strategy documented for high-traffic endpoints
-- p95 response time improved by measurable margin
-
 VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
 ```
+
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
+```
+
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:

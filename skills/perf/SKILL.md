@@ -591,6 +591,33 @@ AUTO-DETECT SEQUENCE:
 5. Output: PROFILING PLAN auto-populated with detected tools and targets.
 ```
 
+## Keep/Discard Discipline
+```
+After EACH performance fix:
+  1. MEASURE: Re-run the profiler or benchmark (minimum 5 runs for statistical confidence).
+  2. COMPARE: Did the target metric improve? Is the change statistically significant (p < 0.05)?
+  3. DECIDE:
+     - KEEP if: improvement is significant AND no regression in other metrics AND tests pass
+     - DISCARD if: no significant improvement OR regression in another metric OR tests fail
+  4. COMMIT kept changes with before/after numbers. Revert discarded changes before the next fix.
+
+Never keep an optimization without measured before/after evidence.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All hotspots consuming > 10% CPU are identified and addressed
+  - Memory is stable under sustained load (no leaks)
+  - Zero race conditions detected by sanitizer tools
+  - User explicitly requests stop
+  - Optimization plateau: 3 consecutive fixes produce < 5% improvement
+
+DO NOT STOP just because:
+  - Minor hotspots (< 5% CPU) remain (diminishing returns)
+  - Benchmarks show unstable variance (fix the environment, not the code)
+```
+
 ## Explicit Loop Protocol
 
 Performance optimization is iterative -- profile, fix, measure, repeat:
@@ -658,14 +685,13 @@ CONFLICT ZONES: Hot path code changes, lock/synchronization changes
 
 ## Anti-Patterns
 
-- **Do NOT optimize without profiling.** "This loop looks slow" is not evidence. Profile it. The bottleneck is almost never where you think it is.
-- **Do NOT report benchmark results without confidence intervals.** "It runs in 150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
-- **Do NOT benchmark on noisy systems.** A shared CI runner with other jobs running produces unreliable results. Control the environment or report high variance.
-- **Do NOT ignore warm-up.** JIT-compiled languages (Java, Node.js, .NET) perform dramatically differently after warm-up. Discard initial iterations.
-- **Do NOT use wall-clock time for micro-benchmarks.** Use high-resolution timers (performance.now(), time.monotonic_ns(), std::time::Instant). Wall-clock time includes OS scheduling noise.
-- **Do NOT claim "no memory leak" from a 30-second test.** Some leaks only manifest over hours or days. Match the test duration to the expected runtime.
-- **Do NOT dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in their cause, even if timing-dependent in their manifestation.
-- **Do NOT profile debug builds.** Debug builds have extra instrumentation, assertions, and disabled optimizations that completely change the performance profile. Always profile release/production builds.
+- **Do NOT optimize without profiling.** The bottleneck is almost never where you think it is. Profile first.
+- **Do NOT report benchmarks without confidence intervals.** "150ms" is meaningless. "150ms mean (95% CI: [142, 158], n=50)" is meaningful.
+- **Do NOT benchmark on noisy systems.** Shared CI runners produce unreliable results. Control the environment.
+- **Do NOT use wall-clock time for micro-benchmarks.** Use high-resolution timers (performance.now(), time.monotonic_ns(), std::time::Instant).
+- **Do NOT claim "no memory leak" from a 30-second test.** Some leaks manifest over hours. Match test duration to expected runtime.
+- **Do NOT dismiss intermittent concurrency bugs.** "It only happens sometimes" means there IS a bug. Race conditions are deterministic in cause.
+- **Do NOT profile debug builds.** Debug builds have extra instrumentation and disabled optimizations. Always profile release builds.
 
 
 ## Output Format

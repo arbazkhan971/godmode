@@ -389,59 +389,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-#### Dependency Update Automation
-```yaml
-name: Dependency Update Check
-
-on:
-  schedule:
-    - cron: '0 9 * * 1'  # Weekly Monday 9am UTC
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  update-deps:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Check for updates
-        run: npx npm-check-updates --format group
-
-      - name: Update minor/patch
-        run: |
-          npx npm-check-updates -u --target minor
-          npm install
-
-      - name: Run tests
-        run: npm test
-
-      - name: Create PR if changes
-        run: |
-          if git diff --quiet; then
-            echo "No updates available"
-            exit 0
-          fi
-          BRANCH="deps/update-$(date +%Y%m%d)"
-          git checkout -b "$BRANCH"
-          git add .
-          git commit -m "deps: update minor/patch dependencies ($(date +%Y-%m-%d))"
-          git push origin "$BRANCH"
-          gh pr create --title "deps: weekly dependency update" \
-            --body "Automated minor/patch dependency updates. All tests pass." \
-            --label "dependencies"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
 ### Step 6: Design Makefile/Taskfile
 
 For local task running and developer workflows:
@@ -543,84 +490,6 @@ ci-build: ## CI: production build
 	NODE_ENV=production npm run build
 ```
 
-#### Taskfile Template (go-task)
-```yaml
-version: '3'
-
-vars:
-  IMAGE_NAME: '{{.PROJECT_NAME | default "app"}}'
-  VERSION:
-    sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
-
-tasks:
-  default:
-    desc: Show available tasks
-    cmds:
-      - task --list
-
-  setup:
-    desc: Install dependencies and configure dev environment
-    cmds:
-      - npm ci
-      - cp -n .env.example .env 2>/dev/null || true
-      - npm run db:migrate
-    status:
-      - test -d node_modules
-
-  dev:
-    desc: Start development server
-    cmds:
-      - npm run dev
-
-  lint:
-    desc: Run linter
-    cmds:
-      - npm run lint
-
-  format:
-    desc: Format code
-    cmds:
-      - npm run format
-
-  test:
-    desc: Run all tests
-    cmds:
-      - npm test
-
-  test:watch:
-    desc: Run tests in watch mode
-    cmds:
-      - npm test -- --watch
-
-  build:
-    desc: Build for production
-    cmds:
-      - npm run build
-    sources:
-      - src/**/*
-      - package.json
-    generates:
-      - dist/**/*
-
-  clean:
-    desc: Remove build artifacts
-    cmds:
-      - rm -rf dist/ coverage/ .next/ node_modules/.cache
-
-  deploy:staging:
-    desc: Deploy to staging
-    deps: [build]
-    cmds:
-      - ./scripts/deploy.sh staging
-
-  deploy:production:
-    desc: Deploy to production
-    deps: [build]
-    prompt: Deploy to PRODUCTION?
-    cmds:
-      - ./scripts/deploy.sh production
-```
-
 ### Step 7: Script Automation for Repetitive Tasks
 
 For one-off or recurring scripts:
@@ -685,59 +554,6 @@ main() {
 }
 
 main "$@"
-```
-
-#### Script Template (Python)
-```python
-#!/usr/bin/env python3
-"""<SCRIPT_NAME> — <description>
-
-Usage:
-    python scripts/<name>.py [options]
-"""
-
-import argparse
-import logging
-import sys
-from pathlib import Path
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="<description>")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    parser.add_argument("-n", "--dry-run", action="store_true", help="Show what would be done")
-    return parser.parse_args()
-
-
-def main() -> int:
-    args = parse_args()
-
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    logger.info("Starting task...")
-
-    if args.dry_run:
-        logger.info("[DRY RUN] Would execute task")
-        return 0
-
-    # <TASK_LOGIC_HERE>
-
-    logger.info("Task completed successfully")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
 ```
 
 ### Step 8: Commit and Report
@@ -857,41 +673,16 @@ Requires: Add SLACK_WEBHOOK_URL to repository secrets.
 
 ## Explicit Loop Protocol
 
-When automating multiple tasks or iterating on automation reliability:
-
 ```
 AUTOMATION BUILD LOOP:
-current_iteration = 0
-max_iterations = 15
-tasks_remaining = total_tasks_to_automate
-
-WHILE tasks_remaining > 0 AND current_iteration < max_iterations:
-    current_iteration += 1
-
-    1. SELECT next task to automate (highest impact first)
-    2. DETECT existing automation context for this task
-    3. GENERATE automation artifact (script, workflow, Makefile target)
-    4. TEST the automation:
-       - Dry-run mode (--dry-run) passes
-       - Real execution succeeds
-       - Error handling works (simulate failure)
-       - Idempotency verified (run twice, same result)
-    5. git commit: "automate: <type> for <task> (iter {current_iteration})"
-    6. IF test fails:
-       - Debug and fix
-       - Re-test
-       - If still failing after 3 attempts, log as manual and move on
-    7. UPDATE tasks_remaining
-
-    IF current_iteration % 5 == 0:
-        PRINT STATUS:
-        "Iteration {current_iteration}/{max_iterations}"
-        "Tasks automated: {total_tasks - tasks_remaining}/{total_tasks}"
-        "Automation types: {cron_count} cron, {workflow_count} workflows, {script_count} scripts"
-        "Remaining: {tasks_remaining} tasks"
-
-IF tasks_remaining > 0:
-    PRINT "Remaining tasks need manual automation design: {tasks_remaining}"
+WHILE tasks_remaining > 0 AND iteration < 15:
+  1. SELECT next task (highest impact first)
+  2. DETECT existing automation context
+  3. GENERATE artifact (script, workflow, Makefile target)
+  4. TEST: dry-run passes, real execution succeeds, error handling works, idempotent
+  5. COMMIT: "automate: <type> for <task>"
+  6. IF test fails after 3 attempts: log as manual and move on
+  Report progress every 5 iterations
 ```
 
 ## HARD RULES
@@ -953,23 +744,10 @@ All of these must be true before marking the task complete:
 
 ## Multi-Agent Dispatch
 ```
-Agent 1 (worktree: automate-scripts):
-  - Create automation scripts with error handling and dry-run
-  - Add logging, lock files, and timeout mechanisms
-  - Write unit tests for script logic
-
-Agent 2 (worktree: automate-ci):
-  - Create/update CI workflows (GitHub Actions, GitLab CI)
-  - Configure scheduled triggers with workflow_dispatch
-  - Set up webhook endpoints if needed
-
-Agent 3 (worktree: automate-infra):
-  - Configure cron jobs / systemd timers / K8s CronJobs
-  - Set up monitoring and alerting for automation failures
-  - Create Makefile/Taskfile targets for local execution
-
+Agent 1 (automate-scripts): scripts with error handling, dry-run, logging, lock files
+Agent 2 (automate-ci): CI workflows, scheduled triggers, webhook endpoints
+Agent 3 (automate-infra): cron jobs, monitoring, Makefile/Taskfile targets
 MERGE ORDER: scripts -> ci -> infra
-CONFLICT ZONES: task runner targets, CI workflow definitions, environment variable declarations
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
@@ -980,12 +758,29 @@ If your platform lacks `Agent()` or `EnterWorktree`:
 
 ## Anti-Patterns
 
-- **Do NOT automate without error handling.** A script without `set -euo pipefail` or try/catch will fail silently. Silent failures are worse than manual processes because nobody notices.
-- **Do NOT hardcode secrets in scripts.** Cron jobs and webhooks that contain API keys in plaintext are security incidents waiting to happen. Use environment variables or secret managers.
-- **Do NOT skip lock files for scheduled jobs.** Two instances of the same cleanup script running simultaneously will corrupt data, double-send notifications, or race-condition your database.
-- **Do NOT create automation without logging.** When a nightly job fails, the first question is "what happened?" Without logs, the answer is "nobody knows."
-- **Do NOT set cron jobs without timeouts.** A data export script that hangs will block the next run, then the next, compounding failures until someone notices.
-- **Do NOT duplicate existing automation.** If the project has a Makefile, add targets to it. Creating a separate Taskfile alongside an existing Makefile creates confusion about which is canonical.
-- **Do NOT schedule jobs at midnight UTC.** Every scheduler defaults to midnight, creating thundering herd problems. Offset jobs by random minutes (e.g., 0 2 * * * instead of 0 0 * * *).
-- **Do NOT automate destructive operations without dry-run.** A cleanup script that deletes data must support `--dry-run`. One mistyped query in production, and the data is gone.
-- **Do NOT forget workflow_dispatch.** Every GitHub Actions scheduled workflow should also have `workflow_dispatch` for manual triggering. Waiting 24 hours to test a cron fix is unacceptable.
+- **Do NOT automate without error handling.** `set -euo pipefail` in bash, try/catch in scripts. Silent failures are undetectable.
+- **Do NOT hardcode secrets in scripts.** Use environment variables or secret managers.
+- **Do NOT skip lock files for scheduled jobs.** Concurrent execution corrupts data.
+- **Do NOT create automation without logging.** Without logs, failures are invisible.
+- **Do NOT set cron jobs without timeouts.** Hanging scripts block subsequent runs.
+- **Do NOT duplicate existing automation.** Add to existing Makefile/Taskfile, do not create competing files.
+- **Do NOT schedule jobs at midnight UTC.** Offset by random minutes to avoid thundering herd.
+- **Do NOT automate destructive operations without dry-run.** `--dry-run` is required for delete operations.
+- **Do NOT forget workflow_dispatch.** Every scheduled GitHub Actions workflow needs manual trigger capability.
+
+## Keep/Discard Discipline
+
+After each automation pass, evaluate:
+- **KEEP** if: script runs with `--dry-run` without side effects, error handling present (`set -euo pipefail` or try/catch), logging captures start/actions/completion, lock file prevents concurrent execution, timeout configured, secrets from env vars only.
+- **DISCARD** if: no error handling, secrets hardcoded, no `--dry-run` support for destructive operations, no logging, no timeout, or duplicates existing automation tooling.
+- Test every automation artifact with `--dry-run` before committing.
+- Revert automation that causes CI failures automatically.
+
+## Stop Conditions
+
+Stop the automate skill when:
+1. Automation script runs with `--dry-run` without destructive side effects.
+2. Error handling is present with meaningful error messages.
+3. Logging captures start time, actions taken, and completion status.
+4. Concurrency guard exists for scheduled jobs (lock file or flock).
+5. Timeout is configured and `workflow_dispatch` is present on all scheduled GitHub Actions.

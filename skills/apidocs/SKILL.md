@@ -27,7 +27,7 @@ Existing spec: <path to openapi.yaml/swagger.json if any>
 Existing routes: <path patterns for route definitions>
 Approach: SPEC-FIRST | CODE-FIRST
 Output format: OpenAPI 3.0 | OpenAPI 3.1 | Swagger 2.0
-Doc renderer: Swagger UI | Redoc | Stoplight Elements | Custom
+    # ... (condensed)
 Hosting: Self-hosted | GitHub Pages | Bump.sh | ReadMe.io | SwaggerHub
 ```
 
@@ -44,212 +44,7 @@ info:
   version: "<version>"
   description: |
     <Multi-line description of the API, its purpose, and getting started guide.>
-  contact:
-    name: "<team or maintainer>"
-    email: "<email>"
-    url: "<support URL>"
-  license:
-    name: "<license>"
-    identifier: "<SPDX identifier>"
-  x-logo:
-    url: "<logo URL for Redoc>"
-
-servers:
-  - url: "https://api.<domain>/v1"
-    description: "Production"
-  - url: "https://staging-api.<domain>/v1"
-    description: "Staging"
-  - url: "http://localhost:<port>/v1"
-    description: "Local development"
-
-tags:
-  - name: "<ResourceGroup>"
-    description: "<Description of this group of endpoints>"
-
-paths:
-  /<resource>:
-    get:
-      tags: ["<ResourceGroup>"]
-      summary: "List <resources>"
-      description: "Returns a paginated list of <resources>."
-      operationId: "list<Resources>"
-      parameters:
-        - $ref: "#/components/parameters/Cursor"
-        - $ref: "#/components/parameters/Limit"
-        - $ref: "#/components/parameters/Sort"
-      responses:
-        "200":
-          description: "Paginated list of <resources>"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/<Resource>List"
-              examples:
-                default:
-                  $ref: "#/components/examples/<Resource>ListExample"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/RateLimitExceeded"
-      security:
-        - BearerAuth: []
-    post:
-      tags: ["<ResourceGroup>"]
-      summary: "Create a <resource>"
-      operationId: "create<Resource>"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Create<Resource>Request"
-            examples:
-              default:
-                $ref: "#/components/examples/Create<Resource>Example"
-      responses:
-        "201":
-          description: "<Resource> created"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/<Resource>"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "409":
-          $ref: "#/components/responses/Conflict"
-
-components:
-  schemas:
-    <Resource>:
-      type: object
-      required: [id, <required_fields>, created_at, updated_at]
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: "Unique identifier"
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        # ... all fields with types, formats, descriptions, examples
-        created_at:
-          type: string
-          format: date-time
-          description: "ISO 8601 creation timestamp"
-        updated_at:
-          type: string
-          format: date-time
-          description: "ISO 8601 last update timestamp"
-
-    Error:
-      type: object
-      required: [error]
-      properties:
-        error:
-          type: object
-          required: [code, message]
-          properties:
-            code:
-              type: string
-              description: "Machine-readable error code"
-            message:
-              type: string
-              description: "Human-readable error description"
-            details:
-              type: array
-              items:
-                type: object
-                properties:
-                  field:
-                    type: string
-                  code:
-                    type: string
-                  message:
-                    type: string
-            request_id:
-              type: string
-              format: uuid
-
-  parameters:
-    Cursor:
-      name: cursor
-      in: query
-      description: "Pagination cursor from a previous response"
-      schema:
-        type: string
-    Limit:
-      name: limit
-      in: query
-      description: "Maximum number of items to return"
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-    Sort:
-      name: sort
-      in: query
-      description: "Sort field and direction (e.g., created_at:desc)"
-      schema:
-        type: string
-
-  examples:
-    <Resource>ListExample:
-      summary: "A paginated list of <resources>"
-      value:
-        data:
-          - id: "550e8400-e29b-41d4-a716-446655440000"
-            # ... example fields
-        pagination:
-          next_cursor: "eyJpZCI6MTAwfQ=="
-          has_more: true
-
-  responses:
-    BadRequest:
-      description: "Invalid request parameters"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-          example:
-            error:
-              code: "VALIDATION_ERROR"
-              message: "Request validation failed"
-              details:
-                - field: "email"
-                  code: "INVALID_FORMAT"
-                  message: "Must be a valid email address"
-    Unauthorized:
-      description: "Authentication required"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    RateLimitExceeded:
-      description: "Rate limit exceeded"
-      headers:
-        Retry-After:
-          schema:
-            type: integer
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    Conflict:
-      description: "Resource conflict"
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    ApiKeyAuth:
-      type: apiKey
-      in: header
+    # ... (condensed)
       name: X-API-Key
 ```
 
@@ -273,16 +68,7 @@ CODE-FIRST SETUP BY FRAMEWORK:
 ├──────────────────────┼───────────────────────────────────────────────────┤
 │  Express / Koa       │  swagger-jsdoc + swagger-ui-express               │
 │  NestJS              │  @nestjs/swagger (built-in decorators)            │
-│  FastAPI (Python)    │  Built-in (auto at /docs and /redoc)              │
-│  Django REST         │  drf-spectacular or drf-yasg                      │
-│  Flask               │  flask-smorest or flasgger                        │
-│  Spring Boot (Java)  │  springdoc-openapi-starter-webmvc-ui              │
-│  Go (Gin/Echo/Chi)   │  swaggo/swag (comment annotations)               │
-│  .NET                │  Swashbuckle.AspNetCore or NSwag                  │
-│  tsoa (TypeScript)   │  tsoa (generates routes + OpenAPI from models)    │
-│  Hono                │  @hono/zod-openapi                                │
-│  tRPC                │  trpc-openapi (adapter to REST + OpenAPI)         │
-│  Elysia (Bun)       │  @elysiajs/swagger                                │
+    # ... (condensed)
 └──────────────────────┴───────────────────────────────────────────────────┘
 ```
 
@@ -295,22 +81,7 @@ const swaggerUi = require("swagger-ui-express");
 const options = {
   definition: {
     openapi: "3.1.0",
-    info: {
-      title: "<API Name>",
-      version: "<version>",
-      description: "<description>",
-    },
-    servers: [{ url: "/api/v1" }],
-    components: {
-      securitySchemes: {
-        BearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
-      },
-    },
-  },
-  apis: ["./src/routes/*.js", "./src/models/*.js"], // Files with JSDoc annotations
-};
-
-const spec = swaggerJsdoc(options);
+    # ... (condensed)
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(spec));
 ```
 
@@ -322,17 +93,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(spec));
  *   get:
  *     summary: List users
  *     tags: [Users]
- *     parameters:
- *       - $ref: '#/components/parameters/Cursor'
- *       - $ref: '#/components/parameters/Limit'
- *     responses:
- *       200:
- *         description: Paginated user list
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UserList'
- */
+    # ... (condensed)
 router.get("/users", listUsers);
 ```
 
@@ -345,15 +106,7 @@ const config = new DocumentBuilder()
   .setTitle("<API Name>")
   .setDescription("<description>")
   .setVersion("<version>")
-  .addBearerAuth()
-  .addTag("<resource>")
-  .build();
-
-const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup("docs", app, document);
-
-// Export spec to file for CI validation
-const fs = require("fs");
+    # ... (condensed)
 fs.writeFileSync("./openapi.json", JSON.stringify(document, null, 2));
 ```
 
@@ -365,11 +118,7 @@ export class CreateUserDto {
   @ApiProperty({ description: "User email address", example: "user@example.com" })
   email: string;
 
-  @ApiProperty({ description: "Display name", minLength: 2, maxLength: 100 })
-  name: string;
-
-  @ApiPropertyOptional({ description: "Profile avatar URL" })
-  avatar_url?: string;
+    # ... (condensed)
 }
 ```
 
@@ -382,19 +131,7 @@ app = FastAPI(
     title="<API Name>",
     description="<description>",
     version="<version>",
-    docs_url="/docs",       # Swagger UI
-    redoc_url="/redoc",     # Redoc
-    openapi_url="/openapi.json",
-)
-
-class User(BaseModel):
-    """User resource."""
-    id: str = Field(..., description="Unique identifier", json_schema_extra={"example": "550e8400-e29b-41d4-a716-446655440000"})
-    email: str = Field(..., description="User email address", json_schema_extra={"example": "user@example.com"})
-    name: str = Field(..., description="Display name", min_length=2, max_length=100)
-
-    model_config = {"json_schema_extra": {"examples": [{"id": "550e...", "email": "user@example.com", "name": "Jane"}]}}
-
+    # ... (condensed)
 # Export spec for CI: python -c "import json; from main import app; print(json.dumps(app.openapi()))" > openapi.json
 ```
 
@@ -416,8 +153,7 @@ springdoc:
   swagger-ui:
     path: /docs
   info:
-    title: "<API Name>"
-    version: "<version>"
+    # ... (condensed)
     description: "<description>"
 ```
 
@@ -429,15 +165,7 @@ public class UserController {
 
     @Operation(summary = "List users", description = "Returns a paginated list of users")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Success",
-            content = @Content(schema = @Schema(implementation = UserListResponse.class))),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    @GetMapping
-    public UserListResponse listUsers(
-        @Parameter(description = "Pagination cursor") @RequestParam(required = false) String cursor,
-        @Parameter(description = "Page size", example = "20") @RequestParam(defaultValue = "20") int limit
-    ) { /* ... */ }
+    # ... (condensed)
 }
 ```
 
@@ -452,10 +180,7 @@ public class UserController {
     "outputDirectory": "docs",
     "specVersion": 3,
     "specFileBaseName": "openapi"
-  },
-  "routes": {
-    "routesDir": "src/generated"
-  }
+    # ... (condensed)
 }
 ```
 
@@ -469,20 +194,7 @@ export class UserController extends Controller {
   /**
    * Retrieves a paginated list of users.
    */
-  @Get()
-  @Security("bearerAuth")
-  public async listUsers(
-    @Query() cursor?: string,
-    @Query() limit: number = 20
-  ): Promise<UserListResponse> { /* ... */ }
-
-  /**
-   * Creates a new user.
-   * @param body The user creation payload
-   */
-  @Post()
-  @Security("bearerAuth")
-  public async createUser(@Body() body: CreateUserRequest): Promise<User> { /* ... */ }
+    # ... (condensed)
 }
 ```
 
@@ -503,14 +215,7 @@ npx tsoa routes   # outputs src/generated/routes.ts
 // @in header
 // @name Authorization
 
-// @Summary List users
-// @Tags Users
-// @Produce json
-// @Param cursor query string false "Pagination cursor"
-// @Param limit query int false "Page size" default(20)
-// @Success 200 {object} UserListResponse
-// @Failure 401 {object} ErrorResponse
-// @Router /users [get]
+    # ... (condensed)
 func ListUsers(c *gin.Context) { /* ... */ }
 ```
 
@@ -536,13 +241,7 @@ SCHEMA REUSE CHECKLIST:
 │  Repeated examples              │  components/examples/<Name>       │
 │  Shared link definitions        │  components/links/<Name>         │
 └─────────────────────────────────┴───────────────────────────────────┘
-
-MULTI-FILE $ref (for large APIs):
-  $ref: "./schemas/User.yaml"
-  $ref: "./paths/users.yaml#/list"
-  $ref: "./parameters/pagination.yaml#/Cursor"
-
-Bundle command:
+    # ... (condensed)
   npx @redocly/cli bundle openapi.yaml -o dist/openapi-bundled.yaml
 ```
 
@@ -566,15 +265,7 @@ CreateUserRequest:
 
 # Polymorphism with oneOf + discriminator
 Notification:
-  oneOf:
-    - $ref: "#/components/schemas/EmailNotification"
-    - $ref: "#/components/schemas/SmsNotification"
-    - $ref: "#/components/schemas/PushNotification"
-  discriminator:
-    propertyName: type
-    mapping:
-      email: "#/components/schemas/EmailNotification"
-      sms: "#/components/schemas/SmsNotification"
+    # ... (condensed)
       push: "#/components/schemas/PushNotification"
 ```
 
@@ -595,18 +286,7 @@ paths:
     post:
       requestBody:
         content:
-          application/json:
-            examples:
-              basic:
-                summary: "Create a basic user"
-                value:
-                  email: "jane@example.com"
-                  name: "Jane Doe"
-              admin:
-                summary: "Create an admin user"
-                value:
-                  email: "admin@example.com"
-                  name: "Admin User"
+    # ... (condensed)
                   role: "admin"
 ```
 
@@ -670,11 +350,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(spec, {
 <body>
   <redoc spec-url="./openapi.yaml"
          expand-responses="200,201"
-         hide-download-button="false"
-         theme='{"colors":{"primary":{"main":"#1a73e8"}}}'
-  ></redoc>
-  <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
-</body>
+    # ... (condensed)
 </html>
 ```
 
@@ -719,23 +395,7 @@ SPEC VERSIONING STRATEGIES:
 │                     │    schema: { enum: ["2024-01-01","2024-06-01"]}│
 │                     │                                                │
 │  Multi-version      │  Use OpenAPI overlays (3.1 feature) or        │
-│  single spec        │  x-since / x-until extensions per operation.  │
-└─────────────────────┴───────────────────────────────────────────────┘
-
-CHANGELOG IN SPEC (x- extensions):
-info:
-  x-changelog:
-    - version: "2.0.0"
-      date: "2025-06-01"
-      changes:
-        - type: "breaking"
-          description: "Removed /users/:id/profile endpoint"
-        - type: "added"
-          description: "Added /users/:id/settings endpoint"
-    - version: "1.1.0"
-      date: "2025-03-01"
-      changes:
-        - type: "added"
+    # ... (condensed)
           description: "Added cursor-based pagination to all list endpoints"
 ```
 
@@ -756,29 +416,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Lint with Spectral (custom rules)
-      - name: Lint OpenAPI spec
-        run: npx @stoplight/spectral-cli lint openapi.yaml --ruleset .spectral.yaml
-
-      # Validate with Redocly CLI
-      - name: Validate OpenAPI spec
-        run: npx @redocly/cli lint openapi.yaml
-
-      # Detect breaking changes with Optic
-      - name: Check for breaking changes
-        run: |
-          npx @useoptic/optic diff openapi.yaml \
-            --base main \
-            --check
-
-      # Build docs to verify rendering
-      - name: Build docs
-        run: npx @redocly/cli build-docs openapi.yaml -o dist/index.html
-
-      # Upload docs artifact
-      - name: Upload docs
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-docs
+    # ... (condensed)
           path: dist/index.html
 ```
 
@@ -796,47 +434,7 @@ rules:
       function: truthy
 
   # Enforce examples on all schemas
-  schema-examples:
-    severity: warn
-    given: "$.components.schemas[*].properties[*]"
-    then:
-      field: example
-      function: truthy
-
-  # Enforce tags on all operations
-  operation-tags:
-    severity: error
-    given: "$.paths[*][*]"
-    then:
-      field: tags
-      function: truthy
-
-  # Ban HTTP auth in favor of HTTPS
-  no-http-servers:
-    severity: error
-    given: "$.servers[*].url"
-    then:
-      function: pattern
-      functionOptions:
-        notMatch: "^http://"
-
-  # Require pagination on list endpoints
-  pagination-on-lists:
-    severity: warn
-    given: "$.paths[*].get.parameters"
-    then:
-      function: length
-      functionOptions:
-        min: 1
-
-  # Require error responses
-  error-responses:
-    severity: error
-    given: "$.paths[*][*].responses"
-    then:
-      - field: "401"
-        function: truthy
-      - field: "500"
+    # ... (condensed)
         function: truthy
 ```
 
@@ -868,21 +466,7 @@ openapi-generator-cli generate \
 # Python client
 openapi-generator-cli generate \
   -i openapi.yaml \
-  -g python \
-  -o sdk/python \
-  --additional-properties=packageName=my_api_client
-
-# Go client
-openapi-generator-cli generate \
-  -i openapi.yaml \
-  -g go \
-  -o sdk/go \
-  --additional-properties=packageName=apiclient
-
-# Generate ALL SDKs in CI
-LANGUAGES=("typescript-axios" "python" "go" "java" "ruby" "csharp")
-for lang in "${LANGUAGES[@]}"; do
-  openapi-generator-cli generate -i openapi.yaml -g "$lang" -o "sdk/$lang"
+    # ... (condensed)
 done
 ```
 
@@ -910,17 +494,7 @@ jobs:
     strategy:
       matrix:
         lang: [typescript-axios, python, go]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Generate ${{ matrix.lang }} SDK
-        run: |
-          npx @openapitools/openapi-generator-cli generate \
-            -i openapi.yaml \
-            -g ${{ matrix.lang }} \
-            -o sdk/${{ matrix.lang }}
-      - name: Publish SDK
-        run: |
-          cd sdk/${{ matrix.lang }}
+    # ... (condensed)
           # Publish to npm/pypi/go module registry
 ```
 
@@ -959,10 +533,7 @@ CHANGELOG OUTPUT EXAMPLE:
 │  - GET /users/{id}/settings — new endpoint                          │
 │  - POST /users — added optional field 'nickname'                    │
 │  - GET /users — added cursor-based pagination (cursor param)        │
-│                                                                      │
-│  DEPRECATIONS:                                                       │
-│  - GET /users?offset= — offset pagination deprecated, use cursor    │
-│  - Header X-API-Token — deprecated in favor of Authorization bearer │
+    # ... (condensed)
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -980,24 +551,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Get base spec
-        run: git show origin/main:openapi.yaml > /tmp/base-spec.yaml
-
-      - name: Generate changelog
-        run: |
-          npx oasdiff changelog /tmp/base-spec.yaml openapi.yaml \
-            --format markdown > changelog.md
-
-      - name: Check breaking changes
-        run: |
-          npx oasdiff breaking /tmp/base-spec.yaml openapi.yaml \
-            || echo "::warning::Breaking changes detected"
-
-      - name: Comment on PR
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: api-changelog
+    # ... (condensed)
           path: changelog.md
 ```
 
@@ -1018,14 +572,7 @@ APIDOCS VALIDATION:
 │  Security schemes applied to endpoints    │  PASS | FAIL     │
 │  Tags defined and applied                 │  PASS | FAIL     │
 │  Servers configured for all environments  │  PASS | FAIL     │
-│  No breaking changes vs. main branch      │  PASS | FAIL|N/A │
-│  Doc renderer builds successfully         │  PASS | FAIL     │
-│  Spectral lint passes (zero errors)       │  PASS | FAIL     │
-│  Examples are realistic (not "string")    │  PASS | FAIL     │
-│  Pagination documented on list endpoints  │  PASS | FAIL     │
-│  Rate limit headers documented            │  PASS | FAIL     │
-└───────────────────────────────────────────┴──────────────────┘
-
+    # ... (condensed)
 VERDICT: <PASS | NEEDS REVISION>
 ```
 
@@ -1083,17 +630,6 @@ Doc renderer: Redoc (clean, modern UI)
 Setting up swagger-jsdoc...
 Adding JSDoc annotations to 3 route files...
 Configuring Swagger UI at /docs...
-Building Redoc static docs...
-Running Spectral validation...
-
-12/15 checks PASS.
-3 warnings: Missing examples on 3 schemas.
-
-Artifacts:
-- OpenAPI spec: docs/api/openapi.yaml
-- Swagger UI: http://localhost:3000/docs
-- Redoc: docs/api/index.html
-- Spectral config: .spectral.yaml
 ```
 
 ### Writing a spec from scratch
@@ -1114,36 +650,6 @@ Modeling resources:
 - Refund (id, transaction_id, amount, reason, status)
 - Webhook (id, url, events, secret, active)
 
-Writing OpenAPI spec with 12 endpoints...
-Adding request/response examples for all operations...
-Configuring security (API key + webhook signature verification)...
-Running Spectral validation...
-
-15/15 checks PASS.
-
-Artifacts:
-- OpenAPI spec: docs/api/payment-gateway-openapi.yaml
-- Stoplight Elements: docs/api/index.html
-- Mock server: npx prism mock docs/api/payment-gateway-openapi.yaml
-```
-
-### Setting up CI validation
-```
-User: /godmode:apidocs Set up CI to validate our OpenAPI spec
-
-APIDocs: Configuring CI pipeline...
-
-Added:
-- .spectral.yaml — custom lint rules (12 rules)
-- .github/workflows/api-docs.yml — lint, validate, breaking change detection, doc build
-- package.json scripts: "lint:api", "docs:build", "docs:breaking"
-
-CI will:
-1. Lint with Spectral (custom rules + spectral:oas defaults)
-2. Validate with Redocly CLI
-3. Detect breaking changes with Optic (vs. main branch)
-4. Build Redoc static docs
-5. Comment changelog on PRs
 ```
 
 ## Flags & Options
@@ -1160,10 +666,6 @@ CI will:
 | `--breaking` | Check for breaking changes vs. main branch |
 | `--mock` | Start Prism mock server from spec |
 | `--sdk <lang>` | Generate client SDK (typescript, python, go, java, etc.) |
-| `--ci` | Generate CI workflow for spec validation and doc publishing |
-| `--changelog` | Generate changelog from spec diff |
-| `--bundle` | Bundle multi-file spec into single file |
-| `--export <format>` | Export spec as yaml, json, or html |
 
 ## HARD RULES
 
@@ -1193,10 +695,6 @@ grep -r "redoc\|swagger-ui\|stoplight\|scalar" package.json 2>/dev/null
 # Detect validation tools
 grep -r "spectral\|redocly\|optic\|oasdiff" package.json .github/ 2>/dev/null
 
-# Detect API routes to document
-find src/ -name "*controller*" -o -name "*router*" -o -name "*route*" 2>/dev/null | head -10
-```
-
 ## Output Format
 
 After each apidocs skill invocation, emit a structured report:
@@ -1211,15 +709,10 @@ APIDOCS REPORT:
 │  Examples            │  <N> operations with examples   │
 │  Renderer            │  <Swagger UI | Redoc | Stoplight> │
 │  CI validation       │  CONFIGURED / NOT CONFIGURED    │
-│  Breaking changes    │  <N> detected vs main          │
-│  Spectral lint       │  <N> errors / <N> warnings      │
-│  Verdict             │  PASS | NEEDS REVISION          │
-└──────────────────────────────────────────────────────┘
-```
 
 ## TSV Logging
 
-Log every apidocs action for tracking:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	skill	action	endpoints	schemas	lint_errors	breaking_changes	status
@@ -1242,31 +735,14 @@ The apidocs skill is complete when ALL of the following are true:
 
 ## Error Recovery
 
-```
 IF OpenAPI spec fails validation:
   1. Run npx @redocly/cli lint openapi.yaml for detailed error messages
-  2. Fix structural errors first (invalid paths, missing required fields)
-  3. Fix reference errors ($ref pointing to nonexistent schemas)
-  4. Re-validate after each fix batch
-
 IF Spectral lint reports errors:
   1. Check .spectral.yaml for custom rules that may need adjustment
-  2. Fix errors in priority order: missing descriptions > missing examples > style issues
-  3. Suppress false positives with spectral inline ignores (use sparingly)
-  4. Re-run lint after fixes
-
 IF breaking changes are detected in CI:
   1. Review each breaking change: is it intentional or accidental?
-  2. For intentional breaks: document in changelog, add migration notes
-  3. For accidental breaks: revert the spec change
-  4. Use API versioning for intentional breaking changes
-
 IF doc renderer fails to build:
   1. Check for YAML syntax errors (common: wrong indentation, missing quotes)
-  2. Validate the spec with a JSON/YAML parser first
-  3. Try rendering with a different renderer to isolate the issue
-  4. Check renderer-specific extensions (x- fields) for compatibility
-```
 
 ## Iterative API Documentation Loop
 
@@ -1278,13 +754,6 @@ doc_tasks = [discovery, spec_writing, schema_extraction, examples, renderer_setu
 WHILE doc_tasks is not empty AND current_iteration < max_iterations:
     task = doc_tasks.pop(0)
     1. Execute the task (write spec, extract schemas, add examples, etc.)
-    2. Validate: run Spectral lint + Redocly validate
-    3. IF validation fails → fix errors and re-validate
-    4. IF passing → commit: "apidocs: <action> for <service>"
-    5. current_iteration += 1
-
-POST-LOOP: Run full validation checklist and build rendered docs
-```
 
 ## Multi-Agent Dispatch
 
@@ -1298,21 +767,34 @@ MERGE ORDER: spec → examples → ci
 CONFLICT ZONES: openapi.yaml (spec is authoritative, examples and CI reference it)
 ```
 
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run API docs tasks sequentially: spec writing, then examples, then CI/renderer setup.
 - Use branch isolation per task: `git checkout -b godmode-apidocs-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
 
-## Anti-Patterns
-
-- **Do NOT write docs without examples.** A schema without examples is a guessing game. Every request body and response must have at least one realistic example.
-- **Do NOT duplicate schemas.** If you see the same object shape in two places, extract it to `components/schemas` and use `$ref`. Duplicated schemas drift and cause consumer bugs.
-- **Do NOT skip CI validation.** A spec that was valid last week can be broken by today's PR. Lint and validate on every change.
-- **Do NOT use "string" as an example for typed fields.** `example: "string"` for an email field tells the consumer nothing. Use `example: "jane.doe@example.com"`.
-- **Do NOT generate docs and never update them.** Stale docs are worse than no docs — they actively mislead consumers. Generate from code or validate the spec in CI to keep it current.
-- **Do NOT hand-edit generated specs.** If using code-first, the generated spec is the source of truth. Edits to the generated file will be overwritten. Modify annotations in code instead.
-- **Do NOT ignore breaking changes.** A field type change, a removed endpoint, a renamed parameter — these break consumers silently. Use Optic or oasdiff in CI to catch them.
-- **Do NOT skip security scheme documentation.** An undocumented auth requirement means every new consumer has to reverse-engineer your auth flow.
-- **Do NOT serve docs only in development.** If your docs endpoint is behind `if (env === 'development')`, your API consumers in staging and production have no reference. Serve docs in all environments or publish static docs.
-- **Do NOT write a monolithic spec for a microservices architecture.** Each service owns its own spec. Use a gateway or portal (Backstage, Bump.sh) to aggregate them.
+```

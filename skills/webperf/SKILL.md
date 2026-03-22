@@ -624,14 +624,14 @@ STOP when:
 
 ## Anti-Patterns
 
-- **Do NOT optimize without measuring.** "I think this is slow" is not actionable. Run Lighthouse, analyze the bundle, measure Core Web Vitals. Data drives optimization, not intuition.
-- **Do NOT lazy-load the LCP element.** The Largest Contentful Paint image must load eagerly with `fetchpriority="high"`. Lazy loading it makes LCP worse.
-- **Do NOT serve uncompressed assets.** Enable gzip or Brotli compression on the server. Uncompressed text assets (HTML, CSS, JS) are 60-80% larger than compressed.
-- **Do NOT load all JavaScript upfront.** Code split by route and lazy load components that are not visible on initial render. Users should not download code for pages they have not visited.
-- **Do NOT use enormous hero images without srcset.** A 4000px wide image on a 375px mobile screen wastes 90% of the bytes. Use responsive images with appropriate breakpoints.
-- **Do NOT add font weights you do not use.** Each unused font weight is 20-30KB downloaded for nothing. Audit CSS for actually-used weights and remove the rest.
-- **Do NOT set Cache-Control: no-store on static assets.** Hashed filenames (main.a1b2c3.js) are immutable — cache them for a year. Only HTML and API responses need revalidation.
-- **Do NOT ignore third-party script impact.** A single chat widget can add 200KB+ of JavaScript and block the main thread for seconds. Measure third-party impact and load non-essential scripts with async/defer.
+- **Do NOT optimize without measuring.** Run Lighthouse, analyze the bundle, measure Core Web Vitals first.
+- **Do NOT lazy-load the LCP element.** It must load eagerly with `fetchpriority="high"`.
+- **Do NOT serve uncompressed assets.** Enable gzip or Brotli compression.
+- **Do NOT load all JavaScript upfront.** Code split by route and lazy load off-screen components.
+- **Do NOT use hero images without srcset.** A 4000px image on a 375px screen wastes 90% of bytes.
+- **Do NOT add font weights you do not use.** Each unused weight is 20-30KB wasted.
+- **Do NOT set Cache-Control: no-store on hashed static assets.** Cache them for a year.
+- **Do NOT ignore third-party script impact.** Measure and load non-essential scripts with async/defer.
 
 ## Output Format
 Print on completion: `Webperf: Lighthouse {before_score} → {after_score} (+{delta}). LCP: {lcp}s, INP: {inp}ms, CLS: {cls}. JS: {js_before} → {js_after} (-{js_savings}). Total transfer: {transfer_before} → {transfer_after}. Verdict: {verdict}.`
@@ -712,44 +712,6 @@ PREFER the simpler performance optimization:
   - Fewer large impactful optimizations (images, code splitting, critical CSS) over many micro-optimizations
 ```
 
-## Multi-Agent Dispatch
-For comprehensive web performance optimization:
-```
-DISPATCH parallel agents (one per optimization area):
-
-Agent 1 (worktree: webperf-bundle):
-  - Bundle analysis and code splitting
-  - Tree shaking verification
-  - Library replacement (moment → dayjs, lodash → native)
-  - Scope: webpack/vite config, dynamic imports
-  - Output: Optimized bundle with route-based splitting
-
-Agent 2 (worktree: webperf-assets):
-  - Image optimization (WebP/AVIF, srcset, lazy loading)
-  - Font optimization (subsetting, font-display, preload)
-  - Scope: public/, src/assets/, CSS @font-face
-  - Output: Optimized images and fonts
-
-Agent 3 (worktree: webperf-rendering):
-  - Critical CSS extraction and inlining
-  - Render-blocking resource elimination
-  - LCP element optimization (preload, fetchpriority)
-  - Scope: HTML templates, CSS files, head tags
-  - Output: Optimized rendering pipeline
-
-Agent 4 (worktree: webperf-caching):
-  - Service worker configuration (Workbox)
-  - HTTP cache headers audit and fix
-  - CDN configuration
-  - Scope: sw.js, server config, CDN rules
-  - Output: Optimal caching strategy
-
-MERGE ORDER: bundle → assets → rendering → caching
-CONFLICT RESOLUTION: each agent owns its resource type exclusively
-```
-
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run webperf tasks sequentially: bundle optimization, then assets, then rendering, then caching.
-- Use branch isolation per task: `git checkout -b godmode-webperf-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run webperf tasks sequentially: bundle optimization, then assets, then rendering, then caching.
+Use branch isolation per task: `git checkout -b godmode-webperf-{task}`, implement, commit, merge back.

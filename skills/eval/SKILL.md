@@ -254,27 +254,6 @@ Protocol:
      - Discuss scoring disagreements
      - Align on rubric interpretation
 
-  2. Independent evaluation:
-     - Each evaluator scores <N> examples independently
-     - Overlap: <N> examples scored by all evaluators (for agreement)
-     - Unique: remaining examples distributed evenly
-
-  3. Agreement measurement:
-     - Cohen's kappa (pairwise) or Fleiss' kappa (multi-rater)
-     - Target: kappa >= 0.7 (substantial agreement)
-     - If kappa < 0.6: re-calibrate, refine guidelines, adjudicate
-
-  4. Adjudication:
-     - For examples with >1 point disagreement: discussion and consensus
-     - Final score: majority vote or adjudicator decision
-
-Output:
-  - Per-example scores with evaluator IDs
-  - Inter-annotator agreement statistics
-  - Aggregated scores per dimension
-  - Qualitative findings and failure patterns
-```
-
 ### Step 6: Benchmark Creation
 Create a reusable benchmark for ongoing evaluation:
 
@@ -649,20 +628,6 @@ Agent 2 — "automated-evaluation":
   EnterWorktree("automated-evaluation")
   Run system under test on all evaluation examples
   Score with automated judges across all quality dimensions
-  Compute aggregate metrics, confidence intervals, per-category breakdowns
-  Compare against baseline with statistical significance tests
-  ExitWorktree()
-
-Agent 3 — "regression-and-reporting":
-  EnterWorktree("regression-and-reporting")
-  Run full regression test suite (exact match, semantic match, assertion-based)
-  Identify new failures and fixed regressions
-  Generate evaluation report with verdict (PASS/FAIL)
-  Store results for historical tracking
-  ExitWorktree()
-
-MERGE: Combine judge calibration, evaluation results, and regression status into unified report.
-```
 
 ## Auto-Detection
 
@@ -753,18 +718,6 @@ IF evaluation takes too long to run in CI:
   4. Cache embedding computations and model responses where safe
 ```
 
-## Anti-Patterns
-
-- **Do NOT evaluate without a baseline.** "Our model scores 4.2/5" is meaningless. Compared to what? Always report relative to a baseline.
-- **Do NOT use the same model as judge and subject.** Self-evaluation is biased. Use a different, preferably stronger model as the judge.
-- **Do NOT skip calibration of LLM judges.** An uncalibrated judge may consistently over-score or under-score. Validate against human ratings before trusting automated evaluation.
-- **Do NOT treat evaluation as one-time.** AI systems degrade over time (model updates, data drift, prompt rot). Run evaluations continuously, not just at launch.
-- **Do NOT ignore statistical significance.** Small differences between systems may be noise. Run significance tests. Report p-values and confidence intervals.
-- **Do NOT delete regression tests.** Once a bug is caught and tested, that test stays forever. Regression tests are the memory of past failures.
-- **Do NOT use accuracy alone.** Accuracy on imbalanced tasks is misleading. Use precision, recall, F1, or task-specific metrics. Report multiple dimensions.
-- **Do NOT evaluate only happy paths.** Adversarial inputs, edge cases, and out-of-scope queries reveal more about system quality than common-case inputs.
-
-
 ## Evaluation Framework Audit
 
 Comprehensive audit of the evaluation framework itself to ensure metrics are meaningful, benchmarks are comprehensive, and regressions are detectable:
@@ -806,116 +759,31 @@ METRIC SELECTION AUDIT:
       5. IF metric correlates < 0.5 with human judgment: MISCALIBRATED
 
 BENCHMARK COVERAGE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Dimension               │ Examples │ % of Total │ Adequate?     │
-├──────────────────────────────────────────────────────────────────┤
-│  Happy path (common)     │ <N>      │ <pct>      │ >= 40%        │
-│  Edge cases (unusual)    │ <N>      │ <pct>      │ >= 15%        │
-│  Adversarial (attacks)   │ <N>      │ <pct>      │ >= 10%        │
-│  Out-of-scope (refuse)   │ <N>      │ <pct>      │ >= 10%        │
-│  Regression (prev bugs)  │ <N>      │ <pct>      │ >= 10%        │
-│  Cross-category balance  │ <N cats> │ <balance>  │ No cat < 5%   │
-│  Difficulty distribution │ <E/M/H>  │ <pcts>     │ Balanced      │
-│  Freshness (last update) │ <date>   │ N/A        │ < 90 days     │
-│  Size sufficiency        │ <N total>│ N/A        │ >= 100        │
-└──────────────────────────────────────────────────────────────────┘
 
-  Benchmark coverage gaps:
-    1. SCAN for categories with < 5 examples: these are undertested
-    2. SCAN for difficulty levels with 0 examples: add hard cases
-    3. SCAN for recently-added features with no eval examples
-    4. CHECK: is the benchmark too easy? (if all systems score > 90%, add harder cases)
-    5. CHECK: is the benchmark representative? (compare query distribution to production logs)
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH evaluation dimension scored:
+  1. MEASURE: Compare metric to baseline with confidence interval.
+  2. VERIFY: Statistical significance test run (paired bootstrap).
+  3. DECIDE:
+     - KEEP if: metric meets threshold AND comparison to baseline is statistically significant
+     - DISCARD if: metric below threshold OR result is not significant OR judge disagreement > 30%
+  4. Log kept results. Re-run discarded dimensions with refined judge prompts.
 
-  Benchmark maintenance protocol:
-    - ADD new examples monthly (minimum 10 per month)
-    - ADD regression examples for every production bug found
-    - NEVER modify existing examples (append only)
-    - REVIEW and refresh every quarter (remove stale, add emerging patterns)
-    - VERSION the benchmark (semver) — major version when > 20% of examples change
-    - TRACK benchmark saturation (if top system scores > 95%, benchmark needs harder cases)
-
-REGRESSION DETECTION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Regression suite exists            │ PASS|FAIL│ <test count>    │
-│  Every past production bug has a    │ PASS|FAIL│ <coverage %>    │
-│    corresponding regression test    │          │                 │
-│  Regression suite runs in CI        │ PASS|FAIL│ <CI job link>   │
-│  Regression failures block merges   │ PASS|FAIL│ <branch protect>│
-│  Regression tests use exact match   │ PASS|FAIL│ <match strategy>│
-│    OR semantic match OR assertions  │          │                 │
-│  New failures are auto-detected     │ PASS|FAIL│ <diff detection>│
-│    (compare to previous run)        │          │                 │
-│  Regression test set only grows     │ PASS|FAIL│ <deletion audit>│
-│    (never shrinks)                  │          │                 │
-│  Flaky tests identified and fixed   │ PASS|FAIL│ <flake rate %>  │
-│  Regression run time < 10 min       │ PASS|FAIL│ <run duration>  │
-│    (fast enough for CI)             │          │                 │
-│  Historical regression results      │ PASS|FAIL│ <storage>       │
-│    stored for trend analysis        │          │                 │
-└──────────────────────────────────────────────────────────────────┘
-
-  Regression detection sensitivity test:
-    1. Take the current best system
-    2. Introduce a known degradation (e.g., remove a few-shot example, increase temperature)
-    3. Run regression suite
-    4. VERIFY: at least one regression test fails
-    5. IF no test fails: the regression suite is too weak — add more sensitive tests
-
-JUDGE QUALITY AUDIT (if using LLM-as-judge):
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Judge model differs from subject   │ PASS|FAIL│ <judge model>   │
-│  Judge calibrated vs human ratings  │ PASS|FAIL│ <kappa value>   │
-│  Judge rubric is specific (not vague│ PASS|FAIL│ <rubric review> │
-│  Position bias tested and mitigated │ PASS|FAIL│ <bias test>     │
-│  Verbosity bias tested              │ PASS|FAIL│ <bias test>     │
-│  Judge consistency tested (same     │ PASS|FAIL│ <intra-rater r> │
-│    input scored similarly)          │          │                 │
-│  Judge cost is sustainable          │ PASS|FAIL│ <cost per eval> │
-│  Judge latency is acceptable        │ PASS|FAIL│ <ms per eval>   │
-└──────────────────────────────────────────────────────────────────┘
-
-AUDIT VERDICT: <ROBUST — framework is sound | GAPS — <N> items to address>
-Priority fixes:
-  1. <highest priority gap>
-  2. <second priority gap>
-  3. <third priority gap>
+Never report an evaluation result without a baseline comparison and significance test.
 ```
 
-### Evaluation Framework Audit Loop
-
+## Stop Conditions
 ```
-EVAL FRAMEWORK AUDIT ITERATION:
-audit_areas = [metric_selection, benchmark_coverage, regression_detection, judge_quality]
-current_area = 0
+STOP when ANY of these are true:
+  - All quality dimensions evaluated with baseline comparison
+  - Regression tests pass and are integrated into CI
+  - Statistical significance computed for all comparisons
+  - User explicitly requests stop
 
-WHILE current_area < len(audit_areas):
-  area = audit_areas[current_area]
-
-  1. RUN all checks for the area
-  2. FOR each FAIL: document root cause and recommended fix
-  3. CLASSIFY severity: CRITICAL (evaluation is misleading) | HIGH (gaps in coverage) | MEDIUM (nice to have)
-  4. IF any CRITICAL failures in metric_selection or regression_detection:
-     HALT "Evaluation framework is unreliable. Fix before trusting eval results."
-
-  current_area += 1
-
-FINAL:
-  total_checks = sum(all checks across areas)
-  pass_count = sum(all PASS across areas)
-  framework_health = pass_count / total_checks * 100
-
-  IF framework_health < 60%: "Evaluation framework needs significant work. Results are unreliable."
-  IF framework_health >= 60% AND < 85%: "Evaluation framework is functional but has gaps."
-  IF framework_health >= 85%: "Evaluation framework is robust. Schedule re-audit in 90 days."
+DO NOT STOP just because:
+  - One dimension shows no significant difference (report it as-is)
+  - Human evaluation budget is exhausted (use automated judges for remaining)
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run evaluation tasks sequentially: dataset/judges, then automated evaluation, then regression/reporting.
-- Use branch isolation per task: `git checkout -b godmode-eval-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

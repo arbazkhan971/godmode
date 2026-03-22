@@ -111,93 +111,28 @@ Set up a production-grade Tailwind configuration:
 
 #### Tailwind 3.x (JS configuration)
 ```typescript
-// tailwind.config.ts
+// tailwind.config.ts — same tokens as v4 but in JS format
 import type { Config } from 'tailwindcss';
 import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
-  content: [
-    './src/**/*.{html,js,ts,jsx,tsx,svelte,vue}',
-    './components/**/*.{js,ts,jsx,tsx}',
-  ],
-
-  darkMode: 'class',  // or 'media' for OS preference
-
+  content: ['./src/**/*.{html,js,ts,jsx,tsx,svelte,vue}', './components/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
-      // Colors — design token-driven
       colors: {
-        brand: {
-          50: 'oklch(0.97 0.02 250)',
-          100: 'oklch(0.93 0.04 250)',
-          500: 'oklch(0.55 0.20 250)',
-          600: 'oklch(0.48 0.20 250)',
-          700: 'oklch(0.40 0.18 250)',
-          900: 'oklch(0.25 0.12 250)',
-        },
-        surface: {
-          DEFAULT: 'var(--color-surface)',
-          dark: 'var(--color-surface-dark)',
-        },
+        brand: { 50: 'oklch(0.97 0.02 250)', 500: 'oklch(0.55 0.20 250)', 600: 'oklch(0.48 0.20 250)', 700: 'oklch(0.40 0.18 250)', 900: 'oklch(0.25 0.12 250)' },
+        surface: { DEFAULT: 'var(--color-surface)', dark: 'var(--color-surface-dark)' },
       },
-
-      // Typography
-      fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
-        mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono],
-      },
-
-      fontSize: {
-        '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
-      },
-
-      // Spacing
-      spacing: {
-        18: '4.5rem',
-        88: '22rem',
-      },
-
-      // Breakpoints
-      screens: {
-        xs: '475px',
-      },
-
-      // Shadows
-      boxShadow: {
-        soft: '0 2px 8px rgba(0,0,0,0.06)',
-        card: '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)',
-      },
-
-      // Border radius
-      borderRadius: {
-        button: '0.5rem',
-        card: '0.75rem',
-        modal: '1rem',
-      },
-
-      // Animations
-      keyframes: {
-        'slide-in': {
-          from: { transform: 'translateY(8px)', opacity: '0' },
-          to: { transform: 'translateY(0)', opacity: '1' },
-        },
-        'fade-in': {
-          from: { opacity: '0' },
-          to: { opacity: '1' },
-        },
-      },
-      animation: {
-        'slide-in': 'slide-in 0.3s ease-out',
-        'fade-in': 'fade-in 0.2s ease-out',
-      },
+      fontFamily: { sans: ['Inter', ...defaultTheme.fontFamily.sans], mono: ['JetBrains Mono', ...defaultTheme.fontFamily.mono] },
+      screens: { xs: '475px' },
+      boxShadow: { soft: '0 2px 8px rgba(0,0,0,0.06)', card: '0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)' },
+      borderRadius: { button: '0.5rem', card: '0.75rem', modal: '1rem' },
+      keyframes: { 'slide-in': { from: { transform: 'translateY(8px)', opacity: '0' }, to: { transform: 'translateY(0)', opacity: '1' } } },
+      animation: { 'slide-in': 'slide-in 0.3s ease-out', 'fade-in': 'fade-in 0.2s ease-out' },
     },
   },
-
-  plugins: [
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/container-queries'),
-  ],
+  plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms'), require('@tailwindcss/container-queries')],
 } satisfies Config;
 ```
 
@@ -285,23 +220,6 @@ export const typographyPlugin = plugin(({ addBase, addComponents, addUtilities, 
       '&::-webkit-scrollbar': { display: 'none' },
     },
   });
-});
-```
-
-#### Variant Plugin
-```typescript
-// tailwind-plugins/variants.ts
-import plugin from 'tailwindcss/plugin';
-
-export const variantPlugin = plugin(({ addVariant }) => {
-  // Custom variants
-  addVariant('hocus', ['&:hover', '&:focus-visible']);
-  addVariant('group-hocus', [':merge(.group):hover &', ':merge(.group):focus-visible &']);
-  addVariant('not-first', '&:not(:first-child)');
-  addVariant('not-last', '&:not(:last-child)');
-  addVariant('aria-selected', '&[aria-selected="true"]');
-  addVariant('aria-expanded', '&[aria-expanded="true"]');
-  addVariant('data-active', '&[data-active="true"]');
 });
 ```
 
@@ -505,25 +423,14 @@ TAILWIND PERFORMANCE AUDIT:
 └─────────────────────────────┴──────────────────┴─────────────────────┘
 ```
 
-#### Content Path Configuration
 ```typescript
-// Ensure ALL template files are covered
+// Content paths — ALL template files must be covered
 content: [
-  // Framework components
   './src/**/*.{html,js,ts,jsx,tsx,svelte,vue,astro}',
-  // UI library (if classes come from node_modules)
-  './node_modules/@your-ui-lib/src/**/*.{js,ts,jsx,tsx}',
-  // Storybook stories
+  './node_modules/@your-ui-lib/src/**/*.{js,ts,jsx,tsx}',  // if UI lib uses classes
   './.storybook/**/*.{js,ts,jsx,tsx}',
-  // Markdown content (if using class names)
-  './content/**/*.md',
 ],
-
-// Classes that are dynamically constructed and can't be detected
-safelist: [
-  // Only safelist when absolutely necessary
-  { pattern: /^bg-(red|green|blue|yellow)-(100|500)$/ },
-],
+safelist: [{ pattern: /^bg-(red|green|blue|yellow)-(100|500)$/ }],  // only when necessary
 ```
 
 #### Avoiding Bloat
@@ -545,21 +452,6 @@ const colorClasses = {
 
 // GOOD: Use theme values or extend config
 <div class="w-88 mt-3 text-brand-700">
-```
-
-#### PostCSS Optimization
-```javascript
-// postcss.config.js
-export default {
-  plugins: {
-    'tailwindcss/nesting': {},   // CSS nesting support
-    tailwindcss: {},
-    autoprefixer: {},
-    ...(process.env.NODE_ENV === 'production'
-      ? { cssnano: { preset: 'default' } }
-      : {}),
-  },
-};
 ```
 
 Rules:
@@ -669,78 +561,21 @@ cn(buttonVariants({ variant }), className)  // -> merge with overrides
 ```
 
 #### Pattern 4: Component Extraction Rules
-```
-WHEN TO EXTRACT A COMPONENT:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Signal                        │  Action                            │
-├────────────────────────────────┼────────────────────────────────────┤
-│  Same classes repeated 3+ times│  Extract component                 │
-│  Class list > 10 utilities     │  Extract component or use CVA      │
-│  Variant needed (size, color)  │  Use CVA                           │
-│  Complex responsive pattern    │  Extract component with props      │
-│  Dark mode doubles class count │  Use semantic tokens instead       │
-│  Conditional classes complex   │  Use cn() with clear conditions    │
-└────────────────────────────────┴────────────────────────────────────┘
 
-WHEN NOT TO EXTRACT:
-- One-off layout styling (just use utilities inline)
-- Simple 3-4 utility combinations
-- Page-specific layout that won't repeat
-```
+Extract when: same classes 3+ times, class list > 10 utilities, variants needed (use CVA), dark mode doubles class count (use semantic tokens instead).
+Do NOT extract: one-off layouts, simple 3-4 utility combos, page-specific non-repeating patterns.
 
 ### Step 8: Design System Integration
-Connect Tailwind to a design system:
 
 ```
-DESIGN TOKEN MAPPING:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Design Token (Figma)     │  Tailwind Config          │  Class      │
-├───────────────────────────┼───────────────────────────┼─────────────┤
-│  Color/Primary/600        │  colors.brand.600         │  text-brand-600 │
-│  Color/Neutral/100        │  colors.gray.100          │  bg-gray-100    │
-│  Spacing/4                │  spacing.4 (default 1rem) │  p-4            │
-│  Radius/Medium            │  borderRadius.card        │  rounded-card   │
-│  Shadow/Elevation-1       │  boxShadow.card           │  shadow-card    │
-│  Font/Heading/H1          │  (plugin base styles)     │  (h1 element)   │
-│  Font/Body/Regular        │  fontSize.base            │  text-base      │
-└───────────────────────────┴───────────────────────────┴─────────────┘
+DESIGN TOKEN MAPPING: Figma Token → Tailwind Config → Utility Class
+  Color/Primary/600 → colors.brand.600 → text-brand-600
+  Spacing/4 → spacing.4 → p-4
+  Radius/Medium → borderRadius.card → rounded-card
+  Shadow/Elevation-1 → boxShadow.card → shadow-card
 
 SYNC STRATEGY: <Manual | Style Dictionary | Figma plugin>
-```
-
-#### Tailwind Preset for Shared Design System
-```typescript
-// packages/design-tokens/tailwind-preset.ts
-import type { Config } from 'tailwindcss';
-import { tokens } from './generated-tokens';  // From Figma/Style Dictionary
-
-export default {
-  theme: {
-    colors: tokens.colors,
-    fontFamily: tokens.fonts,
-    fontSize: tokens.fontSizes,
-    spacing: tokens.spacing,
-    borderRadius: tokens.radii,
-    boxShadow: tokens.shadows,
-  },
-  plugins: [
-    require('./plugins/typography'),
-    require('./plugins/components'),
-  ],
-} satisfies Partial<Config>;
-
-// In project tailwind.config.ts
-import designSystem from '@company/design-tokens/tailwind-preset';
-
-export default {
-  presets: [designSystem],
-  content: ['./src/**/*.{ts,tsx}'],
-  theme: {
-    extend: {
-      // Project-specific extensions
-    },
-  },
-} satisfies Config;
+SHARED PRESET: Use `presets: [designSystem]` in tailwind.config.ts for multi-repo consistency
 ```
 
 ### Step 9: Validation
@@ -834,27 +669,6 @@ Setting up:
 CSS bundle: 8.2 KB (gzipped)
 ```
 
-### Migrating from CSS-in-JS to Tailwind
-```
-User: /godmode:tailwind Migrate from styled-components to Tailwind
-
-Tailwind: Scanning styled-components usage...
-
-Found 47 styled components
-Token mapping:
-  24 color tokens -> Tailwind theme colors
-  8 spacing tokens -> Tailwind spacing scale
-  6 font sizes -> Tailwind typography scale
-  4 shadows -> Tailwind box shadows
-
-Migration plan:
-  Phase 1: Set up Tailwind config with matched tokens
-  Phase 2: Convert simple styled components (32) to utility classes
-  Phase 3: Convert complex styled components (15) to CVA patterns
-  Phase 4: Remove styled-components dependency
-  Phase 5: Verify visual regression tests pass
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -885,23 +699,12 @@ Migration plan:
 
 ## Auto-Detection
 
-On activation, detect the Tailwind project context:
-
-```bash
-# Detect Tailwind installation and version
-grep -r "tailwindcss" package.json 2>/dev/null
-
-# Detect config file
-ls tailwind.config.* postcss.config.* 2>/dev/null
-
-# Detect CSS framework conflicts
-grep -r "styled-components\|@emotion\|sass\|less\|css-modules" package.json 2>/dev/null
-
-# Detect template file locations
-find src/ -name "*.tsx" -o -name "*.jsx" -o -name "*.vue" -o -name "*.svelte" -o -name "*.html" 2>/dev/null | head -5
-
-# Detect existing design tokens
-grep -r "theme\|extend" tailwind.config.* 2>/dev/null | head -10
+```
+1. Tailwind version: grep "tailwindcss" package.json
+2. Config: ls tailwind.config.* postcss.config.*
+3. CSS conflicts: grep for styled-components, @emotion, sass, less, css-modules
+4. Template locations: scan src/ for .tsx, .jsx, .vue, .svelte, .html
+5. Existing tokens: grep "theme|extend" in tailwind.config.*
 ```
 
 ## Output Format
@@ -922,23 +725,9 @@ Notes: <one-line summary>
 
 ## TSV Logging
 
-Append one TSV row to `.godmode/tailwind.tsv` after each invocation:
-
 ```
 timestamp	project	action	files_count	components_count	tokens_count	build_status	notes
 ```
-
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | component | theme | optimize | migrate | audit
-- `files_count`: number of files created or modified
-- `components_count`: number of components styled
-- `tokens_count`: number of design tokens added or modified
-- `build_status`: passing | failing | not-checked
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
 
@@ -959,57 +748,49 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 
 ## Error Recovery
 
-When errors occur, follow these remediation steps:
-
 ```
 IF build fails (missing classes):
-  1. Check content paths in tailwind.config.js — all template dirs must be listed
-  2. Verify dynamic classes are in safelist or use complete string literals
-  3. Check that PostCSS config includes tailwindcss plugin
-  4. For Tailwind v4: verify @import "tailwindcss" in CSS entry point
-
+  Check content paths, verify dynamic classes use complete strings, check PostCSS config
 IF styles not applying:
-  1. Check CSS specificity — Tailwind utilities may be overridden by custom CSS
-  2. Verify the class exists in the generated CSS (inspect build output)
-  3. Check for typos in class names (Tailwind does not warn on invalid classes)
-  4. Verify purge/content config is not removing needed classes
-
+  Check specificity, verify class in generated CSS, check purge config
 IF theme inconsistencies:
-  1. Check that custom values use theme() function in CSS or config references
-  2. Verify extend vs override in tailwind.config.js
-  3. Check for conflicting plugin theme modifications
-  4. Verify CSS custom properties match Tailwind token names
-
+  Verify extend vs override, check plugin conflicts, verify CSS custom properties
 IF responsive design breaks:
-  1. Verify mobile-first order: base styles first, then sm:, md:, lg:, xl:
-  2. Check container queries vs media queries for component-level responsive
-  3. Verify max-w and breakpoints are consistent across layouts
-  4. Test with browser responsive mode at each breakpoint
-
+  Verify mobile-first order, check container vs media queries, test all breakpoints
 IF dark mode issues:
-  1. Verify darkMode config: 'class' for manual, 'media' for system preference
-  2. Check that all color utilities have dark: variants
-  3. Verify dark mode toggle updates the HTML class or data attribute
-  4. Check that images/shadows have dark mode alternatives
+  Verify darkMode config, check dark: variants, verify toggle updates HTML class
 ```
 
 ## Anti-Patterns
 
-- **Do NOT construct class names dynamically.** `bg-${color}-500` will not be included in the output. Use complete strings in an object map.
-- **Do NOT use @apply everywhere.** Excessive `@apply` recreates CSS-in-JS with extra steps. Use utilities in markup or extract to components.
-- **Do NOT override the entire theme.** Use `theme.extend` to add values. Overriding `theme.colors` removes all default colors.
-- **Do NOT use !important modifier (`!`) casually.** If you need `!important`, you have a specificity problem. Fix the source, not the symptom.
-- **Do NOT safelist large pattern sets.** Safelisting `bg-*-*` includes thousands of classes. Safelist only specific, necessary classes.
-- **Do NOT ignore content paths.** Missing a template directory means classes used there won't be generated. Your production build will have missing styles.
-- **Do NOT write desktop-first responsive.** `lg:flex flex-col` means "flex on desktop, column on everything." Write `flex flex-col lg:flex-row` instead — mobile first.
-- **Do NOT duplicate utilities across components.** If 5 components share the same 12-class pattern, extract a component or use CVA.
-- **Do NOT hardcode colors or spacing.** `text-[#1a2b3c]` or `mt-[13px]` defeats the design system. Add values to the config and use theme tokens.
-- **Do NOT skip focus styles.** Every interactive element needs `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` or equivalent. Keyboard users depend on visible focus.
+- **Do NOT construct class names dynamically.** `bg-${color}-500` is not detected. Use complete strings in an object map.
+- **Do NOT use @apply everywhere.** Excessive `@apply` recreates CSS-in-JS. Use utilities in markup.
+- **Do NOT override the entire theme.** Use `theme.extend`. Overriding `theme.colors` removes all defaults.
+- **Do NOT safelist large pattern sets.** Safelist only specific, necessary classes.
+- **Do NOT ignore content paths.** Missing template directories cause missing production styles.
+- **Do NOT write desktop-first responsive.** Write `flex flex-col lg:flex-row` — mobile first.
+- **Do NOT hardcode colors or spacing.** `text-[#1a2b3c]` defeats the design system. Use theme tokens.
+- **Do NOT skip focus styles.** Every interactive element needs `focus-visible:ring-2` or equivalent.
 
+## Keep/Discard Discipline
+
+After each Tailwind implementation pass, evaluate:
+- **KEEP** if: CSS build completes without errors, no dynamic class construction, content paths cover all templates, mobile-first responsive patterns, all interactive elements have focus-visible styles.
+- **DISCARD** if: `theme.extend` not used (overrides entire theme), dynamic class names detected, `@apply` count exceeds 10, arbitrary values exceed 20, or focus styles missing on interactive elements.
+- Measure CSS bundle size before and after. Revert changes that increase bundle without adding functionality.
+- Check dark mode in both light and dark themes before committing.
+
+## Stop Conditions
+
+Stop the tailwind skill when:
+1. CSS build completes without errors on all configured content paths.
+2. No dynamically constructed class names exist in the codebase.
+3. All interactive elements have focus-visible styles.
+4. Mobile-first responsive patterns verified (no desktop-first breakpoints).
+5. CSS bundle size is under 15 KB gzipped.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
-- Replace `Agent("task")` → run the task inline in the current conversation
-- Replace `EnterWorktree` → use `git stash` + work in current directory
-- Replace `TodoWrite` → track progress with numbered comments in chat
-- All Tailwind CSS conventions, patterns, and quality checks still apply identically
+- Run the task inline in the current conversation.
+- Use `git stash` + work in current directory instead of `EnterWorktree`.
+- All Tailwind CSS conventions, patterns, and quality checks still apply identically.

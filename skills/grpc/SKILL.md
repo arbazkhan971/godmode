@@ -360,67 +360,26 @@ STREAMING BEST PRACTICES:
 ```
 
 ### Step 6: gRPC-Web for Browser Clients
-Enable browser access to gRPC services:
 
 ```
-GRPC-WEB ARCHITECTURE:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  ┌──────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │  Browser  │───│  Envoy Proxy │───│  gRPC Server  │       │
-│  │ (gRPC-Web)│   │  (transcodes)│   │  (native gRPC)│       │
-│  └──────────┘    └──────────────┘    └──────────────┘       │
-│                                                              │
-│  Alternative: gRPC-Web middleware in the server itself       │
-│  ┌──────────┐    ┌──────────────────────────┐               │
-│  │  Browser  │───│  gRPC Server + grpc-web  │               │
-│  │ (gRPC-Web)│   │  middleware               │               │
-│  └──────────┘    └──────────────────────────┘               │
-│                                                              │
-│  Alternative: Connect protocol (Buf Connect)                 │
-│  ┌──────────┐    ┌──────────────────────────┐               │
-│  │  Browser  │───│  Connect Server           │               │
-│  │ (Connect) │   │  (gRPC + gRPC-Web + HTTP) │               │
-│  └──────────┘    └──────────────────────────┘               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-
 GRPC-WEB OPTIONS:
+┌──────────────┬────────────────────────────────────────────────────┐
+│ Option       │ Description                                        │
+├──────────────┼────────────────────────────────────────────────────┤
+│ Envoy Proxy  │ Transcodes gRPC-Web to native gRPC. Production-   │
+│ (production) │ proven. No server code changes. Extra component.   │
+│ Buf Connect  │ No proxy needed. Full streaming. Browser-native.   │
+│ (new projects│ Supports gRPC + gRPC-Web + Connect simultaneously.│
+│ grpc-web npm │ Server-side middleware. Simpler but limited         │
+│ (simple)     │ streaming support.                                 │
+└──────────────┴────────────────────────────────────────────────────┘
 
-Option A — Envoy Proxy (RECOMMENDED for production):
-  Envoy sits in front of gRPC services and transcodes
-  gRPC-Web requests to native gRPC.
+LIMITATIONS: No client streaming, no bidi streaming (browser HTTP/1.1).
+Server streaming works via chunked transfer encoding. CORS required.
 
-  Pros: No server code changes, production-proven, supports all features
-  Cons: Extra infrastructure component
-
-Option B — grpc-web npm package + middleware:
-  Server includes gRPC-Web middleware that handles transcoding.
-
-  Pros: No separate proxy, simpler deployment
-  Cons: Limited streaming support, less mature
-
-Option C — Buf Connect (RECOMMENDED for new projects):
-  Connect is a protocol compatible with gRPC that works natively
-  in browsers without a proxy. Supports gRPC, gRPC-Web, and
-  Connect protocols simultaneously.
-
-  Pros: No proxy needed, full streaming, idiomatic HTTP, browser-native
-  Cons: Newer ecosystem, requires Connect-compatible server
-
-GRPC-WEB LIMITATIONS:
-- No client streaming (browser limitation — HTTP/1.1)
-- No bidirectional streaming (use WebSocket fallback or Connect)
-- Server streaming works but with chunked transfer encoding
-- Binary proto encoding or base64 text encoding
-- CORS must be configured on the proxy/server
-
-CLIENT CODE GENERATION:
-  # Using buf + connect-es (recommended)
-  buf generate --template buf.gen.ts.yaml
-
-  # Using grpc-web
-  protoc --grpc-web_out=import_style=typescript,mode=grpcwebtext:gen/web
+CODE GENERATION:
+  buf generate --template buf.gen.ts.yaml   # Buf Connect (recommended)
+  protoc --grpc-web_out=...                 # grpc-web
 ```
 
 ### Step 7: Load Balancing & Service Mesh Integration
@@ -442,43 +401,10 @@ GRPC LOAD BALANCING:
 └─────────────────────────────────────────────────────────────┘
 
 LOAD BALANCING STRATEGIES:
-
-1. Proxy-based (L7 — RECOMMENDED for most deployments):
-   ┌──────────┐    ┌──────────┐    ┌──────────┐
-   │  Client   │───│  L7 Proxy │───│  Server 1 │
-   │           │   │ (Envoy,   │───│  Server 2 │
-   │           │   │  Nginx,   │───│  Server 3 │
-   │           │   │  Traefik) │
-   └──────────┘    └──────────┘
-
-   - Proxy terminates HTTP/2 connection from client
-   - Opens separate connections to each backend
-   - Distributes individual RPCs (not connections)
-   - Supports round-robin, least-connections, weighted
-
-2. Client-side (look-aside):
-   ┌──────────┐    ┌──────────┐
-   │  Client   │───│  Server 1 │
-   │  (built-in│───│  Server 2 │
-   │   LB)     │───│  Server 3 │
-   └──────┬───┘
-          │
-   ┌──────┴───────┐
-   │  Service      │
-   │  Discovery    │
-   │  (DNS, etcd,  │
-   │   Consul)     │
-   └──────────────┘
-
-   - Client discovers backends via service registry
-   - Client maintains connections to multiple backends
-   - Client distributes RPCs using configured policy
-   - Built into grpc-go, grpc-java (pick_first, round_robin)
-
-3. xDS-based (service mesh native):
-   - Client uses xDS protocol to get routing config from control plane
-   - Istio, Linkerd, and Consul inject xDS-compatible sidecars
-   - Most sophisticated: supports traffic splitting, fault injection, retries
+1. Proxy-based L7 (RECOMMENDED): Envoy/Nginx/Traefik terminates HTTP/2, distributes individual RPCs.
+2. Client-side (look-aside): Client discovers backends via DNS/etcd/Consul, distributes RPCs directly.
+   Built into grpc-go, grpc-java (pick_first, round_robin).
+3. xDS-based (service mesh): Client gets routing config from control plane (Istio, Linkerd, Consul).
 
 SERVICE MESH INTEGRATION:
 
@@ -493,28 +419,12 @@ SERVICE MESH INTEGRATION:
 │  Connect      │                │  sidecar                     │
 └───────────────┴────────────────┴─────────────────────────────┘
 
-MESH CONFIGURATION FOR GRPC:
-1. Enable HTTP/2 protocol detection (automatic in Istio/Linkerd)
-2. Configure per-RPC load balancing (not per-connection)
-3. Set retry policies per method:
-   - Unary: retry on UNAVAILABLE, DEADLINE_EXCEEDED (max 3)
-   - Streaming: retry on UNAVAILABLE only (streams are not idempotent)
-4. Configure circuit breaking:
-   - Max connections per host
-   - Max pending requests
-   - Max requests per connection
-5. Enable distributed tracing propagation (gRPC metadata -> trace headers)
-6. Configure mTLS between services (mesh handles certificate rotation)
+MESH CONFIGURATION: Enable HTTP/2 detection, per-RPC LB, retry policies
+(unary: retry UNAVAILABLE+DEADLINE_EXCEEDED max 3, streaming: UNAVAILABLE only),
+circuit breaking, distributed tracing propagation, mTLS.
 
-HEALTH CHECKING:
-  service Health {
-    rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
-    rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
-  }
-
-  - Implement grpc.health.v1.Health service on every gRPC server
-  - Used by load balancers, service mesh, and Kubernetes probes
-  - Report per-service health (not just process health)
+HEALTH CHECKING: Implement grpc.health.v1.Health on every server.
+Used by load balancers, service mesh, and Kubernetes probes.
 ```
 
 ### Step 8: Error Handling & Observability
@@ -546,13 +456,8 @@ STATUS CODES (use correctly — not all errors are INTERNAL):
 └──────────────────┴───────────────────────────────────────────┘
 
 RICH ERROR DETAILS (google.rpc.Status):
-  Use google.rpc error details to attach structured metadata:
-  - BadRequest.FieldViolation — per-field validation errors
-  - RetryInfo — when and how to retry
-  - DebugInfo — stack trace (development only, never production)
-  - ErrorInfo — machine-readable error reason and domain
-  - QuotaFailure — which quota was exceeded
-  - PreconditionFailure — which precondition failed
+  BadRequest.FieldViolation (validation), RetryInfo (retry guidance),
+  ErrorInfo (machine-readable reason), PreconditionFailure (which precondition).
 
 OBSERVABILITY:
 
@@ -775,61 +680,26 @@ AUTO-DETECT SEQUENCE:
 
 ## Explicit Loop Protocol
 
-When building multiple gRPC services or RPCs iteratively:
-
 ```
-GRPC SERVICE BUILD LOOP:
-current_iteration = 0
-services = [service_1, service_2, ...]  // from discovery
+FOR EACH service (in dependency order):
+  1. DESIGN proto: service definition, messages, enums, validation rules
+  2. RUN buf lint + buf breaking — fix before proceeding
+  3. GENERATE code, IMPLEMENT handlers (unary first, then streaming)
+  4. ADD interceptors (recovery, logging, metrics, auth), health check
+  5. WRITE tests, REPORT progress
 
-WHILE current_iteration < len(services) AND NOT user_says_stop:
-  1. SELECT next service by dependency order
-  2. DESIGN proto file: service definition, messages, enums, validation rules
-  3. RUN buf lint — fix any violations before proceeding
-  4. RUN buf breaking (against main branch) — ensure no breaking changes
-  5. GENERATE code: run buf generate for all target languages
-  6. IMPLEMENT server handlers: unary RPCs first, then streaming
-  7. ADD interceptors: recovery, logging, metrics, auth, validation
-  8. IMPLEMENT health check (grpc.health.v1.Health)
-  9. WRITE tests: handler unit tests, integration tests, streaming edge cases
-  10. current_iteration += 1
-  11. REPORT: "Service <N>/<total>: <name> — <X> RPCs (<Y> unary, <Z> streaming), buf lint PASS"
-
-ON COMPLETION:
-  RUN buf lint + buf breaking on full proto tree
-  VERIFY health checks on all services
-  REPORT: "<N> services, <M> RPCs total, buf lint PASS, buf breaking PASS"
+POST-LOOP: buf lint + buf breaking on full proto tree, verify all health checks.
 ```
 
 ## Multi-Agent Dispatch
 
-For multi-service gRPC architectures, dispatch parallel agents:
-
 ```
-PARALLEL GRPC AGENTS:
-When building multiple gRPC services simultaneously:
+PARALLEL AGENTS (3 worktrees):
+  Agent 1 — grpc-protos: proto design, buf config, shared types, lint + breaking checks
+  Agent 2 — grpc-server: handlers, interceptor chain, health check, L7 load balancing
+  Agent 3 — grpc-client: client stubs, client interceptors, gRPC-Web/Connect, integration tests
 
-Agent 1 (worktree: grpc-protos):
-  - Design all proto files with consistent conventions
-  - Set up buf configuration (lint, breaking, generation)
-  - Create shared proto types (common messages, enums, well-known type imports)
-  - Run buf lint and buf breaking validation
-
-Agent 2 (worktree: grpc-server):
-  - Implement server handlers for all services
-  - Add interceptor chain (recovery, logging, metrics, auth, validation)
-  - Implement health check service
-  - Configure L7 load balancing (Envoy or client-side)
-
-Agent 3 (worktree: grpc-client):
-  - Generate typed client stubs for all consumer languages
-  - Implement client interceptors (retry, timeout, auth metadata)
-  - Set up gRPC-Web or Connect for browser clients
-  - Write integration tests using generated clients
-
-MERGE STRATEGY: Proto agent merges first (server and client depend on generated code).
-  Server and client merge independently.
-  Final: run full integration test suite with real client-server communication.
+MERGE: Proto first (server+client depend on generated code). Final: integration test suite.
 ```
 
 ## Hard Rules
@@ -847,18 +717,6 @@ HARD RULES — GRPC:
 9. ALWAYS set deadlines on all RPCs. RPCs without deadlines can hang forever and leak resources.
 10. ALWAYS use correct status codes. NOT_FOUND, INVALID_ARGUMENT, PERMISSION_DENIED give clients actionable information — INTERNAL does not.
 ```
-
-## Anti-Patterns
-
-- **Do NOT use L4 load balancing for gRPC.** HTTP/2 multiplexes all RPCs over one connection. L4 balancers see one connection and route everything to one backend.
-- **Do NOT skip enum zero value.** Every enum must have `FOO_UNSPECIFIED = 0`. Without it, you cannot distinguish "not set" from the first enum value.
-- **Do NOT reuse field numbers.** When you remove a field, reserve its number. Reusing a number causes silent data corruption with old clients.
-- **Do NOT share request/response messages across RPCs.** Each RPC gets its own messages. Sharing creates coupling — changing one RPC breaks another.
-- **Do NOT use INTERNAL for all errors.** gRPC has 16 status codes for a reason. INVALID_ARGUMENT, NOT_FOUND, and PERMISSION_DENIED give clients actionable information.
-- **Do NOT ignore backpressure in streams.** A fast producer and slow consumer will cause OOM. Implement flow control on both sides.
-- **Do NOT skip health checks.** Without grpc.health.v1.Health, load balancers and orchestrators cannot route traffic correctly.
-- **Do NOT commit generated code.** Generate in CI from proto files. Committed generated code drifts from protos and causes merge conflicts.
-
 
 ## Output Format
 
@@ -933,114 +791,27 @@ ERROR RECOVERY — GRPC:
    → Re-run buf generate or protoc with current proto files. Delete old generated files first. Verify import paths match proto package.
 ```
 
-## Proto Audit Loop
-
-Autonomous audit loop that validates proto files, detects backward compatibility breaks, and enforces proto best practices. Runs until all checks pass or max iterations reached.
-
+## Keep/Discard Discipline
 ```
-PROTO AUDIT LOOP:
-current_iteration = 0
-max_iterations = 15
-proto_files = find_all_proto_files()  // **/*.proto
-buf_config = detect_buf_config()      // buf.yaml
+After EACH proto file change:
+  1. MEASURE: Run buf lint + buf breaking against main branch.
+  2. COMPARE: Are lint errors = 0 AND breaking changes = 0?
+  3. DECIDE:
+     - KEEP if buf lint PASS AND buf breaking PASS AND health check present.
+     - DISCARD if any lint error, any breaking change, or missing health check.
+  4. COMMIT kept changes. Revert discarded changes before the next iteration.
 
-WHILE current_iteration < max_iterations AND NOT all_checks_pass:
-  current_iteration += 1
-
-  // Phase 1: Proto Lint
-  lint_errors = buf_lint(proto_files)
-  IF lint_errors > 0:
-    FOR each error:
-      FIX the violation:
-        - ENUM_ZERO_VALUE_SUFFIX: add _UNSPECIFIED = 0
-        - FIELD_LOWER_SNAKE_CASE: rename to snake_case
-        - SERVICE_SUFFIX: add "Service" suffix
-        - RPC_REQUEST_RESPONSE_UNIQUE: create per-RPC messages
-        - PACKAGE_DEFINED: add package declaration
-      LOG: "LINT fixed: {error.rule} in {error.file}:{error.line}"
-    RE-LINT — repeat until 0 errors
-
-  // Phase 2: Backward Compatibility Check
-  breaking_changes = buf_breaking(proto_files, against="HEAD~1")
-  // Detected: field number reuse, field type change, enum removal,
-  // required field added, service/method removal, package rename
-  FOR each change in breaking_changes:
-    severity = classify(change)
-    IF severity == "WIRE_INCOMPATIBLE":
-      // Field number reused, type changed — data corruption risk
-      REVERT immediately
-      ADD reserved number/name for removed fields
-      LOG: "WIRE BREAK reverted: {change.description}"
-    IF severity == "SOURCE_INCOMPATIBLE":
-      // Method removed, message renamed — client build break
-      REVERT — add new method, mark old as deprecated
-      LOG: "SOURCE BREAK reverted: {change.description}"
-
-  // Phase 3: Proto Quality Checks
-  quality_checks = {
-    enum_zero_unspecified: every_enum_has_unspecified_zero(),
-    field_numbers_sequential: no_gaps_in_field_numbers(),
-    reserved_for_removed: all_removed_fields_have_reserved(),
-    no_shared_messages: each_rpc_has_own_request_response(),
-    package_versioned: package_name_includes_version(),  // e.g., company.service.v1
-    imports_well_known: uses_google_protobuf_types(),     // Timestamp, FieldMask, etc.
-    validation_rules: request_fields_have_validate_rules(),
-    deadlines_documented: all_rpcs_document_timeout_expectation(),
-    health_check_present: grpc_health_v1_implemented(),
-    field_docs_present: all_fields_have_comments()
-  }
-
-  FOR each check in quality_checks:
-    IF check.status == FAIL:
-      FIX the issue
-      LOG: "QUALITY fixed: {check.name}"
-
-  // Phase 4: Keep/Discard
-  relint = buf_lint(proto_files)
-  rebreak = buf_breaking(proto_files, against="HEAD~1")
-
-  IF relint.errors == 0 AND rebreak.breaking == 0 AND all(quality_checks):
-    KEEP all changes
-    COMMIT: "grpc: proto audit pass #{current_iteration} — {fixes} fixes, buf lint PASS, buf breaking PASS"
-    all_checks_pass = true
-  ELSE:
-    CONTINUE
-
-  REPORT: "Iteration {current_iteration}: lint_errors={relint.errors}, breaking={rebreak.breaking}, quality={sum(quality_checks.pass)}/{len(quality_checks)}"
-
-ON COMPLETION:
-  LOG to .godmode/grpc-audit.tsv:
-    timestamp\tproto_count\titerations\tlint_errors_fixed\tbreaking_caught\tquality_score\tverdict
-  REPORT: "Proto audit complete: {current_iteration} iterations, {proto_count} files, buf lint PASS, 0 breaking"
+Never keep a change that introduces a wire-incompatible break.
+Never skip buf breaking check before merge.
 ```
 
-### Backward Compatibility Reference
-
+## Stop Conditions
 ```
-BACKWARD COMPATIBILITY RULES (enforced by audit loop):
-┌────────────────────────────────────────┬───────────────┬─────────────────────────────┐
-│ Change                                 │ Compatibility │ Auto-fix                    │
-├────────────────────────────────────────┼───────────────┼─────────────────────────────┤
-│ Add new field (new number)             │ SAFE          │ Keep                        │
-│ Add new RPC method                     │ SAFE          │ Keep                        │
-│ Add new enum value (non-zero)          │ SAFE          │ Keep                        │
-│ Add new message type                   │ SAFE          │ Keep                        │
-│ Remove field (without reserved)        │ WIRE BREAK    │ Revert, add reserved        │
-│ Reuse field number                     │ WIRE BREAK    │ Revert, use next number     │
-│ Change field type                      │ WIRE BREAK    │ Revert, add new field       │
-│ Remove enum value                      │ WIRE BREAK    │ Revert, deprecate           │
-│ Rename package                         │ SOURCE BREAK  │ Revert                      │
-│ Remove RPC method                      │ SOURCE BREAK  │ Revert, deprecate           │
-│ Change RPC request/response type       │ SOURCE BREAK  │ Revert, add new RPC         │
-│ Add required field to existing message │ WIRE BREAK    │ Make optional or add default │
-└────────────────────────────────────────┴───────────────┴─────────────────────────────┘
-
-THRESHOLDS:
-- Wire-incompatible changes: 0 allowed (hard gate, blocks merge)
-- Source-incompatible changes: 0 allowed without deprecation plan
-- buf lint violations: 0 allowed
-- Reserved declarations: required for every removed field/number
-- Health check (grpc.health.v1): required on every service
+STOP when ANY of these are true:
+  - buf lint: 0 errors AND buf breaking: 0 regressions AND health check implemented
+  - All RPCs have deadlines, per-RPC request/response messages, and validation rules
+  - User explicitly requests stop
+  - Max iterations (10) reached
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

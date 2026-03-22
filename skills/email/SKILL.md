@@ -740,39 +740,12 @@ WHILE notification_queue is not empty:
 ```
 
 ## Multi-Agent Dispatch
-
 ```
-PARALLEL AGENTS (4 worktrees):
-
-Agent 1 — "email-service":
-  EnterWorktree("email-service")
-  Set up email provider client (Resend, SES, Postmark, SendGrid)
-  Implement email queue with retry and exponential backoff
-  Build suppression list management
-  ExitWorktree()
-
-Agent 2 — "templates":
-  EnterWorktree("templates")
-  Create email templates for all notification types (React Email or MJML)
-  Add plain-text versions for every HTML template
-  Verify responsive design and client compatibility
-  ExitWorktree()
-
-Agent 3 — "delivery-tracking":
-  EnterWorktree("delivery-tracking")
-  Implement webhook handler for bounces, complaints, unsubscribes
-  Build delivery metrics dashboard (delivery rate, bounce rate, open rate)
-  Set up alerts for degraded deliverability
-  ExitWorktree()
-
-Agent 4 — "notification-system":
-  EnterWorktree("notification-system")
-  Build multi-channel notification service (email + push + SMS + in-app)
-  Implement user preference center
-  Add rate limiting and digest batching for low-priority notifications
-  ExitWorktree()
-
-MERGE: Combine all branches, verify end-to-end email delivery flow.
+Agent 1 (email-service): Provider client, queue with retry, suppression list
+Agent 2 (templates): Email templates, plain-text versions, responsive design
+Agent 3 (delivery-tracking): Bounce/complaint webhooks, delivery metrics, alerts
+Agent 4 (notification-system): Multi-channel service, preference center, rate limiting
+MERGE: Combine all branches -> end-to-end delivery test
 ```
 
 ## Auto-Detection
@@ -825,329 +798,29 @@ All of these must be true before marking the task complete:
 | Queue not processing | Verify queue connection (Redis/SQS). Check worker is running. Check dead-letter queue for stuck messages. |
 | Bounce rate exceeds 5% | Immediately pause sending. Audit suppression list. Verify list hygiene. Check for typos in recipient collection. |
 
-## Anti-Patterns
-
-- **Do NOT send email synchronously in request handlers.** Email delivery can take seconds and fail transiently. Use a queue with retry logic. Return the API response immediately.
-- **Do NOT mix transactional and marketing on the same domain/IP.** Marketing spam complaints destroy transactional deliverability. Isolate them completely.
-- **Do NOT email hard-bounced addresses.** Repeatedly emailing invalid addresses tanks your sender reputation. Maintain and enforce a suppression list.
-- **Do NOT skip SPF, DKIM, and DMARC.** Without email authentication, your emails go to spam. All three are required for reliable delivery.
-- **Do NOT use noreply@domain.com as the only contact.** Users will reply to transactional emails with support questions. Monitor the reply-to address or route to support.
-- **Do NOT send notifications without user preference checks.** Every non-critical notification must respect user preferences. Over-notifying drives users to unsubscribe or mark you as spam.
-- **Do NOT embed images as base64 in email HTML.** Email clients often block base64 images. Host images on a CDN and reference them with absolute URLs.
-- **Do NOT launch marketing email on a new IP at full volume.** Warm up gradually over 30 days. ISPs flag sudden high-volume senders as spam.
-
-
-## Email Deliverability Optimization Loop
-
-When auditing and optimizing email deliverability, run this systematic loop. Each pass targets a specific deliverability dimension with measurable before/after metrics.
-
-### Pass 1: SPF / DKIM / DMARC Audit
-
+## Keep/Discard Discipline
 ```
-EMAIL AUTHENTICATION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Check SPF (Sender Policy Framework)                    │
-│                                                                   │
-│  # Query current SPF record:                                     │
-│  dig TXT example.com | grep "v=spf1"                            │
-│                                                                   │
-│  Expected format:                                                │
-│  v=spf1 include:_spf.google.com include:sendgrid.net ~all       │
-│                                                                   │
-│  Audit checklist:                                                │
-│  [ ] SPF record exists on sending domain                         │
-│  [ ] All sending IPs/services are included                       │
-│  [ ] Record ends with -all (hard fail) or ~all (soft fail)       │
-│  [ ] Total DNS lookups <= 10 (SPF hard limit)                    │
-│  [ ] No duplicate include statements                             │
-│  [ ] Subdomain has own SPF if sending from subdomain             │
-│                                                                   │
-│  Common SPF includes by provider:                                │
-│  ┌──────────────────────────┬────────────────────────────────┐  │
-│  │  Provider                │  SPF Include                    │  │
-│  ├──────────────────────────┼────────────────────────────────┤  │
-│  │  SendGrid                │  include:sendgrid.net           │  │
-│  │  AWS SES                 │  include:amazonses.com          │  │
-│  │  Postmark                │  include:spf.mtasv.net          │  │
-│  │  Resend                  │  include:_spf.resend.com        │  │
-│  │  Google Workspace        │  include:_spf.google.com        │  │
-│  │  Microsoft 365           │  include:spf.protection.outlook.com │
-│  └──────────────────────────┴────────────────────────────────┘  │
-│                                                                   │
-│  Step 2: Check DKIM (DomainKeys Identified Mail)                │
-│                                                                   │
-│  # Query DKIM record (selector varies by provider):              │
-│  dig TXT selector._domainkey.example.com                         │
-│  # Common selectors: s1, k1, google, selector1, default          │
-│                                                                   │
-│  Audit checklist:                                                │
-│  [ ] DKIM record exists for each sending service                 │
-│  [ ] Key length >= 1024 bits (2048 recommended)                  │
-│  [ ] Record type: CNAME (provider-managed) or TXT (self-managed)│
-│  [ ] Rotation policy: rotate keys at least annually              │
-│  [ ] Multiple selectors for multiple sending services            │
-│                                                                   │
-│  Step 3: Check DMARC (Domain-based Message Authentication)      │
-│                                                                   │
-│  # Query DMARC record:                                           │
-│  dig TXT _dmarc.example.com                                     │
-│                                                                   │
-│  Expected format:                                                │
-│  v=DMARC1; p=reject; rua=mailto:dmarc@example.com;              │
-│  ruf=mailto:dmarc-forensic@example.com; pct=100                 │
-│                                                                   │
-│  DMARC policy progression:                                       │
-│  1. p=none     (monitor only — start here)                       │
-│  2. p=quarantine (spam folder — after monitoring)                │
-│  3. p=reject   (reject outright — production target)             │
-│                                                                   │
-│  Audit checklist:                                                │
-│  [ ] DMARC record exists on sending domain                       │
-│  [ ] rua= tag set (aggregate reports — critical for monitoring) │
-│  [ ] Policy is at least p=quarantine for production domains      │
-│  [ ] pct=100 (apply to 100% of messages)                         │
-│  [ ] Subdomain policy: sp=reject (or inherited from parent)      │
-│  [ ] Reports are being monitored (use DMARC analytics service)  │
-│                                                                   │
-│  Step 4: Validate with online tools                              │
-│  - mail-tester.com — send test email, get deliverability score   │
-│  - mxtoolbox.com/SuperTool — check DNS records                   │
-│  - dmarcanalyzer.com — monitor DMARC reports                     │
-│  - learndmarc.com — interactive DMARC validator                  │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - SPF: PASS on all test emails                                  │
-│  - DKIM: PASS on all test emails (2048-bit key)                  │
-│  - DMARC: p=reject with 100% enforcement                        │
-│  - mail-tester.com score: >= 9/10                                │
-└──────────────────────────────────────────────────────────────────┘
+After EACH email template or deliverability change:
+  1. MEASURE: Send a test email — does it arrive in inbox (not spam)? Does the template render correctly?
+  2. COMPARE: Is the mail-tester.com score maintained or improved? Are bounce rates stable?
+  3. DECIDE:
+     - KEEP if: email lands in inbox AND template renders in top 8 clients AND SPF/DKIM/DMARC pass
+     - DISCARD if: email lands in spam OR template breaks in any major client OR authentication fails
+  4. COMMIT kept changes. Revert discarded changes before the next template.
 ```
 
-### Pass 2: Spam Score Audit
-
+## Stop Conditions
 ```
-SPAM SCORE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Test with mail-tester.com                               │
-│  - Send test email to the disposable address provided            │
-│  - Review score breakdown:                                       │
-│    ┌──────────────────────────────┬──────────┬───────────────┐  │
-│    │  Factor                      │  Points  │  Status       │  │
-│    ├──────────────────────────────┼──────────┼───────────────┤  │
-│    │  SPF authentication          │  +1      │  PASS/FAIL    │  │
-│    │  DKIM authentication         │  +1      │  PASS/FAIL    │  │
-│    │  DMARC alignment             │  +1      │  PASS/FAIL    │  │
-│    │  Reverse DNS (PTR record)    │  +0.5    │  PASS/FAIL    │  │
-│    │  HTML/text ratio             │  +0.5    │  PASS/FAIL    │  │
-│    │  Spam word detection         │  -0 to -3│  clean/flagged│  │
-│    │  Broken links                │  -1      │  clean/broken │  │
-│    │  Blacklist check             │  -5      │  clean/listed │  │
-│    │  Image-to-text ratio         │  -0 to -2│  balanced?    │  │
-│    │  Unsubscribe header          │  +0.5    │  present?     │  │
-│    └──────────────────────────────┴──────────┴───────────────┘  │
-│                                                                   │
-│  Step 2: Content optimization                                    │
-│  - Always include plain-text version alongside HTML              │
-│  - Maintain text-to-image ratio > 60% text                       │
-│  - Avoid spam trigger words: "FREE!!!", "ACT NOW", all caps     │
-│  - Do not use URL shorteners (bit.ly, etc.) — they are flagged  │
-│  - Include physical mailing address (CAN-SPAM requirement)       │
-│  - Use consistent From name and address                          │
-│  - Avoid large attachments — link to hosted files instead        │
-│                                                                   │
-│  Step 3: Sender reputation monitoring                            │
-│  - Google Postmaster Tools: monitor Gmail-specific reputation    │
-│  - Microsoft SNDS: monitor Outlook/Hotmail delivery              │
-│  - Check blacklists: mxtoolbox.com/blacklists.aspx              │
-│  - Monitor bounce rate: hard bounce rate must stay < 2%          │
-│  - Monitor complaint rate: must stay < 0.1% (1 per 1000 emails) │
-│                                                                   │
-│  Step 4: List-Unsubscribe header                                │
-│  // RFC 8058 — One-click unsubscribe (required by Gmail/Yahoo): │
-│  headers: {                                                      │
-│    'List-Unsubscribe': '<https://app.com/unsubscribe?token=X>,  │
-│                         <mailto:unsubscribe@app.com>',           │
-│    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',       │
-│  }                                                               │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - mail-tester.com score: >= 9/10                                │
-│  - Hard bounce rate: < 2%                                        │
-│  - Spam complaint rate: < 0.1%                                   │
-│  - Not listed on any major blacklist                             │
-│  - List-Unsubscribe header present on all marketing emails       │
-└──────────────────────────────────────────────────────────────────┘
+STOP when ANY of these are true:
+  - All notification types implemented with templates and queue-based delivery
+  - SPF + DKIM + DMARC all passing, mail-tester score >= 9/10
+  - Suppression list enforced and bounce webhook handler active
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - DMARC is at p=none (progression to p=reject takes 30 days of monitoring)
+  - Marketing email is not yet set up (transactional is the priority)
 ```
 
-### Pass 3: Template Rendering Audit
-
-```
-TEMPLATE RENDERING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Email client compatibility testing                      │
-│                                                                   │
-│  Test matrix (minimum):                                          │
-│  ┌──────────────────────────┬──────────┬──────────────────────┐ │
-│  │  Client                  │  Platform│  Status               │ │
-│  ├──────────────────────────┼──────────┼──────────────────────┤ │
-│  │  Gmail (web)             │  Web     │  PASS/FAIL            │ │
-│  │  Gmail (mobile)          │  iOS/And │  PASS/FAIL            │ │
-│  │  Apple Mail              │  macOS   │  PASS/FAIL            │ │
-│  │  Apple Mail (iOS)        │  iOS     │  PASS/FAIL            │ │
-│  │  Outlook 365 (web)       │  Web     │  PASS/FAIL            │ │
-│  │  Outlook (desktop)       │  Windows │  PASS/FAIL            │ │
-│  │  Yahoo Mail              │  Web     │  PASS/FAIL            │ │
-│  │  Dark mode (all above)   │  All     │  PASS/FAIL            │ │
-│  └──────────────────────────┴──────────┴──────────────────────┘ │
-│                                                                   │
-│  Use Litmus or Email on Acid for automated cross-client testing  │
-│                                                                   │
-│  Step 2: Template best practices audit                           │
-│  [ ] Tables-based layout (not div/flexbox — Outlook support)     │
-│  [ ] Inline CSS styles (many clients strip <style> blocks)       │
-│  [ ] Max width: 600px (optimal for all clients)                  │
-│  [ ] System fonts or web-safe fonts (custom fonts unreliable)    │
-│  [ ] Images have alt text (displayed when images blocked)        │
-│  [ ] Images hosted on CDN with HTTPS URLs                        │
-│  [ ] Responsive design via media queries (where supported)       │
-│  [ ] Dark mode support:                                          │
-│      - Use transparent PNG logos (not white background)          │
-│      - Test @media (prefers-color-scheme: dark) styles           │
-│      - Avoid hard-coded white backgrounds                        │
-│  [ ] Preview text set (visible in inbox list)                    │
-│  [ ] CTA button is bulletproof (table-based, not image)          │
-│                                                                   │
-│  Step 3: Performance audit                                       │
-│  - Total email size: < 100KB HTML (many clients clip at 102KB)  │
-│  - Image count: < 10 images per email                            │
-│  - Image total weight: < 500KB (compressed)                      │
-│  - No JavaScript (stripped by all clients)                        │
-│  - No forms (inconsistent support across clients)                │
-│  - Plain text version: always include for accessibility          │
-│                                                                   │
-│  Step 4: Dynamic content testing                                 │
-│  - Test with all variable combinations (empty, long, special chars)│
-│  - Test with missing optional variables (graceful fallback)       │
-│  - Test with localized content (RTL languages, Unicode)          │
-│  - Verify all dynamic URLs are properly encoded                  │
-│  - Verify personalization tokens render correctly                │
-│                                                                   │
-│  TARGETS:                                                        │
-│  - All templates pass rendering in top 8 email clients           │
-│  - Dark mode renders correctly (no invisible text)               │
-│  - Email size < 100KB (avoid Gmail clipping)                     │
-│  - All dynamic content has fallback values                       │
-│  - Plain text version included for every template                │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Pass 4: Sending Infrastructure Audit
-
-```
-SENDING INFRASTRUCTURE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Step 1: Domain and IP configuration                             │
-│                                                                   │
-│  Domain strategy:                                                │
-│  ┌──────────────────────────┬────────────────────────────────┐  │
-│  │  Email Type              │  Sending Domain                 │  │
-│  ├──────────────────────────┼────────────────────────────────┤  │
-│  │  Transactional           │  notifications.example.com      │  │
-│  │  Marketing               │  mail.example.com               │  │
-│  │  Corporate               │  example.com                    │  │
-│  └──────────────────────────┴────────────────────────────────┘  │
-│  WHY: marketing spam complaints must not affect transactional    │
-│  deliverability. Separate domains = separate reputation.         │
-│                                                                   │
-│  IP configuration:                                               │
-│  - Dedicated IP for transactional (consistent reputation)        │
-│  - Shared or dedicated IP for marketing (depends on volume)      │
-│  - New dedicated IP must be warmed up over 30 days:              │
-│    Day 1-3: 50 emails/day                                        │
-│    Day 4-7: 200 emails/day                                       │
-│    Day 8-14: 1,000 emails/day                                    │
-│    Day 15-21: 5,000 emails/day                                   │
-│    Day 22-30: ramp to full volume                                │
-│                                                                   │
-│  Step 2: Bounce and suppression handling                         │
-│  // Webhook handler for bounces:                                 │
-│  async function handleBounce(event: WebhookEvent) {             │
-│    if (event.type === 'hard_bounce') {                           │
-│      // Immediately suppress — address is permanently invalid    │
-│      await suppressionList.add(event.email, 'hard_bounce');     │
-│      await db.users.update({                                    │
-│        where: { email: event.email },                            │
-│        data: { email_verified: false, email_suppressed: true },  │
-│      });                                                         │
-│    }                                                              │
-│    if (event.type === 'complaint') {                             │
-│      // User marked as spam — suppress and unsubscribe          │
-│      await suppressionList.add(event.email, 'complaint');        │
-│      await unsubscribeAll(event.email);                          │
-│    }                                                              │
-│    if (event.type === 'soft_bounce' && event.bounceCount >= 3) { │
-│      // Repeated soft bounces — treat as hard bounce             │
-│      await suppressionList.add(event.email, 'repeated_soft_bounce'); │
-│    }                                                              │
-│  }                                                               │
-│                                                                   │
-│  Step 3: Rate limiting and throttling                            │
-│  - Respect provider rate limits (SES: 14/sec default)            │
-│  - Implement per-domain throttling for bulk sends:               │
-│    Gmail: max 500/hr from new domains                            │
-│    Outlook: varies by reputation                                 │
-│  - Use queue with rate limiter for marketing batches             │
-│  - Monitor for 429/throttle responses from providers             │
-│                                                                   │
-│  AUDIT CHECKLIST:                                                │
-│  [ ] Transactional and marketing use separate sending domains    │
-│  [ ] SPF + DKIM + DMARC configured on all sending domains       │
-│  [ ] Bounce webhook handler suppresses hard bounces immediately  │
-│  [ ] Complaint webhook handler unsubscribes and suppresses       │
-│  [ ] Suppression list checked before every send                  │
-│  [ ] Dedicated IP warmed up (or shared IP with good reputation) │
-│  [ ] Rate limiting respects provider and ISP limits              │
-│  [ ] Email queue retries with exponential backoff                │
-│  [ ] Daily report: sent, delivered, bounced, complained, opened  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Optimization Loop Summary
-
-```
-EMAIL DELIVERABILITY REPORT:
-┌──────────────────────────────┬───────────┬───────────┬───────────┐
-│  Metric                      │  Before   │  After    │  Δ        │
-├──────────────────────────────┼───────────┼───────────┼───────────┤
-│  SPF authentication          │  FAIL     │  PASS     │  FIXED    │
-│  DKIM authentication         │  FAIL     │  PASS     │  FIXED    │
-│  DMARC policy                │  none     │  reject   │  FIXED    │
-│  mail-tester.com score       │  <N>/10   │  <N>/10   │  +<N>     │
-│  Hard bounce rate (%)       │  <N>%     │  <N>%     │  -<N>%    │
-│  Spam complaint rate (%)    │  <N>%     │  <N>%     │  -<N>%    │
-│  Inbox placement rate (%)   │  <N>%     │  <N>%     │  +<N>%    │
-│  Template rendering (clients)│  <N>/8    │  8/8      │  FIXED    │
-│  Dark mode compatibility     │  FAIL     │  PASS     │  FIXED    │
-│  List-Unsubscribe header     │  MISSING  │  PRESENT  │  FIXED    │
-│  Suppression list enforced   │  NO       │  YES      │  FIXED    │
-│  Domain separation           │  NO       │  YES      │  FIXED    │
-└──────────────────────────────┴───────────┴───────────┴───────────┘
-
-PASS CRITERIA:
-- SPF + DKIM + DMARC all PASS on test emails
-- DMARC policy at p=quarantine minimum (p=reject preferred)
-- mail-tester.com score >= 9/10
-- Hard bounce rate < 2%, spam complaint rate < 0.1%
-- Templates render correctly in top 8 email clients including dark mode
-- Suppression list actively enforced (hard bounces never re-sent)
-- Transactional and marketing emails use separate sending domains
-- List-Unsubscribe header present on all bulk/marketing emails
-
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run email tasks sequentially: email service, then templates, then delivery tracking, then notification system.
-- Use branch isolation per task: `git checkout -b godmode-email-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-email-{task}`. See `adapters/shared/sequential-dispatch.md`.

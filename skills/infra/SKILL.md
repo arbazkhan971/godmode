@@ -158,7 +158,7 @@ COST ESTIMATE:
 Cost threshold: $500/mo — WITHIN BUDGET
 ```
 
-If cost exceeds threshold: "Estimated cost ($X) exceeds budget threshold ($Y). Consider: <specific cost optimization suggestions>."
+If cost exceeds threshold: "Estimated cost ($X) exceeds budget threshold ($Y). Use: <specific cost optimization suggestions>."
 
 ### Step 5: Drift Detection
 Compare deployed infrastructure against the IaC definitions:

@@ -31,11 +31,7 @@ Data volume:       <current size, growth rate>
 Read/write ratio:  <percentage split>
 Consistency needs: <Strong | Eventual | Tunable>
 Latency target:    <p50, p99 requirements>
-Scale direction:   <Vertical | Horizontal>
-Relationships:     <None | Simple | Complex | Graph-like>
-Schema flexibility: <Fixed | Evolving | Schemaless>
-Query complexity:  <Simple lookups | Aggregations | Graph traversals | Full-text>
-Cloud preference:  <AWS | GCP | Azure | Self-managed>
+    # ... (condensed)
 Budget:            <Managed service OK | Self-hosted required>
 ```
 
@@ -51,48 +47,7 @@ DATABASE SELECTION MATRIX:
 |  Nested objects, flexible      | MongoDB        | Highly       |
 |  schema, rich queries          |                | relational   |
 +--------------------------------------------------------------+
-|  Key-value lookups, known      | DynamoDB       | Ad-hoc       |
-|  access patterns, serverless   |                | queries      |
-+--------------------------------------------------------------+
-|  High-write time-series,       | Cassandra      | Complex      |
-|  IoT sensor data, wide rows    |                | joins        |
-+--------------------------------------------------------------+
-|  Relationships ARE the data,   | Neo4j          | Simple       |
-|  traversals, recommendations   |                | CRUD         |
-+--------------------------------------------------------------+
-|  Metrics, events, monitoring   | InfluxDB /     | Relational   |
-|  with time-based queries       | TimescaleDB    | queries      |
-+--------------------------------------------------------------+
-|  Simple cache, session store   | Redis          | Complex      |
-|  counters, queues              |                | queries      |
-+--------------------------------------------------------------+
-|  Full-text search, logging     | Elasticsearch  | Transactional|
-|  analytics, faceted search     |                | writes       |
-+--------------------------------------------------------------+
-
-DECISION TREE:
-1. Is the primary access pattern key-value lookups?
-   -> YES: DynamoDB (AWS) or Redis (if fits in memory)
-   -> NO: continue
-
-2. Are relationships between entities the core of the data model?
-   -> YES: Neo4j or Amazon Neptune
-   -> NO: continue
-
-3. Is the data primarily time-series (metrics, events, IoT)?
-   -> YES: TimescaleDB (SQL + time-series) or InfluxDB (purpose-built)
-   -> NO: continue
-
-4. Do you need flexible schemas with rich query capabilities?
-   -> YES: MongoDB
-   -> NO: continue
-
-5. Is it massive write throughput with simple lookups?
-   -> YES: Cassandra or ScyllaDB
-   -> NO: continue
-
-6. Is it search and analytics over unstructured text?
-   -> YES: Elasticsearch / OpenSearch
+    # ... (condensed)
    -> NO: PostgreSQL is probably the right choice
 ```
 
@@ -161,89 +116,7 @@ EMBEDDING vs REFERENCING:
   total: 109.97,
   status: "shipped",
   created_at: ISODate("2025-01-15T10:30:00Z")
-}
-
-// PATTERN 2: Referenced Document (1:many, read independently)
-// Users with orders -- orders are queried independently
-// users collection
-{
-  _id: ObjectId("user123"),
-  name: "Alice Johnson",
-  email: "alice@example.com",
-  plan: "pro"
-}
-// orders collection
-{
-  _id: ObjectId("order456"),
-  user_id: ObjectId("user123"),  // reference
-  total: 109.97,
-  status: "shipped"
-}
-
-// PATTERN 3: Bucket Pattern (time-series, IoT, metrics)
-// Group related measurements into buckets
-{
-  _id: ObjectId("..."),
-  sensor_id: "temp-sensor-42",
-  bucket_start: ISODate("2025-01-15T10:00:00Z"),
-  bucket_end: ISODate("2025-01-15T11:00:00Z"),
-  measurements: [
-    { ts: ISODate("2025-01-15T10:00:00Z"), value: 22.5 },
-    { ts: ISODate("2025-01-15T10:01:00Z"), value: 22.6 },
-    // ... up to 60 measurements per hour
-  ],
-  count: 60,
-  sum: 1350.0,
-  min: 22.1,
-  max: 23.4,
-  avg: 22.5
-}
-// Benefits: fewer documents, pre-computed aggregates, efficient time queries
-
-// PATTERN 4: Computed Pattern (pre-aggregate for reads)
-// Product with computed review stats
-{
-  _id: ObjectId("prod789"),
-  name: "Wireless Headphones",
-  price: 79.99,
-  review_stats: {
-    count: 342,
-    avg_rating: 4.3,
-    rating_distribution: { 1: 12, 2: 18, 3: 45, 4: 120, 5: 147 }
-  }
-}
-// Update review_stats atomically on new review:
-// db.products.updateOne({ _id: "prod789" }, {
-//   $inc: { "review_stats.count": 1, "review_stats.rating_distribution.5": 1 },
-//   $set: { "review_stats.avg_rating": <new_avg> }
-// })
-
-// PATTERN 5: Polymorphic Pattern (different shapes in same collection)
-// Notifications of different types
-{
-  _id: ObjectId("..."),
-  type: "email",
-  recipient: "alice@example.com",
-  subject: "Welcome!",
-  body: "...",
-  sent_at: ISODate("...")
-}
-{
-  _id: ObjectId("..."),
-  type: "sms",
-  phone: "+1234567890",
-  message: "Your code is 123456",
-  sent_at: ISODate("...")
-}
-{
-  _id: ObjectId("..."),
-  type: "push",
-  device_token: "abc123...",
-  title: "New message",
-  payload: { ... },
-  sent_at: ISODate("...")
-}
-// Single collection, single index on { type: 1, sent_at: -1 }
+    # ... (condensed)
 // Discriminator: "type" field determines document shape
 ```
 
@@ -267,49 +140,7 @@ db.orders.aggregate([
   // Stage 3: Lookup product details
   { $lookup: {
       from: "products",
-      localField: "items.product_id",
-      foreignField: "_id",
-      as: "product"
-  }},
-  { $unwind: "$product" },
-
-  // Stage 4: Group by region and category
-  { $group: {
-      _id: {
-        region: "$shipping_address.region",
-        category: "$product.category"
-      },
-      total_revenue: { $sum: { $multiply: ["$items.qty", "$items.price"] } },
-      order_count: { $sum: 1 },
-      avg_order_value: { $avg: { $multiply: ["$items.qty", "$items.price"] } },
-      unique_customers: { $addToSet: "$customer_id" }
-  }},
-
-  // Stage 5: Add computed fields
-  { $addFields: {
-      unique_customer_count: { $size: "$unique_customers" }
-  }},
-
-  // Stage 6: Sort by revenue
-  { $sort: { total_revenue: -1 } },
-
-  // Stage 7: Project final shape
-  { $project: {
-      _id: 0,
-      region: "$_id.region",
-      category: "$_id.category",
-      total_revenue: { $round: ["$total_revenue", 2] },
-      order_count: 1,
-      avg_order_value: { $round: ["$avg_order_value", 2] },
-      unique_customers: "$unique_customer_count"
-  }}
-])
-
-// Aggregation pipeline optimization tips:
-// 1. $match early: filter before $lookup and $unwind
-// 2. $project early: drop unneeded fields to reduce pipeline memory
-// 3. Use indexes: first $match/$sort can use indexes
-// 4. allowDiskUse: true for large aggregations (> 100MB pipeline memory)
+    # ... (condensed)
 // 5. $merge/$out: write results to a collection for materialized views
 ```
 
@@ -333,12 +164,7 @@ db.articles.find({ $text: { $search: "mongodb performance" } })
 
 // Wildcard index (flexible schema)
 db.events.createIndex({ "payload.$**": 1 })
-// Indexes all fields within payload -- use cautiously (storage overhead)
-
-// TTL index (auto-expire documents)
-db.sessions.createIndex({ created_at: 1 }, { expireAfterSeconds: 86400 })
-
-// Index intersection: MongoDB can combine 2 single-field indexes
+    # ... (condensed)
 // But compound indexes are almost always better than relying on intersection
 ```
 
@@ -387,31 +213,7 @@ TABLE DESIGN:
 |  CUSTOMER#cust-123   | CUSTOMER#cust-123     | name, email,    |
 |                      |                       | plan, created   |
 +--------------------------------------------------------------+
-|  CUSTOMER#cust-123   | ORDER#2025-01-15#ord1 | total, status,  |
-|                      |                       | created_at      |
-+--------------------------------------------------------------+
-|  CUSTOMER#cust-123   | ORDER#2025-01-10#ord2 | total, status,  |
-|                      |                       | created_at      |
-+--------------------------------------------------------------+
-|  ORDER#ord-001       | ORDER#ord-001         | customer_id,    |
-|                      |                       | total, status   |
-+--------------------------------------------------------------+
-|  ORDER#ord-001       | ITEM#prod-abc#1       | product_name,   |
-|                      |                       | qty, price      |
-+--------------------------------------------------------------+
-|  ORDER#ord-001       | ITEM#prod-xyz#2       | product_name,   |
-|                      |                       | qty, price      |
-+--------------------------------------------------------------+
-|  PRODUCT#prod-abc    | PRODUCT#prod-abc      | name, price,    |
-|                      |                       | category        |
-+--------------------------------------------------------------+
-
-QUERIES:
-1. Get customer:     PK = "CUSTOMER#cust-123", SK = "CUSTOMER#cust-123"
-2. Get order:        PK = "ORDER#ord-001",     SK = "ORDER#ord-001"
-3. Customer orders:  PK = "CUSTOMER#cust-123", SK begins_with "ORDER#"
-4. Order items:      PK = "ORDER#ord-001",     SK begins_with "ITEM#"
-5. Get product:      PK = "PRODUCT#prod-abc",  SK = "PRODUCT#prod-abc"
+    # ... (condensed)
 6. Product orders:   GSI1 (see below)
 ```
 
@@ -435,29 +237,7 @@ GSI DESIGN for E-Commerce:
 GSI1 -- "Inverted Index" (product -> orders)
   GSI1-PK: product_id  (attribute projected from items)
   GSI1-SK: order_date
-  Query: All orders containing a specific product
-
-GSI2 -- "Status Index" (order status queries)
-  GSI2-PK: status
-  GSI2-SK: created_at
-  Query: All orders by status, sorted by date
-
-SPARSE INDEX PATTERN:
-  Only items with the GSI PK attribute appear in the GSI
-  Useful for: "Get all featured products" (only featured ones have the attribute)
-  GSI-PK: featured_status   (only set on featured products)
-  GSI-SK: created_at
-  Result: Small, efficient index of only featured items
-
-OVERLOADED GSI PATTERN:
-  Same GSI serves multiple access patterns:
-  GSI1-PK: "gsi1pk" (generic attribute name)
-  GSI1-SK: "gsi1sk" (generic attribute name)
-
-  For customer entity: gsi1pk = email,           gsi1sk = "CUSTOMER"
-  For order entity:    gsi1pk = product_id,       gsi1sk = order_date
-  For payment entity:  gsi1pk = payment_method,   gsi1sk = amount
-
+    # ... (condensed)
   One GSI, three access patterns
 ```
 
@@ -481,14 +261,7 @@ CAPACITY PLANNING:
   Provisioned: Best for steady workloads, cheaper at scale, with auto-scaling
 
   WCU (Write Capacity Unit) = 1 write/sec for items up to 1KB
-  RCU (Read Capacity Unit)  = 1 strongly consistent read/sec for items up to 4KB
-                             = 2 eventually consistent reads/sec for items up to 4KB
-
-HOT PARTITION PREVENTION:
-  BAD PK:  status (only 3-4 values, all traffic on few partitions)
-  GOOD PK: customer_id (high cardinality, even distribution)
-  WORKAROUND: Add random suffix for write-heavy keys
-    PK = "COUNTER#page-views#" + random(0, 9)
+    # ... (condensed)
     Sum all 10 shards for total count
 ```
 
@@ -539,20 +312,7 @@ CREATE TABLE sensor_readings (
                     'compaction_window_unit': 'DAYS'}
   AND default_time_to_live = 7776000;  -- 90 days TTL
 
--- Query: latest readings for sensor today
-SELECT * FROM sensor_readings
-WHERE sensor_id = 'temp-42' AND day = '2025-01-15'
-ORDER BY reading_time DESC
-LIMIT 100;
-
--- Query: readings in a time range
-SELECT * FROM sensor_readings
-WHERE sensor_id = 'temp-42' AND day = '2025-01-15'
-  AND reading_time >= '2025-01-15T10:00:00Z'
-  AND reading_time <= '2025-01-15T12:00:00Z';
-
--- Anti-pattern: unbounded partition (no day bucket)
--- BAD: PRIMARY KEY (sensor_id, reading_time)
+    # ...
 -- A sensor sending 1 reading/sec = 86,400 rows/day = 31M rows/year
 -- Partition too large! Bucket by day or hour.
 ```
@@ -598,20 +358,7 @@ CREATE TABLE orders_by_status (
     order_id      UUID,
     user_id       UUID,
     total         DECIMAL,
-    PRIMARY KEY (status, order_date, order_id)
-) WITH CLUSTERING ORDER BY (order_date DESC, order_id ASC);
-
--- Table 3: Order details by ID
-CREATE TABLE orders_by_id (
-    order_id      UUID,
-    user_id       UUID,
-    order_date    TIMESTAMP,
-    total         DECIMAL,
-    status        TEXT,
-    items         LIST<FROZEN<order_item>>,  -- UDT
-    PRIMARY KEY (order_id)
-);
-
+    # ...
 -- ALL THREE TABLES are written to on every order create/update
 -- This is normal in Cassandra -- trade write amplification for read performance
 ```
@@ -640,15 +387,7 @@ GRAPH vs RELATIONAL:
 |  Query                        | Relational    | Graph         |
 +--------------------------------------------------------------+
 |  Direct lookup by ID          | Fast          | Fast          |
-|  1-hop relationship           | JOIN (fast)   | Traverse      |
-|  2-hop relationship           | 2 JOINs       | 2 traversals  |
-|  Variable depth (1-N hops)    | N JOINs or    | Single query  |
-|                               | recursive CTE | (fast!)       |
-|  Shortest path                | Very hard     | Built-in      |
-|  Pattern matching             | Complex SQL   | Native        |
-|  Aggregation over all data    | Fast (scan)   | Slower        |
-+--------------------------------------------------------------+
-
+    # ...
 KEY INSIGHT: Graphs excel at relationship-centric queries.
 Relational databases excel at set-based operations and aggregations.
 ```
@@ -673,45 +412,7 @@ RETURN followed.name
 MATCH (alice:Person {name: 'Alice'})-[:FOLLOWS]->()-[:FOLLOWS]->(fof)
 WHERE fof <> alice  // Exclude Alice herself
 RETURN DISTINCT fof.name
-
-// Variable-length paths (1-3 hops)
-MATCH (alice:Person {name: 'Alice'})-[:FOLLOWS*1..3]->(connection)
-RETURN DISTINCT connection.name, length(shortestPath((alice)-[:FOLLOWS*]->(connection))) AS distance
-
-// Shortest path
-MATCH path = shortestPath(
-  (alice:Person {name: 'Alice'})-[:FOLLOWS*..10]-(bob:Person {name: 'Bob'})
-)
-RETURN path, length(path) AS distance
-
-// Recommendation: People who follow the same people Alice follows
-MATCH (alice:Person {name: 'Alice'})-[:FOLLOWS]->(common)<-[:FOLLOWS]-(recommendation)
-WHERE recommendation <> alice
-  AND NOT (alice)-[:FOLLOWS]->(recommendation)
-RETURN recommendation.name, COUNT(common) AS shared_connections
-ORDER BY shared_connections DESC
-LIMIT 10
-
-// Aggregation: Company with most employees
-MATCH (p:Person)-[:WORKS_AT]->(c:Company)
-RETURN c.name, COUNT(p) AS employee_count
-ORDER BY employee_count DESC
-
-// Subgraph pattern matching: Find triangles (mutual follows)
-MATCH (a:Person)-[:FOLLOWS]->(b:Person)-[:FOLLOWS]->(c:Person)-[:FOLLOWS]->(a)
-RETURN a.name, b.name, c.name
-
-// Update: Add property to relationship
-MATCH (alice:Person {name: 'Alice'})-[r:FOLLOWS]->(bob:Person {name: 'Bob'})
-SET r.since = 2023
-
-// Delete: Remove relationship
-MATCH (alice:Person {name: 'Alice'})-[r:FOLLOWS]->(bob:Person {name: 'Bob'})
-DELETE r
-
-// Indexes for performance
-CREATE INDEX person_name FOR (p:Person) ON (p.name)
-CREATE INDEX company_name FOR (c:Company) ON (c.name)
+    # ... (condensed)
 CREATE CONSTRAINT person_email_unique FOR (p:Person) REQUIRE p.email IS UNIQUE
 ```
 
@@ -735,33 +436,7 @@ PATTERN 2: E-Commerce Recommendations
   MATCH (c:Customer)-[:PURCHASED]->(:Product {id: 'X'}),
         (c)-[:PURCHASED]->(rec:Product)
   WHERE rec.id <> 'X'
-  RETURN rec, COUNT(c) AS score
-  ORDER BY score DESC LIMIT 10
-
-PATTERN 3: Knowledge Graph
-  (:Entity)-[:RELATES_TO {type: '...'}]->(:Entity)
-  (:Entity)-[:HAS_PROPERTY]->(:Property)
-  (:Entity)-[:INSTANCE_OF]->(:Class)
-  (:Class)-[:SUBCLASS_OF]->(:Class)
-
-PATTERN 4: Fraud Detection
-  (:Account)-[:TRANSFERRED {amount, timestamp}]->(:Account)
-  (:Person)-[:OWNS]->(:Account)
-  (:Person)-[:SHARES_ADDRESS_WITH]->(:Person)
-  (:Person)-[:SHARES_DEVICE_WITH]->(:Person)
-
-  Fraud query: Find accounts connected through suspicious patterns
-  MATCH (a:Account)-[:TRANSFERRED*2..5]->(b:Account)
-  WHERE a <> b AND ALL(r IN relationships(path) WHERE r.amount > 10000)
-  RETURN a, b, length(path)
-
-PATTERN 5: Dependency Graph
-  (:Package)-[:DEPENDS_ON]->(:Package)
-  (:Service)-[:CALLS]->(:Service)
-  (:Task)-[:BLOCKS]->(:Task)
-
-  Circular dependency detection:
-  MATCH path = (p:Package)-[:DEPENDS_ON*]->(p)
+    # ... (condensed)
   RETURN path
 ```
 
@@ -805,15 +480,7 @@ from(bucket: "metrics")
 from(bucket: "metrics")
   |> range(start: -1h)
   |> filter(fn: (r) => r._measurement == "cpu_usage")
-  |> aggregateWindow(every: 1m, fn: mean)
-  |> movingAverage(n: 10)
-  |> map(fn: (r) => ({r with _value: r._value * 1.0}))
-
-// Downsampling task (continuous query equivalent)
-option task = {name: "downsample_cpu", every: 1h}
-from(bucket: "metrics")
-  |> range(start: -1h)
-  |> filter(fn: (r) => r._measurement == "cpu_usage")
+    # ...
   |> aggregateWindow(every: 5m, fn: mean)
   |> to(bucket: "metrics_downsampled", org: "myorg")
 ```
@@ -904,13 +571,6 @@ DOCUMENT DESIGN:
   - Embed: author summary (name, avatar) -- read together
   - Embed: categories (small bounded list) -- read together
   - Reference: author full profile -- read independently
-  - Text index: title + body for full-text search
-
-  Indexes:
-  1. { slug: 1 } -- unique
-  2. { "categories.slug": 1, published_at: -1 } -- category listing
-  3. { author_id: 1, published_at: -1 } -- author's articles
-  4. text: { title: "text", body: "text" } -- full-text search
 ```
 
 ### DynamoDB single-table design
@@ -931,35 +591,6 @@ SINGLE TABLE:
   PK: TENANT#<id>,     SK: USER#<email>           (user in tenant)
   PK: TENANT#<id>,     SK: INVOICE#<date>#<id>    (invoice)
 
-  GSI1-PK: email,      GSI1-SK: TENANT#<id>       (user by email)
-
-  5 access patterns served with 1 table + 1 GSI
-```
-
-### Choosing between databases
-```
-User: /godmode:nosql Should we use MongoDB or DynamoDB for our app?
-
-NoSQL: Comparing for your use case...
-
-YOUR REQUIREMENTS:
-  - Flexible schema (evolving rapidly)
-  - Complex queries with aggregation
-  - Full-text search
-  - 50K reads/sec, 5K writes/sec
-  - AWS infrastructure
-
-VERDICT: MongoDB Atlas (on AWS)
-REASONS:
-  1. Aggregation pipeline covers your complex query needs
-  2. Built-in full-text search (Atlas Search)
-  3. Flexible schema with validation
-  4. DynamoDB's query limitations would require too many GSIs
-
-  DynamoDB would be better if:
-  - Access patterns were simpler (key-value lookups)
-  - You needed serverless scaling
-  - Latency < 5ms was critical
 ```
 
 ## Flags & Options
@@ -995,21 +626,6 @@ IF code imports "cassandra-driver" OR "datastax":
   DETECT database = "Cassandra"
   SUGGEST "Cassandra driver detected. Activate /godmode:nosql?"
 
-IF code imports "neo4j-driver" OR "neo4j":
-  DETECT database = "Neo4j"
-  SUGGEST "Neo4j graph database detected. Activate /godmode:nosql?"
-
-IF code imports "influxdb" OR "influxdb-client":
-  DETECT database = "InfluxDB"
-  SUGGEST "InfluxDB time-series database detected. Activate /godmode:nosql?"
-
-IF docker-compose.yml contains "mongo:" OR "dynamodb-local" OR "cassandra:" OR "neo4j:":
-  db_name = detect_nosql_from_compose()
-  SUGGEST "{db_name} detected in Docker Compose. Activate /godmode:nosql?"
-
-IF directory contains *.cql files (Cassandra) OR *.cypher files (Neo4j):
-  SUGGEST "NoSQL query files detected. Activate /godmode:nosql?"
-```
 
 ## Iterative Data Modeling Protocol
 
@@ -1033,22 +649,7 @@ WHILE current_pattern < total_patterns:
 
   2. DESIGN key structure / document shape / graph model
   3. VALIDATE:
-     - Partition size bounded (DynamoDB < 10GB, Cassandra < 100MB)
-     - No unbounded arrays in documents (MongoDB)
-     - High-cardinality partition keys
-     - No shared data that requires distributed transactions
-
-  IF pattern cannot be served efficiently:
-    unserved_patterns.append(pattern)
-    SUGGEST "Pattern '{pattern}' may need a GSI, materialized view, or separate table"
-  ELSE:
-    served_patterns.append(pattern)
-
-  current_pattern += 1
-  REPORT "{current_pattern}/{total_patterns} access patterns addressed"
-
-FINAL:
-  REPORT "Served: {len(served_patterns)}, Unserved: {len(unserved_patterns)}"
+    # ...
   FOR each unserved pattern: propose solution (GSI, denormalization, separate table)
   GENERATE complete schema with all indexes and access pattern mapping
 ```
@@ -1065,31 +666,6 @@ DISPATCH parallel agents in worktrees:
     - Map all CRUD access patterns to key design
     - Design indexes (compound, partial, TTL)
     - Output: data model documentation + index definitions
-
-  Agent 2 (secondary-data-model):
-    - Design secondary store if needed (Redis cache, Elasticsearch search)
-    - Design cache invalidation strategy
-    - Design search index mapping
-    - Output: cache strategy + search index config
-
-  Agent 3 (graph-model):
-    - Design graph model if relationships are core (Neo4j)
-    - Write Cypher queries for traversal patterns
-    - Design graph indexes
-    - Output: graph schema + query library
-
-  Agent 4 (migration-and-testing):
-    - Design data migration scripts (seed data, backfill)
-    - Write data validation queries
-    - Design capacity planning estimates
-    - Output: migration scripts + validation suite
-
-MERGE:
-  - Verify all access patterns are served by at least one data store
-  - Verify denormalization is consistent across stores
-  - Verify sync strategy between primary and secondary stores
-  - Run validation queries against test data
-```
 
 ## HARD RULES
 
@@ -1111,29 +687,9 @@ MERGE:
    "Schemaless" does not mean "no schema."
 
 6. In Cassandra, ONE TABLE PER QUERY. No JOINs, no subqueries.
-   Write amplification is the accepted tradeoff.
-
-7. NEVER choose NoSQL because "it scales." PostgreSQL handles
-   terabytes and millions of rows. Choose NoSQL for data model fit.
-
-8. ALWAYS start with PostgreSQL as the default. Move to NoSQL only
-   when PostgreSQL cannot meet a specific technical requirement
+    # ... (condensed)
    (schema flexibility, data model fit, horizontal scale).
 ```
-
-## Anti-Patterns
-
-- **Do NOT choose NoSQL because "it scales."** PostgreSQL scales to terabytes and millions of rows. Choose NoSQL for data model fit, not scale marketing.
-- **Do NOT design NoSQL schemas like relational schemas.** Normalized tables with references and JOINs is an anti-pattern in DynamoDB and Cassandra. Denormalize for reads.
-- **Do NOT use MongoDB as a "schemaless" dumping ground.** Enforce schema validation. "Schemaless" does not mean "no schema" -- it means the schema lives in your application code, which is worse.
-- **Do NOT create DynamoDB tables per entity type.** Single-table design puts all entities in one table with composite keys. Multiple tables means you cannot query across entity types.
-- **Do NOT use low-cardinality partition keys.** A DynamoDB partition key with 3 values (e.g., "active", "pending", "closed") creates hot partitions. Use high-cardinality keys.
-- **Do NOT create unbounded partitions in Cassandra.** A partition that grows forever (sensor data without time bucketing) will eventually exceed node memory and cause read timeouts.
-- **Do NOT use Neo4j for simple CRUD.** If your queries are "get user by ID" and "list users by name", a relational database is simpler and faster. Use graphs when relationships drive the queries.
-- **Do NOT use high-cardinality tags in InfluxDB.** Tags like user_id with millions of values create enormous index memory usage. Use fields for high-cardinality values.
-- **Do NOT ignore consistency trade-offs.** MongoDB is eventually consistent by default. DynamoDB GSIs are eventually consistent. Cassandra consistency is tunable. Understand what "eventually" means for your application.
-- **Do NOT skip the "which database" question.** The most expensive NoSQL mistake is choosing the wrong database. Spend time on selection (Step 2) before spending weeks on modeling.
-
 
 ## Output Format
 
@@ -1149,16 +705,10 @@ After every NoSQL operation (database selection, schema design, query optimizati
 │ GSIs : GSI1 (inverted), GSI2 (by-status)             │
 │ Access Patterns : 12 identified, 12 covered          │
 │ Hot Partition Risk : LOW (high-cardinality PK)       │
-│ Est. WCU/RCU : 500/2000 (on-demand recommended)     │
-│ Verdict : READY                                      │
-└──────────────────────────────────────────────────────┘
-```
-
-Fields adapt to the database. For MongoDB: `Collection`, `Indexes`, `Validation Schema`, `Sharding Key`. For Cassandra: `Keyspace`, `Replication`, `Tables Per Query`, `Partition Size Est.`. For Neo4j: `Node Labels`, `Relationship Types`, `Index Strategy`. Always include `Verdict`: one of READY, NEEDS_TUNING, DEGRADED.
 
 ## TSV Logging
 
-Append one row per NoSQL operation to `.godmode/nosql-ops.tsv`:
+Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 timestamp	database	operation	entity_count	access_patterns_covered	access_patterns_total	partition_strategy	hot_partition_risk	verdict
@@ -1166,8 +716,6 @@ timestamp	database	operation	entity_count	access_patterns_covered	access_pattern
 2026-03-20T14:35:00Z	MongoDB	schema-validation	3	8	8	sharded-by-tenant	LOW	READY
 2026-03-20T14:40:00Z	Cassandra	table-per-query	6	15	18	time-bucketed	MEDIUM	NEEDS_TUNING
 ```
-
-Create the file with the header row on first run. Tab-separated, one row per operation. This log is the audit trail for all NoSQL decisions.
 
 ## Success Criteria
 
@@ -1183,170 +731,69 @@ Create the file with the header row on first run. Tab-separated, one row per ope
 
 **NEEDS_TUNING** (any one true):
 - 1-2 access patterns not covered by existing indexes/GSIs (requires scan or filter)
-- Partition sizes between 50-100% of recommended limits
-- Read/write latency p99 > 50ms for simple lookups
-- Missing secondary index for a known query pattern (full scan as workaround)
-- Consistency level not explicitly documented (using defaults)
-
-**DEGRADED** (any one true):
-- Access patterns require cross-partition scatter-gather queries
-- Hot partition detected (single partition > 30% of total throughput)
-- No schema validation in production (MongoDB schemaless, DynamoDB no validation)
-- Normalized relational design in DynamoDB/Cassandra (JOINs or references)
-- Unbounded partition growth without time bucketing or size limits
-- PostgreSQL would have been simpler and sufficient (no technical justification for NoSQL)
-- Low-cardinality partition key (< 100 distinct values for high-volume table)
-- No backup/point-in-time recovery configured
 
 ## Error Recovery
 
 1. **Hot partition detected (single partition > 30% of throughput)**
-   - DynamoDB: Check CloudWatch `ConsumedReadCapacityUnits` and `ConsumedWriteCapacityUnits` by partition key. If a single key dominates, add write sharding (append random suffix 0-N to partition key, fan-out on read).
-   - Cassandra: Run `nodetool tablehistograms` to find large partitions. Introduce time bucketing (e.g., `sensor_id:2026-03-20` instead of `sensor_id`).
-   - MongoDB: Check `db.collection.stats()` for chunk distribution. If one shard is hot, the shard key has low cardinality -- add a hashed prefix or compound shard key.
-
 2. **Access pattern not covered (full table scan required)**
-   - DynamoDB: Add a GSI with the needed partition key and sort key. If GSI limit reached (20), consolidate with overloaded GSI pattern (generic PK/SK attributes).
-   - Cassandra: Create a new materialized view or denormalized table for the query. One table per query is the correct pattern.
-   - MongoDB: Add a compound index matching the query's filter + sort fields. Use `explain()` to verify index usage.
-   - Neo4j: Add a node label index or relationship property index. Check with `EXPLAIN` / `PROFILE` that index is used.
-
 3. **Data inconsistency from denormalization (stale duplicated data)**
-   - Identify the source of truth for every duplicated field. Document in schema comments.
-   - Implement change propagation: DynamoDB Streams + Lambda, MongoDB Change Streams, Cassandra CDC.
-   - Add a `last_synced_at` timestamp to duplicated fields. Alert if drift > acceptable window (define per use case).
-   - For critical data, consider reading from source of truth and caching duplicates, rather than trusting duplicates for writes.
-
 4. **Migration between NoSQL databases (or from SQL to NoSQL)**
-   - Export data in a neutral format (JSON lines or Parquet).
-   - Design the target schema from access patterns first -- do NOT copy the source schema structure.
-   - Run dual-write during migration: write to both old and new, read from old. Switch reads to new only after validation.
-   - Validate row counts, checksums, and sample queries between source and target before cutover.
 
 ## NoSQL Schema Design Audit Loop
 
-Autonomous audit loop that validates access pattern coverage, partition key optimization, and data model health. Runs until all access patterns are served and no hot partitions exist.
-
 ```
-NOSQL SCHEMA DESIGN AUDIT LOOP:
-current_iteration = 0
+NOSQL AUDIT LOOP:
 max_iterations = 15
-access_patterns = list_all_access_patterns()  // from requirements
-database = detect_nosql_database()  // MongoDB, DynamoDB, Cassandra, Neo4j
 
-WHILE current_iteration < max_iterations AND NOT all_patterns_covered:
-  current_iteration += 1
+WHILE NOT all_patterns_covered AND iteration < max_iterations:
+  Phase 1 — Access Pattern Coverage:
+    FOR each access pattern: verify it can be served without scan
+    MongoDB: check index covers query. DynamoDB: PK/SK or GSI. Cassandra: table exists.
+    Fix uncovered patterns: add GSI, index, or denormalized table.
 
-  // Phase 1: Access Pattern Coverage
-  coverage = {}
-  FOR each pattern in access_patterns:
-    served = can_serve_without_scan(pattern, database)
-    // MongoDB: covered by index? DynamoDB: PK/SK or GSI? Cassandra: table exists?
-    coverage[pattern] = {
-      served: served,
-      method: "PK_LOOKUP" | "GSI" | "INDEX" | "TABLE" | "SCAN" | "NOT_SERVED",
-      estimated_latency: estimate_latency(pattern)
-    }
-    IF NOT served:
-      // Fix: add index, GSI, or denormalized table
-      IF database == "DynamoDB":
-        ADD GSI or restructure PK/SK to cover pattern
-      IF database == "MongoDB":
-        ADD compound index matching filter + sort
-      IF database == "Cassandra":
-        CREATE new table for this query pattern
-      IF database == "Neo4j":
-        ADD node/relationship index
-      LOG: "PATTERN COVERED: {pattern.name} — {fix_applied}"
+  Phase 2 — Partition Key Optimization (DynamoDB/Cassandra):
+    Check for hot partitions (>30% of traffic on one partition) → add write sharding
+    Check partition sizes (DynamoDB <10GB, Cassandra <100MB) → add time bucketing
+    Check PK cardinality (<100 on high-volume tables) → use composite key
 
-  uncovered = [p for p in access_patterns if not coverage[p].served]
-  LOG: "Coverage: {len(access_patterns) - len(uncovered)}/{len(access_patterns)} patterns served"
+  Phase 3 — Document Validation (MongoDB):
+    Add JSON Schema validators to collections without them
+    Extract unbounded arrays to separate collections
+    Split documents >1MB into references
 
-  // Phase 2: Partition Key Optimization
-  IF database in ["DynamoDB", "Cassandra"]:
-    partition_analysis = analyze_partition_distribution()
-    FOR each table in partition_analysis:
-      IF table.hot_partition_pct > 30:
-        // Single partition handles > 30% of traffic
-        FIX: add write sharding (random suffix) or composite key
-        LOG: "HOT PARTITION fix: {table.name} — {table.hot_partition_key} sharded"
-      IF table.partition_size > partition_limit:
-        // DynamoDB: > 10GB item collection, Cassandra: > 100MB partition
-        FIX: add time bucketing or split key
-        LOG: "PARTITION SIZE fix: {table.name} — time bucketing added"
-      IF table.pk_cardinality < 100 AND table.write_volume > 1000/sec:
-        FIX: increase cardinality (composite key, hash prefix)
-        LOG: "LOW CARDINALITY fix: {table.name} PK — composite key added"
-
-  // Phase 3: Document/Schema Validation (MongoDB)
-  IF database == "MongoDB":
-    FOR each collection in collections:
-      IF NOT has_json_schema_validator(collection):
-        GENERATE and APPLY JSON Schema validator
-        LOG: "VALIDATION added: {collection} — JSON Schema enforced"
-      IF has_unbounded_array(collection):
-        // Array field that can grow without limit
-        EXTRACT to separate collection with reference
-        LOG: "UNBOUNDED ARRAY fix: {collection}.{field} → separate collection"
-      IF document_avg_size > 1MB:
-        SPLIT embedded data into references
-        LOG: "LARGE DOCUMENT fix: {collection} — embedded data extracted"
-
-  // Phase 4: Denormalization Audit
-  duplicated_fields = find_all_denormalized_fields()
-  FOR each field in duplicated_fields:
-    IF NOT has_sync_mechanism(field):
-      // Duplicated field with no change propagation
-      ADD sync: DynamoDB Streams, MongoDB Change Streams, or Cassandra CDC
-      LOG: "SYNC MISSING: {field.source} → {field.targets} — change stream added"
-    IF field.last_synced_at AND drift > acceptable_window:
-      ALERT: "DATA DRIFT: {field.name} — source and copy diverged by {drift}"
-
-  // Phase 5: Keep/Discard
-  new_uncovered = count_uncovered_patterns()
-  new_hot_partitions = count_hot_partitions()
-  new_unvalidated = count_collections_without_validation()
-
-  IF new_uncovered == 0 AND new_hot_partitions == 0 AND new_unvalidated == 0:
-    KEEP all changes
-    COMMIT: "nosql: schema audit pass #{current_iteration} — all patterns covered, no hot partitions"
-    all_patterns_covered = true
-  ELSE:
-    LOG: "Iteration {current_iteration}: uncovered={new_uncovered}, hot_partitions={new_hot_partitions}, unvalidated={new_unvalidated}"
-    CONTINUE
-
-  REPORT: "Iteration {current_iteration}: patterns={len(access_patterns)-new_uncovered}/{len(access_patterns)}, hot_partitions={new_hot_partitions}, validation={len(collections)-new_unvalidated}/{len(collections)}"
-
-ON COMPLETION:
-  LOG to .godmode/nosql-audit.tsv:
-    timestamp\tdatabase\titerations\tpatterns_total\tpatterns_covered\thot_partitions_fixed\tvalidation_added\tverdict
-  REPORT: "NoSQL audit complete: {current_iteration} iterations, {len(access_patterns)} patterns covered, 0 hot partitions, all collections validated"
-```
-
-### NoSQL Health Thresholds
-
-```
-NOSQL SCHEMA HEALTH THRESHOLDS:
-┌──────────────────────────────────────┬──────────────┬──────────────┬──────────────┐
-│ Metric                               │ READY        │ NEEDS TUNING │ DEGRADED     │
-├──────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
-│ Access pattern coverage              │ 100%         │ 90-99%       │ < 90%        │
-│ Hot partition traffic share          │ < 10%        │ 10-30%       │ > 30%        │
-│ Partition size (DynamoDB)            │ < 5GB        │ 5-8GB        │ > 10GB       │
-│ Partition size (Cassandra)           │ < 50MB       │ 50-80MB      │ > 100MB      │
-│ MongoDB document avg size            │ < 100KB      │ 100KB-1MB    │ > 1MB        │
-│ Unbounded arrays in documents        │ 0            │ 0            │ > 0          │
-│ Collections without schema validation│ 0            │ 1-2          │ > 2          │
-│ Denormalized fields without sync     │ 0            │ 1-2          │ > 2          │
-│ PK cardinality (high-volume tables)  │ > 10,000     │ 100-10,000   │ < 100        │
+    # ...
 │ Simple lookup latency p99            │ < 10ms       │ 10-50ms      │ > 50ms       │
-│ GSI count (DynamoDB)                 │ < 10         │ 10-15        │ > 15 (of 20) │
-│ Tables per query (Cassandra)         │ 1            │ 1            │ > 1 (scan)   │
 └──────────────────────────────────────┴──────────────┴──────────────┴──────────────┘
 ```
+
+## Keep/Discard Discipline
+```
+After EACH implementation or optimization change:
+  1. MEASURE: Run tests / validate the change produces correct output.
+  2. COMPARE: Is the result better than before? (faster, safer, more correct)
+  3. DECIDE:
+     - KEEP if: tests pass AND quality improved AND no regressions introduced
+     - DISCARD if: tests fail OR performance regressed OR new errors introduced
+  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+```
+
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All identified tasks are complete and validated
+  - User explicitly requests stop
+  - Max iterations reached — report partial results with remaining items listed
+
+DO NOT STOP just because:
+  - One item is complex (complete the simpler ones first)
+  - A non-critical check is pending (that can be a follow-up pass)
+```
+
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or `EnterWorktree`:
 - Run NoSQL tasks sequentially: primary data model, then secondary data model, then graph model (if needed).
 - Use branch isolation per task: `git checkout -b godmode-nosql-{task}`, implement, commit, merge back.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.
+```

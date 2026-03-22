@@ -1465,14 +1465,34 @@ echo "=== Existing Headers ==="
 grep -r "X-RateLimit\|Retry-After\|x-rate" --include="*.ts" --include="*.js" --include="*.py" -l 2>/dev/null | head -5
 ```
 
+## Keep/Discard Discipline
+```
+After EACH rate limit configuration change:
+  1. MEASURE: Send requests at the configured limit — does the (N+1)th request return 429?
+  2. COMPARE: Are headers correct (RateLimit-Limit, Remaining, Reset, Retry-After)?
+  3. DECIDE:
+     - KEEP if: limit enforced atomically, headers present, fail-open on Redis down
+     - DISCARD if: race condition allows bypass OR 429 missing Retry-After OR fail-closed on backend outage
+  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before configuring the next tier.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All public endpoints have rate limits with correct response headers
+  - Tiered limits configured for all user classes (anonymous through enterprise)
+  - Fail-open degradation verified (Redis down = requests allowed + alert)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Monitoring dashboards are not yet built (metrics export is sufficient)
+  - Daily/monthly quotas are not yet enforced (per-minute rate limits are higher priority)
+```
+
 ## Anti-Patterns
 
-- **Do NOT skip rate limiting on public endpoints.** Every unauthenticated endpoint is an abuse vector. "We don't have enough traffic to worry about it" is how you get your first outage.
-- **Do NOT use non-atomic check-and-increment.** Separate GET and INCR commands have a race condition. Under load, clients can exceed limits by 10x or more. Use Lua scripts.
-- **Do NOT fail closed when Redis is down.** A rate limiter outage must not become an application outage. Fail open, log the issue, and alert the team.
-- **Do NOT hardcode limits.** Limits should be configurable per tier, per endpoint, and changeable without a deploy. Use a configuration file or database, not constants in code.
+- **Do NOT hardcode limits.** Limits must be configurable per tier, per endpoint, and changeable without a deploy. Use a configuration file or database, not constants in code.
 - **Do NOT trust X-Forwarded-For blindly.** Clients can spoof this header. Only trust it from known reverse proxy IPs. Otherwise, use the direct connection IP.
-- **Do NOT rate limit without response headers.** Clients cannot implement backoff without knowing their remaining quota and reset time. Always include RateLimit-* headers.
 - **Do NOT apply the same limit to all endpoints.** Login should be 5/min. Product listing should be 1000/min. A single global limit is either too strict for reads or too loose for sensitive operations.
 - **Do NOT forget quotas.** Rate limits prevent bursts, but a client making 99 req/min for 24 hours consumes 142,560 requests. Daily and monthly quotas catch sustained abuse.
 
@@ -1547,7 +1567,7 @@ ERROR RECOVERY — RATE LIMITING:
 3. 429 responses missing Retry-After header:
    → Add Retry-After to the rate-limited response handler. Calculate from reset_at timestamp. Clients cannot self-throttle without this header.
 4. Rate limit too strict (legitimate users blocked):
-   → Check tier configuration. Verify user is in correct tier. Analyze traffic patterns (burst vs sustained). Consider increasing burst allowance or upgrading tier limit.
+   → Check tier configuration. Verify user is in correct tier. Analyze traffic patterns (burst vs sustained). Increase burst allowance or upgrade the tier limit.
 5. Rate limit too loose (abuse not caught):
    → Add endpoint-specific overrides for sensitive endpoints. Tighten anonymous tier. Add IP-based rate limit as secondary check. Monitor rejection rate (if 0%, limits are too loose).
 6. Lua script errors in Redis:

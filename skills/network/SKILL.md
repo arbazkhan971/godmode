@@ -611,34 +611,6 @@ Recommendation: Set up process manager (systemd/supervisord)
 | `--domain <name>` | Target a specific domain |
 | `--provider <name>` | Use specific provider (aws, cloudflare, gcp) |
 
-## Auto-Detection
-
-```
-IF directory contains nginx.conf OR nginx/:
-  SUGGEST "Nginx configuration detected. Activate /godmode:network?"
-
-IF directory contains haproxy.cfg OR haproxy/:
-  SUGGEST "HAProxy configuration detected. Activate /godmode:network?"
-
-IF directory contains Caddyfile:
-  SUGGEST "Caddy server detected. Activate /godmode:network?"
-
-IF Terraform files contain "aws_lb" OR "aws_cloudfront" OR "aws_route53":
-  SUGGEST "AWS networking infrastructure detected. Activate /godmode:network?"
-
-IF k8s/ contains Ingress OR Certificate OR NetworkPolicy manifests:
-  SUGGEST "Kubernetes networking resources detected. Activate /godmode:network?"
-
-IF directory contains cloudflare/ OR wrangler.toml:
-  SUGGEST "Cloudflare configuration detected. Activate /godmode:network?"
-
-IF .env or config contains DOMAIN, SSL_CERT, or CDN references:
-  SUGGEST "Networking configuration variables detected. Activate /godmode:network?"
-
-ON deployment failure with 502/503/504 errors:
-  SUGGEST "Gateway error detected. Run /godmode:network --troubleshoot?"
-```
-
 ## Iterative Network Setup Protocol
 
 ```
@@ -680,44 +652,6 @@ FINAL:
   REPORT full network inventory
 ```
 
-## Multi-Agent Dispatch
-
-```
-WHEN setting up networking for a multi-service deployment:
-
-DISPATCH parallel agents in worktrees:
-
-  Agent 1 (vpc-and-security):
-    - Design VPC with public/private/isolated subnets
-    - Configure security groups (least-privilege)
-    - Set up NACLs and VPC Flow Logs
-    - Output: infra/network/ (Terraform or CloudFormation)
-
-  Agent 2 (load-balancer):
-    - Configure ALB/NLB with target groups
-    - Set up health checks and routing rules
-    - Configure SSL termination
-    - Output: infra/lb/ configs
-
-  Agent 3 (cdn-and-dns):
-    - Configure CDN (CloudFront/Cloudflare)
-    - Set up DNS records with correct TTLs
-    - Configure cache behaviors per path
-    - Output: infra/cdn/ + infra/dns/ configs
-
-  Agent 4 (ssl-and-security):
-    - Configure SSL certificates (Let's Encrypt / cert-manager)
-    - Set up WAF rules (SQL injection, XSS, rate limiting)
-    - Configure HSTS, CSP, and security headers
-    - Output: infra/certs/ + infra/waf/ configs
-
-MERGE:
-  - Verify DNS points to CDN which routes to LB
-  - Verify SSL terminates correctly at each layer
-  - Verify security groups allow traffic flow: CDN -> LB -> App -> DB
-  - Run end-to-end connectivity test through full stack
-```
-
 ## HARD RULES
 
 ```
@@ -748,14 +682,14 @@ MERGE:
 
 ## Anti-Patterns
 
-- **Do NOT use self-signed certificates in production.** Let's Encrypt is free. There is no excuse for self-signed certs outside of local development.
-- **Do NOT expose database ports to the internet.** Databases belong in isolated subnets with no public IP and no internet gateway route.
-- **Do NOT use 0.0.0.0/0 in security group rules** except for ALB inbound on ports 80/443. Everything else should reference specific security groups or CIDR blocks.
-- **Do NOT set DNS TTL to 0.** Extremely low TTLs cause excessive DNS queries and increase latency. Use 60s minimum for dynamic records.
-- **Do NOT skip HSTS.** Without HSTS, browsers allow HTTP connections that can be intercepted. Enable HSTS with preload on all production domains.
-- **Do NOT cache authenticated content at the CDN.** Unless you configure cache keys to include auth tokens, you risk serving one user's data to another.
-- **Do NOT rely on a single availability zone.** LBs, subnets, and instances must span at least two AZs for fault tolerance.
-- **Do NOT ignore VPC Flow Logs.** They are essential for security forensics and compliance auditing. Enable them on all production VPCs.
+- **Do NOT use self-signed certificates in production.** Let's Encrypt is free.
+- **Do NOT expose database ports to the internet.** Databases belong in isolated subnets.
+- **Do NOT use 0.0.0.0/0 in security group rules** except for ALB inbound on 80/443.
+- **Do NOT set DNS TTL to 0.** Use 60s minimum for dynamic records.
+- **Do NOT skip HSTS.** Enable HSTS with preload on all production domains.
+- **Do NOT cache authenticated content at the CDN** without auth-aware cache keys.
+- **Do NOT rely on a single availability zone.** Span at least two AZs.
+- **Do NOT ignore VPC Flow Logs.** Enable them on all production VPCs.
 
 
 ## Output Format
@@ -839,7 +773,5 @@ PREFER the simpler networking approach:
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.
-- Use branch isolation per task: `git checkout -b godmode-network-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run network tasks sequentially: VPC/security, then load balancer, then CDN/DNS.
+Use branch isolation per task: `git checkout -b godmode-network-{task}`, implement, commit, merge back.

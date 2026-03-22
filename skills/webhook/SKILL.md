@@ -887,19 +887,6 @@ RECOMMENDATIONS:
 7. **ALWAYS send failed events to a dead letter queue.** Silent data loss erodes trust.
 8. **ALWAYS add random jitter to retry delays.** Thousands of retries at the exact same second creates a thundering herd.
 
-## Anti-Patterns
-
-- **Do NOT deliver webhooks synchronously in the request path.** Webhook delivery must be async. The user's API request should not block on delivering events to third-party endpoints.
-- **Do NOT retry on 4xx errors (except 408/429).** A 400 means your payload is wrong. A 404 means the endpoint is gone. Retrying will not fix it — fix the payload or remove the subscription.
-- **Do NOT use simple string comparison for signatures.** `signature == expected` leaks timing information. Always use constant-time comparison (`hmac.compare_digest`, `crypto.timingSafeEqual`).
-- **Do NOT parse the body before verifying the signature.** Signature must be computed over the raw bytes. Parsing and re-serializing JSON can change field order, whitespace, or encoding.
-- **Do NOT store webhook secrets in plain text.** Encrypt at rest. The secret is shown once at creation time and never again via the API.
-- **Do NOT allow HTTP webhook URLs in production.** HTTPS only. No exceptions. No "we'll enforce it later."
-- **Do NOT skip SSRF checks on webhook URLs.** Attackers will register `http://169.254.169.254/latest/meta-data/` as a webhook URL. Block all private and reserved IP ranges.
-- **Do NOT discard failed events silently.** Every event that cannot be delivered must end up in a dead letter queue. Silent data loss erodes trust.
-- **Do NOT retry without jitter.** Thousands of retries firing at the exact same second creates a thundering herd. Add random jitter to every retry delay.
-- **Do NOT assume consumers handle duplicates.** Document that delivery is at-least-once. Tell consumers to implement idempotency. But also minimize unnecessary duplicates.
-
 ## Auto-Detection
 
 ```
@@ -1023,160 +1010,36 @@ ON COMPLETION:
 ```
 
 ## Multi-Agent Dispatch
-
 ```
-PARALLEL WEBHOOK AGENTS:
-When building a complete webhook system (inbound + outbound):
-
-Agent 1 (worktree: webhook-outbound):
-  - Design event payload schemas for all event types
-  - Implement async delivery via queue (BullMQ/Celery/SQS)
-  - Add HMAC-SHA256 signature generation
-  - Configure retry strategy with exponential backoff + jitter
-  - Implement circuit breaker per destination
-
-Agent 2 (worktree: webhook-inbound):
-  - Implement inbound webhook handlers (Stripe, GitHub, etc.)
-  - Add signature verification (constant-time comparison, raw body)
-  - Build webhook secret management (encrypted storage, rotation)
-  - Add SSRF protection on webhook URL registration
-
-Agent 3 (worktree: webhook-infra):
-  - Design database schema (subscriptions, deliveries, DLQ)
-  - Build subscription management API (CRUD + test endpoint)
-  - Configure monitoring (delivery success rate, latency, DLQ depth)
-  - Write integration tests (end-to-end delivery + signature verification)
-
-MERGE: Outbound and inbound merge independently.
-  Infra rebases onto both. Final: end-to-end delivery test with real queue.
+Agent 1 (worktree: webhook-outbound): Payload schemas, async delivery, HMAC signing, retry + circuit breaker
+Agent 2 (worktree: webhook-inbound): Signature verification, secret management, SSRF protection
+Agent 3 (worktree: webhook-infra): DB schema, subscription API, monitoring, integration tests
+MERGE: outbound + inbound independently -> infra rebases onto both
 ```
 
-## Webhook Reliability Audit Loop
-
-Autonomous audit loop that validates retry logic, idempotency, timeout handling, and delivery guarantees. Runs until all reliability checks pass or max iterations reached.
-
+## Keep/Discard Discipline
 ```
-WEBHOOK RELIABILITY AUDIT LOOP:
-current_iteration = 0
-max_iterations = 15
-webhook_config = detect_webhook_infrastructure()
-delivery_stats = query_delivery_metrics()  // success rate, DLQ depth, retry queue
-
-WHILE current_iteration < max_iterations AND NOT all_checks_pass:
-  current_iteration += 1
-
-  // Phase 1: Retry Logic Validation
-  retry_checks = {
-    exponential_backoff:  retry_delays_follow_exponential_curve(),
-    // Expected: 1m, 5m, 30m, 2h, 8h, 24h (or similar)
-    jitter_present:       retry_delays_include_random_jitter(),
-    // Jitter: +/- 20% of base delay
-    max_attempts_bounded: max_retry_attempts <= 15,
-    no_retry_on_4xx:      does_not_retry_on_400_401_403_404_405(),
-    retry_on_408_429:     retries_on_timeout_and_ratelimit(),
-    retry_on_5xx:         retries_on_500_502_503_504(),
-    backoff_formula:      delay = base * (2 ^ attempt) + random_jitter()
-  }
-
-  FOR each check in retry_checks:
-    IF check.status == FAIL:
-      FIX: implement correct retry behavior
-      LOG: "RETRY fixed: {check.name}"
-
-  // Phase 2: Idempotency Validation
-  idempotency_checks = {
-    event_id_unique:         every_event_has_globally_unique_id(),
-    dedup_on_receive:        inbound_handler_checks_event_id_before_processing(),
-    dedup_store_configured:  dedup_store_exists(),  // Redis SET, DB table
-    dedup_ttl_set:           dedup_entries_expire_after_72h(),
-    outbound_idempotency:    delivery_table_tracks_event_subscription_pair(),
-    handler_safe_to_replay:  handlers_use_upsert_or_idempotency_guard()
-  }
-
-  FOR each check in idempotency_checks:
-    IF check.status == FAIL:
-      FIX: add deduplication or idempotency guard
-      LOG: "IDEMPOTENCY fixed: {check.name}"
-
-  // Phase 3: Timeout Handling
-  timeout_checks = {
-    delivery_timeout:      outbound_request_timeout <= 30s,   // 5-30s recommended
-    connect_timeout:       connect_timeout <= 5s,
-    total_timeout:         total_timeout <= 60s,
-    timeout_on_receiver:   inbound_handler_responds_within_5s(),
-    async_processing:      heavy_work_queued_not_inline(),     // 200 ACK then process
-    circuit_breaker:       circuit_opens_after_N_consecutive_failures(),
-    // Thresholds: open after 5 failures, half-open after 60s, close after 3 successes
-    dead_letter_on_exhaust: exhausted_retries_go_to_dlq()
-  }
-
-  FOR each check in timeout_checks:
-    IF check.status == FAIL:
-      FIX: configure correct timeouts and circuit breaker
-      LOG: "TIMEOUT fixed: {check.name}"
-
-  // Phase 4: Delivery Guarantee Audit
-  guarantee_checks = {
-    at_least_once:          delivery_retries_ensure_eventual_delivery(),
-    ordering_documented:    docs_state_ordering_is_not_guaranteed(),
-    payload_immutable:      event_payload_does_not_change_between_retries(),
-    signature_per_attempt:  each_retry_generates_fresh_signature_with_current_timestamp(),
-    dlq_replay_available:   dlq_entries_can_be_manually_replayed(),
-    monitoring_configured:  alerts_on_success_rate_below_95pct()
-  }
-
-  FOR each check in guarantee_checks:
-    IF check.status == FAIL:
-      FIX: implement missing guarantee
-      LOG: "GUARANTEE fixed: {check.name}"
-
-  // Phase 5: Keep/Discard
-  all_retry = all(retry_checks)
-  all_idempotency = all(idempotency_checks)
-  all_timeout = all(timeout_checks)
-  all_guarantee = all(guarantee_checks)
-
-  IF all_retry AND all_idempotency AND all_timeout AND all_guarantee:
-    KEEP all changes
-    COMMIT: "webhook: reliability audit pass #{current_iteration}"
-    all_checks_pass = true
-  ELSE:
-    remaining = count_failing([retry_checks, idempotency_checks, timeout_checks, guarantee_checks])
-    LOG: "Iteration {current_iteration}: {remaining} checks still failing"
-    CONTINUE
-
-  REPORT: "Iteration {current_iteration}: retry={sum(retry_checks)}/7, idempotency={sum(idempotency_checks)}/6, timeout={sum(timeout_checks)}/7, guarantee={sum(guarantee_checks)}/6"
-
-ON COMPLETION:
-  LOG to .godmode/webhook-audit.tsv:
-    timestamp\tproject\titerations\tretry_fixes\tidempotency_fixes\ttimeout_fixes\tguarantee_fixes\tverdict
-  REPORT: "Webhook reliability audit complete: {current_iteration} iterations, all {total_checks} checks PASS"
+After EACH webhook event type implementation or reliability fix:
+  1. MEASURE: Send a test event — does signature verify? Does retry behave correctly?
+  2. COMPARE: Is delivery success rate maintained? Is DLQ depth stable?
+  3. DECIDE:
+     - KEEP if: signature verifies AND retry logic is correct AND DLQ depth did not spike
+     - DISCARD if: signature fails OR retry logic wrong (e.g., retrying 4xx) OR data loss detected
+  4. COMMIT kept changes. Revert discarded changes before the next event type.
 ```
 
-### Reliability Thresholds
-
+## Stop Conditions
 ```
-WEBHOOK RELIABILITY THRESHOLDS:
-┌──────────────────────────────────────┬──────────────┬────────────────────────┐
-│ Metric                               │ Target       │ Alert                  │
-├──────────────────────────────────────┼──────────────┼────────────────────────┤
-│ First-attempt delivery success rate  │ > 95%        │ < 90%                  │
-│ Overall delivery success rate        │ > 99.5%      │ < 98%                  │
-│ Delivery latency p50                 │ < 500ms      │ > 2s                   │
-│ Delivery latency p99                 │ < 5s         │ > 15s                  │
-│ DLQ entries per 24h                  │ < 10         │ > 100                  │
-│ Retry queue depth                    │ < 500        │ > 5,000                │
-│ Circuit breakers open                │ 0            │ > 3                    │
-│ Duplicate deliveries (same event)    │ < 0.1%       │ > 1%                   │
-│ Dedup store miss rate                │ 0%           │ > 0% (dedup broken)    │
-│ Inbound handler response time        │ < 2s         │ > 5s                   │
-│ Connect timeout                      │ 3-5s         │ > 10s                  │
-│ Request timeout                      │ 5-30s        │ > 60s                  │
-└──────────────────────────────────────┴──────────────┴────────────────────────┘
+STOP when ANY of these are true:
+  - All event types implemented with HMAC signatures and retry logic
+  - All reliability checks pass (retry, idempotency, timeout, delivery guarantee)
+  - Delivery success rate > 99.5% in testing
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - DLQ has a few entries (that is expected; investigate only if > 5% of events)
+  - A consumer endpoint is intermittently slow (circuit breaker handles this)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run webhook tasks sequentially: outbound delivery, then inbound handling, then infrastructure/monitoring.
-- Use branch isolation per task: `git checkout -b godmode-webhook-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-webhook-{task}`. See `adapters/shared/sequential-dispatch.md`.

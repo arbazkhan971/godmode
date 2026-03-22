@@ -676,48 +676,16 @@ PREFER the simpler observability approach:
   - Single dashboard per service before multi-dashboard sprawl
 ```
 
-## Multi-Agent Dispatch
-
-For large systems with multiple services, dispatch parallel agents:
-
-```
-MULTI-AGENT OBSERVABILITY SETUP:
-Dispatch 2-4 agents in parallel worktrees when instrumenting multiple services.
-
-Agent 1 (worktree: observe-metrics):
-  - Instrument all services with metrics (RED/USE)
-  - Configure /metrics endpoints
-  - Set up Prometheus scrape targets
-
-Agent 2 (worktree: observe-logging):
-  - Replace unstructured logging with structured JSON
-  - Add request_id correlation middleware
-  - Configure log aggregation (ELK/Loki)
-
-Agent 3 (worktree: observe-tracing):
-  - Add OpenTelemetry auto-instrumentation
-  - Configure trace propagation headers
-  - Verify end-to-end trace visibility
-
-Agent 4 (worktree: observe-alerts):
-  - Define SLOs and error budgets
-  - Create Prometheus alert rules
-  - Build Grafana dashboards
-
-MERGE ORDER: metrics -> logging -> tracing -> alerts (each depends on prior)
-CONFLICT ZONES: middleware registration order, config files, docker-compose ports
-```
-
 ## Anti-Patterns
 
-- **Do NOT alert on symptoms without context.** "CPU is high" is not actionable. "CPU is high on api-server causing P95 latency > 500ms" is actionable.
-- **Do NOT use unstructured logs.** `console.log("error: " + err)` is unsearchable and unparseable. Use structured JSON with consistent fields.
-- **Do NOT create metric labels with unbounded cardinality.** Adding `user_id` as a Prometheus label creates millions of time series and kills your monitoring.
-- **Do NOT set alerts without `for` duration.** Instant alerts cause flapping. Require the condition to persist (typically 5 minutes).
-- **Do NOT log PII or secrets.** Audit every log statement. Mask email addresses, redact tokens, exclude passwords.
-- **Do NOT build dashboards without a question.** "What does this dashboard answer?" If you cannot state the question, the dashboard is noise.
-- **Do NOT skip trace context propagation.** If service A calls service B but the trace breaks, you lose visibility into the most critical part of the request.
-- **Do NOT ignore error budget.** When the error budget is depleted, stop shipping features and fix reliability. That is the whole point of SLOs.
+- **Do NOT alert on symptoms without context.** "CPU is high" is not actionable. Include the user-facing impact.
+- **Do NOT use unstructured logs.** Use structured JSON with consistent fields.
+- **Do NOT create metric labels with unbounded cardinality.** `user_id` as a Prometheus label kills your monitoring.
+- **Do NOT set alerts without `for` duration.** Require the condition to persist (typically 5 minutes).
+- **Do NOT log PII or secrets.** Mask email addresses, redact tokens, exclude passwords.
+- **Do NOT build dashboards without a question.** If you cannot state the question, the dashboard is noise.
+- **Do NOT skip trace context propagation.** Broken traces lose visibility at service boundaries.
+- **Do NOT ignore error budget.** When depleted, stop shipping features and fix reliability.
 
 
 ## Output Format
@@ -754,7 +722,5 @@ Columns: iteration, pillar(metrics/logging/tracing/alerts/dashboards), tool, ite
 - **SLO calculation shows 100% availability**: The SLO is likely misconfigured. Verify the error condition captures actual user-facing errors. Check that the measurement window is correct. A 100% SLO over months means you are not measuring real errors.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run observability tasks sequentially: metrics, then logging, then tracing, then alerts.
-- Use branch isolation per task: `git checkout -b godmode-observe-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run observability tasks sequentially: metrics, then logging, then tracing, then alerts.
+Use branch isolation per task: `git checkout -b godmode-observe-{task}`, implement, commit, merge back.

@@ -228,12 +228,7 @@ Enforcement strategy:
 
 SELECTED: <Option> — <justification>
 
-Validation layer:
-  - Parse output as JSON/schema
-  - Validate against schema (ajv, pydantic, zod)
-  - Retry with error message on validation failure
-  - Max retries: <N> (typically 2-3)
-  - Fallback: <what to do if all retries fail>
+Validation: Parse output, validate against schema (ajv/pydantic/zod), retry on failure (max 2-3).
 ```
 
 ### Step 7: Prompt Injection Prevention
@@ -459,34 +454,6 @@ WHILE current_iteration < max_iterations AND accuracy < target:
   ...
 ```
 
-## Multi-Agent Dispatch
-
-For large prompt engineering projects with multiple prompts:
-
-```
-PARALLEL AGENTS (when designing multiple prompts):
-Agent 1 — Prompt Design (worktree: prompt-design)
-  - Design system prompts and few-shot examples
-  - Select patterns (CoT, ReAct, structured output)
-
-Agent 2 — Test Suite (worktree: prompt-tests)
-  - Create golden set test cases
-  - Create edge case and adversarial tests
-  - Create injection resistance tests
-
-Agent 3 — Evaluation Pipeline (worktree: prompt-eval)
-  - Build evaluation harness (RAGAS, DeepEval, or custom)
-  - Run evaluations and generate metrics
-  - Compare prompt versions
-
-Agent 4 — Security Hardening (worktree: prompt-security)
-  - Audit for prompt injection vulnerabilities
-  - Design input sanitization and output validation
-  - Build monitoring and alerting for injection attempts
-
-MERGE ORDER: Agent 1 first (prompts), then Agent 2 (tests), then Agent 3 + 4 in parallel.
-```
-
 ## HARD RULES
 
 ```
@@ -555,51 +522,6 @@ EVALUATION:
   Cost: $0.003/call
 
 Verdict: PASS — Prompt exceeds all targets.
-```
-
-### Optimizing an Existing Prompt
-```
-User: /godmode:prompt --optimize Our extraction prompt is only 72% accurate
-
-Prompt: Analyzing current prompt...
-
-Current: v1.0 — Zero-shot extraction, 72% accuracy
-Issues found:
-  1. No examples — model guessing output format
-  2. No chain-of-thought — complex extractions need reasoning
-  3. No edge case handling — fails on multi-entity inputs
-
-Generating variants:
-  v1.1: +3 few-shot examples -> 81.5% accuracy
-  v1.2: +chain-of-thought reasoning -> 86.2% accuracy
-  v1.3: +edge case instructions -> 88.9% accuracy
-
-Recommendation: Deploy v1.3 (+16.9% accuracy, +$0.004/call cost)
-```
-
-### Preventing Prompt Injection
-```
-User: /godmode:prompt --harden Our chatbot is vulnerable to injection attacks
-
-Prompt: Running injection audit...
-
-Testing 25 known injection patterns...
-  Direct injection: 8/10 bypassed current defenses
-  Indirect injection: 3/5 bypassed
-  Jailbreak: 2/5 bypassed
-
-Applying defense layers:
-  Layer 1: Input sanitization rules (5 patterns)
-  Layer 2: Delimiter restructuring (XML tags for untrusted input)
-  Layer 3: Output validation (schema + PII check)
-  Layer 4: Monitoring alerts (injection pattern detection)
-
-Re-testing:
-  Direct injection: 1/10 bypassed (90% blocked -> 90% improvement)
-  Indirect injection: 0/5 bypassed (100% blocked)
-  Jailbreak: 1/5 bypassed (80% blocked)
-
-Remaining risk: 2 edge cases flagged for monitoring. No known bypass for production use.
 ```
 
 ## Flags & Options
@@ -689,28 +611,41 @@ IF prompt is too expensive (token cost too high):
   4. Cache responses for identical or similar inputs
 ```
 
-## Auto-Detection
-
-```
-AUTO-DETECT SEQUENCE:
-1. Detect AI framework: grep for openai, anthropic, langchain, llamaindex in dependencies
-2. Detect existing prompts: find . -name "*.prompt" -o -name "*prompt*.yaml" -o -name "*prompt*.json"
-3. Detect model configuration: grep for model name, API key env vars in config files
-4. Detect evaluation tools: grep for promptfoo, deepeval, ragas in dependencies or config
-5. Detect prompt management: grep for helicone, humanloop, langsmith in dependencies
-6. Auto-configure: match prompt patterns to detected model and framework
-```
-
 ## Anti-Patterns
 
-- **Do NOT ship untested prompts.** "I tried it once and it worked" is not testing. Run the golden set. Measure accuracy. Track regressions.
-- **Do NOT ignore prompt injection.** If user input goes into a prompt, it WILL be attacked. Design defenses before production.
-- **Do NOT hardcode prompts in application code.** Externalize prompts into versioned files. Prompt changes should not require code deployments.
-- **Do NOT over-engineer simple tasks.** Zero-shot works for many tasks. Adding chain-of-thought to a simple classification just adds cost and latency.
-- **Do NOT copy prompts between models.** A prompt optimized for GPT-4 may underperform on Claude. Test on the target model and optimize accordingly.
-- **Do NOT use temperature 0 for everything.** Temperature 0 is for deterministic tasks. Creative tasks, brainstorming, and diverse generation benefit from higher temperature.
-- **Do NOT skip the system prompt.** User messages alone are fragile. The system prompt is the persistent instruction layer that survives conversation turns.
-- **Do NOT treat prompt engineering as one-and-done.** Models change, requirements evolve, edge cases emerge. Prompts need ongoing maintenance.
+- **Do NOT ship untested prompts.** Run the golden set. Measure accuracy. Track regressions.
+- **Do NOT ignore prompt injection.** If user input enters the prompt, design defenses before production.
+- **Do NOT hardcode prompts in application code.** Externalize to versioned files.
+- **Do NOT over-engineer simple tasks.** Zero-shot works for many tasks. Adding chain-of-thought to a classification just adds cost and latency.
+- **Do NOT copy prompts between models.** Test on the target model and optimize accordingly.
+- **Do NOT use temperature 0 for everything.** Creative tasks benefit from higher temperature.
+- **Do NOT skip the system prompt.** It is the persistent instruction layer that survives conversation turns.
+
+## Keep/Discard Discipline
+```
+After EACH prompt optimization iteration:
+  1. MEASURE: Run the golden set evaluation on the new variant.
+  2. COMPARE: Did accuracy improve? Did any safety metric regress?
+  3. DECIDE:
+     - KEEP if: primary metric improved AND no safety/format regression
+     - DISCARD if: accuracy unchanged or decreased OR any safety metric regressed
+  4. COMMIT kept changes. Revert discarded changes before generating the next variant.
+
+Never keep a prompt variant that degrades safety or injection resistance, even if accuracy improves.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Accuracy meets or exceeds target on the golden set
+  - Two consecutive iterations produce < 1% accuracy improvement (diminishing returns)
+  - All safety, format, and injection metrics meet thresholds
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Token cost is slightly above budget (optimize tokens after accuracy)
+  - A single edge case fails (log it, move on)
+```
 
 
 ## Prompt Optimization Loop (Autoresearch-Quality)
@@ -841,13 +776,11 @@ TOKEN EFFICIENCY OPTIMIZATION:
       3. Re-run golden set: measure accuracy AND token count
       4. IF accuracy dropped > 1%: REVERT change
       5. IF accuracy maintained: ACCEPT, log savings
-      6. IF accuracy improved (sometimes shorter prompts work better): ACCEPT
+      6. IF accuracy improved: ACCEPT
 
     REPORT: "Token optimization: {original_tokens} -> {final_tokens} ({reduction_pct}% reduction), accuracy: {original_acc} -> {final_acc}"
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run prompt engineering tasks sequentially: prompt design, then test suite, then evaluation pipeline, then security hardening.
-- Use branch isolation per task: `git checkout -b godmode-prompt-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run prompt engineering tasks sequentially: prompt design, then test suite, then evaluation pipeline, then security hardening.
+Use branch isolation per task: `git checkout -b godmode-prompt-{task}`, implement, commit, merge back.

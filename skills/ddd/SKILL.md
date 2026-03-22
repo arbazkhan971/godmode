@@ -598,16 +598,42 @@ IF existing codebase has anemic domain model:
   → Track: "Enriched {aggregate} — moved {N} methods from services to domain"
 ```
 
+## Keep/Discard Discipline
+```
+After EACH aggregate design or context boundary decision:
+  1. MEASURE: Does the aggregate protect its invariants? Are cross-aggregate references by ID only?
+  2. COMPARE: Is the aggregate small (3-4 entities max)? Does the bounded context have a consistent language?
+  3. DECIDE:
+     - KEEP if: invariants are enforceable AND aggregate is small AND context language is consistent
+     - DISCARD if: aggregate exceeds 4 entities OR same term means different things within one context
+  4. Split oversized aggregates. Redraw context boundaries where language diverges.
+
+Never keep an aggregate that requires modifying two aggregates in the same transaction.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Core domain has bounded contexts, aggregates, and event catalog defined
+  - Ubiquitous language glossary has 5+ terms with unambiguous definitions
+  - Context map shows relationships between all bounded contexts
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Supporting/generic domains are not fully modeled (core domain is the priority)
+  - Implementation scaffold is not yet generated (model correctness comes first)
+```
+
 ## Anti-Patterns
 
-- **Do NOT start with the database schema.** DDD models the domain, not the database. The persistence model is derived from the domain model, not the other way around.
-- **Do NOT create one big aggregate.** If your aggregate contains every entity in the system, you have a God Aggregate. Split it. One aggregate per transactional boundary.
-- **Do NOT share domain objects across bounded contexts.** Each context has its own model. An "Order" in Ordering is different from an "Order" in Fulfillment. Translate at the boundary.
-- **Do NOT use DDD for CRUD.** If the domain logic is "save this, read that, delete the other," DDD adds complexity without value. Use DDD where business rules are complex.
-- **Do NOT skip the ubiquitous language.** Code that uses technical terms instead of domain terms (e.g., `processRecord` instead of `placeOrder`) creates a translation layer in every developer's head.
-- **Do NOT hold references across aggregate boundaries.** Use IDs. Direct references create hidden coupling and make it impossible to enforce transactional boundaries.
-- **Do NOT force immediate consistency across aggregates.** If two aggregates must be consistent, they should probably be one aggregate. Otherwise, use domain events and eventual consistency.
-- **Do NOT model the entire domain at once.** Start with the core domain. Model supporting domains simply. Use off-the-shelf for generic domains. Expand DDD coverage only when complexity justifies it.
+- **Do NOT start with the database schema.** Model the domain first. Persistence is derived.
+- **Do NOT create one big aggregate.** One aggregate per transactional boundary. Split if > 4 entities.
+- **Do NOT share domain objects across bounded contexts.** Each context owns its model. Translate at the boundary.
+- **Do NOT use DDD for CRUD.** If the logic is "save, read, delete," DDD adds complexity without value.
+- **Do NOT skip the ubiquitous language.** `processRecord` instead of `placeOrder` creates a mental translation layer.
+- **Do NOT hold references across aggregate boundaries.** Use IDs only. Direct references create hidden coupling.
+- **Do NOT force immediate consistency across aggregates.** Use domain events and eventual consistency.
+- **Do NOT model the entire domain at once.** Start with the core domain. Expand only when complexity justifies it.
 
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

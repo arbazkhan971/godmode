@@ -104,11 +104,6 @@ OBJECT STORAGE COMPARISON:
 │  Presigned URLs   │ Yes       │ Yes       │ SAS tokens  │
 │  Event triggers   │ Lambda    │ Functions │ Functions   │
 │  Storage classes  │ 6 tiers   │ 4 tiers   │ 4 tiers     │
-│  Min billing      │ 128 KB    │ N/A       │ N/A         │
-│  Egress cost      │ $0.09/GB  │ $0.12/GB  │ $0.087/GB   │
-└──────────────────────────────────────────────────────────┘
-```
-
 ### Step 3: File Upload Architecture
 Design secure, scalable upload flows:
 
@@ -371,21 +366,6 @@ VIDEO PROCESSING PIPELINE:
 │  4. GENERATE ASSETS                                        │
 │     - Thumbnail at 3 different timestamps                  │
 │     - Preview GIF (first 3 seconds, 320px wide)            │
-│     - Subtitle extraction (if embedded)                    │
-│     - Waveform visualization (for audio content)           │
-│                                                            │
-│  5. ADAPTIVE STREAMING (HLS)                               │
-│     - Segment duration: 6 seconds                          │
-│     - Multiple quality levels for adaptive bitrate          │
-│     - Encryption: AES-128 or DRM (Widevine/FairPlay)       │
-│     - Manifest: m3u8 playlist served via CDN                │
-│                                                            │
-│  6. SERVE via CDN                                          │
-│     - Range request support for seeking                     │
-│     - Signed URLs for premium content                      │
-│     - Geographic restrictions if required                   │
-└────────────────────────────────────────────────────────────┘
-```
 
 ### Step 5: Storage Cost Optimization
 Analyze and reduce storage costs:
@@ -566,7 +546,7 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
 ## Key Behaviors
 
 1. **Never accept uploads through your API server.** Use presigned URLs for direct-to-storage uploads. Your server should never be a proxy for file transfers — it creates a bottleneck and wastes compute.
-2. **Validate on the server side, not just the client.** Client-side validation is for UX. Server-side validation (MIME type sniffing, file header inspection, virus scanning) is for security.
+2. **Validate on the server side, not the client.** Client-side validation is for UX. Server-side validation (MIME type sniffing, file header inspection, virus scanning) is for security.
 3. **Strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps. Serving user photos with EXIF data is a privacy violation.
 4. **Use content-addressable storage when possible.** Hash the file content for the key. This gives you automatic deduplication and cache-friendly immutable URLs.
 5. **Set lifecycle policies from day one.** Storage costs grow silently. Transition to IA after 90 days, Glacier after a year. Auto-delete incomplete multipart uploads after 24 hours.
@@ -610,39 +590,6 @@ Estimated costs:
   Requests: $45/month (2M GETs, 50K PUTs)
   Processing: $60/month (Lambda + MediaConvert)
   CDN egress: $170/month (2 TB via CloudFront)
-  Total: ~$505/month
-```
-
-### Optimizing storage costs
-```
-User: /godmode:storage Our S3 bill is $3,000/month, help reduce it
-
-Storage: Analyzing storage usage...
-
-Current state:
-  Total storage: 45 TB
-  Standard tier: 45 TB (100% — no lifecycle policy)
-  Incomplete multipart uploads: 2.1 TB (wasted)
-  Orphaned files: 3.8 TB (no DB reference)
-
-Access pattern analysis:
-  Last 30 days: 12 TB accessed (27%)
-  Last 90 days: 18 TB accessed (40%)
-  Last 365 days: 30 TB accessed (67%)
-  Never accessed: 8 TB (18%)
-
-Recommendations:
-  1. Abort incomplete uploads: -$48/month (immediate)
-  2. Delete orphaned files: -$86/month (after verification)
-  3. Lifecycle to IA (90 days): -$540/month
-  4. Lifecycle to Glacier IR (365 days): -$420/month
-  5. Serve via CloudFront: -$380/month (egress savings)
-  6. WebP conversion for images: -$210/month
-
-Projected bill: $1,316/month (56% reduction)
-Implementation: 3 PRs over 1 week (low risk, incremental)
-```
-
 ## Flags & Options
 
 | Flag | Description |
@@ -702,7 +649,6 @@ WHILE storage implementation is incomplete:
   IF tests fail: check IAM permissions, bucket policy, CORS config. Fix and re-test (max 3 attempts)
 STOP: all components implemented, end-to-end upload works, CDN serving verified, lifecycle rules active
 ```
-
 ## TSV Logging
 After each workflow step, append a row to `.godmode/storage-results.tsv`:
 ```
@@ -735,7 +681,6 @@ All of these must be true before marking the task complete:
 | CDN returns stale content | Invalidate CDN cache: `aws cloudfront create-invalidation`. For future: use content-hashed filenames to avoid cache invalidation entirely. |
 | Image processing OOM | Reduce Sharp concurrency: `sharp.concurrency(1)`. Process large images in a background job, not in the request handler. Set memory limits on the worker. |
 | Upload timeout | For files >100MB, switch to multipart upload. Set appropriate timeout on the client. Implement resumable uploads (tus protocol) for unreliable networks. |
-
 ## Multi-Agent Dispatch
 ```
 Agent 1 (worktree: storage-core):
@@ -752,10 +697,6 @@ Agent 3 (worktree: storage-api):
   - Create upload API endpoints (presigned URL generation, upload confirmation)
   - Implement file metadata tracking in database
   - Add download endpoints with access control
-
-MERGE ORDER: core -> processing -> api
-CONFLICT ZONES: storage client initialization, file metadata schema, upload route handlers
-```
 
 ## Storage Optimization Audit
 
@@ -798,135 +739,30 @@ ACCESS PATTERN ANALYSIS:
     - ALERT if read frequency drops > 30% (possible broken CDN or stale cache)
     - ALERT if storage growth rate exceeds projected budget
 
-COMPRESSION AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  File Type   │ Count   │ Size    │ Compressed │ Savings │ Method │
-├──────────────────────────────────────────────────────────────────┤
-│  Images (raw)│ <N>     │ <size>  │ <size>     │ <pct>%  │ WebP   │
-│  Images (opt)│ <N>     │ <size>  │ N/A        │ N/A     │ Already│
-│  Documents   │ <N>     │ <size>  │ <size>     │ <pct>%  │ gzip   │
-│  Video (raw) │ <N>     │ <size>  │ <size>     │ <pct>%  │ H.265  │
-│  Video (opt) │ <N>     │ <size>  │ N/A        │ N/A     │ Already│
-│  JSON/CSV    │ <N>     │ <size>  │ <size>     │ <pct>%  │ gzip   │
-│  Logs        │ <N>     │ <size>  │ <size>     │ <pct>%  │ zstd   │
-│  Backups     │ <N>     │ <size>  │ <size>     │ <pct>%  │ zstd   │
-└──────────────────────────────────────────────────────────────────┘
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH storage configuration change:
+  1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.
+  2. VERIFY: Direct bucket access blocked, lifecycle rules active, CORS correct.
+  3. DECIDE:
+     - KEEP if: end-to-end test passes AND no access regressions AND cost projection improved
+     - DISCARD if: upload fails OR direct bucket access possible OR CORS breaks
+  4. COMMIT kept changes. Revert discarded changes before next component.
 
-  Compression checks:
-    1. SCAN for uncompressed images (JPEG > 500KB, PNG > 200KB without optimization)
-    2. VERIFY WebP/AVIF variants exist for all images served via CDN
-    3. CHECK if text-based files (JSON, CSV, logs) are compressed before storage
-    4. VERIFY CDN serves with Content-Encoding: gzip/br for compressible types
-    5. IDENTIFY largest objects and check if they can be compressed or split
-    6. MEASURE deduplication opportunity (hash-based scan for identical content)
-
-  Compression recommendations:
-    - Images: Convert to WebP (30-50% savings vs JPEG), AVIF for modern browsers
-    - Text: gzip for compatibility, Brotli for CDN serving, zstd for archives
-    - Video: H.265 for storage efficiency, adaptive bitrate for serving
-    - Logs: zstd compression (fastest decompression, good ratio)
-    - Backups: zstd with dictionary training on similar data
-
-LIFECYCLE POLICY AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  Lifecycle rules exist              │ PASS|FAIL│ <rule count>    │
-│  Incomplete multipart uploads       │ PASS|FAIL│ <abort after Xd>│
-│    auto-aborted                     │          │                 │
-│  Temp files auto-deleted            │ PASS|FAIL│ <expiry days>   │
-│  Old versions expired               │ PASS|FAIL│ <noncurrent exp>│
-│  Transition to IA configured        │ PASS|FAIL│ <after N days>  │
-│  Transition to Glacier configured   │ PASS|FAIL│ <after N days>  │
-│  Deep archive for compliance data   │ PASS|FAIL│ <after N days>  │
-│  Delete markers cleaned up          │ PASS|FAIL│ <expiry config> │
-│  Intelligent tiering enabled        │ PASS|FAIL│ <for uncertain  │
-│    (where access pattern unknown)   │          │  access pattern> │
-│  Lifecycle rules tested             │ PASS|FAIL│ <test evidence> │
-│    (verified objects actually move) │          │                 │
-│  Cost projection matches actual     │ PASS|FAIL│ <budget vs real>│
-└──────────────────────────────────────────────────────────────────┘
-
-  Lifecycle optimization:
-    1. REVIEW current lifecycle rules vs actual access patterns
-    2. IDENTIFY objects in wrong storage class (paying premium for cold data)
-    3. CALCULATE optimal transition days based on access frequency analysis
-    4. VERIFY lifecycle rules are not conflicting (multiple rules on same prefix)
-    5. TEST: create a test object, verify it transitions correctly after rule criteria met
-    6. MONITOR: lifecycle transition metrics (objects transitioned per day)
-
-CDN AND EGRESS OPTIMIZATION:
-┌──────────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence        │
-├──────────────────────────────────────────────────────────────────┤
-│  CDN serves all public content      │ PASS|FAIL│ <CDN coverage>  │
-│  Cache hit ratio > 90%              │ PASS|FAIL│ <hit ratio>     │
-│  Cache-Control headers set          │ PASS|FAIL│ <header config> │
-│  Content-hashed filenames used      │ PASS|FAIL│ <naming scheme> │
-│    (avoids cache invalidation)      │          │                 │
-│  Direct bucket access blocked       │ PASS|FAIL│ <bucket policy> │
-│  Egress cost optimized              │ PASS|FAIL│ <CDN vs direct> │
-│  Regional CDN for geo-specific data │ PASS|FAIL│ <distribution>  │
-│  Image CDN used for on-the-fly      │ PASS|FAIL│ <Cloudinary/    │
-│    transforms (if applicable)       │          │  imgix/Cloudflare│
-└──────────────────────────────────────────────────────────────────┘
-
-AUDIT SUMMARY:
-┌────────────────────────────────────────────────────────────────┐
-│  Current monthly cost:    $<amount>                            │
-│  Projected after optimize: $<amount>                           │
-│  Potential savings:       $<amount>/month (<pct>% reduction)   │
-│                                                                │
-│  Top savings opportunities:                                    │
-│  1. <action> — saves $<amount>/month                           │
-│  2. <action> — saves $<amount>/month                           │
-│  3. <action> — saves $<amount>/month                           │
-│                                                                │
-│  Audit verdict: <OPTIMIZED | SAVINGS AVAILABLE | WASTEFUL>     │
-│  Next audit: <scheduled date>                                  │
-└────────────────────────────────────────────────────────────────┘
+Never keep a storage change that exposes the bucket directly or breaks uploads.
 ```
 
-### Storage Optimization Loop
-
+## Stop Conditions
 ```
-STORAGE OPTIMIZATION ITERATION:
-optimization_areas = [access_patterns, compression, lifecycle, cdn_egress]
-current_area = 0
-total_savings = 0
+STOP when ANY of these are true:
+  - End-to-end upload works (presigned URL -> upload -> CDN serving)
+  - Direct bucket access blocked, lifecycle rules active
+  - All credentials from environment variables or IAM roles
+  - User explicitly requests stop
 
-WHILE current_area < len(optimization_areas):
-  area = optimization_areas[current_area]
-
-  1. ANALYZE current state (costs, access patterns, configurations)
-  2. IDENTIFY optimization opportunities with projected savings
-  3. RANK by savings-to-effort ratio (highest ROI first)
-  4. IMPLEMENT top optimization (ONE change at a time)
-  5. VERIFY: no access errors, no latency regression, cost reduction visible
-  6. WAIT 7 days to confirm steady-state behavior
-  7. LOG: { area, change, projected_savings, actual_savings, side_effects }
-
-  total_savings += actual_savings
-  current_area += 1
-
-FINAL:
-  REPORT "Storage optimization complete. Total savings: ${total_savings}/month"
-  SCHEDULE next audit in 90 days
+DO NOT STOP just because:
+  - Cost optimization is incomplete (lifecycle rules are a start)
+  - Video processing is not yet implemented (if not requested)
 ```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run storage tasks sequentially: bucket/CDN configuration, then storage client, then processing pipeline, then API endpoints.
-- Use branch isolation per task: `git checkout -b godmode-storage-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
-
-## Anti-Patterns
-
-- **Do NOT proxy file uploads through your API server.** Presigned URLs let clients upload directly to storage. Your server generating presigned URLs and the client uploading directly is both faster and cheaper.
-- **Do NOT store files on the application server filesystem.** Local storage is not durable, not scalable, and lost on deploy. Use object storage.
-- **Do NOT serve files directly from the storage bucket URL.** Use a CDN. Direct bucket access is slower, more expensive (egress), and exposes your bucket name.
-- **Do NOT skip virus scanning on uploads.** User-uploaded files can contain malware. Scan before making files available to other users.
-- **Do NOT generate image variants on-demand in production.** Pre-generate variants at upload time. On-demand processing adds latency and unpredictable costs.
-- **Do NOT store files without a lifecycle policy.** Storage without lifecycle rules grows indefinitely. Set transition and expiration rules from day one.
-- **Do NOT trust the file extension or Content-Type header.** Inspect the file header (magic bytes) to determine the actual file type. A .jpg with a PHP file header is an attack.
-- **Do NOT replicate without monitoring replication lag.** Cross-region replication can fall behind. Monitor and alert on replication lag exceeding your RPO.

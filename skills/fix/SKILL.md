@@ -193,6 +193,24 @@ Fixing [2/2]: FAIL src/api/users.test.ts — "should return 404 for missing user
 Fixed: 2 → 0 in 2 iters. Skipped: [].
 ```
 
+## Keep/Discard Discipline
+```
+After EACH fix attempt:
+  KEEP if: error count decreased AND no new errors introduced
+  DISCARD if: error count did not decrease OR new errors appeared
+  On discard: git reset --hard HEAD~1. Increment attempt counter. After 3 attempts, skip error.
+  Never keep a fix that does not reduce the total error count.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: error_count == 0 (all checks pass)
+  - budget_exhausted: all errors either fixed or in skipped_list
+  - diminishing_returns: 3 consecutive iterations with 0 errors fixed
+  - stuck: >5 consecutive reverts across different errors
+```
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - The fix skill is inherently sequential (one fix at a time), so no parallel dispatch is needed.

@@ -265,80 +265,16 @@ const posts = await postRepository
   .getMany();
 ```
 
-```python
-# ========== DJANGO ORM ==========
-# BAD: N+1
-posts = Post.objects.all()
-for post in posts:
-    print(post.author.name)  # Hits DB for each post
-
-# GOOD: select_related (SQL JOIN, for ForeignKey/OneToOne)
-posts = Post.objects.select_related('author').all()
-
-# GOOD: prefetch_related (separate query + Python join, for ManyToMany/reverse FK)
-posts = Post.objects.prefetch_related('comments').all()
-
-# GOOD: combined
-posts = Post.objects.select_related('author').prefetch_related('tags', 'comments').all()
-
-# ========== SQLALCHEMY ==========
-# BAD: N+1 (lazy loading by default)
-posts = session.query(Post).all()
-for post in posts:
-    print(post.author.name)  # Lazy load triggers query
-
-# GOOD: joinedload (SQL JOIN)
-from sqlalchemy.orm import joinedload
-posts = session.query(Post).options(joinedload(Post.author)).all()
-
-# GOOD: selectinload (separate SELECT ... WHERE id IN (...))
-from sqlalchemy.orm import selectinload
-posts = session.query(Post).options(selectinload(Post.comments)).all()
-
-# GOOD: SQLAlchemy 2.0 style
-from sqlalchemy import select
-stmt = select(Post).options(joinedload(Post.author))
-posts = session.scalars(stmt).unique().all()
 ```
-
-```ruby
-# ========== ACTIVE RECORD ==========
-# BAD: N+1
-Post.all.each { |post| puts post.author.name }
-
-# GOOD: includes (Rails decides JOIN vs separate query)
-Post.includes(:author).each { |post| puts post.author.name }
-
-# GOOD: eager_load (forces LEFT OUTER JOIN)
-Post.eager_load(:author).each { |post| puts post.author.name }
-
-# GOOD: preload (forces separate query)
-Post.preload(:comments).each { |post| puts post.comments.size }
-
-# Nested eager loading
-Post.includes(author: :organization, comments: :user).all
-```
-
-```go
-// ========== GORM ==========
-// BAD: N+1
-var posts []Post
-db.Find(&posts)
-for _, post := range posts {
-    var author User
-    db.First(&author, post.AuthorID)  // N queries
-}
-
-// GOOD: Preload
-var posts []Post
-db.Preload("Author").Find(&posts)
-
-// GOOD: Joins (single query)
-var posts []Post
-db.Joins("Author").Find(&posts)
-
-// Nested preload
-db.Preload("Author.Organization").Preload("Comments.User").Find(&posts)
+N+1 FIX — OTHER ORMS:
+  Django:     Post.objects.select_related('author')       (FK/O2O JOIN)
+              Post.objects.prefetch_related('comments')    (M2M separate query)
+  SQLAlchemy: session.query(Post).options(joinedload(Post.author))
+              session.query(Post).options(selectinload(Post.comments))
+  Rails:      Post.includes(:author)                      (Rails picks JOIN or separate)
+              Post.eager_load(:author)                    (forces JOIN)
+  GORM:       db.Preload("Author").Find(&posts)           (separate query)
+              db.Joins("Author").Find(&posts)             (single JOIN query)
 ```
 
 ### Step 4: Connection Pooling Configuration
@@ -414,38 +350,13 @@ const db = drizzle(pool);
 
 ```python
 # SQLAlchemy: connection pool
-from sqlalchemy import create_engine
-
-engine = create_engine(
-    "postgresql://user:pass@host:5432/db",
-    pool_size=20,           # Maximum persistent connections
-    max_overflow=10,        # Extra connections when pool is full
-    pool_timeout=30,        # Seconds to wait for a connection
-    pool_recycle=3600,      # Recycle connections after 1 hour
-    pool_pre_ping=True,     # Test connections before use (handles stale connections)
-    echo=False,             # SQL logging (True for debugging)
-)
+engine = create_engine("postgresql://...", pool_size=20, max_overflow=10,
+                       pool_timeout=30, pool_recycle=3600, pool_pre_ping=True)
 ```
 
-```ruby
-# Rails: database.yml
-production:
-  adapter: postgresql
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  timeout: 5000
-  checkout_timeout: 10
-  reaping_frequency: 30
-  idle_timeout: 300
-```
+Other ORMs: Rails `database.yml` uses `pool:` setting. GORM uses `sqlDB.SetMaxOpenConns()` / `SetMaxIdleConns()`.
 
 ```go
-// GORM: connection pool
-import (
-    "gorm.io/driver/postgres"
-    "gorm.io/gorm"
-)
-
-db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 sqlDB, _ := db.DB()
 
 sqlDB.SetMaxOpenConns(20)                  // Maximum open connections
@@ -984,32 +895,11 @@ OUTPUT: Full data access layer report with before/after metrics.
 ```
 
 ## Multi-Agent Dispatch
-
-For large codebases with many data access patterns, dispatch parallel agents:
-
 ```
-MULTI-AGENT ORM OPTIMIZATION:
-Dispatch 2-3 agents in parallel worktrees.
-
-Agent 1 (worktree: orm-n-plus-one):
-  - Scan all endpoints/services for N+1 query patterns
-  - Add eager loading (include/select_related/Preload) to each
-  - Verify with query logging: before/after query counts
-
-Agent 2 (worktree: orm-pool-config):
-  - Audit connection pool settings across all environments
-  - Configure production pool sizes based on CPU cores
-  - Add connection health checks and monitoring
-  - Set statement timeouts and max lifetimes
-
-Agent 3 (worktree: orm-transactions):
-  - Audit transaction patterns for correctness
-  - Add optimistic locking where concurrent updates occur
-  - Implement saga pattern for cross-service operations
-  - Add retry logic for transient failures
-
+Agent 1 (worktree: orm-n-plus-one): Scan and fix N+1 queries with eager loading
+Agent 2 (worktree: orm-pool-config): Audit and configure connection pool settings
+Agent 3 (worktree: orm-transactions): Audit transaction patterns, add optimistic locking
 MERGE ORDER: n-plus-one -> pool-config -> transactions
-CONFLICT ZONES: ORM config files, middleware registration, service constructors
 ```
 
 ## Auto-Detection
@@ -1031,20 +921,6 @@ AUTO-DETECT ORM and data access context:
     - Check connection pool sizing against instance count
     - Match existing migration patterns and naming conventions
 ```
-
-## Anti-Patterns
-
-- **Do NOT use the ORM for everything.** Complex reporting queries, recursive CTEs, window functions, and bulk operations are often better as raw SQL. The ORM is for CRUD, not analytics.
-- **Do NOT lazy-load in a loop.** Accessing a relationship in a for loop triggers a query per iteration. Always eager-load relationships you know you will need.
-- **Do NOT open connections without a pool.** Creating a new connection per request is 10-100x slower than using a pooled connection. Always use a connection pool.
-- **Do NOT hold transactions open during I/O.** Do not make HTTP calls, send emails, or wait for user input inside a database transaction. Compute outside, write inside.
-- **Do NOT use SELECT * through the ORM.** Select only the columns you need. ORMs that load full objects by default waste bandwidth and memory.
-- **Do NOT ignore the generated SQL.** The prettiest ORM code can generate terrible SQL. Log the SQL, read it, run EXPLAIN on it.
-- **Do NOT disable foreign key constraints for "flexibility."** Foreign keys are not a performance problem. Orphaned data is. Keep constraints on.
-- **Do NOT set pool size to max_connections.** If you have 3 app instances each with pool_size=100 and PostgreSQL max_connections=100, the third instance gets zero connections. Coordinate pool sizes across instances.
-- **Do NOT retry on every error.** Retry on transient errors (connection reset, deadlock). Do NOT retry on constraint violations or syntax errors -- those will never succeed.
-- **Do NOT mix ORMs in the same project.** Using Prisma AND TypeORM on the same database creates schema drift, migration conflicts, and connection pool contention. Pick one.
-
 
 ## Output Format
 
@@ -1118,116 +994,29 @@ ERROR RECOVERY — ORM:
    → Re-introspect the database schema (prisma db pull, sqlacodegen). Update model to match actual column types. Re-run migration diff.
 ```
 
-## Query Optimization Loop
-
-Autonomous loop that detects N+1 queries, suggests indexes, analyzes query plans, and optimizes ORM usage. Runs until query count and latency targets are met or max iterations reached.
-
+## Keep/Discard Discipline
 ```
-QUERY OPTIMIZATION LOOP:
-current_iteration = 0
-max_iterations = 15
-endpoints = detect_all_endpoints()  // API routes, GraphQL resolvers, etc.
-baseline = {}
-
-// Phase 0: Baseline Measurement
-FOR each endpoint in endpoints:
-  enable_query_logging()
-  result = exercise_endpoint(endpoint, with_realistic_data=true)
-  baseline[endpoint] = {
-    query_count: count_queries(),
-    latency_ms: result.latency_ms,
-    slow_queries: queries_over(threshold=100ms)
-  }
-  LOG: "BASELINE: {endpoint} — {baseline[endpoint].query_count} queries, {baseline[endpoint].latency_ms}ms"
-
-// Sort by worst offenders first
-endpoints = sort_by(endpoints, key=lambda e: baseline[e].query_count, descending=true)
-
-WHILE current_iteration < max_iterations AND has_failing_endpoints(baseline):
-  current_iteration += 1
-  endpoint = next_worst_endpoint()
-
-  // Phase 1: N+1 Detection
-  queries = capture_queries_for(endpoint)
-  n1_patterns = detect_n_plus_1(queries)
-  // Pattern: same query template repeated N times with different parameter
-  FOR each pattern in n1_patterns:
-    relation = identify_relation(pattern)
-    FIX: add eager loading (include, select_related, Preload, joinedload)
-    LOG: "N+1 fixed: {endpoint} — {relation} — {pattern.count} queries eliminated"
-
-  // Phase 2: Missing Index Detection
-  FOR each query in queries:
-    plan = explain_analyze(query)
-    IF plan.contains("Seq Scan") AND plan.table_rows > 10000:
-      suggested_index = derive_index_from_query(query)
-      // Composite index matching WHERE + ORDER BY columns
-      CREATE INDEX CONCURRENTLY suggested_index
-      LOG: "INDEX added: {suggested_index} — eliminates Seq Scan on {plan.table}"
-
-  // Phase 3: Query Plan Analysis
-  FOR each slow_query in queries_over(threshold=50ms):
-    plan = explain_analyze(slow_query, buffers=true)
-    issues = analyze_plan(plan)
-    // Check for: nested loop with high row count, hash join on large table,
-    // sort without index, bitmap heap scan with high recheck rate
-    FOR each issue in issues:
-      IF issue.type == "MISSING_INDEX":
-        CREATE INDEX CONCURRENTLY
-      IF issue.type == "UNNECESSARY_COLUMNS":
-        SELECT only needed columns (not SELECT *)
-      IF issue.type == "LARGE_SORT_NO_INDEX":
-        ADD index on sort column
-      IF issue.type == "ORM_GENERATES_BAD_SQL":
-        REWRITE as raw SQL with parameterized query
-      LOG: "PLAN fix: {slow_query.template} — {issue.type} resolved"
-
-  // Phase 4: Verify Improvement
-  new_result = exercise_endpoint(endpoint, with_realistic_data=true)
-  improvement = {
-    query_reduction: baseline[endpoint].query_count - new_result.query_count,
-    latency_reduction: baseline[endpoint].latency_ms - new_result.latency_ms,
-    pct_improvement: ((baseline[endpoint].latency_ms - new_result.latency_ms) / baseline[endpoint].latency_ms) * 100
-  }
-
-  // Phase 5: Keep/Discard
-  IF new_result.query_count <= baseline[endpoint].query_count AND new_result.latency_ms <= baseline[endpoint].latency_ms:
-    KEEP changes
-    baseline[endpoint] = new_result  // update baseline
-    LOG: "KEEP: {endpoint} — queries {baseline[endpoint].query_count}→{new_result.query_count}, latency {baseline[endpoint].latency_ms}ms→{new_result.latency_ms}ms"
-  ELSE:
-    DISCARD changes — revert to previous state
-    LOG: "DISCARD: {endpoint} — regression detected, reverted"
-
-  REPORT: "Iteration {current_iteration}: {endpoint} — queries {improvement.query_reduction} fewer, latency {improvement.pct_improvement}% better"
-
-ON COMPLETION:
-  LOG to .godmode/orm-optimization.tsv:
-    timestamp\tendpoint\tqueries_before\tqueries_after\tlatency_before_ms\tlatency_after_ms\tn1_fixed\tindexes_added\tverdict
-  REPORT: "Query optimization complete: {current_iteration} iterations, {total_n1_fixed} N+1 fixed, {total_indexes} indexes added, avg latency reduction {avg_pct}%"
+After EACH N+1 fix, index addition, or query rewrite:
+  1. MEASURE: Re-run the endpoint with query logging — count queries and measure latency.
+  2. COMPARE: Is the query count lower AND latency equal or better?
+  3. DECIDE:
+     - KEEP if: query count decreased AND latency did not increase AND no new errors
+     - DISCARD if: query count increased OR latency regressed OR test suite fails
+  4. COMMIT kept changes. Revert discarded changes before the next optimization.
 ```
 
-### Query Optimization Thresholds
-
+## Stop Conditions
 ```
-QUERY OPTIMIZATION TARGETS:
-┌──────────────────────────────────────┬──────────────┬────────────────────────────┐
-│ Metric                               │ Target       │ Action if exceeded         │
-├──────────────────────────────────────┼──────────────┼────────────────────────────┤
-│ Queries per list endpoint            │ <= 5         │ Fix N+1 with eager loading │
-│ Queries per detail endpoint          │ <= 3         │ Fix N+1 or combine queries │
-│ Endpoint latency p50                 │ < 50ms       │ Add indexes, optimize      │
-│ Endpoint latency p99                 │ < 200ms      │ Raw SQL for slow queries   │
-│ Sequential scans on > 10K rows      │ 0            │ Add index                  │
-│ SELECT * in production paths         │ 0            │ Select specific columns    │
-│ Queries inside loops                 │ 0            │ Batch with DataLoader/eager │
-│ Connection pool wait time p99        │ < 100ms      │ Tune pool size             │
-│ Unused indexes (0 scans, > 10MB)     │ 0            │ Drop unused indexes        │
-└──────────────────────────────────────┴──────────────┴────────────────────────────┘
+STOP when ANY of these are true:
+  - Zero N+1 queries detected in audited endpoints
+  - All endpoints under target latency (p50 < 50ms, p99 < 200ms)
+  - Connection pool sized correctly (pool_size * instances < max_connections * 0.8)
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Some queries use raw SQL (that may be the correct choice for complex queries)
+  - A single slow endpoint remains (document it for manual review)
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run ORM tasks sequentially: N+1 fixes, then pool config, then transaction patterns.
-- Use branch isolation per task: `git checkout -b godmode-orm-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-orm-{task}`. See `adapters/shared/sequential-dispatch.md`.

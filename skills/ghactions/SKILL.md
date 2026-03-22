@@ -294,64 +294,24 @@ jobs:
 ```
 
 ### Step 5: Composite Actions
-Build custom actions that encapsulate multi-step logic:
+Encapsulate multi-step logic in `.github/actions/<name>/action.yml`:
 
 ```yaml
 # .github/actions/setup-project/action.yml
 name: 'Setup Project'
-description: 'Install dependencies with caching and optional build'
 inputs:
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '20'
-  install-command:
-    description: 'Install command'
-    required: false
-    default: 'npm ci'
-  build:
-    description: 'Run build after install'
-    required: false
-    default: 'false'
-outputs:
-  cache-hit:
-    description: 'Whether cache was hit'
-    value: ${{ steps.cache.outputs.cache-hit }}
+  node-version: { required: false, type: string, default: '20' }
+  build: { required: false, type: string, default: 'false' }
 runs:
   using: composite
   steps:
     - uses: actions/setup-node@v4
-      with:
-        node-version: ${{ inputs.node-version }}
-        cache: 'npm'
-
-    - id: cache
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: deps-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          deps-${{ runner.os }}-
-
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: ${{ inputs.install-command }}
+      with: { node-version: '${{ inputs.node-version }}', cache: 'npm' }
+    - run: npm ci
       shell: bash
-
-    - name: Build
-      if: inputs.build == 'true'
+    - if: inputs.build == 'true'
       run: npm run build
       shell: bash
-```
-
-```yaml
-# Usage in any workflow
-steps:
-  - uses: actions/checkout@v4
-  - uses: ./.github/actions/setup-project
-    with:
-      build: 'true'
-  - run: npm test
 ```
 
 ### Step 6: Caching Strategies
@@ -547,94 +507,24 @@ jobs:
 ```
 
 ```
-ARTIFACT LIFECYCLE:
-┌──────────────────────────────────────────────────────────┐
-│  Artifact Type    │ Retention │ Compression │ Max Size    │
-│  ─────────────────────────────────────────────────────── │
-│  Build output     │ 7 days    │ level 6     │ ~50 MB      │
-│  Test results     │ 30 days   │ level 6     │ ~10 MB      │
-│  Coverage reports │ 14 days   │ level 6     │ ~20 MB      │
-│  Docker SBOM      │ 90 days   │ level 9     │ ~5 MB       │
-│  Release binaries │ 90 days   │ level 9     │ ~500 MB     │
-│  Debug logs       │ 3 days    │ level 1     │ ~100 MB     │
-├──────────────────────────────────────────────────────────┤
-│  GitHub limit: 500 MB per artifact, 10 GB per repo       │
-└──────────────────────────────────────────────────────────┘
-```
+
+GitHub limits: 500 MB per artifact, 10 GB per repo. Set `retention-days` on every upload.
 
 ### Step 9: Conditional Execution
 Control when jobs and steps run:
 
-```yaml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    # Job-level conditions
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      # Skip if commit message contains [skip ci]
-      - name: Check skip
-        if: "!contains(github.event.head_commit.message, '[skip ci]')"
-        run: echo "Running CI"
-
-      # Run only on specific file changes
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            backend:
-              - 'src/api/**'
-              - 'src/lib/**'
-            frontend:
-              - 'src/app/**'
-              - 'src/components/**'
-            infra:
-              - 'terraform/**'
-              - 'Dockerfile'
-
-      - name: Deploy backend
-        if: steps.changes.outputs.backend == 'true'
-        run: ./deploy-backend.sh
-
-      - name: Deploy frontend
-        if: steps.changes.outputs.frontend == 'true'
-        run: ./deploy-frontend.sh
-
-      # Always run cleanup, even on failure
-      - name: Cleanup
-        if: always()
-        run: ./cleanup.sh
-
-      # Run only on failure
-      - name: Notify on failure
-        if: failure()
-        run: |
-          curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
-            -d '{"text":"Deploy failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
-
-      # Run on success only
-      - name: Tag release
-        if: success()
-        run: |
-          git tag "v${{ github.run_number }}"
-          git push origin "v${{ github.run_number }}"
 ```
+KEY CONDITIONS:
+  success()                              — All previous steps passed
+  failure()                              — Any previous step failed
+  always()                               — Run regardless of status
+  github.ref == 'refs/heads/main'        — Push to main branch
+  github.event_name == 'pull_request'    — Triggered by PR
+  startsWith(github.ref, 'refs/tags/v')  — Tag push (v1.0.0)
 
-```
-CONDITION REFERENCE:
-┌──────────────────────────────────────────────────────────┐
-│  Condition                     │ Evaluates True When      │
-│  ─────────────────────────────────────────────────────── │
-│  success()                     │ All previous steps pass  │
-│  failure()                     │ Any previous step fails  │
-│  always()                      │ Always (even cancelled)  │
-│  cancelled()                   │ Workflow was cancelled    │
-│  github.ref == 'refs/heads/m'  │ Push to main branch      │
-│  github.event_name == 'PR'     │ Triggered by PR          │
-│  contains(matrix.os, 'ubuntu') │ Matrix value matches     │
-│  startsWith(github.ref, 'v')   │ Tag push (v1.0.0)        │
-│  github.actor == 'dependabot'  │ Dependabot triggered     │
-└──────────────────────────────────────────────────────────┘
+PATH FILTERING (dorny/paths-filter@v3):
+  Use to skip deploys when only docs changed.
+  if: steps.changes.outputs.backend == 'true'
 ```
 
 ### Step 10: Workflow Optimization
@@ -1099,19 +989,6 @@ grep -L "permissions:" .github/workflows/*.yml 2>/dev/null
 grep -L "timeout-minutes:" .github/workflows/*.yml 2>/dev/null
 ```
 
-## Anti-Patterns
-
-- **Do NOT use `permissions: write-all`.** Declare the minimum permissions each workflow needs. Broad permissions are an exploit surface.
-- **Do NOT pin actions to mutable tags.** `uses: actions/checkout@v4` can change under you. Pin to the full commit SHA. Use Dependabot for updates.
-- **Do NOT interpolate untrusted input in `run:` blocks.** `${{ github.event.pull_request.title }}` in a `run:` step is a script injection vector. Use `env:` variables instead.
-- **Do NOT share secrets with fork PRs.** `pull_request_target` runs with repo secrets. Forks can exploit this. Gate secret access with `github.event.pull_request.head.repo.full_name == github.repository`.
-- **Do NOT skip concurrency groups.** Without them, every push queues a new run. Five quick commits means five redundant runs burning Actions minutes.
-- **Do NOT omit timeouts.** A workflow without `timeout-minutes` can run for up to 6 hours by default. Set explicit timeouts on every job.
-- **Do NOT duplicate steps across workflows.** Extract shared logic into composite actions or reusable workflows. Duplication means divergence.
-- **Do NOT upload artifacts without retention limits.** Default retention is 90 days. Set `retention-days` to avoid ballooning storage costs.
-- **Do NOT ignore the Actions usage report.** Monitor minutes consumption in repository settings. Self-hosted runners or larger runners may be more cost-effective at scale.
-- **Do NOT use `continue-on-error: true` as a fix for flaky steps.** It masks real failures. Fix the flakiness or quarantine the test.
-
 ## Output Format
 Print on completion: `GH Actions: {workflow_count} workflows, {job_count} jobs. Duration: {total_time}. Cache: {cache_hit_rate}%. Security: {security_issues} issues. Minutes/run: {minutes}. Verdict: {verdict}.`
 
@@ -1195,42 +1072,13 @@ DO NOT STOP just because:
   - Self-hosted runners would help (recommend them but do not block on setup)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler workflow design:
-  - Inline steps before composite actions (until reuse across 3+ workflows is needed)
-  - Single workflow file before workflow_call chains (unless workflows share no logic)
-  - GitHub-hosted runners before self-hosted (until cost or performance demands it)
-  - Built-in secrets before external secret managers
-  - Fewer explicit permissions over broad write-all (but always declare them)
-```
-
 ## Multi-Agent Dispatch
-For repositories with multiple workflows:
 ```
-DISPATCH parallel agents (one per workflow concern):
-
-Agent 1 (worktree: ghactions-security):
-  - Pin all actions to SHA, restrict permissions, fix secret handling
-  - Scope: all .github/workflows/*.yml
-  - Output: Hardened workflows
-
-Agent 2 (worktree: ghactions-perf):
-  - Add caching, concurrency groups, parallel jobs
-  - Scope: all .github/workflows/*.yml
-  - Output: Optimized workflows
-
-Agent 3 (worktree: ghactions-reusable):
-  - Extract shared logic into composite actions and reusable workflows
-  - Scope: .github/actions/, .github/workflows/
-  - Output: DRY workflow architecture
-
-MERGE ORDER: security → perf → reusable
-CONFLICT RESOLUTION: security branch takes priority on permission/action version conflicts
+Agent 1 (worktree: ghactions-security): Pin actions to SHA, restrict permissions, fix secret handling
+Agent 2 (worktree: ghactions-perf): Add caching, concurrency groups, parallel jobs
+Agent 3 (worktree: ghactions-reusable): Extract shared logic into composite actions and reusable workflows
+MERGE ORDER: security -> perf -> reusable
 ```
 
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run GitHub Actions tasks sequentially: security hardening, then performance optimization, then reusable workflow extraction.
-- Use branch isolation per task: `git checkout -b godmode-ghactions-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+## Platform Fallback
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-ghactions-{task}`. See `adapters/shared/sequential-dispatch.md`.

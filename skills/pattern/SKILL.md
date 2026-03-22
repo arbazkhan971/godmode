@@ -441,33 +441,6 @@ WHILE findings is not empty AND current_iteration < 8:
 OUTPUT: Pattern analysis report with all recommendations and implementations.
 ```
 
-## Multi-Agent Dispatch
-
-For large-scale anti-pattern remediation, dispatch parallel agents:
-
-```
-MULTI-AGENT PATTERN REMEDIATION:
-Dispatch 2-3 agents in parallel worktrees when multiple anti-patterns found.
-
-Agent 1 (worktree: pattern-god-objects):
-  - Break god objects into focused classes
-  - Apply Facade if unified interface needed
-  - Extract services by domain responsibility
-
-Agent 2 (worktree: pattern-coupling):
-  - Resolve circular dependencies with dependency inversion
-  - Replace tight coupling with Strategy/Observer patterns
-  - Add interfaces at module boundaries
-
-Agent 3 (worktree: pattern-primitives):
-  - Replace primitive obsession with Value Objects
-  - Add domain types (Email, Money, UserId)
-  - Add validation at construction time
-
-MERGE ORDER: god-objects -> coupling -> primitives (structural before type-level)
-CONFLICT ZONES: Shared service interfaces, constructor signatures, import paths
-```
-
 ## Output Format
 Print on completion:
 ```
@@ -524,13 +497,39 @@ IF codebase uses a framework with built-in patterns (NestJS, Spring, etc.):
 
 ## Anti-Patterns
 
-- **Do NOT recommend patterns without understanding the problem.** "Use a Factory" means nothing without knowing what creation problem exists. Diagnose first.
-- **Do NOT apply patterns prophylactically.** A pattern should solve a current problem, not a theoretical future one. YAGNI applies to patterns too.
-- **Do NOT recommend Singleton for dependency sharing.** Use dependency injection instead. Singleton is rarely the right answer in modern codebases.
-- **Do NOT stack multiple patterns at once.** Recommend one pattern, let the team implement it, then evaluate if another is needed. Pattern layering causes accidental complexity.
-- **Do NOT ignore language idioms.** A Visitor in Python (which has duck typing) looks very different from Visitor in Java. Respect the language's strengths.
-- **Do NOT confuse patterns with frameworks.** "Use Redux" is not a pattern recommendation. The pattern is "unidirectional data flow" or "event sourcing on the client."
-- **Do NOT treat patterns as sacred.** Partial implementations are fine. You don't need the full GoF specification to benefit from the core idea of a pattern.
+- **Do NOT recommend patterns without understanding the problem.** Diagnose first.
+- **Do NOT apply patterns prophylactically.** YAGNI applies to patterns too.
+- **Do NOT recommend Singleton for dependency sharing.** Use dependency injection.
+- **Do NOT stack multiple patterns at once.** One pattern at a time.
+- **Do NOT ignore language idioms.** Visitor in Python differs from Visitor in Java.
+- **Do NOT confuse patterns with frameworks.** "Use Redux" is not a pattern recommendation.
+- **Do NOT treat patterns as sacred.** Partial implementations are fine.
+
+## Keep/Discard Discipline
+```
+After EACH pattern recommendation or refactoring:
+  1. MEASURE: Does the applied pattern reduce the original symptom (duplication, coupling, complexity)?
+  2. COMPARE: Is the code measurably better? Do tests still pass?
+  3. DECIDE:
+     - KEEP if: original symptom resolved AND tests pass AND code is no more complex than necessary
+     - DISCARD if: pattern adds more complexity than it removes OR tests fail
+  4. COMMIT kept changes. Revert discarded changes.
+
+Never keep a pattern that adds more files/abstractions than the problem warrants.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - The original design problem is resolved with a tested implementation
+  - Anti-pattern scan completed and findings prioritized
+  - One pattern recommended with trade-offs and at least one rejected alternative
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Additional anti-patterns exist (prioritize by severity/effort ratio)
+  - The pattern could be extended further (ship the minimal viable pattern)
+```
 
 
 ## Design Pattern Audit
@@ -752,7 +751,5 @@ PATTERN AUDIT SUMMARY:
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run pattern refactoring tasks sequentially: god objects, then coupling, then primitive obsession.
-- Use branch isolation per task: `git checkout -b godmode-pattern-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run pattern refactoring tasks sequentially: god objects, then coupling, then primitive obsession.
+Use branch isolation per task: `git checkout -b godmode-pattern-{task}`, implement, commit, merge back.

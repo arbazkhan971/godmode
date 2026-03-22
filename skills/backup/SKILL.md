@@ -403,7 +403,7 @@ Generate a comprehensive runbook document:
 
 ## Key Behaviors
 
-1. **Backups that are not tested are not backups.** A backup you have never restored is a hope, not a plan. Test restores regularly.
+1. **Untested backups are not backups.** A backup you have never restored is a hope, not a plan. Test restores regularly.
 2. **RPO and RTO drive everything.** Do not design backup strategy without first defining acceptable data loss and downtime. These numbers come from the business, not from engineering preferences.
 3. **Separate backup storage from production.** Backups in the same region, same account, or same failure domain as production are not disaster recovery. Use separate regions and accounts.
 4. **Encrypt all backups.** Backups contain your most sensitive data. Encrypt at rest and in transit. Manage keys separately from backup storage.
@@ -563,13 +563,13 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 
 ## Anti-Patterns
 
-- **Do NOT assume backups work without testing.** "We have automated backups configured" means nothing until you have successfully restored from one. Test regularly.
-- **Do NOT store backups in the same failure domain.** Same-region, same-account backups do not protect against region failures or account compromise. Use separate regions and accounts.
-- **Do NOT skip encryption.** Backup files contain your entire database — every user's data, every secret. Encrypt them. Manage keys separately.
-- **Do NOT define RPO/RTO without business input.** Engineering cannot decide acceptable data loss alone. These are business decisions with engineering implementation.
-- **Do NOT write runbooks that only one person can execute.** Recovery procedures must be usable by anyone on the on-call rotation. Test with different team members.
-- **Do NOT neglect backup monitoring.** A silently failing backup job is worse than no backup — it creates false confidence. Alert on every failure, verify every success.
-- **Do NOT treat DR as a one-time project.** Systems change. New data stores are added. Backup strategies must evolve with the system. Review quarterly.
+- **Do NOT assume backups work without testing.** "We have automated backups" means nothing until you have restored from one.
+- **Do NOT store backups in the same failure domain.** Same-region, same-account backups do not protect against region failures.
+- **Do NOT skip encryption.** Backup files contain your entire database. Encrypt them. Manage keys separately.
+- **Do NOT define RPO/RTO without business input.** These are business decisions with engineering implementation.
+- **Do NOT write runbooks only one person can execute.** Recovery must be usable by anyone on-call.
+- **Do NOT neglect backup monitoring.** Silent backup failures create false confidence. Alert on every failure.
+- **Do NOT treat DR as a one-time project.** Systems change. Review backup strategies quarterly.
 
 ## Output Format
 Print on completion: `Backup: {asset_count} assets covered. RPO: {rpo}. RTO: {rto}. Last restore test: {last_test_date}. Encryption: {encryption_status}. Cross-region: {cross_region}. Verdict: {verdict}.`

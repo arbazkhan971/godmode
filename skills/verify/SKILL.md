@@ -387,7 +387,7 @@ WHILE current_layer < max_layers:
        │  Overall verdict:   VERIFIED                          │
        │  Evidence:          4 files preserved                 │
        │                                                       │
-       │  Note: Consider adding e2e tests for full coverage.   │
+       │  Note: Add e2e tests for full coverage.                │
        └──────────────────────────────────────────────────────┘
 
   REPORT: "Layer {current_layer}/{max_layers}: {layer} — {PASS | FAIL | SKIP}"
@@ -430,6 +430,24 @@ EVIDENCE STANDARDS (for auditable verification):
    - Flaky tests undermine the entire verification chain
    - Report flaky tests separately: .godmode/flaky-tests.tsv
    - Flaky tests must be fixed or quarantined before claiming verification
+```
+
+## Keep/Discard Discipline
+```
+After EACH verification run:
+  KEEP if: command executed successfully AND verdict is clearly PASS or FAIL
+  DISCARD if: command failed to run OR output is ambiguous OR evidence file missing
+  On discard: retry command once. If still ambiguous, verdict = FAIL with reason.
+  Never keep a verification without a concrete verdict backed by evidence.
+```
+
+## Stop Conditions
+```
+STOP when FIRST of:
+  - target_reached: all claims verified with PASS or FAIL verdicts
+  - budget_exhausted: command timeout (120s) reached
+  - diminishing_returns: re-verification produces same result as prior run
+  - stuck: >5 consecutive ambiguous results across different claims
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

@@ -1,7 +1,7 @@
 ---
 name: distributed
 description: |
-  Distributed systems design skill. Activates when user needs CAP theorem trade-off analysis, consensus protocol selection (Raft, Paxos), distributed locking (Redlock, ZooKeeper), sharding and partitioning strategies, eventual consistency patterns, leader election, or distributed architecture design. Triggers on: /godmode:distributed, "distributed system", "CAP theorem", "consensus", "Raft", "Paxos", "sharding", "partitioning", "eventual consistency", "leader election", or when the orchestrator detects distributed systems work.
+ Distributed systems design skill. Activates when user needs CAP theorem trade-off analysis, consensus protocol selection (Raft, Paxos), distributed locking (Redlock, ZooKeeper), sharding and partitioning strategies, eventual consistency patterns, leader election, or distributed architecture design. Triggers on: /godmode:distributed, "distributed system", "CAP theorem", "consensus", "Raft", "Paxos", "sharding", "partitioning", "eventual consistency", "leader election", or when the orchestrator detects distributed systems work.
 ---
 
 # Distributed -- Distributed Systems Design
@@ -44,43 +44,43 @@ Analyze the fundamental trade-offs for the system:
 ```
 CAP THEOREM ANALYSIS:
 +---------------------------------------------------------------+
-|                        CONSISTENCY                              |
-|                            /\                                   |
-|                           /  \                                  |
-|                          /    \                                 |
-|                         / CP   \                                |
-|                        /  zone  \                               |
-|                       /          \                              |
-|                      /    YOUR    \                             |
-|                     /   SYSTEM     \                            |
-|                    /    [here]      \                           |
-|                   /                  \                          |
-|  AVAILABILITY ---/-------- AP --------\--- PARTITION TOLERANCE  |
-|                         zone                                    |
+| CONSISTENCY |
+| /\ |
+| / \ |
+| / \ |
+| / CP \ |
+| / zone \ |
+| / \ |
+| / YOUR \ |
+| / SYSTEM \ |
+| / [here] \ |
+| / \ |
+| AVAILABILITY ---/-------- AP --------\--- PARTITION TOLERANCE |
+| zone |
 +---------------------------------------------------------------+
 
 TRADE-OFF DECISION:
 +--------------------------------------------------------------+
-|  Dimension         | Choice          | Justification          |
+| Dimension | Choice | Justification |
 +--------------------------------------------------------------+
-|  During partition  | Consistency (CP)| <why or why not>       |
-|                    | OR Availability |                        |
-|                    | (AP)            |                        |
-|  Normal operation  | Tunable per     | <which operations      |
-|                    | operation       |  need strong vs eventual>|
-|  Read consistency  | <level>         | <justification>        |
-|  Write consistency | <level>         | <justification>        |
+| During partition | Consistency (CP)| <why or why not> |
+| | OR Availability | |
+| | (AP) | |
+| Normal operation | Tunable per | <which operations |
+| | operation | need strong vs eventual>|
+| Read consistency | <level> | <justification> |
+| Write consistency | <level> | <justification> |
 +--------------------------------------------------------------+
 
 CONSISTENCY LEVELS:
 +--------------------------------------------------------------+
-|  Level             | Guarantee              | Latency Cost     |
+| Level | Guarantee | Latency Cost |
 +--------------------------------------------------------------+
-|  Linearizable      | Real-time ordering     | Highest (quorum) |
-|  Sequential        | Global total order     | High             |
-|  Causal            | Respects causality     | Medium           |
-|  Session           | Read-your-writes       | Low-Medium       |
-|  Eventual          | Converges eventually   | Lowest           |
+| Linearizable | Real-time ordering | Highest (quorum) |
+| Sequential | Global total order | High |
+| Causal | Respects causality | Medium |
+| Session | Read-your-writes | Low-Medium |
+| Eventual | Converges eventually | Lowest |
 +--------------------------------------------------------------+
 
 PACELC EXTENSION:
@@ -102,33 +102,33 @@ Choose and configure the right consensus protocol:
 ```
 RAFT OVERVIEW:
 +--------------------------------------------------------------+
-|  Component         | Role                                      |
+| Component | Role |
 +--------------------------------------------------------------+
-|  Leader             | Handles all client requests, replicates  |
-|                     | log entries to followers                  |
-|  Follower           | Replicates leader's log, votes in        |
-|                     | elections, redirects clients to leader    |
-|  Candidate          | Requests votes to become leader           |
+| Leader | Handles all client requests, replicates |
+| | log entries to followers |
+| Follower | Replicates leader's log, votes in |
+| | elections, redirects clients to leader |
+| Candidate | Requests votes to become leader |
 +--------------------------------------------------------------+
 
 RAFT STATE MACHINE:
-  Follower --[election timeout]--> Candidate
-  Candidate --[majority votes]--> Leader
-  Candidate --[higher term seen]--> Follower
-  Leader --[higher term seen]--> Follower
+ Follower --[election timeout]--> Candidate
+ Candidate --[majority votes]--> Leader
+ Candidate --[higher term seen]--> Follower
+ Leader --[higher term seen]--> Follower
 
 RAFT CONFIGURATION:
-  Cluster size: <N> (odd number: 3, 5, 7)
-  Quorum: <(N/2) + 1>
-  Election timeout: 150-300ms (randomized)
-  Heartbeat interval: 50ms (must be << election timeout)
-  Log compaction: Snapshot every <N> entries
+ Cluster size: <N> (odd number: 3, 5, 7)
+ Quorum: <(N/2) + 1>
+ Election timeout: 150-300ms (randomized)
+ Heartbeat interval: 50ms (must be << election timeout)
+ Log compaction: Snapshot every <N> entries
 
 FAULT TOLERANCE:
-  3 nodes: tolerates 1 failure
-  5 nodes: tolerates 2 failures
-  7 nodes: tolerates 3 failures
-  Formula: tolerates (N-1)/2 failures
+ 3 nodes: tolerates 1 failure
+ 5 nodes: tolerates 2 failures
+ 7 nodes: tolerates 3 failures
+ Formula: tolerates (N-1)/2 failures
 
 USE WHEN:
 - Need strong consistency (linearizable reads/writes)
@@ -148,28 +148,28 @@ IMPLEMENTATIONS:
 ```
 PAXOS OVERVIEW:
 +--------------------------------------------------------------+
-|  Role              | Responsibility                            |
+| Role | Responsibility |
 +--------------------------------------------------------------+
-|  Proposer          | Proposes values (client requests)         |
-|  Acceptor          | Votes on proposals, stores accepted values|
-|  Learner           | Learns the chosen value                   |
+| Proposer | Proposes values (client requests) |
+| Acceptor | Votes on proposals, stores accepted values|
+| Learner | Learns the chosen value |
 +--------------------------------------------------------------+
 
 PAXOS PHASES:
-  Phase 1a (Prepare): Proposer sends prepare(n) to acceptors
-  Phase 1b (Promise): Acceptors promise not to accept proposals < n
-  Phase 2a (Accept):  Proposer sends accept(n, value) to acceptors
-  Phase 2b (Accepted): Acceptors accept if no higher proposal seen
+ Phase 1a (Prepare): Proposer sends prepare(n) to acceptors
+ Phase 1b (Promise): Acceptors promise not to accept proposals < n
+ Phase 2a (Accept): Proposer sends accept(n, value) to acceptors
+ Phase 2b (Accepted): Acceptors accept if no higher proposal seen
 
 VARIANTS:
 +--------------------------------------------------------------+
-|  Variant           | Improvement              | Use Case       |
+| Variant | Improvement | Use Case |
 +--------------------------------------------------------------+
-|  Basic Paxos       | Single value consensus   | Rare in practice|
-|  Multi-Paxos       | Pipelined log replication| Database replication|
-|  Fast Paxos        | 2 round trips vs 3      | Low-latency    |
-|  Flexible Paxos    | Asymmetric quorums      | Read-heavy     |
-|  EPaxos            | Leaderless, commutative  | Multi-leader   |
+| Basic Paxos | Single value consensus | Rare in practice|
+| Multi-Paxos | Pipelined log replication| Database replication|
+| Fast Paxos | 2 round trips vs 3 | Low-latency |
+| Flexible Paxos | Asymmetric quorums | Read-heavy |
+| EPaxos | Leaderless, commutative | Multi-leader |
 +--------------------------------------------------------------+
 
 USE WHEN:
@@ -188,14 +188,14 @@ PREFER RAFT WHEN:
 ```
 CONSENSUS DECISION:
 +--------------------------------------------------------------+
-|  Factor              | Raft           | Paxos           | None|
+| Factor | Raft | Paxos | None|
 +--------------------------------------------------------------+
-|  Understandability   | High           | Low              | N/A |
-|  Leader requirement  | Yes (single)   | Optional         | N/A |
-|  Latency             | 1 RTT (leader) | 2 RTT (basic)   | 0   |
-|  Fault tolerance     | (N-1)/2        | (N-1)/2          | 0   |
-|  Implementation ease | Medium         | Hard             | Easy|
-|  Best for            | Most systems   | Multi-leader     | AP  |
+| Understandability | High | Low | N/A |
+| Leader requirement | Yes (single) | Optional | N/A |
+| Latency | 1 RTT (leader) | 2 RTT (basic) | 0 |
+| Fault tolerance | (N-1)/2 | (N-1)/2 | 0 |
+| Implementation ease | Medium | Hard | Easy|
+| Best for | Most systems | Multi-leader | AP |
 +--------------------------------------------------------------+
 
 SELECTED: <Raft | Paxos | None (AP system)> -- <justification>
@@ -209,43 +209,43 @@ Design distributed locks for coordination across nodes:
 REDLOCK ALGORITHM:
 1. Get current time in milliseconds
 2. Acquire lock on N/2+1 Redis instances sequentially
-   - SET key value NX PX <ttl>
-   - Use short timeout per instance (5-50ms)
+ - SET key value NX PX <ttl>
+ - Use short timeout per instance (5-50ms)
 3. Calculate elapsed time
 4. Lock is valid if acquired on majority AND elapsed < TTL
 5. If lock acquired: effective TTL = initial TTL - elapsed
 6. If lock NOT acquired: release on ALL instances
 
 CONFIGURATION:
-  Redis instances: <N> (odd, typically 5, on independent machines)
-  Lock TTL: <duration> (must be >> clock drift + operation time)
-  Retry delay: <random 0-retry_max ms>
-  Retry count: <3-5 attempts>
-  Clock drift factor: 0.01 (1% of TTL)
+ Redis instances: <N> (odd, typically 5, on independent machines)
+ Lock TTL: <duration> (must be >> clock drift + operation time)
+ Retry delay: <random 0-retry_max ms>
+ Retry count: <3-5 attempts>
+ Clock drift factor: 0.01 (1% of TTL)
 
 REDLOCK IMPLEMENTATION:
-  lock_key = "lock:<resource>"
-  lock_value = "<unique-client-id>:<uuid>"  // For safe unlock
-  lock_ttl = 30000  // 30 seconds
+ lock_key = "lock:<resource>"
+ lock_value = "<unique-client-id>:<uuid>" // For safe unlock
+ lock_ttl = 30000 // 30 seconds
 
-  // Acquire
-  acquired = 0
-  start_time = now()
-  for each redis_instance:
-    if SET lock_key lock_value NX PX lock_ttl:
-      acquired++
-  elapsed = now() - start_time
-  if acquired >= (N/2 + 1) AND elapsed < lock_ttl:
-    // Lock acquired, valid for (lock_ttl - elapsed) ms
-  else:
-    // Release all, retry
+ // Acquire
+ acquired = 0
+ start_time = now()
+ for each redis_instance:
+ if SET lock_key lock_value NX PX lock_ttl:
+ acquired++
+ elapsed = now() - start_time
+ if acquired >= (N/2 + 1) AND elapsed < lock_ttl:
+ // Lock acquired, valid for (lock_ttl - elapsed) ms
+ else:
+ // Release all, retry
 
-  // Release (must use Lua script for atomicity)
-  EVAL "if redis.call('get', KEYS[1]) == ARGV[1] then
-          return redis.call('del', KEYS[1])
-        else
-          return 0
-        end" 1 lock_key lock_value
+ // Release (must use Lua script for atomicity)
+ EVAL "if redis.call('get', KEYS[1]) == ARGV[1] then
+ return redis.call('del', KEYS[1])
+ else
+ return 0
+ end" 1 lock_key lock_value
 
 LIMITATIONS:
 - Controversial: Martin Kleppmann argues Redlock is unsafe
@@ -271,38 +271,38 @@ ADVANTAGES OVER REDLOCK:
 - Fencing tokens: use zxid (ZooKeeper transaction ID)
 
 ZOOKEEPER LOCK PATTERN:
-  /locks/
-    /resource-a/
-      lock-0000000001  (held by client-1, ephemeral)
-      lock-0000000002  (waiting, watches 0001)
-      lock-0000000003  (waiting, watches 0002)
+ /locks/
+ /resource-a/
+ lock-0000000001 (held by client-1, ephemeral)
+ lock-0000000002 (waiting, watches 0001)
+ lock-0000000003 (waiting, watches 0002)
 
 CONFIGURATION:
-  Session timeout: 30s (balance between quick failover and false expiry)
-  Lock path: /locks/<namespace>/<resource>
-  Fencing token: zxid of lock node creation
+ Session timeout: 30s (balance between quick failover and false expiry)
+ Lock path: /locks/<namespace>/<resource>
+ Fencing token: zxid of lock node creation
 ```
 
 #### Distributed Lock Decision
 ```
 DISTRIBUTED LOCK SELECTION:
 +--------------------------------------------------------------+
-|  Factor             | Redlock        | ZooKeeper     | etcd   |
+| Factor | Redlock | ZooKeeper | etcd |
 +--------------------------------------------------------------+
-|  Correctness        | Debated        | Strong        | Strong |
-|  Latency            | Low (~5ms)     | Medium (~20ms)| Medium |
-|  Fault tolerance    | Majority       | Majority      | Raft   |
-|  Auto-release       | TTL-based      | Session-based | Lease  |
-|  Fencing tokens     | Manual         | Built-in      | Rev    |
-|  Operational cost   | Redis cluster  | ZK ensemble   | etcd   |
-|  Best for           | Efficiency lock| Correctness   | K8s env|
+| Correctness | Debated | Strong | Strong |
+| Latency | Low (~5ms) | Medium (~20ms)| Medium |
+| Fault tolerance | Majority | Majority | Raft |
+| Auto-release | TTL-based | Session-based | Lease |
+| Fencing tokens | Manual | Built-in | Rev |
+| Operational cost | Redis cluster | ZK ensemble | etcd |
+| Best for | Efficiency lock| Correctness | K8s env|
 +--------------------------------------------------------------+
 
 IMPORTANT DISTINCTION:
 - Efficiency lock: Prevents duplicate work, tolerates occasional failure
-  -> Redlock is fine, simpler to operate
+ -> Redlock is fine, simpler to operate
 - Correctness lock: Prevents data corruption, must never fail
-  -> ZooKeeper or etcd with fencing tokens
+ -> ZooKeeper or etcd with fencing tokens
 
 SELECTED: <Redlock | ZooKeeper | etcd> -- <justification>
 FENCING: <Yes (required for correctness) | No (efficiency lock)>
@@ -314,40 +314,40 @@ Design data distribution across nodes:
 ```
 PARTITIONING STRATEGIES:
 +--------------------------------------------------------------+
-|  Strategy           | How It Works         | Best For          |
+| Strategy | How It Works | Best For |
 +--------------------------------------------------------------+
-|  Hash partitioning  | hash(key) % N        | Even distribution |
-|  Range partitioning | Key ranges per shard  | Range queries     |
-|  Consistent hashing | Hash ring with vnodes | Dynamic scaling   |
-|  Geographic         | By region/location    | Data locality     |
-|  Directory-based    | Lookup table          | Flexible routing  |
+| Hash partitioning | hash(key) % N | Even distribution |
+| Range partitioning | Key ranges per shard | Range queries |
+| Consistent hashing | Hash ring with vnodes | Dynamic scaling |
+| Geographic | By region/location | Data locality |
+| Directory-based | Lookup table | Flexible routing |
 +--------------------------------------------------------------+
 
 CONSISTENT HASHING:
-  Hash Ring:
-  0 ----[Node A]---- 90 ----[Node B]---- 180 ----[Node C]---- 270 ---- 360
-          |                    |                     |
-     keys 271-90          keys 91-180          keys 181-270
+ Hash Ring:
+ 0 ----[Node A]---- 90 ----[Node B]---- 180 ----[Node C]---- 270 ---- 360
+ | | |
+ keys 271-90 keys 91-180 keys 181-270
 
-  Virtual Nodes (vnodes):
-  - Each physical node gets 100-200 virtual nodes on the ring
-  - Ensures even distribution despite heterogeneous hardware
-  - Adding a node steals proportional keys from all existing nodes
-  - Removing a node distributes keys proportionally
+ Virtual Nodes (vnodes):
+ - Each physical node gets 100-200 virtual nodes on the ring
+ - Ensures even distribution despite heterogeneous hardware
+ - Adding a node steals proportional keys from all existing nodes
+ - Removing a node distributes keys proportionally
 
-  REBALANCING:
-  - Add node: Only 1/N of keys need to move (vs hash % N where all move)
-  - Remove node: Only removed node's keys redistribute
-  - Weight adjustment: Add/remove vnodes for the physical node
+ REBALANCING:
+ - Add node: Only 1/N of keys need to move (vs hash % N where all move)
+ - Remove node: Only removed node's keys redistribute
+ - Weight adjustment: Add/remove vnodes for the physical node
 
 PARTITION KEY SELECTION:
 +--------------------------------------------------------------+
-|  Criterion          | Good Key              | Bad Key          |
+| Criterion | Good Key | Bad Key |
 +--------------------------------------------------------------+
-|  Cardinality        | user_id (millions)    | country (few)    |
-|  Distribution       | UUID (uniform)        | timestamp (hot)  |
-|  Query pattern      | Matches WHERE clause  | Requires scatter  |
-|  Write distribution | Even across partitions| All to one shard  |
+| Cardinality | user_id (millions) | country (few) |
+| Distribution | UUID (uniform) | timestamp (hot) |
+| Query pattern | Matches WHERE clause | Requires scatter |
+| Write distribution | Even across partitions| All to one shard |
 +--------------------------------------------------------------+
 
 HOT SPOT MITIGATION:
@@ -358,11 +358,11 @@ HOT SPOT MITIGATION:
 
 SHARD MAP:
 +--------------------------------------------------------------+
-|  Shard   | Key Range / Hash Range | Node      | Replicas      |
+| Shard | Key Range / Hash Range | Node | Replicas |
 +--------------------------------------------------------------+
-|  shard-0 | <range>                | node-1    | node-2, node-3|
-|  shard-1 | <range>                | node-2    | node-3, node-1|
-|  shard-2 | <range>                | node-3    | node-1, node-2|
+| shard-0 | <range> | node-1 | node-2, node-3|
+| shard-1 | <range> | node-2 | node-3, node-1|
+| shard-2 | <range> | node-3 | node-1, node-2|
 +--------------------------------------------------------------+
 ```
 
@@ -372,20 +372,20 @@ Design systems that converge to consistency over time:
 ```
 EVENTUAL CONSISTENCY PATTERNS:
 +--------------------------------------------------------------+
-|  Pattern              | Mechanism            | Use Case        |
+| Pattern | Mechanism | Use Case |
 +--------------------------------------------------------------+
-|  Read repair          | Fix stale reads on   | Key-value stores|
-|                       | detection             |                 |
-|  Anti-entropy         | Background Merkle    | Replica sync    |
-|                       | tree comparison       |                 |
-|  Gossip protocol      | Random peer exchange | Membership,     |
-|                       |                       | failure detect  |
-|  Vector clocks        | Causal ordering      | Conflict detect |
-|  CRDTs                | Merge without coord  | Collaborative   |
-|                       |                       | editing, counters|
-|  Last-writer-wins     | Timestamp resolution | Simple cases    |
-|  Application-level    | Domain-specific      | Business rules  |
-|  resolution           | merge logic           |                 |
+| Read repair | Fix stale reads on | Key-value stores|
+| | detection | |
+| Anti-entropy | Background Merkle | Replica sync |
+| | tree comparison | |
+| Gossip protocol | Random peer exchange | Membership, |
+| | | failure detect |
+| Vector clocks | Causal ordering | Conflict detect |
+| CRDTs | Merge without coord | Collaborative |
+| | | editing, counters|
+| Last-writer-wins | Timestamp resolution | Simple cases |
+| Application-level | Domain-specific | Business rules |
+| resolution | merge logic | |
 +--------------------------------------------------------------+
 ```
 
@@ -393,15 +393,15 @@ EVENTUAL CONSISTENCY PATTERNS:
 ```
 CRDT TYPES:
 +--------------------------------------------------------------+
-|  CRDT              | Operations      | Merge Rule     | Use   |
+| CRDT | Operations | Merge Rule | Use |
 +--------------------------------------------------------------+
-|  G-Counter         | Increment       | Max per node   | Views |
-|  PN-Counter        | Inc/Dec         | Max per node   | Votes |
-|  G-Set             | Add             | Union          | Tags  |
-|  OR-Set            | Add/Remove      | Add wins       | Cart  |
-|  LWW-Register      | Set             | Latest wins    | Profile|
-|  MV-Register       | Set             | Keep all       | Collab|
-|  RGA              | Insert/Delete    | Interleave     | Text  |
+| G-Counter | Increment | Max per node | Views |
+| PN-Counter | Inc/Dec | Max per node | Votes |
+| G-Set | Add | Union | Tags |
+| OR-Set | Add/Remove | Add wins | Cart |
+| LWW-Register | Set | Latest wins | Profile|
+| MV-Register | Set | Keep all | Collab|
+| RGA | Insert/Delete | Interleave | Text |
 +--------------------------------------------------------------+
 
 CRDT GUARANTEE:
@@ -420,13 +420,13 @@ WHEN TO USE CRDTs:
 ```
 CONFLICT RESOLUTION DECISION:
 +--------------------------------------------------------------+
-|  Strategy           | Complexity | Data Loss Risk | Best For  |
+| Strategy | Complexity | Data Loss Risk | Best For |
 +--------------------------------------------------------------+
-|  Last-writer-wins   | Low        | High           | Idempotent|
-|  Vector clocks      | Medium     | None (manual)  | Custom    |
-|  CRDTs              | High       | None (auto)    | Counters  |
-|  Application merge  | High       | None (custom)  | Business  |
-|  Operational trans.  | Very High  | None           | Documents |
+| Last-writer-wins | Low | High | Idempotent|
+| Vector clocks | Medium | None (manual) | Custom |
+| CRDTs | High | None (auto) | Counters |
+| Application merge | High | None (custom) | Business |
+| Operational trans. | Very High | None | Documents |
 +--------------------------------------------------------------+
 
 SELECTED: <strategy> -- <justification>
@@ -438,16 +438,16 @@ Design leader election for coordination:
 ```
 LEADER ELECTION PATTERNS:
 +--------------------------------------------------------------+
-|  Pattern             | Mechanism          | Implementation     |
+| Pattern | Mechanism | Implementation |
 +--------------------------------------------------------------+
-|  Bully algorithm     | Highest ID wins    | Custom             |
-|  Raft election       | Random timeout +   | etcd, Consul       |
-|                      | majority vote       |                    |
-|  ZooKeeper           | Ephemeral          | ZooKeeper/Curator  |
-|  ephemeral nodes     | sequential nodes    |                    |
-|  Database advisory   | SELECT FOR UPDATE  | PostgreSQL         |
-|  locks               | or advisory lock    |                    |
-|  Cloud-native        | Managed service    | K8s Lease, DynamoDB|
+| Bully algorithm | Highest ID wins | Custom |
+| Raft election | Random timeout + | etcd, Consul |
+| | majority vote | |
+| ZooKeeper | Ephemeral | ZooKeeper/Curator |
+| ephemeral nodes | sequential nodes | |
+| Database advisory | SELECT FOR UPDATE | PostgreSQL |
+| locks | or advisory lock | |
+| Cloud-native | Managed service | K8s Lease, DynamoDB|
 +--------------------------------------------------------------+
 
 LEADER ELECTION REQUIREMENTS:
@@ -459,24 +459,24 @@ KUBERNETES LEASE-BASED ELECTION:
 apiVersion: coordination.k8s.io/v1
 kind: Lease
 metadata:
-  name: my-service-leader
-  namespace: default
+ name: my-service-leader
+ namespace: default
 spec:
-  holderIdentity: pod-name-xyz
-  leaseDurationSeconds: 15
-  acquireTime: "2025-01-15T10:00:00Z"
-  renewTime: "2025-01-15T10:00:10Z"
-  leaseTransitions: 3
+ holderIdentity: pod-name-xyz
+ leaseDurationSeconds: 15
+ acquireTime: "2025-01-15T10:00:00Z"
+ renewTime: "2025-01-15T10:00:10Z"
+ leaseTransitions: 3
 
 LEADER RESPONSIBILITIES:
 +--------------------------------------------------------------+
-|  Responsibility         | How                                  |
+| Responsibility | How |
 +--------------------------------------------------------------+
-|  Heartbeat/renewal      | Renew lease every <interval>         |
-|  Graceful handoff       | Release lease on shutdown signal     |
-|  Work distribution      | Assign partitions to followers       |
-|  Follower health check  | Reassign work from failed followers  |
-|  Split-brain prevention | Fencing token on every operation     |
+| Heartbeat/renewal | Renew lease every <interval> |
+| Graceful handoff | Release lease on shutdown signal |
+| Work distribution | Assign partitions to followers |
+| Follower health check | Reassign work from failed followers |
+| Split-brain prevention | Fencing token on every operation |
 +--------------------------------------------------------------+
 
 FENCING TOKENS:
@@ -487,13 +487,13 @@ FENCING TOKENS:
 
 LEADER ELECTION DECISION:
 +--------------------------------------------------------------+
-|  Environment        | Recommendation                           |
+| Environment | Recommendation |
 +--------------------------------------------------------------+
-|  Kubernetes         | K8s Lease API (simplest)                 |
-|  etcd available     | etcd election (battle-tested)            |
-|  ZooKeeper available| ZK ephemeral nodes (strong guarantees)   |
-|  Database only      | Advisory locks (pragmatic)               |
-|  Custom cluster     | Raft-based (build with hashicorp/raft)   |
+| Kubernetes | K8s Lease API (simplest) |
+| etcd available | etcd election (battle-tested) |
+| ZooKeeper available| ZK ephemeral nodes (strong guarantees) |
+| Database only | Advisory locks (pragmatic) |
+| Custom cluster | Raft-based (build with hashicorp/raft) |
 +--------------------------------------------------------------+
 
 SELECTED: <approach> -- <justification>
@@ -505,14 +505,14 @@ Design behavior during and after network partitions:
 ```
 PARTITION HANDLING STRATEGY:
 +--------------------------------------------------------------+
-|  Phase              | Action                                   |
+| Phase | Action |
 +--------------------------------------------------------------+
-|  Detection          | Failure detector (heartbeat timeout,     |
-|                     | phi accrual, or gossip-based)            |
-|  During partition   | <CP: reject writes on minority side>     |
-|                     | OR <AP: accept writes, resolve later>    |
-|  Healing            | Anti-entropy, read repair, reconciliation|
-|  Post-partition     | Conflict resolution, data merge          |
+| Detection | Failure detector (heartbeat timeout, |
+| | phi accrual, or gossip-based) |
+| During partition | <CP: reject writes on minority side> |
+| | OR <AP: accept writes, resolve later> |
+| Healing | Anti-entropy, read repair, reconciliation|
+| Post-partition | Conflict resolution, data merge |
 +--------------------------------------------------------------+
 
 FAILURE DETECTION:
@@ -534,24 +534,24 @@ Generate the system architecture:
 ```
 DISTRIBUTED TOPOLOGY:
 +---------------------------------------------------------------+
-|  Region: us-east-1                  Region: eu-west-1          |
-|  +---------------------------+     +---------------------------+|
-|  |  [Leader Node 1]         |     |  [Follower Node 3]       ||
-|  |  [Follower Node 2]       |     |  [Follower Node 4]       ||
-|  |  [Follower Node 5]       |     |                           ||
-|  +---------------------------+     +---------------------------+|
-|              |                               |                  |
-|              +---------- WAN Link -----------+                  |
-|                       (async replication)                       |
+| Region: us-east-1 Region: eu-west-1 |
+| +---------------------------+ +---------------------------+|
+| | [Leader Node 1] | | [Follower Node 3] ||
+| | [Follower Node 2] | | [Follower Node 4] ||
+| | [Follower Node 5] | | ||
+| +---------------------------+ +---------------------------+|
+| | | |
+| +---------- WAN Link -----------+ |
+| (async replication) |
 +---------------------------------------------------------------+
 
 DATA FLOW:
-  Writes -> Leader (us-east-1) -> Sync replicate to Node 2, 5
-                                -> Async replicate to Node 3, 4
+ Writes -> Leader (us-east-1) -> Sync replicate to Node 2, 5
+ -> Async replicate to Node 3, 4
 
-  Reads (strong) -> Leader only
-  Reads (eventual) -> Any node (local region preferred)
-  Reads (bounded staleness) -> Any node with max lag check
+ Reads (strong) -> Leader only
+ Reads (eventual) -> Any node (local region preferred)
+ Reads (bounded staleness) -> Any node with max lag check
 ```
 
 ### Step 10: Validation & Artifacts
@@ -560,20 +560,20 @@ Validate the distributed system design:
 ```
 DISTRIBUTED SYSTEM VALIDATION:
 +--------------------------------------------------------------+
-|  Check                                    | Status            |
+| Check | Status |
 +--------------------------------------------------------------+
-|  CAP trade-offs explicitly documented     | PASS | FAIL       |
-|  Consistency level defined per operation   | PASS | FAIL       |
-|  Consensus protocol selected and justified | PASS | FAIL       |
-|  Partition handling strategy defined       | PASS | FAIL       |
-|  Conflict resolution mechanism chosen     | PASS | FAIL       |
-|  Leader election with fencing tokens      | PASS | FAIL       |
-|  Replication topology documented          | PASS | FAIL       |
-|  Sharding strategy with partition key     | PASS | FAIL       |
-|  Failure detector configured              | PASS | FAIL       |
-|  Split-brain prevention in place          | PASS | FAIL       |
-|  Network partition test plan exists       | PASS | FAIL       |
-|  Data reconciliation after partition      | PASS | FAIL       |
+| CAP trade-offs explicitly documented | PASS | FAIL |
+| Consistency level defined per operation | PASS | FAIL |
+| Consensus protocol selected and justified | PASS | FAIL |
+| Partition handling strategy defined | PASS | FAIL |
+| Conflict resolution mechanism chosen | PASS | FAIL |
+| Leader election with fencing tokens | PASS | FAIL |
+| Replication topology documented | PASS | FAIL |
+| Sharding strategy with partition key | PASS | FAIL |
+| Failure detector configured | PASS | FAIL |
+| Split-brain prevention in place | PASS | FAIL |
+| Network partition test plan exists | PASS | FAIL |
+| Data reconciliation after partition | PASS | FAIL |
 +--------------------------------------------------------------+
 
 VERDICT: <SOUND | NEEDS REVISION>
@@ -621,18 +621,18 @@ User: /godmode:distributed Design a distributed KV store for our configuration s
 Distributed: Analyzing requirements...
 
 DISTRIBUTED SYSTEM CONTEXT:
-  Purpose: Configuration service for 50 microservices
-  Consistency: Strong (config changes must be visible immediately)
-  Availability: 99.99% target
-  Data volume: Small (< 1GB total), read-heavy (1000:1 read:write)
+ Purpose: Configuration service for 50 microservices
+ Consistency: Strong (config changes must be visible immediately)
+ Availability: 99.99% target
+ Data volume: Small (< 1GB total), read-heavy (1000:1 read:write)
 
 CAP ANALYSIS:
-  Choice: CP -- config must be consistent, brief unavailability OK
-  PACELC: PC/EC -- consistency always, even at latency cost
+ Choice: CP -- config must be consistent, brief unavailability OK
+ PACELC: PC/EC -- consistency always, even at latency cost
 
 CONSENSUS: Raft (3-node cluster)
-  Quorum reads for strong consistency
-  Follower reads with linearizable lease for reduced leader load
+ Quorum reads for strong consistency
+ Follower reads with linearizable lease for reduced leader load
 
 SHARDING: Not needed (data fits on single Raft group)
 REPLICATION: 3 replicas, synchronous within Raft
@@ -640,23 +640,6 @@ REPLICATION: 3 replicas, synchronous within Raft
 Verdict: SOUND -- 12/12 checks pass
 ```
 
-### Analyzing partition tolerance
-```
-User: /godmode:distributed How should our payment system handle network partitions?
-
-Distributed: Analyzing partition scenarios...
-
-PARTITION HANDLING:
-  System: Payment processing (MUST be CP)
-  During partition: Reject writes on minority side (return 503)
-  Fencing: Monotonic transaction IDs prevent stale leader writes
-  Post-partition: Reconcile in-flight transactions by correlation ID
-  Split-brain prevention: Quorum-based leader election (3/5 nodes)
-
-  Scenario 1: Leader in majority -> continues serving
-  Scenario 2: Leader in minority -> steps down, majority elects new leader
-  Scenario 3: Even split -> witness node breaks tie
-```
 
 ## Flags & Options
 
@@ -680,43 +663,57 @@ Before prompting the user, automatically detect distributed system context:
 ```
 AUTO-DETECT SEQUENCE:
 1. Detect multi-service topology:
-   - docker-compose.yml with multiple services → distributed system
-   - kubernetes manifests with multiple Deployments → distributed system
-   - Multiple repos or monorepo with service directories → microservices
+ - docker-compose.yml with multiple services → distributed system
+ - kubernetes manifests with multiple Deployments → distributed system
+ - Multiple repos or monorepo with service directories → microservices
 
 2. Detect consensus/coordination:
-   - grep for: etcd, consul, zookeeper in configs or dependencies
-   - Check for: Raft, Paxos references in code or docs
-   - Check for: leader election, distributed lock usage
+ - grep for: etcd, consul, zookeeper in configs or dependencies
+ - Check for: Raft, Paxos references in code or docs
+ - Check for: leader election, distributed lock usage
 
 3. Detect message brokers:
-   - Kafka, RabbitMQ, SQS, NATS, Redis Streams in configs
-   - Event-driven patterns: event bus, event store, pub/sub
+ - Kafka, RabbitMQ, SQS, NATS, Redis Streams in configs
+ - Event-driven patterns: event bus, event store, pub/sub
 
 4. Detect data distribution:
-   - Multiple database connection strings → data partitioned across stores
-   - Sharding configuration in database config (MongoDB shardKey, Vitess, Citus)
-   - Read replica configuration (primary/replica endpoints)
+ - Multiple database connection strings → data partitioned across stores
+ - Sharding configuration in database config (MongoDB shardKey, Vitess, Citus)
+ - Read replica configuration (primary/replica endpoints)
 
 5. Detect consistency patterns:
-   - grep for: eventual consistency, saga, compensation, outbox pattern
-   - Check for: dual-write code, CDC (change data capture) configs
-   - Check for: idempotency keys, correlation IDs, fencing tokens
+ - grep for: eventual consistency, saga, compensation, outbox pattern
+ - Check for: dual-write code, CDC (change data capture) configs
+ - Check for: idempotency keys, correlation IDs, fencing tokens
 
 6. Detect replication topology:
-   - Multi-region deployment configs (AWS regions, GCP regions)
-   - Replication lag monitoring (pg_stat_replication, ReplicaLag metrics)
-   - Async vs sync replication configuration
+ - Multi-region deployment configs (AWS regions, GCP regions)
+ - Replication lag monitoring (pg_stat_replication, ReplicaLag metrics)
+ - Async vs sync replication configuration
 
 7. Auto-classify:
-   - Single service + single DB → not distributed (suggest /godmode:architect)
-   - Multiple services + message broker → event-driven distributed
-   - Multiple services + shared DB → distributed monolith (anti-pattern)
-   - Multi-region deployment → geo-distributed system
+ - Single service + single DB → not distributed (suggest /godmode:architect)
+ - Multiple services + message broker → event-driven distributed
+ - Multiple services + shared DB → distributed monolith (anti-pattern)
+ - Multi-region deployment → geo-distributed system
 
 -> Auto-populate DISTRIBUTED SYSTEM CONTEXT from detected signals.
 -> Only ask about consistency requirements if not inferrable from code.
 ```
+
+## Keep/Discard Discipline
+Each design decision either passes validation or gets revised.
+- **KEEP**: Validation checklist passes for the design aspect, failure modes documented.
+- **DISCARD**: Validation fails (e.g., no fencing tokens on leader election, missing partition plan). Revise before proceeding.
+- **CRASH**: Design reveals fundamental architectural conflict. Revisit CAP trade-off from scratch.
+- Log every design session to `.godmode/distributed-results.tsv`.
+
+## Stop Conditions
+- CAP trade-off documented before any implementation begins.
+- Consistency level specified per operation, not per system.
+- Consensus protocol selected with fault tolerance calculated.
+- Partition handling strategy defined for during-partition and post-partition phases.
+- Every failure mode documented: "What happens when X is down?"
 
 ## HARD RULES
 
@@ -728,38 +725,6 @@ AUTO-DETECT SEQUENCE:
 - ALL consistency levels MUST be documented per operation, not per system
 - ALL failure modes MUST be documented for every component ("what happens when X is down?")
 - ALL distributed systems MUST be tested with real network partitions via chaos engineering before production
-
-## Iterative Design Validation Loop Protocol
-
-When designing or auditing a distributed system:
-
-```
-current_iteration = 0
-validation_queue = [CAP_analysis, consensus, locking, sharding, consistency_patterns, leader_election, partition_handling]
-WHILE validation_queue is not empty:
-    current_iteration += 1
-    design_aspect = validation_queue.pop(next)
-    analyze current design for design_aspect
-    run validation checklist for design_aspect
-    IF validation fails:
-        revise design, re-add to queue
-    IF design_aspect reveals new concerns in other areas:
-        add affected areas to validation_queue
-    report: "Iteration {current_iteration}: {design_aspect} — {PASS|FAIL}, {N} issues found, {remaining} aspects to validate"
-```
-
-## Multi-Agent Dispatch
-
-```
-DISPATCH 3 agents in separate worktrees:
-  Agent 1 (design):       CAP analysis + consensus protocol selection + replication topology design
-  Agent 2 (coordination): Distributed locking + leader election + fencing token implementation
-  Agent 3 (data):         Sharding strategy + consistency patterns + conflict resolution + partition handling
-SYNC point: All agents complete
-  Merge worktrees
-  Run full validation checklist (12 checks)
-  Generate distributed system architecture document with topology diagram
-```
 
 ## Output Format
 Print on completion:
@@ -797,311 +762,30 @@ Append one row per session. Create the file with headers on first run.
 ## Error Recovery
 ```
 IF user skips CAP discussion and jumps to implementation:
-  → Block: "CAP trade-off must be documented before design. Is your system CP or AP during partitions?"
-  → Do NOT proceed until consistency requirements are explicitly stated
+ → Block: "CAP trade-off must be documented before design. Is your system CP or AP during partitions?"
+ → Do NOT proceed until consistency requirements are explicitly stated
 
 IF consensus cluster has even number of nodes:
-  → Warn: "Even node count ({N}) risks split-brain with no majority"
-  → Recommend: add a witness/arbiter node or use odd count (N+1)
+ → Warn: "Even node count ({N}) risks split-brain with no majority"
+ → Recommend: add a witness/arbiter node or use odd count (N+1)
 
 IF Redlock chosen for a correctness-critical lock:
-  → Warn: "Redlock is debated for correctness locks (Kleppmann critique). Consider ZooKeeper or etcd with fencing tokens."
-  → If user accepts risk: document in design: "Redlock used as efficiency lock; data corruption risk accepted"
+ → Warn: "Redlock is debated for correctness locks (Kleppmann critique). Consider ZooKeeper or etcd with fencing tokens."
+ → If user accepts risk: document in design: "Redlock used as efficiency lock; data corruption risk accepted"
 
 IF sharding key produces hot spots (one shard receives >50% of writes):
-  → Identify the hot key pattern (timestamp-based? popular entity?)
-  → Apply mitigation: salting, split hot partition, or write buffering
-  → Re-measure write distribution after fix
+ → Identify the hot key pattern (timestamp-based? popular entity?)
+ → Apply mitigation: salting, split hot partition, or write buffering
+ → Re-measure write distribution after fix
 
 IF network partition test reveals data loss:
-  → Identify: was the partition CP or AP? Was fencing token enforced?
-  → If AP without conflict resolution: add CRDT, vector clocks, or application-level merge
-  → If CP with data loss: check quorum configuration and fencing token implementation
-  → Re-run partition test — must show zero data loss
+ → Identify: was the partition CP or AP? Was fencing token enforced?
+ → If AP without conflict resolution: add CRDT, vector clocks, or application-level merge
+ → If CP with data loss: check quorum configuration and fencing token implementation
+ → Re-run partition test — must show zero data loss
 
 IF replication lag exceeds acceptable threshold:
-  → Measure: what is the current lag (pg_stat_replication.replay_lag)?
-  → Check: is the replica under-resourced? Is WAL generation rate too high?
-  → Mitigate: increase replica resources, or implement bounded-staleness reads that check lag before serving
+ → Measure: what is the current lag (pg_stat_replication.replay_lag)?
+ → Check: is the replica under-resourced? Is WAL generation rate too high?
+ → Mitigate: increase replica resources, or implement bounded-staleness reads that check lag before serving
 ```
-
-## Anti-Patterns
-
-- **Do NOT ignore the CAP theorem.** Claiming your system is consistent, available, AND partition-tolerant is physically impossible. If you think you have all three, you have not considered real network failures.
-- **Do NOT use wall clocks for ordering.** Clocks drift, NTP updates cause jumps, and leap seconds exist. Use logical clocks (Lamport, vector) or hybrid logical clocks for event ordering.
-- **Do NOT assume the network is reliable.** The Fallacies of Distributed Computing exist for a reason. Latency is not zero, bandwidth is not infinite, the network is not secure, and topology does change.
-- **Do NOT use 2-phase commit at scale.** 2PC blocks all participants if the coordinator fails. It does not scale. Use sagas or compensation-based approaches.
-- **Do NOT skip fencing tokens on leader election.** A leader that does not know it has been replaced will corrupt data. Fencing tokens are mandatory for correctness locks.
-- **Do NOT shard prematurely.** Sharding adds enormous complexity. Start with a single node, then replicas, then shard only when data volume or write throughput demands it.
-- **Do NOT conflate consensus and consistency.** Consensus (Raft, Paxos) is a mechanism. Consistency (linearizable, eventual) is a property. You can have consensus without linearizability and vice versa.
-- **Do NOT design without testing partitions.** A distributed system that has never been tested under network partitions is a system waiting to corrupt data.
-
-
-## Distributed Systems Audit
-
-Structured audit loop for consistency verification, partition tolerance testing, and failure mode analysis:
-
-```
-DISTRIBUTED SYSTEMS AUDIT LOOP:
-
-current_iteration = 0
-max_iterations = 15
-audit_queue = [
-    "consistency_verification",
-    "partition_tolerance_testing",
-    "failure_mode_analysis",
-    "replication_health",
-    "consensus_health",
-    "clock_synchronization",
-    "data_integrity_verification"
-]
-findings = []
-
-WHILE audit_queue is not empty AND current_iteration < max_iterations:
-    current_iteration += 1
-    audit_aspect = audit_queue.pop(0)
-
-    1. ANALYZE current implementation for {audit_aspect}
-    2. COMPARE against distributed systems invariants
-    3. CLASSIFY: SOUND | DEGRADED | UNSAFE
-    4. IF UNSAFE or DEGRADED: generate remediation with proof of correctness
-    5. IF audit reveals concerns in other aspects: audit_queue.append(concern)
-    6. REPORT "Audit iteration {current_iteration}: {audit_aspect} — {status}"
-
-FINAL: Distributed systems safety report with verified invariants
-```
-
-### Consistency Checks
-
-```
-CONSISTENCY VERIFICATION:
-┌──────────────────────────────────────────────────────────────┐
-│  Check                              │ Status   │ Evidence    │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Per-operation consistency level     │ PASS|FAIL│             │
-│  documented for ALL operations       │          │             │
-│  (which ops need strong, which       │          │             │
-│  tolerate eventual)                  │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Read-your-own-writes guarantee      │ PASS|FAIL│             │
-│  (user sees their own mutations      │          │             │
-│  immediately after write)            │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Monotonic reads guarantee           │ PASS|FAIL│             │
-│  (user never sees older state after  │          │             │
-│  seeing newer state)                 │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Causal ordering preserved           │ PASS|FAIL│             │
-│  (if A causes B, every observer      │          │             │
-│  sees A before B)                    │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  No lost updates under concurrency   │ PASS|FAIL│             │
-│  (concurrent writes to same key      │          │             │
-│  do not silently overwrite)          │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Convergence time measured           │ PASS|FAIL│ <p99 lag>   │
-│  (how long until all replicas        │          │             │
-│  converge after a write)             │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Conflict resolution strategy        │ PASS|FAIL│ <strategy>  │
-│  defined and tested                  │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Stale read protection               │ PASS|FAIL│             │
-│  (reads from replicas check lag      │          │             │
-│  against acceptable threshold)       │          │             │
-└─────────────────────────────────────┴──────────┴─────────────┘
-
-CONSISTENCY TESTING METHODOLOGY:
-  1. Write to primary, immediately read from replica
-     → Verify: does the system provide read-your-writes?
-  2. Write A, then write B (causally dependent)
-     → Read from multiple replicas: do all see A before B?
-  3. Concurrent writes to same key from different nodes
-     → Verify: conflict resolution produces deterministic result
-  4. Measure replication lag under load:
-     → p50, p95, p99 convergence time
-     → Alert threshold: when lag exceeds acceptable window
-  5. Network partition between primary and replica
-     → Verify: system behaves according to documented CAP choice
-     → CP: rejects writes on minority side
-     → AP: accepts writes, resolves conflicts on heal
-
-TOOLS:
-  - Jepsen: formal consistency testing for distributed databases
-  - Elle: transactional consistency checker
-  - Maelstrom: lightweight distributed systems workbench
-  - Custom: write-read pair tests with artificial network delays
-```
-
-### Partition Tolerance Testing
-
-```
-PARTITION TOLERANCE AUDIT:
-┌──────────────────────────────────────────────────────────────┐
-│  Scenario                           │ Expected │ Actual      │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Network partition: primary isolated │          │             │
-│  from all replicas                   │          │             │
-│  → Does system elect new leader?     │ YES      │ PASS|FAIL   │
-│  → How long until recovery?          │ <N>s     │ <N>s        │
-│  → Data loss during partition?       │ NONE     │ PASS|FAIL   │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Network partition: cluster split    │          │             │
-│  into two equal halves               │          │             │
-│  → Which side accepts writes?        │ NEITHER  │ PASS|FAIL   │
-│  → Is split-brain prevented?         │ YES      │ PASS|FAIL   │
-│  → Fencing tokens enforced?          │ YES      │ PASS|FAIL   │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Network partition: one replica      │          │             │
-│  isolated                            │          │             │
-│  → Does system continue serving?     │ YES      │ PASS|FAIL   │
-│  → Isolated replica stops serving?   │ YES      │ PASS|FAIL   │
-│  → Replica rejoins after heal?       │ YES      │ PASS|FAIL   │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Asymmetric partition: A→B works,    │          │             │
-│  B→A fails                           │          │             │
-│  → Detected by failure detector?     │ YES      │ PASS|FAIL   │
-│  → Handled correctly (not split-     │ YES      │ PASS|FAIL   │
-│  brain)?                             │          │             │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Slow network (not partition):       │          │             │
-│  latency between nodes = 500ms       │          │             │
-│  → False positive leader election?   │ NO       │ PASS|FAIL   │
-│  → Timeout tuning adequate?          │ YES      │ PASS|FAIL   │
-├─────────────────────────────────────┼──────────┼─────────────┤
-│  Clock skew: 500ms difference        │          │             │
-│  between nodes                       │          │             │
-│  → Lease/lock safety preserved?      │ YES      │ PASS|FAIL   │
-│  → Event ordering still correct?     │ YES      │ PASS|FAIL   │
-└─────────────────────────────────────┴──────────┴─────────────┘
-
-CHAOS ENGINEERING TEST PLAN:
-  Tool: Chaos Mesh (K8s) | Toxiproxy | tc (Linux traffic control) | Pumba
-
-  Test 1: Network partition between zones
-    tc qdisc add dev eth0 root netem loss 100%  # drop all packets
-    Duration: 30s → 5m → 30m
-    Observe: leader election, write availability, read consistency
-
-  Test 2: Network delay injection
-    tc qdisc add dev eth0 root netem delay 500ms 200ms
-    Observe: timeout behavior, false positive elections, latency propagation
-
-  Test 3: Asymmetric partition
-    iptables -A OUTPUT -d <node-B> -j DROP  # A cannot reach B
-    (B can still reach A)
-    Observe: failure detector accuracy, split-brain prevention
-
-  Test 4: Clock skew
-    timedatectl set-ntp no; date -s "+30 seconds"
-    Observe: lease validity, lock safety, event ordering
-
-  Test 5: Process crash and recovery
-    kill -9 <leader-process>
-    Observe: failover time, data loss, client reconnection
-```
-
-### Failure Mode Analysis
-
-```
-FAILURE MODE ANALYSIS (FMA):
-┌──────────────────────────────────────────────────────────────┐
-│  Component          │ Failure Mode       │ Detection │ Impact │
-│                     │                    │ Time      │        │
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Leader node        │ Crash              │ <N>s      │        │
-│  (consensus leader) │ → New leader       │ (election │ Write  │
-│                     │   elected          │  timeout) │ pause  │
-│                     │ → Client retries   │           │ <N>s   │
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Follower node      │ Crash              │ <N>s      │        │
-│  (read replica)     │ → Reads rerouted   │ (health   │ Minimal│
-│                     │   to remaining     │  check)   │ (if    │
-│                     │   followers        │           │ >1     │
-│                     │ → Reduced fault    │           │ replica│
-│                     │   tolerance margin │           │ left)  │
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Network partition  │ Cluster split      │ <N>s      │        │
-│                     │ → Minority side    │ (heartbeat│ Partial│
-│                     │   stops serving    │  timeout) │ unavail│
-│                     │ → Majority side    │           │ for    │
-│                     │   continues        │           │ minority│
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Message broker     │ Broker down        │ <N>s      │        │
-│  (Kafka/RabbitMQ)   │ → Events queued    │ (conn     │ Event  │
-│                     │   client-side      │  timeout) │ delay  │
-│                     │ → Sync calls as    │           │ until  │
-│                     │   fallback (if any)│           │ recover│
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Database primary   │ Crash              │ <N>s      │        │
-│                     │ → Automated        │ (HA proxy │ Write  │
-│                     │   failover to      │  or cloud │ pause  │
-│                     │   standby          │  failover)│ <N>s   │
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  Cache (Redis)      │ Crash / eviction   │ <N>s      │        │
-│                     │ → Cache miss →     │ (conn     │ Latency│
-│                     │   database hit     │  error)   │ spike  │
-│                     │ → Stampede risk    │           │        │
-├─────────────────────┼────────────────────┼───────────┼────────┤
-│  DNS resolution     │ DNS failure        │ <N>s      │        │
-│                     │ → Service          │ (lookup   │ Total  │
-│                     │   discovery fails  │  timeout) │ outage │
-│                     │ → Cached entries   │           │ if no  │
-│                     │   expire           │           │ cache  │
-└─────────────────────┴────────────────────┴───────────┴────────┘
-
-FOR EACH FAILURE MODE:
-  Component: <name>
-  Failure: <what breaks>
-  Probability: <LOW|MEDIUM|HIGH> (based on historical data or MTBF)
-  Detection: <how is it detected and how fast>
-  Impact: <what degrades or stops working>
-  Blast radius: <which users/services are affected>
-  Recovery:
-    Automated: <what happens automatically>
-    Manual: <what requires human intervention>
-    RTO: <recovery time objective>
-    RPO: <recovery point objective — max data loss>
-  Mitigation: <preventive measure to reduce probability or impact>
-  Last tested: <date of last chaos test for this mode>
-
-FAILURE MODE COVERAGE:
-  Total failure modes documented: <N>
-  Failure modes with automated recovery: <N>
-  Failure modes tested via chaos engineering: <N>
-  Failure modes with no mitigation: <N> (ACTION REQUIRED)
-  Mean time to recovery (MTTR) across all modes: <N> seconds
-```
-
-### Distributed Systems Safety Report
-
-```
-DISTRIBUTED SYSTEMS SAFETY REPORT:
-┌──────────────────────────────────────────────────────────────┐
-│  System: <name>                                                │
-│  Topology: <single-region|multi-region|edge>                   │
-│  Nodes: <N>  │  CAP choice: <CP|AP>  │  PACELC: <class>       │
-├──────────────────────────────────────────────────────────────┤
-│  Safety Dimension        │ Status     │ Last Verified          │
-├──────────────────────────┼────────────┼────────────────────────┤
-│  Consistency guarantees  │ VERIFIED   │ <date>                 │
-│  Partition handling      │ VERIFIED   │ <date>                 │
-│  Leader election safety  │ VERIFIED   │ <date>                 │
-│  Fencing token usage     │ VERIFIED   │ <date>                 │
-│  Clock independence      │ VERIFIED   │ <date>                 │
-│  Failure mode coverage   │ <N>/<total>│ <date>                 │
-│  Chaos test coverage     │ <N>/<total>│ <date>                 │
-├──────────────────────────┴────────────┴────────────────────────┤
-│  OVERALL SAFETY: SOUND | PARTIALLY VERIFIED | UNVERIFIED       │
-│  RECOMMENDED ACTIONS:                                          │
-│  1. <highest priority action>                                  │
-│  2. <next priority action>                                     │
-│  3. <next priority action>                                     │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run distributed system tasks sequentially: design, then coordination, then data/sharding.
-- Use branch isolation per task: `git checkout -b godmode-distributed-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.

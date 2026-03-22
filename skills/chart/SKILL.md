@@ -209,56 +209,6 @@ function Chart({ data }: { data: ChartData[] }) {
 }
 ```
 
-#### Chart.js Implementation Pattern
-```typescript
-import { Chart, registerables } from 'chart.js';
-Chart.register(...registerables);
-
-function createChart(canvas: HTMLCanvasElement, data: ChartData[]) {
-  return new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: data.map(d => d.label),
-      datasets: [{
-        label: 'Dataset',
-        data: data.map(d => d.value),
-        backgroundColor: palette,
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'top' },
-        title: { display: true, text: 'Chart Title' }
-      }
-    }
-  });
-}
-```
-
-#### Plotly Implementation Pattern
-```typescript
-import Plotly from 'plotly.js-dist-min';
-
-function createChart(container: HTMLElement, data: ChartData[]) {
-  const trace = {
-    x: data.map(d => d.category),
-    y: data.map(d => d.value),
-    type: 'bar',
-    marker: { color: palette }
-  };
-
-  const layout = {
-    title: 'Chart Title',
-    xaxis: { title: 'Category' },
-    yaxis: { title: 'Value' },
-    autosize: true
-  };
-
-  Plotly.newPlot(container, [trace], layout, { responsive: true });
-}
-```
-
 ### Step 6: Responsive Design
 Ensure charts work across all viewport sizes:
 
@@ -370,24 +320,15 @@ Ensure charts render efficiently with large datasets:
 
 ```
 PERFORMANCE STRATEGIES:
-┌──────────────────────────────────────────────────────────────────────┐
-│  Data size        │  Strategy                                       │
-├───────────────────┼─────────────────────────────────────────────────┤
+┌───────────────────┬─────────────────────────────────────────────────┐
 │  < 1,000 points   │  Render all — no optimization needed            │
 │  1K - 10K points  │  Canvas rendering (not SVG), debounce tooltips  │
 │  10K - 100K points│  Data aggregation, LTTB downsampling, WebGL     │
-│  > 100K points    │  Server-side aggregation, progressive loading,  │
-│                   │  WebGL (deck.gl), virtual scrolling for tables  │
+│  > 100K points    │  Server-side aggregation, WebGL (deck.gl)       │
 └───────────────────┴─────────────────────────────────────────────────┘
 
-TECHNIQUES:
-- Use Canvas over SVG for > 1000 data points (Chart.js uses Canvas by default)
-- Apply LTTB (Largest Triangle Three Buckets) downsampling for time series
-- Virtualize data tables with react-virtualized or TanStack Virtual
-- Lazy-load below-the-fold charts with IntersectionObserver
-- Memoize expensive data transformations with useMemo/useCallback
-- Use Web Workers for heavy data processing off the main thread
-- Debounce resize handlers (250ms) and brush/zoom interactions
+Key techniques: Canvas over SVG for > 1K points, LTTB downsampling for time series,
+IntersectionObserver for lazy-loading, useMemo for data transforms, Web Workers for heavy processing.
 ```
 
 ### Step 10: Validation & Delivery
@@ -805,43 +746,43 @@ FINAL VISUALIZATION AUDIT REPORT:
 └────────────────────────────────────┴───────────┴───────────┴────────┘
 ```
 
-### Data Visualization Audit TSV Logging
-
-Append one row per audit action to `.godmode/chart-audit.tsv`:
-
-```
-timestamp	project	phase	chart	metric	before	after	technique	status
-2024-01-15T10:30:00Z	my-app	perf	HeatmapGrid	render_ms	890	180	canvas-renderer	improved
-2024-01-15T10:35:00Z	my-app	a11y	ScatterPlot	data_table	missing	present	added-sr-table	fixed
-2024-01-15T10:40:00Z	my-app	responsive	SegmentBar	320px_overflow	yes	no	label-abbreviation	fixed
-```
-
-### Data Visualization Audit Hard Rules
-
-```
-1. NEVER ship a chart without a data table alternative. Charts are invisible to screen readers without one.
-2. NEVER render > 1000 SVG nodes. Switch to Canvas or WebGL for large datasets.
-3. ALWAYS test colorblind safety with Chrome DevTools vision deficiency emulation before marking a11y as done.
-4. ALWAYS test at 320px viewport width. If the chart is unusable on mobile, provide a simplified mobile version.
-5. NEVER rely on hover-only for tooltips. Touch devices need tap-to-show. Keyboard users need focus-to-show.
-6. ALWAYS measure render performance with real or representative data volumes, not trivial sample data.
-7. Log every audit finding in TSV format for tracking visualization quality across releases.
-```
-
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run chart tasks sequentially: data preparation, then chart implementation, then accessibility/responsive.
-- Use branch isolation per task: `git checkout -b godmode-chart-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
+Run chart tasks sequentially: data preparation, then chart implementation, then accessibility/responsive.
+Use branch isolation per task: `git checkout -b godmode-chart-{task}`, implement, commit, merge back.
 
 ## Anti-Patterns
 
-- **Do NOT use pie charts for more than 5 categories.** Humans cannot accurately compare arc angles. Use a bar chart.
-- **Do NOT use 3D charts.** They distort data perception and add no information. Always use 2D.
-- **Do NOT start bar chart y-axis above zero.** This exaggerates differences and misleads the viewer.
-- **Do NOT use rainbow color palettes.** They are not perceptually uniform, not colorblind-safe, and not ordered.
-- **Do NOT render thousands of SVG nodes.** Use Canvas or WebGL for large datasets. SVG is for < 1000 elements.
-- **Do NOT skip the data table alternative.** Charts are not accessible to screen readers. A data table must exist.
+- **Do NOT use pie charts for more than 5 categories.** Use a bar chart instead.
+- **Do NOT use 3D charts.** They distort data perception and add no information.
+- **Do NOT start bar chart y-axis above zero.** This exaggerates differences.
+- **Do NOT use rainbow color palettes.** They are not perceptually uniform or colorblind-safe.
+- **Do NOT render thousands of SVG nodes.** Use Canvas or WebGL for large datasets.
+- **Do NOT skip the data table alternative.** Charts are invisible to screen readers without one.
 - **Do NOT build charts without responsive behavior.** If it breaks on mobile, it is not done.
-- **Do NOT use dual y-axes without explicit labels.** Dual axes are inherently confusing. Label both clearly or avoid them.
-- **Do NOT animate charts for the sake of animation.** Animation should reveal data relationships, not decorate. Respect prefers-reduced-motion.
+- **Do NOT animate charts for decoration.** Respect prefers-reduced-motion.
+
+## Keep/Discard Discipline
+```
+After EACH chart implementation or optimization:
+  1. MEASURE: Render time, accessibility checks (12-point checklist), responsive behavior at 320/768/1440px.
+  2. COMPARE: Did rendering performance stay within targets? Did accessibility score hold or improve?
+  3. DECIDE:
+     - KEEP if: renders within target time AND all a11y checks pass AND responsive at all breakpoints
+     - DISCARD if: render time exceeds target OR accessibility regresses OR layout breaks at any breakpoint
+  4. COMMIT kept changes. Revert discarded changes before the next chart.
+
+Never keep a chart optimization that breaks colorblind safety or removes the data table alternative.
+```
+
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - All charts render within performance targets (< 100ms for < 1K points, < 500ms for 1K-10K)
+  - All 12 accessibility checks pass for every chart
+  - Charts are responsive at 320px, 768px, and 1440px
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - One chart type is complex to make responsive (provide a simplified mobile version)
+  - Colorblind palette looks less appealing than the original (accessibility is non-negotiable)
+```

@@ -536,6 +536,19 @@ FOR each detected secret:
   EVERY discard recorded with reason — no silent drops
 ```
 
+## Stop Conditions
+```
+STOP when ANY of these are true:
+  - Zero verified leaks in current codebase and git history
+  - All production secrets are in a secret manager (not hardcoded or in env vars)
+  - Pre-commit hook for secret scanning is installed and active
+  - User explicitly requests stop
+
+DO NOT STOP just because:
+  - Some secrets have not been rotated yet (remediate leaks first, rotate second)
+  - False positives remain in scanner output (add them to the allowlist)
+```
+
 ## Multi-Agent Dispatch
 
 ```
@@ -565,14 +578,13 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 
 ## Anti-Patterns
 
-- **Do NOT hardcode secrets.** Not in source code, not in config files, not in Dockerfiles, not in CI/CD configs. Never.
-- **Do NOT commit .env files.** Add to .gitignore before the first commit. If already committed, scrub from history.
-- **Do NOT share secrets via Slack, email, or chat.** Use a secret manager or a one-time-use link (e.g., Vault wrapped tokens, 1Password share).
-- **Do NOT use the same secret across environments.** Dev, staging, and production each get unique credentials.
-- **Do NOT skip rotation because "nothing happened."** Rotation limits the blast radius of unknown compromises.
-- **Do NOT log secrets.** Sanitize all log output. Mask values in error messages. Never include credentials in stack traces.
-- **Do NOT use long-lived credentials when short-lived alternatives exist.** Prefer IAM roles over access keys. Prefer JWT with short TTL over permanent tokens.
-- **Do NOT ignore secret scanning alerts.** GitHub, GitLab, and other platforms surface leaked secrets. Act on them immediately.
+- **Do NOT hardcode secrets.** Not in source code, config files, Dockerfiles, or CI configs.
+- **Do NOT commit .env files.** Add to .gitignore before the first commit. If already committed, scrub history.
+- **Do NOT share secrets via Slack, email, or chat.** Use a secret manager or one-time-use link.
+- **Do NOT skip rotation because "nothing happened."** Rotation limits blast radius of unknown compromises.
+- **Do NOT log secrets.** Sanitize all log output. Mask values in error messages.
+- **Do NOT use long-lived credentials when short-lived alternatives exist.** Prefer IAM roles over access keys.
+- **Do NOT ignore secret scanning alerts.** Act on them immediately.
 
 
 ## Output Format

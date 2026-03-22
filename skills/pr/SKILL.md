@@ -346,46 +346,6 @@ GITHUB ACTIONS LABELER (.github/labeler.yml):
   tests:
     - changed-files:
       - any-glob-to-any-file: ['**/*.test.*', '**/*.spec.*']
-
-  documentation:
-    - changed-files:
-      - any-glob-to-any-file: ['**/*.md', 'docs/**']
-
-AUTO-ASSIGNMENT (.github/auto-assign.yml):
-  addReviewers: true
-  addAssignees: true
-  reviewers:
-    - reviewer1
-    - reviewer2
-    - reviewer3
-  numberOfReviewers: 2
-  assignees:
-    - author         # Auto-assign PR author
-  skipKeywords:
-    - wip
-    - draft
-
-SIZE LABELS (GitHub Action):
-  name: PR Size Label
-  on: pull_request
-  jobs:
-    size:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/labeler@v5
-        - name: Label PR size
-          uses: codelytv/pr-size-labeler@v1
-          with:
-            xs_max_size: 10
-            s_max_size: 50
-            m_max_size: 200
-            l_max_size: 500
-            fail_if_xl: true
-            message_if_xl: |
-              This PR is too large (>500 lines). Please split into
-              smaller PRs for better review quality.
-```
-
 ### Step 7: PR Metrics and Cycle Time Optimization
 Measure and improve the PR review process:
 
@@ -520,21 +480,6 @@ WHILE remaining_diff > 200 lines AND current_iteration < 8:
   2. CREATE branch and PR:
      - Branch from previous stack branch (or main for first)
      - Create PR with base = previous branch
-     - Apply description template with stack position
-
-  3. VALIDATE:
-     - PR size < 200 lines? YES -> continue
-     - CI passes on this branch? YES -> continue
-     - Independently reviewable? YES -> continue
-     - IF any NO: re-split this slice further
-
-  4. UPDATE remaining_diff:
-     - remaining_diff -= lines_in_this_pr
-     - pr_stack.append({ pr_number, branch, size, base })
-
-  OUTPUT: pr_stack with merge order and retarget instructions
-```
-
 ## Multi-Agent Dispatch
 
 For large feature PRs that need splitting across domains:
@@ -551,15 +496,6 @@ Agent 2 — API PR (worktree: pr-api)
 
 Agent 3 — Frontend PR (worktree: pr-frontend)
   - Extract frontend changes (components, pages, styles)
-  - Base on Agent 2's branch
-
-Agent 4 — Config/Infra PR (worktree: pr-infra)
-  - Extract infrastructure changes (docker, CI, env vars)
-  - Independent base (main), merge in parallel
-
-Each agent writes its own PR description with stack context.
-MERGE ORDER: Agent 4 (independent) + Agent 1 -> Agent 2 -> Agent 3
-```
 
 ## HARD RULES
 
@@ -743,17 +679,6 @@ AUTO-DETECT SEQUENCE:
 7. Auto-configure: use detected conventions for PR creation
 ```
 
-## Anti-Patterns
-
-- **Do NOT open PRs with 500+ lines.** They will not get a thorough review. Split them. No exceptions.
-- **Do NOT leave the PR description empty.** "See ticket" is not a description. The PR should stand on its own.
-- **Do NOT request review before self-reviewing.** Read your own diff first. Catch the obvious issues yourself.
-- **Do NOT keep PRs open for more than 3 days.** If a PR is aging, it means it's too large, the reviewer is overloaded, or the feature is not well-scoped.
-- **Do NOT stack more than 5 PRs deep.** Beyond 5, the rebase chain becomes fragile. Break into independent parallel PRs if possible.
-- **Do NOT force push during review.** Push new commits so reviewers can see incremental changes. Squash before merge.
-- **Do NOT request review from the entire team.** Tag 1-2 specific reviewers. Diffusion of responsibility means nobody reviews.
-
-
 ## PR Quality Loop
 
 Iterative protocol for ensuring every PR meets quality standards before requesting review:
@@ -805,161 +730,31 @@ WHILE current_iteration < max_iterations:
        - Commented-out code blocks: <N> (target: 0)
        - Unresolved TODOs: <N> (target: 0 or explicitly documented)
        - Hardcoded values: <N> (target: 0)
-    4. IF findings > 0: FIX before proceeding
 
-  IF gate == "description_check":
-    1. VALIDATE PR description against template:
-       REQUIRED SECTIONS:
-       [ ] Summary (1-3 sentences, not empty)
-       [ ] Problem/context (links to issue or explains why)
-       [ ] Solution (what approach was taken and key tradeoffs)
-       [ ] Changes (bulleted list of specific changes)
-       [ ] Testing (how it was tested, new tests added)
-       [ ] Checklist (standard items checked off)
-    2. SCORE description quality:
-       - All sections present: +1 per section (max 6)
-       - Issue/ticket linked: +1
-       - Screenshots for UI changes: +1
-       - Reviewer guidance notes: +1
-       - Total: <N>/9
-    3. IF score < 6: REWRITE missing sections before proceeding
+## Platform Fallback
+Run tasks sequentially with branch isolation if `Agent()` or `EnterWorktree` unavailable. See `adapters/shared/sequential-dispatch.md`.
+## Keep/Discard Discipline
+```
+After EACH PR quality gate:
+  1. MEASURE: Run CI checks — do tests, lint, and type checks pass?
+  2. VERIFY: Is the PR within size limits and description complete?
+  3. DECIDE:
+     - KEEP if: CI passes AND size < 400 lines AND description has all required sections
+     - DISCARD if: CI fails OR PR is XL without justification OR description is empty
+  4. Fix discarded items before requesting review.
 
-  IF gate == "checklist_verify":
-    1. RUN verification commands:
-       [ ] Tests pass: {test_cmd} → exit code 0
-       [ ] Lint clean: {lint_cmd} → exit code 0
-       [ ] Type check: {typecheck_cmd} → exit code 0 (if applicable)
-       [ ] Build succeeds: {build_cmd} → exit code 0
-       [ ] No secrets in diff: grep for API_KEY, SECRET, PASSWORD, TOKEN
-       [ ] No conflict markers: grep for <<<<<<<, =======, >>>>>>>
-       [ ] Branch is up to date with base: git fetch origin {base} && git merge-base --is-ancestor origin/{base} HEAD
-    2. ALL must pass. ANY failure blocks PR creation.
-    3. IF tests/lint/build fail: delegate to /godmode:fix, then re-run this gate
-
-  IF gate == "merge_criteria":
-    1. DEFINE merge readiness criteria:
-       REQUIRED (all must be true):
-       [ ] CI passes (all status checks green)
-       [ ] At least 1 approval from a qualified reviewer
-       [ ] No unresolved review comments (all threads resolved)
-       [ ] Branch is up to date with base (no merge conflicts)
-       [ ] PR size is within limits (< 400 lines or justified)
-       RECOMMENDED:
-       [ ] No "changes requested" reviews outstanding
-       [ ] Author has responded to all reviewer comments
-       [ ] Documentation updated if public API changed
-       [ ] CHANGELOG updated if user-facing change
-    2. SCORE: required_met / total_required
-    3. IF all required met: READY TO MERGE
-       IF any required missing: BLOCKED — list blockers
-
-  REPORT: "Gate {current_iteration}/{max_iterations}: {gate} — {PASS | FAIL | BLOCKED}"
-
-FINAL PR QUALITY SCORE:
-┌──────────────────────────────────────────────────────────┐
-│  PR QUALITY ASSESSMENT                                    │
-├──────────────────────┬────────┬───────────────────────────┤
-│  Gate                │ Status │ Details                    │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Size check          │ PASS   │ M (142 lines)             │
-│  Self-review         │ PASS   │ 0 issues found            │
-│  Description         │ PASS   │ 8/9 quality score         │
-│  Checklist verify    │ PASS   │ 7/7 checks passed         │
-│  Merge criteria      │ READY  │ Awaiting 1 approval       │
-├──────────────────────┼────────┼───────────────────────────┤
-│  Overall             │ READY  │ Ready for review           │
-└──────────────────────┴────────┴───────────────────────────┘
+Never request review on a PR that fails any automated check.
 ```
 
-### Review Checklist Protocol
-
-Standardized checklist for reviewers to ensure thorough, consistent reviews:
-
+## Stop Conditions
 ```
-REVIEWER CHECKLIST (apply to every PR review):
+STOP when ANY of these are true:
+  - All PRs are within size limits (< 400 lines or split)
+  - PR description template applied with all required sections
+  - CI passes and reviewers assigned
+  - User explicitly requests stop
 
-CORRECTNESS:
-[ ] Does the code do what the PR description says?
-[ ] Are edge cases handled (null, empty, boundary values)?
-[ ] Are error paths handled correctly (not swallowed, proper error types)?
-[ ] Is the logic correct for all input combinations?
-[ ] Are there race conditions or concurrency issues?
-
-DESIGN:
-[ ] Is this the right level of abstraction?
-[ ] Does this follow existing patterns in the codebase?
-[ ] Are there unnecessary dependencies introduced?
-[ ] Is the code in the right location (correct module/layer)?
-[ ] Could this be simpler without losing functionality?
-
-TESTING:
-[ ] Are new tests added for new functionality?
-[ ] Do tests cover both happy path and error cases?
-[ ] Are test names descriptive (document expected behavior)?
-[ ] Are tests independent (no shared mutable state)?
-[ ] Is test coverage adequate for the risk level of the change?
-
-SECURITY:
-[ ] No secrets, credentials, or PII in the diff?
-[ ] Input validation present for user-supplied data?
-[ ] SQL injection, XSS, CSRF protections maintained?
-[ ] Authentication/authorization checks not bypassed?
-[ ] No new attack surface exposed without documentation?
-
-PERFORMANCE:
-[ ] No N+1 queries introduced?
-[ ] No unbounded loops or data fetches?
-[ ] Pagination for list endpoints?
-[ ] Appropriate caching if accessing expensive resources?
-[ ] No unnecessary re-renders (frontend)?
-
-REVIEW COMMENT CONVENTIONS:
-  Prefix every comment with its weight:
-  "blocking: <comment>"     — Must fix before merge
-  "suggestion: <comment>"   — Improvement, not required
-  "nit: <comment>"          — Style/preference, not required
-  "question: <comment>"     — Seeking understanding, not blocking
-  "praise: <comment>"       — Acknowledging good work (important for morale)
-
-REVIEW RESPONSE TIMES:
-  Target: first review within 4 business hours
-  SLA: all PRs reviewed within 24 business hours
-  If you cannot review within SLA: decline and suggest alternate reviewer
+DO NOT STOP just because:
+  - One PR is borderline on size (split it or justify)
+  - Reviewers have not responded yet (that is outside this skill's scope)
 ```
-
-### Merge Criteria Enforcement
-
-```
-MERGE CRITERIA (enforced before every merge):
-
-HARD REQUIREMENTS (automated — cannot be bypassed):
-  1. CI green: all status checks pass
-  2. No merge conflicts: branch is rebased on latest base
-  3. Approvals met: >= {required_approvals} (default: 1)
-  4. No dismissed reviews: all "changes requested" resolved
-
-SOFT REQUIREMENTS (team-enforced — documented exceptions allowed):
-  1. All review threads resolved
-  2. PR description complete (all template sections filled)
-  3. Documentation updated for API/behavior changes
-  4. CHANGELOG entry for user-facing changes
-  5. Migration tested (if database changes present)
-  6. Feature flag configured (if partial feature)
-
-MERGE METHOD:
-  Default: squash merge (clean history, one commit per PR)
-  Exception: merge commit for release branches or when commit history matters
-  Never: rebase merge on shared branches without team agreement
-
-POST-MERGE CLEANUP:
-  1. Delete source branch (automated via GitHub settings)
-  2. Retarget dependent PRs (if stacked)
-  3. Verify CI on main after merge (catch integration issues)
-  4. Close related issues (via "Closes #NNN" in description)
-```
-
-## Platform Fallback (Gemini CLI, OpenCode, Codex)
-If your platform lacks `Agent()` or `EnterWorktree`:
-- Run PR tasks sequentially: backend PR, then API PR, then frontend PR, then config/infra PR.
-- Use branch isolation per task: `git checkout -b godmode-pr-{task}`, implement, commit, merge back.
-- See `adapters/shared/sequential-dispatch.md` for full protocol.
