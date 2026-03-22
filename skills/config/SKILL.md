@@ -133,7 +133,7 @@ FLAG TYPES:
 
 3. OPS FLAG — Control operational behavior
    Example: OPS_MAINTENANCE_MODE=false
-   Lifecycle: Create → Toggle as needed → Keep permanently
+   Lifecycle: Create → Toggle during incidents → Keep permanently
 
 4. PERMISSION FLAG — Gate features by user segment
    Example: PERMISSION_BETA_FEATURES=["user_123", "org_456"]
@@ -254,7 +254,7 @@ SECRET AUDIT:
 ## Key Behaviors
 
 1. **Never commit secrets.** If a secret is found in code or git history, flag it as CRITICAL immediately. Secrets belong in environment variables or secret managers, never in source code.
-2. **Schema is the source of truth.** Every config key should be defined in a schema with type, validation, and description. Undocumented keys are tech debt.
+2. **Schema is the source of truth.** Define every config key in a schema with type, validation, and description. Undocumented keys are tech debt.
 3. **Parity before deploy.** Never deploy to an environment with missing required config keys. Fail fast on startup if config is invalid.
 4. **Flags have lifecycles.** Every feature flag must have an owner, creation date, and expected removal date. Flags without expiry become permanent tech debt.
 5. **A/B tests need math.** Don't eyeball results. Calculate required sample size, run until significant, and use proper statistical tests.

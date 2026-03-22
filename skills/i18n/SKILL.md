@@ -374,83 +374,6 @@ STEP\tCOMPONENT\tLOCALE\tSTATUS\tDETAILS
 ## I18n Audit Loop
 
 ```
-I18N AUDIT LOOP:
-Project: <project name>
-Base locale: <e.g., en-US>
-Target locales: <list of all target locales>
-Audit date: <date>
-
-TRANSLATION COVERAGE AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Locale    │ Total Keys │ Translated │ Missing │ Coverage │ Stale │
-├──────────────────────────────────────────────────────────────────┤
-│  en-US     │ <N>        │ <N>        │ 0       │ 100%     │ 0     │
-│  es-ES     │ <N>        │ <N>        │ <N>     │ <pct>%   │ <N>   │
-│  de-DE     │ <N>        │ <N>        │ <N>     │ <pct>%   │ <N>   │
-│  ja-JP     │ <N>        │ <N>        │ <N>     │ <pct>%   │ <N>   │
-│  ar-SA     │ <N>        │ <N>        │ <N>     │ <pct>%   │ <N>   │
-│  zh-CN     │ <N>        │ <N>        │ <N>     │ <pct>%   │ <N>   │
-└──────────────────────────────────────────────────────────────────┘
-
-  Coverage checks:
-    FOR each locale:
-      1. COUNT total keys in base locale resource file
-      2. COUNT translated keys in target locale resource file
-      3. IDENTIFY missing keys (in base but not in target)
-      4. IDENTIFY stale keys (base value changed since last translation)
-      5. IDENTIFY orphan keys (in target but removed from base)
-      6. VALIDATE placeholders preserved ({name}, {{count}}, %s, etc.)
-      7. VALIDATE HTML/markup tags balanced and intact
-      8. CHECK max-length constraints (does translation fit the UI?)
-
-  Coverage thresholds:
-    CRITICAL: < 80% coverage — locale should not be shipped
-    WARNING:  80-95% coverage — usable but incomplete
-    PASS:     > 95% coverage — ready for production
-    TARGET:   100% coverage with 0 stale translations
-
-LOCALE TESTING AUDIT:
-┌──────────────────────────────────────────────────────────────────┐
-│  Test Type                │ Status   │ Locales Tested │ Issues   │
-├──────────────────────────────────────────────────────────────────┤
-│  Pseudo-localization      │ PASS|FAIL│ <pseudo>       │ <N>      │
-│  String length overflow   │ PASS|FAIL│ <de-DE, fi-FI> │ <N>      │
-│  Date format by locale    │ PASS|FAIL│ <all targets>  │ <N>      │
-│  Number format by locale  │ PASS|FAIL│ <all targets>  │ <N>      │
-│  Currency format by locale│ PASS|FAIL│ <all targets>  │ <N>      │
-│  Plural rules per locale  │ PASS|FAIL│ <all targets>  │ <N>      │
-│  Sorting/collation        │ PASS|FAIL│ <all targets>  │ <N>      │
-│  Unicode handling (emoji,  │ PASS|FAIL│ <all targets>  │ <N>      │
-│    CJK, diacritics)       │          │                │          │
-│  Bidirectional text (bidi)│ PASS|FAIL│ <ar, he>       │ <N>      │
-│  Screenshot regression    │ PASS|FAIL│ <all targets>  │ <N>      │
-│  Fallback behavior        │ PASS|FAIL│ <missing keys> │ <N>      │
-│    (missing key -> base)  │          │                │          │
-└──────────────────────────────────────────────────────────────────┘
-
-  Locale testing protocol:
-    FOR each target locale:
-      1. RENDER all key screens (login, dashboard, settings, checkout)
-      2. VERIFY no text truncation (compare against bounding boxes)
-      3. VERIFY correct date/number/currency format (spot-check 5 instances each)
-      4. VERIFY plural forms work for: 0, 1, 2, 5, 21, 100 (covers most CLDR rules)
-      5. VERIFY no raw keys visible to user (missing translations fall back gracefully)
-      6. CAPTURE screenshots and compare to baseline (flag layout regressions)
-      7. VERIFY sorting works correctly (e.g., German umlauts, Japanese kana order)
-
-RTL SUPPORT AUDIT:
-  Checks: dir="rtl" on <html>, CSS logical properties, text-align: start,
-  float: inline-start, flexbox logical order, icon mirroring (arrows reversed,
-  checkmarks NOT), form RTL input, progress indicators, breadcrumbs,
-  tables, scrollbar, mixed LTR/RTL content, no overlapping elements.
-
-  RTL violation scan:
-    1. GREP for directional CSS: margin-left/right, padding-left/right,
-       text-align: left/right, float: left/right, border-left/right
-    2. COUNT violations per file
-    3. GENERATE replacement map (margin-left -> margin-inline-start)
-    4. PRIORITIZE by page importance (landing page > settings)
-
 AUDIT ITERATION PROTOCOL:
 current_pass = 0
 max_passes = 3
@@ -458,9 +381,8 @@ areas = [translation_coverage, locale_testing, rtl_support]
 
 WHILE current_pass < max_passes:
   current_pass += 1
-
   FOR each area in areas:
-    1. RUN all checks
+    1. RUN all checks from Steps 9-10
     2. COLLECT failures with severity (CRITICAL | HIGH | MEDIUM | LOW)
     3. FIX all CRITICAL items before next pass
     4. FIX HIGH items if time permits
@@ -472,24 +394,8 @@ WHILE current_pass < max_passes:
   IF coverage >= 95% AND locale_tests_pass AND (rtl_clean OR no RTL locales):
     BREAK "I18n audit PASS. All targets met."
 
-  IF current_pass == max_passes AND any target not met:
-    REPORT "I18n audit incomplete after {max_passes} passes. Remaining: {issues}"
-
-FINAL REPORT:
-┌────────────────────────────────────────────────────────────────┐
-│  I18N AUDIT SUMMARY                                            │
-├────────────────────────────────────────────────────────────────┤
-│  Locales audited:     <N>                                      │
-│  Avg coverage:        <pct>%                                   │
-│  Lowest coverage:     <locale> at <pct>%                       │
-│  Stale translations:  <N> across <N> locales                   │
-│  RTL violations:      <N> remaining                            │
-│  Locale test pass:    <N>/<M> tests passing                    │
-│  Verdict:             PASS | NEEDS WORK                        │
-│  Next audit:          <scheduled date>                         │
-└────────────────────────────────────────────────────────────────┘
+  Coverage thresholds: <80% CRITICAL (do not ship), 80-95% WARNING, >95% PASS.
 ```
-
 
 ## Error Recovery
 | Failure | Action |

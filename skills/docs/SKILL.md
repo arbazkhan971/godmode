@@ -219,7 +219,7 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 3. **Coverage over perfection.** 80% coverage with good docs beats 20% coverage with perfect docs. Get the public API documented first.
 4. **Detect staleness ruthlessly.** A wrong doc is worse than no doc. Cross-reference everything against the actual codebase.
 5. **Match existing style.** If the project uses JSDoc, write JSDoc. If it uses NumPy-style docstrings, use those. Don't introduce a new convention.
-6. **Runbooks are commands, not prose.** Every runbook step should be a copy-pasteable command with expected output. Narrative text belongs in guides, not runbooks.
+6. **Runbooks are commands, not prose.** Write every runbook step as a copy-pasteable command with expected output. Narrative text belongs in guides, not runbooks.
 
 ## Flags & Options
 
@@ -231,7 +231,7 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 
 ## HARD RULES
 
-1. **Never generate documentation from function names alone.** Read the implementation body. `getUserById` might soft-delete check, cache-first, or throw specific errors. Describe actual behavior.
+1. **Never generate documentation from function names alone.** Read the implementation body. `getUserById` can soft-delete check, cache-first, or throw specific errors. Describe actual behavior.
 2. **Never document stale code.** Before writing docs for a function, verify it still exists and matches the current signature. `git log -1 -- <file>` to check recency.
 3. **Never ship docs without a plain-text fallback.** Every HTML doc must have a Markdown or text equivalent. Screen readers, terminals, and search indexers depend on it.
 4. **Never commit docs with broken internal links.** Grep for `](./` and `](#` references and verify each target exists before committing.

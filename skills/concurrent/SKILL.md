@@ -392,7 +392,7 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 4. **Lock ordering prevents deadlocks.** If you must use multiple locks, define and enforce a global acquisition order. Document it.
 5. **Test concurrency with stress and chaos.** Running a test once proves nothing about concurrent correctness. Run it 1000 times. Inject delays. Simulate failures.
 6. **Cancellation is not optional.** Every concurrent operation must support cancellation. Leaked goroutines, orphaned tasks, and zombie threads are resource leaks.
-7. **Start with the simplest correct solution.** A mutex that works is better than a lock-free structure that might work. Optimize only with profiling evidence.
+7. **Start with the simplest correct solution.** A mutex that works is better than a lock-free structure that could fail subtly. Optimize only with profiling evidence.
 8. **Document the concurrency model.** Future developers need to understand why a particular approach was chosen and what invariants must be maintained.
 
 ## Flags & Options
@@ -489,5 +489,5 @@ Append one row per session. Create the file with headers on first run.
 |---------|--------|
 | Deadlock detected | Use consistent lock ordering. Add lock timeout. Use `NOWAIT` or `SKIP LOCKED` in SQL. Log lock acquisition order for debugging. |
 | Race condition in tests (flaky) | Run stress test 1000x to reproduce reliably. Add explicit synchronization or use deterministic scheduling in test harness. |
-| Thread pool exhaustion | Check for blocking calls in async code. Add backpressure. Monitor active thread count. Consider work-stealing scheduler. |
+| Thread pool exhaustion | Check for blocking calls in async code. Add backpressure. Monitor active thread count. Switch to a work-stealing scheduler. |
 | Data corruption under load | Add mutex/lock around shared state. Use atomic operations for counters. Verify all shared state is documented with protecting lock. |

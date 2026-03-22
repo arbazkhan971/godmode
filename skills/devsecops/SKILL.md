@@ -12,7 +12,7 @@ description: |
 - User says "container scan", "dependency scan", "secret scanning in CI"
 - User says "security gate", "block deploys on vulnerabilities"
 - Building CI/CD pipelines that handle sensitive code or data
-- After `/godmode:pentest` reveals issues that should be caught automatically
+- After `/godmode:pentest` reveals issues to catch automatically
 - When `/godmode:cicd` needs security controls integrated
 - Compliance requires automated security testing (SOC2, PCI-DSS, HIPAA)
 
@@ -314,7 +314,7 @@ SECURITY METRICS DASHBOARD:
 
 ## Key Behaviors
 
-1. **Shift left, not shift burden.** Security scanning in CI should be fast enough that developers do not skip it. Baseline scans in PRs, full scans on schedule.
+1. **Shift left, not shift burden.** Keep CI security scanning fast enough that developers do not skip it. Baseline scans in PRs, full scans on schedule.
 2. **Block on critical, warn on the rest.** Only CRITICAL and HIGH severity findings should block merges. Medium and low get tracked but do not stop velocity.
 3. **No secrets pass the gate.** Secret scanning has zero exceptions. A leaked secret is an incident, not a finding to triage.
 4. **SBOM is a requirement, not optional.** Every release must have a Software Bill of Materials. This is increasingly a legal requirement, not just a best practice.
@@ -382,17 +382,6 @@ DAST INTEGRATION VALIDATION:
 
 LOG to.godmode/devsecops-integration-checks.tsv:
  timestamp	tool_type	tool_name	check_1	check_2	check_3	check_4	check_5	check_6	result
-```
-current_iteration = 0
-scan_queue = [SAST, SCA, secret_scan, container_scan, IaC_scan, DAST]
-max_iterations = len(scan_queue) + 4 # buffer for discovered scan types
-
-WHILE scan_queue is not empty AND current_iteration < max_iterations:
- current_iteration += 1
- scan_type = scan_queue.pop(next)
- configure and run scan_type
- collect findings (CRITICAL, HIGH, MEDIUM, LOW)
- FOR each CRITICAL/HIGH finding:
 ```
 
 ## Keep/Discard Discipline

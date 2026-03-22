@@ -117,7 +117,7 @@ Memory types:
 │ (short-term)        │ model context length. Contains current task state,   │
 │                     │ recent tool results, and immediate reasoning.        │
 │                     │                                                      │
-│ Conversation memory │ Full conversation history, possibly summarized.      │
+│ Conversation memory │ Full conversation history, summarized as needed.     │
 │ (session)           │ Stored in session store (Redis, database).           │
 │                     │ Summarize older turns to fit context window.         │
 │                     │                                                      │

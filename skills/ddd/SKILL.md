@@ -199,7 +199,7 @@ AGGREGATE BOUNDARY RULES:
    two aggregates in the same transaction.
 
 3. SIZE RULE: Keep aggregates small. If an aggregate has more than
-   3-4 entities, consider splitting.
+   3-4 entities, split it.
 
 4. REFERENCE RULE: Aggregates reference each other by ID only, never
    by direct object reference.

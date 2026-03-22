@@ -14,7 +14,7 @@ description: Scheduled tasks, cron jobs, background job queues, recurring work. 
 - User asks about cron syntax, timezone handling, or overlap protection
 - User needs distributed scheduling across multiple instances
 - User needs rate-limited or priority-aware recurring execution
-- Godmode orchestrator detects hardcoded `setInterval` or `setTimeout` loops that should be proper scheduled jobs
+- Godmode orchestrator detects hardcoded `setInterval` or `setTimeout` loops that need conversion to proper scheduled jobs
 
 ## Workflow
 

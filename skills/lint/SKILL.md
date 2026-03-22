@@ -373,7 +373,7 @@ EXIT when all rule groups enabled and violations resolved
 5. NEVER run the full linter in pre-commit hooks — lint only staged files. Full linting makes commits painful.
 6. NEVER skip the formatter — linting without formatting eliminates only half the style noise.
 7. NEVER keep warnings around — warnings are noise. Promote to error or remove the rule.
-8. ALWAYS configure linting with team agreement — rules imposed without consensus will be circumvented.
+8. ALWAYS configure linting with team agreement — the team will circumvent rules imposed without consensus.
 9. ALWAYS set `--max-warnings=0` in CI — prevent warning accumulation over time.
 10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
 

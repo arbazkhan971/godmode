@@ -34,7 +34,7 @@ Size classification:
   XS:  1-10 lines    (trivial — auto-merge candidate)
   S:   11-50 lines   (ideal — single concept, quick review)
   M:   51-200 lines  (acceptable — focused feature or fix)
-  L:   201-500 lines (too large — consider splitting)
+  L:   201-500 lines (too large — split into stacked PRs)
 ```
 
 ### Step 2: PR Size Optimization
@@ -292,8 +292,8 @@ HARD RULES — NEVER VIOLATE:
 1. **Small PRs are non-negotiable.** A 500-line PR will get rubber-stamped. Four 125-line PRs will get thoughtful reviews. Always split large changes.
 2. **Description is for the reviewer.** Write the PR description as if the reviewer knows nothing about what you have been working on. Give them the context to review efficiently.
 3. **Self-review first.** Read your own diff before clicking "Request review." You will catch 30% of issues yourself and save your reviewer time.
-4. **Stacked PRs for large features.** If a feature takes more than 200 lines, plan the stack before writing code. Each PR should be independently reviewable and mergeable.
-5. **Automate the boring parts.** Labels, assignment, size checks, and template enforcement should be automated. Humans focus on code quality, not metadata.
+4. **Stacked PRs for large features.** If a feature takes more than 200 lines, plan the stack before writing code. Make each PR independently reviewable and mergeable.
+5. **Automate the boring parts.** Automate labels, assignment, size checks, and template enforcement. Humans focus on code quality, not metadata.
 6. **Measure and improve.** Track cycle time, review rounds, and PR size. What gets measured gets improved.
 7. **Review others promptly.** PR review is a team sport. If you want fast reviews, review others' PRs fast. The golden rule applies.
 
@@ -409,7 +409,7 @@ WHILE current_iteration < max_iterations:
        XS:  1-10 lines     → auto-merge candidate, skip most gates
        S:   11-50 lines    → ideal, full review in <15 min
        M:   51-200 lines   → acceptable, review in <30 min
-       L:   201-400 lines  → WARNING: consider splitting
+       L:   201-400 lines  → WARNING: split into stacked PRs
        XL:  401+ lines     → BLOCKED: must split before review
     3. IF XL:
        - Analyze diff by concern: refactor, feature, tests, config, docs
@@ -425,9 +425,9 @@ WHILE current_iteration < max_iterations:
        FOR each file in changed_files:
          - [ ] Read the full diff for {file} — no skimming
          - [ ] Check for debug statements (console.log, print, debugger)
-         - [ ] Check for commented-out code (should be deleted, not commented)
+         - [ ] Check for commented-out code (delete it, do not comment it out)
          - [ ] Check for hardcoded values (magic numbers, URLs, credentials)
-         - [ ] Check for TODO/FIXME/HACK that should be resolved before merge
+         - [ ] Check for TODO/FIXME/HACK — resolve them before merge
          - [ ] Check for adequate error handling (no bare catch, no swallowed errors)
     2. RUN automated self-review:
        grep -rn 'console\.log\|debugger\|print(' $(git diff --name-only {base}..HEAD) 2>/dev/null

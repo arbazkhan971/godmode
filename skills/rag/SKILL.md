@@ -332,7 +332,7 @@ IF hallucination rate is high (> 5%):
   2. Add "If the answer is not in the context, say so" instruction
   3. Reduce the number of retrieved chunks to avoid noise diluting the signal
   4. Add a reranker to improve precision of retrieved chunks
-  5. Consider adding a hallucination detection step as a post-processing guard
+  5. Add a hallucination detection step as a post-processing guard
 
 IF latency is too high:
 ```

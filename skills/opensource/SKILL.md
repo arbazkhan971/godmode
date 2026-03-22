@@ -63,7 +63,7 @@ Thank you for your interest in contributing! This document provides
 ### Suggesting Features
 - Use the [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml) template
 - Describe the problem the feature would solve
-- Propose a solution and consider alternatives
+- Propose a solution and list alternatives
 
 ### Code Contributions
 - Look for issues labeled `good first issue` or `help wanted`

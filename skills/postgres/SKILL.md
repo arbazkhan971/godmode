@@ -298,6 +298,6 @@ INDEX TUNING DECISION TABLE:
 | Failure | Action |
 |---------|--------|
 | Query plan shows sequential scan on large table | Add appropriate index. Use `EXPLAIN (ANALYZE, BUFFERS)` to verify index is used. Check if statistics are stale (`ANALYZE table`). |
-| Lock contention on hot table | Use `SKIP LOCKED` for queue patterns. Reduce transaction duration. Consider partitioning. Check for long-running transactions with `pg_stat_activity`. |
+| Lock contention on hot table | Use `SKIP LOCKED` for queue patterns. Reduce transaction duration. Partition the table. Check for long-running transactions with `pg_stat_activity`. |
 | Connection pool exhaustion | Increase pool size or use PgBouncer. Check for leaked connections. Set `idle_in_transaction_session_timeout`. Monitor with `pg_stat_activity`. |
 | Migration locks table for too long | Use `CREATE INDEX CONCURRENTLY`. Add columns with `DEFAULT` (Postgres 11+ is instant). Split large data migrations into batches. |

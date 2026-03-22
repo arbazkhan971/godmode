@@ -708,7 +708,7 @@ Phase 3: Implement cell routing
 Phase 4: Deploy additional cells
   - Start with 2 cells (canary)
   - Gradually migrate users to cell-based routing
-  - Add cells as needed for scale or isolation
+  - Add cells when traffic or isolation requirements demand it
 
 RISKS:
 - Cross-cell queries (global reports, admin views)

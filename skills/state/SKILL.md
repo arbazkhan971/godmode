@@ -314,8 +314,8 @@ Commit: `"state: design <description> state architecture"`
 6. **State machines prevent impossible states.** If you find yourself writing `isLoading && !isError && !isSuccess`, you need a state machine. A machine can only be in one state at a time.
 7. **Persistence is not free.** localStorage is synchronous and blocks the main thread. IndexedDB is async but complex. Choose based on data size and access pattern.
 8. **Selectors prevent re-renders.** Always access store state through selectors that pick only what the component needs. Never subscribe to the entire store.
-9. **URL state is shareable state.** Filters, pagination, sort order, and selected items should be in the URL so users can share and bookmark.
-10. **Hydration must be idempotent.** SSR hydration should produce the same result whether it runs once or twice. No side effects in hydration logic.
+9. **URL state is shareable state.** Put filters, pagination, sort order, and selected items in the URL so users can share and bookmark.
+10. **Hydration must be idempotent.** SSR hydration produces the same result whether it runs once or twice. No side effects in hydration logic.
 
 ## Flags & Options
 

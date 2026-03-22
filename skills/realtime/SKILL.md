@@ -15,7 +15,7 @@ description: |
 - User needs bidirectional communication between client and server
 - User needs to broadcast updates to multiple connected clients
 - Application has features that require instant data synchronization
-- Godmode orchestrator detects polling patterns that should be push-based
+- Godmode orchestrator detects polling patterns that need conversion to push-based delivery
 
 ## Workflow
 

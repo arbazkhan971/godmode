@@ -231,7 +231,7 @@ POST-REFACTORING REPORT:
 ## Key Behaviors
 
 1. **Tests MUST pass after every step.** Refactoring means changing structure without changing behavior. If tests fail, the behavior changed. Revert.
-2. **One pattern per commit.** "Extract and rename and move" is three commits, not one. Each commit should be independently revertable.
+2. **One pattern per commit.** "Extract and rename and move" is three commits, not one. Make each commit independently revertable.
 3. **Impact analysis before touching code.** Know the blast radius before you start. Surprises during refactoring mean you didn't analyze well enough.
 4. **Low coverage = write tests first.** Never refactor code with <60% test coverage. Write characterization tests first.
 5. **Strangler over big bang.** For large refactors, migrate incrementally. Never rewrite a module in one commit.

@@ -340,7 +340,7 @@ DASHBOARD LAYOUT — Service Overview:
 
 1. **Three pillars are mandatory.** Metrics, logs, and traces are not optional. Each gives visibility that the others cannot.
 2. **Structured logs only.** No `console.log("something happened")`. Every log entry must be structured JSON with consistent fields.
-3. **Alerts must be actionable.** If an alert fires and the on-call cannot act on it, the alert is noise. Remove or fix it.
+3. **Make alerts actionable.** If an alert fires and the on-call cannot act on it, the alert is noise. Remove or fix it.
 4. **SLOs drive decisions.** Error budget remaining determines whether you ship features or fix reliability. Define SLOs before you need them.
 5. **Dashboards tell stories.** A dashboard is not a wall of graphs. It answers specific questions: "Is the service healthy?" "What changed?"
 6. **Cardinality matters.** Do not use high-cardinality labels (user_id, request_id) on metrics. That is what logs and traces are for.

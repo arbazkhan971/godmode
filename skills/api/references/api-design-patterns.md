@@ -67,7 +67,7 @@ GET /api/v1/dashboard
 - Reduces round trips significantly
 - Harder to cache (composite invalidation)
 - Tightly couples the API to a specific UI view
-- Consider GraphQL if you need many composite endpoints
+- Use GraphQL if you need many composite endpoints
 
 ---
 

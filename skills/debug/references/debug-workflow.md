@@ -165,7 +165,7 @@ git bisect reset
 
 ### When to Use
 - Code works in unit tests but fails in integration
-- External services might be causing the issue
+- External services are suspected of causing the issue
 - The bug only appears in certain environments
 
 ### Step-by-Step

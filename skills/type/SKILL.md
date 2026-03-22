@@ -290,7 +290,7 @@ Columns: phase, action, any_before, any_after, errors_fixed, tests_pass, safety_
 - **Enabling strict flag produces hundreds of errors**: Do not enable all flags at once. Follow the gradual adoption phases (Phase 1-4). Enable one flag, fix errors, commit, then proceed to the next flag.
 - **Third-party library lacks types**: Check DefinitelyTyped (`@types/library-name`). If not available, create a minimal `.d.ts` declaration file in `src/types/`. Do not use `any` as a workaround.
 - **Zod schema and existing type diverge**: Delete the manually written TypeScript interface. Use `z.infer<typeof Schema>` as the single source of truth. Never maintain both.
-- **Runtime validation is too slow**: Use `schema.parse()` only at boundaries. Inside service functions, trust the types. For hot paths, consider `schema.safeParse()` with early return instead of try/catch.
+- **Runtime validation is too slow**: Use `schema.parse()` only at boundaries. Inside service functions, trust the types. For hot paths, use `schema.safeParse()` with early return instead of try/catch.
 - **`noUncheckedIndexedAccess` produces too many errors**: Add explicit undefined checks where needed. Use `Array.at()` for safer access. Do not disable the flag — the errors it surfaces are real bugs.
 - **Auto-fix changes semantics**: Review all `as` casts and type assertions after fixing. Run the full test suite. If behavior changes, the previous code was relying on incorrect types.
 

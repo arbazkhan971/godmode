@@ -285,10 +285,10 @@ PREVENTION LAYER:
 1. **Leaks are emergencies.** An exposed secret is not a TODO item. It is an active security incident. Revoke first, then fix the code.
 2. **Never commit secrets.** Not even "temporarily." Git history is permanent. If it was committed, it is leaked.
 3. **Environment variables are not secret management.** They are better than hardcoding, but a proper secret manager (Vault, AWS SM, GCP SM) provides rotation, auditing, and access control.
-4. **.env.example is documentation.** Keep it in sync with .env. New developers should be able to set up from .env.example alone.
+4. **.env.example is documentation.** Keep it in sync with .env. New developers set up from .env.example alone.
 5. **Rotation is not optional.** Credentials age like milk. Even if a secret has not been compromised, rotate it on schedule.
 6. **Least privilege for secret access.** Each service reads only its own secrets. No shared service accounts reading everything.
-7. **Audit access regularly.** If a human accessed production secrets, there should be a documented reason.
+7. **Audit access regularly.** If a human accessed production secrets, document the reason.
 8. **Defense in depth.** Pre-commit hooks catch local mistakes. CI scans catch missed hooks. GitHub push protection catches everything else. Use all three layers.
 
 ## Flags & Options

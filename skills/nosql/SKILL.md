@@ -292,7 +292,7 @@ DO NOT STOP just because:
 ## Error Recovery
 | Failure | Action |
 |---------|--------|
-| Query performance degrades with data growth | Check index usage with `explain()`. Add compound indexes matching query patterns. Consider sharding for horizontal scale. |
+| Query performance degrades with data growth | Check index usage with `explain()`. Add compound indexes matching query patterns. Use sharding for horizontal scale. |
 | Data inconsistency across replicas | Check write concern settings. Use `majority` write concern for critical data. Add application-level reconciliation. |
 | Schema migration breaks existing documents | Add default values for new fields at application layer. Use lazy migration: update documents on read. Never drop fields without checking all consumers. |
 | Connection pool exhaustion | Increase pool size. Check for connection leaks (unclosed cursors, long-running transactions). Add connection timeout. |

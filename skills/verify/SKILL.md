@@ -414,7 +414,7 @@ EVIDENCE STANDARDS (for auditable verification):
    - Log the exact command (not paraphrased)
    - Log the working directory
    - Log relevant environment variables (without values for secrets)
-   - Another developer should be able to re-run and get the same result
+   - Another developer can re-run and get the same result
 
 4. EVIDENCE CHAIN format (append to .godmode/verify-log.tsv):
    timestamp	claim	layer	command	expected	actual	verdict	evidence_file	duration_ms	confidence

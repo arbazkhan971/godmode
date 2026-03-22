@@ -323,7 +323,7 @@ Commit: `"svelte: <project> — <N> routes, <N> components, <SvelteKit | Svelte>
 3. **Load functions, not fetch-in-component.** Data fetching belongs in `+page.server.ts` load functions, not in `onMount`. Load functions run on the server, are type-safe, and handle errors properly.
 4. **Form actions over API routes.** For mutations (create, update, delete), use form actions with `use:enhance`. They work without JavaScript and are progressively enhanced.
 5. **Progressive enhancement is free.** SvelteKit forms work without JavaScript by default. Adding `use:enhance` makes them better with JavaScript. Do not break this.
-6. **Prerender what you can.** Static pages should be prerendered at build time. Dynamic pages should be SSR with cache headers. Only client-render what truly cannot be server-rendered.
+6. **Prerender what you can.** Prerender static pages at build time. SSR dynamic pages with cache headers. Only client-render what truly cannot run on the server.
 7. **Choose the right adapter.** Match the adapter to your deployment target. `adapter-auto` works for CI detection, but explicit adapters give you platform-specific features.
 
 ## Flags & Options

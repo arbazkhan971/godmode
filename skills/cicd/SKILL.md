@@ -381,7 +381,7 @@ STOP when ANY of these are true:
   - Max iterations (15) reached
 
 DO NOT STOP just because:
-  - One stage cannot be optimized further (other stages might have room)
+  - One stage cannot be optimized further (other stages can still improve)
   - Cache hit rate is already >90% (there may be non-cache optimizations)
 ```
 

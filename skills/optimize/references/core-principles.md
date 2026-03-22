@@ -88,7 +88,7 @@ optimize: complete — <metric> <baseline> → <final> (<improvement>%)
 - Log the result THIRD
 - The log entry is descriptive (what happened), not predictive (what we think will happen)
 
-**Why it matters:** Prediction creates confirmation bias. If you write "this should improve by 20%" and then measure 18%, you might be satisfied. But if you measure first and see 18%, you evaluate that number on its own merits — maybe 18% isn't worth the added complexity.
+**Why it matters:** Prediction creates confirmation bias. If you write "this should improve by 20%" and then measure 18%, you will be satisfied. But if you measure first and see 18%, you evaluate that number on its own merits — 18% is likely not worth the added complexity.
 
 **Violation examples:**
 ```
@@ -171,7 +171,7 @@ Iteration 11: Aggressive caching — tests failed (stale data)
 - Max iterations reached → accept what you have
 - Marginal improvement (< 2% for last 3 kept iterations) → stop
 
-**Why it matters:** The first 3 iterations might yield 60% improvement. The next 10 might yield another 15%. The last 20 might yield 3%. At some point, the agent's effort is better spent elsewhere. Recognize that point and stop.
+**Why it matters:** The first 3 iterations typically yield 60% improvement. The next 10 yield another 15%. The last 20 yield 3%. At some point, the agent's effort is better spent elsewhere. Recognize that point and stop.
 
 **Stopping decision matrix:**
 ```

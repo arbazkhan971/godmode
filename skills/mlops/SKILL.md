@@ -233,7 +233,7 @@ DRIFT THRESHOLDS:
 Feature drift (PSI):
   < 0.1:  No drift
   0.1-0.2: Moderate drift — monitor closely
-  > 0.2:  Significant drift — investigate and consider retraining
+  > 0.2:  Significant drift — investigate and trigger retraining
 
 Performance degradation:
   < 2% drop:  Normal variance

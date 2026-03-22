@@ -335,7 +335,7 @@ WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
 
 ```
 MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
-1. NEVER consider a backup valid until a restore test has succeeded.
+1. NEVER treat a backup as valid until a restore test has succeeded.
 2. NEVER store backups in the same failure domain as production (same region, same account).
 3. EVERY backup MUST be encrypted at rest — no exceptions for any data tier.
 4. EVERY backup job MUST alert on failure — silent backup failures are the worst kind.

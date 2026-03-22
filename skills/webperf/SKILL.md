@@ -370,7 +370,7 @@ Verdicts:
 3. **Images are the lowest-hanging fruit.** Converting to WebP/AVIF, adding responsive srcset, and enabling lazy loading often saves more bytes than any code change.
 4. **Critical CSS eliminates render blocking.** Inlining above-the-fold CSS and async-loading the rest removes the single biggest cause of slow First Contentful Paint.
 5. **Fonts cause invisible text.** Without font-display: swap and proper preloading, custom fonts cause Flash of Invisible Text (FOIT). Users see a blank page while fonts download.
-6. **Cache everything possible.** Hashed assets should be cached for a year. Service workers provide offline caching. CDN edge caches reduce latency. Every cache miss is wasted time.
+6. **Cache everything possible.** Cache hashed assets for a year. Service workers provide offline caching. CDN edge caches reduce latency. Every cache miss is wasted time.
 7. **Third-party scripts are performance debt.** Every analytics tag, chat widget, and ad script runs on the main thread. Audit third-party impact and defer or remove what is not essential.
 
 ## Flags & Options

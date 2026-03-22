@@ -196,7 +196,7 @@ Setup is done when ALL of the following are true:
 2. **Accepting unvalidated commands:** Never store a test command without running it. A broken `test_cmd` wastes every downstream skill's time.
 3. **Storing secrets in config:** Never put API keys, tokens, or passwords in `.godmode/config.yaml`. Use environment variables or a secrets manager. If a command needs a secret, reference the env var name: `API_KEY=$MY_API_KEY npm test`.
 4. **Requiring setup for simple skills:** `/godmode:think` and `/godmode:debug` work without config. Do not force setup as a prerequisite for skills that do not need `test_cmd`/`lint_cmd`/`build_cmd`.
-5. **Over-configuring:** Do not ask 10 questions. Detect everything possible, validate by running, and present the result. User should be able to accept defaults and go.
+5. **Over-configuring:** Do not ask 10 questions. Detect everything possible, validate by running, and present the result. Let the user accept defaults and go.
 
 ## Examples
 

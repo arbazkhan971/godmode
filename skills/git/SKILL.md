@@ -275,7 +275,7 @@ TYPES:
 3. **History should tell a story.** Each commit on main should represent a logical, reviewable unit of work. Use interactive rebase to achieve this before merging.
 4. **Never rebase public branches.** Rebase your own feature branch onto main. Never rebase main onto anything. Never force-push shared branches.
 5. **Bisect is underused.** When a regression appears, reach for `git bisect` before reading through 100 commits manually. Automated bisect is even better.
-6. **Stashes are temporary.** If a stash survives more than a day, it should be a WIP commit or a branch. Stash lists longer than 3 entries are a smell.
+6. **Stashes are temporary.** If a stash survives more than a day, convert it to a WIP commit or a branch. Stash lists longer than 3 entries are a smell.
 7. **Worktrees eliminate context switching.** Instead of stashing, switching branches, and restoring state, open another worktree. Each worktree is isolated.
 
 ## Flags & Options

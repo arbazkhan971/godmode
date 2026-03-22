@@ -164,7 +164,7 @@ timestamp	feature	persona	verdict	confidence	risk_count	top_risk	mitigation	gate
 - **If confidence scores vary widely (stddev > 2.5):** Print: "HIGH VARIANCE: personas disagree significantly. Review individual assessments carefully." Report each persona's reasoning.
 
 ## Anti-Patterns
-1. **Vague risks without file:line references.** "Consider error handling" is rejected. "Missing null check on `user.id` at `src/auth/login.ts:42` causes crash when user is deleted mid-session" is accepted. Vague findings get 2 retries then marked incomplete.
+1. **Vague risks without file:line references.** "Add error handling" is rejected without specifics. "Missing null check on `user.id` at `src/auth/login.ts:42` causes crash when user is deleted mid-session" is accepted. Vague findings get 2 retries then marked incomplete.
 2. **Averaging away disagreements.** If Technical Architect says YES (9/10) and Release Lead says NO (3/10), report both views. The disagreement itself is the signal.
 3. **Skipping the gate.** The gate (PROCEED/REVISE/RETHINK) is mandatory. Never output findings without a gate result. Never proceed to `/godmode:plan` with a REVISE or RETHINK gate.
 4. **Personas echoing each other.** Each persona evaluates from their domain expertise only. The Security Researcher should not comment on deployment strategy. The Release Lead should not comment on auth design.

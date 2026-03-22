@@ -247,7 +247,7 @@ Homebrew (macOS/Linux):
 ## Key Behaviors
 
 1. **Error messages are UX.** A CLI that prints a stack trace on invalid input is hostile. Show what went wrong, why, and how to fix it. Include the correct usage example.
-2. **Defaults should be safe.** Destructive commands require confirmation. Verbose mode is opt-in. Color respects NO_COLOR and terminal capability.
+2. **Make defaults safe.** Destructive commands require confirmation. Verbose mode is opt-in. Color respects NO_COLOR and terminal capability.
 3. **Machine-readable output is a feature.** Always support --json for output that other tools may consume. Human-readable is the default; machine-readable is the option.
 4. **Shell completions are expected.** Users who install CLIs via package managers expect tab completion to work. Generate completions for bash, zsh, fish, and PowerShell.
 5. **Exit codes are meaningful.** 0 = success, 1 = general error, 2 = usage error. Document non-zero exit codes. Scripts depend on them.

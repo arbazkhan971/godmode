@@ -484,7 +484,7 @@ Columns: iteration, module(cpu/memory/concurrency/benchmark), finding_type, loca
 | Profiler shows no clear hotspot | Check sampling rate is sufficient. Profile under realistic load, not idle. Try a different profiler (CPU vs memory vs I/O). |
 | Optimization regresses another metric | Measure all key metrics before and after. Use A/B testing for production changes. Revert if tradeoff is unacceptable. |
 | Benchmark results are noisy | Increase iterations. Pin CPU frequency. Disable turbo boost. Run on dedicated hardware. Warm up JIT before measuring. |
-| Memory optimization increases latency | Profile both metrics together. Check if GC pressure shifted rather than reduced. Consider memory pooling or arena allocation. |
+| Memory optimization increases latency | Profile both metrics together. Check if GC pressure shifted rather than reduced. Use memory pooling or arena allocation. |
 
 ## Success Criteria
 1. Target metric improved with statistical confidence (median of 3+ runs, <5% variance).

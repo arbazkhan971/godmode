@@ -397,7 +397,7 @@ IF chart renders blank or does not appear:
   4. Test with hardcoded sample data to isolate data vs rendering issue
 
 IF chart is too slow (> 500ms render):
-  1. Check data point count — if > 1000, consider canvas/WebGL renderer
+  1. Check data point count — if > 1000, switch to canvas/WebGL renderer
   2. Enable data decimation or sampling for time series
   3. Debounce resize handlers to prevent layout thrashing
   4. Use virtualization for very large datasets

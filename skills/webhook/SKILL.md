@@ -158,5 +158,18 @@ Log to `.godmode/webhook-results.tsv`: `timestamp\tproject\tdirection\tevent_typ
 4. **SSRF attempt:** Block, log, verify blocklist covers all private ranges.
 5. **Queue backed up:** Scale workers, add per-destination concurrency limits.
 
+## Keep/Discard Discipline
+KEEP: webhook delivery succeeds AND retry logic works AND idempotency verified.
+DISCARD: delivery fails after max retries OR duplicate processing detected. Revert: `git reset --hard HEAD~1`.
+
+## Stop Conditions
+1. All webhook endpoints verified reliable (retry + idempotency + timeout)
+2. Budget exhausted (max iterations reached)
+3. Diminishing returns (3 consecutive iterations < 1% improvement)
+4. Stuck (>5 consecutive discards)
+
+## Output Format
+Webhook: {endpoints_audited} endpoints, {issues_found} issues -> {issues_fixed} fixed. Status: {DONE|PARTIAL}.
+
 ## Platform Fallback
 Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-webhook-{task}`. See `adapters/shared/sequential-dispatch.md`.

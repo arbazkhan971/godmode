@@ -334,7 +334,7 @@ Commit: `"eval: <system> — v<version>, <N> examples, correctness=<val>, faithf
 2. **Baseline everything.** Every metric is meaningless without a baseline. Compare against the previous version, a naive baseline, or a published benchmark. Never report absolute numbers alone.
 3. **Separate retrieval from generation.** In RAG systems, evaluate retrieval quality and generation quality independently. A bad answer from good retrieval is a different problem than a bad answer from bad retrieval.
 4. **LLM judges need calibration.** An uncalibrated LLM judge can be worse than no evaluation. Calibrate against human judgments. Measure agreement. Refine rubrics.
-5. **Statistical significance is not optional.** A 2% improvement might be noise. Run significance tests. Report confidence intervals. Do not deploy based on noise.
+5. **Statistical significance is not optional.** A 2% improvement is often noise. Run significance tests. Report confidence intervals. Do not deploy based on noise.
 6. **Regression tests only grow.** Every production bug becomes a regression test. The regression set never shrinks. It is the immune system of your AI system.
 7. **Evaluation datasets are living artifacts.** They need versioning, maintenance, and periodic expansion. A stale benchmark produces false confidence.
 

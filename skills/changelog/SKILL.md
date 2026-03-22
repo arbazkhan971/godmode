@@ -70,7 +70,7 @@ All notable changes to this project will be documented in this file.
 ```
 CHANGELOG RULES:
 1. Changelogs are for humans, not machines
-2. There should be an entry for every version
+2. Include an entry for every version
 ```
 
 ### Step 4: Auto-Generate Changelog
@@ -218,7 +218,7 @@ npm test
 ## Common Issues
 
 ### "TypeError: createClient is not a function"
-You may be using a named import instead of default import:
+Check if a named import is used instead of default import:
 ```typescript
 // Wrong
 import { createClient } from '<package>';

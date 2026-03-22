@@ -82,7 +82,7 @@ Key red flags:
 ```
 RED FLAGS:
 [ ] Sequential scan on large table (> 10K rows) -- needs index
-[ ] Nested loop join on large tables -- consider hash/merge join
+[ ] Nested loop join on large tables -- switch to hash/merge join
 [ ] Rows estimated vs actual off by > 10x -- stale statistics
 [ ] Sort on disk (external merge) -- needs more work_mem or index
 [ ] Filter removing > 90% of scanned rows -- index needed
@@ -146,7 +146,7 @@ DIAGNOSIS: Inefficient join strategy
 Evidence: Nested Loop join between <table_a> (<N> rows) and <table_b> (<M> rows)
           Resulting in <N*M> comparisons
 Solution: Ensure join columns are indexed on both sides
-          Consider rewriting as a subquery or CTE if appropriate
+          Rewrite as a subquery or CTE if the join produces excessive rows
 Impact:   Nested Loop -> Hash Join, estimated speedup: <X>x
 ```
 
@@ -185,7 +185,7 @@ Impact:   Bitmap scan -> single Index Scan, estimated speedup: <X>x
 DIAGNOSIS: Full table scan for aggregation
 Evidence: Seq Scan + Sort + GroupAggregate on <table> (<N> rows)
 Solution: Add index matching GROUP BY columns
-          Consider materialized view for frequently-run aggregations
+          Use a materialized view for frequently-run aggregations
           Use approximate counts (HyperLogLog) for cardinality estimation
 Impact:   Seq Scan -> Index Scan/Index Only Scan, estimated speedup: <X>x
 ```
@@ -387,7 +387,7 @@ HARD RULES — NEVER VIOLATE:
 1. **Measure before and after.** Never claim an optimization without numbers. Run EXPLAIN ANALYZE before the change, apply the fix, run EXPLAIN ANALYZE after.
 2. **Read the EXPLAIN output line by line.** Don't just check if there's a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
 3. **Prefer index-only solutions.** Adding an index is cheaper and safer than rewriting application code. Start with indexes, escalate to query rewrites only if needed.
-4. **Consider write trade-offs.** Every index speeds up reads but slows down writes. Always state the trade-off explicitly.
+4. **State write trade-offs.** Every index speeds up reads but slows down writes. Always state the trade-off explicitly.
 5. **Fix N+1 at the ORM level.** Don't just optimize the SQL -- fix the application code that generates the N+1 pattern. Use eager loading, batching, or data loaders.
 6. **CONCURRENTLY for production indexes.** In PostgreSQL, always use CREATE INDEX CONCURRENTLY in production to avoid locking the table. In MySQL, use ALTER TABLE ... ADD INDEX (online DDL) or pt-online-schema-change.
 7. **Statistics matter.** Before blaming the query, check if table statistics are current. Stale statistics cause bad plans.
@@ -487,6 +487,6 @@ VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 | Failure | Action |
 |---------|--------|
 | Query returns wrong results | Check JOIN conditions and WHERE clauses. Verify NULL handling. Test with known data set. Compare against manual calculation. |
-| Query too slow (>1s) | Run EXPLAIN ANALYZE. Check for missing indexes, full table scans, or unnecessary JOINs. Consider materialized views for complex aggregations. |
+| Query too slow (>1s) | Run EXPLAIN ANALYZE. Check for missing indexes, full table scans, or unnecessary JOINs. Use materialized views for complex aggregations. |
 | Query works in dev but fails in production | Check for data volume differences. Verify index existence in production. Check for parameter sniffing issues. Test with production-like data. |
 | ORM-generated query is inefficient | Use raw SQL for complex queries. Check for N+1 patterns. Use query builder for dynamic conditions. Profile ORM query output. |
