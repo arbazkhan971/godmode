@@ -184,8 +184,8 @@ Print: `Skill: OWASP {tested}/10, STRIDE {tested}/6. {before} findings → {afte
 2. Cover all OWASP Top 10 x 4 personas = 40 test cases minimum. Real payloads only.
 3. Never approve with Critical findings open. Critical+High count in final verdict.
 4. Findings without code evidence from any persona = DISCARD with justification.
-5. Auto-fix (if `--fix`) must run full test suite after each fix — revert if ANY test breaks.
-6. Never ask to continue. Loop autonomously until all OWASP + STRIDE categories are tested.
+5. Auto-fix (if `--fix`) must run full test suite after each fix — verify with guard (test_cmd && lint_cmd). Revert if ANY test breaks.
+6. Never ask to continue. Loop autonomously until all OWASP + STRIDE categories are tested. Measure baseline finding count and track improvement per iteration.
 
 ## Rules
 1. Every finding: file:line + exploit steps + proof (curl command, test case, or code path). No theoretical risks.

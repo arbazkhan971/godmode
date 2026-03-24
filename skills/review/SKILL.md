@@ -97,6 +97,6 @@ If your platform lacks parallel agent dispatch:
 
 ## Success Criteria
 1. Every MUST-FIX and SHOULD-FIX has file:line, description, and concrete code fix.
-2. All auto-fixed NITs pass the full test suite.
-3. Verdict score computed from all 4 agents (Correctness, Security, Performance, Style).
+2. All auto-fixed NITs pass the full test suite — verify with guard (test_cmd && lint_cmd).
+3. Verdict score computed from all 4 agents (Correctness, Security, Performance, Style). Measure baseline finding count before and after auto-fixes.
 4. Re-review completed if score < 8 (max 3 iterations).
