@@ -97,7 +97,7 @@ Print a single formatted table:
 | Expected | {pass_condition}                              |
 | Actual   | {actual_value}                                |
 | Verdict  | PASS / FAIL                                   |
-| Evidence | {first 10 lines of output, or relevant excerpt} |
+| Evidence | {first 10 lines of output, or key excerpt} |
 | File     | /tmp/godmode-verify-{timestamp}.txt           |
 ```
 
@@ -289,7 +289,7 @@ EVIDENCE STANDARDS (for auditable verification):
 3. EVERY verification stays reproducible:
    - Log the exact command (not paraphrased)
    - Log the working directory
-   - Log relevant environment variables (without values for secrets)
+   - Log required environment variables (without values for secrets)
    - Another developer can re-run and get the same result
 
 4. EVIDENCE CHAIN format (append to .godmode/verify-log.tsv):

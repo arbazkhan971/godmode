@@ -77,7 +77,7 @@ Before generating any migration, assess risk. This is the most critical step.
 RISK ASSESSMENT:
 Level:          <SAFE | CAUTION | DANGEROUS | BREAKING>
 Reversible:     <YES | PARTIAL | NO>
-Data loss risk: <NONE | POTENTIAL | CERTAIN>
+Data loss risk: <NONE | POTENTIAL | GUARANTEED>
 Downtime:       <ZERO | BRIEF | EXTENDED>
 Lock duration:  <NONE | ROW | TABLE — estimate in seconds>
 ```

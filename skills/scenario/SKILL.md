@@ -53,7 +53,7 @@ Print per dimension: `[scenario:{dimension}] {N} scenarios found`
 
 ### 4. Score Every Scenario
 For each scenario, assign:
-- **Likelihood (L)**: 1 = nearly impossible, 2 = rare, 3 = occasional, 4 = likely, 5 = certain
+- **Likelihood (L)**: 1 = nearly impossible, 2 = rare, 3 = occasional, 4 = likely, 5 = inevitable
 - **Impact (I)**: 1 = cosmetic, 2 = degraded UX, 3 = feature broken, 4 = data loss/security breach, 5 = system down/compliance violation
 
 Score = L x I. Severity thresholds:
@@ -172,9 +172,9 @@ Status values: `TEST_PASS` (edge case is handled), `TEST_FAIL` (bug found), `NO_
 - **If the feature is too large (>20 files)**: Break it into sub-features. Run scenario analysis per sub-feature. Merge results into one table and one TSV log.
 
 ## Hard Rules
-1. All 12 dimensions must be explored — skipping requires a one-sentence justification.
+1. Explore all 12 dimensions — skipping requires a one-sentence justification.
 2. Every scenario must have a code reference (file:line) or spec section heading.
-3. Every scenario must be scored: L(1-5) x I(1-5). No zero scores, no unscored rows.
+3. Score every scenario: L(1-5) x I(1-5). No zero scores, no unscored rows.
 4. All CRITICAL and HIGH scenarios must have runnable tests — not stubs, not TODOs.
 5. Generated tests must use the project's actual test framework and real code paths.
 6. Measure before/after. Guard: test_cmd && lint_cmd.
@@ -182,7 +182,7 @@ Status values: `TEST_PASS` (edge case is handled), `TEST_FAIL` (bug found), `NO_
 8. Never ask to continue. Loop autonomously.
 
 ## Anti-Patterns
-1. **Never skip a dimension without justification.** All 12 dimensions apply to most features. "Not relevant" requires a one-sentence explanation of why.
+1. **Never skip a dimension without justification.** All 12 dimensions apply to most features. "Not applicable" requires a one-sentence explanation of why.
 2. **Never leave a scenario unscored.** Every row needs L, I, and Score. Guessing is better than omitting — you can always note "estimate" in the TSV.
 3. **Never write stub tests.** `it('should handle X', () => { /* TODO */ })` is not a test. Either write a complete ARRANGE/ACT/ASSERT or don't generate the file.
 4. **Never generate scenarios without code references.** "SQL injection could happen" is useless. "SQL injection at `src/search.ts:42` where `req.query.q` is interpolated into `db.query()`" is actionable.

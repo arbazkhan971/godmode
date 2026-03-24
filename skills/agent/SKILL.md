@@ -108,7 +108,7 @@ Memory types:
 | Working memory | Current conversation context window. Limited by |
 | (short-term) | model context length. Contains current task state, |
 |  | recent tool results, and immediate reasoning. |
-| Conversation memory | Full conversation history, summarized as needed. |
+| Conversation memory | Full conversation history, summarized on overflow. |
 |--|--|
 | (session) | Stored in session store (Redis, database). |
 |  | Summarize older turns to fit context window. |
@@ -236,7 +236,7 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 6. Safety violation rate MUST equal 0% — any safety failure is a blocking issue.
 7. Log every agent step in structured format:
    STEP\tACTION\tTOOL\tRESULT\tTOKENS\tLATENCY
-8. Test trajectories, not just final outputs — correct answer via unsafe path is a failure.
+8. Test trajectories, not only final outputs — correct answer via unsafe path is a failure.
 9. NEVER give agents tools they do not need — fewer tools = better tool selection.
 10. Observability is mandatory — if you cannot trace every step, do not deploy.
 ```
@@ -290,7 +290,7 @@ STOP when ANY of these are true:
   - All guardrails (max steps, cost budget, confirmation gates) verified working
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Completion rate is below 100% on edge cases (document them, iterate later)
   - A single tool has high error rate (fix the tool, not the agent)
 ```

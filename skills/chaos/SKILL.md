@@ -321,8 +321,8 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - A rollback fails (investigate before running more experiments)
 
-DO NOT STOP just because:
-  - Some failure domains scored C instead of A (document and prioritize fixes)
+DO NOT STOP because:
+  - Failure domains scored C instead of A (document and prioritize fixes)
   - Production experiments are not yet approved (complete staging experiments first)
 ```
 

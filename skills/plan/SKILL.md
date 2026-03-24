@@ -182,7 +182,7 @@ The plan is done when ALL of the following are true:
 2. Max 5 files per task. More than 5 = split into subtasks with a shared interface.
 3. No circular dependencies — detect and break cycles before writing the plan.
 4. Same-round tasks must have zero file overlap — if unavoidable, make sequential.
-5. Plan must be committed to git and validated as parseable YAML before proceeding.
+5. Commit the plan to git and validate it as parseable YAML before proceeding.
 
 ## Keep/Discard Discipline
 ```

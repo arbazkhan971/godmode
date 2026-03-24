@@ -266,7 +266,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
 
 DO NOT STOP because:
-  - Some secrets have not been rotated yet (remediate leaks first, rotate second)
+  - Secrets have not been rotated yet (remediate leaks first, rotate second)
   ...
 ```
 

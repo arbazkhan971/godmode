@@ -93,7 +93,7 @@ PERFORMANCE AUDIT:
 [ ] OnPush on all components          [ ] Lazy loading for feature routes
 [ ] trackBy on all *ngFor / @for      [ ] Signals for local state
 [ ] No subscriptions without cleanup  [ ] Bundle budget configured
-[ ] NgOptimizedImage for images       [ ] SSR/prerendering where appropriate
+[ ] NgOptimizedImage for images       [ ] SSR/prerendering for public routes
 [ ] Zoneless evaluated                [ ] No unnecessary re-renders
 ```
 

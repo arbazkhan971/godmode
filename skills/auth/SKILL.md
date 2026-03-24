@@ -324,7 +324,7 @@ DO NOT STOP only because:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| JWT verification fails after key rotation | Ensure both old and new keys are accepted during rotation window. Check `kid` header in token matches available keys. |
+| JWT verification fails after key rotation | Accept both old and new keys during rotation window. Check `kid` header in token matches available keys. |
 | OAuth callback returns error | Verify redirect URI matches exactly (including trailing slash). Check client secret is current. Inspect error parameter in callback URL. |
 | Password hash migration fails | Keep old hash algorithm as fallback. Re-hash on successful login with old algorithm. Never lock out users during migration. |
 | Rate limiter blocks legitimate users | Check threshold is per-user, not global. Verify IP detection handles proxies (X-Forwarded-For). Add allowlist for known IPs if needed. |

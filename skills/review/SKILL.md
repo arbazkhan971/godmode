@@ -74,7 +74,7 @@ STOP when FIRST of:
 5. Deduplicate same file:line across agents -- keep highest severity, first agent's fix.
 
 ## Rules
-1. Every finding: file:line + suggested fix (code). No vague feedback like 'improve' or 'could be better'.
+1. Every finding: file:line + suggested fix (code). No vague feedback like 'improve' or 'needs work'.
 2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Review against spec + tests, not personal style. No bikeshedding.
 3. Auto-fix only safe changes. Never auto-fix logic, public APIs, or security-related code.
 

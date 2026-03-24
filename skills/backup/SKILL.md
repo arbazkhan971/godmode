@@ -66,7 +66,7 @@ BACKUP VERIFICATION SCHEDULE:
 ```
 
 ### Step 5: Data Integrity Verification
-Ensure backed-up data is consistent and usable:
+Verify backed-up data is consistent and usable:
 ```
 DATA INTEGRITY CHECKS:
 | Check | Method | Frequency |

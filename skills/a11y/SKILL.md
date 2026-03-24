@@ -277,7 +277,7 @@ STOP when ANY of these are true:
   - All WCAG 2.1 AA criteria have status PASS or N/A
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - MEDIUM or LOW findings remain (document them with remediation plan)
   - One automated tool still shows warnings (verify manually)
 ```
@@ -288,6 +288,6 @@ DO NOT STOP just because:
 | axe-core reports false positive | Verify with manual inspection. If confirmed false positive, add `// eslint-disable-next-line` with justification. Do not suppress without checking. |
 | Screen reader behaves differently than expected | Test in NVDA (Windows) and VoiceOver (macOS). ARIA roles may behave differently across readers. Use native HTML elements over ARIA when possible. |
 | Color contrast fails but design team insists | Document the exception. Provide alternative: large text (18px+) has lower ratio requirement (3:1 vs 4.5:1). Suggest adjacent high-contrast alternative. |
-| Keyboard trap in modal | Ensure focus is trapped inside modal with `Tab`/`Shift+Tab`, and `Escape` closes it. Restore focus to trigger element on close. |
+| Keyboard trap in modal | Trap focus inside modal with `Tab`/`Shift+Tab`, and `Escape` closes it. Restore focus to trigger element on close. |
   ...
 ```

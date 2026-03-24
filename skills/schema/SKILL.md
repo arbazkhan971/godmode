@@ -210,7 +210,7 @@ MULTI-TENANCY STRATEGIES:
 | Shared schema     | Row-level (WHERE   | Low               | SaaS with many    |
 | (tenant_id col)   | tenant_id = ?)    |                   | small tenants     |
 | Schema per tenant | Schema-level       | Medium            | Medium tenants    |
-| (PostgreSQL       | (SET search_path) |                   | needing some      |
+| (PostgreSQL       | (SET search_path) |                   | needing moderate  |
 |  schemas)         |                   |                   | isolation         |
 | Database per      | Full database      | High              | Enterprise with   |
 | tenant            | isolation          |                   | compliance needs  |

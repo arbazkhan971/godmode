@@ -328,7 +328,7 @@ Never keep an optimization that makes the pipeline faster but breaks test reliab
 ```
 
 ## Stuck Recovery
-If >5 consecutive optimizations produce no improvement: re-measure baseline, profile step by step, consider architectural changes (sharding, parallel stages, self-hosted runners). If still stuck, log `stop_reason=optimization_plateau`.
+If >5 consecutive optimizations produce no improvement: re-measure baseline, profile step by step, evaluate architectural changes (sharding, parallel stages, self-hosted runners). If still stuck, log `stop_reason=optimization_plateau`.
 
 ## Stop Conditions
 ```

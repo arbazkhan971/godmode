@@ -174,7 +174,7 @@ npm install -g @openapitools/openapi-generator-cli
 
 ```yaml
 # Alternative: openapi-typescript (lightweight, type-only)
-# Generates TypeScript types from OpenAPI — no runtime, just types
+# Generates TypeScript types from OpenAPI — no runtime, types only
 npx openapi-typescript openapi.yaml -o src/api/schema.d.ts
 ```
 
@@ -303,7 +303,7 @@ DO NOT STOP only because:
 |--|--|
 | OpenAPI spec validation fails | Run `swagger-cli validate` to get specific errors. Fix schema references, missing required fields, and invalid types. |
 | Generated docs drift from implementation | Add CI check: compare spec against route handlers. Use spec-first or code-first consistently, never mix. |
-| Examples fail validation against schema | Ensure example values match declared types, enums, and patterns. Auto-generate examples from schema as fallback. |
+| Examples fail validation against schema | Verify example values match declared types, enums, and patterns. Auto-generate examples from schema as fallback. |
 | Docs build breaks after API change | Pin docs generator version. Run docs build in CI on every PR that touches API routes. |
 
 ## Output Format

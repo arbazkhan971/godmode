@@ -57,11 +57,11 @@ git ls-files | head -150
 # Entry points and configs
 cat package.json 2>/dev/null || cat pyproject.toml 2>/dev/null || cat go.mod 2>/dev/null
 
-# Existing types/interfaces relevant to the feature
+# Existing types/interfaces related to the feature
 grep -rn "interface\|type\|class\|def " --include="*.ts" --include="*.py" --include="*.go" | head -40
 
 # Recent changes in related areas
-git log --oneline -15 -- <relevant-paths>
+git log --oneline -15 -- <affected-paths>
 
 # Existing test patterns
 ls -la tests/ test/ __tests__/ spec/ 2>/dev/null
@@ -84,7 +84,7 @@ Never propose an approach that contradicts existing patterns unless the spec exp
 For each approach, provide exactly 5 fields:
 
 ```
-For each approach (A, B, and optionally C if meaningfully different), fill this template:
+For each approach (A, B, and C if meaningfully different), fill this template:
 
 APPROACH {A|B|C}: {name}
 What: {1-2 sentences describing the approach}
@@ -282,8 +282,8 @@ Think: problem — in-app notification feed with unread count and mark-as-read.
 ## Hard Rules
 1. Max 3 approaches — pick one and move on. No analysis paralysis.
 2. Always scan existing code first (unless greenfield) — reuse patterns, do not reinvent.
-3. Success criteria must be a shell command or metric with threshold — never subjective prose.
-4. Spec must be under 100 lines — if longer, decompose into sub-features.
+3. Write success criteria as a shell command or metric with threshold — never subjective prose.
+4. Keep spec under 100 lines — if longer, decompose into sub-features.
 5. Never commit a spec with invalid file paths — verify with `git ls-files` before commit.
 6. Measure before/after. Guard: test_cmd && lint_cmd.
 7. On failure: git reset --hard HEAD~1.

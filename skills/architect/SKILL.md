@@ -38,7 +38,7 @@ PATTERN: <Name>
 └── Best when: <conditions where this pattern wins>
 ```
 
-Candidate patterns: Modular Monolith, Microservices, Serverless/FaaS, Event-Driven, CQRS, Hexagonal (Ports & Adapters). Evaluate the most relevant 3-6 for the system.
+Candidate patterns: Modular Monolith, Microservices, Serverless/FaaS, Event-Driven, CQRS, Hexagonal (Ports & Adapters). Evaluate the top 3-6 for the system.
 
 ### Step 3: Architecture Comparison Matrix
 Present a structured comparison:

@@ -192,7 +192,7 @@ Statistical significance:
 
 1. **Reproducibility is non-negotiable.** Every experiment must record: code version (git SHA), data version, hyperparameters, random seeds, and environment. Anyone reproduces the result by following these records.
 2. **Baselines first.** Never evaluate a model without a baseline. Even a naive baseline (majority class, mean prediction) provides essential context.
-3. **Statistical significance matters.** A 0.2% improvement could be noise. Test significance before claiming improvement.
+3. **Statistical significance matters.** A 0.2% improvement could be noise. Test significance before claiming gains.
 4. **Evaluation on held-out test set.** Never tune hyperparameters on the test set. That is the final, one-time evaluation. Validation set is for tuning.
 5. **Bias is a blocker.** A model that performs well on average but poorly for a protected group is not ready to deploy. Check before shipping.
 6. **Track negative results.** Failed experiments are valuable. They tell you what does not work and prevent others from repeating dead ends.
@@ -263,7 +263,7 @@ WHILE current_experiment < total_experiments:
    Bias is a deployment blocker, not a nice-to-have.
 
 5. ALWAYS test statistical significance before claiming improvement.
-   A 0.2% improvement could be noise. Use paired bootstrap (10K iterations).
+   A 0.2% delta could be noise. Use paired bootstrap (10K iterations).
 
 ```
 ## Output Format
@@ -300,7 +300,7 @@ The ML skill is complete when ALL of the following are true:
 2. Best model beats baseline by a meaningful margin on the primary metric
 3. Test set is used exactly once for final evaluation (no tuning on test data)
 4. No data leakage detected (no target leakage, no train/test overlap, no future data)
-5. Bias/fairness check passes for all relevant subgroups
+5. Bias/fairness check passes for all protected subgroups
 6. All experiments are logged with hyperparameters, metrics, and outcomes
 7. Failed experiments are documented with reasons for failure
 8. Model artifacts are versioned and reproducible from logged configuration

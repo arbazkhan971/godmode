@@ -202,7 +202,7 @@ WHILE current_iteration < max_iterations:
   Ship type:       {pr | release | deploy}
   Rollback command: {exact command}
   Time to rollback: < {N} minutes
-  Data impact:     {none | possible | certain}
+  Data impact:     {none | possible | guaranteed}
   Verification:    {verification command}
   Escalation:      {who to contact if rollback fails}
   Backup taken:    {YES / NO / N/A}

@@ -172,7 +172,7 @@ timestamp	feature	persona	verdict	confidence	risk_count	top_risk	mitigation	gate
 2. Gate is pure voting: PROCEED = 3 YES, REVISE = 1-2 REVISE + 0 NO, RETHINK = any NO.
 3. Never gate on incomplete findings — exclude from gate calculation, log separately.
 4. Each persona evaluates from their domain only — no cross-talk between persona outputs.
-5. Praise must be non-obvious and specific — "looks clean" is rejected.
+5. Praise must be non-obvious and specific — reject "looks clean."
 
 ## Anti-Patterns
 1. **Vague risks without file:line references.** "Add error handling" is rejected without specifics. "Missing null check on `user.id` at `src/auth/login.ts:42` causes crash when user is deleted mid-session" is accepted. Vague findings get 2 retries then marked incomplete.
@@ -250,7 +250,7 @@ Predict: Gate: RETHINK. Verdicts: 1Y 1R 1N. Validated risks: 4. Incomplete: 1.
 ```
 $ /godmode:predict db-migration-cli
 Evaluating: new CLI tool for database migrations (85 lines)
-Note: greenfield evaluation — risks are architectural, not code-specific.
+Greenfield evaluation — risks are architectural, not code-specific.
 
 [Technical Architect] YES 7/10 — 2 risks (no rollback strategy @ proposed:migrations/runner.ts, schema diff unspecified @ proposed:migrations/diff.ts)
 [Security Researcher] YES 8/10 — 1 risk (SQL injection via string concat in templates @ proposed:migrations/template.ts:15)

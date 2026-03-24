@@ -165,7 +165,7 @@ DASHBOARD PRINCIPLES:
   ...
 ```
 ### Step 9: Performance Optimization
-Ensure charts render efficiently with large datasets:
+Optimize chart rendering for large datasets:
 
 ```
 PERFORMANCE STRATEGIES:
@@ -223,7 +223,7 @@ Commit: `"chart: <component> — <chart type>, <library>, <N> data series, respo
 4. **Performance scales with data.** Do not render 100K SVG nodes. Match the rendering strategy to the data volume.
 5. **Consistent dashboards.** All charts in a dashboard use the same color encoding, typography, and interaction patterns.
 6. **No misleading visualizations.** Bar charts start at 0. Dual axes are labeled clearly. Truncated axes are flagged.
-7. **Color is not the only channel.** Use patterns, labels, and position in addition to color. Ensure information remains perceivable without color vision.
+7. **Color is not the only channel.** Use patterns, labels, and position in addition to color. Verify information remains perceivable without color vision.
 
 ## Flags & Options
 
@@ -335,7 +335,7 @@ STOP when ANY of these are true:
   - Charts are responsive at 320px, 768px, and 1440px
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - One chart type is complex to make responsive (provide a simplified mobile version)
   - Colorblind palette looks less appealing than the original (accessibility is non-negotiable)
 ```

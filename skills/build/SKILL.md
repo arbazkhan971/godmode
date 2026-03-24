@@ -70,6 +70,7 @@ STOP when FIRST of:
 3. After every merge: `build_cmd && lint_cmd && test_cmd`. Any non-zero exit = stop round, fix before next merge.
 4. Max 5 agents per round. Dependency order always. No unplanned refactoring, no TODOs, no stubs.
 5. Every new function gets a test. Every merge gets a TSV row. No exceptions.
+6. Never ask to continue. Loop autonomously until all tasks complete or stop conditions trigger.
 
 ## Workflow
 1. Load plan from `.godmode/plan.yaml` — missing plan means run `/godmode:plan` first.

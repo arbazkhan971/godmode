@@ -307,7 +307,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
 
 DO NOT STOP only because:
-  - Some `any` types are in third-party type definitions (those are not your code)
+  - `any` types exist in third-party type definitions (those are not your code)
   - `@ts-expect-error` is used for genuine compiler limitations (document each one)
 ```
 

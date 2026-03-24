@@ -154,7 +154,7 @@ iteration	error_type	file	line	fix_description	lines_changed	status
 $ /godmode:fix
 Fix triage: build failing with 3 errors
 Fixing [1/3]: TS2345 at src/api/users.ts:42
-  Root cause: argument type 'string | undefined' not assignable to 'string' because req.query.id can be undefined
+  Root cause: argument type 'string | undefined' does not match 'string' because req.query.id can be undefined
   KEPT: error count 3 → 2
 Fixing [2/3]: TS2339 at src/models/user.ts:18
   Root cause: property 'email' does not exist on type 'BaseUser' because interface was not extended

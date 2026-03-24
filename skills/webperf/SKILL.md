@@ -103,7 +103,7 @@ IMAGE AUDIT:
 | Image | Format | Size | Dimensions | Issues |
 |--|--|--|--|--|
 | hero.jpg | JPEG | 1.2 MB | 4000x2000 | No srcset, oversized |
-| logo.png | PNG | 45 KB | 400x100 | Could be SVG |
+| logo.png | PNG | 45 KB | 400x100 | Convert to SVG |
 | team-photo.jpg | JPEG | 800 KB | 3000x2000 | No lazy load |
 | icon-set.png | PNG | 120 KB | 500x500 | Convert to SVG |
 | product-1.jpg | JPEG | 650 KB | 2400x1600 | No WebP |

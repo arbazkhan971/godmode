@@ -138,7 +138,7 @@ NOT spot-eligible: production web servers, databases, stateful services.
 ```
 
 ### Step 6: Cost Allocation & Tagging
-Ensure all resources are properly tagged for cost attribution:
+Verify all resources are tagged for cost attribution:
 
 ```
 TAGGING AUDIT:

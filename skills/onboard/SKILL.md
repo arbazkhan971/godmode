@@ -156,12 +156,12 @@ Duration: ~<N> minutes reading time
 Stop 1: Entry Point (<file>)
   What: Application bootstrap — where everything starts
   Key lines: <start>-<end>
-  Note: <important detail about initialization order, config loading, etc.>
+  Detail: <initialization order, config loading, etc.>
 
 Stop 2: Configuration (<file>)
   What: How the app reads and validates its configuration
   Key lines: <start>-<end>
-  Note: <environment handling, defaults, validation>
+  Detail: <environment handling, defaults, validation>
   ...
 ```
 ### Step 7: Generate Onboarding Report
@@ -337,6 +337,6 @@ STOP when ANY of these are true:
 
 DO NOT STOP only because:
   - The repo is large (focus on the 20 most-modified files)
-  - Some modules lack documentation (note gaps in the report)
+  - Modules lack documentation (note gaps in the report)
 ```
 

@@ -104,7 +104,7 @@ STOP when FIRST of:
 Print: `Skill: {metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} discarded. Status: {DONE|PARTIAL}.`
 
 ## Hard Rules
-1. Metric must be a shell command outputting a single number — no subjective assessment.
+1. Metric must be a shell command that outputs a single number — no subjective assessment.
 2. One change per agent per round. Max 3 agents. Only the winner is kept.
 3. Never modify test files. Never trade readability for <1% gain. Profile before guessing.
 4. Guard (build+lint+test) must pass for every kept change — guard failure = terminal discard.

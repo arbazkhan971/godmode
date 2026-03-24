@@ -180,7 +180,7 @@ STOP when ANY of these are true:
 
 DO NOT STOP only because:
   - Additional anti-patterns exist (prioritize by severity/effort ratio)
-  - The pattern could be extended further (ship the minimal viable pattern)
+  - The pattern has room for extension (ship the minimal viable pattern)
 ```
 
 ## Design Pattern Audit

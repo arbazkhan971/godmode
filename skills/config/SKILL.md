@@ -69,7 +69,7 @@ CRITICAL DRIFT (must fix):
 
 EXPECTED DRIFT (document and accept):
 - Log levels (debug in dev, warn in prod)
-- Connection pool sizes (scale-appropriate)
+- Connection pool sizes (scaled per environment)
 - Feature flags (intentional per-environment rollout)
 - Debug/profiling settings (dev-only)
 
@@ -159,7 +159,7 @@ Hypothesis: "Changing <X> will improve <metric> by <expected_delta>"
 Primary metric: <conversion_rate | revenue | engagement | latency | etc.>
 Secondary metrics: <list of guardrail metrics to monitor>
 Minimum detectable effect: <smallest meaningful improvement, e.g., 2%>
-Statistical significance: <p-value threshold, typically 0.05>
+Statistical significance: <p-value threshold, default 0.05>
 Required sample size: <calculated from MDE and baseline>
 
 Variants:
@@ -176,7 +176,7 @@ Kill criteria: <when to stop early — e.g., >10% degradation in guardrail metri
 Phase 1: Internal (100%, 2-3 days, catch bugs). Phase 2: Canary (1-5%, 24-48h, verify no regressions). Phase 3: Controlled (10% -> 25% -> 50%, 1-2 weeks per increment, gather statistical significance).
 
 ### Step 6: Secret Management Audit
-Ensure secrets are handled safely across all environments:
+Verify secrets are handled safely across all environments:
 
 ```
 SECRET AUDIT:
@@ -340,7 +340,7 @@ STOP the loop when ANY of these are true:
   - User explicitly requests stop
   - Max iterations (15) reached — report partial results
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Expected drift exists (that is normal)
   - Non-critical config keys lack schema (nice-to-have, not blocking)
 ```

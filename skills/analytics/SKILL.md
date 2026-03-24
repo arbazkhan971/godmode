@@ -101,7 +101,7 @@ USER PROPERTIES (set once, updated on change):
 Implement analytics tracking in the codebase:
 
 #### Provider Setup
-Configure the selected provider SDK (Segment, Amplitude, PostHog, etc.) with environment-keyed initialization. Build a unified abstraction layer (`AnalyticsProvider` interface with `track`, `identify`, `page` methods) so providers can be swapped without touching component code.
+Configure the selected provider SDK (Segment, Amplitude, PostHog, etc.) with environment-keyed initialization. Build a unified abstraction layer (`AnalyticsProvider` interface with `track`, `identify`, `page` methods) so you swap providers without touching component code.
 
 ### Step 6: Funnel Analysis Setup
 Design and instrument conversion funnels:

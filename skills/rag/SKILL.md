@@ -179,7 +179,7 @@ Retrieval metrics:
 | Metric | Score | Description |
 |--|--|--|
 | Hit rate @ K | <val> | % of queries where answer is in top-K |
-| MRR (Mean Reciprocal | <val> | Average 1/rank of first relevant result |
+| MRR (Mean Reciprocal | <val> | Average 1/rank of first correct result |
 | Rank) |  |  |
 | NDCG @ K | <val> | Ranking quality considering relevance |
 ```

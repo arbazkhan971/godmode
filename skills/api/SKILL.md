@@ -270,7 +270,7 @@ STOP when ANY of these are true:
   - Rate limiting and auth defined for every endpoint
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Mock server is not yet generated (spec is the source of truth)
   - One endpoint lacks example responses (add it, but spec is functional)
 ```
@@ -335,7 +335,7 @@ resources = [resource_1, resource_2, ...]  // from resource modeling
 
 WHILE current_iteration < len(resources) AND NOT user_says_stop:
   1. SELECT next resource by dependency order (independent resources first)
-  2. DESIGN endpoints: GET (single + list), POST, PATCH, DELETE as appropriate
+  2. DESIGN endpoints: GET (single + list), POST, PATCH, DELETE per resource
   3. DEFINE request/response schemas with examples
   4. ADD pagination to list endpoints, filtering, sorting
   5. APPLY auth and rate limiting to each endpoint

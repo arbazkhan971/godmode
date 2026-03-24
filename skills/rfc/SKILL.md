@@ -44,7 +44,7 @@ Before writing the RFC, gather supporting evidence:
 ```bash
 # Understand the current state
 find . -name "*.ts" -o -name "*.js" -o -name "*.py" | head -50
-git log --oneline --since="3 months ago" -- <relevant-paths>
+git log --oneline --since="3 months ago" -- <affected-paths>
 
 # Check for related past RFCs or ADRs
 ls docs/rfcs/ docs/adr/ 2>/dev/null

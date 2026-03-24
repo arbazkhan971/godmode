@@ -9,7 +9,7 @@ description: |
 ## When to Activate
 - User invokes `/godmode:comply`
 - User says "are we GDPR compliant?", "audit trail", "privacy review", "compliance check"
-- Features handling personal data, health data, or payment data are being built
+- Team builds features handling personal data, health data, or payment data
 - Pre-ship check when `/godmode:ship` detects regulated data flows
 - User needs license compliance audit across dependencies
 - Preparing for SOC2 audit or regulatory review
@@ -143,7 +143,7 @@ PCI-DSS — REQUIREMENTS CHECK:
 ```
 
 ### Step 6: Audit Trail Design & Validation
-Verify that all security-relevant and compliance-relevant events are logged:
+Verify that all security and compliance events are logged:
 
 ```
 AUDIT TRAIL ASSESSMENT:

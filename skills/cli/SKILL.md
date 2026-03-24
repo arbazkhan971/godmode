@@ -316,7 +316,7 @@ STOP when ANY of these are true:
   - Distribution configured for at least one package manager
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - man pages are not yet generated (ship first, add man pages later)
   - Only one distribution channel is configured (one is enough to ship)
 ```

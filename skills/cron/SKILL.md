@@ -331,6 +331,8 @@ STOP when ANY of these are true:
 DO NOT STOP only because:
   - One job is complex (still configure the simpler ones)
   - Monitoring is not yet configured (handle that in a separate pass)
+
+On failure: revert the last cron configuration change with `git reset --hard HEAD~1` and retry with a narrower scope.
 ```
 
 ## Error Recovery
