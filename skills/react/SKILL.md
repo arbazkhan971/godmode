@@ -77,6 +77,12 @@ REACT AUDIT:
 VERDICT: <PASS | NEEDS REVISION>
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Composition over configuration.** Small components > many props.
@@ -138,7 +144,7 @@ Run tasks sequentially with branch isolation if Agent() unavailable.
 |--|--|
 | Infinite re-render loop | Check `useEffect` dependency arrays. Look for objects/arrays created inline as deps. Use `useMemo`/`useCallback` to stabilize references. |
 | State update on unmounted component | Use cleanup function in `useEffect`. Check for async operations that complete after unmount. Use `AbortController` for fetch. |
-| Hydration mismatch (SSR) | Ensure server and client render identical output. Avoid `Date.now()`, `Math.random()`, or `window` during SSR. Use `useEffect` for client-only code. |
+| Hydration mismatch (SSR) | Verify server and client render identical output. Avoid `Date.now()`, `Math.random()`, or `window` during SSR. Use `useEffect` for client-only code. |
 | Bundle size too large | Run `npx @next/bundle-analyzer` or `source-map-explorer`. Lazy-load routes with `React.lazy`. Check for unnecessary dependencies. |
 
 ## Success Criteria

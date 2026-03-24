@@ -209,10 +209,13 @@ KEEP if: notification delivered, preferences checked, delivery status tracked
 DISCARD if: not received OR preferences bypassed OR duplicate sends
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when: all channels deliver with preference checks, quiet hours enforced, idempotency works, or user stops
-DO NOT STOP just because: digest batching incomplete or analytics dashboards missing
+DO NOT STOP because: digest batching incomplete or analytics dashboards missing
 ```
 
 ## Anti-Patterns

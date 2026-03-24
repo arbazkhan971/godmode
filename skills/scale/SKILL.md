@@ -111,6 +111,7 @@ Next: /godmode:loadtest, /godmode:observe, /godmode:cost
 6. **Rate limiting is protection, not punishment.**
 7. **Capacity planning is continuous.** Quarterly review.
 8. **Cache with purpose.** Measure hit rates, cache only the working set.
+9. **Never ask to continue. Loop autonomously until target capacity or budget exhausted.**
 
 ## Flags & Options
 

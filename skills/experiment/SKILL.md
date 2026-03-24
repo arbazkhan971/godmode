@@ -284,32 +284,29 @@ Commit: `"experiment: <name> — <N> variants, <primary metric>, <statistical me
 | (none) | Full experiment design workflow |
 | `--platform <name>` | Force platform: `statsig`, `optimizely`, `growthbook`, `vwo`, `launchdarkly`, `posthog`, `custom` |
 | `--design` | Design experiment only (hypothesis, metrics, sample size) — no implementation |
-AUTO-DETECT SEQUENCE:
-1. Scan for experimentation SDK imports (statsig, optimizely, growthbook, launchdarkly, posthog, vwo)
-2. Detect analytics platform (Amplitude, Mixpanel, Segment, PostHog) from package.json / requirements.txt
-3. Check for existing feature flag configuration files
-4. Identify data warehouse connection (BigQuery, Snowflake, Redshift) from env vars or config
-5. Scan for existing experiment configs or assignment logic
-6. Detect framework (React, Next.js, Vue, etc.) for client-side assignment patterns
-7. Check for existing A/B test infrastructure (hash-based assignment, exposure logging)
+AUTO-DETECT:
+1. Scan for SDK imports (statsig, optimizely, growthbook, launchdarkly, posthog, vwo)
+2. Detect analytics (Amplitude, Mixpanel, Segment), data warehouse, feature flag configs
+3. Scan for existing experiment configs, assignment logic, exposure logging
 ```
 
 ### Keep/Discard Discipline
-Each experiment either advances the branch or gets reverted. No half-implemented experiments remain in the tree.
-- **KEEP**: Validated, implemented, metrics confirmed. Commit it.
-- **DISCARD**: Failed validation, broke existing tests, or guardrails tripped. `git revert` to last good state.
-- **CRASH**: Implementation error. If fixable (typo/import), fix and retry once. If fundamental, discard and move on.
+Each experiment either advances the branch or gets reverted. No half-implemented experiments remain.
+- **KEEP**: Validated, implemented, metrics confirmed.
+- **DISCARD**: Failed validation, tests broke, or guardrails tripped. `git revert` to last good state.
+- **CRASH**: If fixable (typo/import), fix and retry once. If fundamental, discard.
 
-### Results TSV Logging
-After each experiment iteration, append to `.godmode/experiment-results.tsv`:
+### TSV Logging
+Append to `.godmode/experiment-results.tsv`:
 ```
 COMMIT	METRIC	MEMORY	STATUS	DESCRIPTION
-a1b2c3d	conversion_rate	512MB	keep	checkout-single-page — 50/50 split, Statsig, MDE=8%
-(none)	bounce_rate	—	discard	hero-banner-test — SRM detected in validation, reverted
-(none)	latency_p99	—	crash	edge-assignment — SDK incompatible with runtime, skipped
 ```
 
 ## Stop Conditions
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 - All success criteria (8 checks) pass for the current experiment.
 - Feature flag cleanly separates control and treatment with no code leakage.
 - Exposure logging fires exactly once per user per experiment per session.
@@ -349,7 +346,7 @@ Print: `Experiment: {name} — {status}. Split: {control}%/{treatment}%. Sample:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| SRM detected (uneven split) | Halt analysis immediately. Check assignment logic, bot filtering, and exposure logging. Do not interpret results until SRM resolved. |
-| Feature flag leaking between variants | Verify flag evaluation is deterministic per user ID. Check for caching issues. Re-instrument and restart experiment. |
-| Sample size not reached after planned duration | Extend duration or increase traffic allocation. Never peek at frequentist results early — use sequential testing if early stopping needed. |
-| Guardrail metric breached | Kill treatment immediately. Roll back to control. Investigate root cause before re-launching. |
+| SRM detected | Halt analysis. Check assignment logic, bot filtering, exposure logging. |
+| Flag leaking between variants | Verify deterministic evaluation per user ID. Check caching. Re-instrument. |
+| Sample size not reached | Extend duration or increase traffic. Use sequential testing for early stopping. |
+| Guardrail breached | Kill treatment immediately. Roll back to control. Investigate before re-launch. |

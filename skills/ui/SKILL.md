@@ -169,43 +169,12 @@ const meta: Meta<typeof Button> = {
   title: 'Components/Button',
 ```
 
-#### Story Quality Checklist
-```
-STORYBOOK AUDIT:
-| Component | Stories | Docs | Controls | A11y addon | Status |
-|--|--|--|--|--|--|
-| Button | 5 | Yes | Yes | Passing | GOOD |
-| Input | 3 | Yes | Yes | 1 warning | OK |
-| DataTable | 1 | No | No | Not tested | POOR |
-| Modal | 0 | No | No | Not tested | NONE |
-| Card | 2 | Yes | Partial | Passing | OK |
-  ...
-```
-
 ### Step 7: Component Documentation
-Ensure every component is properly documented:
+Verify every component is properly documented:
 
-#### Documentation Requirements
-Each component must have:
-```
-1. Purpose — what the component does and when to use it
-2. Props table — all props with types, defaults, and descriptions
-3. Usage examples — code snippets for common use cases
-4. Variants — visual examples of all variants/states
-5. Do/Don't — guidance on correct vs incorrect usage
-6. Accessibility — keyboard behavior, ARIA requirements
-7. Related components — links to related or alternative components
-```
+Each component must have: purpose, props table (types/defaults/descriptions), usage examples, variant visuals, do/don't guidance, accessibility requirements, and related components.
 
-#### Auto-doc with Storybook
-```typescript
-// In story file, use autodocs tag
-const meta: Meta<typeof Button> = {
-  title: 'Components/Button',
-  component: Button,
-  tags: ['autodocs'],  // Generates docs from JSDoc and TypeScript types
-  parameters: {
-```
+Use Storybook `tags: ['autodocs']` to auto-generate docs from JSDoc and TypeScript types.
 
 ### Step 8: Pattern Consistency Rules
 Define and enforce component patterns across the codebase:
@@ -275,6 +244,9 @@ PATTERN VIOLATIONS:
 2. **Design tokens are mandatory.** Every color, spacing value, font size, shadow, and z-index should come from a token. Hardcoded values are bugs waiting to cause inconsistency.
 3. **Storybook is the component catalog.** Every component needs stories. Stories serve as documentation, visual testing targets, and a development sandbox. No exceptions for "simple" components.
 4. **Consistency over cleverness.** Every component should follow the same patterns: same prop naming, same file structure, same composition approach. Predictability is a feature.
+5. **Measure before/after.** Guard: test_cmd && lint_cmd.
+6. **On failure: git reset --hard HEAD~1.**
+7. **Never ask to continue. Loop autonomously until all components pass or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |

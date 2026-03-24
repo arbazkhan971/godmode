@@ -128,72 +128,20 @@ POST-RECOVERY:
 
 #### Scenario 2: Data Corruption
 ```
-RECOVERY: Data Corruption (accidental deletion, bad migration, etc.)
-Severity: HIGH
-RPO: Depends on detection time
-RTO: 15 minutes to 2 hours
-
-PROCEDURE:
-  1. STOP THE BLEEDING
-     - Identify the scope of corruption (which tables, which rows)
-     - If ongoing: disable the source (bad migration, broken code, etc.)
-     - If accidental deletion: check if soft-delete is available
-
-  2. ASSESS RECOVERY OPTIONS
-     Option A: Point-in-time recovery (best for recent corruption)
-       - Determine the timestamp immediately before corruption
-       - Restore WAL to that point-in-time
-       - Extract corrected data
-       - Apply to production
-
-     Option B: Snapshot restore (best for widespread corruption)
-       - Identify the most recent clean snapshot
-       - Restore to a separate instance
-       - Diff against production to identify affected data
-       - Selectively restore corrupted data
-
-     Option C: Selective restore (best for targeted corruption)
-       - Restore backup to temporary instance
-       - Export only affected tables/rows
-       - Import into production
-
-  3. VERIFY RECOVERY
-     - Row counts match expected values
-     - Application smoke tests pass
-     - No orphaned records or broken references
-     - Users can access their data
-
-  4. POST-MORTEM
-     - How did corruption occur?
-     - How to prevent recurrence?
-     - Was detection fast enough?
-     - Was recovery fast enough?
+RECOVERY: Data Corruption — Severity: HIGH, RTO: 15min-2h
+1. STOP: Identify scope, disable source (bad migration, broken code)
+2. RECOVER: Point-in-time restore (recent) | Snapshot restore (widespread) | Selective table restore (targeted)
+3. VERIFY: Row counts, smoke tests, no orphaned records
+4. POST-MORTEM: Root cause, prevention, detection/recovery speed
 ```
 
 #### Scenario 3: Complete Region Failure
 ```
-RECOVERY: Region Failure (disaster recovery)
-Severity: CRITICAL
-RPO: < 1 minute (cross-region replication)
-RTO: < 30 minutes (DNS failover + warm standby)
-
-PROCEDURE:
-  1. Detect region failure (monitoring + cloud provider status page)
-  2. Activate DR region:
-     a. Promote cross-region database replica
-     b. Verify file storage is accessible in DR region
-     c. Scale up application instances in DR region
-     d. Update DNS to point to DR region (set TTL low: 60s)
-  3. Verify DR environment is serving traffic
-  4. Communicate to stakeholders: estimated recovery, data loss assessment
-  5. Monitor DR environment stability
-
-RETURN TO PRIMARY (when original region recovers):
-  1. Verify primary region is stable (wait 24+ hours)
-  2. Set up reverse replication (DR → primary)
-  3. Verify data consistency between regions
-  4. Gradual traffic shift back to primary (canary approach)
-  5. Demote DR back to standby mode
+RECOVERY: Region Failure — Severity: CRITICAL, RPO: <1min, RTO: <30min
+1. Detect failure (monitoring + cloud status page)
+2. Activate DR: promote cross-region replica, verify storage, scale instances, update DNS (TTL 60s)
+3. Verify DR serving traffic, communicate to stakeholders
+RETURN TO PRIMARY: Wait 24h+, reverse replication, verify consistency, canary traffic shift
 ```
 
 ### Step 7: Disaster Recovery Runbook
@@ -314,6 +262,8 @@ WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
 ```
 
 ## HARD RULES
+
+Never ask to continue. Loop autonomously until all backup gaps are resolved or budget exhausted.
 
 ```
 MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:

@@ -32,7 +32,7 @@ Authorization complexity:
   ...
 ```
 ### Step 2: Permission Model Selection
-Select and design the appropriate authorization model:
+Select and design the correct authorization model:
 
 #### Model: RBAC (Role-Based Access Control)
 For systems with well-defined, stable role structures:
@@ -239,12 +239,18 @@ HARD RULES — NEVER VIOLATE:
   ...
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Default deny.** If no policy explicitly grants access, the answer is DENY. Never default to ALLOW. This is the single most important security principle in access control.
-2. **Least privilege.** Every role should have the minimum permissions needed to perform its function. Start with zero permissions and add only what is required. It is easier to grant additional permissions than to revoke excessive ones.
+2. **Least privilege.** Every role should have the minimum permissions needed to perform its function. Start with zero permissions and add only what is required. Granting additional permissions is easier than revoking excessive ones.
 3. **Separation of duties.** Critical operations should require multiple roles. The person who creates an invoice should not be the person who approves payment. Encode these constraints in the role model.
-4. **Audit everything.** Log every authorization decision — ALLOW and DENY — with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
+4. **Audit everything.** Log every authorization decision -- ALLOW and DENY -- with enough context to reconstruct what happened during a security investigation. If it is not logged, it did not happen.
 ## Flags & Options
   ...
 ```
@@ -282,7 +288,7 @@ IF policy engine denies a legitimate request:
   1. Check the audit log for the denial reason and matching policy
   2. Verify the user's effective permissions (role hierarchy resolution)
   3. Add or adjust the specific permission — do not create a bypass
-  4. Test both the fixed access AND ensure other restrictions still hold
+  4. Test both the fixed access AND verify other restrictions still hold
   5. Log the policy change with who, what, when, and why
 ## Stop Conditions
 ```
@@ -292,7 +298,7 @@ STOP when ANY of these are true:
   - Audit logging covers all ALLOW and DENY decisions
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One role has complex inheritance (resolve it)
   ...
 ```

@@ -113,6 +113,9 @@ VERDICT: <PASS | NEEDS REVISION>
 5. **CVA for variants.** When a component has multiple visual variants, use CVA.
 6. **cn() for conditional and merge.** Always use `tailwind-merge` + `clsx` via `cn()`.
 7. **Performance is passive.** JIT generates only what you use. Keep content paths accurate.
+8. **Measure before/after.** Guard: test_cmd && lint_cmd.
+9. **On failure: git reset --hard HEAD~1.**
+10. **Never ask to continue. Loop autonomously until build passes or budget exhausted.**
 
 ## Flags & Options
 

@@ -178,6 +178,9 @@ After EACH legacy modernization step:
   On discard: revert. Add more characterization tests before retrying.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ALL of:

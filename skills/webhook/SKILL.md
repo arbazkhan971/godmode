@@ -102,6 +102,8 @@ Check all: HMAC signatures, constant-time comparison, replay prevention, idempot
 5. **Verify on receive.** Raw bytes, constant-time, timestamp tolerance.
 6. **Idempotency is mandatory.** Both inbound (dedup) and outbound.
 7. **HTTPS only.** Block private IPs (SSRF).
+8. **Measure before/after.** Guard: test_cmd && lint_cmd.
+9. **Never ask to continue. Loop autonomously until all endpoints verified or budget exhausted.**
 
 ## Flags & Options
 

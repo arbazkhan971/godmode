@@ -115,6 +115,8 @@ Document the decision formally:
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until architecture comparison matrix, C4 diagrams, and ADR are complete.
+
 1. **Requirements before patterns.** Never recommend an architecture without understanding scale expectations, team size, and constraints. A microservice architecture for a 2-person team is malpractice.
 2. **Always compare at least 3 options.** Even if the answer seems obvious, the comparison matrix forces rigorous thinking and documents why alternatives were rejected.
 3. **C4 diagrams are mandatory.** At minimum produce Level 1 (Context) and Level 2 (Container) diagrams. Level 3 and 4 are produced when the user asks for detail.

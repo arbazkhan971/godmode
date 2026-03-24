@@ -318,6 +318,9 @@ After EACH Node.js change (route, middleware, optimization):
   4. COMMIT kept changes. Run `git reset --hard` on discarded changes before the next task.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -326,7 +329,7 @@ STOP when ANY of these are true:
   - Event loop lag p99 < 50ms under expected load
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Worker thread optimization is not complete (only needed for CPU-bound tasks)
   - Dependency audit has unresolved low-severity advisories
 ```

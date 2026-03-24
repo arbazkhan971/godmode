@@ -236,27 +236,13 @@ Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/asy
 - ALL API list endpoints MUST have pagination configured — unbounded queries are not acceptable
 
 ## Iterative Audit Loop Protocol
-
-When auditing or building a Django/FastAPI project:
-
 ```
-current_iteration = 0
-audit_queue = [all_apps_and_modules]
 WHILE audit_queue is not empty:
-    current_iteration += 1
     batch = audit_queue.pop(next 3 apps)
-    FOR each app in batch:
-        check: business logic in services.py (not views/serializers)
-        check: serializers have explicit fields (no __all__)
-        check: select_related/prefetch_related on all querysets
-        check: database indexes on filtered/ordered fields
-        check: admin has list_select_related and list_per_page
-        check: pagination on all list endpoints
-        log violations found and fixes applied
-    run tests + migration check (python manage.py check --deploy)
-    IF new issues discovered in dependent apps:
-        add to audit_queue
-    report: "Iteration {current_iteration}: {N} apps audited, {M} violations fixed, {remaining} apps remaining"
+    FOR each app: check services.py, serializer fields, select_related, indexes, admin, pagination
+    run tests + python manage.py check --deploy
+    IF new issues in dependent apps: add to audit_queue
+    report: "Iteration {N}: {apps} audited, {violations} fixed, {remaining} remaining"
 ```
 
 ## Auto-Detection
@@ -322,36 +308,16 @@ Every Django skill invocation must pass ALL of these checks before reporting suc
 If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
 
 ## Error Recovery
-
-IF manage.py check fails:
-  1. Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS)
-IF tests fail:
-  1. Check that the system creates the test database successfully (permissions)
-IF migration errors:
-  1. Conflicting migrations → run makemigrations --merge
-IF N+1 query detected:
-  1. Add select_related() for ForeignKey/OneToOne traversals
-IF serializer/validation errors:
-  1. Check that all required fields have defaults or are provided
+- **manage.py check fails:** Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS).
+- **Tests fail:** Check test database creation (permissions).
+- **Migration errors:** Conflicting migrations → `makemigrations --merge`.
+- **N+1 detected:** Add select_related() for FK/OneToOne.
+- **Serializer errors:** Check required fields have defaults or are provided.
 
 ## Django Optimization Loop
-
 ```
-DJANGO OPTIMIZATION PASSES:
-
-Pass 1 — Query Count & N+1 Audit:
-  1. Instrument with django-debug-toolbar or DB logging
-  2. Baseline query count per endpoint
-  3. Fix N+1: select_related() for FK, prefetch_related() for M2M/reverse FK
-  4. Use Prefetch() objects for filtered prefetches, annotate() for counts
-  5. Target: list endpoints <=3-5 queries, detail <=2-3 queries
-
-Pass 2 — Query Efficiency:
-  1. Add indexes on every field in filter()/order_by()
-  2. Add partial indexes for common query patterns (condition=Q(...))
-  3. Use .values()/.only()/.defer() to reduce data loading
-  4. Replace .save() loops with bulk_create()/bulk_update()
-  5. Use .exists() instead of .count() > 0
+Pass 1 — N+1 Audit: Instrument DB, baseline query count, fix with select_related/prefetch_related. Target: list <=5 queries, detail <=3.
+Pass 2 — Query Efficiency: Add indexes on filter/order_by fields, use .values()/.only(), bulk_create/bulk_update, .exists() over .count() > 0.
 ```
 
 ## Keep/Discard Discipline
@@ -367,12 +333,16 @@ After EACH implementation or optimization change:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All identified tasks are complete and validated
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```

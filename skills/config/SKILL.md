@@ -146,15 +146,7 @@ interface FeatureFlag {
 ```
 
 #### Flag Lifecycle Management
-```
-FLAG HYGIENE:
-- [ ] Every flag has an owner and expiry date
-- [ ] Release flags older than 30 days at 100% → remove the flag, keep the code
-- [ ] Experiment flags older than 14 days → conclude experiment, pick winner
-- [ ] Dead flags (no code references) → delete from flag system
-- [ ] Flag count audit: total flags should stay under 20 for a small team
-- [ ] Stale flag report generated weekly
-```
+Every flag: owner + expiry date. Release flags >30 days at 100%: remove flag, keep code. Experiment flags >14 days: conclude, pick winner. Dead flags (no code refs): delete. Keep total under 20 for small teams. Weekly stale flag report.
 
 ### Step 5: A/B Test Setup
 Design controlled experiments with statistical rigor:
@@ -181,23 +173,7 @@ Kill criteria: <when to stop early — e.g., >10% degradation in guardrail metri
 ```
 
 #### Rollout Strategy
-```
-ROLLOUT PHASES:
-Phase 1: Internal (dogfooding)
-  - 100% of internal users
-  - Duration: 2-3 days
-  - Goal: Catch obvious bugs
-
-Phase 2: Canary
-  - 1-5% of production traffic
-  - Duration: 24-48 hours
-  - Goal: Verify no regressions in error rate, latency, core metrics
-
-Phase 3: Controlled Rollout
-  - 10% → 25% → 50% of production traffic
-  - Duration: 1-2 weeks per increment
-  - Goal: Gather statistical significance
-```
+Phase 1: Internal (100%, 2-3 days, catch bugs). Phase 2: Canary (1-5%, 24-48h, verify no regressions). Phase 3: Controlled (10% -> 25% -> 50%, 1-2 weeks per increment, gather statistical significance).
 
 ### Step 6: Secret Management Audit
 Ensure secrets are handled safely across all environments:
@@ -258,6 +234,8 @@ SECRET AUDIT:
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until all environments are audited and drift is resolved.
+
 1. **NEVER commit secrets** to source control. If found, flag as CRITICAL immediately.
 2. **NEVER deploy to an environment with missing required config keys.** Fail fast.
 3. **EVERY config key MUST have a schema entry** with type, validation, and description.
@@ -307,22 +285,16 @@ iteration	task	environment	keys_total	secrets_count	drift_detected	validation_st
 Columns: iteration, task, environment, keys_total, secrets_count, drift_detected, validation_status, status(audited/drift_found/migrated/configured/failed).
 
 ## Success Criteria
-- All configuration keys inventoried and documented.
-- Secrets stored in a secret manager (not in config files or environment variables).
-- Startup validation fails fast on missing or invalid config.
-- Configuration drift between environments detected and explained.
-- Feature flags have expiry dates and cleanup plans.
-- Typed config parsing (no raw `process.env` string access in application code).
-- Environment-specific overrides use templates, not copy-paste.
-- Config changes are auditable (versioned, logged).
+All keys inventoried. Secrets in secret manager. Startup validation fails fast. Drift detected and explained. Flags have expiry + cleanup plans. Typed config parsing (no raw `process.env`). Config changes auditable.
 
 ## Error Recovery
-- **App fails to start after config change**: Check startup validation errors for the specific key that failed. Compare with the previous working config. Verify the config format matches the expected schema (type coercion issues are common).
-- **Secret rotation breaks the app**: Use a config reload mechanism (environment variable re-read or config file watch). Test secret rotation in staging before production. Ensure the new secret is valid before revoking the old one.
-- **Config drift between environments**: Run the drift detection tool to identify which keys differ. Determine if the drift is intentional (environment-specific) or accidental (missed update). Document intentional drift.
-- **Feature flag stuck at 100% for months**: Flag has become tech debt. Schedule cleanup: remove the flag check, delete the flag, remove the old code path. Set a recurring reminder for flag cleanup.
-- **Startup validation too strict (blocks deployment)**: Separate required and optional config. Use sensible defaults for non-critical config. Allow graceful degradation for optional features.
-- **Environment variable injection fails in containers**: Verify the env vars are set in the container runtime config (not only the Dockerfile). Check for quoting issues in YAML/JSON config. Use `printenv` in the container to debug.
+| Failure | Action |
+|--|--|
+| App fails to start after config change | Check validation errors for specific key. Compare with previous working config. |
+| Secret rotation breaks app | Test rotation in staging first. Validate new secret before revoking old. |
+| Config drift between envs | Run drift detection. Document intentional drift, fix accidental. |
+| Feature flag stuck at 100% | Schedule cleanup: remove flag check, delete flag, remove old code path. |
+| Startup validation too strict | Separate required/optional config. Use defaults for non-critical. |
 
 ## Iterative Loop Protocol
 ```
@@ -357,16 +329,7 @@ Every change is atomic — never leave config in a half-migrated state.
 ```
 
 ## Stuck Recovery
-```
-IF >3 consecutive iterations fail to resolve a config issue:
-  1. Re-read ALL config files and environment definitions — stale understanding is #1 cause of stuck loops.
-  2. Widen scope: check for config loaded from unexpected sources (CI variables, Docker env, cloud metadata).
-  3. Try a different approach:
-     - If schema validation is failing → simplify the schema (fewer constraints, add them back gradually).
-     - If parity check is failing → focus on one environment at a time instead of all at once.
-     - If secret migration is failing → verify secret manager connectivity before attempting migration.
-  4. If still stuck after 2 recovery attempts → log stop_reason=stuck in .godmode/config-results.tsv, report findings, move to next environment.
-```
+If >3 consecutive failures: re-read all config files, check unexpected sources (CI vars, Docker env, cloud metadata). Simplify schema, focus one env at a time, verify secret manager connectivity. If still stuck, log `stop_reason=stuck` and move to next environment.
 
 ## Stop Conditions
 ```
@@ -383,12 +346,5 @@ DO NOT STOP just because:
 ```
 
 ## Simplicity Criterion
-```
-PREFER the simpler config approach:
-  - If a key works as a static default instead of per-environment override → use the default
-  - If a validation schema has >10 constraints on a single key → reduce to the 3 most important
-  - If a feature flag system has >30 flags → audit and remove dead/stale flags before adding more
-  - If config validation requires a new dependency → prefer built-in runtime checks first
-  - ONE config format per project (do not mix .env + YAML + TOML unless existing convention requires it)
-```
+Prefer static defaults over per-env overrides. Limit schema to 3 constraints per key max. Audit and remove stale flags before adding more. Prefer built-in runtime checks over new dependencies. One config format per project.
 

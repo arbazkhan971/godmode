@@ -185,14 +185,19 @@ Stop 2: Configuration (<file>)
 3. Commit: `"onboard: <project> — architecture walkthrough with <N>-stop code tour"`
 4. Suggest: "Onboarding complete. Start with the code tour, then try `/godmode:think` to design your first feature."
 
+## Autonomous Operation
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
-1. **Read before writing.** Scan the entire project structure before making any claims about architecture. Don't guess — verify.
+1. **Read before writing.** Scan the entire project structure before making any claims about architecture. Do not guess -- verify.
 2. **Follow the data.** The best way to understand a system is to trace a request from entry to response. Follow the data flow.
 3. **Git history tells the story.** The most-modified files are where active development happens. Recent commits reveal current priorities.
-4. **Naming conventions are tribal knowledge.** Document them explicitly so new developers don't have to guess.
+4. **Naming conventions are tribal knowledge.** Document them explicitly so new developers do not have to guess.
 5. **Dependencies reveal architecture.** The import graph shows how modules relate. Circular dependencies indicate design problems.
-6. **Key files first.** A new developer shouldn't need to read 500 files. Identify the 7-10 files that explain 80% of the system.
+6. **Key files first.** A new developer should not need to read 500 files. Identify the 7-10 files that explain 80% of the system.
 7. **Code tours beat documentation.** Walking through actual code with commentary is more useful than abstract architecture docs.
 
 ## Flags & Options
@@ -330,27 +335,8 @@ STOP when ANY of these are true:
   - Development setup verified (build + test from clean checkout)
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - The repo is large (focus on the 20 most-modified files)
   - Some modules lack documentation (note gaps in the report)
 ```
 
-## Onboarding Audit Loop
-
-Systematic protocol for measuring and improving the onboarding experience with quantitative metrics:
-
-```
-ONBOARDING AUDIT LOOP:
-current_iteration = 0
-max_iterations = 5
-audit_phases = [time_to_first_commit, setup_script_validation, knowledge_gap_detection, ramp_up_curve, onboarding_doc_completeness]
-
-WHILE current_iteration < max_iterations:
-  phase = audit_phases[current_iteration]
-  current_iteration += 1
-
-  IF phase == "time_to_first_commit":
-    1. MEASURE time-to-first-commit (TTFC) by simulating a clean onboarding:
-       START_TIME = now()
-  ...
-```

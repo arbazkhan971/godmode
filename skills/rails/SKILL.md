@@ -303,93 +303,43 @@ HARD RULES — NEVER VIOLATE:
 11. ALWAYS use build over create in factories when DB persistence is not needed.
   ...
 ```
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
-
-1. **Convention over configuration.** Follow the Rails Way. If you are fighting the framework, you are doing it wrong.
-2. **Fat models, skinny controllers — but not too fat.** Extract complex logic to service objects. Models handle persistence and simple business rules.
-3. **N+1 is the enemy.** Use `includes`, `strict_loading`, and Bullet gem to detect and eliminate N+1 queries before they hit production.
-4. **Hotwire first, React later.** Most Rails apps do not need a JavaScript SPA. Turbo Frames and Streams handle 90% of interactive UI needs.
-5. **Background everything slow.** Email sending, PDF generation, external API calls, and anything over 200ms belongs in a background job.
-6. **Test behavior, not implementation.** RSpec request specs test the HTTP interface. Model specs test business rules. System specs test critical user flows.
-7. **Migrations are forever.** Keep every migration reversible. Never edit a committed migration — write a new one.
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full Rails setup workflow |
-| `--api` | API-only Rails application |
-| `--hotwire` | Configure Hotwire (Turbo + Stimulus) |
+1. **Convention over configuration.** Follow the Rails Way.
+2. **Fat models, skinny controllers -- but not too fat.** Extract complex logic to service objects.
+3. **N+1 is the enemy.** Use `includes`, `strict_loading`, and Bullet gem.
+4. **Hotwire first, React later.** Turbo Frames and Streams handle 90% of interactive UI.
+5. **Background everything slow.** Anything over 200ms belongs in a background job.
+6. **Test behavior, not implementation.** Request specs test HTTP, model specs test rules.
+7. **Migrations are forever.** Never edit a committed migration -- write a new one.
 
 ## Output Format
+Print on completion: `Rails: {action} — {files_count} files, {models_count} models, {migrations_count} migrations. Tests: {status}. Notes: {summary}.`
 
-End every Rails skill invocation with this summary block:
-
-```
-RAILS RESULT:
-Action: <scaffold | model | controller | service | optimize | test | audit | upgrade | deploy>
-Files created/modified: <N>
-Models created/modified: <N>
-Controllers created/modified: <N>
-Migrations created: <N>
-Tests passing: <yes | no | skipped>
-Build status: <passing | failing | not-checked>
-Issues fixed: <N>
-Notes: <one-line summary>
-```
 ## TSV Logging
-
-Append one TSV row to `.godmode/rails.tsv` after each invocation:
-
+Log to `.godmode/rails.tsv`:
 ```
 timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
 ```
-Field definitions:
-- `timestamp`: ISO-8601 UTC
-- `project`: directory name from `basename $(pwd)`
-- `action`: scaffold | model | controller | service | optimize | test | audit | upgrade | deploy
-- `files_count`: number of files created or modified
-- `models_count`: number of models created or modified
-- `controllers_count`: number of controllers created or modified
-- `migrations_count`: number of migrations generated
-- `tests_status`: passing | failing | skipped | none
-- `notes`: free-text, max 120 chars, no tabs
-
-If `.godmode/` does not exist, create it and add `.godmode/` to `.gitignore` if not already present.
 
 ## Success Criteria
-
-Every Rails skill invocation must pass ALL of these checks before reporting success:
-
 1. `bin/rails test` (or `bundle exec rspec`) passes if test suite exists
-2. `bin/rails db:migrate:status` shows no pending migrations
-3. All `belongs_to` foreign keys have database indexes
-4. No `default_scope` on any model
-5. No business logic in callbacks (use service objects)
-6. All queries with WHERE/ORDER BY clauses have appropriate indexes
-7. No raw SQL without parameterized queries
-8. N+1 queries detected by Bullet gem are resolved
-9. `bundle audit` shows no known vulnerabilities (if gem installed)
-10. `bin/rails routes` has no duplicate or orphaned routes
-
-If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+2. No pending migrations, all foreign keys indexed
+3. No `default_scope`, no business logic in callbacks
+4. All WHERE/ORDER BY clauses have correct indexes
+5. No raw SQL without parameterized queries
+6. N+1 queries resolved, `bundle audit` clean
+7. No duplicate or orphaned routes
 
 ## Error Recovery
-
-When errors occur, follow these remediation steps:
-
-```
-IF tests fail:
- 1. Check test database exists and is migrated (bin/rails db:test:prepare)
- 2. Verify fixtures/factories have valid data and associations
- 3. Check for order-dependent tests (run with --seed to verify)
- 4. Verify that database cleaner strategy is correct (transaction vs truncation)
-
-IF migration fails:
- 1. Check for irreversible migration (add explicit down method)
- 2. Verify column types are compatible with existing data
- 3. Check for lock timeout on large tables (use strong_migrations gem)
- 4. For failed production migration → write a corrective migration, never edit existing ones
-
-  ...
-```
+| Failure | Action |
+|--|--|
+| Tests fail | Check test DB (db:test:prepare), verify fixtures, check order-dependent tests (--seed). |
+| Migration fails | Add explicit down method. Check column type compatibility. Use strong_migrations for large tables. |
+| N+1 detected | Add `includes`/`eager_load` at query site. Verify with Bullet gem. |
+| Bundle audit vulnerability | Update gem. If no patch, document risk and pin version. |

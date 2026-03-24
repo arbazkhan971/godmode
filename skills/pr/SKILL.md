@@ -205,9 +205,15 @@ HARD RULES — NEVER VIOLATE:
 9. ALWAYS squash commits before merging (not during review).
 10. NEVER merge a PR with failing CI checks.
 ```
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
-1. **Small PRs are non-negotiable.** A 500-line PR will get rubber-stamped. Four 125-line PRs will get thoughtful reviews. Always split large changes.
+1. **Small PRs are non-negotiable.** A 500-line PR will get rubber-stamped. Four 125-line PRs will get thoughtful reviews. Split large changes.
 2. **Description is for the reviewer.** Write the PR description as if the reviewer knows nothing about your recent work. Give them the context to review efficiently.
 3. **Self-review first.** Read your own diff before clicking "Request review." You will catch 30% of issues yourself and save your reviewer time.
 4. **Stacked PRs for large features.** If a feature takes more than 200 lines, plan the stack before writing code. Make each PR independently reviewable and mergeable.
@@ -256,7 +262,7 @@ The PR skill is complete when ALL of the following are true:
 2. PR description includes summary, related issues, and test plan
 3. Self-review checklist is completed before requesting review
 4. CI passes (tests, lint, type check)
-5. Appropriate reviewers are assigned (1-2 specific people, not the whole team)
+5. Correct reviewers are assigned (1-2 specific people, not the whole team)
 6. PR targets the correct base branch
 7. Stacked PRs (if any) have correct dependency chain and are < 5 deep
 
@@ -281,7 +287,7 @@ STOP when ANY of these are true:
   - CI passes and reviewers assigned
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One PR is borderline on size (split it or justify)
   ...
 ```

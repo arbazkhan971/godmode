@@ -195,6 +195,10 @@ After EACH workflow change:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ALL of:
   - All workflows pass on clean PR
   - Caching configured for dependencies

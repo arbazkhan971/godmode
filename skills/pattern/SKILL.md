@@ -74,7 +74,7 @@ Adapt to language idioms:
 - **TypeScript/JavaScript**: Use interfaces, generics, dependency injection
 - **Python**: Use protocols (typing.Protocol), abstract base classes, decorators
 - **Go**: Use interfaces (implicit satisfaction), functional options, embedding
-- **Java/Kotlin**: Use interfaces, generics, Spring annotations where appropriate
+- **Java/Kotlin**: Use interfaces, generics, Spring annotations where applicable
 - **Rust**: Use traits, enums, generics, the type system
 
 ### Step 5: Anti-Pattern Detection
@@ -123,9 +123,15 @@ AUTO-DETECT SEQUENCE:
 4. Output: PATTERN CONTEXT auto-populated with detected patterns and signals.
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## HARD RULES
 
-1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Always complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
+1. **NEVER recommend a pattern without understanding the problem first.** Diagnose before prescribing. Complete Step 1 (Problem Analysis) before Step 3 (Pattern Recommendation).
 2. **NEVER stack multiple patterns at once.** Recommend ONE pattern, let the team implement it, then evaluate if another is needed.
 3. **NEVER recommend Singleton for dependency sharing.** Use dependency injection instead. Singleton is the last resort, not the first choice.
 4. **NEVER apply patterns prophylactically.** A pattern should solve a CURRENT problem, not a theoretical future one. YAGNI applies to patterns.
@@ -293,71 +299,19 @@ ANTI-PATTERN AUDIT:
 |  |  |  | but not the other |
 
 DETECTION COMMANDS:
-  # God Objects: files with high LOC and many exports
-  find src/ -name "*.ts" | xargs wc -l | sort -rn | head -20
-
-  # Circular Dependencies
-  npx madge --circular src/
-  # Or: dependency-cruiser --output-type err src/
-
-  # Duplicated Code
-  npx jscpd src/ --min-lines 10 --min-tokens 50
-
-  # Feature Envy (heuristic: grep for excessive other-class field access)
-  # Manual review guided by coupling metrics
-
-  # Primitive Obsession: grep for untyped signatures
-  grep -rn "email: string\|price: number\|id: string" --include="*.ts" src/
-```
-
-### Refactor Suggestions
-
-```
-REFACTOR SUGGESTION FORMAT:
-  Anti-Pattern: <name>
-  Location: <file:line-range>
-  Severity: <CRITICAL|HIGH|MEDIUM|LOW>
-  Effort: <S|M|L|XL>
-  Problem:
-  <1-2 sentences: what is wrong and why it matters>
-  Recommended Pattern: <design pattern that resolves this>
-  Before (current):
-  ```<language>
-  // Problematic code snippet
-  ```
-  After (refactored):
-  ```<language>
-  // Improved code snippet using recommended pattern
-  ```
-  Steps:
-  1. <specific first action>
-  2. <specific second action>
-  3. <run tests after each step>
-  Risk: <what could go wrong>
-  Prerequisite: <tests needed, dependencies to resolve first>
-  Related: <other findings this fix may resolve>
-
-PRIORITIZATION MATRIX:
-| Finding | Severity | Effort | Priority Score |
-|  | (1-4) | (1-4) | (severity/effort) |
-| <finding 1> | <N> | <N> | <ratio> |
-| <finding 2> | <N> | <N> | <ratio> |
-| <finding 3> | <N> | <N> | <ratio> |
-  RECOMMENDED ORDER: highest priority score first
-  (maximum impact per unit of effort)
+  find src/ -name "*.ts" | xargs wc -l | sort -rn | head -20  # God Objects
+  npx madge --circular src/  # Circular Dependencies
+  npx jscpd src/ --min-lines 10 --min-tokens 50  # Duplicated Code
+  grep -rn "email: string\|price: number\|id: string" --include="*.ts" src/  # Primitive Obsession
 ```
 
 ### Pattern Audit Report
 
 ```
 PATTERN AUDIT SUMMARY:
-  Codebase: {project_name}
-  Patterns detected: {N} ({list with locations})
-  Patterns correctly implemented: {N}
-  Pattern misuses: {N} ({list with issues})
-  Anti-patterns found: {N} (CRITICAL: {N}, HIGH: {N}, MEDIUM: {N}, LOW: {N})
+  Patterns detected: {N} | Correctly implemented: {N} | Misuses: {N}
+  Anti-patterns: {N} (CRITICAL: {N}, HIGH: {N}, MEDIUM: {N}, LOW: {N})
   Refactor suggestions: {N} prioritized by severity/effort ratio
-  Estimated effort: {total hours/days}
   Recommended first action: {highest priority refactor}
 ```
 

@@ -104,7 +104,7 @@ helm template <release-name> <chart-dir> -f values-prod.yaml
 
 ```
 ### Step 4: Deployment Strategy Selection
-Choose and configure the appropriate deployment strategy:
+Choose and configure the correct deployment strategy:
 
 #### Rolling Update (Default — Zero-Downtime)
 ```yaml
@@ -253,83 +253,54 @@ helm upgrade --install <release> <chart> \
 ```
 ```
 DEPLOYMENT RESULT:
-  Deployment: <service-name>
-  Namespace: <namespace>
-  Strategy: Rolling Update
-  Pods: 3/3 Ready
-  Replicas: 3 desired, 3 available, 0 unavailable
-  Image: <registry>/<image>:<new-tag>
-  Rollout: Complete (took 45s)
-  Health Checks:
-  [x] All pods passing liveness probe
-  [x] All pods passing readiness probe
-  [x] Service endpoint returning 200
-  [x] No error logs in last 60 seconds
+  <service> in <namespace>: 3/3 Ready, Rolling Update, Complete.
+  Health: liveness OK, readiness OK, endpoint 200, no errors in 60s.
 ```
 ### Step 8: Commit and Report
 ```
-1. Save Kubernetes manifests in `k8s/` or `charts/` directory
-2. Commit: "k8s: <description> — <strategy> deployment (<N> replicas)"
-3. If validation failed: "Manifest validation failed. Fix issues before deploying."
-4. If deployment succeeded: "Deployment complete. All pods healthy."
-5. If rollback needed: "Deployment failed. Run `kubectl rollout undo` or `helm rollback`."
+Save manifests in `k8s/` or `charts/`. Commit: `"k8s: <description> — <strategy> (<N> replicas)"`
 ```
 
 ## Key Behaviors
-
-1. **Always set resource requests AND limits.** Pods without resource definitions cause noisy-neighbor problems and make scheduling unpredictable.
-2. **Always configure health probes.** Liveness, readiness, and startup probes are mandatory. Without them, Kubernetes cannot manage pod lifecycle correctly.
-3. **PodDisruptionBudget is required.** Without a PDB, node drains will take down all your pods simultaneously.
-4. **Never use `latest` tag.** Pin image versions with SHA digests or semantic version tags. `latest` is not reproducible.
-5. **Namespace isolation.** Each service or team gets its own namespace with resource quotas and network policies.
-6. **Secrets are not ConfigMaps.** Use Kubernetes Secrets (or external-secrets-operator) for sensitive data. Never put credentials in ConfigMaps.
-7. **Test manifests before deploying.** `kubectl apply --dry-run=server` catches issues before they hit the cluster.
-8. **Canary before yolo.** For high-risk changes, use canary deployments with automated analysis. Do not push straight to 100% traffic.
+1. **Resource requests+limits mandatory.** Unbounded pods cause noisy-neighbor issues.
+2. **Health probes mandatory.** Liveness, readiness, startup probes on all pods.
+3. **PDB required.** Without PDB, node drains take down all pods.
+4. **Never `latest` tag.** Pin with SHA digest or semver.
+5. **Namespace isolation.** Per service/team with quotas and network policies.
+6. **Secrets not ConfigMaps.** Use K8s Secrets or external-secrets-operator.
+7. **Dry-run before apply.** `kubectl apply --dry-run=server` catches issues early.
+8. **Canary for high-risk.** Do not push straight to 100% traffic.
 
 ## HARD RULES
-1. NEVER deploy without resource requests AND limits on every container — unbounded pods starve other workloads.
-2. NEVER skip health probes (liveness, readiness, startup) — without them, K8s sends traffic to broken pods.
-3. NEVER use the `latest` image tag — pin versions with SHA digests or semantic version tags. `latest` is not reproducible.
-4. NEVER put secrets in plain ConfigMaps or environment variables in manifests — use Kubernetes Secrets or external-secrets-operator.
-5. NEVER set CPU limits equal to CPU requests — this causes throttling even when the node has spare capacity.
-6. NEVER run containers as root — use `securityContext.runAsNonRoot: true` and `readOnlyRootFilesystem: true`.
-7. NEVER deploy straight to production without validating in dev/staging first.
-8. ALWAYS create a PodDisruptionBudget for production workloads — without PDB, node drains take down all pods.
-9. ALWAYS validate manifests before applying: `kubectl apply --dry-run=server`, kubeval, kube-linter.
-10. ALWAYS use namespaces for isolation — each service/team gets its own namespace with resource quotas.
+1. NEVER deploy without resource requests AND limits — unbounded pods starve workloads.
+2. NEVER skip health probes — K8s sends traffic to broken pods without them.
+3. NEVER use `latest` tag — pin with SHA or semver.
+4. NEVER put secrets in ConfigMaps — use K8s Secrets or external-secrets-operator.
+5. NEVER set CPU limits == requests — causes throttling with spare capacity.
+6. NEVER run as root — `runAsNonRoot: true`, `readOnlyRootFilesystem: true`.
+7. ALWAYS validate in dev/staging before production.
+8. ALWAYS create PDB for production workloads.
+9. ALWAYS validate manifests: `--dry-run=server`, kubeval, kube-linter.
+10. ALWAYS use namespaces with resource quotas.
 
 ## Auto-Detection
-On activation, detect Kubernetes context automatically:
 ```
-AUTO-DETECT:
-1. Check kubectl context:
-   - kubectl config current-context
-   - kubectl cluster-info
-2. Scan for existing manifests:
-   - k8s/, manifests/, deploy/, kubernetes/ directories
-   - *.yaml files with apiVersion: apps/v1 or similar
-3. Scan for Helm:
-   - charts/ directory, Chart.yaml, values*.yaml
-   - helm list (if cluster accessible)
-4. Detect application:
-   - Dockerfile, docker-compose.yml → containerized app
-   - Parse Dockerfile for EXPOSE ports, CMD/ENTRYPOINT
-5. Detect deployment tooling:
-   - .github/workflows/ with kubectl/helm steps → GitHub Actions
+1. kubectl context: current-context, cluster-info
+2. Manifests: k8s/, manifests/, deploy/ directories, apiVersion: apps/v1
+3. Helm: charts/, Chart.yaml, values*.yaml
+4. App: Dockerfile, docker-compose.yml, EXPOSE ports
+5. CI: .github/workflows/ with kubectl/helm steps
 ```
 
 ## Keep/Discard Discipline
 ```
-After EACH manifest change or deployment:
-  1. MEASURE: Run kubectl apply --dry-run=server, kubeval, kubesec — do they pass?
-  2. COMPARE: Are pods healthier, more secure, or better-sized than before?
-  3. DECIDE:
-     - KEEP if: validation passes AND pods are Ready AND no error logs in last 60s
-     - DISCARD if: validation fails OR pods crash OR readiness probe fails
-  4. COMMIT kept changes. Rollback discarded changes (helm rollback / kubectl rollout undo).
-
-Never promote a deployment stage if the current stage is unhealthy.
+KEEP if: validation passes AND pods Ready AND no error logs in last 60s
+DISCARD if: validation fails OR pods crash OR readiness probe fails
+Rollback: helm rollback / kubectl rollout undo. Never promote if current stage is unhealthy.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -339,7 +310,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - A rollback was triggered (investigate before retrying)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - HPA is not yet configured (get pods healthy first, then add autoscaling)
   - Network policies are not yet applied (apply after core deployment is stable)
 ```
@@ -359,27 +330,18 @@ Print on completion: `K8s: {resource_count} resources across {namespace_count} n
 Log every Kubernetes operation to `.godmode/k8s-results.tsv`:
 ```
 iteration	task	namespace	resources_created	resources_modified	health_check	security_issues	status
-1	manifests	app-prod	12	0	all_ready	2	created
-2	security	app-prod	0	5	all_ready	0	hardened
-3	scaling	app-prod	0	3	all_ready	0	configured
-4	observability	monitoring	4	0	all_ready	0	deployed
 ```
-Columns: iteration, task, namespace, resources_created, resources_modified, health_check, security_issues, status(created/modified/hardened/configured/deployed).
 
 ## Success Criteria
-- All pods have resource requests AND limits configured.
-- All deployments have liveness and readiness probes.
-- All containers run as non-root with read-only root filesystem.
-- No secrets in plain-text manifests (using Secrets or external-secrets).
-- Image tags are pinned to specific versions (no `latest`).
-- HPA configured for production deployments with appropriate min/max replicas.
-- NetworkPolicies restrict ingress/egress to required paths only.
+- Resource requests+limits on all pods. Liveness+readiness probes on all deployments.
+- Non-root containers, read-only rootfs. No plain-text secrets. Pinned image tags (no `latest`).
+- HPA configured with correct min/max. NetworkPolicies restrict ingress/egress.
 - All manifests pass `kubectl --dry-run=server` validation.
 
 ## Error Recovery
-- **Pod stuck in CrashLoopBackOff**: Check logs with `kubectl logs <pod> --previous`. Verify liveness probe is not too aggressive (increase `initialDelaySeconds`). Check resource limits (OOMKilled = memory limit too low).
-- **Pod stuck in Pending**: Check `kubectl describe pod` for scheduling failures. Common causes: insufficient CPU/memory on nodes, node affinity/taint mismatch, PVC not bound.
-- **ImagePullBackOff**: Verify image exists in registry. Check `imagePullSecrets` on the service account. Verify registry credentials are valid and not expired.
-- **Service returns 503**: Check if endpoints exist (`kubectl get endpoints <service>`). Verify readiness probe is passing. Check if the pod labels match the service selector.
-- **HPA not scaling**: Verify metrics-server is running. Check `kubectl describe hpa` for conditions. Verify resource requests are set (HPA needs requests to calculate utilization).
-- **ConfigMap/Secret changes not picked up**: Restart pods to pick up ConfigMap/Secret changes unless using volume mounts with `subPath`. Use a rolling restart: `kubectl rollout restart deployment/<name>`.
+- **CrashLoopBackOff**: Check `kubectl logs <pod> --previous`. Increase `initialDelaySeconds`. Check OOMKilled.
+- **Pending**: `kubectl describe pod` for scheduling failures. Check CPU/memory, affinity, PVC.
+- **ImagePullBackOff**: Verify image, `imagePullSecrets`, registry credentials.
+- **503**: Check endpoints, readiness probe, pod label/selector match.
+- **HPA not scaling**: Verify metrics-server, resource requests set.
+- **ConfigMap/Secret stale**: `kubectl rollout restart deployment/<name>`.

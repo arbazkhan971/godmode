@@ -116,16 +116,8 @@ spec:
 CERTIFICATE STATUS:
 | Domain | Issuer | Expires | Status |
 |--|--|--|--|
-| example.com | Let's Encrypt | 2026-06-15 | VALID |
-| *.example.com | Let's Encrypt | 2026-06-15 | VALID |
-| api.example.com | Let's Encrypt | 2026-04-01 | RENEWING |
-| old.example.com | DigiCert | 2026-03-20 | EXPIRING |
-  Auto-renewal: ENABLED
-  Next renewal check: <date>
-  Alert threshold: 14 days before expiry
-
-TLS CONFIGURATION:
-  ...
+  Auto-renewal: ENABLED. Alert threshold: 14 days before expiry.
+  TLS: min 1.2, prefer 1.3. HSTS enabled with preload.
 ```
 
 ### Step 4: CDN Configuration
@@ -149,18 +141,8 @@ CLOUDFRONT DISTRIBUTION:
 
 #### Cloudflare Configuration
 ```
-CLOUDFLARE ZONE:
-  Zone: <domain>
-  Plan: <Free | Pro | Business | Enterprise>
-  SSL Mode: Full (Strict)
-  Min TLS: 1.2
-  Performance:
-  Cache Level: Standard
-  Browser Cache TTL: Respect Existing Headers
-  Always Online: Enabled
-  Brotli: Enabled
-  Early Hints: Enabled
-  Rocket Loader: Disabled (conflicts with SPA frameworks)
+CLOUDFLARE: Zone=<domain>, SSL=Full(Strict), MinTLS=1.2, Brotli=On, Early Hints=On
+Rocket Loader: Disabled (conflicts with SPA frameworks)
 ```
 
 #### CDN Cache Optimization
@@ -282,28 +264,17 @@ Defense in Depth Checklist:
 ```
 
 ### Step 7: Commit and Report
-```
-1. Save network configuration files in appropriate locations:
-   - DNS records: `infra/dns/` or provider-specific config
-   - SSL/TLS: `infra/certs/` or cert-manager manifests in `k8s/`
-   - CDN: `infra/cdn/` or Terraform modules
-   - Load balancer: `infra/lb/` or Nginx/HAProxy config
-   - VPC/Security: `infra/network/` or Terraform modules
-2. Commit: "network: <description> — <components configured>"
-3. If troubleshooting: "network: fix <issue> — <root cause and resolution>"
-4. If new setup: "network: <domain> — DNS + SSL + CDN + LB configured"
-```
+Save configs to `infra/{dns,certs,cdn,lb,network}/`. Commit: `"network: <description> — <components configured>"`
 
 ## Key Behaviors
-
-1. **HTTPS everywhere.** No exceptions. Every public endpoint must use TLS 1.2+ with valid certificates. HTTP exists only to redirect to HTTPS.
-2. **DNS TTL strategy.** Long TTLs (3600s+) for stable records. Short TTLs (60-300s) for records that may change during deployments. Lower TTL before migration, raise after.
-3. **Certificate auto-renewal is mandatory.** Manual certificate management leads to outages. Use Let's Encrypt with certbot or cert-manager for automatic renewal.
-4. **Keep CDN caches invalidatable.** Use content hashing for static assets. Never cache API responses at the CDN unless explicitly designed for it.
-5. **Load balancers need health checks.** Without health checks, the LB sends traffic to dead backends. Configure check interval, thresholds, and timeout.
-6. **Security groups are allowlists.** Default deny. Explicitly allow only the traffic each tier needs. Never use 0.0.0.0/0 for anything except the ALB inbound.
-7. **VPC design uses three tiers.** Public (LB), private (app), isolated (data). Data tier has no internet access. All tiers span multiple availability zones.
-8. **Log everything.** VPC Flow Logs, ALB access logs, WAF logs. You cannot investigate what you did not record.
+1. **HTTPS everywhere.** TLS 1.2+ on all public endpoints. HTTP only redirects to HTTPS.
+2. **DNS TTL strategy.** Long TTLs (3600s+) for stable, short (60-300s) for dynamic. Lower before migration.
+3. **Certificate auto-renewal mandatory.** Let's Encrypt + certbot or cert-manager.
+4. **CDN caches invalidatable.** Content hashing for static. Never cache APIs without explicit design.
+5. **LB health checks required.** Check interval, thresholds, timeout configured.
+6. **Security groups = allowlists.** Default deny. No 0.0.0.0/0 except ALB inbound.
+7. **Three-tier VPC.** Public (LB), private (app), isolated (data). Multi-AZ.
+8. **Log everything.** VPC Flow Logs, ALB access logs, WAF logs.
 
 ## Flags & Options
 
@@ -337,45 +308,27 @@ Print on completion: `Network: {resource_count} resources configured. TLS: {tls_
 Log every network configuration step to `.godmode/network-results.tsv`:
 ```
 iteration	task	resource_type	count	security_issues	tls_status	status
-1	vpc	vpc/subnets	6	0	n/a	created
-2	security	security_groups	8	0	n/a	hardened
-3	load_balancer	alb	2	0	tls_1.3	configured
-4	cdn	cloudfront	1	0	tls_1.3	configured
-5	dns	route53	4	0	n/a	configured
 ```
-Columns: iteration, task, resource_type, count, security_issues, tls_status, status(created/hardened/configured/failed).
 
 ## Success Criteria
-- VPC with public/private subnet separation across at least 2 AZs.
-- Security groups follow least-privilege (no 0.0.0.0/0 except ALB 80/443).
-- TLS 1.2+ enforced on all endpoints (TLS 1.3 preferred).
-- HSTS enabled with preload on all production domains.
-- DNS configured with appropriate TTLs (60s minimum for dynamic records).
-- Load balancer health checks configured for all target groups.
-- CDN configured with appropriate cache policies (immutable for hashed assets).
-- VPC Flow Logs enabled on all production VPCs.
-- No database ports exposed to the internet.
+- VPC: public/private subnets, 2+ AZs. SGs: least-privilege (no 0.0.0.0/0 except ALB).
+- TLS 1.2+ enforced, HSTS preload. DNS with correct TTLs. LB health checks configured.
+- CDN with correct cache policies. VPC Flow Logs enabled. No DB ports exposed.
 
 ## Error Recovery
-- **TLS certificate expires**: Set up automated certificate renewal (Let's Encrypt / ACM). Configure certificate expiry alerts at 30, 14, and 7 days before expiry. If already expired, issue a new certificate immediately.
-- **DNS propagation delays**: Check TTL values. Flush local DNS cache. Verify the change was applied at the authoritative nameserver. Wait for the old TTL to expire before testing.
-- **Load balancer returns 502/503**: Check target group health. Verify security groups allow traffic from ALB to targets. Check that the application is listening on the correct port. Verify the health check path returns 200.
-- **CDN serves stale content**: Invalidate the CDN cache for affected paths. Check cache-control headers on the origin. Verify the CDN is configured to respect origin cache headers.
-- **Security group blocks legitimate traffic**: Check inbound rules for the affected port. Verify the source CIDR or security group reference is correct. Use VPC Flow Logs to identify dropped packets.
-- **VPC peering or transit gateway connectivity fails**: Verify route tables in both VPCs include routes to the peer. Check security groups allow traffic from the peer CIDR. Verify DNS resolution works across the peering connection.
+- **TLS expires**: Auto-renewal + alert at 30/14/7d. **DNS**: Check TTL, flush, verify NS.
+- **LB 502/503**: Target health, SGs, port, health path. **CDN stale**: Invalidate, check headers.
+- **SG blocks**: Check rules, CIDR, Flow Logs. **Peering fails**: Routes, SGs, DNS.
 
 ## Keep/Discard Discipline
 ```
-After EACH network configuration change:
-  1. MEASURE: Validate the component (dig for DNS, openssl for TLS, curl for LB, traceroute for routing).
-  2. COMPARE: Is the networking state better than before? (TLS valid, DNS resolving, LB healthy)
-  3. DECIDE:
-     - KEEP if: validation passes AND connectivity confirmed AND no security regressions
-     - DISCARD if: validation fails OR connectivity broken OR new security issue introduced
-  4. COMMIT kept changes. Revert discarded changes before configuring the next component.
-
-Never proceed to the next networking component if the current one is broken — components depend on each other.
+KEEP if: validation passes AND connectivity confirmed AND no security regressions
+DISCARD if: validation fails OR connectivity broken OR new security issue introduced
+Validate: dig (DNS), openssl (TLS), curl (LB), traceroute (routing). Fix before proceeding.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -385,7 +338,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - A component requires provider-level support (e.g., domain transfer pending)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - CDN is not yet configured (LB + SSL is functional without CDN)
   - WAF rules are not yet tuned (basic networking must work first)
 ```

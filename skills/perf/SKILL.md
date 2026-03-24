@@ -201,6 +201,11 @@ Mean: <value> +/- <std dev> | Median: <value> | P95/P99: <value>/<value>
 1. Save flame graphs and profiles: `docs/perf/<target>-profile/`
 2. Auto-detect runtime from manifest files, existing profiling tools, build config, and benchmarks.
 
+## Autonomous Operation
+- Loop until all hotspots addressed or budget exhausted. Never pause.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## HARD RULES
 
 1. **NEVER optimize without profiling first.** Developers' intuition about performance is wrong more often than right. Profile, then optimize.

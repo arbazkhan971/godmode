@@ -16,7 +16,7 @@ Fix input: specific error at file:line, not vague "X is broken".
 ## One Fix Per Iteration
 Fix ONE error per iteration. Verify. Commit. Move to next.
 Never batch-fix multiple errors in one commit.
-This ensures each fix is independently verifiable and revertable.
+This makes each fix independently verifiable and revertable.
 
 ## Max Retries Per Error
 3 attempts per error. After 3 failed attempts:
@@ -60,7 +60,7 @@ WHILE error_count > 0:
     error = pick_highest_priority(errors, skipped_list)
     IF error is None: BREAK
 
-    # 3. ANALYZE — Read FULL error output (all lines, not just first).
+    # 3. ANALYZE — Read FULL error output (all lines, not only the first).
     #    Read source at error file:line ±15 lines. Read imports, types, callers.
     #    Name the mismatch: "expected X, got Y because Z".
     #    If error references another file (e.g., type mismatch from import), read that file too.
@@ -69,8 +69,8 @@ WHILE error_count > 0:
     #    No workarounds: no `any` casts, no `// @ts-ignore`, no `eslint-disable`, no empty catch blocks.
     #    If fix requires >5 lines, check if the real fix is in a different file (common with type errors).
 
-    # 5. REGRESSION TEST — If fixing a logic bug (not just a type/lint error),
-    #    add a minimal test in the same commit that would have caught this bug.
+    # 5. REGRESSION TEST — If fixing a logic bug (not a type/lint error),
+    #    add a minimal test in the same commit that catches this bug.
     #    Test file: colocate with source (e.g., foo.test.ts next to foo.ts).
 
     # 6. COMMIT — `git add {changed_files} && git commit -m "fix({module}): {description}"`
@@ -211,6 +211,10 @@ After EACH fix attempt:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when FIRST of:
   - target_reached: error_count == 0 (all checks pass)
   - budget_exhausted: all errors either fixed or in skipped_list

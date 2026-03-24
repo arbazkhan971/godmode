@@ -166,6 +166,10 @@ After EACH design system change:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ALL of:
   - All components reference semantic tokens only
   - Storybook builds and deploys successfully

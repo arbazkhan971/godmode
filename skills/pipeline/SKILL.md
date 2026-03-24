@@ -90,6 +90,11 @@ Commit: "pipeline: <name> -- <source> to <target>, <schedule>"
 Components: extractor, transformer, loader, quality checks, orchestrator config, tests
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 1. **Design before coding.** Map full data flow before writing code.
 2. **Idempotency is non-negotiable.** Use upserts, watermarks, deduplication.

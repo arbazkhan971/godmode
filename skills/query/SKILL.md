@@ -47,7 +47,7 @@ python -c "
 
 #### 2a: Run EXPLAIN (SQL Databases)
 
-Execute the appropriate EXPLAIN command for the database engine:
+Execute the correct EXPLAIN command for the database engine:
 
 ```sql
 -- PostgreSQL (most informative)
@@ -134,7 +134,7 @@ Impact:   <N+1> queries -> <1-2> queries, estimated speedup: <X>x
 DIAGNOSIS: Inefficient join strategy
 Evidence: Nested Loop join between <table_a> (<N> rows) and <table_b> (<M> rows)
           Resulting in <N*M> comparisons
-Solution: Ensure join columns are indexed on both sides
+Solution: Verify join columns are indexed on both sides
           Rewrite as a subquery or CTE if the join produces excessive rows
 Impact:   Nested Loop -> Hash Join, estimated speedup: <X>x
 ```
@@ -233,68 +233,16 @@ SELECT u.*, COALESCE(o.order_count, 0) AS order_count
 ```
 
 #### 4c: ORM-Level Optimizations
+- **Django**: `select_related` / `prefetch_related` for N+1
+- **Prisma**: `include` in `findMany` queries
+- **Rails**: `includes` / `eager_load` at query site
 
-```python
-# Django: N+1 fix
-# BEFORE (N+1):
-for order in Order.objects.all():
-    print(order.customer.name)  # Hits DB for each customer
-
-# AFTER (eager loading):
-```
-```typescript
-// Prisma: N+1 fix
-// BEFORE (N+1):
-const users = await prisma.user.findMany();
-for (const user of users) {
-  const orders = await prisma.order.findMany({ where: { userId: user.id } });
-}
-```
-```ruby
-# Rails: N+1 fix
-# BEFORE (N+1):
-@orders = Order.all
-@orders.each { |o| puts o.customer.name }
-
-# AFTER (eager loading):
-```
 ### Step 5: Verify Optimization
-
-After applying changes, measure the improvement:
-
-```
-OPTIMIZATION RESULTS:
-|  Before                    |  After                            |
-|--|--|
-|  Execution time: <X>ms     |  Execution time: <Y>ms           |
-|  Rows scanned:   <N>       |  Rows scanned:   <M>             |
-|  Scan type:      Seq Scan  |  Scan type:      Index Scan      |
-|  Buffers read:   <A>       |  Buffers read:   <B>             |
-|  Queries:        <P>       |  Queries:        <Q>             |
-  ...
-```
-Verification steps:
 ```
 1. Run EXPLAIN ANALYZE on optimized query -- confirm plan changed
 2. Run query 3 times -- take median execution time
-3. Compare before vs after with same data
-4. Run full test suite -- ensure correctness preserved
-5. Check write performance -- new indexes slow down writes
-6. Monitor for 24h in staging -- check for edge cases under load
-```
-
-### Step 6: Report and Transition
-
-```
-|  QUERY OPTIMIZATION -- <description>                        |
-|  Database:        <engine>                                  |
-|  Tables:          <affected tables>                         |
-|  Original time:   <X>ms                                     |
-|  Optimized time:  <Y>ms                                     |
-|  Speedup:         <X/Y>x                                    |
-|  Changes made:                                              |
-|  1. <change description>                                    |
-  ...
+3. Run full test suite -- verify correctness preserved
+4. Check write performance -- new indexes slow down writes
 ```
 Commit: `"query: optimize <description> -- <speedup>x improvement"`
 
@@ -308,15 +256,20 @@ HARD RULES — NEVER VIOLATE:
 4. NEVER use SELECT * in production queries — select only needed columns.
 5. NEVER use OFFSET for deep pagination — use keyset/cursor pagination.
 6. NEVER apply functions to indexed columns in WHERE clauses.
-7. ALWAYS fix N+1 at the ORM/application level, not just the SQL level.
+7. ALWAYS fix N+1 at the ORM/application level, not only the SQL level.
   ...
 ```
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Measure before and after.** Never claim an optimization without numbers. Run EXPLAIN ANALYZE before the change, apply the fix, run EXPLAIN ANALYZE after.
-2. **Read the EXPLAIN output line by line.** Don't only check if there's a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
+2. **Read the EXPLAIN output line by line.** Do not only check if there is a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
 3. **Prefer index-only solutions.** Adding an index is cheaper and safer than rewriting application code. Start with indexes, escalate to query rewrites only if needed.
-4. **State write trade-offs.** Every index speeds up reads but slows down writes. Always state the trade-off explicitly.
+4. **State write trade-offs.** Every index speeds up reads but slows down writes. State the trade-off explicitly.
 ## Flags & Options
 
 | Flag | Description |
@@ -347,48 +300,30 @@ STOP when ANY of these are true:
   - Improvement < 10% in last iteration (diminishing returns)
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   ...
 ```
 
 ## Output Format
+Print on completion: `Query: {queries_analyzed} analyzed, {queries_optimized} optimized. Indexes: +{added}/-{removed}. Latency: -{reduction_pct}%. Verdict: {verdict}.`
 
-```
-QUERY OPTIMIZATION COMPLETE:
-  Database: <PostgreSQL | MySQL | MongoDB | Redis | other>
-  Queries analyzed: <N>
-  Queries optimized: <M>
-  Indexes added: <K> (write overhead: <estimate>)
-  Indexes removed: <J> (unused)
-  Total latency reduction: <X>% (avg across optimized queries)
-
-  ...
-```
 ## TSV Logging
-
-Log every query optimization session to `.godmode/query-results.tsv`:
-
+Log to `.godmode/query-results.tsv`:
 ```
-Fields: timestamp\tproject\tdatabase\tqueries_analyzed\tqueries_optimized\tindexes_added\tindexes_removed\tavg_latency_reduction_pct\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-app\tpostgresql\t8\t5\t3\t1\t87\tabc1234
+timestamp	project	database	queries_analyzed	queries_optimized	indexes_added	indexes_removed	avg_latency_reduction_pct	commit_sha
 ```
-Append after every completed optimization pass. One row per session. If the file does not exist, create it with a header row.
 
 ## Success Criteria
+- EXPLAIN ANALYZE run before AND after every optimization
+- Every optimization measured with numbers
+- No sequential scan on tables > 10K rows
+- N+1 queries eliminated
+- No SELECT * in optimized queries
 
-```
-QUERY OPTIMIZATION SUCCESS CRITERIA:
-|  Criterion                                  | Required         |
-|--|--|
-|  EXPLAIN ANALYZE run before AND after       | YES              |
-|  Every optimization measured with numbers   | YES              |
-|  No sequential scan on tables > 10K rows    | YES              |
-|  N+1 queries eliminated                     | YES              |
-|  No SELECT * in optimized queries           | YES              |
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Query returns wrong results | Check JOIN conditions and WHERE clauses. Verify NULL handling. Test with known data set. Compare against manual calculation. |
-| Query too slow (>1s) | Run EXPLAIN ANALYZE. Check for missing indexes, full table scans, or unnecessary JOINs. Use materialized views for complex aggregations. |
-| Query works in dev but fails in production | Check for data volume differences. Verify index existence in production. Check for parameter sniffing issues. Test with production-like data. |
-| ORM-generated query is inefficient | Use raw SQL for complex queries. Check for N+1 patterns. Use query builder for dynamic conditions. Profile ORM query output. |
+| Wrong results | Check JOIN conditions, WHERE clauses, NULL handling. Test with known data set. |
+| Still slow (>1s) | Run EXPLAIN ANALYZE. Check missing indexes, full scans, unnecessary JOINs. |
+| Fails in production | Check data volume differences, index existence, parameter sniffing. |
+| ORM inefficiency | Use raw SQL for complex queries. Check N+1. Profile ORM output. |

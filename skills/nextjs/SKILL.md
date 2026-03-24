@@ -215,6 +215,9 @@ DISCARD if TTFB worsened OR build failed OR content freshness degraded.
 Never measure TTFB in dev mode.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when: All routes TTFB < 200ms (p75) AND client JS < 150KB gzipped

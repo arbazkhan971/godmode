@@ -92,35 +92,9 @@ Stateless sessions (JWT-based):
 Stateful sessions (server-side):
   Store: Redis | PostgreSQL | DynamoDB
   Session ID: 256-bit cryptographic random, base64url encoded
-  Storage format:
-    {
-      sid: "<session-id>",
-      uid: "<user-id>",
-      created: "<ISO-8601>",
-      lastActive: "<ISO-8601>",
-      ip: "<client-ip>",
-      userAgent: "<browser>",
-      mfa_verified: true/false,
-      roles: ["user", "admin"],
-      metadata: {}
-    }
-
-Session lifecycle:
-  Idle timeout: 30 minutes of inactivity
-  Absolute timeout: 12 hours (force re-auth)
-  Sliding window: Reset idle timeout on each request
-  Concurrent limit: <N> sessions per user
-  Session fixation: Regenerate session ID after authentication
-  Logout: Destroy session server-side + clear cookie
-
-Cookie configuration:
-  Name: __Host-session (with Host prefix for additional security)
-  HttpOnly: true (prevent XSS access)
-  Secure: true (HTTPS only)
-  SameSite: Lax (CSRF protection with usability) | Strict (maximum protection)
-  Path: / (or restrict to API path)
-  Domain: Do not set (restricts to exact origin)
-  Max-Age: Match session lifetime
+  Idle timeout: 30min, absolute timeout: 12h, sliding window reset on request
+  Concurrent limit: <N> per user. Regenerate ID after auth. Destroy on logout.
+  Cookie: __Host-session, HttpOnly, Secure, SameSite=Lax, no Domain set
 
 SECURITY CHECKLIST:
 - [ ] Session ID is cryptographically random (256+ bits)
@@ -263,6 +237,8 @@ AUTH SECURITY HARDENING:
 4. If PRODUCTION READY: "Authentication architecture complete. Run `/godmode:rbac` to design access control, or `/godmode:build` to implement."
 
 ## Key Behaviors
+
+Never ask to continue. Loop autonomously until all auth flows pass and security checklist is complete.
 
 1. **Security by default.** Every design choice defaults to the most secure option. Weaker options require explicit justification. Never suggest HS256 for multi-service JWT. Never suggest implicit grant. Never suggest SMS as primary MFA.
 2. **Strategy must match architecture.** JWTs for stateless microservices. Server-side sessions for traditional web apps. OAuth2/OIDC for third-party integration. Do not force a strategy that does not fit the application type.

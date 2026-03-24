@@ -98,7 +98,7 @@ Rules:
 - Add database indexes on all foreign keys and columns used in where/orderBy
 
 ### Step 3: Service Container, Facades & Contracts
-Leverage Laravel's IoC container:
+Use Laravel's IoC container:
 
 ```php
 // Contract (Interface)
@@ -288,21 +288,10 @@ Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
 10. ALWAYS use backed enums (PHP 8.1+) for status fields and `$casts` for type safety.
 
 ## Auto-Detection
-On activation, detect Laravel project context automatically:
 ```
-AUTO-DETECT:
-1. Confirm Laravel project:
-   - artisan file in project root
-   - composer.json with laravel/framework dependency
-   - Parse Laravel version from composer.lock
-2. Detect PHP version:
-   - composer.json → require.php version constraint
-   - php -v output
-3. Detect architecture:
-   - routes/web.php present → full-stack (Blade/Livewire/Inertia)
-   - routes/api.php present → API routes exist
-   - resources/views/ → Blade templates
-  ...
+1. Laravel: artisan file, composer.json laravel/framework, composer.lock version
+2. PHP: composer.json require.php, php -v
+3. Architecture: routes/web.php (full-stack), routes/api.php (API), resources/views/ (Blade)
 ```
 
 ## Flags & Options
@@ -314,20 +303,11 @@ AUTO-DETECT:
 | `--auth sanctum` | Configure Sanctum auth |
 
 ## Output Format
-
-End every Laravel skill invocation with this summary block:
-
 ```
 LARAVEL RESULT:
-Action: <scaffold | model | controller | service | policy | optimize | test | audit | upgrade>
-Files created/modified: <N>
-Models created/modified: <N>
-Controllers created/modified: <N>
-Migrations created: <N>
-Tests passing: <yes | no | skipped>
-Build status: <passing | failing | not-checked>
-Issues fixed: <N>
-Notes: <one-line summary>
+Action: <scaffold|model|controller|service|policy|optimize|test|audit|upgrade>
+Files: <N> created/modified. Models: <N>. Controllers: <N>. Migrations: <N>.
+Tests: <passing|failing|skipped>. Build: <passing|failing>. Issues fixed: <N>.
 ```
 ## TSV Logging
 
@@ -338,44 +318,20 @@ timestamp	project	action	files_count	models_count	controllers_count	migrations_c
 ```
 ## Success Criteria
 
-Every Laravel skill invocation must pass ALL of these checks before reporting success:
-
-1. `php artisan test` passes if test suite exists
-2. No Eloquent models returned directly from controllers (use API Resources)
-3. No business logic in controllers (use Action or Service classes)
-4. All models use explicit `$fillable` (no `$guarded = []`)
-5. All form validation uses Form Request classes (no inline validation)
-6. Heavy work dispatched to queues (email, PDF, payment, external APIs)
-7. `preventLazyLoading` enabled in AppServiceProvider (development)
-8. No `env()` calls outside config files (use `config()` helper)
-9. All endpoints have authorization (Policies or Gates)
-10. All migrations are consistent (`php artisan migrate:status`)
-
-If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+1. `php artisan test` passes. 2. No raw Eloquent from controllers. 3. No logic in controllers. 4. Explicit `$fillable`. 5. Form Request classes. 6. Heavy work queued. 7. `preventLazyLoading` enabled. 8. No `env()` outside config. 9. All endpoints authorized. 10. Migrations consistent.
 
 ## Error Recovery
-
-IF php artisan test fails:
-  1. Check that test database is configured in phpunit.xml
-IF migration fails:
-  1. Check for column type conflicts with existing data
-IF N+1 query detected (preventLazyLoading):
-  1. Add with() eager loading to the query
-IF queue job fails:
-  1. Check that job class is serializable (no closures, no unserializable properties)
-IF authorization errors:
-  1. Verify Policy is registered in AuthServiceProvider
+- Test fails: check phpunit.xml test DB. Migration fails: check column type conflicts. N+1: add `with()`. Queue job fails: check serializability. Auth errors: verify Policy registration.
 
 ## Keep/Discard Discipline
 ```
-After EACH implementation or optimization change:
-  1. MEASURE: Run tests / validate the change produces correct output.
-  2. COMPARE: Is the result better than before? (faster, safer, more correct)
-  3. DECIDE:
-     - KEEP if: tests pass AND quality improved AND no regressions introduced
-     - DISCARD if: tests fail OR performance regressed OR new errors introduced
-  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+KEEP if: tests pass AND quality improved AND no regressions
+DISCARD if: tests fail OR performance regressed OR new errors
+On discard: revert before proceeding.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -384,7 +340,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```

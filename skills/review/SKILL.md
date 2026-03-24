@@ -62,12 +62,16 @@ STOP when FIRST of:
   - stuck: >5 vague findings discarded without actionable replacements
 ```
 
+## Autonomous Operation
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Hard Rules
-1. Every finding must include file:line + suggested fix (code snippet) — no vague feedback.
+1. Every finding must include file:line + suggested fix (code snippet) -- no vague feedback.
 2. MUST-FIX blocks merge. NIT = auto-fixed if safe. Never auto-fix logic, APIs, or security code.
-3. Review against spec + tests, not personal style — no bikeshedding.
+3. Review against spec + tests, not personal style -- no bikeshedding.
 4. Score is median of all 4 agents. Score < 8 triggers re-review (max 3 iterations).
-5. Deduplicate same file:line across agents — keep highest severity, first agent's fix.
+5. Deduplicate same file:line across agents -- keep highest severity, first agent's fix.
 
 ## Rules
 1. Every finding: file:line + suggested fix (code). No vague feedback like 'improve' or 'could be better'.

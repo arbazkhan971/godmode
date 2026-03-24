@@ -178,7 +178,7 @@ QUALITY AUDIT:
 | 2 | Missing: no docs for /users | HIGH | (none) |
 | 3 | Broken link: ./setup.md | MEDIUM | README:15 |
 | 4 | Outdated example: uses v1 API | MEDIUM | guide.md:8 |
-| 5 | Typo: "recieve" (x3) | LOW | various |
+| 5 | Typo: "recieve" (x3) | LOW | multiple files |
 ```
 
 Staleness detection strategies:
@@ -252,25 +252,11 @@ WHILE documentation_queue is not empty:
 ```
 
 ## Auto-Detection
-
 ```
-AUTO-DETECT project documentation context:
-  1. Grep for doc generation configs: .jsdoc.json, typedoc.json, mkdocs.yml, sphinx conf.py
-  2. Check for existing OpenAPI/Swagger specs: openapi.yaml, swagger.json
-  3. Scan package.json / pyproject.toml for doc scripts (docs:build, docs:generate)
-  4. Count public exports vs documented exports → compute coverage percentage
-  5. Check for .env.example → derive configuration documentation
-  6. Detect framework:
-     - JSDoc / TSDoc → TypeScript/JavaScript project
-     - Sphinx / pydoc → Python project
-     - godoc → Go project
-     - Javadoc → Java project
-  7. Check for docs/ directory structure → existing documentation conventions
-
-  USE detected context to:
-    - Match existing doc style and tooling
-    - Prioritize undocumented public APIs
-    - Skip already-documented items with recent modification dates
+1. Scan for doc configs: .jsdoc.json, typedoc.json, mkdocs.yml, sphinx conf.py, openapi.yaml
+2. Check package.json/pyproject.toml for doc scripts. Count documented vs undocumented exports.
+3. Detect framework (JSDoc/TSDoc, Sphinx, godoc, Javadoc). Match existing doc style.
+4. Prioritize undocumented public APIs. Skip recently documented items.
 ```
 
 ## Output Format
@@ -312,24 +298,9 @@ The docs skill is complete when ALL of the following are true:
 7. Runbooks (if any) contain exact commands verified to work
 
 ## Error Recovery
-
-```
-IF documentation does not match code behavior:
-  1. Read the actual source code (never document from memory or assumptions)
-  2. Run the function/endpoint to verify behavior before documenting
-  3. Check git blame to see if the code changed after docs were written
-  4. Update the documentation to match current behavior, not intended behavior
-
-IF doc generation tool fails:
-  1. Check for syntax errors in doc comments (JSDoc, docstrings, godoc)
-  2. Verify the doc tool version is compatible with the project's language version
-  3. Run the tool in verbose mode to identify the failing file
-  4. Fix the source comment and re-run
-
-IF links in documentation are broken:
-  1. Use a link checker tool (markdown-link-check, linkinator)
-  2. Update moved references to their new locations
-```
+- **Docs don't match code:** Read actual source. Check git blame for code changes after docs written. Update docs to match current behavior.
+- **Doc generation tool fails:** Check syntax errors in comments. Verify tool version compatibility. Run verbose mode to find failing file.
+- **Broken links:** Run link checker (markdown-link-check, linkinator). Update moved references.
 
 ## Keep/Discard Discipline
 ```
@@ -346,36 +317,28 @@ Never merge documentation that references functions or endpoints that no longer 
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All public functions/endpoints have descriptions, parameters, and error cases
   - Zero broken internal links
   - No stale docs (doc modification date >= code modification date)
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - Private/internal functions lack docs (public API is the priority)
   - Runbooks are not yet created (code docs come first)
 ```
 
 ## Documentation Audit Loop
-
-Systematic protocol for scoring documentation coverage, detecting staleness, and validating API docs:
-
 ```
-DOCUMENTATION AUDIT LOOP:
-current_iteration = 0
-max_iterations = 5
-audit_phases = [coverage_scoring, stale_detection, api_doc_validation, link_integrity, freshness_enforcement]
-
-WHILE current_iteration < max_iterations:
-  phase = audit_phases[current_iteration]
-  current_iteration += 1
-
-  IF phase == "coverage_scoring":
-    1. INVENTORY all documentable targets:
-       public_functions = count exported/public functions across all source files
-       public_types = count exported types/interfaces/classes
-       api_endpoints = count route definitions (REST, GraphQL, gRPC)
-       config_vars = count environment variables / config keys
+WHILE audit_phases remain (coverage_scoring, stale_detection, api_doc_validation, link_integrity, freshness):
+  coverage_scoring: inventory all public functions, types, endpoints, config vars → compute coverage %
+  stale_detection: compare doc modification dates vs code modification dates → flag stale
+  api_doc_validation: verify OpenAPI spec matches actual routes → flag missing/stale endpoints
+  link_integrity: check all internal links resolve → flag broken
+  freshness: verify doc dates >= code dates for all documented targets
 ```
 

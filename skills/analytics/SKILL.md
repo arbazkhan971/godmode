@@ -100,45 +100,8 @@ USER PROPERTIES (set once, updated on change):
 ### Step 5: Implementation
 Implement analytics tracking in the codebase:
 
-#### Segment Implementation
-```typescript
-// analytics/segment.ts
-import { AnalyticsBrowser } from '@segment/analytics-next';
-
-export const analytics = AnalyticsBrowser.load({
-  writeKey: process.env.SEGMENT_WRITE_KEY!,
-});
-```
-
-#### Amplitude Implementation
-```typescript
-// analytics/amplitude.ts
-import * as amplitude from '@amplitude/analytics-browser';
-
-export function initAmplitude() {
-  amplitude.init(process.env.AMPLITUDE_API_KEY!, {
-    defaultTracking: {
-```
-
-#### PostHog Implementation
-```typescript
-// analytics/posthog.ts
-import posthog from 'posthog-js';
-
-export function initPostHog() {
-  posthog.init(process.env.POSTHOG_API_KEY!, {
-    api_host: process.env.POSTHOG_HOST || 'https://app.posthog.com',
-```
-
-#### Analytics Abstraction Layer
-```typescript
-// analytics/index.ts — unified interface
-interface AnalyticsProvider {
-  track(event: string, properties?: Record<string, unknown>): void;
-  identify(userId: string, traits?: Record<string, unknown>): void;
-  page(name: string, properties?: Record<string, unknown>): void;
-}
-```
+#### Provider Setup
+Configure the selected provider SDK (Segment, Amplitude, PostHog, etc.) with environment-keyed initialization. Build a unified abstraction layer (`AnalyticsProvider` interface with `track`, `identify`, `page` methods) so providers can be swapped without touching component code.
 
 ### Step 6: Funnel Analysis Setup
 Design and instrument conversion funnels:
@@ -264,6 +227,8 @@ Funnels: <N> funnels defined
 Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 
 ## Key Behaviors
+
+Never ask to continue. Loop autonomously until all events are instrumented and validated.
 
 1. **Taxonomy first, tracking second.** Design the event catalog before writing any tracking code. Ad-hoc event naming creates an unmaintainable mess.
 2. **Privacy by default.** No tracking before consent. No PII in events. Respect DNT. Implement data deletion. These are not optional.

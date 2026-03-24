@@ -171,199 +171,16 @@ Example row:
 5. Never delete a branch on DISCARD without explicit user confirmation.
 
 ## Completion Verification Protocol
-
-Systematic protocol ensuring all quality dimensions are met before a branch is considered truly finished:
-
 ```
-COMPLETION VERIFICATION PROTOCOL:
-current_iteration = 0
-max_iterations = 6
-verification_dimensions = [test_suite, coverage_threshold, docs_updated, lint_clean, pr_readiness, integration_check]
+FOR EACH dimension in [test_suite, coverage, docs, lint, pr_readiness, integration]:
+  test_suite: Run full suite, compare vs main baseline, check new code has tests.
+  coverage: Check overall >= target (80%), changed files >= 60%, no coverage drop > 2%.
+  docs: Check API docs match routes, new exports documented, config docs updated.
+  lint: Run lint + type check. Grep for TODO/FIXME/debugger in changed files.
+  pr_readiness: Clean commits, rebased on main, diff < 400 lines.
+  integration: Check merge conflicts, dependent packages, migration compatibility.
 
-WHILE current_iteration < max_iterations:
-  dimension = verification_dimensions[current_iteration]
-  current_iteration += 1
-
-  IF dimension == "test_suite":
-    1. RUN full test suite:
-       result = run({test_cmd})
-       total_tests = parse test count from output
-       passing_tests = parse passing count
-       failing_tests = parse failing count
-       skipped_tests = parse skipped count
-
-    2. COMPARE against baseline:
-       baseline_tests = count from main branch (git stash, run tests on main, restore)
-       new_tests = total_tests - baseline_tests
-       IF new_tests < 0: FAIL — "Tests were deleted. Verify this is intentional."
-
-    3. VERIFY no regressions:
-       IF failing_tests > 0: FAIL — "{N} tests failing. Fix before finishing."
-       IF skipped_tests > baseline_skipped: WARN — "{N} new skipped tests. Verify intentional."
-
-    4. VERIFY new code has tests:
-       new_files = git diff --name-only main..HEAD --diff-filter=A | filter source files
-       test_files = git diff --name-only main..HEAD --diff-filter=A | filter test files
-       untested_files = new_files without corresponding test files
-       IF untested_files is not empty: WARN — "{N} new source files without tests: {list}"
-
-    5. SCORE:
-       [ ] All tests pass: {YES/NO}
-       [ ] No test regressions: {YES/NO}
-       [ ] New code has tests: {YES/NO/PARTIAL}
-       [ ] No new skips: {YES/NO}
-
-  IF dimension == "coverage_threshold":
-    1. RUN coverage measurement:
-       IF coverage_cmd exists:
-         result = run({coverage_cmd})
-         overall_coverage = parse percentage
-         file_coverages = parse per-file coverage
-
-    2. CHECK thresholds:
-       project_target = read from config (default: 80%)
-       IF overall_coverage < project_target:
-         WARN — "Coverage {overall_coverage}% is below target {project_target}%"
-
-    3. CHECK coverage on changed files specifically:
-       changed_files = git diff --name-only main..HEAD | filter source files
-       FOR each changed_file:
-         file_coverage = coverage for this specific file
-         IF file_coverage < 60%:
-           FAIL — "{file} has {coverage}% coverage (minimum: 60% for changed files)"
-
-    4. CHECK coverage delta:
-       previous_coverage = coverage on main branch
-       delta = overall_coverage - previous_coverage
-       IF delta < -2%: FAIL — "Coverage dropped by {delta}%. Add tests before finishing."
-       IF delta < 0: WARN — "Coverage decreased slightly by {delta}%."
-       IF delta > 0: PASS — "Coverage improved by +{delta}%."
-
-    5. SCORE:
-       [ ] Overall >= target: {YES/NO}
-       [ ] Changed files >= 60%: {YES/NO}
-       [ ] Coverage not decreased: {YES/NO}
-
-  IF dimension == "docs_updated":
-    1. DETECT if documentation updates are needed:
-       changed_files = git diff --name-only main..HEAD
-
-       needs_doc_update = FALSE
-       reasons = []
-
-       IF changed_files contains API route files:
-         check if openapi.yaml or API docs were also updated
-         IF NOT: needs_doc_update = TRUE; reasons.append("API routes changed but API docs not updated")
-
-       IF changed_files contains new public exports:
-         check if JSDoc/docstrings were added
-         IF NOT: needs_doc_update = TRUE; reasons.append("New public exports without documentation")
-
-       IF changed_files contains config changes:
-         check if .env.example or config docs were updated
-         IF NOT: needs_doc_update = TRUE; reasons.append("Config changed but docs not updated")
-
-       IF changed_files contains database migrations:
-         check if schema docs or data model docs were updated
-         IF NOT: needs_doc_update = TRUE; reasons.append("Schema changed but model docs not updated")
-
-    2. CHECK README freshness:
-       IF significant feature added (>100 lines, new entry point):
-         check if README.md was modified in this branch
-         IF NOT: WARN — "Significant feature added. Update README."
-
-    3. SCORE:
-       [ ] API docs match code: {YES/NO/N/A}
-       [ ] New exports documented: {YES/NO/N/A}
-       [ ] Config docs updated: {YES/NO/N/A}
-       [ ] README current: {YES/NO/N/A}
-
-  IF dimension == "lint_clean":
-    1. RUN full lint suite:
-       lint_result = run({lint_cmd})
-       IF lint fails: FAIL — "Fix lint errors before finishing."
-
-    2. RUN type check (if applicable):
-       typecheck_result = run({typecheck_cmd})
-       IF typecheck fails: FAIL — "Fix type errors before finishing."
-
-    3. CHECK for code quality signals:
-       - grep for TODO/FIXME/HACK/XXX in changed files
-       - grep for console.log/print/debugger in changed files
-       - grep for commented-out code blocks in changed files
-
-    4. SCORE:
-       [ ] Lint passes: {YES/NO}
-       [ ] Type check passes: {YES/NO/N/A}
-       [ ] No debug statements: {YES/NO}
-       [ ] No TODO/FIXME in new code: {YES/NO}
-
-  IF dimension == "pr_readiness":
-    1. CHECK PR metadata readiness:
-       [ ] Branch has descriptive name (matches convention)
-       [ ] Commits are clean (no WIP, fixup, or merge commits)
-       [ ] Commit messages follow convention
-       [ ] Branch is rebased on latest main (no conflicts)
-       [ ] Diff size is within limits (< 400 lines preferred)
-
-    2. IF commits need cleanup:
-       RECOMMEND: "Run interactive rebase to clean up {N} WIP commits before PR."
-       PROVIDE: exact rebase command
-
-    3. IF branch is behind main:
-       RECOMMEND: "Rebase onto latest main: git fetch origin main && git rebase origin/main"
-
-    4. GENERATE PR readiness summary:
-       PR READINESS:
-| Check | Status |
-|--|--|
-| Branch naming convention | OK/FAIL |
-| Clean commit history | OK/FAIL |
-| Commit message convention | OK/FAIL |
-| Rebased on latest main | OK/FAIL |
-| Diff size within limits | OK/WARN |
-
-  IF dimension == "integration_check":
-    1. CHECK for integration issues:
-       a. Fetch latest main and check for conflicts:
-          git fetch origin main
-          conflict_check = git merge-tree $(git merge-base HEAD origin/main) origin/main HEAD
-          IF conflicts: WARN — "Merge conflicts detected. Resolve before finishing."
-
-       b. Check if dependent services/packages still work:
-          IF monorepo: run tests in dependent packages
-          IF microservice: check API contract compatibility
-
-       c. Check migration compatibility:
-          IF database changes present:
-            verify migration applies cleanly on main's schema
-            verify rollback works
-            verify application starts with migrated schema
-
-    2. SCORE:
-       [ ] No merge conflicts: {YES/NO}
-       [ ] Dependent packages pass: {YES/NO/N/A}
-       [ ] Migrations clean: {YES/NO/N/A}
-
-  REPORT: "Dimension {current_iteration}/{max_iterations}: {dimension} — {PASS | FAIL | WARN}"
-
-FINAL COMPLETION VERIFICATION:
-  COMPLETION VERIFICATION SUMMARY
-| Dimension | Status | Details |
-|--|--|--|
-| Test suite | PASS | 112/112 pass, +8 new |
-| Coverage threshold | PASS | 84% (+2% vs main) |
-| Docs updated | WARN | API docs need update |
-| Lint clean | PASS | 0 errors, 0 warnings |
-| PR readiness | PASS | Clean commits, rebased |
-| Integration check | PASS | No conflicts, migration OK |
-| Overall | READY | 1 warning (docs) |
-| Recommendation |  | Update API docs, then ship |
-
-DECISION:
-  IF all PASS: → proceed to /godmode:ship or /godmode:finish (PR/merge)
-  IF any FAIL: → BLOCK. Fix failures first, re-run verification.
-  IF only WARN: → proceed with acknowledgment. Warnings logged.
+DECISION: ALL PASS → ship. ANY FAIL → block, fix first. WARN only → proceed with acknowledgment.
 ```
 ## Keep/Discard Discipline
 ```
@@ -376,6 +193,9 @@ After EACH finalization attempt:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when FIRST of:
   - target_reached: branch finalized (MERGED, PR created, KEPT, or DISCARDED)
   - budget_exhausted: guard suite re-run 3 times with no improvement

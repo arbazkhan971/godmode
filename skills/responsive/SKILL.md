@@ -210,7 +210,7 @@ Optimize images for every viewport:
 ```
 
 ### Step 8: Print Stylesheets
-Ensure content prints well:
+Verify content prints well:
 
 ```css
 /* print.css */
@@ -260,36 +260,27 @@ Handle tables that don't fit on small screens:
 
 ```
 RESPONSIVE DESIGN AUDIT:
-  Breakpoints
   Strategy: <mobile-first / desktop-first / intrinsic>
-  Defined: <list breakpoints>
-  Consistent: YES / NO
-  Layout Techniques
-  CSS Grid: <N> usages
-  Flexbox: <N> usages
-  ...
+  Breakpoints: <list>, Consistent: YES / NO
+  Grid: <N> usages, Flexbox: <N> usages
+  Score: Layout (0-25) + Viewports (0-25) + Images (0-15) + Type (0-10) + Touch (0-10) + Print (0-5) + Issues (0-10)
 ```
-Scoring:
-- Layout techniques (Grid/Flex/Container queries): 0-25 points
-- Viewport testing (all breakpoints pass): 0-25 points
-- Images (srcset, art direction, formats): 0-15 points
-- Typography (fluid, readable): 0-10 points
-- Touch / pointer handling: 0-10 points
-- Print stylesheet: 0-5 points
-- No common issues (overflow, small text, tiny targets): 0-10 points
 
 ### Step 12: Commit and Transition
-1. If responsive layouts were built: `"responsive: implement responsive layout with Grid + container queries"`
-2. If images were optimized: `"responsive: add srcset and art direction for responsive images"`
-3. If print stylesheet was added: `"responsive: add print stylesheet with page break controls"`
-4. If audit was completed: Save report at `docs/responsive/<project>-responsive-audit.md`
-5. Transition: "Responsive design complete. Run `/godmode:a11y` for accessibility, `/godmode:perf` for performance, or `/godmode:visual` for visual regression testing."
+Commit: `"responsive: implement responsive layout with Grid + container queries"`
+Transition: "Run `/godmode:a11y` for accessibility, `/godmode:perf` for performance."
+
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
 
 ## Key Behaviors
 
 1. **Mobile-first is the default.** Start with the smallest viewport. Add complexity with `min-width` media queries. Mobile-first forces you to prioritize content, which produces better designs at every size.
-2. **Container queries are the future.** Components should respond to their container, not the viewport. A card in a sidebar and a card in the main content area have different space. Container queries make components truly reusable.
-3. **CSS Grid for layout, Flexbox for alignment.** Grid is for 2D page-level layout (rows and columns). Flexbox is for 1D component-level alignment (a row of buttons, a nav bar). Using the right tool simplifies the code.
+2. **Container queries are the future.** Components should respond to their container, not the viewport. A card in a sidebar and a card in the main content area have different space. Container queries make components reusable.
+3. **CSS Grid for layout, Flexbox for alignment.** Grid is for 2D page-level layout (rows and columns). Flexbox is for 1D component-level alignment (a row of buttons, a nav bar). Using the correct tool simplifies the code.
 4. **Fluid typography eliminates breakpoints.** `clamp(1rem, 0.9rem + 0.5vw, 1.125rem)` scales smoothly between mobile and desktop. No media queries needed for type. Fewer breakpoints means less code and fewer edge cases.
 ## Flags & Options
 
@@ -313,56 +304,33 @@ AUTO-DETECT SEQUENCE:
   ...
 ```
 ## Output Format
-
-After each responsive skill invocation, emit a structured report:
-
-```
-RESPONSIVE AUDIT REPORT:
-| Pages audited | <N> |
-|--|--|
-| Breakpoints tested | 320, 375, 768, 1024, 1280, 1536 |
-| Layout issues | <N> found / <N> fixed |
-| Image optimization | <N> images with srcset/sizes |
-| Touch targets | <N> below 44px / <N> fixed |
-| CLS score | <N> (target < 0.1) |
-| Typography | fluid (clamp): YES / NO |
+Print on completion: `Responsive: {pages} pages audited, {issues_found} issues found / {issues_fixed} fixed. CLS: {score}. Verdict: {verdict}.`
 
 ## TSV Logging
-
-  ...
+Log to `.godmode/responsive.tsv`:
 ```
 timestamp	skill	page	viewport	issue_type	element	before	after	status
-2026-03-20T14:00:00Z	responsive	/home	320px	overflow	.hero-img	overflow-x	contained	fixed
-2026-03-20T14:01:00Z	responsive	/pricing	768px	touch_target	.cta-btn	32px	48px	fixed
 ```
 
 ## Success Criteria
-
-The responsive skill is complete when ALL of the following are true:
 1. No horizontal overflow at any viewport from 320px to 1536px
-2. All images use srcset + sizes or are SVG (no single-resolution raster images)
+2. All images use srcset + sizes or are SVG
 3. All interactive elements have minimum 44x44px touch targets
 4. Typography uses clamp() or responsive units (no fixed px font sizes)
-5. Layout uses CSS Grid and/or Flexbox (no float-based layouts)
-6. CLS < 0.1 (all images/video have explicit width/height or aspect-ratio)
+5. Layout uses CSS Grid/Flexbox (no float-based layouts)
+6. CLS < 0.1 (explicit width/height or aspect-ratio on media)
 7. Media queries use consistent direction (mobile-first = min-width only)
-8. Pages tested and passing at 320px, 375px, 768px, 1024px, 1280px, and 1536px
+
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All identified tasks are complete and validated
-  - User explicitly requests stop
-  - Max iterations reached — report partial results with remaining items listed
-
-DO NOT STOP only because:
-  - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (handle that in a follow-up pass)
+STOP when ANY: all tasks validated, user requests stop, max iterations reached.
+DO NOT STOP only because one item is complex or a non-critical check is pending.
 ```
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Layout breaks at specific breakpoint | Check for fixed widths. Use `max-width` instead of `width`. Test at breakpoint boundaries (e.g., 767px and 768px). |
-| Images overflow container on mobile | Add `max-width: 100%; height: auto;` to all images. Use `object-fit: cover` for background images. |
-| Touch targets too small on mobile | Minimum 44x44px touch targets (WCAG). Add padding to clickable elements. Increase spacing between adjacent targets. |
-| Horizontal scroll on mobile | Find the overflowing element with DevTools. Check for `width` > 100vw, unbreaking text, or fixed-width tables. |
+| Layout breaks at breakpoint | Check fixed widths. Use `max-width` instead. Test at boundaries (767px/768px). |
+| Images overflow on mobile | `max-width: 100%; height: auto;` on all images. `object-fit: cover` for backgrounds. |
+| Touch targets too small | Minimum 44x44px (WCAG). Add padding. Increase spacing between adjacent targets. |
+| Horizontal scroll | Find overflowing element in DevTools. Check `width` > 100vw, unbreaking text, fixed-width tables. |

@@ -169,43 +169,16 @@ ACTUATOR CONFIGURATION:
 | /actuator/beans | DISABLED in prod |
 | /actuator/heapdump | DISABLED in prod |
 ```
-```java
-// Custom health indicator
-@Component
-public class PaymentGatewayHealthIndicator implements HealthIndicator {
-
-    @Override
-    public Health health() {
-```
 ### Step 6: Spring Cloud Microservices
 Design microservice architecture when needed:
 
 ```
-MICROSERVICES ARCHITECTURE:
-  API Gateway
-  (Spring Cloud Gateway)
-  - Route matching, load balancing, rate limiting
-  - JWT validation at edge, circuit breaker
-└──────────────────┬──────────────────────────────────┬────────────┘
-         ┌─────────▼─────────┐              ┌────────▼──────────┐
-| Service A |  | Service B |
-|--|--|--|
-| (Spring Boot) | ◄────────────► | (Spring Boot) |
-| - REST/gRPC | OpenFeign | - REST/gRPC |
-| - Own database | or gRPC | - Own database |
-         └─────────┬─────────┘              └────────┬──────────┘
+API Gateway (Spring Cloud Gateway) → Service A + Service B (each with own DB)
+Communication: OpenFeign or gRPC. Circuit breaker: Resilience4j.
 ```
 ### Step 7: Testing Strategy
 Test at every layer:
 
-```java
-// Unit test — Service layer with Mockito
-@ExtendWith(MockitoExtension.class)
-class OrderServiceTest {
-
-    @Mock private OrderRepository orderRepository;
-    @Mock private PaymentClient paymentClient;
-```
 ```
 TESTING STRATEGY:
 | Layer | Approach |
@@ -280,6 +253,7 @@ Commit: `"spring: <service> — <N> endpoints, Spring Boot <version>, <starters>
 5. **Security is not optional.** Every endpoint is denied by default. Authentication and authorization are configured before the first API endpoint is written.
 6. **Profile-driven configuration.** Local, dev, staging, and production environments get separate profiles. Secrets come from environment variables or Vault.
 7. **Actuator for production.** Health probes for Kubernetes, Prometheus metrics for monitoring, and structured logging for observability are configured before shipping.
+8. **Never ask to continue. Loop autonomously until all validation checks pass or budget exhausted.**
 
 ## Flags & Options
 
@@ -342,25 +316,9 @@ If any check fails, fix it before reporting success. If a fix is not possible, d
 
 ## Error Recovery
 
-When errors occur, follow these remediation steps:
-
-```
-IF build fails (mvnw/gradlew):
-  1. Read the full error output — fix compilation errors first
-  2. Check dependency version conflicts (mvn dependency:tree)
-  3. Verify Java version matches pom.xml/build.gradle requirement
-  4. Check for missing @ComponentScan or @EntityScan configurations
-
-IF tests fail:
-  1. Verify TestContainers is running (Docker needs to run)
-  2. Check @SpringBootTest vs @WebMvcTest vs @DataJpaTest scope
-  3. Verify @MockBean and @SpyBean are correctly applied
-  4. Check that test properties override production config
-
-IF JPA/Hibernate errors:
-  1. LazyInitializationException → use @EntityGraph or JOIN FETCH, never OSIV
-  2. N+1 queries → add @BatchSize or use JOIN FETCH in repository queries
-```
+- **Build fails**: Read error output, check dependency conflicts (`mvn dependency:tree`), verify Java version, check `@ComponentScan`/`@EntityScan`.
+- **Tests fail**: Verify Docker running (TestContainers), check test slice scope, verify `@MockBean` applied correctly.
+- **JPA errors**: `LazyInitializationException` → use `@EntityGraph` or JOIN FETCH. N+1 → add `@BatchSize` or JOIN FETCH.
 ## Keep/Discard Discipline
 ```
 After EACH Spring Boot configuration or code change:
@@ -382,7 +340,7 @@ STOP when ANY of these are true:
   - Actuator endpoints are secured for production
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Test coverage is below target (log it, address separately)
   - One non-critical deprecation warning remains (document it)
 ```

@@ -178,7 +178,7 @@ CI/CD integration:
 ```
 
 ### Step 8: Statistical Significance & Comparison
-Ensure evaluation results are statistically meaningful:
+Verify evaluation results are statistically meaningful:
 
 ```
 STATISTICAL ANALYSIS:
@@ -196,26 +196,11 @@ Per-metric comparison:
 | Cost per call | <$> | <$> | <delta> | — | — |
 
 Statistical tests:
-  Paired comparisons (same inputs, different systems):
-    - Paired bootstrap test (recommended, non-parametric)
-    - McNemar's test (for binary pass/fail)
-    - Wilcoxon signed-rank test (for ordinal scores)
-  Independent comparisons (different inputs):
-    - Mann-Whitney U test (non-parametric)
-    - Permutation test
-
-  Significance level: alpha = 0.05
-  Multiple comparison correction: Bonferroni (if testing >3 metrics)
-
-Sample size requirements:
-  - For detecting 5% improvement with 80% power: ~<N> examples
-  - For detecting 2% improvement with 80% power: ~<N> examples
-  - Current dataset: <N> examples — sufficient to detect <X>% improvement
-
-Confidence intervals:
-  Correctness: <val> [<lower>, <upper>] (95% CI)
-  Relevance: <val> [<lower>, <upper>] (95% CI)
-  Faithfulness: <val> [<lower>, <upper>] (95% CI)
+  Paired: bootstrap (recommended), McNemar's (binary), Wilcoxon (ordinal)
+  Independent: Mann-Whitney U, permutation test
+  Alpha: 0.05. Multiple correction: Bonferroni (if >3 metrics).
+  Sample size: calculate for target MDE with 80% power.
+  Report 95% confidence intervals for all metrics.
 
 VERDICT:
   <System B is significantly better on X, Y metrics>
@@ -291,9 +276,7 @@ Commit: `"eval: <system> — v<version>, <N> examples, correctness=<val>, faithf
 5. **Never delete regression tests.** Once a bug is caught and tested, that test stays forever. The regression set is the immune system of your AI system.
 
 ## Output Format
-
 After each eval skill invocation, emit a structured report:
-  ...
 ```
 EVALUATION REPORT:
 | System evaluated | <name and version> |
@@ -345,20 +328,23 @@ Never report an evaluation result without a baseline comparison and significance
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All quality dimensions evaluated with baseline comparison
   - Regression tests pass and are integrated into CI
   - Statistical significance computed for all comparisons
   - User explicitly requests stop
 
-DO NOT STOP only because:
+DO NOT STOP when:
   - One dimension shows no significant difference (report it as-is)
   - Human evaluation budget is exhausted (use automated judges for remaining)
 ```
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Evaluation scores are noisy/inconsistent | Increase sample size. Use multiple judges and take median. Add calibration examples to the prompt. |
-| LLM judge disagrees with human ratings | Calibrate judge prompt with labeled examples. Check for position bias (swap A/B order). Use structured rubrics. |
-| Test set too small for significance | Calculate minimum sample size for desired confidence interval. Expand test set or reduce dimensions evaluated. |
-| Regression detected but unclear cause | Bisect recent changes. Run eval on each commit in range. Check for prompt drift or data quality changes. |
+| Noisy/inconsistent scores | Increase sample size. Multiple judges, take median. Add calibration examples. |
+| Judge disagrees with humans | Calibrate with labeled examples. Check position bias. Use structured rubrics. |
+| Test set too small | Calculate minimum sample size. Expand test set or reduce dimensions. |
+| Unclear regression cause | Bisect recent changes. Run eval per commit. Check for prompt/data drift. |

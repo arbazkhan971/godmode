@@ -94,6 +94,8 @@ Verdict: <SECURE | NEEDS IMPROVEMENT | INSECURE>
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until zero weak algorithms remain and all secrets are in env vars or secret managers.
+
 1. NEVER implement your own cryptographic primitives.
 2. NEVER reuse IVs/nonces with the same key.
 3. NEVER store keys alongside encrypted data.

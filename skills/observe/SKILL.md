@@ -272,6 +272,12 @@ DASHBOARD LAYOUT — Service Overview:
 7. If complete: "Full observability stack configured: metrics, logging, tracing, alerts, SLOs."
 ```
 
+## Autonomous Operation
+- Loop until all three pillars produce verified output or budget exhausted. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Three pillars are mandatory.** Metrics, logs, and traces are not optional. Each gives visibility that the others cannot.
@@ -298,18 +304,8 @@ DASHBOARD LAYOUT — Service Overview:
 8. **ALWAYS verify webhook/exporter endpoints are reachable before declaring setup complete.**
 
 ## Auto-Detection
+Scan for: prom-client, datadog, statsd, opentelemetry, newrelic, winston, pino, bunyan, structlog, loguru, slog, zerolog, jaeger-client, zipkin, dd-trace. Check for /metrics endpoint in routes.
 
-Before starting any observability work, detect the existing setup:
-
-```
-AUTO-DETECT SEQUENCE:
-1. Scan for existing instrumentation:
-   - grep for prom-client, datadog, statsd, opentelemetry, newrelic imports
-   - grep for winston, pino, bunyan, structlog, loguru, slog, zerolog
-   - grep for @opentelemetry, jaeger-client, zipkin, dd-trace
-   - check for /metrics endpoint in routes
-
-2. Detect monitoring infrastructure:
 ## Keep/Discard Discipline
 ```
 After EACH observability instrumentation change:
@@ -325,46 +321,30 @@ After EACH observability instrumentation change:
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All three pillars (metrics, logs, traces) produce verified output
-  - SLOs defined and error budget tracking enabled
-  - Alert rules configured with runbook links
-  - User explicitly requests stop
-
-DO NOT STOP only because:
-  - Dashboards are not yet built (alerts and raw data access are more important)
-  ...
+STOP when ANY: all three pillars produce verified output, SLOs defined, alerts configured, user requests stop.
+DO NOT STOP only because dashboards are not yet built.
 ```
 
 ## Output Format
 Print on completion: `Observe: {pillar_count}/3 pillars configured (metrics/logs/traces). SLOs: {slo_count} defined. Alerts: {alert_count} configured. Dashboards: {dashboard_count}. Error budget: {error_budget_pct}% remaining. Verdict: {verdict}.`
 
 ## TSV Logging
-Log every observability setup step to `.godmode/observe-results.tsv`:
+Log to `.godmode/observe-results.tsv`:
 ```
 iteration	pillar	tool	items_configured	coverage_pct	alert_count	status
-1	metrics	prometheus	24	85	8	configured
-2	logging	structured_json	12	90	4	configured
-3	tracing	opentelemetry	8	75	2	configured
-4	alerts	alertmanager	14	100	14	verified
 ```
-Columns: iteration, pillar(metrics/logging/tracing/alerts/dashboards), tool, items_configured, coverage_pct, alert_count, status(configured/verified/incomplete).
 
 ## Success Criteria
 - All three observability pillars implemented (metrics, logs, traces).
 - SLOs defined for all critical services with error budgets.
-- Structured logging with consistent JSON format across all services.
-- Trace context propagated across all service boundaries.
-- Alerts have `for` duration (no instant alerts) and actionable runbooks.
-- Dashboards answer specific questions (not decorative).
+- Alerts have `for` duration and actionable runbooks.
 - No unbounded cardinality in metric labels.
 - PII redacted from all logs and traces.
-- Error budget tracked and enforced (feature freeze when depleted).
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Metrics cardinality explosion | Remove high-cardinality labels (user IDs, request IDs). Use histograms instead of per-value counters. Set cardinality limits in collector. |
-| Traces missing spans | Check sampling rate. Verify context propagation across service boundaries. Check that all HTTP clients propagate trace headers. |
-| Alert fatigue (too many false alerts) | Tune thresholds using historical data. Add `for:` duration to firing conditions. Use multi-signal alerts (metric + log + trace). |
-| Log volume exceeds budget | Add structured logging with severity levels. Drop DEBUG in production. Sample high-volume paths. Compress before shipping. |
+| Metrics cardinality explosion | Remove high-cardinality labels. Use histograms instead of per-value counters. Set cardinality limits. |
+| Traces missing spans | Check sampling rate. Verify context propagation. Check HTTP clients propagate trace headers. |
+| Alert fatigue | Tune thresholds using historical data. Add `for:` duration. Use multi-signal alerts. |
+| Log volume exceeds budget | Drop DEBUG in production. Sample high-volume paths. Compress before shipping. |

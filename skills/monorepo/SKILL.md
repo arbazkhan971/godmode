@@ -211,6 +211,9 @@ KEEP if build passes AND boundary violations = 0 AND circular deps = 0.
 DISCARD if build fails OR new violation OR new circular dep.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when: orchestrator configured AND zero violations AND zero circular deps AND remote caching

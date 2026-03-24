@@ -246,6 +246,10 @@ Never keep wire-incompatible breaks. Never skip buf breaking before merge.
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when: buf lint 0 errors AND buf breaking 0 regressions AND health check implemented
   AND all RPCs have deadlines, per-RPC messages, and validation
   OR user requests stop OR max 10 iterations

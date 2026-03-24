@@ -201,7 +201,7 @@ RETRY POLICY:
   ...
 ```
 ### Step 7: Idempotency Patterns
-Ensure safe message reprocessing when duplicates occur:
+Guarantee safe message reprocessing when duplicates occur:
 
 ```
 IDEMPOTENCY PATTERNS:
@@ -266,6 +266,10 @@ Each event domain design either passes validation or gets revised.
 - Log every domain result to `.godmode/event-results.tsv`.
 
 ## Stop Conditions
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 - All events have schema definitions with compatibility checks.
 - DLQ configured for every consumer with exponential backoff retry policy.
 - Every consumer handles duplicate delivery (idempotent processing verified).

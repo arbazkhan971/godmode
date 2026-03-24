@@ -21,7 +21,7 @@ description: |
 
 ### Step 1: Real-time Requirements Assessment
 
-Evaluate the communication needs, constraints, and appropriate protocol:
+Evaluate the communication needs, constraints, and correct protocol:
 
 ```
 REAL-TIME REQUIREMENTS ASSESSMENT:
@@ -169,12 +169,18 @@ class RealtimeClient {
 3. Save presence system as `realtime/presence.ts`
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **SSE before WebSocket.** If you only need server-to-client push (notifications, feeds, dashboards), use SSE. It is simpler, works through HTTP proxies, and auto-reconnects. WebSocket is for bidirectional communication.
-2. **Always authenticate on connect.** WebSocket connections bypass standard HTTP middleware. Authenticate during the handshake, not after. Reject unauthenticated connections immediately.
+2. **Authenticate on connect.** WebSocket connections bypass standard HTTP middleware. Authenticate during the handshake, not after. Reject unauthenticated connections immediately.
 3. **Heartbeats are mandatory.** Connections silently die (mobile networks, NAT timeouts, proxy kills). Client and server must exchange heartbeats to detect dead connections within 60 seconds.
-4. **Design for disconnection.** Every client will disconnect — network switch, sleep mode, backgrounded tab. Queue messages, track last received ID, sync on reconnect. Assume unreliable connections.
+4. **Design for disconnection.** Every client will disconnect -- network switch, sleep mode, backgrounded tab. Queue messages, track last received ID, sync on reconnect. Assume unreliable connections.
 5. **Presence needs debouncing.** Do not broadcast "user left" the instant a WebSocket closes. Wait 3-5 seconds for reconnection. Otherwise, presence flickers on every network blip.
 6. **Redis pub/sub for multi-server.** A single server handles thousands of connections. Multiple servers need a message bus. Redis pub/sub is the standard approach for Socket.io scaling.
 7. **Typing indicators are ephemeral.** Never persist typing state. Broadcast it, auto-expire it in 5 seconds, and never send it faster than once per 2 seconds. Typing state is noise, not data.
@@ -287,4 +293,4 @@ REALTIME OPTIMIZATION REPORT:
 | WebSocket connections drop frequently | Implement automatic reconnection with exponential backoff. Check for idle timeouts on load balancers. Send heartbeat/ping frames. |
 | Messages delivered out of order | Add sequence numbers. Buffer and reorder on client. Use ordered channels/topics where available. |
 | Server memory grows with connected clients | Check for event listener leaks. Limit per-connection buffer size. Implement connection limits. Use pub/sub pattern to avoid per-connection state. |
-| Real-time updates not reaching all clients | Verify pub/sub fan-out. Check subscription filters. Ensure sticky sessions or shared state across server instances. |
+| Real-time updates not reaching all clients | Verify pub/sub fan-out. Check subscription filters. Verify sticky sessions or shared state across server instances. |

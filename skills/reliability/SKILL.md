@@ -73,6 +73,12 @@ SLOs, error budget alerts, dashboards, logging, tracing, alerts, runbooks, on-ca
 VERDICT: <RELIABLE | NEEDS WORK>
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **SLOs drive decisions.** Define first.

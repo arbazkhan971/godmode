@@ -271,6 +271,9 @@ After EACH implementation or optimization change:
   4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:

@@ -78,6 +78,9 @@ After EACH bug investigation:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when FIRST of:
   - target_reached: failing_count == 0 (all bugs fixed or handed off)
   - budget_exhausted: max iterations reached

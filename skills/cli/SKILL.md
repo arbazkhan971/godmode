@@ -259,6 +259,8 @@ Homebrew (macOS/Linux):
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until all commands pass tests and shell completions are generated.
+
 1. **NEVER ship a CLI without `--help`, `--version`, and `--no-color`.**
 2. **NEVER require global installation** — support npx/pipx/cargo install/go install.
 3. **NEVER make interactive prompts mandatory** — support `--yes` / `--no-input` for CI.
@@ -320,32 +322,18 @@ DO NOT STOP just because:
 ```
 
 ## Iteration Protocol
-```
-WHILE cli implementation is incomplete:
-  1. REVIEW — check current state: which commands exist, which are missing, test results
-  2. IMPLEMENT — pick next command/feature from the plan, implement with tests
-  3. TEST — run test suite: unit tests for parsing, integration tests for command output
-  4. VERIFY — run the command with sample input, check exit codes, stderr/stdout separation
-  IF tests pass AND command works: commit, move to next command
-  IF tests fail: fix, re-test (max 3 attempts), then ask user if stuck
-STOP: all planned commands implemented, tests pass, help text complete, distribution configured
-```
+Loop: REVIEW state -> IMPLEMENT next command with tests -> TEST (unit + integration) -> VERIFY (exit codes, stderr/stdout). If tests pass: commit, next command. If fail: fix (max 3 attempts). Stop when all commands implemented, tests pass, distribution configured.
 
 ## TSV Logging
-After each workflow step, append a row to `.godmode/cli-results.tsv`:
+Append to `.godmode/cli-results.tsv`:
 ```
-STEP\tCOMMAND\tLANGUAGE\tSTATUS\tDETAILS
-1\tscaffold\tnode\tcreated\tpackage.json bin entry + commander setup
-2\tinit\tnode\timplemented\tinit command with --template flag, interactive prompts
-3\tlist\tnode\timplemented\tlist command with --json and --table output formats
-4\tdistribution\tnode\tconfigured\tnpm publish + npx support + GitHub Releases workflow
+STEP	COMMAND	LANGUAGE	STATUS	DETAILS
 ```
-Print final summary: `CLI: {tool_name}, language: {lang}, commands: {N}. Parser: {library}. Distribution: {methods}. Tests: {pass}/{total}. Shell completions: {yes/no}.`
+Print: `CLI: {tool_name}, language: {lang}, commands: {N}. Parser: {library}. Distribution: {methods}. Tests: {pass}/{total}. Completions: {yes/no}.`
 
 ## Success Criteria
-Verify all of these before marking the task complete:
 1. All planned commands work with correct argument parsing (required args, optional flags, defaults).
-2. `--help` output is present for every command and subcommand with descriptions and examples.
+2. `--help` output present for every command and subcommand with descriptions and examples.
 3. Exit codes are correct: 0 for success, 1 for user error, 2 for system error.
 4. stdout contains only program output (machine-parseable). stderr contains errors, warnings, and progress.
 5. `--json` flag (or equivalent) produces valid JSON for all list/show commands.
@@ -356,7 +344,7 @@ Verify all of these before marking the task complete:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Parser library not detected | Check `package.json` for `commander`/`yargs`/`meow`, `Cargo.toml` for `clap`, `go.mod` for `cobra`/`urfave/cli`, `pyproject.toml` for `click`/`typer`/`argparse`. If none, ask user for preference. |
-| Command fails silently | Ensure all error paths write to stderr and set non-zero exit code. Add `process.exitCode = 1` (Node), `std::process::exit(1)` (Rust), `os.Exit(1)` (Go), `sys.exit(1)` (Python). |
-| Output encoding issues | Force UTF-8 output. Node: set `process.stdout` encoding. Python: set `PYTHONIOENCODING=utf-8`. Test with pipe: `tool list | cat` must not break. |
+| Parser library not detected | Check package manager files for known parsers. If none, ask user preference. |
+| Command fails silently | All error paths: write to stderr + non-zero exit code. |
+| Output encoding issues | Force UTF-8. Test with pipe: `tool list | cat` must not break. |
 

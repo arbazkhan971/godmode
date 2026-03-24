@@ -256,6 +256,10 @@ Each design decision either passes validation or gets revised.
 - Log every design session to `.godmode/distributed-results.tsv`.
 
 ## Stop Conditions
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 - CAP trade-off documented before any implementation begins.
 - Consistency level specified per operation, not per system.
 - Consensus protocol selected with fault tolerance calculated.

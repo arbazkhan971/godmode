@@ -162,7 +162,7 @@ REPLICATION:
 ```
 MEMORY OPTIMIZATION STRATEGIES:
 
-1. Use appropriate data structures:
+1. Use correct data structures:
 ```
 
 #### Eviction Policies
@@ -238,10 +238,16 @@ PERSISTENCE OPTIONS:
 
 Commit: `"redis: <description> -- <key outcome>"`
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
-1. **Choose the right data structure.** Redis has 10+ data structures. Using the wrong one (e.g., String for a leaderboard instead of Sorted Set) wastes memory and makes operations harder.
-2. **Always set TTL.** Data without TTL grows forever until maxmemory eviction kicks in. Explicit TTL on every key is a hygiene requirement.
+1. **Choose the correct data structure.** Redis has 10+ data structures. Using the wrong one (e.g., String for a leaderboard instead of Sorted Set) wastes memory and makes operations harder.
+2. **Set TTL on every key.** Data without TTL grows forever until maxmemory eviction kicks in. Explicit TTL on every key is a hygiene requirement.
 3. **Use pipelining for batch operations.** Sending 100 commands one at a time takes 100 round trips. Pipeline them into one round trip.
 4. **Avoid O(N) commands on large collections.** KEYS *, SMEMBERS on a 1M-member set, HGETALL on a 10K-field hash. Use SCAN, SSCAN, HSCAN for iteration.
 5. **Use Lua/Functions for atomicity.** Keep multi-step operations (check-and-set, rate limiting) atomic. Lua scripts execute on the server without interleaving.
@@ -250,26 +256,6 @@ Commit: `"redis: <description> -- <key outcome>"`
 8. **Monitor memory fragmentation.** mem_fragmentation_ratio > 1.5 indicates fragmentation. Use MEMORY PURGE or restart Redis to reclaim.
 9. **Never use KEYS in production.** KEYS blocks the entire Redis instance. Use SCAN with COUNT hint instead.
 10. **Streams over Pub/Sub for reliability.** Pub/Sub is fire-and-forget. Streams persist messages, support consumer groups, acknowledgment, and replay.
-
-## Iterative Implementation Loop
-
-```
-current_iteration = 0
-max_iterations = 10
-redis_tasks = [list of Redis features to implement/optimize]
-```
-MECHANICAL CONSTRAINTS — NEVER VIOLATE:
-1. NEVER use KEYS command in production. Use SCAN with cursor.
-2. NEVER store values > 100KB. Compress or split.
-3. NEVER create a key without a TTL unless it is permanent reference data.
-4. NEVER use SELECT (multi-database). Use key prefixes for namespacing.
-5. NEVER use Pub/Sub for reliable messaging. Use Streams with consumer groups.
-6. NEVER connect without a connection pool. One connection per request kills throughput.
-7. EVERY Lua script stays idempotent. Scripts may retry on MOVED errors in Cluster mode.
-8. EVERY key must follow the naming convention: {service}:{entity}:{id}[:{field}].
-9. NEVER run O(N) commands on large collections without SCAN or pagination.
-10. ALWAYS set maxmemory and maxmemory-policy. An unbounded Redis is a ticking bomb.
-```
 
 ## HARD RULES
 
@@ -288,49 +274,19 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 ```
 
 ## Output Format
-
-```
-┌─ REDIS RESULT ─────────────────────────────────────┐
-  Operation : cache-aside setup for user sessions
-  Data Structure : STRING with EX (TTL)
-  Key Pattern : app:session:{session_id}
-  TTL : 1800s (30 min)
-  Eviction Policy : allkeys-lru
-  Memory Est. : ~50MB for 100K sessions
-  Persistence : AOF (appendfsync everysec)
-  Verdict : READY
+Print on completion: `Redis: {operation} — {data_structure} with {key_pattern}, TTL {ttl}s, {eviction_policy}, ~{memory_est}. Verdict: {verdict}.`
 
 ## TSV Logging
-
-Log every invocation to `.godmode/` as TSV. Create on first run.
-
+Log to `.godmode/redis.tsv`:
 ```
 timestamp	operation	data_structure	key_pattern	ttl	eviction_policy	memory_estimate	persistence	verdict
-2026-03-20T14:30:00Z	cache-aside	STRING	app:session:{id}	1800	allkeys-lru	50MB	AOF	READY
-2026-03-20T14:35:00Z	rate-limiter	SORTED_SET	ratelimit:{ip}	60	noeviction	10MB	none	READY
 ```
 
 ## Success Criteria
-
-**HEALTHY** (verify all):
-- `used_memory` < 80% of `maxmemory`
-- `mem_fragmentation_ratio` between 1.0 and 1.5
-- `connected_clients` < 80% of `maxclients`
-- `keyspace_hit_ratio` > 90% (hits / (hits + misses))
-- `instantaneous_ops_per_sec` within expected baseline
-- Zero `rejected_connections` in the monitoring window
-- All keys follow `{service}:{entity}:{id}` naming convention
-- Every cache key has an explicit TTL
-- `maxmemory-policy` is explicitly set (not default `noeviction` unless intentional)
-- Persistence (RDB or AOF) is enabled for any non-ephemeral data
-
-## Cache Optimization Loop
-
-```
-CACHE OPTIMIZATION LOOP:
-max_iterations = 15
-
-```
+- `used_memory` < 80% of `maxmemory`, `mem_fragmentation_ratio` 1.0-1.5
+- `keyspace_hit_ratio` > 90%, zero `rejected_connections`
+- All keys follow `{service}:{entity}:{id}` convention with explicit TTLs
+- `maxmemory-policy` explicitly set, persistence enabled for non-ephemeral data
 
 ## Keep/Discard Discipline
 ```

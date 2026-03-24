@@ -269,13 +269,12 @@ MODEL MONITORING DASHBOARD:
 6. If A/B test complete: "A/B test concluded. <Recommendation>. Run `/godmode:mlops --promote` or `--rollback`."
 
 ## Key Behaviors
-
-1. **Never deploy without a readiness check.** A model that passes evaluation can still fail in production. Check latency, resource usage, error handling, and fallback behavior.
-2. **Shadow mode before live traffic.** When possible, run new models in shadow mode first — they receive real traffic but their responses are not returned to users. Compare against champion silently.
-3. **Canary before full rollout.** Start with 1-5% traffic. Watch error rates and latency. Only increase if stable.
-4. **Monitor continuously, not at deploy time.** Drift happens gradually. Set up alerts for degradation, not outages.
-5. **Automate retraining, but gate deployment.** Automate retraining freely. Require a validation gate (A/B test or human review) for deployment.
-6. **Keep rollback instant.** Always maintain the previous champion model ready to serve. Rollback should take seconds, not minutes.
+1. **Readiness check before deploy.** Check latency, resource usage, error handling, fallback.
+2. **Shadow mode first.** Compare against champion silently before live traffic.
+3. **Canary before full rollout.** Start 1-5%, increase only if stable.
+4. **Monitor continuously.** Alerts for degradation, not outages.
+5. **Automate retraining, gate deployment.** Require A/B test or human review.
+6. **Instant rollback.** Previous champion always ready. Seconds, not minutes.
 
 ## Flags & Options
 
@@ -286,21 +285,11 @@ MODEL MONITORING DASHBOARD:
 | `--deploy <model>` | Deploy a specific model version |
 
 ## Auto-Detection
-
 ```
-IF directory contains model files (*.pt, *.onnx, *.savedmodel, *.pkl, *.h5):
-  SUGGEST "Trained model artifacts detected. Activate /godmode:mlops for deployment?"
-
-IF directory contains Dockerfile AND (model loading code OR serving framework):
-  SUGGEST "Model serving container detected. Activate /godmode:mlops?"
-
-IF directory contains configs/ with serving configs (triton, tf-serving, sagemaker):
-  SUGGEST "Model serving configuration detected. Activate /godmode:mlops?"
-
-IF code imports fastapi OR flask AND loads model:
-  SUGGEST "Custom model serving endpoint detected. Activate /godmode:mlops?"
-
-  ...
+IF model files (*.pt, *.onnx, *.savedmodel, *.pkl, *.h5): SUGGEST mlops
+IF Dockerfile + model loading/serving code: SUGGEST mlops
+IF serving configs (triton, tf-serving, sagemaker): SUGGEST mlops
+IF fastapi/flask + model loading: SUGGEST mlops
 ```
 ## HARD RULES
 
@@ -320,43 +309,21 @@ IF code imports fastapi OR flask AND loads model:
   ...
 ```
 ## Output Format
-
-After each MLOps skill invocation, emit a structured report:
-
-```
-MLOPS DEPLOYMENT REPORT:
-| Model | <name> v<version> |
-|--|--|
-| Serving framework | <TorchServe | TFServing | Triton | custom> |
-| Deployment method | <canary | blue-green | shadow> |
-| Latency (p50/p99) | <N>ms / <N>ms |
-| Throughput | <N> req/s |
-| Model size | <N> MB |
-| Drift monitoring | CONFIGURED / NOT CONFIGURED |
-| Fallback strategy | <description> |
-| A/B test | RUNNING / NOT APPLICABLE |
-| Verdict | DEPLOYED | NEEDS WORK |
-```
+Print: `MLOPS: {model} v{version}. Framework: {serving}. Deploy: {method}. Latency p50/p99: {N}/{N}ms. Throughput: {N} rps. Drift: {status}. Verdict: {verdict}.`
 ## TSV Logging
 
 Log every deployment action for tracking:
 
 ```
 timestamp	skill	model	version	action	latency_p99_ms	throughput_rps	status
-2026-03-20T14:00:00Z	mlops	fraud_detector	v3.2	canary_5pct	45	1200	deployed
-2026-03-20T14:30:00Z	mlops	fraud_detector	v3.2	canary_25pct	48	1180	deployed
 ```
 ## Success Criteria
+1. Gradual rollout (canary/blue-green/shadow). Latency meets SLA at p50/p99.
+2. Fallback tested. Drift monitoring configured. Versions tracked independently.
+3. Rollback < 5 min. A/B test has sufficient samples. Artifacts versioned and reproducible.
 
-The MLOps skill is complete when ALL of the following are true:
-1. Model is deployed with a gradual rollout strategy (canary, blue-green, or shadow)
-2. Latency meets SLA targets at p50 and p99 (benchmarked under production-like load)
-3. Fallback strategy is defined and tested (what happens when the model fails)
-4. Drift monitoring is configured for input features and prediction distribution
-5. Model version and serving code version are tracked independently
-6. Rollback procedure is tested and takes < 5 minutes
-7. A/B test (if applicable) has sufficient sample size before making decisions
-8. All deployment artifacts are versioned and reproducible
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -366,22 +333,18 @@ STOP when ANY of these are true:
   - Rollback tested and completes in < 5 minutes
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - A/B test is still running (wait for minimum sample size)
   - Retraining pipeline is not yet automated (manual retraining is acceptable initially)
 ```
 ## Error Recovery
-| Failure | Action |
-|--|--|
-| Model training fails midway | Check GPU memory (OOM). Verify data pipeline integrity. Resume from last checkpoint if available. Reduce batch size. |
-| Model performance degrades in production | Check for data drift using statistical tests. Compare feature distributions. Trigger retraining if drift exceeds threshold. |
-| Feature store returns stale features | Verify feature freshness SLAs. Check pipeline scheduling. Add monitoring for feature age. |
-| A/B test shows no significant difference | Verify sample size was sufficient. Check for implementation bugs. Document null result. Do not extend test indefinitely. |
+- **Training fails**: Check OOM. Resume from checkpoint. Reduce batch size.
+- **Performance degrades**: Check data drift. Trigger retraining if threshold exceeded.
+- **Stale features**: Verify freshness SLAs. Add monitoring for feature age.
+- **A/B no difference**: Verify sample size. Document null result.
 
 ## Keep/Discard Discipline
 ```
-After EACH model or pipeline change:
-  KEEP if: evaluation metrics improve AND no regression on guardrail metrics AND pipeline runs end-to-end
-  DISCARD if: metrics regress OR pipeline fails OR data quality checks fail
-  On discard: revert model artifact and pipeline config. Log reason in experiment tracker.
+KEEP if: metrics improve AND no guardrail regression AND pipeline runs end-to-end
+DISCARD if: metrics regress OR pipeline fails OR data quality fails. Revert and log reason.
 ```

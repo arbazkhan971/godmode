@@ -95,38 +95,9 @@ import pytz
 
 ```
 
-#### Sidekiq-Cron (Ruby)
-```ruby
-# config/initializers/sidekiq_cron.rb
-Sidekiq::Cron::Job.load_from_hash(
-  'daily_digest' => {
-    'cron'  => '0 9 * * *',
-    'class' => 'DailyDigestWorker',
-    'queue' => 'default',
-```
-
-#### Hangfire (.NET)
-```csharp
-// Startup.cs
-services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-    {
-        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-  ...
-```
-
-#### Quartz (Java)
-```java
-// QuartzConfig.java
-@Configuration
-public class QuartzConfig {
-
-    @Bean
-    public JobDetail dailyDigestJob() {
-```
+**Sidekiq-Cron (Ruby):** `Sidekiq::Cron::Job.load_from_hash` with cron expression, class, and queue.
+**Hangfire (.NET):** `RecurringJob.AddOrUpdate` with cron expression, SQL Server or Redis storage.
+**Quartz (Java):** `@Configuration` with `JobDetail` bean and `CronTrigger` schedule.
 
 ### Step 3: Idempotency for Retries
 
@@ -314,6 +285,8 @@ Use Redis-backed (BullMQ, Sidekiq-Cron) when:
 | `--diagnose` | Diagnose missed or failing scheduled jobs |
 
 ## HARD RULES
+
+Never ask to continue. Loop autonomously until all jobs have locking, idempotency, and monitoring.
 
 1. **NEVER use `setInterval` or `setTimeout` for production scheduling.** They do not survive restarts, have no distributed locking, no monitoring, and drift over time.
 2. **NEVER schedule jobs in local timezones.** DST transitions skip the 2 AM job in March and double-fire the 1 AM job in November. Use UTC for all system schedules.

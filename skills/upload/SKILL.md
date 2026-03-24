@@ -119,6 +119,8 @@ Files: upload service, image processor worker, video processor worker, file vali
 8. **Run cleanup from day one.** Stale uploads accumulate silently.
 9. **Serve through CDN with immutable caching.** Content-addressed, max-age=1year.
 10. **Track every upload in the database.** DB is source of truth; S3 is the storage layer.
+11. **On failure: git reset --hard HEAD~1.**
+12. **Never ask to continue. Loop autonomously until pipeline complete or budget exhausted.**
 
 ## Flags & Options
 
@@ -199,7 +201,7 @@ DISCARD if: processing fails silently OR malicious file passes OR EXIF leaks
 ## Stop Conditions
 ```
 STOP when: end-to-end upload works, validation by magic bytes, virus scanning active, or user stops
-DO NOT STOP just because: video transcoding not done or cleanup cron not running
+DO NOT STOP because: video transcoding not done or cleanup cron not running
 ```
 
 ## Anti-Patterns

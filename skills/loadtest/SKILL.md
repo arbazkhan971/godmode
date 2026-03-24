@@ -36,7 +36,7 @@ Current known metrics:
 
 ```
 ### Step 2: Select Test Type
-Choose the appropriate load test pattern:
+Choose the correct load test pattern:
 
 #### Load Test (Baseline)
 ```
@@ -251,45 +251,29 @@ RULES FOR VALID COMPARISON:
 6. If MEETS SLOs: "Performance validated. Ready for `/godmode:ship`."
 
 ## Key Behaviors
-
-1. **Baseline before optimizing.** You cannot improve what you haven't measured. Always establish a baseline first.
-2. **Test in production-like environments.** Load tests against localhost with SQLite don't predict production behavior. Match hardware, data volume, and network topology.
-3. **Think in percentiles, not averages.** Average response time of 100ms means nothing if P99 is 5 seconds. Always report P50, P95, P99.
-4. **Statistical rigor required.** A single run proves nothing. Multiple runs with variance analysis are the minimum for valid conclusions.
-5. **Correlate, don't guess.** When response time increases, check CPU, memory, database query time, and network I/O simultaneously. The bottleneck is where saturation occurs.
-6. **Realistic scenarios.** Load tests should simulate real user behavior — mixed read/write operations, think time between requests, varied payloads.
-7. **Automate for regression.** Performance tests should run in CI to catch regressions before they reach production.
+1. **Baseline first.** Measure before optimizing.
+2. **Production-like environments.** Match hardware, data volume, network.
+3. **Percentiles, not averages.** Report P50, P95, P99.
+4. **Statistical rigor.** Multiple runs with variance analysis.
+5. **Correlate, don't guess.** Check CPU, memory, DB, network simultaneously.
+6. **Realistic scenarios.** Mixed read/write, think time, varied payloads.
+7. **Automate for regression.** Run in CI to catch regressions.
 
 ## HARD RULES
-1. NEVER load test production without coordination — unannounced load tests are indistinguishable from DDoS attacks.
-2. NEVER test without think time between requests — real users pause. Tests without think time overestimate capacity.
-3. NEVER compare single runs — one run with P95=200ms and another with P95=180ms is noise. Run 5+ times minimum.
-4. NEVER test with empty databases — performance on 100 rows is meaningless. Use production-scale data volumes.
-5. NEVER skip warm-up — cold starts, empty caches, and JIT compilation make the first minutes unrepresentative.
-6. NEVER report averages without percentiles — average response time hides tail latency problems. Always report P50, P95, P99.
-7. NEVER ignore tail latency — if P50 is 50ms but P99 is 5s, 1% of users has a terrible experience.
-8. ALWAYS establish a baseline before optimizing — you cannot improve what you haven't measured.
-9. ALWAYS test in production-like environments — match hardware, data volume, and network topology.
-10. ALWAYS include realistic mixed workloads — combine reads, writes, searches in proportion to real traffic.
+1. NEVER load test production without coordination — looks like DDoS.
+2. NEVER test without think time — overestimates capacity.
+3. NEVER compare single runs — run 5+ times minimum.
+4. NEVER test with empty databases — use production-scale data.
+5. NEVER skip warm-up — cold starts make first minutes unrepresentative.
+6. NEVER report averages without percentiles — always P50, P95, P99.
+7. ALWAYS baseline before optimizing. Production-like environments. Mixed workloads.
 
 ## Auto-Detection
-On activation, detect load test context automatically:
 ```
-AUTO-DETECT:
-1. Detect API endpoints:
-   - Parse route files: routes/*.ts, app.py, main.go, routes/web.php
-   - Extract endpoint paths, methods, and handlers
-   - Estimate traffic weight from analytics or handler complexity
-2. Detect existing load tests:
-   - loadtest/, performance/, bench/ directories
-   - *.k6.js, *.artillery.yml, *_locust.py, *.jmx files
-3. Detect baseline data:
-   - loadtest/results/, performance/baselines/
-   - Previous test reports (JSON, HTML)
-4. Detect infrastructure:
-   - docker-compose.yml → local stack
-   - k8s manifests → container resources, replica count
-   - terraform → cloud resources, instance types
+1. Endpoints: parse route files (routes/*.ts, app.py, main.go), extract paths/methods
+2. Existing tests: loadtest/, performance/, *.k6.js, *.artillery.yml, *_locust.py
+3. Baselines: loadtest/results/, performance/baselines/
+4. Infra: docker-compose.yml, k8s manifests, terraform
 ```
 
 ## Iterative Load Test Protocol
@@ -314,16 +298,13 @@ WHILE current_phase != "complete":
 
 ## Keep/Discard Discipline
 ```
-After EACH optimization applied between load test runs:
-  1. MEASURE: Re-run the baseline test (minimum 5 runs for statistical confidence).
-  2. COMPARE: Did P95/P99 improve? Did throughput increase? Did error rate decrease?
-  3. DECIDE:
-     - KEEP if: improvement is statistically significant (p < 0.05) AND no new error types
-     - DISCARD if: no significant improvement OR improvement in one metric causes regression in another
-  4. COMMIT kept changes. Revert discarded changes before the next optimization attempt.
-
-Never declare an improvement based on a single run — variance matters.
+KEEP if: statistically significant improvement (p < 0.05, min 5 runs) AND no new error types
+DISCARD if: no significant improvement OR regression in another metric
+Never declare improvement from a single run — variance matters.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -333,7 +314,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Optimization plateau reached (5 consecutive no-improvement rounds)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - One endpoint has a slow P99 (report it but continue testing others)
   - The load test tool reports warnings (investigate but do not abandon the test)
 ```
@@ -353,26 +334,17 @@ Print on completion: `Loadtest: {test_type} — P95: {p95}ms, P99: {p99}ms, thro
 Log every load test run to `.godmode/loadtest-results.tsv`:
 ```
 iteration	test_type	target_rps	actual_rps	p50_ms	p95_ms	p99_ms	error_rate	max_users	status
-1	baseline	100	98	45	180	420	0.02	50	meets_slo
-2	stress	500	420	120	890	2400	8.5	300	breaking
-3	spike	500	480	95	340	980	0.8	200	recovery_ok
 ```
-Columns: iteration, test_type, target_rps, actual_rps, p50_ms, p95_ms, p99_ms, error_rate, max_users, status(meets_slo/needs_work/breaking).
 
 ## Success Criteria
-- Baseline established with at least 5 runs and statistical confidence (CV < 10%).
-- P95 response time meets defined SLO (default target: < 500ms).
-- P99 response time meets defined SLO (default target: < 1000ms).
-- Error rate under target threshold (default target: < 1%).
-- Breaking point identified and documented (stress test).
-- Headroom above current production traffic is at least 2x.
-- Bottlenecks ranked by impact with specific fix recommendations.
-- Results saved to `loadtest/results/` with timestamp for regression tracking.
+- Baseline: 5+ runs, CV < 10%. P95 < 500ms, P99 < 1000ms, errors < 1%.
+- Breaking point identified. 2x headroom above production traffic.
+- Bottlenecks ranked by impact. Results saved to `loadtest/results/` with timestamps.
 
 ## Error Recovery
-- **Load test tool fails to start**: Verify the tool is installed (`k6 version`, `artillery --version`, `locust --version`). Check that the target URL is reachable from the test machine.
-- **All requests return errors**: Check target server is running and accepting connections. Verify authentication tokens are valid. Check firewall rules and rate limiting.
-- **Results show unrealistic numbers**: Verify think time is included between requests. Check that the test machine is not the bottleneck (CPU/network saturation on the load generator). Use distributed load generation for high concurrency.
-- **High variance between runs (CV > 15%)**: Eliminate noise sources — close other applications, pin CPU governor to performance mode, run on dedicated hardware. Increase run duration. Increase warm-up phase.
-- **Test crashes at high concurrency**: Increase file descriptor limits (`ulimit -n 65535`). Check connection pool sizes on both client and server. Use connection keep-alive.
-- **Cannot reproduce production performance**: Match data volume (seed with production-scale data). Match hardware specs. Match network latency (test from same region as users). Include realistic user scenarios, not only single-endpoint hammering.
+- **Tool fails to start**: Verify installed (`k6 version`). Check target URL reachable.
+- **All requests error**: Check server running, auth tokens valid, firewall rules.
+- **Unrealistic numbers**: Verify think time. Check load generator not bottleneck.
+- **High variance (CV > 15%)**: Eliminate noise, increase duration, increase warm-up.
+- **Crashes at high concurrency**: `ulimit -n 65535`. Check connection pools.
+- **Cannot reproduce prod**: Match data volume, hardware, network latency.

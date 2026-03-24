@@ -25,7 +25,7 @@ Project: <project name>
 Framework: <React/Vue/Angular/iOS/Android/etc.>
 ```
 ### Step 2: Select i18n Framework
-Based on the project stack, recommend and configure the appropriate i18n framework:
+Based on the project stack, recommend and configure the correct i18n framework:
 
 ```
 FRAMEWORK SELECTION:
@@ -202,74 +202,23 @@ CHARACTER SET CHECKS:
 ```
 
 ### Step 8: Translation Workflow
-Set up the process for managing translations:
 ```
 TRANSLATION WORKFLOW:
-
-1. Developer adds string:
-   - Add key + en-US value to base resource file
-   - Add translator context/notes
-   - Mark string for translation
-
-2. Extract for translation:
-   - Export new/changed strings to exchange format (XLIFF, JSON, CSV)
-   - Include: key, source text, context, max length, screenshots
-
-3. Translation process:
-   - Option A: Professional translators (high quality, slow, expensive)
-   - Option B: Translation management system (Crowdin, Lokalise, Phrase)
-   - Option C: Machine translation with human review (fast, medium quality)
-   - Option D: Community translation (open source projects)
-
-4. Import translations:
-   - Import translated files back to resource format
-   - Validate completeness (all keys present)
-   - Validate format (placeholders intact, HTML tags balanced)
-   - Validate length (fits UI constraints)
-
-5. Quality checks:
-   - [ ] No missing translations (fallback to base locale is a bug, not a feature)
-   - [ ] Placeholders preserved ({name}, {{count}}, %s, etc.)
-   - [ ] HTML/markup preserved and balanced
-   - [ ] No truncation in UI (test with German — typically 30% longer than English)
-   - [ ] Pseudo-localization passes (accented characters render correctly)
+1. Developer adds key + en-US value + translator context to base resource file
+2. Export new/changed strings to exchange format (XLIFF, JSON, CSV)
+3. Translate via: professional translators | TMS (Crowdin, Lokalise) | MT + human review
+4. Import, validate completeness, placeholder preservation, HTML balance, length
+5. Quality: no missing keys, placeholders intact, no truncation, pseudo-loc passes
 ```
 
 ### Step 9: i18n Testing
-Test internationalization across target locales:
 ```
 I18N TEST PLAN:
-
-1. Pseudo-localization test:
-   - Replace ASCII with accented equivalents: "Hello" → "[Hellö]"
-   - Pad strings by 30-40% to simulate verbose languages (German, Finnish)
-   - Verify: no truncation, no layout breaks, no hardcoded strings visible
-
-2. RTL layout test (if applicable):
-   - Switch to RTL locale (ar, he)
-   - Verify: layout mirrors correctly, no overlapping elements
-   - Verify: bidirectional text (mixed LTR/RTL) displays correctly
-   - Verify: form inputs accept RTL text entry
-
-3. Locale-specific formatting test:
-   For each target locale:
-   - [ ] Dates display in correct format
-   - [ ] Numbers use correct thousands/decimal separators
-   - [ ] Currency displays correct symbol and position
-   - [ ] Pluralization uses correct form for 0, 1, 2, 5, 21, 100
-   - [ ] Sorting respects locale collation rules
-
-4. Edge case test:
-   - [ ] Extremely long translations (German compound words)
-   - [ ] Very short translations (CJK single characters for English phrases)
-   - [ ] Characters outside BMP (emoji, mathematical symbols)
-   - [ ] Mixed scripts in same string (English brand name in Arabic text)
-   - [ ] Empty translations fallback to base locale gracefully
-
-5. Snapshot/screenshot test:
-   - Render key screens in each target locale
-   - Compare against baseline for layout regressions
-   - Flag strings that exceed container bounds
+1. Pseudo-localization: accented equivalents, pad 30-40%, verify no truncation/hardcoded strings
+2. RTL layout (if applicable): mirror layout, bidirectional text, RTL form inputs
+3. Locale formatting: dates, numbers, currency, pluralization (0,1,2,5,21,100), collation
+4. Edge cases: long translations (German), short (CJK), emoji, mixed scripts, empty fallback
+5. Snapshot test: render key screens per locale, compare against baseline
 ```
 
 ### Step 10: Findings Report
@@ -332,57 +281,34 @@ Print final summary: `i18n: {N} locales, {total_keys} keys, coverage: {avg}%. Fr
 ## TSV Logging
 ```
 STEP\tCOMPONENT\tLOCALE\tSTATUS\tDETAILS
-1\taudit\t-\tcomplete\t47 hardcoded strings found in 12 files
-2\textract\ten\tcomplete\t47 keys extracted to messages/en.json
-3\tformat\ten,de,ja\tcreated\tdate/number/currency formatters using Intl API
-4\trtl\tar,he\tcomplete\tCSS logical properties applied, dir="auto" on 8 components
-5\ttest\tpseudo\tpassed\tpseudo-loc reveals 3 truncation issues in sidebar
 ```
 
 ## I18n Audit Loop
-
 ```
-AUDIT ITERATION PROTOCOL:
-current_pass = 0
-max_passes = 3
-areas = [translation_coverage, locale_testing, rtl_support]
-
-WHILE current_pass < max_passes:
-  current_pass += 1
-  FOR each area in areas:
-    1. RUN all checks from Steps 9-10
-    2. COLLECT failures with severity (CRITICAL | HIGH | MEDIUM | LOW)
-    3. FIX all CRITICAL items before next pass
-    4. FIX HIGH items if time permits
-
-  coverage = min(locale_coverage for all target locales)
-  locale_tests_pass = all locale-specific formatting tests pass
-  rtl_clean = rtl_violations == 0
-
-  IF coverage >= 95% AND locale_tests_pass AND (rtl_clean OR no RTL locales):
-    BREAK "I18n audit PASS. All targets met."
-
-  Coverage thresholds: <80% CRITICAL (do not ship), 80-95% WARNING, >95% PASS.
+WHILE current_pass < max_passes (3):
+  RUN checks per area (translation_coverage, locale_testing, rtl_support).
+  FIX CRITICAL items before next pass.
+  IF coverage >= 95% AND locale_tests_pass AND rtl_clean: BREAK.
+  Thresholds: <80% CRITICAL, 80-95% WARNING, >95% PASS.
 ```
+
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Missing translation key at runtime | Add fallback chain: requested locale -> default locale -> key name. Log missing keys for translator backlog. |
-| Pluralization rules incorrect | Use ICU MessageFormat, not manual if/else. Verify locale-specific plural categories (some languages have 6 plural forms). |
-| Date/number formatting wrong for locale | Use `Intl.DateTimeFormat` and `Intl.NumberFormat` with explicit locale parameter. Never format manually. |
-| Translation file merge conflicts | Use one file per locale per namespace. Keep keys sorted alphabetically. Use flat key structure over nested. |
+| Missing translation key at runtime | Add fallback chain: requested locale -> default locale -> key name. |
+| Pluralization rules incorrect | Use ICU MessageFormat, not manual if/else. |
+| Date/number formatting wrong | Use `Intl.DateTimeFormat`/`Intl.NumberFormat` with explicit locale. |
+| Translation file merge conflicts | One file per locale per namespace. Flat key structure. |
 
-## Success Criteria
-1. All user-visible strings extracted to translation files (zero hardcoded strings).
-2. Fallback locale configured and tested (missing key shows default, not blank or key name).
-3. Pluralization uses ICU MessageFormat for all locales.
-  ...
+## Keep/Discard Discipline
 ```
-After EACH i18n change:
-  KEEP if: all locales render correctly AND no missing key warnings AND fallback works
-  DISCARD if: missing keys at runtime OR formatting errors OR layout breaks in RTL
-  On discard: revert. Fix extraction or key mapping before retrying.
+KEEP if: all locales render correctly AND no missing key warnings AND fallback works
+DISCARD if: missing keys at runtime OR formatting errors OR layout breaks in RTL
+On discard: revert. Fix extraction or key mapping before retrying.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```

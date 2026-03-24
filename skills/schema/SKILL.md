@@ -61,40 +61,10 @@ ENTITY CATALOG:
 | Task              | id, title, status, assignee_id, project_id | 5M               |
 | Comment           | id, body, author_id, task_id, created_at   | 20M              |
 ```
-#### 2b: Define Relationships
-
+#### 2b: Define Relationships & ER Diagram
 ```
-RELATIONSHIP MAP:
-| From              | Relationship   | To                | Cardinality       |
-|--|--|--|--|
-| Organization      | has many       | User              | 1:N               |
-| Organization      | has many       | Project           | 1:N               |
-| User              | belongs to     | Organization      | N:1               |
-| Project           | has many       | Task              | 1:N               |
-| Task              | has many       | Comment           | 1:N               |
-| Task              | assigned to    | User              | N:1               |
-| User              | has many       | Comment           | 1:N               |
-| Task              | has many       | Tag (through)     | M:N               |
-```
-#### 2c: ER Diagram (Text)
-
-```
-┌──────────────┐     1:N     ┌──────────────┐     1:N     ┌──────────────┐
-| Organization | ────────────> | Project | ────────────> | Task |
-│              │             │              │             │              │
-| id (PK) |  | id (PK) |  | id (PK) |
-|--|--|--|--|--|
-| name |  | name |  | title |
-| plan |  | description |  | status |
-| billing_email |  | org_id (FK) |  | priority |
-| created_at |  | created_at |  | assignee_id |
-└──────────────┘             └──────────────┘             │ project_id   │
-|  | created_at |
-       │ 1:N                                               └──────────────┘
-       ▼                                                          │
-┌──────────────┐                                           1:N    │
-│    User      │                                                  ▼
-│              │                                           ┌──────────────┐
+Organization 1:N → Project 1:N → Task 1:N → Comment
+Organization 1:N → User, Task N:1 → User (assignee), Task M:N → Tag
 ```
 ### Step 3: Relational Schema Design
 
@@ -176,17 +146,7 @@ KEY-VALUE DESIGN PATTERNS:
 
 #### 5a: Backward-Compatible Changes (Safe)
 
-```
-SAFE SCHEMA CHANGES (no downtime, no coordination):
-| Change                     | Why It's Safe                                |
-|--|--|
-| Add nullable column        | Existing rows get NULL, old code ignores it  |
-| Add column with default    | Existing rows get default, old code ignores  |
-| Add new table              | No existing code references it               |
-| Add new index              | CONCURRENTLY avoids locks (PostgreSQL)       |
-| Widen a column type        | INT -> BIGINT, VARCHAR(50) -> VARCHAR(255)   |
-| Add CHECK constraint       | If all existing data satisfies it             |
-```
+Safe changes (no downtime): add nullable column, add column with default, add table, add index (CONCURRENTLY), widen column type, add CHECK constraint (if data satisfies it).
 
 #### 5b: Breaking Changes (Expand-Contract Pattern)
 
@@ -244,16 +204,6 @@ export const userSchema = z.object({
   orgId: z.string().uuid(),
 ```
 
-#### 6b: JSON Schema
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/user.json",
-  "type": "object",
-  "required": ["email", "name", "role", "orgId"],
-  "properties": {
-```
 MULTI-TENANCY STRATEGIES:
 | Strategy          | Isolation          | Complexity        | Best For          |
 |--|--|--|--|
@@ -301,6 +251,7 @@ Commit: `"schema: design <description> data model"`
 8. **Document models are designed around queries.** In NoSQL, embed data that is read together, reference data that is shared. There is no "correct" document structure -- only structures that serve your access patterns.
 9. **Validation schemas are the single source of truth.** Define the schema once (Zod, Protobuf, Avro), derive types, API docs, and database constraints from it. Never maintain parallel definitions.
 10. **Test schema changes against production-scale data.** A migration that runs in 100ms on dev (1000 rows) may lock the table for 30 minutes in production (10M rows).
+11. **Never ask to continue. Loop autonomously until all entities migrated or budget exhausted.**
 
 ## Flags & Options
 

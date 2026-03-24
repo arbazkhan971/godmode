@@ -214,9 +214,14 @@ HARD RULES — NEVER VIOLATE:
    and a maintenance window. It takes an EXCLUSIVE LOCK.
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
-1. **Always check the version.** PostgreSQL features vary significantly across versions. CTEs are optimized differently in 12+, partitioning improved dramatically in 11-14, and JSONB path queries require 12+.
+1. **Check the version first.** PostgreSQL features vary significantly across versions. CTEs are optimized differently in 12+, partitioning improved dramatically in 11-14, and JSONB path queries require 12+.
 2. **Measure before tuning.** Run pg_stat_statements, check cache hit ratios, and identify the actual bottleneck before changing postgresql.conf. Random tuning is worse than defaults.
 3. **Use CONCURRENTLY for production DDL.** CREATE INDEX CONCURRENTLY, REINDEX CONCURRENTLY, and pg_repack avoid exclusive locks that block reads and writes.
 4. **Partition key in every query.** Partitioning only helps if the query planner can prune partitions. Always include the partition key in WHERE clauses.
@@ -288,7 +293,7 @@ INDEX TUNING DECISION TABLE:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Query plan shows sequential scan on large table | Add appropriate index. Use `EXPLAIN (ANALYZE, BUFFERS)` to verify index is used. Check if statistics are stale (`ANALYZE table`). |
+| Query plan shows sequential scan on large table | Add correct index. Use `EXPLAIN (ANALYZE, BUFFERS)` to verify index is used. Check if statistics are stale (`ANALYZE table`). |
 | Lock contention on hot table | Use `SKIP LOCKED` for queue patterns. Reduce transaction duration. Partition the table. Check for long-running transactions with `pg_stat_activity`. |
 | Connection pool exhaustion | Increase pool size or use PgBouncer. Check for leaked connections. Set `idle_in_transaction_session_timeout`. Monitor with `pg_stat_activity`. |
 | Migration locks table for too long | Use `CREATE INDEX CONCURRENTLY`. Add columns with `DEFAULT` (Postgres 11+ is instant). Split large data migrations into batches. |

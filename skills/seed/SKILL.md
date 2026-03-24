@@ -109,6 +109,7 @@ Files: seed script, factories/, environment configs, package.json seed command
 8. **Never seed production with fake data.** Only reference data (roles, permissions).
 9. **Anonymize before snapshotting.** Replace all PII before copying production data.
 10. **Clean up after tests.** Transaction rollback (fastest), truncate, or delete-by-marker.
+11. **Never ask to continue. Loop autonomously until all entities seeded or budget exhausted.**
 
 ## Flags & Options
 
@@ -185,7 +186,7 @@ DISCARD if: unique constraint on re-run OR FK errors OR single-row loops
 ## Stop Conditions
 ```
 STOP when: all entities seeded idempotently, env guard active, --reset works, or user stops
-DO NOT STOP just because: demo curation incomplete or anonymization pipeline not built
+DO NOT STOP because: demo curation incomplete or anonymization pipeline not built
 ```
 
 ## Anti-Patterns

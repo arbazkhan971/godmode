@@ -34,6 +34,7 @@ Print: `Test: coverage {start}% → {final}% (target: {target}%). {N} tests adde
 3. No mocking unless external I/O. Test names: `should_{verb}_when_{condition}`.
 4. Min 1 assertion per test; 3+ recommended. Priority: happy_path > error_path > edge_case.
 5. Never keep a test that does not increase coverage or breaks existing tests.
+6. Never ask to continue. Loop autonomously until coverage target met or budget exhausted.
 
 ## Workflow
 1. Measure current coverage with `coverage_cmd`. Set target (user-provided or default 80%).

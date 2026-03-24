@@ -205,36 +205,10 @@ npx glyphhanger https://example.com --subset=fonts/inter.woff2 --formats=woff2
 npx woff2-cli compress fonts/fancy.ttf
 
 ```
-### Step 7: Service Worker Caching Strategies
-Configure service workers for optimal caching:
-
+### Step 7: Service Worker Caching
 ```
-CACHING STRATEGY MATRIX:
-| Resource Type | Strategy | Max Age | Rationale |
-|--|--|--|--|
-| HTML pages | Network First | 0 | Fresh content |
-| CSS/JS (hashed) | Cache First | 1 year | Immutable |
-| CSS/JS (unhashed) | Stale While Revalidate | 1 hour | Fast + fresh |
-| Images | Cache First | 30 days | Rarely change |
-| Fonts | Cache First | 1 year | Never change |
-  ...
-```
-#### Workbox Configuration
-```javascript
-// workbox-config.js
-module.exports = {
-  globDirectory: 'dist/',
-  globPatterns: ['**/*.{html,js,css,png,jpg,webp,avif,woff2,svg}'],
-  swDest: 'dist/sw.js',
-  runtimeCaching: [
-```
-
-```bash
-# Generate service worker with Workbox
-npx workbox generateSW workbox-config.js
-
-# Or inject into existing service worker
-npx workbox injectManifest workbox-config.js
+STRATEGY: HTML → Network First (0). CSS/JS hashed → Cache First (1yr, immutable). Images → Cache First (30d). Fonts → Cache First (1yr).
+TOOL: Workbox — `npx workbox generateSW workbox-config.js`
 ```
 ### Step 8: CDN & Edge Caching
 Configure CDN and HTTP cache headers for optimal delivery:
@@ -250,17 +224,7 @@ CDN & CACHING AUDIT:
 | Fonts | public, max-age=31536000 | Yes | 1 year |
   ...
 ```
-```
-# Optimal Cache-Control headers
-# Hashed static assets (immutable)
-Cache-Control: public, max-age=31536000, immutable
-
-# HTML pages (always revalidate)
-Cache-Control: no-cache
-# or: public, max-age=0, must-revalidate
-
-  ...
-```
+Hashed assets: `Cache-Control: public, max-age=31536000, immutable`. HTML: `Cache-Control: no-cache`. API: `Cache-Control: private, no-cache`.
 ### Step 9: Performance Optimization Report
 
 ```
@@ -290,6 +254,8 @@ Verdicts:
 2. **JavaScript is the most expensive resource.** A 200KB image and 200KB of JavaScript are not equivalent. The browser parses, compiles, and executes JavaScript. Reduce JS first.
 3. **Images are the lowest-hanging fruit.** Converting to WebP/AVIF, adding responsive srcset, and enabling lazy loading often saves more bytes than any code change.
 4. **Critical CSS eliminates render blocking.** Inlining above-the-fold CSS and async-loading the rest removes the single biggest cause of slow First Contentful Paint.
+5. **On failure: git reset --hard HEAD~1.**
+6. **Never ask to continue. Loop autonomously until Lighthouse >= 90 or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |
@@ -367,7 +333,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - No further optimizations yield meaningful improvement (< 2 point Lighthouse improvement)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   ...
 ```
 

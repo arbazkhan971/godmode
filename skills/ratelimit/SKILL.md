@@ -110,12 +110,18 @@ Commit: "ratelimit: <system> -- <algorithm>, <tiers configured>, <quota tracking
 Artifacts: Lua scripts, middleware, tier config, monitoring dashboard
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Rate limit every public endpoint.** Unprotected endpoint = open door for abuse.
 2. **Use sliding window counter as default.** Excellent accuracy with O(1) memory.
 3. **Atomic operations only.** Use Redis Lua scripts. Non-atomic = race condition = bypass.
-4. **Always return rate limit headers.** Clients need them to self-throttle.
+4. **Return rate limit headers on every response.** Clients need them to self-throttle.
 5. **Fail open, not closed.** Broken rate limiter must not become an outage.
 6. **Separate rate limits from quotas.** Rate limits prevent bursts; quotas prevent sustained overuse.
 7. **Tiered limits by user class.** Anonymous through enterprise should differ. Internal bypasses entirely.
@@ -195,7 +201,7 @@ DISCARD if: race condition allows bypass OR 429 missing Retry-After OR fail-clos
 ## Stop Conditions
 ```
 STOP when: all public endpoints protected, tiers configured, fail-open verified, or user stops
-DO NOT STOP just because: dashboards not built or monthly quotas not yet enforced
+DO NOT STOP only because: dashboards not built or monthly quotas not yet enforced
 ```
 
 ## Anti-Patterns

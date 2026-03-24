@@ -65,7 +65,7 @@ Naming: `enable_<feature>` (release), `exp_<name>` (experiment), `disable_<featu
 Stale flag detection: release at 100% for >2 weeks, experiment concluded >1 week, not evaluated in >30 days, >90 days without cleanup date. Automate weekly stale flag reminders with cleanup tickets.
 
 ### Step 7: A/B Testing
-1. Define hypothesis and primary metric. 2. Set guardrail metrics (must not regress). 3. Calculate sample size. 4. Configure sticky bucketing variants. 5. Track exposure and conversion events. 6. Wait for significance (p<0.05). Pitfalls: no peeking, adjust for multiple testing, deterministic hashing not random, run full business cycle (7 days).
+1. Define hypothesis and primary metric. 2. Set guardrail metrics (must not regress). 3. Calculate sample size. 4. Configure sticky bucketing variants. 5. Track exposure and conversion events. 6. Wait for significance (p<0.05). Pitfalls: no peeking, correct for multiple testing, deterministic hashing not random, run full business cycle (7 days).
 
 ### Step 8: Homegrown Schema
 Tables: feature_flags, flag_rules, flag_rollouts, flag_variants, flag_audit_log, flag_environments. Evaluation: cache (refresh 30s) -> env override -> global enable -> rules (priority) -> percentage (murmur3) -> default disabled.
@@ -165,6 +165,9 @@ After EACH flag rollout stage:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ALL of:
   - Flag at 100% with stable metrics for 7 days
   - Kill switch tested and verified

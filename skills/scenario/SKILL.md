@@ -177,6 +177,9 @@ Status values: `TEST_PASS` (edge case is handled), `TEST_FAIL` (bug found), `NO_
 3. Every scenario must be scored: L(1-5) x I(1-5). No zero scores, no unscored rows.
 4. All CRITICAL and HIGH scenarios must have runnable tests — not stubs, not TODOs.
 5. Generated tests must use the project's actual test framework and real code paths.
+6. Measure before/after. Guard: test_cmd && lint_cmd.
+7. On failure: git reset --hard HEAD~1.
+8. Never ask to continue. Loop autonomously.
 
 ## Anti-Patterns
 1. **Never skip a dimension without justification.** All 12 dimensions apply to most features. "Not relevant" requires a one-sentence explanation of why.

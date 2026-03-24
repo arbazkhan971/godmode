@@ -46,7 +46,7 @@ CSS approach: <Tailwind / UnoCSS / SCSS / scoped styles>
 If starting fresh, ask: "What are you building? Do you need SSR (SvelteKit) or a client-only app?"
 
 ### Step 2: Svelte Reactivity Model
-Guide the appropriate reactivity approach:
+Guide the correct reactivity approach:
 
 #### Svelte 5 Runes (Recommended)
 ```svelte
@@ -254,6 +254,9 @@ Commit: `"svelte: <project> — <N> routes, <N> components, <SvelteKit | Svelte>
 2. **Runes for Svelte 5.** New Svelte 5 projects use runes (`$state`, `$derived`, `$effect`). They are more explicit, more powerful, and the future of Svelte.
 3. **Load functions, not fetch-in-component.** Data fetching belongs in `+page.server.ts` load functions, not in `onMount`. Load functions run on the server, are type-safe, and handle errors properly.
 4. **Form actions over API routes.** For mutations (create, update, delete), use form actions with `use:enhance`. They work without JavaScript and are progressively enhanced.
+5. **Measure before/after.** Guard: test_cmd && lint_cmd.
+6. **On failure: git reset --hard HEAD~1.**
+7. **Never ask to continue. Loop autonomously until all checks pass or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |
@@ -338,6 +341,6 @@ Every Svelte skill invocation must pass ALL of these checks before reporting suc
 |--|--|
 | `svelte-check` type errors | Read errors line by line. Fix prop type mismatches and missing types first. Re-run after each batch of fixes. |
 | Hydration mismatch | Wrap browser-only code in `{#if browser}` or `onMount`. Check for `Date.now()` or `Math.random()` in SSR. |
-| Load function errors | Verify `+page.server.ts` vs `+page.ts` placement. Ensure `error()` and `redirect()` are thrown, not returned. Await `parent()` calls. |
+| Load function errors | Verify `+page.server.ts` vs `+page.ts` placement. Verify `error()` and `redirect()` are thrown, not returned. Await `parent()` calls. |
 | `$:` reactive statements in Svelte 5 | Replace with runes: `$state` for state, `$derived` for computed, `$effect` for side effects. |
   ...

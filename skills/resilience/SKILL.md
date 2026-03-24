@@ -189,10 +189,15 @@ RESILIENCE VERIFICATION CHECKLIST:
 | Category | Test | Pass? |
 ```
 
+## Autonomous Operation
+- Loop until all critical dependencies have circuit breakers, timeouts, and fallbacks or budget exhausted. Never pause.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Output
 - Resilience design at `docs/resilience/<service>-resilience.md`
 - Implementation files in service source directory
-- Commit: `"resilience: <service> — <patterns applied> (<coverage>)"`
+- Commit: `"resilience: <service> -- <patterns applied> (<coverage>)"`
 
 ## Chaining
 - **From `/godmode:chaos`:** Chaos tests reveal missing resilience patterns → fix with `/godmode:resilience`

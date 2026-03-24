@@ -203,44 +203,16 @@ export default defineNuxtConfig({
  '/blog/**': { isr: 60 }, // ISR — revalidate every 60s
 ```
 
-#### Nuxt Data Fetching Patterns
-```vue
-<script setup lang="ts">
-// useAsyncData — cached, deduplicated, SSR-friendly
-const { data: posts, pending, error, refresh } = await useAsyncData(
- 'posts',
- () => $fetch('/api/posts'),
- {
- transform: (data) => data.map(normalizePost),
- watch: [page], // Re-fetch when page ref changes
- default: () => [], // Default value while loading
- }
-)
-
-// useFetch — shorthand for useAsyncData + $fetch
-const { data: user } = await useFetch(`/api/users/${route.params.id}`, {
- key: `user-${route.params.id}`,
-```
-
 Rules for Nuxt:
 - **Choose rendering strategy per route** — not one strategy for the entire app
 - **Use `useAsyncData` over `useFetch`** when you need transforms or custom keys
 - **Always provide keys** — prevents duplicate fetches and enables proper caching
 - **Use `$fetch` in API routes** — not `axios` or `fetch`, to get auto-typed responses
 - **Runtime config over hardcoded values** — access env vars via `useRuntimeConfig()`
-- **Auto-imports are fine** — Nuxt auto-imports Vue APIs, composables, and components; don't fight it
 - **Server routes in `server/api/`** — use Nitro's file-based API routing
 
-### Step 7: Vite Configuration Optimization
-Optimize the Vite build configuration:
-
-Rules:
-- **Pre-bundle heavy dependencies** — list in `optimizeDeps.include` to speed up dev startup
-- **Manual chunks for vendors** — split Vue ecosystem and UI library into separate chunks
-- **Target modern browsers** — `es2020` unless you need IE11 (you don't)
-- **CSS code splitting** — enabled by default, keep it on
-- **Analyze bundle** — use `rollup-plugin-visualizer` to find bloat
-- **Proxy API in dev** — avoid CORS issues with Vite's built-in proxy
+### Step 7: Vite Optimization
+- Pre-bundle heavy deps in `optimizeDeps.include`, manual chunks for vendors, target `es2020`, analyze with `rollup-plugin-visualizer`
 
 ### Step 8: Testing with Vitest and Vue Test Utils
 Set up and write comprehensive tests:
@@ -260,16 +232,6 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import UserCard from '@/components/UserCard.vue'
 
-```
-
-#### Composable Testing
-```typescript
-// tests/composables/useUser.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useUser } from '@/composables/useUser'
-import { flushPromises } from '@vue/test-utils'
-
-vi.mock('@/api', () => ({
 ```
 
 ### Step 9: Validation
@@ -294,26 +256,8 @@ VUE APPLICATION AUDIT:
 ### Step 10: Deliverables & Handoff
 Generate the project artifacts:
 
-```
-VUE PROJECT COMPLETE:
-
-Artifacts:
-- Project structure: <scaffolded / audited>
-- Components: <N> components (<Composition API / Options API>)
-- Stores: <N> Pinia stores
-- Routes: <N> routes (<lazy-loaded / eager>)
-- Composables: <N> reusable composables
-- Tests: <N> test files, <M>% coverage
-- Validation: <PASS | NEEDS REVISION>
-
-Next steps:
--> /godmode:tailwind — Set up Tailwind CSS styling
--> /godmode:a11y — Accessibility audit
--> /godmode:e2e — End-to-end testing with Playwright
--> /godmode:build — Implement features
--> /godmode:ship — Deploy the application
-```
 Commit: `"vue: <project> — <N> components, <M> stores, <Composition API | Options API>"`
+Next: `/godmode:tailwind`, `/godmode:a11y`, `/godmode:e2e`, `/godmode:build`, `/godmode:ship`
 
 ## Key Behaviors
 
@@ -324,6 +268,8 @@ Commit: `"vue: <project> — <N> components, <M> stores, <Composition API | Opti
 5. **Type everything.** Props, emits, store state, composable returns, route params. TypeScript catches bugs that tests miss.
 6. **Test composables independently.** Composables are pure logic; test them without mounting components. Test components for rendering and interaction.
 7. **Choose rendering strategy per route.** Nuxt hybrid rendering lets you SSG marketing pages, SSR product pages, and SPA dashboards in one app.
+8. **On failure: git reset --hard HEAD~1.**
+9. **Never ask to continue. Loop autonomously until all audit checks pass or budget exhausted.**
 
 ## Flags & Options
 

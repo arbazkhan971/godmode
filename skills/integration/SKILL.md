@@ -270,35 +270,20 @@ func TestWithRealDatabase(t *testing.T) {
 
 ```
 INTEGRATION TEST REPORT:
-Target: <module/service>
-Tests written: <N>
- - Database integration: <N>
- - API integration: <N>
- - Service integration: <N>
- - Message queue integration: <N>
-Containers used:
- - <PostgreSQL 16, Redis 7, Kafka 3.6, etc.>
-Seeding strategy: <fixtures | factories | SQL files>
-Cleanup strategy: <truncate | transaction rollback | unique data>
-All passing: <YES/NO>
-  ...
+Target: <module/service>. Tests: <N> (DB: <N>, API: <N>, Queue: <N>).
+Containers: <list>. Seeding: <strategy>. Cleanup: <strategy>. All passing: YES/NO.
 ```
-
 ### Step 8: Commit and Transition
-1. Commit tests: `"test(integration): <module> — <N> tests with <containers>"`
-2. If database tests: confirm migrations run cleanly in test containers
-3. If slow tests found: recommend container reuse or parallel execution
-4. If external services involved: recommend `/godmode:contract` for contract testing
+Commit: `"test(integration): <module> — <N> tests with <containers>"`
 
 ## Key Behaviors
-
-1. **Use real dependencies, not mocks.** The entire point of integration tests is to verify real interactions. If you mock the database, you have a unit test with extra steps.
-2. **Isolate between tests, not from dependencies.** Each test gets clean state (via truncate/rollback), but uses real databases, real caches, real queues.
-3. **Testcontainers over shared instances.** Shared test databases cause flaky tests. Testcontainers give every test run a fresh, disposable instance.
-4. **Test the transaction boundary.** The most valuable integration test verifies that multi-step operations either fully succeed or fully roll back.
-5. **Separate integration from unit tests.** Integration tests are slower (seconds, not milliseconds). Run them separately in CI so unit tests stay fast.
-6. **Seed minimally.** Each test seeds only the data it needs. Global seeding creates hidden dependencies between tests.
-7. **Test failure modes.** Database down, network timeout, connection pool exhausted — integration tests should verify graceful degradation.
+1. **Real dependencies, not mocks.** Mocking the DB = unit test with extra steps.
+2. **Isolate between tests.** Clean state per test (truncate/rollback), real services.
+3. **Testcontainers over shared instances.** Fresh, disposable per run.
+4. **Test transaction boundaries.** Multi-step operations succeed or fully roll back.
+5. **Separate from unit tests in CI.** Integration tests are slower.
+6. **Seed minimally.** Each test owns its data. No global seeds.
+7. **Test failure modes.** DB down, timeout, pool exhaustion.
 
 ## Keep/Discard Discipline
 Each integration test boundary either passes or gets reverted. No flaky tests remain.
@@ -307,6 +292,9 @@ Each integration test boundary either passes or gets reverted. No flaky tests re
 - **CRASH**: Container startup failure or port conflict. Fix infrastructure, then retry once.
 - Log every boundary result to `.godmode/integration-results.tsv`.
 
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 - All external boundaries have integration test coverage (database, API, cache, queue).
 - All integration tests pass with real containers, no mocks for external dependencies.
@@ -314,37 +302,22 @@ Each integration test boundary either passes or gets reverted. No flaky tests re
 - Average test duration under 5 seconds per test (excluding container startup).
 
 ## HARD RULES
-1. NEVER mock the database in integration tests — use Testcontainers or real instances. Mocking defeats the purpose.
-2. NEVER share test databases across parallel test runs — each run gets its own container.
-3. NEVER hardcode ports — always use `container.getMappedPort()` for dynamic port assignment.
-4. NEVER seed all data globally — each test owns its data. Global seeds create hidden coupling.
-5. NEVER use production databases for testing — not even read-only queries.
-6. NEVER skip cleanup between tests — leftover data causes mysterious failures.
-7. ALWAYS separate integration tests from unit tests in CI — integration tests are slower and run independently.
-8. ALWAYS test the transaction boundary — verify multi-step operations fully succeed or fully roll back.
-9. ALWAYS include a timeout for container startup (`beforeAll` timeout >= 60s).
-10. ALWAYS test failure modes (database down, network timeout, pool exhaustion) — not just happy paths.
+1. NEVER mock DB in integration tests — use Testcontainers or real instances.
+2. NEVER share test DBs across parallel runs — each gets its own container.
+3. NEVER hardcode ports — use `container.getMappedPort()`.
+4. NEVER seed globally — each test owns its data.
+5. NEVER use production databases for testing.
+6. NEVER skip cleanup between tests.
+7. ALWAYS separate integration from unit tests in CI.
+8. ALWAYS test transaction boundaries (full success or full rollback).
+9. ALWAYS include container startup timeout (>= 60s).
+10. ALWAYS test failure modes (DB down, timeout, pool exhaustion).
 AUTO-DETECT:
-1. Scan for existing test infrastructure:
- - docker-compose*.yml, Dockerfile*, testcontainers* references
- - tests/integration/, tests/e2e/, **/it/
-2. Detect test framework:
- - package.json → jest, vitest, mocha
- - pyproject.toml → pytest, pytest markers
- - go.mod → testing package, testify
- - pom.xml/build.gradle → JUnit, Testcontainers
-3. Detect external dependencies:
- - Database connections: pg, mysql2, mongoose, prisma, sqlalchemy, gorm
- - Message queues: kafkajs, amqplib, bullmq
- - Cache: ioredis, redis, node-cache
- - External APIs: axios, fetch, http client calls
-4. Detect ORM/migration tooling:
- - Prisma, Drizzle, Knex, TypeORM, Sequelize
- - Alembic, Django migrations, Flask-Migrate
- - golang-migrate, goose
-5. Check for existing seeding:
- - seeds/, fixtures/, factories/, test-data/
- - Factory libraries (factory-boy, fishery, faker)
+1. Test infra: docker-compose*.yml, testcontainers*, tests/integration/
+2. Framework: jest/vitest/mocha, pytest, JUnit/Testcontainers
+3. Dependencies: pg/mysql2/prisma/mongoose, kafkajs/amqplib, ioredis
+4. ORM: Prisma/Drizzle/Knex/TypeORM, Alembic, golang-migrate
+5. Seeding: seeds/, fixtures/, factories/, factory-boy/fishery/faker
 ```
 
 ## Flags & Options
@@ -358,23 +331,15 @@ AUTO-DETECT:
 ## Output Format
 Print on completion: `Integration: {total_tests} tests across {boundary_count} boundaries. Containers: {containers}. Pass rate: {pass_rate}%. Avg duration: {avg_ms}ms. Verdict: {verdict}.`
 
-  ...
+## TSV Logging
 ```
 iteration	boundary	container	tests_written	tests_passing	avg_duration_ms	status
-1	database	postgres:16	6	6	245	passing
-2	api	postgres:16	8	7	312	failing
-3	queue	kafka:3.6	4	4	890	passing
 ```
-Columns: iteration, boundary, container, tests_written, tests_passing, avg_duration_ms, status(passing/failing/flaky).
 
 ## Success Criteria
-- All external boundaries have integration test coverage (database, API, cache, queue).
-- All integration tests pass with real containers (no mocks for external dependencies).
-- Test data isolation verified (no leakage between tests).
-- Transaction boundaries tested (multi-step operations succeed or fully roll back).
-- Failure modes tested (connection failure, timeout, constraint violation).
-- Average test duration under 5 seconds per test (excluding container startup).
-- CI pipeline runs integration tests on every PR with container support.
+- All external boundaries covered (database, API, cache, queue) with real containers.
+- Test data isolation verified, transaction boundaries tested, failure modes covered.
+- Average test duration under 5s per test. CI runs integration tests on every PR.
 
 ## Error Recovery
   ...

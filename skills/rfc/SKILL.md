@@ -75,7 +75,7 @@ Create the RFC using the structured template:
 - **Decision:** <Pending | Approved | Rejected | Deferred>
 
 ## Summary
-<2-3 sentence executive summary. A busy person reads just this
+<2-3 sentence executive summary. A busy person reads only this
 and understand what you're proposing and why.>
 
 ## Problem Statement
@@ -229,9 +229,15 @@ git add docs/rfcs/<NNN>-<title>.md
 git commit -m "rfc: RFC-<NNN> — <title> (<status>)"
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
-1. **"Do Nothing" is always an alternative.** Every RFC must explicitly evaluate and reject the status quo. If "do nothing" is acceptable, you do not need an RFC.
+1. **"Do Nothing" is an alternative.** Every RFC must explicitly evaluate and reject the status quo. If "do nothing" is acceptable, you do not need an RFC.
 2. **Evidence, not opinions.** The Problem Statement must include numbers, metrics, or concrete code references. "Our API is slow" is not a problem statement. "P95 latency for /api/users is 2.3s, up from 400ms in Q1" is.
 3. **The Summary is the most important section.** Most reviewers will read only the summary. Make it count.
 4. **Risks must have mitigations.** Listing risks without mitigations is empty worry. Every risk should have a concrete response plan.
@@ -262,28 +268,6 @@ AUTO-DETECT SEQUENCE:
 5. Check for decision log: docs/decisions/, ADR directory, decision-log.md
 6. Detect team communication: Slack webhook, email distribution list for RFC announcements
 7. Scan for active RFCs: find drafts, in-review, accepted statuses in RFC metadata
-```
-## Iterative RFC Writing Loop
-
-```
-current_iteration = 0
-max_iterations = 8
-rfc_sections = [problem, context, options, proposal, risks, migration, open_questions, review]
-
-WHILE rfc_sections is not empty AND current_iteration < max_iterations:
-    section = rfc_sections.pop(0)
-    1. IF problem: define the problem clearly with evidence (metrics, user reports, incidents)
-    2. IF context: document current state, constraints, and prior art
-    3. IF options: list all alternatives including "Do Nothing" with pros/cons
-    4. IF proposal: detail the recommended approach with concrete implementation steps
-    5. IF risks: identify risks with likelihood, impact, and mitigation strategies
-    6. IF migration: define rollout plan, backward compatibility, rollback procedure
-    7. IF open_questions: list unresolved questions that need input from reviewers
-    8. IF review: submit for team review with clear review deadline
-    9. Validate: every section is concise, evidence-based, and actionable
-    10. current_iteration += 1
-
-POST-LOOP: Verify all open questions are resolved before accepting
 ```
 ## HARD RULES
 
@@ -326,47 +310,21 @@ Append one row per session. Create the file with headers on first run.
 7. RFC saved to `docs/rfcs/` with correct numbering sequence.
 
 ## Error Recovery
-```
-IF no existing RFC directory or numbering convention found:
-  → Create docs/rfcs/ directory
-  → Start numbering at 001
-  → Create docs/rfcs/README.md with RFC process summary
-
-IF user wants to write RFC after code is already written:
-  → Warn: "Code already exists. This RFC documents a decision retroactively."
-  → Change RFC type to "Decision Record" and save as ADR instead
-  → Suggest: "For future proposals, write RFC before implementation"
-
-IF review deadline passes with unresolved concerns:
-  → Status remains "In Review" — do NOT auto-accept
-  → Append to Decision Log: "Deadline {date} passed — {N} unresolved concerns"
-  → Suggest: extend deadline by 3 days or schedule a synchronous review meeting
-
-IF RFC scope exceeds 5 pages:
-  → Split into parent RFC (overview + decision) and child RFCs (detailed design per component)
-  → Parent RFC references children: "See RFC-{N+1} for Phase 2 details"
-
-IF all reviewers reject:
-  → Set status to Rejected
-  → Document rejection rationale in Decision Log
-  → Preserve the RFC — do NOT delete it
-  → Suggest: "Revisit in {timeframe} or explore alternative approaches"
-```
+| Failure | Action |
+|--|--|
+| No RFC directory exists | Create docs/rfcs/, start numbering at 001. |
+| RFC written after code exists | Change type to "Decision Record" (ADR). Warn user. |
+| Review deadline passes | Keep "In Review" status. Suggest extend 3 days or sync meeting. |
+| RFC exceeds 5 pages | Split into parent (overview) and child RFCs (detail per component). |
+| All reviewers reject | Set Rejected. Document rationale. Preserve RFC. |
 
 ## Keep/Discard Discipline
 ```
-After EACH RFC section draft:
-  KEEP if: section is evidence-based, concise, and actionable
-  DISCARD if: section is vague, lacks evidence, or exceeds page budget
-  On discard: rewrite section with specific evidence and code references.
-  Never keep a section without concrete data or code references.
+KEEP if: section is evidence-based, concise, and actionable.
+DISCARD if: vague, lacks evidence, or exceeds page budget. Rewrite with specifics.
 ```
 
 ## Stop Conditions
 ```
-STOP when FIRST of:
-  - target_reached: all RFC sections complete AND committed
-  - budget_exhausted: max 8 iterations across all sections
-  - diminishing_returns: re-edits produce no new information
-  - stuck: >5 section rewrites with no quality improvement
+STOP when FIRST of: all sections complete + committed, 8 iterations exhausted, re-edits produce no new info.
 ```

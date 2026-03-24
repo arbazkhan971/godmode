@@ -7,3 +7,4 @@ round	change	metric_before	metric_after	delta%	status	lines_changed
 5	eliminate_ascii_table_borders_fix_dupes	3.78	1.60	-57.7%	kept	-276
 6	remove_condensed_placeholders_dedup_templates	1.60	0.87	-45.6%	kept	-250
 7	trim_400_vague_words_missing_sections_dupes	6.46	1.19	-81.6%	kept	-5000
+8	autoresearch_align_trim_vague_all_126_skills	8.66	1.23	-85.8%	kept	-4000

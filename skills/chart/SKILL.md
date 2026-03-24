@@ -120,42 +120,14 @@ CHART CONFIGURATION:
 | Legend | <position: top | right | bottom | none> |
   ...
 ```
-#### D3.js Implementation Pattern
-```typescript
-import * as d3 from 'd3';
-
-function createChart(container: HTMLElement, data: ChartData[], options: ChartOptions) {
-  const { width, height, margin } = options;
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
-```
-
-#### Recharts Implementation Pattern
-```tsx
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-function Chart({ data }: { data: ChartData[] }) {
-  return (
-    <ResponsiveContainer width="100%" height={400}>
-      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-```
+Use the selected library's standard patterns:
+- **D3.js**: SVG with margin convention, scales, axes, data joins
+- **Recharts**: `ResponsiveContainer` wrapper, declarative component composition
+- **Chart.js**: Canvas-based config object with datasets array
+- **Plotly**: Trace objects with layout configuration
 
 ### Step 6: Responsive Design
-Ensure charts work across all viewport sizes:
-
-```
-RESPONSIVE STRATEGY:
-| Breakpoint | Width | Adaptations |
-|--|--|--|
-| Mobile | < 480px | Stack legend below, reduce tick count, |
-|  |  | hide secondary axes, enlarge touch |
-|  |  | targets, swap to simplified chart type |
-| Tablet | 480-1024px | Side legend, moderate tick density, |
-|  |  | full interactivity |
-| Desktop | > 1024px | Full layout, all annotations visible, |
-|  |  | hover tooltips, brush/zoom enabled |
-
-```
+Mobile (<480px): stack legend below, reduce ticks, enlarge touch targets. Tablet (480-1024px): side legend, full interactivity. Desktop (>1024px): full layout, annotations, brush/zoom.
 ### Step 7: Color & Accessibility
 Design accessible visualizations that work for everyone:
 
@@ -263,6 +235,8 @@ Commit: `"chart: <component> — <chart type>, <library>, <N> data series, respo
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until all charts render within targets and pass accessibility checks.
+
 1. **NEVER use pie charts for more than 5 categories.** No exceptions. Use bar charts instead.
 2. **NEVER use 3D charts.** They distort data and add no information.
 3. **NEVER ship without a data table alternative** for screen readers.
@@ -335,40 +309,11 @@ The chart skill is complete when ALL of the following are true:
 
 ## Error Recovery
 
-```
-IF chart renders blank or does not appear:
-  1. Check browser console for errors (missing data, wrong data shape)
-  2. Verify data is loaded before chart mounts (check async data fetching)
-  3. Confirm container has explicit width/height (many libraries require this)
-  4. Test with hardcoded sample data to isolate data vs rendering issue
-
-IF chart is too slow (> 500ms render):
-  1. Check data point count — if > 1000, switch to canvas/WebGL renderer
-  2. Enable data decimation or sampling for time series
-  3. Debounce resize handlers to prevent layout thrashing
-  4. Use virtualization for very large datasets
-
-  ...
-```
+Blank chart: check console errors, verify data loads before mount, confirm container width/height, test with hardcoded data.
+Slow chart (>500ms): switch to canvas/WebGL for >1K points, enable data decimation, debounce resize handlers.
 ## Data Visualization Audit Loop
 
-Autoresearch-grade iterative audit for data visualization quality. Covers rendering performance, accessibility compliance, and responsive behavior through measured, repeatable cycles.
-
-```
-DATA VISUALIZATION AUDIT PROTOCOL:
-
-Phase 1 — Rendering Performance Audit
-  targets:
-    Initial render: < 100ms for < 1K data points
-    Initial render: < 500ms for 1K-10K data points
-    Interaction response (tooltip, hover): < 50ms
-    Resize/redraw: < 100ms
-    Memory usage: no leaks on repeated re-renders
-  current_iteration = 0
-  max_iterations = 8
-
-  ...
-```
+Performance targets: <1K points render <100ms, 1K-10K <500ms, tooltip/hover <50ms, resize <100ms, no memory leaks on re-renders. Run iteratively (max 8 rounds) until all targets met.
 ## Keep/Discard Discipline
 ```
 After EACH chart implementation or optimization:

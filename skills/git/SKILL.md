@@ -238,21 +238,10 @@ TYPES:
 | `--merge` | Recommend merge strategy (merge vs rebase vs squash) |
 
 ## Auto-Detection
-
-On activation, automatically detect Git repository context:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Run: git remote -v — detect hosting (GitHub, GitLab, Bitbucket, self-hosted)
-2. Run: git log --oneline -20 — detect commit message conventions (conventional, freeform, mixed)
-3. Run: git branch -a — count active branches, identify default branch (main/master/develop)
-4. Run: git branch --merged main — count stale merged branches
-5. Check for branch protection:.github/settings.yml, CODEOWNERS, branch protection API
-6. Detect CI/CD:.github/workflows/,.gitlab-ci.yml, Jenkinsfile,.circleci/config.yml
-7. Check for commit tooling:.commitlintrc*,.husky/,.czrc, commitizen config in package.json
-8. Detect merge strategy: scan recent merge commits for --squash, --no-ff, or rebase patterns
-9. Check for PR templates:.github/pull_request_template.md,.gitlab/merge_request_templates/
-10. Count contributors (git shortlog -sn) — determine team size for workflow recommendation
+Detect: hosting (git remote -v), commit conventions (git log), branch count (git branch -a),
+stale branches (git branch --merged), CI config, commit tooling (.commitlintrc, .husky),
+merge strategy (recent merge commits), PR templates, contributor count (git shortlog -sn).
 ```
 
 ## Keep/Discard Discipline
@@ -263,6 +252,11 @@ Each Git operation either improves the branch state or gets reverted.
 - Always create a backup branch before interactive rebase: `git branch backup-<name>`.
 
 ## Stop Conditions
+```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+```
 - Branch strategy documented and team-agreed (one of: trunk-based, GitHub Flow, GitFlow, Ship/Show/Ask).
 - All commits on the branch follow the team's commit convention.
 - No stale branches older than 30 days remain. Merged branches deleted within 7 days.
@@ -286,22 +280,7 @@ HARD RULES — GIT:
 ```
 
 ## Output Format
-
-After each git skill invocation, emit a structured report:
-
-```
-GIT OPERATION REPORT:
-| Operation | <branch | merge | rebase | bisect | worktree> |
-|--|--|--|--|--|--|
-| Branch | <branch name> |
-| Commits | <N> created / <N> cleaned up |
-| Conflicts resolved | <N> |
-| Stale branches | <N> cleaned / <N> remaining |
-| Worktrees | <N> active |
-| Stashes | <N> current (target: < 3) |
-| Tests after | PASSING / FAILING |
-| Verdict | CLEAN | NEEDS ATTENTION |
-```
+Print: `Git: {operation} on {branch}. Commits: {N} created/{N} cleaned. Conflicts: {N}. Stale branches: {N}. Tests: {PASS|FAIL}. Verdict: {CLEAN|NEEDS ATTENTION}.`
 
 ## TSV Logging
 
@@ -325,23 +304,10 @@ The git skill is complete when ALL of the following are true:
 7. Interactive rebase is performed before PR (clean, logical commits)
 
 ## Error Recovery
-
 ```
-IF merge conflict is too complex to resolve:
- 1. Create a backup branch: git branch backup-<name>
- 2. Try rebase --abort or merge --abort to return to clean state
- 3. Break the conflicting changes into smaller, non-overlapping commits
- 4. Re-attempt the merge/rebase with the smaller changes
-
-IF interactive rebase goes wrong:
- 1. NEVER panic — git reflog shows everything
- 2. Find the pre-rebase commit: git reflog | head -20
- 3. Reset to the pre-rebase state: git reset --hard <pre-rebase-hash>
- 4. Re-attempt with a more careful edit plan
-
-IF bisect identifies the wrong commit:
- 1. Verify the test script is deterministic (run it twice on the same commit)
- 2. Check for flaky tests that may give false good/bad results
+Merge conflict too complex: backup branch, abort, break into smaller commits, re-attempt.
+Rebase goes wrong: git reflog to find pre-rebase state, git reset --hard <hash>, re-attempt.
+Bisect wrong result: verify test script is deterministic, check for flaky tests.
 ```
 
 ADVANCED MERGE/REBASE SCENARIOS:

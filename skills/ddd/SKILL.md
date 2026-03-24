@@ -270,25 +270,12 @@ src/
    ```
 
 ## Auto-Detection
-
-On activation, automatically detect domain context:
-
 ```
 AUTO-DETECT:
-1. Existing domain structure:
-   find src/ -type d -name "domain" -o -name "models" -o -name "entities" \
-     -o -name "aggregates" -o -name "events" 2>/dev/null
-
-2. Existing domain objects:
-   grep -r "class.*Entity\|class.*Aggregate\|class.*ValueObject\|interface.*Repository" \
-     src/ --include="*.ts" --include="*.java" --include="*.cs" -l 2>/dev/null
-
-3. Domain events:
-   grep -r "Event\|EventHandler\|EventBus\|publish.*event\|emit.*event" \
-     src/ --include="*.ts" --include="*.java" -l 2>/dev/null
-
-4. Anemic domain model detection:
-   # Look for models that are just data bags (getters/setters only, no behavior)
+1. Scan for domain dirs: find src/ -type d -name "domain" -o -name "aggregates" -o -name "events"
+2. Scan for domain objects: grep -r "class.*Entity\|class.*Aggregate\|class.*ValueObject" src/ -l
+3. Scan for domain events: grep -r "Event\|EventHandler\|EventBus" src/ -l
+4. Anemic model detection: models with only getters/setters, no behavior methods
 ```
 
 ## Output Format
@@ -325,19 +312,10 @@ Append one row per session. Create the file with headers on first run.
 ```
 IF user asks to start with database schema:
   → Redirect: "Model the domain first. Schema is derived from the domain model."
-  → Begin with Step 1 (Domain Discovery) instead of Step 7 (Implementation Scaffold)
-  → After domain model is complete, suggest: "/godmode:schema to generate the persistence layer"
-
 IF aggregate grows beyond 4 entities:
-  → Flag: "Aggregate {name} has {N} entities — exceeds recommended maximum of 4"
-  → Analyze which entities to extract into separate aggregates
-  → Verify: extracted entities communicate via domain events, not direct references
-
+  → Flag and split. Extracted entities communicate via domain events, not direct references.
 IF same term means different things in different contexts:
-  → This is correct DDD behavior — create separate entries in each context's glossary
-  → Document: "'Order' in Ordering = items customer wants to buy. 'Order' in Fulfillment = items to pick and ship."
-  → Add anti-corruption layer or published language at the boundary
-
+  → Correct DDD behavior — create separate entries in each context's glossary.
 ```
 
 ## Keep/Discard Discipline
@@ -355,13 +333,17 @@ Never keep an aggregate that requires modifying two aggregates in the same trans
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never pause. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - Core domain has bounded contexts, aggregates, and event catalog defined
   - Ubiquitous language glossary has 5+ terms with unambiguous definitions
   - Context map shows relationships between all bounded contexts
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - Supporting/generic domains are not fully modeled (core domain is the priority)
   - Implementation scaffold is not yet generated (model correctness comes first)
 ```

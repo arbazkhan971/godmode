@@ -180,7 +180,7 @@ COMPOSE NETWORKING PATTERNS:
 ```
 
 ### Step 7: BuildKit Features and Build Arguments
-Leverage advanced build capabilities:
+Use advanced build capabilities:
 
 ```
 BUILDKIT FEATURES:
@@ -223,7 +223,7 @@ BUILDKIT FEATURES:
 ## Key Behaviors
 
 1. **Multi-stage builds are non-negotiable.** Every production Dockerfile uses multi-stage builds. No exceptions. The build stage should never appear in the final image.
-2. **Layer caching is the first optimization.** Before anything else, ensure dependency installation is cached separately from source code changes. This alone saves minutes per build.
+2. **Layer caching is the first optimization.** Before anything else, verify dependency installation is cached separately from source code changes. This alone saves minutes per build.
 3. **Security is not optional.** Every image runs as non-root, has a .dockerignore, and passes vulnerability scanning. Secrets never appear in build layers.
 4. **Compose is for development.** Docker Compose is the standard for local development environments. Production uses Kubernetes or managed container services.
 5. **Smaller images are faster and safer.** They deploy faster, start faster, and have fewer vulnerabilities. Target the smallest base image that works for your runtime.
@@ -292,6 +292,9 @@ IF >3 consecutive optimizations fail to reduce image size or fix vulnerabilities
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All images use multi-stage builds with non-root user and health checks
   - Zero critical CVEs in vulnerability scan
@@ -299,7 +302,7 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations (10) reached
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - HIGH (non-critical) CVEs exist in the base image with no fix available
   - Image size is slightly above target but all other criteria pass
 ```
@@ -315,56 +318,32 @@ PREFER the simpler Docker configuration:
 ```
 
 ## Auto-Detection
-
 ```
-1. Check for existing Docker setup:
-   - Scan for Dockerfile, Dockerfile.* → detect existing Dockerfiles
-   - Scan for docker-compose.yml, docker-compose.*.yml → detect Compose files
-   - Scan for .dockerignore → check if exists and is comprehensive
-2. Detect project language/runtime:
-   - Scan for package.json → Node.js
-   - Scan for requirements.txt, pyproject.toml, Pipfile → Python
-   - Scan for go.mod → Go
-   - Scan for Cargo.toml → Rust
-   - Scan for pom.xml, build.gradle → Java
-3. Check current image quality:
-   - Parse FROM directives for base image and tag
-   - Check for USER directive (non-root)
-   - Check for HEALTHCHECK directive
-   - Check for multi-stage build patterns
-4. Determine state: missing | exists-unoptimized | optimized | production-ready
-5. Set assessment fields and proceed to Step 1
+1. Scan for Dockerfile*, docker-compose*, .dockerignore
+2. Detect language: package.json→Node, pyproject.toml→Python, go.mod→Go, Cargo.toml→Rust, pom.xml→Java
+3. Check image quality: FROM tag, USER directive, HEALTHCHECK, multi-stage patterns
+4. State: missing | exists-unoptimized | optimized | production-ready
 ```
 
 ## Output Format
 Print on completion: `Docker: {image_count} images optimized. Size: {before_size} → {after_size} (-{savings}%). Layers: {layer_count}. Security: {vuln_count} vulnerabilities ({critical} critical). Build: {build_time}. Verdict: {verdict}.`
 
 ## TSV Logging
-Log every Docker optimization to `.godmode/docker-results.tsv`:
+Log to `.godmode/docker-results.tsv`:
 ```
 iteration	image	size_before	size_after	layers	vulns_critical	vulns_high	build_time_s	status
-1	app	1.2GB	180MB	12	0	2	45	optimized
-2	worker	800MB	120MB	10	0	0	30	optimized
-3	nginx	150MB	25MB	6	0	0	10	optimized
 ```
-Columns: iteration, image, size_before, size_after, layers, vulns_critical, vulns_high, build_time_s, status(optimized/hardened/created/failed).
 
 ## Success Criteria
-- All images use multi-stage builds (build dependencies not in final image).
-- All images use Alpine or distroless base images where possible.
-- All base image tags pinned to specific versions (no `latest`).
-- All containers run as non-root user.
-- HEALTHCHECK defined in every production Dockerfile.
-- .dockerignore excludes .git, node_modules, .env, and other unnecessary files.
-- No secrets in image layers (verified with `docker history`).
-- Vulnerability scan passes with zero critical CVEs.
-- Build cache optimized (dependency install before source copy).
+- Multi-stage builds, Alpine/distroless base, pinned tags, non-root user, HEALTHCHECK.
+- .dockerignore excludes .git, node_modules, .env. No secrets in layers.
+- Zero critical CVEs. Build cache optimized (deps before source).
 
 ## Error Recovery
-- **Image build fails at dependency install**: Check that the lockfile is copied before the install step. Verify the base image has the required system dependencies. Check network access during build.
-- **Image size unexpectedly large**: Check for unnecessary files with `docker history --no-trunc`. Verify multi-stage build is copying only the final artifact. Check `.dockerignore` for missing entries.
-- **Container crashes on startup**: Check logs with `docker logs <container>`. Verify the CMD/ENTRYPOINT is correct. Check if the non-root user has permission to read required files and bind to the configured port.
-- **Health check fails**: Verify the health check endpoint exists and responds. Check if the application needs a startup delay (`--start-period`). Ensure the health check command is available in the image (curl vs wget vs nc).
-- **Vulnerability scan reports critical CVEs**: Check if the CVE is in the base image or application dependencies. Update the base image tag. If in application deps, update the dependency. If no fix available, document and accept the risk.
-- **Build cache not working**: Verify the COPY order (lockfile before source). Check that the Docker BuildKit is enabled (`DOCKER_BUILDKIT=1`). Ensure the CI runner preserves the build cache between runs.
+- **Build fails at install**: Verify lockfile copied before install. Check base image system deps and network.
+- **Image too large**: Run `docker history --no-trunc`. Verify multi-stage copies only final artifact. Check `.dockerignore`.
+- **Container crashes**: Check `docker logs`. Verify CMD/ENTRYPOINT. Check non-root user permissions.
+- **Health check fails**: Verify endpoint exists. Check `--start-period`. Confirm health check tool in image.
+- **Critical CVEs**: Update base image tag or dep. If no fix, document accepted risk.
+- **Cache miss**: Verify COPY order (lockfile first). Check BuildKit enabled. Confirm CI preserves cache.
 

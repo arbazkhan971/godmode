@@ -246,6 +246,8 @@ Commit: `"state: design <description> state architecture"`
 2. **Minimize state.** If you compute it from other state, it is derived state -- use selectors, not stored values. If it fits in the URL, put it in the URL. Less state means fewer bugs.
 3. **Colocate state.** State should live as close to where it is used as possible. useState > Zustand store > Redux global. Only lift state when two distant components genuinely need it.
 4. **Server state is a cache, not a store.** You do not own server data. You cache it. It can become stale. React Query/SWR handle staleness, refetching, and garbage collection. Redux does not.
+5. **On failure: git reset --hard HEAD~1.**
+6. **Never ask to continue. Loop autonomously until state architecture complete or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |

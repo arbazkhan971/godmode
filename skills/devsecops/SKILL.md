@@ -224,26 +224,10 @@ IAC SECURITY CHECKS:
 ```
 SECURITY METRICS DASHBOARD:
   SECURITY POSTURE — <project>
-  Open vulnerabilities:
-  CRITICAL: <N> (SLA: 24h) Overdue: <N>
-  HIGH: <N> (SLA: 7d) Overdue: <N>
-  MEDIUM: <N> (SLA: 30d) Overdue: <N>
-  LOW: <N> (SLA: 90d) Overdue: <N>
-  Pipeline security:
-  PRs blocked by security gate: <N> this week
-  Average fix time (CRITICAL): <hours>
-  Average fix time (HIGH): <days>
-  Security gate override rate: <N>%
-  Dependency health:
-  Total dependencies: <N>
-  With known vulnerabilities: <N>
-  Outdated (>1 major version): <N>
-  License violations: <N>
-  Container health:
-  Images in production: <N>
-  With CRITICAL CVEs: <N>
-  Using :latest tag: <N> (target 0)
-  Non-root containers: <N>/<N>
+  Open vulnerabilities: CRITICAL <N> (SLA:24h), HIGH <N> (SLA:7d), MEDIUM <N> (SLA:30d), LOW <N> (SLA:90d)
+  Pipeline: PRs blocked <N>/week, avg fix time CRITICAL <hours>, HIGH <days>, override rate <N>%
+  Dependencies: total <N>, vulnerable <N>, outdated <N>, license violations <N>
+  Containers: production <N>, CRITICAL CVEs <N>, :latest tag <N> (target 0), non-root <N>/<N>
   Trend: IMPROVING | STABLE | DEGRADING
 ```
 
@@ -261,7 +245,7 @@ SECURITY METRICS DASHBOARD:
 1. **Shift left, not shift burden.** Keep CI security scanning fast enough that developers do not skip it. Baseline scans in PRs, full scans on schedule.
 2. **Block on critical, warn on the rest.** Only CRITICAL and HIGH severity findings should block merges. Medium and low get tracked but do not stop velocity.
 3. **No secrets pass the gate.** Secret scanning has zero exceptions. A leaked secret is an incident, not a finding to triage.
-4. **SBOM is a requirement, not optional.** Every release must have a Software Bill of Materials. This is increasingly a legal requirement, not just a best practice.
+4. **SBOM is a requirement, not optional.** Every release must have a Software Bill of Materials. This is a legal requirement.
 5. **Scan at every layer.** Source code (SAST), dependencies (SCA), running app (DAST), containers (Trivy), infrastructure (Checkov), secrets (gitleaks). Vulnerabilities hide at every layer.
 ## HARD RULES
 
@@ -295,6 +279,10 @@ FOR each security scanner finding:
   ...
 ```
 ## Stop Conditions
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 - All controls for the target maturity level are ACTIVE (not only configured).
 - CRITICAL and HIGH severity findings block merge (verified with a test PR).
 - Secret scanning active on pre-commit, CI, and push protection (3 layers minimum).
@@ -319,7 +307,6 @@ FOR each security scanner finding:
   ...
 ```
 ## Output Format
-
 Every devsecops invocation must produce a structured report:
 
 ```
@@ -332,13 +319,10 @@ Every devsecops invocation must produce a structured report:
   Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED>
 ```
 ## TSV Logging
-
-Log every pipeline security assessment to `.godmode/devsecops-audit.tsv`:
-
+Log to `.godmode/devsecops-audit.tsv`:
 ```
 timestamp	ci_platform	controls_configured	controls_total	maturity_before	maturity_after	blocking_gates	open_critical	open_high	verdict
 ```
-Append one row per invocation. Never overwrite previous rows.
 
 ## Success Criteria
 
@@ -360,7 +344,7 @@ PASS (Maturity Level 5) additionally requires:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Scanner times out in CI | Pin scanner version, reduce scan scope to changed files only on PRs. Full scan on weekly schedule. Increase CI timeout for security jobs. |
-| False positives blocking PRs | Add to `.semgrepignore` or inline `# nosec` with justification comment. Never blanket-suppress a rule — suppress per-line only. |
-| Secret detected in git history | Rotate the secret immediately. Use `git filter-repo` or BFG to remove from history. Enable push protection to prevent recurrence. |
-| Container scan finds OS-level CVE | Rebuild image from latest base. If no fix available, document accepted risk with expiry date and monitor for upstream patch. |
+| Scanner times out in CI | Pin scanner version, reduce scope to changed files on PRs. Full scan weekly. |
+| False positives blocking PRs | Add to `.semgrepignore` or inline `# nosec` with justification. Never blanket-suppress. |
+| Secret detected in git history | Rotate immediately. Use `git filter-repo` or BFG to remove. Enable push protection. |
+| Container scan finds OS-level CVE | Rebuild from latest base. If no fix, document accepted risk with expiry date. |

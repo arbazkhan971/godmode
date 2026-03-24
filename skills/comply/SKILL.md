@@ -185,27 +185,7 @@ Deletion workflow:
 ```
 
 ### Step 8: License Compliance
-Audit open-source and third-party license obligations:
-
-```
-LICENSE COMPLIANCE:
-| License Type | Count | Commercial OK | Action |
-|--|--|--|--|
-| MIT | <N> | YES | NONE |
-| Apache 2.0 | <N> | YES | NOTICE file |
-| BSD | <N> | YES | NONE |
-| ISC | <N> | YES | NONE |
-| LGPL | <N> | CONDITIONAL | REVIEW |
-| GPL | <N> | RISK | REPLACE/REVIEW |
-| AGPL | <N> | HIGH RISK | REPLACE |
-| Unlicensed | <N> | UNKNOWN | INVESTIGATE |
-| Custom/Prop. | <N> | VARIES | REVIEW TERMS |
-
-Actions required:
-- GPL/AGPL dependencies: Replace with permissively-licensed alternatives or verify usage does not trigger copyleft obligations
-- Unlicensed dependencies: Contact maintainer or replace
-- Attribution requirements: Verify NOTICE/LICENSE files are included in distribution
-```
+Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace or verify no copyleft trigger. Unlicensed = investigate/replace. Verify NOTICE/LICENSE files included in distribution.
 
 ### Step 9: Compliance Report
 
@@ -334,48 +314,14 @@ Append one row per regulation assessed. Never overwrite previous rows.
 
 ## Success Criteria
 
-```
-COMPLIANT if ALL of the following:
-  - Every applicable regulation is fully assessed
-  - Zero CRITICAL findings
-  - Zero HIGH findings
-  - Every finding references a specific regulation article (e.g., "GDPR Article 17")
-  - Every finding points to actual code (file path, line number, function)
-  - Audit trail covers all required event categories and is tamper-resistant
-  - Data retention policies are defined and automatically enforced
-  - License compliance has no GPL/AGPL dependencies in proprietary distribution
-  - Consent management (if GDPR applies) covers all processing activities
-
-CONDITIONAL if:
-  - Zero CRITICAL findings
-  - HIGH findings exist but all have remediation plans with < 30-day SLA
-  - No active data breaches or unmitigated exposure
-```
+COMPLIANT: Zero CRITICAL + zero HIGH findings, all findings reference regulation article + actual code, audit trail complete, data retention enforced, no GPL/AGPL in proprietary distribution.
+CONDITIONAL: Zero CRITICAL, HIGH findings have remediation plans with <30-day SLA, no active exposure.
 
 ## Error Recovery
 
-```
-IF a compliance gap is discovered close to launch:
-  1. Classify severity: CRITICAL gaps block launch, HIGH gaps require timeline commitment
-  2. For CRITICAL GDPR gaps: implement minimum viable consent and data subject rights
-  3. For CRITICAL HIPAA gaps: enable encryption in transit and at rest immediately
-  4. For CRITICAL PCI gaps: move to tokenized payment processing (Stripe/Braintree)
-  5. Document the gap, remediation plan, and timeline for auditors
-  6. Consult legal counsel — technical fixes alone may not satisfy regulatory obligations
-
-IF remediation introduces new compliance gaps:
-  1. Re-run the compliance audit on the remediated code
-  2. A fix for GDPR Article 17 (erasure) must not break Article 20 (portability)
-  3. If conflict exists: document the trade-off and consult legal counsel
-  4. Revert the fix if it creates a gap of equal or higher severity
-
-IF audit trail data is lost or corrupted:
-  1. Treat as a compliance incident — missing audit data is a finding in itself
-  2. Reconstruct what is possible from application logs, database logs, and cloud audit trails
-  3. Document the gap: time window, data types affected, reconstruction status
-  4. Implement redundant audit trail storage (primary + backup in different systems)
-  5. File an incident report and notify compliance stakeholders
-```
+Close-to-launch gaps: CRITICAL blocks launch (GDPR: minimum consent + rights; HIPAA: encryption; PCI: tokenized payments). Document gap + remediation + timeline. Consult legal counsel.
+Remediation introduces new gaps: Re-run audit. Revert if new gap is equal or higher severity. Document trade-offs.
+Audit trail data lost: Treat as compliance incident. Reconstruct from logs. Implement redundant storage. File incident report.
 
 ## Keep/Discard Discipline
 ```

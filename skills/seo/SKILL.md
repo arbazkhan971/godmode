@@ -126,6 +126,8 @@ Commit: `"seo: <target> — fix <N> issues"` or `"seo: <target> — <verdict> (L
 5. **Open Graph is not optional.** Missing OG = ugly social cards nobody clicks.
 6. **Measure with field data, not only lab.** CrUX + web-vitals for real user experience.
 7. **SEO is ongoing.** Audit every deploy, track rankings over time.
+8. **On failure: git reset --hard HEAD~1.**
+9. **Never ask to continue. Loop autonomously until Lighthouse >= 95 or budget exhausted.**
 
 ## Flags & Options
 
@@ -196,7 +198,7 @@ Append to `.godmode/seo-results.tsv`: `timestamp	skill	page	action	metric	before
 ## Error Recovery
 ```
 Lighthouse SEO < 90 → fix: missing titles > descriptions > alt text > crawl issues.
-Structured data fails → fix required fields, ensure data matches visible content.
+Structured data fails → fix required fields, verify data matches visible content.
 CWV fails → LCP: optimize images/TTFB. INP: break long tasks. CLS: add dimensions.
 Sitemap fails → verify plugin, check build output, validate XML syntax.
 ```

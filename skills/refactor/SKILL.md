@@ -91,7 +91,7 @@ IMPACT ANALYSIS:
   - src/controllers/product.controller.ts (no shared code)
   ...
 ```
-### Step 4: Ensure Safety Net
+### Step 4: Verify Safety Net
 Verify tests exist and pass BEFORE refactoring:
 
 ```bash
@@ -182,14 +182,17 @@ POST-REFACTORING REPORT:
 | Files deleted | 0 |
   ...
 ```
+## Autonomous Operation
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Tests MUST pass after every step.** Refactoring means changing structure without changing behavior. If tests fail, the behavior changed. Revert.
 2. **One pattern per commit.** "Extract and rename and move" is three commits, not one. Make each commit independently revertable.
-3. **Impact analysis before touching code.** Know the blast radius before you start. Surprises during refactoring mean you didn't analyze well enough.
+3. **Impact analysis before touching code.** Know the blast radius before you start. Surprises during refactoring mean you did not analyze well enough.
 4. **Low coverage = write tests first.** Never refactor code with <60% test coverage. Write characterization tests first.
 5. **Strangler over big bang.** For large refactors, migrate incrementally. Never rewrite a module in one commit.
-6. **Revert fast.** If a step breaks tests and the fix isn't obvious in 5 minutes, revert. Think more, then try again.
+6. **Revert fast.** If a step breaks tests and the fix is not obvious in 5 minutes, revert. Think more, then try again.
 
 ## Flags & Options
 
@@ -241,7 +244,7 @@ MECHANICAL CONSTRAINTS — NEVER VIOLATE:
 7. NEVER force-push refactoring branches. Keep every step revertable.
 8. IF tests fail after a transformation, REVERT first, THEN diagnose. Do not debug forward.
 9. Coverage MUST NOT decrease after refactoring. If it does, add tests before proceeding.
-10. EVERY renamed symbol requires updates in comments, docs, and error messages — not just code.
+10. EVERY renamed symbol requires updates in comments, docs, and error messages -- not only code.
 ```
 ## Output Format
 
@@ -321,71 +324,16 @@ STOP when ANY of these are true:
   - Zero dead code detected
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - Non-target modules still have high complexity (scope to what was requested)
   - A single transformation was discarded (try a different pattern)
 ```
 
-## Refactoring Complexity Reduction Loop
-
-Track cyclomatic and cognitive complexity before and after each refactoring, with explicit keep/discard decisions per transformation:
-
+## Complexity Thresholds
 ```
-COMPLEXITY REDUCTION LOOP:
-
-current_iteration = 0
-max_iterations = 20
-complexity_targets = [files/functions sorted by complexity, highest first]
-total_complexity_before = measure_total_complexity()
-reductions = []
-
-WHILE complexity_targets is not empty AND current_iteration < max_iterations:
-    current_iteration += 1
-    target = complexity_targets.pop(0)
-
-  ...
-```
-### Complexity Metrics
-
-```
-COMPLEXITY MEASUREMENT:
-| Metric | Threshold | Tool |
+| Metric | Threshold | Tools |
 |--|--|--|
-| Cyclomatic complexity | ≤ 10 per | eslint complexity rule |
-| (decision paths | function | radon (Python) |
-| through a function) |  | gocyclo (Go) |
-|  |  | checkstyle (Java) |
-| Cognitive complexity | ≤ 15 per | SonarQube/SonarLint |
-| (how hard it is for | function | eslint sonarjs plugin |
-| a human to understand |  | cognitive_complexity |
-| the control flow) |  | (Python) |
-| Lines of code (LOC) | ≤ 50 per | wc -l (raw) |
-```
-### Keep/Discard Decision Matrix
-
-```
-KEEP/DISCARD CRITERIA:
-| Condition | Decision |
-|--|--|
-| Tests fail after transformation | DISCARD (always) |
-| Cyclomatic AND cognitive both reduced | KEEP |
-| Cyclomatic reduced, cognitive neutral | KEEP |
-| Cognitive reduced, cyclomatic neutral | KEEP |
-| Both metrics unchanged or increased | DISCARD |
-| LOC increased > 30% without complexity | DISCARD |
-```
-### Complexity Reduction Report
-
-```
-COMPLEXITY REDUCTION REPORT:
-| Target | Transformation | Before | After |
-|  |  | CC/Cog | CC/Cog |
-| <file:function> | <transformation> | <N>/<N> | <N>/<N> |
-  Decision: KEEP|DISCARD — <reason>
-| <file:function> | <transformation> | <N>/<N> | <N>/<N> |
-  Decision: KEEP|DISCARD — <reason>
-  SUMMARY
-  Transformations attempted: <N>
-  Transformations kept: <N>
-  Transformations discarded: <N>
+| Cyclomatic | ≤ 10/function | eslint, radon, gocyclo, checkstyle |
+| Cognitive | ≤ 15/function | SonarQube, eslint sonarjs |
+| LOC | ≤ 50/function | wc -l |
 ```

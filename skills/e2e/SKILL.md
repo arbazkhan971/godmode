@@ -255,13 +255,16 @@ Never merge a test with < 100% pass rate — flaky tests erode trust in the enti
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All critical user flows have E2E coverage with 100% pass rate
   - Cross-browser matrix passes (chromium, firefox, webkit)
   - User explicitly requests stop
   - Max iterations (10) reached — report remaining uncovered flows
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - Non-critical flows lack coverage (cover critical paths first)
   - A single browser has a known platform bug (annotate and continue)
 ```
@@ -333,7 +336,7 @@ Columns: iteration, flow, browser, tests_written, tests_passing, flaky_count, st
 - Test data is isolated per test (no shared state between tests).
 
 ## Error Recovery
-- **Tests fail on first run**: Check if the dev server is running. Verify `baseURL` in config matches the actual server. Run `npx playwright install` to ensure browsers are installed.
+- **Tests fail on first run**: Check if the dev server is running. Verify `baseURL` in config matches the actual server. Run `npx playwright install` to confirm browsers are installed.
 - **Element not found errors**: Switch from CSS selectors to accessible locators (`getByRole`, `getByLabel`, `data-testid`). Check if the element is inside an iframe or shadow DOM.
 - **Timeout errors**: Increase `actionTimeout` in config. Check if the page has slow network requests blocking load. Use `waitForLoadState('networkidle')` only when necessary.
 - **Flaky tests detected**: Run the flaky test 10 times in isolation (`--repeat-each=10`). Check for race conditions, missing waits, or shared test data. Fix root cause before proceeding.

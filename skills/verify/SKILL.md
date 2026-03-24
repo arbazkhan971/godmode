@@ -314,6 +314,7 @@ EVIDENCE STANDARDS (for auditable verification):
 3. Never filter or truncate output — read all of stdout and stderr completely.
 4. Partial pass = FAIL. 99/100 passing when claim is "all tests pass" = FAIL.
 5. Each claim gets its own command, run, and verdict — never combine multiple claims.
+6. Never ask to continue. Loop autonomously until all claims verified or budget exhausted.
 
 ## Keep/Discard Discipline
 ```

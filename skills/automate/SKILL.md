@@ -75,6 +75,8 @@ Trigger: <schedule | event | manual> | Error handling: <present>
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until all automation artifacts pass dry-run and have error handling.
+
 1. NEVER automate without error handling.
 2. NEVER hardcode secrets.
 3. EVERY scheduled job MUST have a lock file.

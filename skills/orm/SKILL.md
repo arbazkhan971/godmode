@@ -96,6 +96,12 @@ Queries: <before> -> <after>  Latency: <before>ms -> <after>ms
 Commit: "orm: optimize <description> data access layer"
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 1. **ORM for 90%, raw SQL for 10%.** Know your escape hatch.
 2. **Enable query logging in development.** Cannot fix what you cannot see.
@@ -164,7 +170,7 @@ Log to `.godmode/orm-results.tsv`: `timestamp\tproject\torm\tmodels_audited\tn1_
 1. **N+1 persists:** Verify include/joinedload on correct relation. Add query count assertion test.
 2. **Pool exhausted:** Check for leaked connections, increase with caution, add proxy.
 3. **Migration fails:** Check data-dependent failures, add backfill before schema change.
-4. **Deadlock:** Ensure consistent lock ordering, reduce transaction scope, retry with backoff.
+4. **Deadlock:** Verify consistent lock ordering, reduce transaction scope, retry with backoff.
 5. **Query timeout:** Run EXPLAIN ANALYZE, add index, paginate.
 
 ## Platform Fallback

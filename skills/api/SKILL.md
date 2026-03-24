@@ -73,52 +73,12 @@ Nested resources:
 | GET | /api/v1/<parents>/:id/<children> | List children of parent |
   ...
 ```
-For **GraphQL** APIs:
-```graphql
-type Query {
-  <resource>(id: ID!): <Resource>
-  <resources>(filter: <Filter>, pagination: Pagination): <ResourceConnection>
-}
+For **GraphQL**: Define Query (single + list with filter/pagination), Mutation (create, update, delete), and typed response objects.
 
-type Mutation {
-  create<Resource>(input: Create<Resource>Input!): <Resource>!
-  update<Resource>(id: ID!, input: Update<Resource>Input!): <Resource>!
-  delete<Resource>(id: ID!): DeleteResult!
-}
-
-type <Resource> {
-  ...
-```
-
-For **gRPC** APIs:
-```protobuf
-service <Resource>Service {
-  rpc Get<Resource>(Get<Resource>Request) returns (<Resource>);
-  rpc List<Resources>(List<Resources>Request) returns (List<Resources>Response);
-  rpc Create<Resource>(Create<Resource>Request) returns (<Resource>);
-  rpc Update<Resource>(Update<Resource>Request) returns (<Resource>);
-  rpc Delete<Resource>(Delete<Resource>Request) returns (google.protobuf.Empty);
-}
-```
+For **gRPC**: Define service with rpc methods (Get, List, Create, Update, Delete) using typed request/response messages.
 
 ### Step 4: Versioning Strategy
-Choose and implement an API versioning strategy:
-
-```
-VERSIONING STRATEGY:
-
-Option A — URL Path Versioning (RECOMMENDED for public APIs):
-  /api/v1/resources
-  /api/v2/resources
-  Pros: Explicit, easy to understand, easy to route
-  Cons: URL pollution, harder to deprecate gradually
-
-Option B — Header Versioning:
-  Accept: application/vnd.<company>.<resource>.v2+json
-  Pros: Clean URLs, content negotiation compliant
-  Cons: Harder to test in browser, less discoverable
-  ...
-```
+URL path versioning (`/api/v1/`) is recommended for public APIs (explicit, easy to route). Header versioning (`Accept: application/vnd...`) is cleaner but less discoverable. Choose one and apply consistently.
 ### Step 5: Pagination Design
 Design pagination for all list endpoints:
 
@@ -273,6 +233,8 @@ AUTO-DETECT SEQUENCE:
 ```
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until OpenAPI spec validates with zero errors.
+
 ```
 MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 1. EVERY list endpoint MUST have pagination — no exceptions, no "we only have a few items."
@@ -332,13 +294,10 @@ ENDPOINT SUMMARY:
 ```
 ## TSV Logging
 
-Log every API design session to `.godmode/api-results.tsv`:
-
+Append to `.godmode/api-results.tsv`:
 ```
-Fields: timestamp\tproject\tendpoints_designed\tspec_format\tvalidation_status\tissues_found\tissues_fixed\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-service\t12\topenapi-3.1\tPASS\t3\t3\tabc1234
+timestamp	project	endpoints_designed	spec_format	validation_status	issues_found	issues_fixed	commit_sha
 ```
-Append after every completed design or validation pass. One row per session. If the file does not exist, create it with a header row.
 
 ## Success Criteria
 
@@ -361,18 +320,11 @@ API DESIGN SUCCESS CRITERIA:
 
 ```
 ERROR RECOVERY — API:
-1. Spec validation fails (spectral/redocly errors):
-   → Read error output line by line. Fix each violation. Re-run validator. Repeat until 0 errors.
-2. Breaking change detected vs previous spec:
-   → Compare old vs new spec with oasdiff or openapi-diff. Revert breaking fields. Add new fields as additive changes only.
-3. Pagination missing on list endpoint:
-   → Add cursor-based pagination parameters (after, first, before, last) and PageInfo to response schema.
-4. Inconsistent error format across endpoints:
-   → Create shared error component in spec. Reference it from all error responses (4xx, 5xx).
-5. Auth model undefined:
-   → Add securitySchemes to spec components. Apply security requirement to each endpoint.
-6. Rate limit headers missing from spec:
-  ...
+1. Spec validation fails → Read error output, fix each violation, re-run until 0 errors.
+2. Breaking change detected → Compare with oasdiff, revert breaking fields, add new fields additively.
+3. Pagination missing → Add cursor-based parameters and PageInfo to response schema.
+4. Inconsistent error format → Create shared error component in components, reference everywhere.
+5. Auth model undefined → Add securitySchemes to components, apply security to each endpoint.
 ```
 ## Explicit Loop Protocol
 

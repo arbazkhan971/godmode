@@ -220,6 +220,10 @@ DISCARD if: email lands in spam OR template breaks OR authentication fails
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when: All notification types implemented with templates and queue-based delivery
   AND SPF+DKIM+DMARC passing AND suppression list enforced AND bounce webhook active
   OR user requests stop

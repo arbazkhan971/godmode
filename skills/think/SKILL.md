@@ -285,6 +285,9 @@ Think: problem — in-app notification feed with unread count and mark-as-read.
 3. Success criteria must be a shell command or metric with threshold — never subjective prose.
 4. Spec must be under 100 lines — if longer, decompose into sub-features.
 5. Never commit a spec with invalid file paths — verify with `git ls-files` before commit.
+6. Measure before/after. Guard: test_cmd && lint_cmd.
+7. On failure: git reset --hard HEAD~1.
+8. Never ask to continue. Loop autonomously.
 
 ## Keep/Discard Discipline
 ```

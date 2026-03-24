@@ -166,6 +166,9 @@ After EACH microservice change:
   On discard: revert. Fix contract or communication pattern before retrying.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ALL of:

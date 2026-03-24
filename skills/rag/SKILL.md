@@ -130,7 +130,7 @@ RETRIEVAL STRATEGY:
 
 Base retrieval:
   Method: <dense (vector) | sparse (BM25) | hybrid>
-  Top-K: <number of chunks to retrieve — typically 5-20>
+  Top-K: <number of chunks to retrieve — 5-20 recommended>
 
 Hybrid search (RECOMMENDED for production):
   Dense weight: <0.0-1.0> (semantic similarity)
@@ -246,59 +246,34 @@ HARD RULES — NEVER VIOLATE:
 5. NEVER use default chunking (500 chars, no overlap) — design the strategy deliberately.
 6. ALWAYS evaluate retrieval and generation SEPARATELY to diagnose bottlenecks.
 7. ALWAYS include source attribution/citations in generated answers.
-8. ALWAYS test with real user queries, not just synthetic ones.
+8. ALWAYS test with real user queries, not only synthetic ones.
 9. NEVER assume one embedding model works for all content types.
 10. ALWAYS set chunk overlap >= 10% of chunk size to prevent boundary splits.
 11. ALWAYS have a fallback response for "I don't know" when context is insufficient.
 12. NEVER evaluate only end-to-end — measure retrieval metrics (hit rate, MRR) independently.
 ```
 
+## Autonomous Operation
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Chunking is the foundation.** Bad chunks produce bad retrieval. Spend more time on chunking strategy than on fancy retrieval algorithms. Garbage in, garbage out.
 2. **Hybrid search beats pure vector search.** Dense retrieval misses exact keyword matches. Sparse search misses semantic matches. Combine both with reciprocal rank fusion.
-3. **Reranking is the highest-leverage optimization.** A cross-encoder reranker applied to the top-20 results dramatically improves precision at minimal latency cost.
+3. **Reranking is the highest-impact optimization.** A cross-encoder reranker applied to the top-20 results dramatically improves precision at minimal latency cost.
 4. **Evaluate retrieval and generation separately.** If retrieval is bad, fixing the prompt will not help. If retrieval is good but generation is bad, fixing retrieval will not help. Diagnose the bottleneck.
 5. **Hallucination is the critical metric.** A RAG system that makes things up is worse than one that says "I don't know." Measure and minimize hallucination rate.
 6. **Context window is a budget.** Every token of context competes with the model's ability to reason. More context is not always better. Retrieve less, rerank more.
 7. **Test with real user queries.** Synthetic test queries are a start. Real user queries reveal failure modes you did not anticipate.
 
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full RAG pipeline design workflow |
-| `--ingest <source>` | Run document ingestion pipeline |
-| `--chunk <strategy>` | Force chunking strategy: `fixed`, `recursive`, `semantic`, `sentence`, `code`, `markdown` |
-
 ## Output Format
-
-After each RAG skill invocation, emit a structured report:
-
-```
-RAG PIPELINE REPORT:
-| Corpus | <N> documents / <N> chunks |
-|--|--|
-| Embedding model | <model name> (<N> dimensions) |
-| Vector store | <store name> |
-| Chunk strategy | <method> (<N> tokens, <N>% overlap) |
-| Retrieval method | <dense | hybrid | dense+rerank> |
-| Reranker | <model name> / NONE |
-| Retrieval quality | Recall@10: <N>%  MRR: <N> |
-| Generation quality | Faithfulness: <N>%  Relevance: <N>% |
-| Hallucination rate | <N>% |
-| Latency (p50/p99) | <N>ms / <N>ms |
-| Verdict | PASS | NEEDS TUNING |
-```
+Print on completion: `RAG: {chunks} chunks, {embedding_model}, {retrieval_method}. Recall@10: {N}%, Faithfulness: {N}%, Hallucination: {N}%. Verdict: {verdict}.`
 
 ## TSV Logging
-
-Log every RAG pipeline run for tracking:
-
+Log to `.godmode/rag.tsv`:
 ```
 timestamp	skill	action	corpus_chunks	recall_at_10	faithfulness	hallucination_rate	status
-2026-03-20T14:00:00Z	rag	index	4200	0.82	0.91	0.04	pass
-2026-03-20T14:30:00Z	rag	eval	4200	0.87	0.93	0.02	improved
 ```
 
 ## Success Criteria
@@ -314,24 +289,11 @@ The RAG skill is complete when ALL of the following are true:
 8. Evaluation suite covers retrieval quality, generation quality, and hallucination separately
 
 ## Error Recovery
-
-```
-IF retrieval quality is low (Recall@10 < 70%):
-  1. Check chunking: are relevant passages being split across chunks?
-  2. Increase chunk overlap to 15-20%
-  3. Try hybrid search (add BM25 alongside dense retrieval)
-  4. Test a domain-specific embedding model instead of a general-purpose one
-  5. Increase top-K retrieval count and add a reranker
-
-IF hallucination rate is high (> 5%):
-  1. Verify the prompt explicitly instructs the model to only use retrieved context
-  2. Add "If the answer is not in the context, say so" instruction
-  3. Reduce the number of retrieved chunks to avoid noise diluting the signal
-  4. Add a reranker to improve precision of retrieved chunks
-  5. Add a hallucination detection step as a post-processing guard
-
-IF latency is too high:
-```
+| Failure | Action |
+|--|--|
+| Low recall (<70%) | Check chunking splits. Increase overlap to 15-20%. Add BM25 hybrid. Try domain-specific embeddings. Add reranker. |
+| High hallucination (>5%) | Add "only use retrieved context" instruction. Reduce chunk count. Add reranker. Add hallucination detection guard. |
+| High latency | Cache frequent queries. Reduce top-K. Use approximate search. Batch embeddings. |
 
 ## Keep/Discard Discipline
 ```
@@ -354,28 +316,9 @@ STOP when ANY of these are true:
   - End-to-end latency meets application requirements
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP only because:
   - One data source has lower quality (fix that source separately)
   - Embedding cost seems high (optimize cost after quality targets are met)
 ```
 
-## RAG Optimization Loop
-
-Structured iterative loop for systematically improving retrieval precision, recall, chunk quality, and embedding effectiveness:
-
-```
-RAG OPTIMIZATION LOOP:
-Pipeline: <pipeline name>
-Optimization target: <metric to improve — e.g., hit_rate, faithfulness, hallucination_rate>
-Golden set: <N evaluation queries with ground-truth relevant passages>
-
-RETRIEVAL PRECISION/RECALL TUNING:
-| Metric | Current | Target | Gap | Priority |
-|--|--|--|--|--|
-| Precision @ 5 | <val> | <val> | <delta> | <H/M/L> |
-| Recall @ 10 | <val> | <val> | <delta> | <H/M/L> |
-| MRR | <val> | <val> | <delta> | <H/M/L> |
-| NDCG @ 10 | <val> | <val> | <delta> | <H/M/L> |
-| Retrieval latency | <ms> | <ms> | <delta> | <H/M/L> |
-```
 

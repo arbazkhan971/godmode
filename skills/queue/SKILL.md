@@ -150,6 +150,10 @@ DASHBOARD: Queue depth over time, processing rate, success vs failure,
 ### Step 9: Commit
 Save queue config, workers, retry/DLQ policy, schedules. Commit: `"queue: <name> — <tech>, <N> queues, <N> workers, <delivery guarantee>"`
 
+## Autonomous Operation
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Async anything over 500ms.** Never make users wait for background work.

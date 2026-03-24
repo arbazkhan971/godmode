@@ -301,6 +301,8 @@ FINAL SHIPPING READINESS:
 3. One ship per invocation: one PR, one release, or one deploy — never combine.
 4. Every ship action must have a known rollback command printed in the dry-run.
 5. Always verify after shipping — CI for PRs, health check for deploys, `gh release view` for releases.
+6. Measure before/after. Guard: test_cmd && lint_cmd.
+7. Never ask to continue. Loop autonomously until shipped or budget exhausted.
 
 ## Keep/Discard Discipline
 ```

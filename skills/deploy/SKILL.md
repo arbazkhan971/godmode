@@ -17,7 +17,7 @@ description: |
 ## Workflow
 
 ### Step 1: Assess Deployment Context
-Characterize the change and determine the appropriate deployment strategy:
+Characterize the change and determine the correct deployment strategy:
 
 ```
 DEPLOYMENT ASSESSMENT:
@@ -248,7 +248,7 @@ After EACH canary/progressive stage:
      - DISCARD (rollback) if: ANY rollback trigger fires OR manual approval denied
   4. Log the stage result with metrics in .godmode/deploy-results.tsv.
 
-Never promote a canary stage if metrics are "probably fine" — require them to be clearly within threshold for the full duration.
+Never promote a canary stage if metrics are ambiguous — require them to be clearly within threshold for the full duration.
 ```
 
 ## Stuck Recovery
@@ -263,6 +263,9 @@ IF deployment is stuck (canary metrics are ambiguous — neither clearly healthy
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+
 STOP the deployment (rollback) when ANY of these are true:
   - Error rate exceeds baseline + 1% for 2+ minutes
   - P99 latency exceeds 2x baseline for 5+ minutes

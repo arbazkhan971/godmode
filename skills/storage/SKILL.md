@@ -60,47 +60,7 @@ OBJECT STORAGE COMPARISON:
   ...
 ```
 PRESIGNED URL FLOW:
-┌────────┐     ┌──────────┐     ┌────────┐
-| Client |  | API |  | S3/GCS |
-└───┬────┘     └────┬─────┘     └───┬────┘
-| 1. Request |  |
-|--|--|
-| upload URL |  |
-    ├──────────────>│               │
-|  | 2. Generate |
-|  | presigned |
-|  | URL |
-| 3. Return |  |
-|--|--|
-| presigned |  |
-  <──────────────┤
-| 4. Upload |  |
-|--|--|
-| directly |  |
-| to storage |  |
-    ├───────────────────────────────>
-|  | 5. S3 Event |
-|  | notification |
-    │               │<──────────────┤
-|  | 6. Process |
-|  | (validate, |
-|  | resize, |
-|  | scan) |
-| 7. Confirm |  |
-|--|--|
-| upload done |  |
-  <──────────────┤
-    └───────────────┘               │
-```
-
-```typescript
-// Server: Generate presigned URL
-async function generateUploadUrl(req: Request): Promise<UploadUrlResponse> {
-  const { filename, contentType, fileSize } = req.body;
-
-  // Validate file type and size
-  if (!ALLOWED_MIME_TYPES.includes(contentType)) {
-  ...
+Client → API (request URL) → API validates type+size, generates presigned PUT → Client PUTs directly to S3 → S3 event → Worker validates/scans/resizes → Client gets confirmation
 ```
 
 #### Multipart Upload (Large Files)
@@ -228,7 +188,7 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
 
 ### Step 7: Commit and Report
 ```
-1. Save storage configuration in appropriate locations:
+1. Save storage configuration in correct locations:
    - Bucket config: `infra/storage/` or Terraform modules
    - Upload service: `src/services/upload/` or `src/lib/storage/`
    - Processing pipeline: `src/services/media/` or Lambda functions
@@ -244,6 +204,9 @@ resource "aws_s3_bucket_replication_configuration" "uploads" {
 2. **Validate on the server side, not the client.** Client-side validation is for UX. Server-side validation (MIME type sniffing, file header inspection, virus scanning) is for security.
 3. **Strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps. Serving user photos with EXIF data is a privacy violation.
 4. **Use content-addressable storage when possible.** Hash the file content for the key. This gives you automatic deduplication and cache-friendly immutable URLs.
+5. **Measure before/after.** Guard: test_cmd && lint_cmd.
+6. **On failure: git reset --hard HEAD~1.**
+7. **Never ask to continue. Loop autonomously until storage configured or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |

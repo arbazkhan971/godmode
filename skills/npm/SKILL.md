@@ -319,6 +319,9 @@ Never keep a version bump that introduces a critical or high vulnerability.
 Never keep a dependency override without documenting the reason and a removal date.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:

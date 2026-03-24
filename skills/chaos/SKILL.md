@@ -91,37 +91,10 @@ Injection:
 ```
 
 **Experiment N2: DNS Failure**
-```
-Hypothesis: "When DNS resolution fails for external services, the
-  system falls back to cached data or gracefully degrades."
-
-Injection:
-  # Block DNS for specific domains
-  iptables -A OUTPUT -p udp --dport 53 -j DROP
-
-  # Or modify /etc/hosts to return wrong IP
-  echo "127.0.0.1 api.external-service.com" >> /etc/hosts
-
-Verify:
-  - Cached responses served for previously-resolved hosts
-  ...
-```
+Hypothesis: "System falls back to cached data when DNS fails." Injection: `iptables -A OUTPUT -p udp --dport 53 -j DROP`. Verify cached responses served, error messages shown for uncached.
 
 **Experiment N3: Packet Loss**
-```
-Hypothesis: "With 10% packet loss, the system maintains >95% success
-  rate through retries and connection management."
-
-Injection:
-  # Add 10% packet loss
-  tc qdisc add dev eth0 root netem loss 10%
-
-Verify:
-  - Retry logic handles transient failures
-  - Response time increases but stays under SLO
-  - Error rate stays below threshold
-  - No connection pool exhaustion
-```
+Hypothesis: "With 10% packet loss, success rate stays >95%." Injection: `tc qdisc add dev eth0 root netem loss 10%`. Verify retry logic, SLO compliance, no pool exhaustion.
 
 #### Process Failure Experiments
 
@@ -143,37 +116,10 @@ Verify:
 ```
 
 **Experiment P2: Memory Pressure**
-```
-Hypothesis: "Under memory pressure (90%+), the application gracefully
-  sheds load rather than OOM-killing."
-
-Injection:
-  # Consume memory gradually
-  stress-ng --vm 1 --vm-bytes 80% --timeout 300s
-
-  # Or in application (test mode)
-  CHAOS_MEMORY_LEAK_MB_PER_SEC=10
-
-Verify:
-  - Application detects memory pressure
-  ...
-```
+Hypothesis: "At 90%+ memory, app sheds load gracefully." Injection: `stress-ng --vm 1 --vm-bytes 80% --timeout 300s`. Verify load shedding, no OOM kill, health check alive.
 
 **Experiment P3: CPU Saturation**
-```
-Hypothesis: "At 95% CPU utilization, the system prioritizes health checks
-  and critical paths over background tasks."
-
-Injection:
-  # Saturate CPU
-  stress-ng --cpu $(nproc) --timeout 300s
-
-Verify:
-  - Health check endpoint still responds (< 1s)
-  - Background jobs are deferred (not dropped)
-  - Critical API endpoints degraded but functional
-  - Autoscaling triggers (if configured)
-```
+Hypothesis: "At 95% CPU, health checks and critical paths prioritized." Injection: `stress-ng --cpu $(nproc) --timeout 300s`. Verify health check <1s, background deferred, autoscaling triggers.
 
 #### Storage Failure Experiments
 

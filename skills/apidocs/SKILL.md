@@ -53,88 +53,13 @@ CODE-FIRST SETUP BY FRAMEWORK:
 
 ```
 
-#### Express + swagger-jsdoc
-```javascript
-// swagger.js — configuration
-const swaggerJsdoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
-```
-
-```javascript
-// Route annotation example
-/**
- * @openapi
-```
-
-#### NestJS + @nestjs/swagger
-```typescript
-// main.ts — setup
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-
-```
-
-```typescript
-// DTO example with decorators
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-
-```
-
-#### FastAPI (Python) — Built-in
-```python
-from fastapi import FastAPI
-from pydantic import BaseModel, Field
-
-```
-
-#### Spring Boot + springdoc
-```xml
-<!-- pom.xml -->
-<dependency>
-  <groupId>org.springdoc</groupId>
-```
-
-```java
-// application.yml
-springdoc:
-  api-docs:
-```
-
-```java
-@Tag(name = "Users", description = "User management")
-@RestController
-@RequestMapping("/api/v1/users")
-```
-
-#### tsoa (TypeScript)
-```json
-// tsoa.json
-{
-  "entryFile": "src/index.ts",
-```
-
-```typescript
-// Controller with tsoa decorators
-import { Controller, Get, Post, Body, Route, Tags, Security, Query } from "tsoa";
-
-```
-
-```bash
-# Generate spec and routes
-npx tsoa spec     # outputs docs/openapi.json
-npx tsoa routes   # outputs src/generated/routes.ts
-```
-
-#### Go + swaggo/swag
-```go
-// @title <API Name>
-// @version <version>
-// @description <description>
-```
-
-```bash
-# Generate spec
-swag init -g cmd/server/main.go -o docs/
-```
+Framework-specific setup:
+- **Express**: `swagger-jsdoc` + `swagger-ui-express` with JSDoc `@openapi` annotations
+- **NestJS**: `@nestjs/swagger` with `DocumentBuilder` and `ApiProperty` decorators
+- **FastAPI**: Built-in OpenAPI generation from Pydantic models
+- **Spring Boot**: `springdoc-openapi` with `@Tag`, `@Operation` annotations
+- **tsoa**: TypeScript decorators, `npx tsoa spec` generates spec
+- **Go**: `swaggo/swag` with comment annotations, `swag init` generates spec
 
 ### Step 4: Schema Reuse with $ref and Components
 Enforce DRY specs by extracting shared schemas:
@@ -309,6 +234,8 @@ Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation c
 7. **Track breaking changes.** A spec diff in CI is worth a thousand "we accidentally broke the mobile app" incidents.
 
 ## HARD RULES
+
+Never ask to continue. Loop autonomously until spec validates and all endpoints have examples.
 
 1. **NEVER write endpoint docs without realistic examples.** A schema without examples is a guessing game. Every request and response must have at least one realistic example.
 2. **NEVER duplicate schemas.** Extract shared shapes to `components/schemas` and use `$ref`. Duplicated schemas drift.

@@ -306,24 +306,9 @@ The ML skill is complete when ALL of the following are true:
 8. Model artifacts are versioned and reproducible from logged configuration
 
 ## Error Recovery
-
-```
-IF model performance is worse than baseline:
-  1. Check for data leakage (target leakage, train/test overlap)
-  2. Verify data preprocessing is consistent between train and evaluation
-  3. Check for class imbalance — switch to stratified sampling and appropriate metrics
-  4. Simplify the model (reduce complexity) and verify it can at least match baseline
-
-IF training diverges or loss increases:
-  1. Reduce learning rate by 10x
-  2. Check for NaN/Inf values in features (missing value handling)
-  3. Normalize/standardize features if not already done
-  4. Reduce model complexity and verify on a smaller data subset
-
-IF model passes validation but fails in production:
-  1. Compare production data distribution with training data distribution
-  2. Check for feature drift (features computed differently in production)
-```
+- **Worse than baseline**: Check data leakage, preprocessing consistency, class imbalance. Simplify model.
+- **Training diverges**: Reduce LR by 10x. Check NaN/Inf. Normalize features. Reduce complexity.
+- **Fails in production**: Compare data distributions. Check feature drift.
 ## Keep/Discard Discipline
 ```
 After EACH experiment run:
@@ -337,6 +322,9 @@ After EACH experiment run:
 Never promote a model that fails bias checks, regardless of primary metric improvement.
 ```
 
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -345,45 +333,15 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - 3 consecutive experiments show no improvement (suggest new approach)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - A single metric plateaued (check other metrics and error analysis first)
   - Training takes a long time (schedule it, do not skip it)
 ```
 
 ## ML Pipeline Audit
-
-Systematically audit the end-to-end ML pipeline for production readiness:
-
 ```
-ML PIPELINE AUDIT:
-Pipeline: <pipeline name and version>
-Audit date: <date>
-Auditor: <team or individual>
-
-DATA VALIDATION AUDIT:
-| Check | Status | Evidence |
-|--|--|--|
-| Schema enforcement on input data | PASS|FAIL | <schema tool> |
-| Missing value thresholds defined | PASS|FAIL | <max % allowed> |
-| Feature distribution monitoring | PASS|FAIL | <drift tool> |
-| Label quality verification | PASS|FAIL | <QA process> |
-| Data versioning (DVC, LakeFS, etc) | PASS|FAIL | <tool + version> |
-| Train/val/test split reproducible | PASS|FAIL | <seed + method> |
-```
-### ML Pipeline Audit Loop
-
-```
-categories = [data_validation, model_metrics, experiment_tracking, pipeline_reliability]
-
-FOR each category:
-  1. SCAN pipeline for all checks in category
-  2. RECORD status (PASS/FAIL) with evidence
-  3. PRIORITIZE fixes: data issues > metric gaps > tracking gaps
-  4. IF > 3 FAIL items: fix top 3 before moving to next category
-
-SCORING:
-  audit_score = total_pass / total_checks * 100
-  < 80%: NOT production-ready
-  80-95%: conditionally ready (fix critical items)
-  >= 95%: production-ready (next audit in 30 days)
+FOR each category (data_validation, model_metrics, experiment_tracking, pipeline_reliability):
+  SCAN, RECORD PASS/FAIL, PRIORITIZE fixes (data > metrics > tracking).
+  IF > 3 FAIL: fix top 3 before next category.
+SCORING: <80% NOT ready, 80-95% conditional, >=95% production-ready.
 ```

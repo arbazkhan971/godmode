@@ -214,6 +214,8 @@ AUTO-DETECT SEQUENCE:
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until zero CRITICAL/HIGH violations or budget exhausted.
+
 ```
 MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 1. NEVER skip the manual checklist even if automated tools report 0 violations.

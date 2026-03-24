@@ -154,6 +154,12 @@ timestamp	feature	persona	verdict	confidence	risk_count	top_risk	mitigation	gate
 - [ ] `.godmode/predict-results.tsv` has 3 rows (one per persona) for this evaluation
 - [ ] Next step recommendation is printed (PROCEED → plan, REVISE/RETHINK → think)
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Error Recovery
 - **If `.godmode/spec.md` does not exist:** Ask the user for a text description of the proposal. If they provide one, evaluate that directly. If not, recommend `/godmode:think` first and stop.
 - **If a persona produces vague findings (no file:line):** Retry that finding with explicit instruction: "Specify file:line and concrete mitigation." Max 2 retries. If still vague, mark as "incomplete" in output and TSV. Do not gate on incomplete findings.
@@ -278,7 +284,7 @@ STOP when FIRST of:
 If your platform lacks `Agent()` or worktree isolation:
 - Run the 3 persona evaluations **sequentially** instead of in parallel.
 - Each persona: set system context to the persona's focus area, provide spec + codebase context, collect structured output.
-- Ensure each persona is evaluated independently — do not include previous persona outputs in the next persona's context.
+- Verify each persona is evaluated independently -- do not include previous persona outputs in the next persona's context.
 - After all 3 complete: meta-expert merges, deduplicates, synthesizes, and gates identically to the parallel version.
 - ~3x slower but identical quality and output format.
 - See `adapters/shared/sequential-dispatch.md` for full protocol.

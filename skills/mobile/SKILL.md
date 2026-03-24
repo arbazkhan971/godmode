@@ -31,7 +31,7 @@ If cross-platform:
   ...
 ```
 ### Step 2: Architecture Pattern Selection
-Choose and implement the appropriate architecture:
+Choose and implement the correct architecture:
 
 #### MVVM (Model-View-ViewModel)
 Best for: Most mobile apps, especially with reactive UI frameworks.
@@ -219,7 +219,7 @@ MEMORY PERFORMANCE CHECKLIST:
 NETWORK PERFORMANCE CHECKLIST:
 [ ] Offline-first: cache data locally, sync when connected
 [ ] Request coalescing: batch multiple API calls into one
-[ ] Image optimization: use WebP/AVIF, request appropriate size
+[ ] Image optimization: use WebP/AVIF, request correct size
 [ ] Pagination: load data in pages (20-50 items), infinite scroll
 [ ] Compression: enable gzip/brotli for API responses
 [ ] Certificate pinning: prevent MITM attacks (but plan for rotation)
@@ -313,8 +313,6 @@ Log every mobile build action for tracking:
 
 ```
 timestamp	skill	platform	screen	action	tests_pass	app_size_mb	status
-2026-03-20T14:00:00Z	mobile	ios	HomeScreen	create	15/15	12.3	pass
-2026-03-20T14:10:00Z	mobile	android	ProfileScreen	update	8/10	14.1	needs_fix
 ```
 ## Success Criteria
 
@@ -328,12 +326,12 @@ The mobile skill is complete when ALL of the following are true:
 7. Platform conventions are respected (iOS HIG, Material Design guidelines)
 8. No signing certificates or secrets committed to version control
 ## Keep/Discard Discipline
+- **KEEP** if: builds on all platforms, tests pass, cold start < 1s, size within budget, no secrets in VCS.
+- **DISCARD** if: crashes, performance regression, guidelines violated, min OS API missing.
+- Measure before/after. Revert changes without measurable improvement.
 
-After each mobile build pass, evaluate:
-- **KEEP** if: app builds on all target platforms, all tests pass, cold start < 1s on mid-range device, app size within budget, no accessibility violations, no signing secrets in version control.
-- **DISCARD** if: release build crashes (ProGuard/R8 issue), performance regression exceeds budget, platform guidelines violated, or minimum OS version API missing.
-- Measure before/after for every optimization. Revert changes that do not produce measurable improvement.
-- Never ship without testing on the minimum supported OS version on a physical device.
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 
@@ -345,9 +343,7 @@ Stop the mobile skill when:
 5. At least one E2E smoke test passes on each platform.
 
 ## Error Recovery
-| Failure | Action |
-|--|--|
-| Build fails on one platform only | Check platform-specific dependencies. Verify native module linking. Clean build cache (`cd ios && pod install`, `cd android && ./gradlew clean`). |
-| App crashes on startup | Check for missing permissions in manifest/plist. Verify all native modules are linked. Check for async initialization race conditions. |
-| Hot reload stops working | Restart metro bundler (RN) or dev server. Clear watchman cache. Check for syntax errors in recently saved files. |
-| App store rejection | Read rejection reason carefully. Common: missing privacy manifest, background mode misuse, incomplete metadata. Fix and resubmit. |
+- **Build fails one platform**: Check platform deps, native module linking, clean cache.
+- **Crashes on startup**: Check permissions, native modules, async init races.
+- **Hot reload broken**: Restart bundler/dev server, clear watchman, check syntax.
+- **Store rejection**: Read reason. Common: privacy manifest, background mode, metadata.

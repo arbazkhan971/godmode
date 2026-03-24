@@ -98,11 +98,17 @@ Files: src/services/payment/, src/api/webhooks/stripe.ts, src/config/tax.ts
 Commit: "pay: <description> — <components implemented>"
 ```
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 1. **Card data never touches your server.** Use client-side tokenization (Stripe.js Elements). This keeps you at PCI SAQ-A.
 2. **Webhooks are the source of truth.** Never rely on client-side confirmation. Fulfill orders from webhooks only.
 3. **Idempotency on every write.** Use idempotency keys on all Stripe API calls and deduplicate webhook events by event.id.
-4. **Tax is not optional.** Use a tax service — never calculate tax yourself.
+4. **Tax is not optional.** Use a tax service -- never calculate tax yourself.
 5. **Reconcile daily.** Compare your DB with the payment provider's records.
 6. **Log payment events, not payment data.** Never log card numbers, CVCs, or bank account numbers.
 

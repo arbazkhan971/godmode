@@ -178,7 +178,7 @@ interface FileUploadProps {
 ```
 
 ### Step 6: Accessible Form Design
-Ensure every form meets WCAG 2.1 AA accessibility requirements:
+Verify every form meets WCAG 2.1 AA accessibility requirements:
 
 #### Accessible FormField Component
 ```typescript
@@ -260,20 +260,9 @@ export function useAutosave<T extends Record<string, any>>({
 ```
 
 ### Step 8: Form Architecture Report
-
 ```
-FORM ARCHITECTURE REPORT:
-  Form: <name/purpose>
-  Fields: <N> total (<N> required)
-  Steps: <N> (or single page)
-  State Management:
-  Library: <React Hook Form / Formik / native>
-  Validation: <Zod / Yup / custom>
-  Mode: <onBlur / onChange / onSubmit>
-  Validation Coverage:
-  Client-side: <N>/<N> fields validated
-  Server-side: YES / NO
-  Async validation: <N> fields
+Form: <name>, Fields: <N> (<N> required), Steps: <N>, Library: <RHF/Formik/native>
+Validation: <Zod/Yup>, Mode: <onBlur/onChange>, Client: <N>/<N>, Server: YES/NO, Async: <N>
 ```
 ### Step 9: Commit and Transition
 1. If form components were created: `"forms: implement <form-name> with <library> + <validation>"`
@@ -316,74 +305,42 @@ HARD RULES — FORMS:
 10. ALWAYS share the same schema (Zod) between client and server validation. Two schemas = two sources of bugs.
 ```
 ## Output Format
-
-After each forms skill invocation, emit a structured report:
-
-```
-FORMS BUILD REPORT:
-| Forms created | <N> |
-|--|--|
-| Forms updated | <N> |
-| Fields total | <N> |
-| Validation schemas | <N> (Zod/Yup) |
-| Client validation | YES / NO |
-| Server validation | YES / NO (shared schema) |
-| A11y (labels+aria) | PASS / <N> violations |
-| Error messages | <N> fields with inline errors |
-| Multi-step | <N> steps / N/A |
-| Tests | <N> passing, <N> failing |
-  ...
-```
+Print: `Forms: {form_name} — {fields} fields, {validation} validation, a11y {PASS|FAIL}, tests {pass}/{total}. Status: {DONE|PARTIAL}.`
 ## TSV Logging
-
-Log every form creation for tracking:
-
-```
-timestamp	skill	form_name	fields	validation	a11y_pass	tests_pass	status
-2026-03-20T14:00:00Z	forms	signup	5	zod_client+server	yes	8/8	pass
-2026-03-20T14:10:00Z	forms	checkout_wizard	12	zod_client+server	yes	15/15	pass
-```
+Log to `.godmode/forms-results.tsv`: `timestamp\tform_name\tfields\tvalidation\ta11y_pass\ttests_pass\tstatus`
 ## Success Criteria
-
-The forms skill is complete when ALL of the following are true:
-1. Every field has a visible `<label>` element (not only placeholder text)
-2. Validation schema is shared between client and server (single source of truth)
-3. Every field shows inline error messages with `aria-describedby` and `aria-invalid`
-4. Form validates on blur (first touch) and on change (after first error)
-5. Form submission is protected against double-submit (disable button + debounce)
-6. Multi-step forms persist data across steps and survive browser back navigation
-7. File uploads validate MIME type, extension, file size, and count
-8. All form interactions are keyboard-accessible (tab order, enter to submit, escape to cancel)
-9. Tests cover: valid submission, each validation rule, error display, and edge cases
+1. Every field has a visible `<label>` with `aria-describedby` and `aria-invalid` on errors.
+2. Validation schema shared between client and server (single source of truth).
+3. Validates on blur (first touch), on change (after first error). No errors on mount.
+4. Multi-step forms persist across steps and survive browser refresh.
+5. File uploads validate MIME type, extension, size, and count.
+6. All form interactions keyboard-accessible. Tests cover valid/invalid/edge cases.
 
 ## Keep/Discard Discipline
 ```
 After EACH form implementation or audit fix:
-  1. MEASURE: Submit the form with valid data, invalid data, and edge cases — does validation fire correctly?
-  2. COMPARE: Are errors inline with aria-describedby, focus on first error, labels visible?
-  3. DECIDE:
-     - KEEP if: validation timing correct (blur first, change after) AND all a11y checks pass AND server validation matches client
-     - DISCARD if: errors show on first keystroke OR focus lost on submit failure OR server/client schemas diverge
-  4. COMMIT kept changes. Run `git reset --hard` on discarded changes before the next form.
+  KEEP if: validation timing correct (blur first, change after) AND a11y passes AND server matches client
+  DISCARD if: errors on first keystroke OR focus lost on submit OR schemas diverge
+  On discard: git reset --hard HEAD~1 before the next form.
 ```
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All forms have visible labels, inline errors with aria-describedby, and shared Zod schemas
   - Multi-step forms persist data across steps and survive browser refresh
   - Keyboard navigation works for all form interactions
   - User explicitly requests stop
-
-DO NOT STOP just because:
-  - Autosave is not yet implemented (explicit save is acceptable)
-  - Error message wording scores below 7/7 on every field (5+ is acceptable for first pass)
 ```
 
 ## Error Recovery
-| Failure | Action |
-|--|--|
-| Validation fires on every keystroke | Use `onBlur` validation for most fields. Only validate `onChange` for fields with instant feedback (e.g., password strength). Debounce async validation. |
-| Form state lost on navigation | Persist form state in sessionStorage or URL params. Use `beforeunload` event to warn about unsaved changes. |
-| Server validation errors not displayed | Map server error field names to form field names. Display inline next to the relevant field, not only as a toast. |
-| Multi-step form loses progress on refresh | Save each step's data to sessionStorage on advancement. Restore on page load. Clear on successful submission. |
+```
+Validation fires every keystroke: use onBlur mode, debounce async validation.
+State lost on navigation: persist in sessionStorage, use beforeunload warning.
+Server errors not displayed: map server field names to form fields, show inline.
+Multi-step loses progress: save to sessionStorage per step, restore on load.
+```

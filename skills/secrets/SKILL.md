@@ -68,35 +68,7 @@ LEAK REMEDIATION <N>:
 ### Step 3: Secret Store Setup
 Configure a centralized secret management system:
 
-#### HashiCorp Vault
-```bash
-# Initialize Vault
-vault operator init -key-shares=5 -key-threshold=3
-
-# Enable secrets engine
-vault secrets enable -path=app kv-v2
-
-```
-
-#### AWS Secrets Manager
-```bash
-# Create a secret
-aws secretsmanager create-secret \
-  --name "prod/api-service/database" \
-  --secret-string '{"username":"admin","password":"rotated-pass","host":"db.example.com"}'
-
-# Enable automatic rotation
-```
-
-#### GCP Secret Manager
-```bash
-# Create a secret
-echo -n "super-secret-value" | gcloud secrets create api-key \
-  --data-file=- \
-  --replication-policy="automatic"
-
-# Add a new version (rotation)
-```
+Supported stores: HashiCorp Vault (KV-v2), AWS Secrets Manager (with auto-rotation), GCP Secret Manager (automatic replication), Azure Key Vault. Use the provider that matches your cloud platform.
 
 ### Step 4: .env File Management
 Manage local development secrets safely:
@@ -126,7 +98,7 @@ AWS_REGION=us-east-1
 #### .env Validation
 ```bash
 # Compare .env against .env.example
-# Ensure all required variables are present
+# Verify all required variables are present
 
 diff <(grep -oP '^[A-Z_]+=?' .env.example | sort) \
      <(grep -oP '^[A-Z_]+=?' .env | sort)
@@ -235,6 +207,9 @@ PREVENTION LAYER:
 2. **Never commit secrets.** Not even "temporarily." Git history is permanent. If it was committed, it is leaked.
 3. **Environment variables are not secret management.** They are better than hardcoding, but a proper secret manager (Vault, AWS SM, GCP SM) provides rotation, auditing, and access control.
 4. **.env.example is documentation.** Keep it in sync with .env. New developers set up from .env.example alone.
+5. **Measure before/after.** Guard: test_cmd && lint_cmd.
+6. **On failure: git reset --hard HEAD~1.**
+7. **Never ask to continue. Loop autonomously until zero leaks or budget exhausted.**
 ## Flags & Options
 
 | Flag | Description |
@@ -290,7 +265,7 @@ STOP when ANY of these are true:
   - Pre-commit hook for secret scanning is installed and active
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Some secrets have not been rotated yet (remediate leaks first, rotate second)
   ...
 ```

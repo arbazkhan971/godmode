@@ -109,6 +109,8 @@ VERDICT: <PASS | NEEDS REVISION>
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until cache hit rate meets target and invalidation is verified.
+
 1. NEVER cache without a TTL.
 2. NEVER update cache on write — delete it.
 3. NEVER cache everything — high-read, low-write only.

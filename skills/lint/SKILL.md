@@ -280,28 +280,11 @@ AUTO-DETECT:
    - Cargo.toml → Rust
    - Gemfile → Ruby
    - pom.xml, build.gradle → Java/Kotlin
-2. Detect existing linter config:
-   - .eslintrc*, eslint.config.* → ESLint
-   - biome.json → Biome
-   - .prettierrc* → Prettier
-   - pyproject.toml [tool.ruff] → Ruff
-   - .flake8, setup.cfg [flake8] → Flake8
-   - .golangci.yml → golangci-lint
-   - .rubocop.yml → RuboCop
-3. Detect formatter:
-   - .prettierrc* → Prettier
-   - biome.json → Biome formatter
-   - pyproject.toml [tool.ruff.format] or [tool.black] → Ruff/Black
-   - gofmt / goimports → Go fmt
-4. Detect pre-commit hooks:
-   - .husky/ → Husky
-   - .pre-commit-config.yaml → pre-commit framework
-   - .git/hooks/pre-commit → manual hook
-5. Detect editor config:
-   - .editorconfig → EditorConfig
-   - .vscode/settings.json → VS Code settings
-6. Count current violations:
-   - Run linter in check mode, count errors + warnings
+2. Linter: .eslintrc*/eslint.config.*→ESLint, biome.json→Biome, pyproject.toml→Ruff, .golangci.yml→golangci-lint
+3. Formatter: .prettierrc*→Prettier, biome.json→Biome, [tool.black]→Black, gofmt→Go
+4. Hooks: .husky/→Husky, .pre-commit-config.yaml→pre-commit, .git/hooks/→manual
+5. Editor: .editorconfig, .vscode/settings.json
+6. Count violations: run linter in check mode
 ```
 
 ## HARD RULES
@@ -317,16 +300,13 @@ AUTO-DETECT:
 10. ALWAYS include `.editorconfig` — it standardizes basics across all editors without tool-specific config.
   ...
 ```
-After EACH rule group is enabled and auto-fixed:
-  1. MEASURE: Run the full test suite — do all tests pass?
-  2. COMPARE: Are violations reduced? Did auto-fix introduce regressions?
-  3. DECIDE:
-     - KEEP if: tests pass AND violation count decreased AND no behavioral changes from auto-fix
-     - DISCARD if: tests fail OR auto-fix changed code semantics OR rule produces excessive false positives
-  4. COMMIT kept changes. Revert discarded changes and reconsider the rule before retrying.
-
-Never keep a rule that produces >20% false positives — developers circumvent it with disable comments.
+KEEP if: tests pass AND violations decreased AND no behavioral changes from auto-fix
+DISCARD if: tests fail OR auto-fix changed semantics OR >20% false positives
+Revert discarded changes and reconsider the rule before retrying.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -336,7 +316,7 @@ STOP when ANY of these are true:
   - CI enforcement configured with --max-warnings=0
   - User explicitly requests stop
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Manual violations remain (list them with file:line for the user)
   - One rule group is contentious (flag it for team discussion)
 ```
@@ -350,24 +330,7 @@ DO NOT STOP just because:
 | `--fix` | Auto-fix all existing violations |
 ```
 iteration	rule_group	violations_before	auto_fixed	manual_remaining	tests_pass	status
-1	import-ordering	89	89	0	yes	clean
-2	unused-variables	45	38	7	yes	partial
-3	no-explicit-any	34	0	34	yes	manual
 ```
-Columns: iteration, rule_group, violations_before, auto_fixed, manual_remaining, tests_pass, status(clean/partial/manual).
 
 ## Success Criteria
-- Linter configured with recommended+ rule set for the detected language.
-- Formatter configured and integrated with linter (no conflicts).
-- Pre-commit hooks installed and running on staged files only.
-- Zero warnings in CI (`--max-warnings=0`).
-- Editor integration configured (format-on-save, lint-on-save).
-- `.editorconfig` present for cross-editor consistency.
-- All auto-fixable violations resolved. Manual violations listed with file:line.
-- Full test suite passes after auto-fix (no regressions).
-
-  ...
-```
-timestamp	tool	violations_before	violations_after	auto_fixed	rules_added	status
-```
-One row per lint pass. Never overwrite previous rows.
+- Linter configured with recommended+ rules. Formatter integrated. Pre-commit hooks on staged files only. Zero warnings in CI. Editor format-on-save. `.editorconfig` present. Auto-fixable resolved. Tests pass after auto-fix.

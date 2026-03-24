@@ -23,7 +23,7 @@ METRIC: shell cmd outputting a single number (optimization target, direction ↑
 GUARD:  test_cmd && lint_cmd && build_cmd (must ALL pass, non-negotiable)
 Change must BOTH improve metric AND pass guard.
 Guard failure → DISCARD (terminal, no retry — rework counts against the 2-rework cap).
-Metric regression + guard pass → DISCARD (not harmful, just useless).
+Metric regression + guard pass → DISCARD (not harmful, useless).
 ```
 
 ## The Loop
@@ -50,7 +50,7 @@ Print: `{metric}: {baseline} → {final} ({delta}%). {keeps} kept, {discards} di
 ## Stuck Recovery Strategy
 ```
 IF >5 consecutive discards:
-  1. Re-read ALL in-scope files (not just recent diffs) — stale mental model is #1 cause of stuck loops.
+  1. Re-read ALL in-scope files (not only recent diffs) — stale mental model is #1 cause of stuck loops.
   2. Try OPPOSITE approach:
      - If simplifying failed → add caching/precomputation
      - If inlining failed → extract functions
@@ -84,6 +84,12 @@ After EACH agent round:
   On discard: git reset --hard HEAD~1. Log discard reason in results.tsv.
   On guard failure: discard is terminal — rework counts against the 2-rework cap.
 ```
+
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
 
 ## Stop Conditions
 ```

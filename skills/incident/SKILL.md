@@ -202,30 +202,18 @@ ACTION ITEMS:
 #### Action Item Types
 - **PREVENT** — Stop this class of incident from recurring
 - **DETECT** — Catch it faster next time (alerts, monitoring, tests)
-- **MITIGATE** — Reduce impact when it happens (circuit breakers, fallbacks, rate limits)
-- **PROCESS** — Improve response process (runbooks, escalation paths, communication templates)
+- **MITIGATE** — Reduce impact (circuit breakers, fallbacks, rate limits)
+- **PROCESS** — Improve response process (runbooks, escalation paths)
 
-#### Priority Levels
-- **P0** — Must complete within 1 week. Blocks shipping new features.
-- **P1** — Must complete within 2 weeks. Tracked in sprint.
-- **P2** — Must complete within 1 month. Scheduled for next cycle.
+Priority: P0 = 1 week (blocks features), P1 = 2 weeks, P2 = 1 month.
 
 ### Step 7: Metrics and Reporting
-
-Track incident metrics over time:
-
 ```
 INCIDENT METRICS:
-MTTD (Mean Time to Detect):    <minutes from first symptom to first alert>
-MTTA (Mean Time to Acknowledge): <minutes from alert to human response>
-MTTR (Mean Time to Resolve):   <minutes from detection to resolution>
-MTBF (Mean Time Between Failures): <days since last incident of this class>
-
-Incident frequency (30 days):
-  SEV1: <count>  SEV2: <count>  SEV3: <count>  SEV4: <count>
-
-Action item completion rate: <completed>/<total> (<percentage>)
-Repeat incidents: <count of incidents with same root cause as prior>
+MTTD: <min from symptom to alert>  MTTA: <min from alert to response>
+MTTR: <min from detection to resolution>  MTBF: <days since last>
+Frequency (30d): SEV1=<N> SEV2=<N> SEV3=<N> SEV4=<N>
+Action items: <completed>/<total> (<pct>). Repeats: <count>.
 ```
 ### Step 8: Commit and Transition
 1. Save post-mortem as `docs/incidents/INC-<ID>-postmortem.md`
@@ -235,13 +223,11 @@ Repeat incidents: <count of incidents with same root cause as prior>
 5. If ACTIVE: "Incident still active. Focus on mitigation. Re-run `/godmode:incident` when resolved to complete post-mortem."
 
 ## Key Behaviors
-
-1. **Severity drives response.** SEV1 means drop everything. SEV4 means queue it up. Never over- or under-classify.
-2. **Timeline is sacred.** Every action, discovery, and decision gets a timestamp. Memory fails under stress; logs don't.
-3. **Blameless or useless.** The moment blame enters, people stop sharing information. Blame systems, not humans.
-4. **Keep action items actionable.** "Be more careful" is not an action item. "Add integration test for payment edge case X" is.
-5. **Every incident is a gift.** It reveals a weakness you didn't know about. The post-mortem is how you extract that value.
-6. **Follow up.** A post-mortem without completed action items is theater. Track completion and hold teams accountable to deadlines.
+1. **Severity drives response.** SEV1 = drop everything. SEV4 = queue it.
+2. **Timeline is sacred.** Timestamp every action. Memory fails under stress; logs don't.
+3. **Blameless or useless.** Blame systems, not humans.
+4. **Actionable items only.** "Add test for edge case X" not "be more careful."
+5. **Follow up.** Track action item completion. Escalate overdue items.
 
 ## HARD RULES
 1. NEVER assign blame to individuals — name systems, processes, and tools. "The deployment pipeline lacked X" not "Alice forgot X."
@@ -256,22 +242,11 @@ Repeat incidents: <count of incidents with same root cause as prior>
 10. ALWAYS update the status page within the timeframe defined by the severity level.
 
 ## Auto-Detection
-On activation, detect incident context automatically:
 ```
-AUTO-DETECT:
-1. Check for active alerts:
-   - Scan conversation for error messages, stack traces, HTTP 5xx codes
-   - Look for PagerDuty/OpsGenie/CloudWatch alert references
-   - Detect severity keywords: "down", "outage", "degraded", "breach"
-2. Check for existing incident docs:
-   - docs/incidents/, postmortems/, incident-reports/
-   - Previous incident IDs (INC-YYYY-MM-DD-NNN pattern)
-3. Check for monitoring integration:
-   - .github/, terraform/ (for infrastructure context)
-   - docker-compose.yml, k8s manifests (for service topology)
-4. Detect environment:
-   - Parse deployment configs for production URLs, service names
-   - Identify on-call rotation tools (PagerDuty, OpsGenie configs)
+1. Check for active alerts: error messages, stack traces, 5xx codes, PagerDuty/OpsGenie refs
+2. Check for existing docs: docs/incidents/, postmortems/, INC-YYYY-MM-DD-NNN patterns
+3. Check for monitoring: .github/, terraform/, docker-compose.yml, k8s manifests
+4. Detect environment: deployment configs, production URLs, on-call rotation tools
 5. Auto-generate incident ID from current date + sequence
 ```
 
@@ -327,10 +302,7 @@ Print on completion: `Incident: SEV{severity} — {title}. Duration: {start} to 
 Log every incident to `.godmode/incident-results.tsv`:
 ```
 timestamp	severity	title	detection_time	resolution_time	mttr_min	root_cause	action_items	status
-2024-01-15T14:30:00Z	SEV1	API outage	2min	45min	47	DB connection pool	5	resolved
-2024-02-03T09:15:00Z	SEV2	Payment timeout	8min	30min	38	3rd party API	3	resolved
 ```
-Columns: timestamp, severity, title, detection_time, resolution_time, mttr_min, root_cause, action_items, status(active/mitigated/resolved/postmortem_done).
 
 ## Success Criteria
 - Incident classified within 5 minutes of detection (severity assigned).
@@ -343,26 +315,22 @@ Columns: timestamp, severity, title, detection_time, resolution_time, mttr_min, 
 - MTTR trending downward quarter over quarter.
 
 ## Error Recovery
-- **Cannot identify root cause**: Widen the investigation window. Check logs, metrics, and traces for the 24 hours before the incident. Look for correlated changes (deploys, config changes, dependency updates). If still unclear, declare "root cause undetermined" and add investigation action items.
-- **Timeline has gaps**: Cross-reference multiple sources (application logs, infrastructure metrics, deployment history, git log, Slack messages). Use `git log --after` and `git log --before` to find changes in the incident window.
-- **Post-mortem becomes blame-oriented**: Redirect to systems thinking. Replace "Person X did Y" with "The system allowed Y to happen without safeguards." Focus on what process or tooling change would prevent recurrence.
-- **Action items not being completed**: Escalate overdue items weekly. Assign each item to a specific person with a specific deadline. Block feature work if critical remediation items are stale.
-- **Severity disputed**: Use the severity matrix (customer impact, data loss, revenue impact). If in doubt, classify higher and downgrade after investigation.
-- **Recurring incidents with same root cause**: Escalate to engineering leadership. Previous action items were insufficient. Require a systemic fix, not another band-aid.
+- **Cannot identify root cause**: Widen investigation to 24h before incident. Check deploys, config changes, dependency updates. Declare "undetermined" if needed.
+- **Timeline has gaps**: Cross-reference logs, metrics, deploy history, git log, Slack messages.
+- **Post-mortem becomes blame-oriented**: Redirect to systems thinking. "The system allowed Y" not "Person X did Y."
+- **Action items stale**: Escalate weekly. Block feature work if critical items overdue.
+- **Severity disputed**: Use severity matrix. If in doubt, classify higher.
+- **Recurring root cause**: Escalate to leadership. Require systemic fix.
 
 ## Keep/Discard Discipline
 ```
-After EACH investigation hypothesis is tested:
-  1. MEASURE: Does the evidence confirm or deny the hypothesis?
-  2. DECIDE:
-     - KEEP if: evidence confirms the hypothesis AND mitigation reduces error rate
-     - DISCARD if: evidence contradicts the hypothesis OR mitigation has no effect
-  3. Log the result: hypothesis, evidence, outcome (confirmed/denied), time spent.
-
-For action items in post-mortems:
-  - KEEP action items that address root cause or contributing factors
-  - DISCARD action items that are vague ("be more careful") or duplicate existing controls
+KEEP if: evidence confirms hypothesis AND mitigation reduces error rate
+DISCARD if: evidence contradicts OR mitigation has no effect. Log all results.
+Action items: KEEP if addresses root cause. DISCARD if vague or duplicate.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```

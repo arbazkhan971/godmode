@@ -73,7 +73,7 @@ Thank you for your interest in contributing! This document provides
 ## Pull Request Process
 1. Update documentation if you change public APIs
 2. Add tests for new functionality
-3. Ensure all tests pass and linting is clean
+3. Verify all tests pass and linting is clean
 4. Update the CHANGELOG.md with your changes
 5. Request review from maintainers
 6. Address review feedback promptly
@@ -267,6 +267,11 @@ Based on the selected model, create the governance document:
 4. If repository was already open: "Community health files updated. Review the generated files and customize contact details, team names, and links."
 5. If new open source project: "Repository is ready for open source. Next: customize templates, enable Discussions, and announce the project."
 
+## Autonomous Operation
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Community health files are non-negotiable.** Every open source project needs LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT, and SECURITY at minimum. No exceptions.
@@ -288,33 +293,13 @@ Based on the selected model, create the governance document:
 7. **ALWAYS match governance model to project size.** Solo project = BDFL. 10+ contributors = consensus. 50+ = steering committee.
 8. **ALWAYS test CONTRIBUTING.md instructions on a clean machine.** If setup takes more than 15 minutes, contributors will leave.
 
-## Explicit Loop Protocol
-
-Repository scaffolding is iterative -- create, verify, customize:
-
-```
-current_iteration = 0
-files_to_scaffold = [LICENSE, CODE_OF_CONDUCT, CONTRIBUTING, SECURITY,
-                     issue_templates, pr_template, CODEOWNERS, workflows,
-```
-
 ## Output Format
-
-After each opensource skill invocation, emit a structured report:
-
-```
-OPEN SOURCE READINESS REPORT:
-| Health score | <N>/13 files present |
-```
+Print on completion: `Opensource: {health_score}/13 files present. {files_created} created, {files_updated} updated. Status: {status}.`
 
 ## TSV Logging
-
-Log every open source setup action for tracking:
-
+Log to `.godmode/opensource.tsv`:
 ```
 timestamp	skill	action	files_created	files_updated	health_score	status
-2026-03-20T14:00:00Z	opensource	scaffold	11	2	13/13	ready
-2026-03-20T14:10:00Z	opensource	audit	0	0	8/13	needs_work
 ```
 
 ## Success Criteria
@@ -343,25 +328,6 @@ STOP when ANY of these are true:
   - All critical files present (LICENSE, README, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
   - Issue and PR templates configured with blank issues disabled
 ```
-
-## Open Source Audit
-
-Comprehensive audit of license compliance, contribution guidelines, and release process maturity:
-
-```
-OPEN SOURCE AUDIT:
-Repository: <org/repo>
-Audit date: <date>
-```
-
-### Open Source Audit Loop
-
-```
-OPEN SOURCE AUDIT ITERATION:
-audit_areas = [license_compliance, contribution_guidelines, release_process, community_health]
-current_area = 0
-```
-
 
 ## Error Recovery
 | Failure | Action |

@@ -220,6 +220,7 @@ AUTO-DETECT:
 6. **ALWAYS validate at the boundary, trust types internally.** Validate in API handlers and database reads. Inside service functions, the types are the contract.
 7. **NEVER validate the same data at every function call.** Validate once at the boundary, then trust the type system downstream.
 8. **ALWAYS enable `strict: true` in tsconfig.** Non-strict TypeScript is a false sense of safety.
+9. **Never ask to continue. Loop autonomously until type safety score >= 80 or budget exhausted.**
 
 ## Iteration Protocol
 

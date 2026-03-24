@@ -272,21 +272,10 @@ LOGGING VERIFICATION CHECKLIST:
 10. ALWAYS make log level configurable at runtime — enable DEBUG for specific modules during incidents without redeployment.
 
 ## Auto-Detection
-On activation, detect logging context automatically:
 ```
-AUTO-DETECT:
-1. Detect current logging:
-   - grep for console.log, console.error → unstructured Node.js
-   - grep for log.Println, log.Printf → unstructured Go
-   - grep for print(), logging.info → unstructured Python
-   - grep for pino, winston, bunyan → structured Node.js
-   - grep for slog, zerolog, zap → structured Go
-   - grep for structlog, loguru → structured Python
-2. Detect logging library:
-   - package.json → pino, winston, bunyan
-   - go.mod → log/slog, rs/zerolog, uber-go/zap
-   - pyproject.toml → structlog, loguru, python-json-logger
-  ...
+1. Unstructured: console.log→Node, log.Println→Go, print()→Python
+2. Structured: pino/winston→Node, slog/zerolog/zap→Go, structlog/loguru→Python
+3. Libraries: package.json, go.mod, pyproject.toml
 ```
 
 ## Iterative Logging Implementation Protocol
@@ -309,16 +298,13 @@ WHILE current_service < len(services):
 
 ## Keep/Discard Discipline
 ```
-After EACH logging configuration change:
-  1. MEASURE: Run the application — are logs valid JSON? Do they include required fields (requestId, service, level)?
-  2. COMPARE: Is the logging better than before? (structured vs unstructured, PII redacted, correlation IDs present)
-  3. DECIDE:
-     - KEEP if: log output is valid JSON AND required fields present AND PII redacted AND no performance regression
-     - DISCARD if: log output is malformed OR required fields missing OR PII leaked OR logging blocks the event loop
-  4. COMMIT kept changes. Revert discarded changes before the next service migration.
-
-Never migrate a service to structured logging without verifying the output is parseable.
+KEEP if: valid JSON AND required fields present AND PII redacted AND no performance regression
+DISCARD if: malformed output OR missing fields OR PII leaked OR blocks event loop
+Never migrate without verifying output is parseable.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
@@ -329,17 +315,10 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - Max iterations (12) reached
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - One service has complex legacy logging (migrate the simpler services first)
   - Log aggregation pipeline is not yet set up (structured logs to stdout is still an improvement)
 ```
-
-## Chaining
-- **From `/godmode:errorhandling`:** After designing error hierarchy, implement structured logging with `/godmode:logging`
-- **From `/godmode:logging` to `/godmode:observe`:** After logging is in place, add metrics and tracing with `/godmode:observe`
-- **From `/godmode:resilience`:** Resilience patterns need logging for circuit breaker states, retries, and degradation events
-- **From `/godmode:secure`:** Security audit requires PII redaction in logs
-- **From `/godmode:incident`:** Post-mortem reveals insufficient logging → improve with `/godmode:logging`
 
 ## Output Format
 Print on completion: `Logging: {service_count} services configured. Format: structured JSON. Levels: {level_config}. Correlation: {correlation_status}. PII: {pii_status}. Retention: {retention_policy}. Verdict: {verdict}.`
@@ -350,26 +329,16 @@ Log every invocation to `.godmode/` as TSV. Create on first run.
 
 ```
 iteration	task	services_configured	format	correlation_ids	pii_redacted	retention_days	status
-1	core_setup	4	structured_json	yes	yes	30	configured
-2	migration	2	migrated_from_console	yes	yes	30	migrated
-3	correlation	4	structured_json	verified	yes	30	verified
-4	pipeline	1	aggregator	n/a	n/a	90	configured
 ```
 ## Success Criteria
-- All services use structured JSON logging (no `console.log` or `print` statements).
-- Log levels correctly configured (ERROR for failures, WARN for degradation, INFO for business events, DEBUG disabled in production).
-- Correlation IDs (request ID, trace ID) attached to every log line.
-- PII redacted or masked in all log output (emails, tokens, passwords).
-- Log aggregation pipeline configured (ship to centralized logging).
-- Retention policy set per environment (production: 30-90 days, staging: 7 days).
-- Async log writing configured (no blocking I/O on hot paths).
-- Consistent log format across all services (same field names, same structure).
+- All services: structured JSON, no console.log/print. Correct log levels per environment.
+- Correlation IDs on every line. PII redacted. Aggregation pipeline configured.
+- Retention: prod 30-90d, staging 7d. Async writing. Consistent format across services.
 
 ## Error Recovery
-
-- **Logs are unstructured after migration**: Search for remaining `console.log`, `print()`, `fmt.Println` calls. Replace with the structured logger. Use lint rules to prevent regression (`no-console` ESLint rule).
-- **Correlation IDs missing in some logs**: Check middleware ordering — correlation ID middleware must run before any handler that logs. Verify the logger context is propagated to all layers (service, repository, etc.).
-- **Log volume too high (cost explosion)**: Audit log levels — production should not use DEBUG. Sample high-volume events instead of logging every one. Filter out health check logs at the aggregator level.
-- **PII found in logs**: Add redaction middleware/filters. Audit all log statements for email, phone, SSN, token, password fields. Use allowlists (log only known-safe fields) instead of denylists.
-- **Logs not appearing in aggregator**: Check the log shipping agent (Fluentd, Filebeat, CloudWatch agent). Verify network connectivity to the aggregator. Check log file rotation — the agent may be tailing a rotated file.
-- **Different services use different log formats**: Standardize on a single schema. Create a shared logging library/wrapper that all services import. Enforce the schema in code review.
+- **Unstructured after migration**: Grep for remaining `console.log`/`print()`. Use lint rules.
+- **Missing correlation IDs**: Check middleware ordering. Propagate context to all layers.
+- **Volume too high**: Audit levels (no DEBUG in prod). Sample high-volume events.
+- **PII found**: Add redaction filters. Use allowlists over denylists.
+- **Not in aggregator**: Check shipping agent, network, log rotation.
+- **Inconsistent formats**: Shared logging library. Enforce in review.

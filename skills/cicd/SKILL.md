@@ -99,20 +99,7 @@ Total estimated savings: 2-6 minutes per pipeline run
 ```
 
 #### Docker Layer Caching
-```dockerfile
-# Optimized Dockerfile for CI caching
-FROM node:20-slim AS base
-
-# Dependencies layer (cached unless lockfile changes)
-FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --production=false
-
-# Build layer (cached unless source changes)
-FROM deps AS build
-COPY . .
-```
+Multi-stage Dockerfile: deps layer (cached on lockfile hash) -> build layer (cached on source hash). Copy lockfile first, `npm ci`, then copy source.
 
 ### Step 5: Pipeline Optimization
 Analyze and improve pipeline performance:
@@ -317,23 +304,16 @@ iteration	stage	job_count	duration_before	duration_after	cache_hit_rate	status
 Columns: iteration, stage, job_count, duration_before, duration_after, cache_hit_rate, status(optimized/sharded/added/configured/failed).
 
 ## Success Criteria
-- Full pipeline runs in under 10 minutes (lint + test + build + deploy).
-- Dependency caching enabled with lockfile hash key (cache hit rate > 90%).
-- Tests parallelized across shards when suite exceeds 3 minutes.
-- Security scanning included (dependency audit + container scan).
-- Staging gate before production deployment.
-- All action/image versions pinned (no `latest` tags).
-- Secrets never echoed in logs (masked with `::add-mask::`).
-- Timeout configured on every job to prevent hung pipelines.
-- Flaky tests quarantined or fixed (zero intermittent failures).
+Pipeline under 10 minutes. Dependency cache hit rate >90%. Tests sharded when >3min. Security scanning included. Staging gate before production. All versions pinned (no `latest`). Secrets masked. Timeouts on every job. Zero flaky tests.
 
 ## Error Recovery
-- **Pipeline times out**: Check for hung tests or builds. Add `timeout-minutes` to every job. Identify the slow step with timing annotations. Split long steps into parallel jobs.
-- **Cache miss on every run**: Verify the cache key includes the lockfile hash. Check that the cache path matches where dependencies are installed. Ensure the cache is not being evicted due to size limits.
-- **Secret not available in workflow**: Check that the secret is defined at the correct scope (repo, environment, org). Verify the workflow has permission to access the environment. Secrets are not available in fork PRs by default.
-- **Deployment fails but tests passed**: Check for environment-specific configuration differences. Verify the build artifact matches what was tested. Check deployment credentials and permissions.
-- **Test sharding produces uneven splits**: Rebalance shards based on test duration, not test count. Use `--shard` with timing data. Ensure the slowest shard is under the target time.
-- **Flaky test blocks the pipeline**: Do not add retries as a permanent fix. Quarantine the test with a skip annotation and a linked issue. Fix the root cause within 48 hours.
+| Failure | Action |
+|--|--|
+| Pipeline times out | Add `timeout-minutes` to every job. Identify slow step, split into parallel jobs. |
+| Cache miss every run | Verify cache key includes lockfile hash. Check cache path matches install location. |
+| Secret not available | Check scope (repo/env/org). Secrets unavailable in fork PRs by default. |
+| Deploy fails, tests pass | Check env-specific config, verify artifact matches tested build. |
+| Flaky test blocks pipeline | Quarantine with skip annotation + linked issue. Fix root cause within 48h. |
 
 ## Keep/Discard Discipline
 ```
@@ -348,13 +328,7 @@ Never keep an optimization that makes the pipeline faster but breaks test reliab
 ```
 
 ## Stuck Recovery
-```
-IF >5 consecutive optimizations produce no duration improvement:
-  1. Re-measure the baseline — previous measurements may be noisy.
-  2. Profile the pipeline step by step — the bottleneck may not be where you think.
-  3. Look for architectural changes: test sharding, parallel stages, self-hosted runners.
-  4. If still stuck → log stop_reason=optimization_plateau, report current pipeline performance.
-```
+If >5 consecutive optimizations produce no improvement: re-measure baseline, profile step by step, consider architectural changes (sharding, parallel stages, self-hosted runners). If still stuck, log `stop_reason=optimization_plateau`.
 
 ## Stop Conditions
 ```
@@ -370,12 +344,5 @@ DO NOT STOP only because:
 ```
 
 ## Simplicity Criterion
-```
-PREFER the simpler pipeline design:
-  - Single workflow file before splitting into reusable workflows (until duplication is real)
-  - Built-in caching (actions/cache, Docker layer cache) before custom cache solutions
-  - Sequential stages before parallel stages (parallelize only when serial is too slow)
-  - Platform-native features before third-party actions (fewer dependencies = fewer breakages)
-  - Fewer pipeline files with clear names over many small workflow fragments
-```
+Prefer: single workflow file before splitting, built-in caching before custom, sequential before parallel (parallelize only when slow), platform-native features before third-party actions.
 

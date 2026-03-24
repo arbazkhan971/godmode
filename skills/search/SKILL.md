@@ -137,6 +137,7 @@ Save mappings, analyzers, synonyms, relevance tests. Commit: `"search: <index> â
 4. **Monitor zero-result queries.** Every zero-result is a missed opportunity.
 5. **Autocomplete latency is sacred.** Sub-50ms. Optimize aggressively.
 6. **Index design is hard to change.** Changing analyzers requires reindexing. Design carefully.
+7. **Never ask to continue. Loop autonomously until target NDCG or budget exhausted.**
 
 ## Flags & Options
 

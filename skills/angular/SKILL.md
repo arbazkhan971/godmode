@@ -167,6 +167,8 @@ UI library, tsconfig strict mode.
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until `ng build` and `ng test` pass with zero errors.
+
 1. EVERY component: OnPush change detection. No Default.
 2. No `any` types in application code.
 3. All subscriptions: cleanup via takeUntilDestroyed(), async pipe, or explicit unsubscribe.

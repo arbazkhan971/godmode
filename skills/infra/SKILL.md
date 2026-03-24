@@ -247,17 +247,8 @@ terraform output -json > outputs.json
 ```
 ```
 DEPLOYMENT RESULT:
-Apply complete! Resources: 3 added, 1 changed, 0 destroyed.
-
-Outputs:
-  api_endpoint = "https://api.example.com"
-  redis_endpoint = "redis.example.internal:6379"
-  security_group_id = "sg-0abc123def456789"
-
-Post-deployment verification:
-  [x] Health check: https://api.example.com/health — 200 OK
-  [x] Redis connectivity — CONNECTED
-  [x] Security group rules — VERIFIED
+Apply complete! Resources: N added, N changed, 0 destroyed.
+Post-deployment: health check 200 OK, connectivity verified, SG rules verified.
 ```
 ### Step 9: Commit and Report
 ```
@@ -269,15 +260,13 @@ Post-deployment verification:
 ```
 
 ## Key Behaviors
-
-1. **Never apply without a plan.** Always run `plan` first and review changes before `apply`. No blind deployments.
-2. **Policy is mandatory.** Every change must pass OPA/Sentinel policy checks. No exceptions for "quick fixes."
-3. **Cost awareness.** Every change includes a cost estimate. Flag unexpected cost increases before they happen.
-4. **Drift is a bug.** Manual changes to infrastructure are technical debt. Detect and reconcile immediately.
-5. **Test infrastructure like code.** Unit tests for modules, integration tests for stacks, compliance tests for security.
-6. **State is sacred.** Never modify state files manually. Use `terraform state` commands or equivalent tooling.
-7. **Environments are isolated.** Dev, staging, and production use separate state, separate accounts/projects, and separate credentials.
-8. **Secrets never in IaC.** Use variable references, secret managers, or parameter stores. Never hardcode credentials.
+1. **Never apply without a plan.** Review changes before `apply`.
+2. **Policy is mandatory.** OPA/Sentinel checks on every change.
+3. **Cost awareness.** Cost estimate with every change.
+4. **Drift is a bug.** Detect and reconcile immediately.
+5. **State is sacred.** Never modify state files manually.
+6. **Environments isolated.** Separate state, accounts, credentials.
+7. **Secrets never in IaC.** Use secret managers or variable references.
 
 ## HARD RULES
 1. NEVER apply infrastructure changes without reviewing the plan output first. No blind `terraform apply`.
@@ -292,35 +281,21 @@ Post-deployment verification:
 10. ALWAYS encrypt data at rest and in transit — TLS 1.2+ minimum, encryption enabled on all data stores.
 
 ## Auto-Detection
-On activation, detect infrastructure context automatically:
 ```
-AUTO-DETECT:
-1. Scan for IaC tool:
-   - *.tf, terraform.tfstate → Terraform
-   - template.yaml, *.cfn.yml → CloudFormation
-   - Pulumi.yaml, Pulumi.*.yaml → Pulumi
-   - cdk.json, cdk.context.json → AWS CDK
-2. Detect cloud provider:
-   - aws provider blocks, AWS:: resources, aws-cdk imports → AWS
-   - google provider blocks, gcp:: resources → GCP
-   - azurerm provider blocks, Microsoft.* resources → Azure
-3. Detect state backend:
-   - backend "s3", backend "gcs", backend "azurerm", cloud {} block
-  ...
+1. Scan for IaC: *.tf→Terraform, template.yaml→CloudFormation, Pulumi.yaml→Pulumi, cdk.json→CDK
+2. Detect provider: aws/google/azurerm blocks
+3. Detect state backend: backend "s3"/"gcs"/"azurerm", cloud {} block
 ```
 
 ## Keep/Discard Discipline
 ```
-After EACH infrastructure change:
-  1. MEASURE: Run terraform plan — are the changes as expected? Run policy checks — do they pass?
-  2. COMPARE: Is the infrastructure more secure/compliant/cost-effective than before?
-  3. DECIDE:
-     - KEEP if: plan shows expected changes AND policy checks pass AND cost within budget
-     - DISCARD if: plan shows unexpected destroys OR policy violations OR cost exceeds threshold
-  4. COMMIT kept changes. Revert discarded changes before proceeding.
-
-Never apply infrastructure changes without reviewing the plan output first.
+KEEP if: plan shows expected changes AND policy checks pass AND cost within budget
+DISCARD if: unexpected destroys OR policy violations OR cost exceeds threshold
+Never apply without reviewing plan output first.
 ```
+
+## Autonomy
+Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd.
 
 ## Stop Conditions
 ```
@@ -330,22 +305,20 @@ STOP when ANY of these are true:
   - User explicitly requests stop
   - A CRITICAL policy violation is found that requires architectural changes (escalate to user)
 
-DO NOT STOP just because:
+DO NOT STOP because:
   - Cost is higher than expected (report it, but still validate security and drift)
   - Non-production environments have minor policy warnings
 ```
 
 ## Flags & Options
-
 | Flag | Description |
 |--|--|
 | (none) | Full validation: lint, plan, policy, cost, drift |
-| `--validate` | Syntax and configuration validation only |
+| `--validate` | Syntax and config validation only |
 | `--plan` | Generate and review execution plan |
 | `--cost` | Cost estimation only |
 | `--drift` | Drift detection only |
 | `--policy` | Policy enforcement check only |
-| `--test` | Run IaC tests (unit, integration, compliance) |
 | `--scaffold` | Generate new IaC project structure |
 | `--apply` | Apply changes (requires prior plan review) |
 | `--env <name>` | Target a specific environment (dev, staging, prod) |
@@ -357,27 +330,14 @@ Print on completion: `Infra: {resource_count} resources across {module_count} mo
 Log every infrastructure operation to `.godmode/infra-results.tsv`:
 ```
 iteration	task	provider	resources_planned	resources_changed	drift_detected	policy_violations	status
-1	modules	aws	24	24	0	3	created
-2	security	aws	0	8	0	0	hardened
-3	cost	aws	0	2	0	0	optimized
-4	drift	aws	0	0	0	0	clean
 ```
-Columns: iteration, task, provider, resources_planned, resources_changed, drift_detected, policy_violations, status(created/modified/hardened/optimized/clean/drifted).
 
 ## Success Criteria
-- All infrastructure defined in code (zero manual console changes).
-- Remote state backend configured with locking (S3+DynamoDB, GCS, Terraform Cloud).
-- All resources tagged with owner, environment, cost-center, and managed-by.
-- IAM policies follow least privilege (no `*` actions or resources).
-- Secrets managed through a secret manager (not hardcoded in `.tf` files).
-- Cost estimate reviewed before every apply.
-- Drift detection runs on schedule (daily or per-PR).
-- State file never committed to version control.
+- All infra in code. Remote state with locking. Resources tagged. IAM least-privilege.
+- Secrets in secret manager. Cost reviewed before apply. Drift detection scheduled. No state in VCS.
 
 ## Error Recovery
-- **`terraform plan` shows unexpected destroys**: Check for state file corruption. Run `terraform state list` to verify resources. If resource was renamed, use `terraform state mv` instead of destroy+recreate.
-- **State lock stuck**: Identify the lock holder with `terraform force-unlock <LOCK_ID>`. Only force-unlock if the holding process is confirmed dead. Never force-unlock during an active apply.
-- **Provider authentication failure**: Check environment variables or credential files. Verify IAM roles/service accounts have required permissions. Check token expiration.
-- **Drift detected in production**: Do not auto-apply to fix drift. Investigate why manual changes were made. Import the manual change into state if intentional, or revert it in the console if accidental. Then apply from code.
-- **Module version conflict**: Pin module versions explicitly. Use version constraints (`~> 3.0`). Check for breaking changes in the module changelog before upgrading.
-- **Cost estimate exceeds budget**: Review the plan for over-provisioned resources. Check for resources belonging in a lower tier. Verify auto-scaling max limits are set.
+- **Unexpected destroys**: Check state corruption, use `terraform state mv`.
+- **State lock stuck**: `force-unlock` only if holder confirmed dead.
+- **Drift in prod**: Investigate, import if intentional, revert if accidental.
+- **Cost exceeds budget**: Check over-provisioned resources, auto-scaling limits.

@@ -46,7 +46,7 @@ MIGRATION TYPE CLASSIFICATION:
 ```
 
 ### Step 2: Migration Strategy Selection
-Choose the appropriate migration strategy based on type and constraints:
+Choose the correct migration strategy based on type and constraints:
 
 #### Strategy: Big Bang
 ```
@@ -250,23 +250,16 @@ MIGRATION PROGRESS:
 Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 
 ### Step 8: Commit and Report
-
-```
-1. Save migration plan and any generated code
-2. Create tracking document at docs/migrations/<name>.md
-3. Commit: "migration: <source> -> <target> -- <phase> (<strategy>)"
-4. Report progress and next steps
-```
+Save plan, create docs/migrations/<name>.md, commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 ## Key Behaviors
-
-1. **Assess before migrating.** Never start a migration without understanding the full scope: code size, dependencies, data volume, team capacity, and timeline. Underestimating scope is the number one cause of failed migrations.
-2. **Strangler fig by default.** Unless the codebase is small and downtime is acceptable, always prefer incremental migration over big bang rewrites. The strangler fig pattern allows continuous feature development alongside migration.
-3. **Parallel run for data integrity.** When data correctness is critical, run old and new systems side by side and compare outputs. Do not trust the new system until the match rate exceeds 99.9%.
-4. **Every migration is reversible.** Document the rollback plan before starting. If you cannot describe how to roll back, you are not ready to migrate forward.
-5. **Feature flags control the cutover.** Never switch traffic with a deployment. Use feature flags to control which system handles requests. Flip flags instantly; deployments cannot match that speed.
-6. **Migrate tests first.** Before migrating application code, migrate or create tests. Tests are the safety net that proves the migration preserves behavior.
-7. **Track and report progress.** Large migrations span weeks or months. Without visible progress tracking, stakeholders lose confidence and teams lose momentum.
-8. **One boundary at a time.** Extract one module, one endpoint, one component at a time. Each extraction is a self-contained unit of work you ship, verify, and roll back independently.
+1. **Assess before migrating.** Understand full scope before starting.
+2. **Strangler fig by default.** Incremental over big bang for large codebases.
+3. **Parallel run for data integrity.** Match rate > 99.9% before trust.
+4. **Every migration reversible.** Rollback plan before starting.
+5. **Feature flags control cutover.** Never switch traffic via deployment.
+6. **Migrate tests first.** Tests prove behavior preservation.
+7. **Track progress visibly.** Large migrations span weeks/months.
+8. **One boundary at a time.** Ship, verify, roll back independently.
 
 ## Flags & Options
 
@@ -280,18 +273,9 @@ Commit: `"migration: <source> -> <target> -- <phase> (<strategy>)"`
 
 ```
 ON project scan:
-  IF tsconfig.json exists AND allowJs == true:
-    js_count = count(*.js in src/)
-    ts_count = count(*.ts in src/)
-    IF js_count > 0 AND ts_count > 0:
-      pct = ts_count / (js_count + ts_count) * 100
-      SUGGEST "JS->TS migration in progress ({pct}% converted). Activate /godmode:migration?"
-
-  IF pages/ AND app/ both exist in Next.js project:
-    SUGGEST "Pages Router -> App Router migration detected. Activate /godmode:migration?"
-
-  IF package.json has framework version < latest_major:
-  ...
+  IF tsconfig.json allowJs AND *.js + *.ts coexist: SUGGEST JS->TS migration
+  IF pages/ AND app/ coexist in Next.js: SUGGEST Router migration
+  IF framework version < latest_major: SUGGEST upgrade
 ```
 ## Iterative Migration Protocol
 
@@ -323,19 +307,7 @@ FOR each component (fewest dependencies first):
   ...
 ```
 ## Output Format
-Print on completion:
-```
-MIGRATION: {source} -> {target}
-Type: {language|framework|api|architecture|data|infrastructure}
-Strategy: {big_bang|strangler_fig|parallel_run|branch_by_abstraction}
-Status: {planning|in_progress|verifying|complete|rolled_back}
-Components: {migrated}/{total} ({percentage}%)
-Data: {migrated_records}/{total_records} records
-Parallel run match: {match_rate}%
-Rollback plan: {documented|missing}
-Timeline: started {date}, est. complete {date}
-Artifacts: {list of files created}
-```
+Print: `MIGRATION: {source} -> {target}. Type: {type}. Strategy: {strategy}. Status: {status}. Components: {migrated}/{total}. Match: {rate}%. Rollback: {documented|missing}.`
 
 ## TSV Logging
 Log every migration session to `.godmode/migration-results.tsv`:
@@ -345,40 +317,24 @@ timestamp	source	target	type	strategy	status	components_migrated	components_tota
 Append one row per session. Create the file with headers on first run.
 
 ## Success Criteria
-1. Migration assessment completed with source state, target state, and constraints documented.
-2. Strategy selected and justified: strangler fig for large systems, big bang only for small codebases with acceptable downtime.
-3. Rollback plan documented before any migration step begins.
-4. Characterization tests exist for all components being migrated (or added before migration starts).
-5. Feature flags control cutover — no traffic switching via deployment.
-6. Parallel run match rate exceeds 99.9% before cutover for data-critical migrations.
-7. Data integrity verified: row count match, checksum match, spot-check sample, referential integrity.
-8. Old system kept running for at least 2 weeks after full cutover.
-9. Migration progress tracked with visible dashboard (components migrated, match rates, timeline).
+1. Assessment documents source, target, constraints. Strategy justified.
+2. Rollback plan documented before any step. Characterization tests exist.
+3. Feature flags control cutover. Parallel run match > 99.9% for data-critical.
+4. Data integrity verified (row count, checksum, referential). Old system runs 2+ weeks post-cutover.
 
 ## Error Recovery
-```
-IF parallel run match rate < 99.0%:
-  → Do NOT proceed to cutover
-  → Analyze mismatches: categorize by type (data format, timing, business logic, edge case)
-  → Fix the top 3 mismatch categories
-  → Re-run parallel comparison
-  → Repeat until match rate > 99.9%
-
-IF migration breaks a feature in production:
-  → Flip feature flag to route traffic back to old system (seconds, not minutes)
-  → If feature flag not in place: revert deployment, then add feature flag before retrying
-  → Investigate: was this a test coverage gap or a parallel run blind spot?
-  → Add test case covering the broken scenario before retrying migration
-  ...
-```
+- **Match rate < 99%**: Do NOT cutover. Categorize mismatches, fix top 3, re-run.
+- **Feature breaks in prod**: Flip feature flag back. Add test case before retrying.
 
 ## Keep/Discard Discipline
+```
+KEEP if: match rate > 99.9%, rollback tested, feature flags control cutover.
+DISCARD if: match rate < 99%, no rollback plan, deployment-switched traffic, data integrity fails.
+Revert if prod error rate > 1.1x baseline.
+```
 
-After each migration pass, evaluate:
-- **KEEP** if: parallel run match rate > 99.9%, rollback plan documented and tested, feature flags control cutover, characterization tests cover migrated components, old system remains operational as fallback.
-- **DISCARD** if: match rate < 99.0% (investigate mismatches first), no rollback plan exists, traffic switched via deployment instead of feature flag, or data integrity verification fails (row count, checksum, spot-check).
-- Never proceed to cutover without verified rollback. If you cannot roll back in under 5 minutes, you are not ready.
-- Revert immediately if production error rate exceeds 1.1x baseline after cutover.
+## Autonomy
+Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 

@@ -321,66 +321,23 @@ iteration	category	resource	current_cost	projected_cost	savings	action	status
 Columns: iteration, category, resource, current_cost, projected_cost, savings, action, status(recommended/applied/deferred/rejected).
 
 ## Success Criteria
-- All resources tagged with owner, environment, and cost-center.
-- Idle/unused resources identified and cleaned up (unattached EBS, stopped instances, unused load balancers).
-- Compute resources rightsized based on utilization data (not guesses).
-- Reserved instances recommended only for workloads with 3+ months of stable usage.
-- Data transfer costs analyzed (cross-region, internet egress).
-- Cost alerts configured for budget thresholds (80%, 100%, 120%).
-- Monthly cost review process established (not one-time optimization).
-- Savings validated with before/after billing data.
+All resources tagged. Idle resources cleaned up. Compute rightsized from utilization data. Reserved instances only for 3+ months stable usage. Transfer costs analyzed. Budget alerts at 80/100/120%. Monthly cost review established. Savings validated with billing data.
 
 ## Error Recovery
-- **Rightsizing breaks the application**: Never rightsize production without testing in staging first. Monitor CPU and memory for 24 hours after the change. Have a rollback plan (scale back up immediately if metrics degrade).
-- **Deleting resources causes outage**: Always verify resources are truly unused before deleting. Check for dependencies (security group referenced by another resource, EBS snapshot used by AMI). Use the provider's "delete protection" feature for critical resources.
-- **Reserved instance purchase is wasteful**: Only purchase reservations for workloads with 3+ months of stable, predictable usage. Start with 1-year no-upfront RIs (lower commitment). Monitor actual usage against the reservation.
-- **Cost alerts fire too frequently**: Adjust thresholds to reduce noise. Separate alerts by service or team. Use anomaly detection instead of fixed thresholds for variable workloads.
-- **Tagging audit reveals massive gaps**: Start with the top 10 most expensive resources. Tag those first. Then implement a tag enforcement policy (prevent untagged resource creation) for new resources.
-- **Optimization savings not reflected in bill**: Allow one full billing cycle for changes to take effect. Check for amortized costs (reserved instance upfront payments spread across months). Verify the optimization was actually applied in the correct account/region.
+| Failure | Action |
+|--|--|
+| Rightsizing breaks app | Test in staging first. Monitor 24h after change. Rollback plan ready. |
+| Deleting causes outage | Verify truly unused. Check dependencies. Use delete protection. |
+| Reserved instance wasteful | Only for 3+ months stable usage. Start with 1yr no-upfront. |
+| Cost alerts too frequent | Adjust thresholds. Separate by service/team. Use anomaly detection. |
+| Tagging gaps | Tag top 10 expensive resources first. Enforce policy for new resources. |
 
 ## Iterative Loop Protocol
-```
-current_category = 0
-categories = [compute, storage, transfer, reserved, idle, tagging]
-
-WHILE current_category < len(categories):
-  category = categories[current_category]
-  1. ANALYZE: Pull utilization data and cost data for {category}
-  2. IDENTIFY: Find optimization opportunities with savings estimate
-  3. RANK: Sort by savings (highest first)
-  4. RECOMMEND: For each opportunity, specify the action and expected savings
-  5. APPLY (if approved): Make the change and log the result
-  6. VERIFY: Check billing after one cycle to confirm savings
-  7. LOG to .godmode/cost-results.tsv
-  8. current_category += 1
-  9. REPORT: "Category {current_category}/{total}: {category} — ${savings}/mo potential savings"
-
-EXIT when all categories analyzed OR user requests stop
-```
+Loop through categories [compute, storage, transfer, reserved, idle, tagging]: ANALYZE utilization -> IDENTIFY savings -> RANK by dollar impact -> RECOMMEND with action + savings -> APPLY if approved -> VERIFY billing -> LOG to TSV. Exit when all categories analyzed.
 
 ## Keep/Discard Discipline
-```
-After EACH cost optimization recommendation is applied:
-  1. MEASURE: Verify the change took effect (resource resized, deleted, or reservation placed)
-  2. COMPARE: Did actual billing decrease? Are monitored metrics (CPU, memory, latency) still healthy?
-  3. DECIDE:
-     - KEEP if: savings confirmed AND no performance regression AND no availability impact
-     - DISCARD if: performance degraded OR availability dropped OR savings not realized
-  4. COMMIT kept changes. Revert discarded changes immediately.
-
-Never batch multiple optimizations without measuring between them — you cannot attribute savings if you change 5 things at once.
-```
+KEEP if: savings confirmed AND no performance regression AND no availability impact. DISCARD if: performance degraded OR availability dropped OR savings not realized. Revert discarded changes immediately. Never batch multiple optimizations without measuring between them.
 
 ## Stop Conditions
-```
-STOP the loop when ANY of these are true:
-  - All resource categories analyzed and all savings quantified
-  - Total savings target met (if user specified one)
-  - Remaining opportunities are below $50/month each (diminishing returns)
-  - User explicitly requests stop
-  - Max iterations (20) reached
-
-DO NOT STOP just because:
-  - One category has no savings (other categories can)
-  - Reserved instance analysis is complex (still do the analysis)
-```
+STOP when: all categories analyzed and savings quantified, OR savings target met, OR remaining opportunities <$50/month each, OR user requests stop, OR max 20 iterations.
+DO NOT STOP because one category has no savings or reserved instance analysis is complex.

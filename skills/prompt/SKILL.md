@@ -79,11 +79,15 @@ WHILE iteration < 5 AND accuracy < target:
   4. COMPARE: accept if improved + no regression. Stop if plateau 2 iterations.
 ```
 
+## Autonomous Operation
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Key Behaviors
 
 1. **Test before shipping.** Golden set evaluation required.
 2. **Version everything.** Prompts are code.
-3. **Measure, don't guess.** Run evaluation, check significance.
+3. **Measure, do not guess.** Run evaluation, check significance.
 4. **Defense in depth.** Layer sanitization, structure, validation.
 5. **Less is more.** Shortest prompt achieving target is best.
 6. **Examples beat instructions.**

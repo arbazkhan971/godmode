@@ -193,53 +193,12 @@ COMPOSITE AVAILABILITY (sequential):
     = 0.999 * 0.999 * 0.9995 * 0.9999 * 0.995
     = 0.9924 (99.24%)
 ```
-### Step 10: SLO Dashboards
-Configure dashboards for SLO visibility:
+### Step 10: SLO Dashboards & Review
+Dashboard panels: SLO summary (SLI/target/current/budget/status), error budget time series (30-day with threshold lines at 75%/50%/25%/10%), burn rate graph, top SLO violators.
 
-```
-SLO DASHBOARD LAYOUT:
-
-PANEL 1: SLO Summary (top of dashboard)
-|  SLI              | Target | Current | Budget Used | Status   |
-|--|--|--|--|--|
-|  Availability     | 99.9%  | 99.95%  | 30%         | HEALTHY  |
-|  Latency (p50)    | <100ms | 45ms    | 15%         | HEALTHY  |
-|  Latency (p99)    | <500ms | 380ms   | 60%         | WARNING  |
-|  Error rate       | <0.1%  | 0.03%   | 30%         | HEALTHY  |
-
-PANEL 2: Error Budget Remaining (time series, 30-day window)
-  - Line chart showing budget remaining over time
-  - Horizontal lines at 75%, 50%, 25%, 10% thresholds
-```
-### Step 11: SLO Review Cadence
-Establish regular SLO reviews:
-
-```
-SLO REVIEW CADENCE:
-|  Review Type  | Frequency | Attendees        | Focus           |
-|--|--|--|--|
-|  Weekly SLO   | Weekly    | Service team     | Budget status,  |
-|  check        |           |                  | burn rate, any  |
-|               |           |                  | incidents        |
-|  Monthly SLO  | Monthly   | Team + eng mgr   | Budget trend,   |
-|  review       |           | + product mgr    | policy enforce, |
-|               |           |                  | SLO adjustments |
-|  Quarterly    | Quarterly | Leadership +     | SLO targets,    |
-|  SLO review   |           | all stakeholders | reliability     |
-|               |           |                  | investment, SLA |
-|               |           |                  | alignment       |
-```
-### Step 12: Artifacts & Completion
-
-```
-SLO IMPLEMENTATION ARTIFACTS:
-- docs/slo/<service>-slo.md (SLO definitions)
-- docs/slo/error-budget-policy.md (budget policy)
-- infra/alerts/<service>-slo-burn-rate.yaml (alert rules)
-- infra/prometheus/<service>-slo-recording-rules.yaml (recording rules)
-- infra/dashboards/<service>-slo-dashboard.json (dashboard)
-- ci/<service>-slo-release-gate.yaml (release gate)
-```
+Review cadence: Weekly (team, budget status), Monthly (team + eng/product mgr, trends + adjustments), Quarterly (leadership, targets + investment + SLA alignment).
+### Step 11: Artifacts & Completion
+Artifacts: `docs/slo/<service>-slo.md`, `infra/alerts/<service>-slo-burn-rate.yaml`, `infra/dashboards/<service>-slo-dashboard.json`, `ci/<service>-slo-release-gate.yaml`.
 Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
 
 ## Key Behaviors
@@ -252,6 +211,8 @@ Commit: `"slo: <service> -- <targets>, <error budget policy>, <verdict>"`
 6. **Release gating with error budgets prevents preventable outages.** If the budget is already low, a risky deployment could breach the SLA. Gate the deploy until budget recovers.
 7. **SLO dashboards make reliability visible to everyone.** Engineers, product managers, and leadership all see the same number. This creates shared ownership of reliability.
 8. **Start conservative, tighten incrementally.** A too-strict SLO that is always violated is worse than a moderate SLO that is consistently met. Build trust first, then raise the bar.
+9. **On failure: git reset --hard HEAD~1.**
+10. **Never ask to continue. Loop autonomously until SLO targets defined or budget exhausted.**
 
 ## Flags & Options
 
@@ -327,10 +288,10 @@ IF error budget policy is ignored (team ships during freeze):
   1. Integrate budget checks into CI/CD pipeline (automated gating)
   2. Make budget status visible on team dashboard and standup
   3. Require VP-level override approval for deploys during freeze
-  4. Review the policy in a team meeting to ensure buy-in
+  4. Review the policy in a team meeting to verify buy-in
 
 IF burn rate alerts are noisy (too many false positives):
-  1. Verify both long AND short windows are configured (not just one)
+  1. Verify both long AND short windows are configured (not one alone)
   2. Check that the SLI calculation excludes client errors (4xx)
 ```
 ## Auto-Detection

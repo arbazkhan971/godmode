@@ -173,7 +173,7 @@ COMPOSITION CHECKS: @key fields have __resolveReference, no ownership conflicts,
 ```
 
 ### Step 8: Performance Hardening
-Protect the GraphQL API from abuse and ensure performance:
+Protect the GraphQL API from abuse and verify performance:
 
 ```
 PERFORMANCE DEFENSES:
@@ -287,25 +287,7 @@ HARD RULES — GRAPHQL:
 ```
 
 ## Output Format
-
-```
-GRAPHQL DESIGN COMPLETE:
-  Schema: <path to schema file(s)>
-  Types: <N> object types, <M> input types, <K> enums
-  Queries: <N> root queries
-  Mutations: <M> root mutations
-  Subscriptions: <S> subscription fields
-  DataLoaders: <D> loaders (batch + grouped)
-  Pagination: Relay connections on all list fields
-  Auth: <mechanism> applied to <N> resolvers
-  Performance: depth limit <N>, complexity limit <N>, persisted queries <on|off>
-  Validation: schema snapshot <PASS|FAIL>, breaking changes <NONE|N found>
-
-SCHEMA SUMMARY:
-|  Domain        | Types | Queries | Mutations | DataLoaders    |
-|--|--|--|--|--|
-|  <domain>      | N     | N       | N         | N              |
-```
+Print: `GraphQL: {types} types, {queries} queries, {mutations} mutations, {dataloaders} DataLoaders. N+1: {status}. Performance: depth {N}, complexity {N}. Status: {DONE|PARTIAL}.`
 
 ## TSV Logging
 
@@ -339,34 +321,25 @@ VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
 ```
 
 ## Error Recovery
-
 ```
-ERROR RECOVERY — GRAPHQL:
-1. Schema compilation fails:
-   → Read SDL error output. Fix syntax (missing types, circular refs, duplicate names). Re-compile. Repeat until clean.
-2. N+1 query detected (query count exceeds expected):
-   → Identify the resolver making direct DB calls. Create a DataLoader (batch or grouped). Replace direct call with loader. Re-test query count.
-3. Breaking change detected vs previous schema:
-   → Run graphql-inspector diff. Revert removals/type changes. Add new fields instead of modifying existing ones. Use @deprecated for removals.
-4. Mutation returns raw error instead of payload type:
-   → Wrap mutation return in a payload type: { entity: T, errors: [UserError] }. Move error handling from throw to errors array.
-5. Subscription not receiving events:
-   → Verify pub/sub backend is connected. Check topic name matches between publish and subscribe. Verify auth context is passed to subscription resolver.
-6. Complexity/depth limit blocks legitimate queries:
-   → Analyze the blocked query. If legitimate, increase limit or add cost overrides for specific fields. If malicious, keep the limit.
+Schema fails: fix syntax (missing types, circular refs, duplicates). N+1 detected: add DataLoader, re-test count.
+Breaking change: revert removals, add new fields, use @deprecated. Mutation raw error: wrap in payload type.
+Subscription silent: verify pub/sub connection and topic names. Limit blocks query: adjust limit or field cost overrides.
 ```
 
 ## Keep/Discard Discipline
-
-After each GraphQL implementation pass, evaluate:
-- **KEEP** if: schema compiles without errors, all relation fields use DataLoaders (zero N+1), all mutations return payload types, depth/complexity limits configured, no breaking changes vs previous schema.
-- **DISCARD** if: N+1 query detected (resolver with direct DB call), mutation throws instead of returning error payload, list field lacks Relay connection pagination, or breaking change detected without version bump.
-- Run schema snapshot test and N+1 regression test before every commit.
-- Revert schema changes that remove types/fields — use @deprecated instead.
+```
+KEEP if: schema compiles, zero N+1, all mutations return payloads, depth/complexity configured, no breaking changes.
+DISCARD if: N+1 detected OR mutation throws OR list lacks Relay pagination OR breaking change without version bump.
+On discard: revert. Run schema snapshot + N+1 regression test before every commit.
+```
 
 ## Stop Conditions
-
-Stop the graphql skill when:
+```
+Loop until target or budget. Never ask to continue — loop autonomously.
+Measure before/after. Guard: test_cmd && lint_cmd.
+On failure: git reset --hard HEAD~1.
+```
 1. Schema compiles without errors and snapshot test passes.
 2. All relation fields have DataLoaders (zero N+1 queries verified by query count assertions).
 3. All mutations return payload types with entity and errors array.

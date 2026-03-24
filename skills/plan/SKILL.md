@@ -127,6 +127,12 @@ git add .godmode/plan.yaml && git commit -m "plan: decompose {feature} into {N} 
 ### Step 7: Summarize and Suggest Next Step
 Print summary. If more than 10 tasks, suggest `/godmode:predict` before building.
 
+## Autonomous Operation
+- Loop until target or budget. Never pause.
+- Measure before/after. Guard: test_cmd && lint_cmd.
+- On failure: git reset --hard HEAD~1.
+- Never ask to continue. Loop autonomously.
+
 ## Output Format
 At each stage, print progress:
 

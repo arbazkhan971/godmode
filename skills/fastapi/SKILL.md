@@ -89,7 +89,7 @@ Rules:
 - Use generic `PaginatedResponse[T]` for consistent pagination across all list endpoints
 
 ### Step 3: Dependency Injection Patterns
-Leverage FastAPI's DI system:
+Use FastAPI's DI system:
 
 ```python
 from collections.abc import AsyncGenerator
@@ -274,21 +274,11 @@ Commit: `"fastapi: <service> — <N> async endpoints, Pydantic schemas, pytest"`
 | `--auth jwt` | Configure JWT authentication |
 
 ## Auto-Detection
-
-On activation, automatically detect FastAPI project context:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Scan for FastAPI imports (from fastapi import FastAPI) in Python files
-2. Detect Python version from pyproject.toml / setup.py / .python-version
-3. Check package manager: uv (uv.lock), poetry (poetry.lock), pip (requirements.txt)
-4. Detect ORM: SQLAlchemy (sqlalchemy in deps), Tortoise (tortoise-orm), SQLModel, Beanie
-5. Check for async DB driver: asyncpg, aiomysql, motor — flag if sync driver used (psycopg2)
-6. Detect auth pattern: python-jose (JWT), authlib (OAuth2), fastapi.security imports
-7. Scan for Pydantic version (v1 vs v2) — flag deprecated v1 patterns (orm_mode, Optional vs | None)
-8. Check for Alembic migrations directory (alembic/ or migrations/)
-9. Detect test framework: pytest, httpx, pytest-asyncio, anyio
-10. Check for existing project structure (monolith vs modular, feature-based vs layer-based)
+1. Scan for FastAPI imports, detect Python version, package manager (uv/poetry/pip)
+2. Detect ORM (SQLAlchemy/Tortoise/SQLModel/Beanie), async DB driver (asyncpg/aiomysql/motor)
+3. Detect auth (python-jose/authlib), Pydantic version (v1 vs v2), Alembic migrations
+4. Detect test framework (pytest/httpx), project structure (monolith vs modular)
 ```
 ## Hard Rules
 
@@ -306,74 +296,30 @@ HARD RULES — FASTAPI:
 10. ALWAYS use pydantic-settings for configuration. Hardcoded config values are deployment bugs waiting to happen.
 ```
 ## Output Format
+Print: `FastAPI: {action}, {endpoints} endpoints, {models} models, {migrations} migrations. Tests: {status}. Verdict: {verdict}.`
 
-End every FastAPI skill invocation with this summary block:
-
-```
-FASTAPI RESULT:
-Action: <scaffold | endpoint | model | schema | service | optimize | test | audit | upgrade>
-Files created/modified: <N>
-Endpoints created/modified: <N>
-Models created/modified: <N>
-Alembic migrations: <N created>
-Tests passing: <yes | no | skipped>
-Build status: <passing | failing | not-checked>
-Issues fixed: <N>
-Notes: <one-line summary>
-```
 ## TSV Logging
-
-Log every invocation to `.godmode/` as TSV. Create on first run.
-
+Log to `.godmode/fastapi-results.tsv`:
 ```
-timestamp	project	action	files_count	endpoints_count	models_count	migrations_count	tests_status	notes
+timestamp	project	action	endpoints_count	models_count	migrations_count	tests_status	notes
 ```
 ## Success Criteria
-
-Every FastAPI skill invocation must pass ALL of these checks before reporting success:
-
-1. `mypy .` or `pyright .` passes with zero errors
-2. `pytest` passes if test suite exists
-3. No sync database drivers (no `psycopg2` without async wrapper)
-4. All endpoints use Pydantic response models (no raw dict returns)
-5. All database sessions use `Depends(get_db)` (no module-global sessions)
-6. All Pydantic schemas use `Field()` with constraints where applicable
-7. No `metadata.create_all()` in production code (use Alembic)
-8. No blocking calls in async endpoints (no `requests`, no sync file I/O)
-9. All configuration uses `pydantic-settings` (no hardcoded values)
-10. Alembic migration chain is linear (no multiple heads)
-
-If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+1. `mypy`/`pyright` passes. `pytest` passes. No sync DB drivers. All endpoints use Pydantic response models.
+2. All DB sessions via `Depends(get_db)`. Schemas use `Field()` constraints. No `metadata.create_all()` in prod.
+3. No blocking calls in async endpoints. Config via `pydantic-settings`. Alembic chain linear.
+If any check fails, fix before reporting success.
 
 ## Error Recovery
-
-IF mypy/pyright fails:
-  1. Fix type errors in order: models → schemas → services → routers
-IF tests fail:
-  1. Verify test database is configured and accessible
-IF Alembic migration errors:
-  1. Multiple heads → run `alembic merge heads` to create merge migration
-IF async/blocking issues:
-  1. Replace `requests` with `httpx.AsyncClient`
-IF dependency injection errors:
-  1. Verify all Depends() functions have correct signatures
+- **mypy/pyright fails:** Fix in order: models → schemas → services → routers.
+- **Tests fail:** Verify test database configured and accessible.
+- **Alembic errors:** Multiple heads → `alembic merge heads`.
+- **Async issues:** Replace `requests` with `httpx.AsyncClient`.
+- **DI errors:** Verify Depends() function signatures.
 
 ## FastAPI Optimization Loop
-
 ```
-FASTAPI OPTIMIZATION PASSES:
-
-Pass 1 — Async Audit:
-  1. Scan for blocking calls in async endpoints: requests→httpx, open→aiofiles,
-     time.sleep→asyncio.sleep, psycopg2→asyncpg, pymongo→motor, redis-py→redis.asyncio
-  2. Convert sync endpoints doing only I/O to async def with async libraries
-  3. Offload CPU-intensive work to run_in_executor or ProcessPoolExecutor
-  4. Monitor event loop lag (alert if >50ms)
-
-Pass 2 — Dependency Injection Audit:
-  1. Catalog all Depends() — verify scope (request vs app), caching, cleanup
-  2. Fix: pool connections instead of creating per-request, cache I/O results
-  ...
+Pass 1 — Async: Replace blocking calls (requests→httpx, psycopg2→asyncpg, time.sleep→asyncio.sleep). Offload CPU to run_in_executor.
+Pass 2 — DI: Catalog Depends(), verify scope/caching/cleanup. Pool connections.
 ```
 ## Keep/Discard Discipline
 ```
@@ -388,12 +334,15 @@ After EACH implementation or optimization change:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All identified tasks are complete and validated
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP just because:
+DO NOT STOP when:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```

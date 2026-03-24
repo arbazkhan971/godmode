@@ -188,7 +188,7 @@ Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching conf
 
 ## Key Behaviors
 
-1. **Edge is for latency, serverless is for scale.** Edge functions run close to users for minimal latency. Serverless functions scale to zero for cost efficiency. Use both where appropriate.
+1. **Edge is for latency, serverless is for scale.** Edge functions run close to users for minimal latency. Serverless functions scale to zero for cost efficiency. Use both where each fits.
 2. **Cold starts are not a bug, they are an architecture constraint.** Design for them: minimize bundle size, lazy-initialize, use provisioned concurrency for latency-critical paths, or choose edge runtimes.
 3. **Cache aggressively at the edge.** The fastest request is one that never reaches the origin. Use stale-while-revalidate, cache keys, and purge strategies.
 4. **State at the edge is hard.** Understand the consistency model of your state store. KV is eventually consistent. Durable Objects are strongly consistent but single-homed. Choose based on requirements, not convenience.
@@ -306,42 +306,11 @@ ERROR RECOVERY — EDGE:
 6. Deployment fails silently (old version still serving):
   ...
 ```
-EDGE OPTIMIZATION PASSES:
-
-Pass 1 — Cold Start Optimization:
-  1. Measure cold start per function (Cloudflare: wrangler tail, Lambda: CloudWatch REPORT)
-  2. Reduce bundle size: tree-shake, replace Node.js polyfills with web-standard APIs
-  3. Lazy initialization: defer DB/cache connections to first use
-  4. Lambda: increase memory (CPU scales with it), use SnapStart, Provisioned Concurrency
-  5. Target: <1MB bundle (<100KB for edge), <200ms cold start (Lambda), <5ms (V8 isolates)
-
-Pass 2 — Payload Size:
-  1. Trim JSON responses: remove null fields, use field selection, paginate lists
-  2. Enable gzip/brotli compression on all responses
-  3. Use streaming (ReadableStream) for responses >100KB
-  4. Target: <50KB gzipped for list endpoints, <10KB for detail
-
-Pass 3 — CDN & Caching:
-  1. Audit Cache-Control headers on every endpoint
-  2. Static assets: public, max-age=31536000, immutable (content-hashed URLs)
-  3. Dynamic: s-maxage=60, stale-while-revalidate=300
-  4. User-specific: private, no-cache. Auth endpoints: no-store
-  5. Target: >80% CDN hit rate for static, >50% for dynamic
-
-Pass 4 — Cost & Efficiency:
-  1. Measure cost per function ($/1M requests)
-  2. Reduce invocations via aggressive caching
-  3. Right-size Lambda memory with Power Tuning tool
-  4. Choose cheapest platform per workload type
-
-OPTIMIZATION REPORT:
-| Metric | Before | After | Δ |
-|--|--|--|--|
-| Cold start p99 (ms) | <N> | <N> | -<N>% |
-| Bundle size (KB) | <N> | <N> | -<N>% |
-| CDN cache hit rate (%) | <N>% | <N>% | +<N>% |
-| Cost per 1M requests ($) | $<N> | $<N> | -<N>% |
-VERDICT: <OPTIMIZED | NEEDS FURTHER WORK>
+OPTIMIZATION PASSES:
+Pass 1 — Cold Start: Measure per function. Tree-shake, lazy init, increase Lambda memory. Target: <1MB bundle, <200ms cold start.
+Pass 2 — Payload: Trim JSON, gzip/brotli, streaming for >100KB. Target: <50KB gzipped for lists.
+Pass 3 — CDN: Audit Cache-Control. Static: immutable+max-age. Dynamic: s-maxage+stale-while-revalidate. Target: >80% hit rate.
+Pass 4 — Cost: Measure $/1M requests. Cache aggressively. Right-size Lambda memory.
 ```
 
 ## Keep/Discard Discipline
@@ -357,12 +326,15 @@ After EACH implementation or optimization change:
 
 ## Stop Conditions
 ```
+Loop until target or budget. Never ask to continue — loop autonomously.
+On failure: git reset --hard HEAD~1.
+
 STOP when ANY of these are true:
   - All identified tasks are complete and validated
   - User explicitly requests stop
   - Max iterations reached — report partial results with remaining items listed
 
-DO NOT STOP only because:
+DO NOT STOP when:
   - One item is complex (complete the simpler ones first)
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
