@@ -55,6 +55,12 @@ Re-review only modified parts. Max 3 iterations.
 - Target: <30min average review turnaround
 - Target: 0 critical issues missed per review
 - Max PR size: <400 lines changed for effective review
+- Target: 0 MUST-FIX findings remaining at merge time
+- Target: >8/10 verdict score before approval
+- Target: <3 re-review iterations to reach approval
+- Target: <500 line diffs per review (split if larger)
+- False positive rate: <10% of all findings
+- Auto-fix success rate: >95% of NIT fixes pass tests
 
 ## Hard Rules
 1. Every finding: file:line + suggested fix (code).

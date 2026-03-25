@@ -70,6 +70,9 @@ Circuit Breaker (5 consecutive 5xx, 30s half-open),
 Timeout (3s default), Retry (3x exponential+jitter),
 Bulkhead (10 concurrent per svc), Rate Limit, Fallback.
 
+IF service boundary violation detected: flag for review.
+WHEN circular dependency found: split service.
+
 ### 8. Validation
 Single bounded context per service, no shared DBs,
 single team ownership, async where possible, circuit

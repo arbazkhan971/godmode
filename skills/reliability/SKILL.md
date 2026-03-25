@@ -39,6 +39,9 @@ Error budget = 1 - SLO.
 Errors: HTTP 5xx, timeouts, circuit breaker rejections.
 NOT 4xx or 429.
 
+IF error rate >0.1%: investigate top 3 error classes.
+WHEN SLO budget <10% remaining: freeze deploys.
+
 ### 3. Error Budgets & Burn Rate Alerts
 Policy:
 - >50% remaining: normal operations

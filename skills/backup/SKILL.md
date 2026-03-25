@@ -58,6 +58,9 @@ TIER 3 BACKUP STRATEGY:
 Application logs:
 ```
 
+IF backup age >24h: trigger immediate backup.
+IF restore test fails: alert and re-run.
+
 ### Step 4: Backup Verification
 Automated checks that backups are actually working:
 

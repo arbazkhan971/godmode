@@ -70,6 +70,9 @@ tax yourself. US: nexus ($100K/200 txns). EU VAT:
 B2C = customer-country rate; B2B = reverse charge
 with VIES-validated VAT ID.
 
+IF PCI scope expanded: run compliance check.
+WHEN payment fails: check idempotency key first.
+
 ### 6. PCI-DSS Compliance
 Target SAQ-A: card data via Stripe.js iframe, never
 touches server. HTTPS everywhere, API keys in secrets

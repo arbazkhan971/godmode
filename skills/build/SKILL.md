@@ -42,6 +42,9 @@ After merge+test failure: max 2 re-attempts.
 - Attempt 3+: discard task, log "reverted_3x", move to backlog.
 
 ## Scope Enforcement
+IF tests fail after merge: revert agent's work.
+IF agent needs file outside scope: report NEEDS_CONTEXT.
+
 Agent discovers it needs file X not in task.files:
 → STOP, report NEEDS_CONTEXT to orchestrator.
 → Orchestrator amends scope or discards task.

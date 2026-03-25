@@ -82,6 +82,9 @@ Gate criteria:
   Manual gate: auto gate + human approval required to proceed
 ```
 
+IF health check fails post-deploy: auto-rollback.
+IF canary error rate >1%: abort promotion.
+
 ### Step 5: Automated Rollback
 Define rollback criteria and execution plan:
 

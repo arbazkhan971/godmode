@@ -54,6 +54,9 @@ FAILURE DOMAIN MAP:
 |  | Container/VM host | Service relocation |
 | Storage | Primary database | Read/write loss |
 ```
+IF experiment crashes service: halt and rollback.
+WHEN steady-state violated: record finding.
+
 ### Step 3: Design Chaos Experiments
 Create specific, controlled experiments for each failure domain:
 

@@ -38,9 +38,29 @@ WHILE coverage < target:
 Print: "Coverage: {start}% -> {final}% in {N} iters"
 ```
 
+## Quality Targets
+- Coverage target: >=80% line coverage (configurable)
+- Test execution: <30s for unit suite, <120s for integration
+- Flaky tests: 0 tolerated (quarantine immediately)
+- Test-to-code ratio: >=1.5 test lines per code line
+- Max test file size: <300 lines (split if larger)
+- Assertion density: >=2 assertions per test average
+
 ## Output Format
 Print: `Test: coverage {start}% -> {final}% (target: {target}%). {N} tests added in {iters} iterations.
 Status: {DONE|PARTIAL}.`
+
+## Workflow Detail
+1. **Detect framework**: read package.json, pytest.ini, Cargo.toml, go.mod to find test runner.
+2. **Baseline coverage**: run coverage command, parse report, record starting percentage.
+3. **Identify gaps**: read coverage report line-by-line, list uncovered functions sorted by importance.
+4. **RED**: write one failing test targeting the highest-priority uncovered path.
+5. **GREEN**: write minimum production code (or confirm existing code) to make the test pass.
+6. **REFACTOR**: clean up duplication in test and source, re-run full suite to confirm no regressions.
+7. **COMMIT**: stage test file and any changed source, commit with message `test: cover {function/path}`.
+8. **MEASURE**: re-run coverage, compute delta, log to TSV.
+9. **REPEAT**: go to step 3 until coverage target met or stop condition triggers.
+10. **FINAL REPORT**: print summary with start coverage, final coverage, iterations, tests added, and status.
 
 ## Hard Rules
 1. RED first -- test must fail before implementation.

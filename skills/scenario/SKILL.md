@@ -69,6 +69,9 @@ LOW:      Score 1-5
 Minimum valid score is 1. Zero is invalid.
 ```
 
+IF scenario covers <80% of edge cases: add more.
+WHEN risk score >7: escalate to team lead.
+
 ### 5. Sort and Prioritize
 Sort by score descending. Within same score:
 1. Data loss / security breach first

@@ -45,6 +45,9 @@ over configuration, feature folders over tech folders.
 | Shared UI | Zustand or Jotai |
 | Complex global | Zustand or Redux Toolkit |
 
+IF bundle >500KB: enable code splitting.
+IF re-renders >3 per interaction: add memoization.
+
 ### 4. Performance
 1. React.memo: only with measured evidence
 2. useMemo: only for expensive computations (>1ms)

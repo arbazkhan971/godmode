@@ -114,6 +114,9 @@ function validateConfig(env: Record<string, string>): void {
     if (schema.required && !value) {
 ```
 
+IF config change breaks health check: rollback immediately.
+WHEN feature flag stale >30 days: schedule removal.
+
 ### Step 4: Feature Flag Design
 Design and manage feature flags for controlled rollouts:
 
