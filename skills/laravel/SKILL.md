@@ -211,6 +211,8 @@ curl -s http://localhost:8000/health
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Laravel conventions first.**
 2. **API Resources always.** Never return raw models.
 3. **Prevent lazy loading** in development.
@@ -270,3 +272,4 @@ STOP when ANY of:
 - N+1: add with() eager loading.
 - Queue job fails: check serializability.
 - Auth errors: verify Policy registration.
+

@@ -236,6 +236,8 @@ src/
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Detect domain model patterns in codebase
 grep -rn "class.*Aggregate\|class.*Entity\|class.*ValueObject" src/ --include="*.ts" --include="*.py"
@@ -253,6 +255,8 @@ IF domain events > 50: group by context, verify no cross-context coupling.
 6. **Eventual consistency between contexts.** Use domain events.
 7. **Not everything needs DDD.** CRUD and reports don't benefit.
 8. **Event storming is collaborative.** Structured thinking catches errors.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -297,3 +301,11 @@ Print on completion:
 DDD SESSION: {domain_name}
 Core domain: {core_domain_name}
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

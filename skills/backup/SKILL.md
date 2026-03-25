@@ -299,3 +299,11 @@ status(success/failed/partial), checksum.
 
 ## Success Criteria
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

@@ -160,6 +160,8 @@ Commit: `"forms: <form-name> — <library> + <validation>"`
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Validation on both client and server.**
    Share the schema (Zod) between both.
 2. **Errors on blur, not on mount.**
@@ -222,3 +224,4 @@ STOP when ANY of:
 - State lost on navigation: persist in sessionStorage.
 - Server errors not shown: map server fields to form.
 - Multi-step loses progress: save per step, restore.
+

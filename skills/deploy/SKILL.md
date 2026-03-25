@@ -191,6 +191,8 @@ Phase 3: CUTOVER
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Strategy matches risk.** Low-risk changes can use rolling deploys. High-risk changes need canary with
 automated rollback. Never under-engineer deployment for risky changes.
 2. **Rollback is always planned.** Every deployment plan includes a rollback procedure. If you cannot define
@@ -272,4 +274,5 @@ Log to `.godmode/deploy-results.tsv`:
 | Migration fails | Don't retry blindly. Check partial changes. Restore backup. |
 | Rollback fails | Manually set previous image. Verify registry + DB compat. |
 | Traffic spike | Pause canary. Resume when baseline restored. |
+
 

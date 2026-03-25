@@ -273,6 +273,8 @@ Use Redis-backed (BullMQ, Sidekiq-Cron) when:
 ```
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Validate cron expressions and test jobs
 npx cron-validate "0 9 * * 1-5"
@@ -286,6 +288,8 @@ IF retry count > 3: move to dead letter queue.
 2. **Idempotency mandatory.** Same result if called twice.
 3. **Distributed locking in production.** No duplicate fires.
 4. **Overlap protection.** Use max_instances: 1 or coalesce.
+On failure: revert with git reset --hard HEAD~1.
+
 ## Flags & Options
 
 | Flag | Description |
@@ -298,3 +302,11 @@ IF retry count > 3: move to dead letter queue.
 - Job success rate: >99% over 30 days
 - Runtime per job: <80% of schedule interval
 - Alert after: >3 consecutive failures
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

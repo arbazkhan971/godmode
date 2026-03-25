@@ -158,6 +158,8 @@ Commit: `"eval: <system> — <N> examples,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Evaluate before shipping.** No AI goes to prod
    without eval. "Works on my examples" is not evidence.
 2. **Baseline everything.** Compare against previous
@@ -225,3 +227,4 @@ STOP when ANY of:
 - Judge disagrees: calibrate, check position bias.
 - Test set too small: calculate minimum for target MDE.
 - Unclear regression: bisect changes, run per commit.
+

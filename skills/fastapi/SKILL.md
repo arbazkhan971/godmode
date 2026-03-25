@@ -187,6 +187,8 @@ Commit: `"fastapi: <service> — <N> async endpoints,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Async everywhere.** One sync layer blocks all.
 2. **Pydantic is your contract.**
 3. **DI over imports.** Makes testing trivial.
@@ -246,3 +248,4 @@ STOP when ANY of:
 - Alembic: multiple heads → `alembic merge heads`.
 - Async issues: replace requests with httpx.AsyncClient.
 - DI errors: verify Depends() function signatures.
+

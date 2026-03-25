@@ -249,6 +249,8 @@ validate or `/godmode:ship` to deploy."
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Run security scans locally
 npx semgrep scan --config auto src/
@@ -295,3 +297,4 @@ secret scanning on 3 layers, SBOM generated per release.
  - Check for.gitleaks.toml,.semgrep/, sonar-project.properties
  - Check for cosign, notation references (artifact signing)
 ```
+

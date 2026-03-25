@@ -148,6 +148,8 @@ IP WARM-UP SCHEDULE:
 Commit: `"email: <description> — <components>"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Separate transactional and marketing streams.**
 2. **Authenticate domain fully.** SPF+DKIM+DMARC.
 3. **Always send plain text version.**
@@ -206,3 +208,4 @@ STOP when: All notification types implemented
 - Webhook signature fails: check signing secret.
 - Lands in spam: check DNS auth, sender reputation.
 - Bounce rate > 5%: pause, audit suppression list.
+

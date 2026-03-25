@@ -147,6 +147,8 @@ Commit: `"event: <system> -- <N> event types,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Events are facts, not commands.** Past tense:
    "OrderPlaced", not "PlaceOrder".
 2. **Events are immutable.** Publish corrective events.
@@ -218,3 +220,4 @@ STOP when ANY of:
 - Consumer lag growing: scale instances, add partitions.
 - DLQ growing: check handler, fix deserialization.
 - Ordering broken: verify partition key strategy.
+

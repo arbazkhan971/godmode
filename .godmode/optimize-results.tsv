@@ -13,3 +13,4 @@ round	change	metric_before	metric_after	delta%	status	lines_changed
 11	v4_prose_trim_cmds_decisions_numbers_126_skills	10.71	2.98	-72.2%	kept	-8000
 12	add_numbers_cmds_trim_prose_all_126	2.98	2.36	-20.8%	kept	-275
 13	add_decisions_expand_thin_files	2.36	2.17	-8.1%	kept	-24
+14	restore_missing_sections_48_files	2.17	0.03	-98.6%	kept	+236

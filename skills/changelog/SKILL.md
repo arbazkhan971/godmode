@@ -297,3 +297,11 @@ After each changelog skill invocation, emit a structured report:
 CHANGELOG REPORT:
 | Last release | <tag> (<date>) |
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

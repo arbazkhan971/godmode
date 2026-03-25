@@ -257,6 +257,8 @@ IF --json output is invalid JSON: treat as P1 bug.
 4. **Shell completions expected.** bash, zsh, fish, PowerShell.
 5. **Exit codes meaningful.** 0=success, 1=error, 2=usage.
 6. **Respect the terminal.** TTY check before colors/spinners.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -297,3 +299,11 @@ AUTO-DETECT:
    ls package.json 2>/dev/null && echo "node"
    ls Cargo.toml 2>/dev/null && echo "rust"
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

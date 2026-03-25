@@ -274,6 +274,10 @@ WHILE doc_tasks remain:
   4. COMMIT kept changes. Revert discarded.
 ```
 
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
@@ -296,3 +300,4 @@ DO NOT STOP only because:
 
 ## Output Format
 Print: `APIDocs: {endpoints} endpoints documented. Schema valid: {yes|no}. Examples: {N}/{M} passing.
+

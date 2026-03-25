@@ -175,6 +175,8 @@ Commit: `"infra: <description> — <N> resources
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Never apply without a plan.** Review first.
 2. **Policy is mandatory.** Every change checked.
 3. **Cost awareness.** Estimate with every change.
@@ -242,3 +244,4 @@ STOP when ANY of:
 - State lock stuck: force-unlock only if holder dead.
 - Drift in prod: investigate, import or revert.
 - Cost exceeds budget: check over-provisioned resources.
+

@@ -154,6 +154,8 @@ DECISION: ALL PASS → ship. ANY FAIL → block.
 - TODO/FIXME density: <1 per 1000 lines committed
 
 ## Hard Rules
+Never ask to continue. Loop autonomously until done.
+
 1. Never merge with failing tests.
 2. Never force-push main — use git revert.
 3. Always squash merge — one commit per feature.
@@ -181,3 +183,4 @@ STOP when FIRST of:
 - gh CLI fails: print PR body to stdout as fallback.
 - Post-merge tests fail: git revert HEAD immediately.
 - Branch already merged: detect, delete stale branch.
+

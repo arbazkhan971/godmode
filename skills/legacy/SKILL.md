@@ -170,6 +170,8 @@ LEGACY MODERNIZATION REPORT:
 Commit: `"legacy: <action> — <target> (<impact>)"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Understand before changing.** Git blame first.
 2. **Tests before refactoring.** Characterization tests.
 3. **Small, reversible steps.** Every change revertable.
@@ -237,3 +239,4 @@ STOP when ALL of:
 - Dead code removal errors: revert, add runtime tracking.
 - God class extraction breaks callers: use facade pattern.
 - No one understands code: archaeology + characterization.
+

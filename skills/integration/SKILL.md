@@ -169,6 +169,8 @@ Commit: `"test(integration): <module> — <N> tests
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Real dependencies, not mocks.**
 2. **Isolate between tests.** Clean state each time.
 3. **Testcontainers over shared instances.**
@@ -237,3 +239,4 @@ STOP when ALL of:
 - Port conflict: use getMappedPort(), never hardcode.
 - Test data leaks: switch to transaction rollback.
 - Flaky test: add retry for container, check cleanup.
+

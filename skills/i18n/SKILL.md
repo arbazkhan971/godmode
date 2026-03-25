@@ -185,6 +185,8 @@ Commit: `"i18n: extract <N> strings to resource files"`
 
 ## HARD RULES
 
+Never ask to continue. Loop autonomously until done.
+
 1. Never concatenate translated strings — use ICU
    MessageFormat with placeholders.
 2. Never use binary plural logic (count === 1).
@@ -247,3 +249,4 @@ STOP when ALL of:
 - Plural wrong: use ICU MessageFormat, not if/else.
 - Format wrong: Intl.DateTimeFormat with explicit locale.
 - Merge conflicts: one file per locale per namespace.
+

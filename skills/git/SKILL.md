@@ -175,6 +175,8 @@ Commit: `"docs: git workflow — <model> with <strategy>"`
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Match workflow to team.** Solo != 50-person team.
 2. **Consistency beats perfection.**
 3. **History should tell a story.**
@@ -240,3 +242,4 @@ STOP when ALL of:
   into smaller commits.
 - Rebase wrong: git reflog, reset to pre-rebase state.
 - Bisect wrong result: verify test script determinism.
+

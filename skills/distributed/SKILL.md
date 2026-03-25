@@ -230,6 +230,8 @@ Commit: `"distributed: <system> -- <consistency model>, <consensus>, <N> shards,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Test distributed system behavior
 docker compose up -d && sleep 5
@@ -298,3 +300,7 @@ Append one row per session. Create the file with headers on first run.
 3. Partition handling defined. Fencing tokens on leader election.
 4. Every failure mode documented. Chaos test plan exists.
 ```
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

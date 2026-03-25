@@ -221,6 +221,8 @@ ARTIFACT STRATEGY:
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Run CI pipeline locally for testing
 act -j test --secret-file .env.ci
@@ -236,6 +238,8 @@ npm run lint && npm run typecheck && npm test
 6. **Concurrency control.** Cancel stale pipeline runs.
 7. **Timeouts mandatory.** Every job has a timeout.
 8. **Secrets injected, not stored.** Never echo in logs.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -297,3 +301,11 @@ Print on completion: `CI/CD: {stage_count} stages, {job_count} jobs. Build: {bui
 Deploy: {deploy_target}. Cache: {cache_status}. Verdict: {verdict}.`
 
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

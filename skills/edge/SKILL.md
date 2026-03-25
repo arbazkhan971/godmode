@@ -175,6 +175,8 @@ Commit: `"edge: <service> — <N> functions, p99 <X>ms"`
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Edge for latency, serverless for scale.**
 2. **Cold starts are architecture constraints.**
    Design for them: minimize bundles, lazy init.
@@ -250,3 +252,4 @@ STOP when ANY of:
 - Function timeout: profile, move work to queue.
 - "X is not defined": check runtime compatibility,
   edge runtimes lack Node.js globals.
+

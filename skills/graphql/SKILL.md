@@ -177,6 +177,8 @@ Commit: `"graphql: <service> — <N> types,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Schema is the contract.** Design before resolvers.
 2. **DataLoaders are mandatory.** N+1 queries are bugs.
 3. **Mutations return payloads.** Never throw for
@@ -264,3 +266,4 @@ STOP when ALL of:
 - Breaking change: revert removal, add new field,
   use @deprecated.
 - Subscription silent: verify pub/sub connection.
+

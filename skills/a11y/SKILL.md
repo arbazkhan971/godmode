@@ -293,7 +293,12 @@ After EACH accessibility fix:
      - DISCARD if: fix introduced new violations OR broke existing functionality
   4. COMMIT kept changes. Revert discarded changes before fixing the next issue.
 
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
 ```
+

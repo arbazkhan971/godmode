@@ -177,6 +177,8 @@ Commit: `"incident: INC-<ID> — <severity> — <title>"`
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Severity drives response.** SEV1 = drop everything.
 2. **Timeline is sacred.** Timestamp every action.
 3. **Blameless or useless.** Blame systems, not humans.
@@ -250,3 +252,4 @@ STOP post-mortem when:
 - Timeline gaps: cross-reference logs, metrics, Slack.
 - Post-mortem blame-oriented: redirect to systems.
 - Recurring root cause: escalate to leadership.
+

@@ -241,6 +241,8 @@ IF consent gate bypassed: block deployment, treat as P0 bug.
 5. **A/B tests need rigor.** Calculate sample size before launch.
 6. **Abstraction layer.** Unified interface over vendor SDK.
 7. **Debug before shipping.** Verify events in staging first.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -296,3 +298,11 @@ Complete when ALL true:
 | Failure | Action |
 |--|--|
 | Events not appearing | Check console errors, verify API key, use analytics debugger, check ad blockers/CSP. |
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

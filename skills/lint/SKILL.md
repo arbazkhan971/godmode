@@ -145,6 +145,8 @@ CODING STANDARDS:
 3. Fixes: `"lint: auto-fix <N> violations"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Format on save, lint on commit, enforce in CI.**
 2. **Auto-fix everything possible.** Humans handle logic.
 3. **Zero warnings in CI.** `--max-warnings=0`.
@@ -204,3 +206,4 @@ STOP when ANY of:
 - Auto-fix breaks tests: revert, narrow fix scope.
 - Hook too slow: lint only staged files, not full repo.
 - False positives: disable rule, document reason.
+

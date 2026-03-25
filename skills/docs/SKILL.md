@@ -202,6 +202,8 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 IF doc coverage < 80% of public API: prioritize undocumented exports.
 WHEN doc modification date < code modification date: flag as stale.
 IF broken links > 0: fix before committing.
@@ -293,3 +295,4 @@ DISCARD if: broken links OR doc contradicts code OR describes deleted functions
 STOP when: all public APIs documented + 0 broken links + 0 stale docs.
 Guard: link-check passes. On failure: git reset --hard HEAD~1.
 ```
+

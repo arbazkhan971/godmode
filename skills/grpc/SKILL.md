@@ -212,6 +212,8 @@ Commit: `"grpc: <service> — <N> RPCs, streaming
   + health checks configured"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Proto files are the contract.** Design first.
 2. **Use buf, not raw protoc.**
 3. **Every enum starts with UNSPECIFIED = 0.**
@@ -282,3 +284,4 @@ STOP when: buf lint 0 errors AND breaking 0
 - Streaming hangs: check deadlines, keepalive config.
 - UNAVAILABLE: verify address, TLS, health check.
 - Stale stubs: re-run buf generate.
+

@@ -94,6 +94,8 @@ After: `Godmode: {skill} complete. Next: {next}.`
 - Target: >95% correct skill match on natural language input
 
 ## Hard Rules
+Never ask to continue. Loop autonomously until done.
+
 1. Detect stack FIRST — cache result. Never guess.
 2. One skill at a time — read SKILL.md, follow it.
 3. Commit BEFORE verify — revert on failure.
@@ -149,3 +151,4 @@ timestamp	skill	iterations	kept	discarded	stop_reason	outcome
 ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
 git log --oneline -5
 ```
+

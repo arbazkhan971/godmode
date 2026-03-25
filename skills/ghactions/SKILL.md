@@ -161,6 +161,8 @@ Commit: "ci: <description> — GitHub Actions
 ```
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Least privilege permissions.** Per-job, not global.
 2. **Pin actions to SHA.** Use Dependabot for updates.
 3. **Cancel redundant runs.** Concurrency groups.
@@ -226,3 +228,4 @@ STOP when ALL of:
 - Cache miss: verify key matches lockfile path.
 - Pipeline too long: add timeout, split jobs.
 - Concurrency cancels needed runs: disable for deploys.
+

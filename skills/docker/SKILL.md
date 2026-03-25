@@ -210,6 +210,8 @@ BUILDKIT FEATURES:
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Docker diagnostics
 docker build --target test -t myapp:test .
@@ -293,3 +295,4 @@ iteration	image	size_before	size_after	layers	vulns_critical	vulns_high	build_ti
 | Container crashes | Check `docker logs`, CMD/ENTRYPOINT, non-root permissions. |
 | Health check fails | Verify endpoint, --start-period, health tool in image. |
 | Critical CVEs | Update base image tag. If no fix, document accepted risk. |
+

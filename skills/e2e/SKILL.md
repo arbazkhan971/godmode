@@ -137,6 +137,8 @@ npx cypress run --browser chrome
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Page objects mandatory.** No selectors in test files.
 2. **Test user journeys, not pages.**
 3. **Stability over speed.** Fix flakiness before adding tests.
@@ -213,3 +215,4 @@ STOP when ANY of:
 - Timeout: increase actionTimeout, check network.
 - Flaky: run `--repeat-each=10`, fix root cause.
 - CI failures: compare browser versions, enable traces.
+

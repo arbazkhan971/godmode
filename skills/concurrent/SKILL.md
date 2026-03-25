@@ -261,6 +261,8 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Run concurrency checks
 go test -race ./...
@@ -297,3 +299,4 @@ Each concurrency fix either passes the race detector or gets reverted.
 
 ## Stop Conditions
 ```
+

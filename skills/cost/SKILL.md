@@ -218,6 +218,8 @@ infracost diff --path .
 5. **Environment awareness.** Conservative for prod, aggressive for dev.
 6. **Tagging is foundational.** Fix tags before optimizing.
 7. **Continuous, not one-time.** Alerts + monthly review.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -294,3 +296,11 @@ AUTO-DETECT:
 Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%).
 Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict:
 {verdict}.`
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

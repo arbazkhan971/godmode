@@ -194,6 +194,8 @@ python manage.py migrate --check
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 ```bash
 # Django diagnostics
 python manage.py check --deploy
@@ -296,4 +298,5 @@ STOP when: all tasks validated OR max iterations reached.
 Guard: python manage.py test && python manage.py check --deploy.
 On failure: git reset --hard HEAD~1.
 ```
+
 

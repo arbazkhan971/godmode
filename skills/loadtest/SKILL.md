@@ -160,6 +160,8 @@ Commit: `"loadtest: <target> — P95: <X>ms,
   <N>rps, <X>% errors"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Baseline first.** Measure before optimizing.
 2. **Production-like environments.** Match hardware.
 3. **Percentiles, not averages.** P50, P95, P99.
@@ -218,3 +220,4 @@ STOP when ANY of:
 - Unrealistic numbers: verify think time.
 - High variance (CV > 15%): increase duration.
 - Crashes at high concurrency: `ulimit -n 65535`.
+

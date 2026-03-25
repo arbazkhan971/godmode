@@ -196,6 +196,8 @@ Commit: `"logging: <service> — structured JSON
   with correlation IDs and PII redaction"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Structured JSON in production.** Always.
 2. **Correct log levels.** 404 is not ERROR.
 3. **Correlation IDs everywhere.** Every log line.
@@ -266,3 +268,4 @@ STOP when ANY of:
 - Volume too high: audit levels, sample DEBUG.
 - PII found: add redaction filters, use allowlists.
 - Not in aggregator: check agent, network, rotation.
+

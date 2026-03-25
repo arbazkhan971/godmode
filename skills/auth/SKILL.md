@@ -297,3 +297,11 @@ PASS if ALL of the following:
   - Token storage follows client-type recommendations (no localStorage for JWTs)
   - HTTPS enforced with HSTS header
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

@@ -170,6 +170,8 @@ Commit: `"experiment: <name> — <N> variants,
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Hypothesis before code.**
 2. **Calculate sample size first.**
 3. **Never peek** at frequentist results early.
@@ -231,3 +233,4 @@ STOP when ALL of:
 - Flag leaking: verify deterministic eval, check cache.
 - Sample not reached: extend or use sequential testing.
 - Guardrail breached: kill treatment immediately.
+

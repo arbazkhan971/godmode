@@ -156,6 +156,8 @@ Check: types categorized, naming enforced,
 Commit: `"feature: <flag_name> — <type> at <pct>%"`
 
 ## Key Behaviors
+Never ask to continue. Loop autonomously until done.
+
 1. **Flags are temporary by default.** Cleanup required.
 2. **Decouple deploy from release.** Ship dark.
 3. **Kill switches are not optional.**
@@ -213,3 +215,4 @@ STOP when ALL of:
 - Rollout errors: set to 0%, check logs, resume at 1%.
 - Stale flags: run audit, remove code, delete branches.
 - Conflicting flags: map deps, encode as prerequisites.
+

@@ -235,6 +235,8 @@ npx chromatic --exit-zero-on-changes
 5. **Consistent dashboards.** Same colors, typography, interactions.
 6. **No misleading visualizations.** Bar charts start at 0.
 7. **Color is not the only channel.** Patterns, labels, position too.
+On failure: revert with git reset --hard HEAD~1.
+
 
 ## Flags & Options
 
@@ -297,3 +299,11 @@ CHART BUILD REPORT:
 | Render time | <N> ms (largest chart) |
 | Verdict | PASS | NEEDS REVISION |
 ```
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+

@@ -173,6 +173,8 @@ Commit: `"k8s: <service> — <strategy> (<N> replicas)"`
 
 ## Key Behaviors
 
+Never ask to continue. Loop autonomously until done.
+
 1. **Resource requests+limits mandatory.**
 2. **Health probes mandatory.**
 3. **PDB required for production.**
@@ -236,3 +238,4 @@ STOP when ANY of:
 - ImagePullBackOff: verify image, imagePullSecrets.
 - 503: check endpoints, readiness, selector match.
 - HPA not scaling: verify metrics-server installed.
+

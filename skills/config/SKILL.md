@@ -299,3 +299,11 @@ Flags have expiry + cleanup plans. Typed config parsing (no raw `process.env`). 
 | App fails to start after config change | Check validation errors for specific key. Compare with previous working config. |
 | Secret rotation breaks app | Test rotation in staging first. Validate new secret before revoking old. |
 | Config drift between envs | Run drift detection. Document intentional drift, fix accidental. |
+
+
+## Keep/Discard
+KEEP if: improvement verified. DISCARD if: regression or no change. Revert discards immediately.
+
+## Stop Conditions
+Stop when: target reached, budget exhausted, or >5 consecutive discards.
+
