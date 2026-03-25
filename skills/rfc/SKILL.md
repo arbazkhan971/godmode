@@ -68,6 +68,16 @@ git add docs/rfcs/<NNN>-<title>.md
 git commit -m "rfc: RFC-<NNN> -- <title> (<status>)"
 ```
 
+## Quality Targets
+- Target: <2 weeks from draft to decision
+- Target: >=3 reviewers for architecture RFCs
+- Target: 100% of breaking changes documented in RFC
+
+## Quality Targets
+- Draft to decision: <2 weeks
+- Reviewers: >3 for architecture RFCs
+- Target: 100% breaking changes documented
+
 ## Hard Rules
 1. EVERY RFC must include "Do Nothing" alternative.
 2. NEVER write RFC after code is already written.

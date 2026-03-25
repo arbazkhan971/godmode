@@ -108,6 +108,26 @@ Leaderboard: ZADD lb score player
   ZREVRANGE lb 0 9 WITHSCORES (top 10)
 ```
 
+
+```bash
+# Redis diagnostics
+redis-cli INFO memory | grep used_memory_human
+redis-cli --latency -i 1
+redis-cli DBSIZE
+```
+
+```bash
+# Redis diagnostics
+redis-cli INFO memory | grep used_memory_human
+redis-cli DBSIZE
+```
+
+```bash
+# Redis health check
+curl -s http://localhost:8080/health/redis
+grep -r "redis" config/ | head -5
+```
+
 ## Hard Rules
 1. NEVER use KEYS in production (blocks). Use SCAN.
 2. NEVER store values > 100KB. Compress or split.

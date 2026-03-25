@@ -194,6 +194,21 @@ LARAVEL VALIDATION:
 Commit: `"laravel: <app> — <N> models,
   <M> endpoints, Pest"`
 
+
+```bash
+# Laravel development and testing
+php artisan test --parallel
+php artisan route:list --compact
+composer audit
+```
+
+```bash
+# Laravel testing and auditing
+php artisan test --parallel
+composer audit
+curl -s http://localhost:8000/health
+```
+
 ## Key Behaviors
 
 1. **Laravel conventions first.**

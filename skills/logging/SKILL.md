@@ -203,6 +203,11 @@ Commit: `"logging: <service> — structured JSON
 5. **Async writing.** Never block the event loop.
 6. **Runtime log level control.** No redeploy needed.
 
+## Quality Targets
+- Log write latency: <5ms per entry
+- Retention: >30 days for app logs
+- Max line size: <10KB
+
 ## HARD RULES
 1. Never use console.log in production.
 2. Never log at ERROR for expected conditions.
@@ -221,6 +226,12 @@ Commit: `"logging: <service> — structured JSON
 2. Structured: pino/winston, slog/zerolog, structlog
 3. Libraries: package.json, go.mod, pyproject.toml
 ```
+
+## Quality Targets
+- Target: <5ms per structured log write
+- Log retention: >=30 days for application logs
+- Max log line size: <10KB
+- Target: 0 PII fields in log output (redaction enforced)
 
 ## Output Format
 Print: `Logging: {N} services. Format: JSON.

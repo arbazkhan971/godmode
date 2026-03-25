@@ -88,6 +88,11 @@ Print: `Godmode: stack={stack}, skill={skill},
   phase={phase}. Dispatching.`
 After: `Godmode: {skill} complete. Next: {next}.`
 
+## Quality Targets
+- Skill routing: <2s to match and dispatch
+- Stack detection: <5s for full project analysis
+- Target: >95% correct skill match on natural language input
+
 ## Hard Rules
 1. Detect stack FIRST — cache result. Never guess.
 2. One skill at a time — read SKILL.md, follow it.
@@ -138,3 +143,9 @@ timestamp	skill	iterations	kept	discarded	stop_reason	outcome
 | SKILL.md missing | List available, suggest closest. |
 | Stuck in loop | Escalate to previous phase. |
 | Merge conflict | Discard agent, re-queue narrower. |
+
+```bash
+# Detect project stack from root files
+ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
+git log --oneline -5
+```

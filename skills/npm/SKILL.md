@@ -97,6 +97,12 @@ IF no fix available: assess exploitability, document risk.
 | Build fails | Delete node_modules + lock, reinstall |
 ```
 
+## Quality Targets
+- Target: <30s npm install with warm cache
+- Target: 0 critical vulnerabilities in npm audit
+- Package size: <500KB published tarball
+- Target: 100% of dependencies pinned in lockfile
+
 ## Hard Rules
 1. ALWAYS commit lock files.
 2. ALWAYS --frozen-lockfile in CI.

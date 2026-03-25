@@ -1,7 +1,11 @@
 ---
 name: angular
 description: |
-  Angular architecture skill. Activates when user needs to build, architect, or optimize Angular applications. Covers module architecture vs standalone components, RxJS patterns, state management (NgRx, Signals), dependency injection, lazy loading, Angular CLI optimization, and testing with Jasmine/Karma and Jest. Triggers on: /godmode:angular, "build an Angular app", "Angular component", "NgRx store", "Angular signals", or when the orchestrator detects Angular-related work.
+  Angular architecture skill. Activates when user needs to build, architect, or optimize Angular applications. Covers
+    module architecture vs standalone components, RxJS patterns, state management (NgRx, Signals), dependency
+    injection, lazy loading, Angular CLI optimization, and testing with Jasmine/Karma and Jest. Triggers on:
+    /godmode:angular, "build an Angular app", "Angular component", "NgRx store", "Angular signals", or when the
+    orchestrator detects Angular-related work.
 ---
 
 # Angular — Angular Architecture
@@ -46,9 +50,11 @@ RULES:
 
 ### Step 3: Component Architecture
 
-Use `OnPush` change detection on all components. Signal-based inputs/outputs on Angular 17+. Smart vs presentational split. One component per file. Consistent selector prefix.
+Use `OnPush` change detection on all components. Signal-based inputs/outputs on Angular 17+. Smart vs
+presentational split. One component per file. Consistent selector prefix.
 
-Standalone pattern (Angular 17+): `@Component({ standalone: true, imports: [...], changeDetection: OnPush })` with `input()`, `output()`, `computed()`, `inject()`.
+Standalone pattern (Angular 17+): `@Component({ standalone: true, imports: [...], changeDetection: OnPush })`
+with `input()`, `output()`, `computed()`, `inject()`.
 
 NgModule pattern (legacy): `@Component({ changeDetection: OnPush })` with `@Input()`, `@Output()`, `EventEmitter`.
 
@@ -99,7 +105,8 @@ PERFORMANCE AUDIT:
 
 ### Step 7: Build Optimization
 
-Use `@angular-devkit/build-angular:application` (esbuild). Budget: initial 500kB warning, 1MB error. Source maps off in prod. Named chunks off in prod.
+Use `@angular-devkit/build-angular:application` (esbuild). Budget: initial 500kB warning, 1MB error. Source
+maps off in prod. Named chunks off in prod.
 
 ### Step 8: Testing
 
@@ -198,10 +205,13 @@ Tests: <passing|failing|skipped>, Build: <passing|failing>
 ```
 
 ## TSV Logging
-Append to `.godmode/angular.tsv`: `timestamp	project	action	components_count	services_count	modules_count	tests_status	build_status	notes`
+Append to `.godmode/angular.tsv`:
+`timestamp	project	action	components_count	services_count	modules_count	tests_status	build_status	notes`
 
 ## Success Criteria
-1. `ng build` zero errors. 2. `ng test` passes. 3. All OnPush. 4. No `any`. 5. All subscriptions cleaned up. 6. No nested subscriptions. 7. All features lazy-loaded. 8. No direct DOM manipulation. 9. Strict TypeScript. 10. All services use proper injection.
+1. `ng build` zero errors. 2. `ng test` passes. 3. All OnPush. 4. No `any`. 5. All subscriptions cleaned up.
+6. No nested subscriptions. 7. All features lazy-loaded. 8. No direct DOM manipulation. 9. Strict TypeScript.
+10. All services use proper injection.
 
 ## Error Recovery
 ```
@@ -226,4 +236,5 @@ STOP when: ng build+test pass AND all OnPush AND all lazy-loaded AND zero any ty
 ```
 
 ## Platform Fallback
-Run sequentially if `Agent()` unavailable. Use `git stash` instead of worktrees. See `adapters/shared/sequential-dispatch.md`.
+Run sequentially if `Agent()` unavailable. Use `git stash` instead of worktrees. See
+`adapters/shared/sequential-dispatch.md`.

@@ -73,6 +73,11 @@ Key anti-patterns:
 Save: `docs/patterns/<feature>-pattern-analysis.md`
 Commit: `"pattern: <feature> -- <pattern> (<confidence>)"`
 
+## Quality Targets
+- Cyclomatic complexity: <20 per function
+- Injected services: <7 per class
+- Circular deps: <1 cycle detected
+
 ## Hard Rules
 1. NEVER recommend pattern without understanding problem.
 2. NEVER stack multiple patterns at once.

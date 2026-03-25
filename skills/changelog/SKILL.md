@@ -1,7 +1,11 @@
 ---
 name: changelog
 description: |
-  Changelog and release notes management skill. Activates when user needs to create, maintain, or auto-generate changelogs and release notes. Supports Keep a Changelog format, Conventional Commits for auto-generation, audience-specific release notes (developers vs end users), breaking change communication, and migration guide generation. Triggers on: /godmode:changelog, "update changelog", "write release notes", "generate migration guide", or when preparing a release.
+  Changelog and release notes management skill. Activates when user needs to create, maintain, or auto-generate
+    changelogs and release notes. Supports Keep a Changelog format, Conventional Commits for auto-generation,
+    audience-specific release notes (developers vs end users), breaking change communication, and migration guide
+    generation. Triggers on: /godmode:changelog, "update changelog", "write release notes", "generate migration
+    guide", or when preparing a release.
 ---
 
 # Changelog — Changelog & Release Notes
@@ -24,7 +28,6 @@ Examine commits, PRs, and tags since the last release:
 CHANGE ANALYSIS:
   Last release: <tag> (<date>)
 ```
-
 Commands to gather data:
 ```bash
 # Commits since last tag
@@ -63,7 +66,6 @@ Generate or update CHANGELOG.md following the Keep a Changelog standard:
 
 This file documents all notable changes to this project.
 ```
-
 #### Keep a Changelog Rules
 ```
 CHANGELOG RULES:
@@ -93,7 +95,6 @@ npm install --save-dev standard-version
 name: Release Please
 on:
 ```
-
 ### Step 5: Release Notes for Different Audiences
 Write release notes tailored to who reads them:
 
@@ -125,7 +126,6 @@ Configure via the `retries` option (default: 3).
 ```typescript
 const client = createClient({ retries: 5, retryDelay: 1000 });
 ```
-
 ### Streaming responses (#256)
 New `client.stream()` method for Server-Sent Events:
 
@@ -134,7 +134,6 @@ for await (const event of client.stream('/events')) {
   console.log(event.data);
 }
 ```
-
 ## Bug Fixes
 - Fixed memory leak in connection pool when requests timeout (#278)
 - Fixed race condition in concurrent batch requests (#291)
@@ -255,20 +254,24 @@ npm install <package>@1
 5. Transition:
    - If preparing release: "Changelog ready. Proceed with /godmode:ship to publish."
    - If migration needed: "Migration guide created. Share with users before releasing."
-   - If setting up automation: "Auto-changelog configured. Future releases will generate changelogs from commits."
 ```
-
 ## Key Behaviors
 
 IF breaking changes > 0: write migration guide before release.
 WHEN commits don't follow conventional format: parse PR titles as fallback.
 IF changelog entry count < commit count * 0.5: review for missed changes.
 
+## Quality Targets
+- Target: 100% PRs tagged with changelog category
+- Generation time: <5min for release notes
+- Target: 0 breaking changes without BREAKING CHANGE tag
+
 ## HARD RULES
 
 1. **NEVER STOP** until all commits since last release are categorized and the changelog entry is written.
 2. **git commit BEFORE verify** — commit the changelog/release notes, then verify formatting.
-3. **Automatic revert on regression** — if the generated changelog has incorrect version numbers or dates, revert and regenerate.
+3. **Automatic revert on regression** — if the generated changelog has incorrect version numbers or dates,
+revert and regenerate.
 4. **TSV logging** — log every changelog generation run:
    ```
    timestamp	version	commits_analyzed	entries_generated	breaking_changes	status
@@ -286,7 +289,6 @@ current_iteration = 0
 unprocessed_commits = all commits since last tag
 changelog_entries = []
 ```
-
 ## Output Format
 
 After each changelog skill invocation, emit a structured report:
@@ -295,47 +297,3 @@ After each changelog skill invocation, emit a structured report:
 CHANGELOG REPORT:
 | Last release | <tag> (<date>) |
 ```
-
-## TSV Logging
-
-Log every changelog generation for tracking (as referenced in Hard Rules):
-
-```
-timestamp	skill	version	commits_analyzed	entries_generated	breaking_changes	status
-2026-03-20T14:00:00Z	changelog	v1.6.0	34	11	0	ready
-2026-03-20T14:30:00Z	changelog	v2.0.0	52	18	3	needs_migration_guide
-```
-
-## Success Criteria
-
-The changelog skill is complete when ALL of the following are true:
-1. All commits since last release are categorized (feat, fix, perf, breaking, skip)
-2. Every user-visible change has a changelog entry
-3. Every entry includes a PR/issue reference
-4. Breaking changes are documented first with migration steps
-5. Version number follows semantic versioning correctly
-6. Changelog entry uses imperative mood ("Add feature" not "Added feature")
-7. Internal changes (refactor, test, ci, chore) are excluded from user-facing changelog
-8. Migration guide exists for any breaking changes (major version bumps)
-
-## Keep/Discard Discipline
-```
-After EACH changelog generation or update:
-  1. MEASURE: Verify all commits since last release are categorized. Count entries.
-  2. COMPARE: Does every user-visible change have an entry? Are PR references present?
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All commits since last release are categorized
-  - Every user-visible change has a changelog entry with PR reference
-```
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Commit messages do not follow conventional format | Parse what exists. Use PR titles as fallback. Flag non-conforming commits for manual categorization. |
-| Duplicate entries from merge commits | Filter merge commits (`--no-merges`). Deduplicate by PR number or commit hash. |
-| Breaking change not flagged | Scan for `BREAKING CHANGE:` in commit body and `!` after type. Also check for API removals in diff. |
-| Changelog generation misses commits | Verify tag range is correct. Check for squash merges that lose individual commit messages. |

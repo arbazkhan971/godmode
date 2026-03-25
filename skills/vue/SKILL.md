@@ -160,6 +160,11 @@ Coverage target: >80% statements, >70% branches.
 6. **Choose rendering per route** (Nuxt hybrid).
 7. **Never ask to continue. Loop autonomously.**
 
+## Quality Targets
+- Initial JS per route: <100KB bundle
+- Render cycle: <16ms per frame (60fps)
+- Lighthouse score: >90 performance
+
 ## HARD RULES
 1. NEVER use mixins in Vue 3. Use composables.
 2. NEVER use Vuex in new projects. Use Pinia.

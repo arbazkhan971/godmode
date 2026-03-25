@@ -87,6 +87,11 @@ Match governance to project size.
 ```
 IF governance mismatch: document and update.
 
+## Quality Targets
+- Target: <48h response time for new issues
+- Target: >80% of PRs reviewed within 7 days
+- Target: 100% of public APIs documented
+
 ## Hard Rules
 1. NEVER open source without LICENSE file.
 2. NEVER skip Code of Conduct.

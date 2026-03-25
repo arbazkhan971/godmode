@@ -1,7 +1,11 @@
 ---
 name: concurrent
 description: |
- Concurrency and parallelism skill. Activates when user needs thread safety analysis, race condition detection, async/await pattern guidance, lock-free data structures, actor model design, deadlock detection and prevention, or concurrent testing strategies. Triggers on: /godmode:concurrent, "thread safety", "race condition", "async await", "deadlock", "lock-free", "actor model", "concurrent", "parallelism", or when the orchestrator detects concurrency work.
+ Concurrency and parallelism skill. Activates when user needs thread safety analysis, race condition
+ detection, async/await pattern guidance, lock-free data structures, actor model design, deadlock detection
+ and prevention, or concurrent testing strategies. Triggers on: /godmode:concurrent, "thread safety", "race
+ condition", "async await", "deadlock", "lock-free", "actor model", "concurrent", "parallelism", or when the
+ orchestrator detects concurrency work.
 ---
 
 # Concurrent -- Concurrency & Parallelism
@@ -31,7 +35,8 @@ I/O Profile: CPU-bound | I/O-bound | Mixed
 Scale: <concurrent connections/operations expected>
   ...
 ```
-If the user has not provided context, ask: "What language/runtime are you using, and is the workload primarily CPU-bound or I/O-bound? This determines the right concurrency model."
+If the user has not provided context, ask: "What language/runtime are you using, and is the workload primarily
+CPU-bound or I/O-bound? This determines the right concurrency model."
 
 ### Step 2: Thread Safety Analysis
 Identify shared mutable state and classify access patterns:
@@ -178,7 +183,6 @@ ACTOR SYSTEM DESIGN:
 | Actor | Messages Received | State | Children|
   ...
 ```
-
 ### Step 7: Deadlock Detection and Prevention
 Systematically prevent and detect deadlocks:
 
@@ -250,6 +254,11 @@ Artifacts:
 ```
 Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdict>"`
 
+## Quality Targets
+- Lock contention: <10ms per critical section
+- CPU utilization: >80% under load
+- Data race count: <1 detected by race detector
+
 ## Key Behaviors
 
 ```bash
@@ -258,7 +267,6 @@ go test -race ./...
 cargo test -- --test-threads=1
 python -m pytest tests/ -x --timeout=30
 ```
-
 IF race detector reports > 0 races: fix before merging.
 WHEN stress test (1000 iterations) shows any failure: investigate.
 IF mutex hold time > 100ms: refactor to reduce critical section.
@@ -288,57 +296,4 @@ Each concurrency fix either passes the race detector or gets reverted.
 - Log every analysis to `.godmode/concurrent-results.tsv`.
 
 ## Stop Conditions
-- Every piece of shared mutable state identified and protected.
-- Race detector (go -race, TSan, etc.) reports zero races.
-- Deadlock detection checklist shows all items PASS.
-- At least one stress test written: 1000 iterations with maximum parallelism, all passing.
-- Every mutex has a comment documenting what shared state it protects.
-
-## HARD RULES
-
-1. **NEVER STOP** until all shared mutable state is identified and protected.
-2. **NEVER add locks without documenting what they protect** — every mutex gets a comment.
-3. **NEVER hold locks during I/O** — fetch data first, then acquire lock to update.
-4. **ALWAYS run the race detector** on every test (go -race, TSan, etc.).
-5. **ALWAYS verify cancellation paths** — every concurrent operation must support cancellation.
-6. **git commit BEFORE verify** — commit concurrency fixes, then run stress tests.
-7. **Automatic revert on regression** — if a fix introduces deadlocks or new races, revert immediately.
-8. **TSV logging** — log every concurrency analysis:
- ```
- timestamp	component	shared_states	races_found	races_fixed	deadlock_risk	verdict
- ```
-
-## Output Format
-Print on completion:
 ```
-CONCURRENCY ANALYSIS: {feature_or_component}
-Language/Runtime: {language} | Model: {concurrency_model}
-Shared mutable states: {N} identified, {N} protected
-Race conditions: {N} found, {N} fixed
-Deadlock risk: {HIGH|MEDIUM|LOW|NONE}
-Concurrent tests: {N} written
-Verdict: {SAFE|NEEDS WORK}
-Artifacts: {list of files created}
-```
-
-## TSV Logging
-Log every concurrency session to `.godmode/concurrent-results.tsv`:
-```
-timestamp	component	language	model	shared_states	races_found	races_fixed	deadlock_risk	tests_written	verdict
-```
-Append one row per session. Create the file with headers on first run.
-
-## Success Criteria
-1. All shared mutable state identified and protected.
-2. Race detector reports 0 races on all code paths.
-3. Deadlock checklist: all items PASS.
-4. Stress test: >= 1000 iterations, max parallelism, all pass.
-5. Every mutex has a comment documenting protected state.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Deadlock detected | Consistent lock ordering. Add timeout. Use NOWAIT in SQL. |
-| Race in tests (flaky) | Stress test 1000x to reproduce. Add synchronization. |
-| Thread pool exhaustion | Check blocking in async. Add backpressure. Monitor threads. |
-| Data corruption under load | Add mutex. Use atomics for counters. Document all locks. |

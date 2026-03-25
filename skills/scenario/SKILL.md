@@ -119,6 +119,11 @@ timestamp	feature	dimension	scenario	L	I	score	severity	test_file	code_ref	statu
 ```
 Status: `TEST_PASS`, `TEST_FAIL`, `BUG_FOUND`, `NO_TEST`
 
+## Quality Targets
+- Target: >90% of critical user paths covered
+- Scenario execution: <60s per end-to-end scenario
+- Target: 0 flaky scenarios (quarantine >1% failure rate)
+
 ## Hard Rules
 1. Explore all 12 dimensions. Skip needs justification.
 2. Every scenario needs file:line or spec heading.

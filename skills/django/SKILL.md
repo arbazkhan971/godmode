@@ -1,7 +1,12 @@
 ---
 name: django
 description: |
-  Django and FastAPI development skill. Activates when building, architecting, or optimizing Python web applications. Covers Django project structure and app architecture, Django REST Framework with serializers and viewsets, FastAPI dependency injection and Pydantic models, async Django with ASGI configuration, admin customization, database optimization with the Django ORM, and production deployment. Every recommendation includes concrete code and architectural rationale. Triggers on: /godmode:django, "Django", "FastAPI", "DRF", "Django REST Framework", "Pydantic", "ASGI", "Django admin", "Python web", "viewsets", "serializers".
+  Django and FastAPI development skill. Activates when building, architecting, or optimizing Python web applications.
+    Covers Django project structure and app architecture, Django REST Framework with serializers and viewsets, FastAPI
+    dependency injection and Pydantic models, async Django with ASGI configuration, admin customization, database
+    optimization with the Django ORM, and production deployment. Every recommendation includes concrete code and
+    architectural rationale. Triggers on: /godmode:django, "Django", "FastAPI", "DRF", "Django REST Framework",
+    "Pydantic", "ASGI", "Django admin", "Python web", "viewsets", "serializers".
 ---
 
 # Django — Django & FastAPI Development
@@ -34,7 +39,8 @@ Deployment: <Gunicorn+Nginx, Docker, serverless, PaaS>
 Existing code: <greenfield | existing Django project | migration>
 ```
 
-If the user hasn't specified, ask: "Are you building with Django, FastAPI, or both? Is this an API-only service or full-stack with templates?"
+If the user hasn't specified, ask: "Are you building with Django, FastAPI, or both? Is this an API-only
+service or full-stack with templates?"
 
 ### Step 2: Django Project Structure
 Design the Django project layout following best practices:
@@ -177,6 +183,14 @@ Next steps:
 ```
 
 Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/async config>"`
+
+
+```bash
+# Django development and testing
+python manage.py check --deploy
+pytest --tb=short
+python manage.py migrate --check
+```
 
 ## Key Behaviors
 

@@ -1,7 +1,10 @@
 ---
 name: config
 description: |
-  Environment and configuration management skill. Activates when user needs to manage dev/staging/prod configs, validate environment parity, design feature flags, or plan A/B test rollouts. Ensures config consistency, secret safety, and environment drift detection. Triggers on: /godmode:config, "manage environments", "feature flags", "config validation", "A/B test setup", or when ship skill needs environment verification.
+  Environment and configuration management skill. Activates when user needs to manage dev/staging/prod configs,
+    validate environment parity, design feature flags, or plan A/B test rollouts. Ensures config consistency, secret
+    safety, and environment drift detection. Triggers on: /godmode:config, "manage environments", "feature flags",
+    "config validation", "A/B test setup", or when ship skill needs environment verification.
 ---
 
 # Config — Environment & Configuration Management
@@ -21,13 +24,14 @@ Map all configuration sources and environments:
 
 ```bash
 # Find config files
-find . -name "*.env*" -o -name "*.config.*" -o -name "*.yml" -o -name "*.yaml" -o -name "*.toml" -o -name "*.ini" | grep -v node_modules | grep -v .git
+find . -name "*.env*" -o -name "*.config.*" -o -name "*.yml" -o -name "*.yaml" -o -name "*.toml" -o -name
+"*.ini" | grep -v node_modules | grep -v .git
 
 # Check for environment-specific files
-find . -name "*development*" -o -name "*staging*" -o -name "*production*" -o -name "*prod*" -o -name "*dev*" | grep -v node_modules | grep -v .git
+find . -name "*development*" -o -name "*staging*" -o -name "*production*" -o -name "*prod*" -o -name "*dev*" |
+grep -v node_modules | grep -v .git
 
 ```
-
 ```
 CONFIG INVENTORY:
 Environments: <dev | staging | prod | custom>
@@ -41,7 +45,6 @@ Total config keys: <N>
 Secret keys: <N>
 Non-secret keys: <N>
 ```
-
 ### Step 2: Environment Parity Check
 Compare configurations across environments to detect drift:
 
@@ -90,7 +93,6 @@ const configSchema = {
     required: true,
     format: 'uri',
 ```
-
 #### Validation Rules
 ```
 For EVERY config key, validate:
@@ -132,7 +134,6 @@ FLAG TYPES:
 
 4. PERMISSION FLAG — Gate features by user segment
    Example: PERMISSION_BETA_FEATURES=["user_123", "org_456"]
-   Lifecycle: Create → Add users/segments → Expand → Convert to release flag
 ```
 
 #### Flag Schema
@@ -146,7 +147,9 @@ interface FeatureFlag {
 ```
 
 #### Flag Lifecycle Management
-Every flag: owner + expiry date. Release flags >30 days at 100%: remove flag, keep code. Experiment flags >14 days: conclude, pick winner. Dead flags (no code refs): delete. Keep total under 20 for small teams. Weekly stale flag report.
+Every flag: owner + expiry date. Release flags >30 days at 100%: remove flag, keep code. Experiment flags >14
+days: conclude, pick winner. Dead flags (no code refs): delete. Keep total under 20 for small teams. Weekly
+stale flag report.
 
 ### Step 5: A/B Test Setup
 Design controlled experiments with statistical rigor:
@@ -168,12 +171,11 @@ Variants:
   [Treatment (C)]: <optional additional variant>
 
 Traffic split: <50/50 | 80/20 | custom>
-Duration: <calculated from traffic volume and required sample size>
-Kill criteria: <when to stop early — e.g., >10% degradation in guardrail metric>
 ```
 
 #### Rollout Strategy
-Phase 1: Internal (100%, 2-3 days, catch bugs). Phase 2: Canary (1-5%, 24-48h, verify no regressions). Phase 3: Controlled (10% -> 25% -> 50%, 1-2 weeks per increment, gather statistical significance).
+Phase 1: Internal (100%, 2-3 days, catch bugs). Phase 2: Canary (1-5%, 24-48h, verify no regressions). Phase
+3: Controlled (10% -> 25% -> 50%, 1-2 weeks per increment, gather statistical significance).
 
 ### Step 6: Secret Management Audit
 Verify secrets are handled safely across all environments:
@@ -191,7 +193,6 @@ SECRET AUDIT:
 | Secret manager in use | PASS/FAIL | <recommendation> |
 | Encryption at rest | PASS/FAIL | <unencrypted stores> |
 ```
-
 ### Step 7: Generate Config Report
 
 ```
@@ -207,7 +208,6 @@ SECRET AUDIT:
   VALIDATION:
   Schema coverage: <X>% of keys have validation
 ```
-
 ### Step 8: Commit and Transition
 1. Save report as `docs/config/<project>-config-audit.md`
 2. Save validation schema if generated
@@ -269,9 +269,10 @@ AUTO-DETECT:
 
 4. Feature flag provider:
 ```
-
 ## Output Format
-Print on completion: `Config: {config_key_count} keys across {env_count} environments. Secrets: {secret_count} (all in secret manager: {secret_mgr_status}). Drift: {drift_count} keys differ. Validation: {validation_status}. Feature flags: {flag_count}. Verdict: {verdict}.`
+Print on completion: `Config: {config_key_count} keys across {env_count} environments. Secrets: {secret_count}
+(all in secret manager: {secret_mgr_status}). Drift: {drift_count} keys differ. Validation:
+{validation_status}. Feature flags: {flag_count}. Verdict: {verdict}.`
 
 ## TSV Logging
 Log every configuration operation to `.godmode/config-results.tsv`:
@@ -282,10 +283,12 @@ iteration	task	environment	keys_total	secrets_count	drift_detected	validation_st
 3	secrets	all	0	12	0	migrated	migrated
 4	validation	all	45	0	0	zod_schema	configured
 ```
-Columns: iteration, task, environment, keys_total, secrets_count, drift_detected, validation_status, status(audited/drift_found/migrated/configured/failed).
+Columns: iteration, task, environment, keys_total, secrets_count, drift_detected, validation_status,
+status(audited/drift_found/migrated/configured/failed).
 
 ## Success Criteria
-All keys inventoried. Secrets in secret manager. Startup validation fails fast. Drift detected and explained. Flags have expiry + cleanup plans. Typed config parsing (no raw `process.env`). Config changes auditable.
+All keys inventoried. Secrets in secret manager. Startup validation fails fast. Drift detected and explained.
+Flags have expiry + cleanup plans. Typed config parsing (no raw `process.env`). Config changes auditable.
 
 ## Error Recovery
 | Failure | Action |
@@ -293,19 +296,3 @@ All keys inventoried. Secrets in secret manager. Startup validation fails fast. 
 | App fails to start after config change | Check validation errors for specific key. Compare with previous working config. |
 | Secret rotation breaks app | Test rotation in staging first. Validate new secret before revoking old. |
 | Config drift between envs | Run drift detection. Document intentional drift, fix accidental. |
-| Feature flag stuck at 100% | Schedule cleanup: remove flag check, delete flag, remove old code path. |
-| Startup validation too strict | Separate required/optional config. Use defaults for non-critical. |
-
-## Keep/Discard Discipline
-```
-KEEP if: validation passes AND parity improved AND no regressions
-DISCARD if: validation fails OR startup breaks OR new drift
-Every change is atomic — never half-migrated config.
-```
-
-## Stop Conditions
-```
-STOP when: all envs audited AND critical drift resolved AND secrets migrated
-  OR user requests stop OR max 15 iterations
-```
-

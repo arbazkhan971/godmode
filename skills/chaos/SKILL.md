@@ -1,7 +1,10 @@
 ---
 name: chaos
 description: |
-  Chaos engineering skill. Activates when user needs to test system resilience through controlled failure injection, validate circuit breakers, plan game days, or verify disaster recovery procedures. Covers network failures, disk pressure, process crashes, dependency outages, and data corruption scenarios. Triggers on: /godmode:chaos, "chaos test", "resilience test", "failure injection", "game day", or when ship skill needs resilience validation.
+  Chaos engineering skill. Activates when user needs to test system resilience through controlled failure injection,
+    validate circuit breakers, plan game days, or verify disaster recovery procedures. Covers network failures, disk
+    pressure, process crashes, dependency outages, and data corruption scenarios. Triggers on: /godmode:chaos, "chaos
+    test", "resilience test", "failure injection", "game day", or when ship skill needs resilience validation.
 ---
 
 # Chaos — Chaos Engineering
@@ -91,10 +94,12 @@ Injection:
 ```
 
 **Experiment N2: DNS Failure**
-Hypothesis: "System falls back to cached data when DNS fails." Injection: `iptables -A OUTPUT -p udp --dport 53 -j DROP`. Verify cached responses served, error messages shown for uncached.
+Hypothesis: "System falls back to cached data when DNS fails." Injection: `iptables -A OUTPUT -p udp --dport
+53 -j DROP`. Verify cached responses served, error messages shown for uncached.
 
 **Experiment N3: Packet Loss**
-Hypothesis: "With 10% packet loss, success rate stays >95%." Injection: `tc qdisc add dev eth0 root netem loss 10%`. Verify retry logic, SLO compliance, no pool exhaustion.
+Hypothesis: "With 10% packet loss, success rate stays >95%." Injection: `tc qdisc add dev eth0 root netem loss
+10%`. Verify retry logic, SLO compliance, no pool exhaustion.
 
 #### Process Failure Experiments
 
@@ -116,10 +121,12 @@ Verify:
 ```
 
 **Experiment P2: Memory Pressure**
-Hypothesis: "At 90%+ memory, app sheds load gracefully." Injection: `stress-ng --vm 1 --vm-bytes 80% --timeout 300s`. Verify load shedding, no OOM kill, health check alive.
+Hypothesis: "At 90%+ memory, app sheds load gracefully." Injection: `stress-ng --vm 1 --vm-bytes 80% --timeout
+300s`. Verify load shedding, no OOM kill, health check alive.
 
 **Experiment P3: CPU Saturation**
-Hypothesis: "At 95% CPU, health checks and critical paths prioritized." Injection: `stress-ng --cpu $(nproc) --timeout 300s`. Verify health check <1s, background deferred, autoscaling triggers.
+Hypothesis: "At 95% CPU, health checks and critical paths prioritized." Injection: `stress-ng --cpu $(nproc)
+--timeout 300s`. Verify health check <1s, background deferred, autoscaling triggers.
 
 #### Storage Failure Experiments
 
@@ -241,7 +248,6 @@ kubectl delete pod <pod-name> --grace-period=0
 stress-ng --cpu $(nproc) --vm 1 --vm-bytes 80% --timeout 60s
 redis-cli FLUSHALL
 ```
-
 1. **Hypothesize before injecting.** Predict the outcome first.
 2. **Start small.** Dev first, then staging, then production.
 3. **Always have a rollback.** Test rollback before injection.
@@ -262,7 +268,8 @@ redis-cli FLUSHALL
 
 1. **NEVER STOP** until all planned experiments are executed or explicitly skipped with documented reason.
 2. **git commit BEFORE verify** — commit experiment definitions and results before running the next experiment.
-3. **Automatic revert on regression** — if an experiment causes unrecoverable state, execute rollback immediately. No exceptions.
+3. **Automatic revert on regression** — if an experiment causes unrecoverable state, execute rollback
+immediately. No exceptions.
 4. **TSV logging** — log every experiment run:
    ```
    timestamp	experiment_name	hypothesis	blast_radius	duration	result	surprises
@@ -290,49 +297,3 @@ AUTO-DETECT:
    linkerd check 2>/dev/null && echo "linkerd"
   ...
 ```
-## Success Criteria
-Verify all of these before marking the task complete:
-1. Steady state hypothesis is defined with measurable metric and threshold (e.g., `p99 latency < 200ms`).
-2. At least one chaos experiment designed with: hypothesis, injection method, blast radius, abort conditions.
-3. Monitoring dashboards show the target metric BEFORE injection (baseline captured).
-4. Experiment runs in a non-production environment first (dev or staging) with expected behavior validated.
-5. Abort mechanism works: operator stops injection within 30 seconds and system recovers.
-6. Findings documented: each surprise becomes a backlog item with severity and remediation plan.
-7. Circuit breakers (if applicable) trip correctly under failure conditions and recover when failure is removed.
-8. Runbook updated with observed failure modes and recovery steps.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Injection cannot be reversed | Kill injection. tc: `tc qdisc del dev eth0 root`. Toxiproxy: `toxic remove`. Document failed abort. |
-| Monitoring not showing impact | Check metric queries, time range. If > 30s lag, do not proceed. |
-| System crashes instead of degrading | This IS a finding. Document and create P1 backlog item. |
-
-## Keep/Discard Discipline
-```
-After EACH chaos experiment:
-  1. MEASURE: Did the system recover to steady state after rollback? What was the recovery time?
-  2. COMPARE: Did the hypothesis hold? Were there surprises?
-  3. DECIDE:
-     - KEEP findings if: experiment ran to completion AND monitoring captured the impact AND system recovered
-     - DISCARD results if: rollback failed (results are unreliable) OR monitoring was not active during injection
-  4. COMMIT experiment results. Create backlog items for every surprise finding.
-
-Never declare a system "resilient" based on an experiment where monitoring was not active.
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All planned experiments executed and results documented
-  - System recovers to steady state within target RTO for all failure domains
-  - User explicitly requests stop
-  - A rollback fails (investigate before running more experiments)
-
-DO NOT STOP because:
-  - Failure domains scored C instead of A (document and prioritize fixes)
-  - Production experiments are not yet approved (complete staging experiments first)
-```
-
-## Output Format
-Print: `Chaos: {system} — {N} experiments, {confirmed}/{total} hypotheses confirmed. Surprises: {S}. Resilience: {RESILIENT|ADEQUATE|FRAGILE}. Status: {DONE|PARTIAL}.`

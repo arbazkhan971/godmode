@@ -1,7 +1,11 @@
 ---
 name: cost
 description: |
-  Cloud cost optimization skill. Activates when user needs to analyze, reduce, or govern cloud spending across AWS, GCP, and Azure. Performs resource utilization analysis, right-sizing recommendations, waste detection, cost allocation tagging, and budget alerting. Uses evidence-based analysis of actual usage data to produce actionable savings recommendations with projected dollar impact. Triggers on: /godmode:cost, "reduce cloud costs", "optimize spending", "why is our bill so high?", or when infrastructure costs need governance.
+  Cloud cost optimization skill. Activates when user needs to analyze, reduce, or govern cloud spending across AWS,
+    GCP, and Azure. Performs resource utilization analysis, right-sizing recommendations, waste detection, cost
+    allocation tagging, and budget alerting. Uses evidence-based analysis of actual usage data to produce actionable
+    savings recommendations with projected dollar impact. Triggers on: /godmode:cost, "reduce cloud costs", "optimize
+    spending", "why is our bill so high?", or when infrastructure costs need governance.
 ---
 
 # Cost — Cloud Cost Optimization
@@ -34,8 +38,6 @@ Resource categories:
   Serverless: <Lambda/Functions — invocations, monthly cost>
   Other: <CDN, DNS, monitoring, etc.>
 
-Total monthly spend: $<amount>
-Month-over-month trend: <increasing/stable/decreasing> (<percentage>)
 ```
 ### Step 2: Utilization Analysis
 Measure actual usage versus provisioned capacity:
@@ -190,12 +192,17 @@ Anomaly detection:
   Medium effort (1 week): $<amount> savings
   Long-term (1 month+):  $<amount> savings
   Risk: LOW — all changes are reversible
-  Confidence: HIGH — based on 14+ days of usage data
 ```
 ### Step 9: Commit and Transition
 1. Save report as `docs/cost/<date>-cost-optimization.md`
 2. Commit: `"cost: <scope> — $<savings>/month identified (<N> recommendations)"`
 3. Provide actionable next steps with priority order
+
+```bash
+# Check cloud cost reports
+curl -s http://localhost:8080/api/costs/summary | jq .total
+grep -r "instance_type" infra/ | head -5
+```
 
 ## Key Behaviors
 
@@ -204,7 +211,6 @@ Anomaly detection:
 aws ce get-cost-and-usage --time-period Start=2026-02-01,End=2026-03-01 --granularity MONTHLY --metrics BlendedCost
 infracost diff --path .
 ```
-
 1. **Data-driven only.** Actual utilization data, not assumptions.
 2. **Dollar impact required.** "$180/mo savings" not "oversized".
 3. **Risk assessment.** LOW/MEDIUM/HIGH per recommendation.
@@ -262,24 +268,6 @@ WHILE resource_categories is not empty:
         utilization = get_utilization(resource, period="14d")
 
         IF utilization.cpu_avg < 5 AND utilization.mem_avg < 10:
-            recommendation = {type: "TERMINATE", savings: resource.monthly_cost}
-        ELIF utilization.cpu_avg < 30 OR utilization.mem_avg < 40:
-            right_size = calculate_right_size(resource, utilization)
-            recommendation = {type: "RESIZE", from: resource.type, to: right_size, savings: delta}
-        ELIF resource.is_unattached OR resource.last_access > 90_days:
-            recommendation = {type: "DELETE", savings: resource.monthly_cost}
-        ELSE:
-            CONTINUE  # Resource is appropriately sized
-
-        all_recommendations.append(recommendation)
-
-    IF current_iteration % 3 == 0:
-        total = sum(r.savings for r in all_recommendations)
-        print(f"Progress: {current_iteration} categories, ${total}/month identified")
-
-sort_by_savings(all_recommendations)
-generate_report(all_recommendations)
-git commit report
 ```
 ## Auto-Detection
 
@@ -301,47 +289,8 @@ AUTO-DETECT:
    which aws-nuke cloud-nuke infracost 2>/dev/null
 
 4. Existing cost tools:
-   ls .infracost/ 2>/dev/null
-   grep -r "cost\|budget\|billing" .github/workflows/ 2>/dev/null
-
-5. Tagging policy:
-   # Check for tag enforcement
-   grep -ri "required_tags\|tag.policy\|tag.compliance" terraform/ 2>/dev/null
-
--> Auto-select provider and configure API calls.
--> Auto-detect account/project scope.
--> Only ask user about time period if not obvious.
 ```
 ## Output Format
-Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%). Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict: {verdict}.`
-
-## TSV Logging
-Log every cost optimization action to `.godmode/cost-results.tsv`:
-```
-iteration	category	resource	current_cost	projected_cost	savings	action	status
-1	compute	ec2_oversized	$2400/mo	$1200/mo	$1200/mo	rightsize_m5.xlarge_to_m5.large	recommended
-2	storage	ebs_unattached	$180/mo	$0/mo	$180/mo	delete_unattached	applied
-3	transfer	cross_region	$500/mo	$200/mo	$300/mo	consolidate_region	recommended
-4	reserved	ec2_stable	$3600/mo	$2160/mo	$1440/mo	1yr_reserved	recommended
-```
-Columns: iteration, category, resource, current_cost, projected_cost, savings, action, status(recommended/applied/deferred/rejected).
-
-## Success Criteria
-All resources tagged. Idle resources cleaned up. Compute rightsized from utilization data. Reserved instances only for 3+ months stable usage. Transfer costs analyzed. Budget alerts at 80/100/120%. Monthly cost review established. Savings validated with billing data.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Rightsizing breaks app | Test in staging first. Monitor 24h after change. Rollback plan ready. |
-| Deleting causes outage | Verify truly unused. Check dependencies. Use delete protection. |
-| Reserved instance wasteful | Only for 3+ months stable usage. Start with 1yr no-upfront. |
-| Cost alerts too frequent | Adjust thresholds. Separate by service/team. Use anomaly detection. |
-| Tagging gaps | Tag top 10 expensive resources first. Enforce policy for new resources. |
-
-## Keep/Discard Discipline
-KEEP if: savings confirmed AND no performance/availability regression.
-DISCARD if: degraded OR savings not realized. Revert immediately.
-
-## Stop Conditions
-STOP when: all categories analyzed OR savings target met
-OR remaining < $50/mo each OR max 20 iterations.
+Print on completion: `Cost: ${current_monthly}/mo → ${projected_monthly}/mo (-${savings}/mo, -{savings_pct}%).
+Top waste: {top_waste}. Untagged: {untagged_count} resources. Reservations: {ri_recommendation}. Verdict:
+{verdict}.`

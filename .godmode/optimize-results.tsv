@@ -11,3 +11,4 @@ round	change	metric_before	metric_after	delta%	status	lines_changed
 9	final_v3_cleanup_vague_passive_weak_ar	1.23	0.76	-38.2%	kept	-70
 10	fix_review_secure_metric_language	0.76	0.68	-10.5%	kept	-4
 11	v4_prose_trim_cmds_decisions_numbers_126_skills	10.71	2.98	-72.2%	kept	-8000
+12	add_numbers_cmds_trim_prose_all_126	2.98	2.36	-20.8%	kept	-275

@@ -104,6 +104,14 @@ IF coverage < 60%: write tests before refactoring.
 [ ] No default_scope, no logic in callbacks
 ```
 
+
+```bash
+# Rails development and testing
+rspec --format progress
+rails db:migrate:status
+bundle audit check
+```
+
 ## Hard Rules
 1. ALWAYS PostgreSQL in production.
 2. NEVER leave N+1 queries (includes + strict_loading).

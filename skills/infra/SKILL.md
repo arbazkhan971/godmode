@@ -203,6 +203,12 @@ Commit: `"infra: <description> — <N> resources
 3. State: backend "s3"/"gcs"/"azurerm"
 ```
 
+## Quality Targets
+- Target: <5min for infrastructure plan generation
+- Target: 0 drift between declared and actual state
+- Cost estimate accuracy: >=90% vs actual spend
+- Target: <15min for full environment provisioning
+
 ## Output Format
 Print: `Infra: {resources} resources,
   {modules} modules. Drift: {status}.

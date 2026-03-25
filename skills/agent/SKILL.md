@@ -1,7 +1,12 @@
 ---
 name: agent
 description: |
-  AI agent development skill. Activates when users need to design, build, or evaluate AI agents. Covers agent architecture patterns (ReAct, plan-and-execute, multi-agent), tool design and integration, memory systems (short-term, long-term, episodic), guardrails and safety, orchestration, and evaluation. Every agent gets a structured architecture spec, tool inventory, safety guardrails, and test suite. Triggers on: /godmode:agent, "build an AI agent", "design agent tools", "add memory to agent", or when the orchestrator detects agent-related work.
+  AI agent development skill. Activates when users need to design, build, or evaluate AI agents. Covers agent
+    architecture patterns (ReAct, plan-and-execute, multi-agent), tool design and integration, memory systems
+    (short-term, long-term, episodic), guardrails and safety, orchestration, and evaluation. Every agent gets a
+    structured architecture spec, tool inventory, safety guardrails, and test suite. Triggers on: /godmode:agent,
+    "build an AI agent", "design agent tools", "add memory to agent", or when the orchestrator detects agent-related
+    work.
 ---
 
 # Agent — AI Agent Development
@@ -37,7 +42,6 @@ Environment:
   - Tools available: <list of APIs, databases, code execution, file systems>
   - External systems: <services the agent will interact with>
 ```
-
 If the user hasn't specified, ask: "What should this agent do autonomously? What tools does it need?"
 
 ### Step 2: Architecture Pattern Selection
@@ -57,7 +61,6 @@ Patterns:
 | Reflexion | Tasks requiring self-correction. Agent attempts, |
 |  | evaluates own output, and retries with feedback. |
 ```
-
 ### Step 3: Agent Loop Design
 Design the core agent execution loop:
 
@@ -76,7 +79,6 @@ ReAct loop:
   Termination conditions:
   - Task completed successfully -> return result
 ```
-
 ### Step 4: Tool Design & Integration
 Design the tools the agent can use:
 
@@ -95,7 +97,6 @@ TOOL DESIGN PRINCIPLES:
 2. Clear naming: tool name describes the action (search_docs, create_ticket)
 3. Typed parameters: every parameter has a type, description, and constraints
 ```
-
 ### Step 5: Memory System Design
 Design how the agent remembers and learns:
 
@@ -114,7 +115,6 @@ Memory types:
 |  | Summarize older turns to fit context window. |
 | Episodic memory | Past task executions and outcomes. "Last time I |
 ```
-
 ### Step 6: Guardrails & Safety
 Design safety boundaries for the agent:
 
@@ -132,7 +132,6 @@ Layer 1 — Input guardrails:
 
 Layer 2 — Execution guardrails:
 ```
-
 ### Step 7: Agent Evaluation & Testing
 Design a test suite for the agent:
 
@@ -152,7 +151,6 @@ Test categories:
 | Edge cases | <N> | Ambiguous inputs, missing data, conflicts |
 | Adversarial | <N> | Injection attacks, manipulation attempts |
 ```
-
 ### Step 8: Agent Artifacts & Commit
 Generate the deliverables:
 
@@ -181,7 +179,6 @@ Evaluation:
 - Avg steps per task: <N>
 - Avg latency per task: <seconds>
 ```
-
 Commit: `"agent: <agent name> — <pattern>, <N> tools, completion=<val>, safety=100%"`
 
 ## Key Behaviors
@@ -199,7 +196,6 @@ Commit: `"agent: <agent name> — <pattern>, <N> tools, completion=<val>, safety
 pytest tests/agents/ -v --timeout=120
 python -m agents.evaluate --test-inputs 3 --safety-check
 ```
-
 IF completion rate < 80%: review tool definitions and prompts.
 WHEN safety violation detected: block deployment, fix immediately.
 
@@ -232,7 +228,6 @@ WHILE issues_remaining > 0 AND current_iteration < max_iterations:
        - Pass/fail for each test category
        - Regression check: did the fix break anything?
 ```
-
 ## HARD RULES
 
 ```
@@ -249,15 +244,19 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 9. NEVER give agents tools they do not need — fewer tools = better tool selection.
 10. Observability is mandatory — if you cannot trace every step, do not deploy.
 ```
-
 ## Auto-Detection
 ```bash
 AUTO-DETECT agent context:
-  1. LLM provider: grep -r "openai\|anthropic\|google.generativeai\|ollama\|together" package.json pyproject.toml requirements.txt 2>/dev/null
-  2. Agent framework: grep -r "langchain\|langgraph\|autogen\|crewai\|magentic\|pydantic-ai" package.json pyproject.toml 2>/dev/null
-  3. Tool definitions: grep -rl "tool_call\|function_call\|@tool\|BaseTool\|StructuredTool" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
-  4. Vector store: grep -r "pinecone\|weaviate\|chromadb\|pgvector\|qdrant\|milvus" package.json pyproject.toml 2>/dev/null
-  5. Existing agent code: grep -rl "agent\|AgentExecutor\|ReActAgent\|create_agent" src/ --include="*.ts" --include="*.py" 2>/dev/null | head -5
+  1. LLM provider: grep -r "openai\|anthropic\|google.generativeai\|ollama\|together" package.json pyproject.toml
+    requirements.txt 2>/dev/null
+  2. Agent framework: grep -r "langchain\|langgraph\|autogen\|crewai\|magentic\|pydantic-ai" package.json
+    pyproject.toml 2>/dev/null
+  3. Tool definitions: grep -rl "tool_call\|function_call\|@tool\|BaseTool\|StructuredTool" src/ --include="*.ts"
+    --include="*.py" 2>/dev/null | head -5
+  4. Vector store: grep -r "pinecone\|weaviate\|chromadb\|pgvector\|qdrant\|milvus" package.json pyproject.toml
+    2>/dev/null
+  5. Existing agent code: grep -rl "agent\|AgentExecutor\|ReActAgent\|create_agent" src/ --include="*.ts"
+    --include="*.py" 2>/dev/null | head -5
 ```
 
 ## Success Criteria
@@ -297,20 +296,4 @@ STOP when ANY of these are true:
   - Agent completes target tasks end-to-end with correct output on 3+ test inputs
   - Safety violation rate = 0% across all test cases including adversarial inputs
   - All guardrails (max steps, cost budget, confirmation gates) verified working
-  - User explicitly requests stop
-
-DO NOT STOP because:
-  - Completion rate is below 100% on edge cases (document them, iterate later)
-  - A single tool has high error rate (fix the tool, not the agent)
 ```
-
-
-## TSV Logging
-Append to `.godmode/agent-results.tsv`:
-```
-timestamp	agent_name	pattern	tools_count	test_inputs	completion_rate	safety_violations	status
-```
-One row per agent build/eval iteration. Never overwrite previous rows.
-
-## Output Format
-Print: `Agent: {name} ({pattern}). Tools: {N}. Completion: {rate}%. Safety violations: {N}. Status: {DONE|PARTIAL}.`

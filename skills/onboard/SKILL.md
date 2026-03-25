@@ -99,6 +99,11 @@ Key files: <N> identified
 Setup: <N> steps to first run
 ```
 
+## Quality Targets
+- Target: <15min from clone to running dev server
+- Target: <5 manual steps in setup process
+- Target: 100% of environment variables documented
+
 ## Hard Rules
 1. NEVER claim architecture without reading code.
 2. NEVER list > 10 key files (80/20 rule).

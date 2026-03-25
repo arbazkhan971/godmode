@@ -1,7 +1,11 @@
 ---
 name: chart
 description: |
-  Data visualization skill. Activates when users need to create charts, graphs, dashboards, or any visual representation of data. Supports chart type selection (bar, line, scatter, heatmap, treemap, sankey), integrates with D3.js, Chart.js, Recharts, and Plotly, enforces dashboard design principles, responsive layouts, and accessibility standards for data visualizations. Triggers on: /godmode:chart, "create a chart", "visualize this data", "build a dashboard", or when the orchestrator detects data visualization work.
+  Data visualization skill. Activates when users need to create charts, graphs, dashboards, or any visual
+    representation of data. Supports chart type selection (bar, line, scatter, heatmap, treemap, sankey), integrates
+    with D3.js, Chart.js, Recharts, and Plotly, enforces dashboard design principles, responsive layouts, and
+    accessibility standards for data visualizations. Triggers on: /godmode:chart, "create a chart", "visualize this
+    data", "build a dashboard", or when the orchestrator detects data visualization work.
 ---
 
 # Chart — Data Visualization
@@ -127,7 +131,8 @@ Use the selected library's standard patterns:
 - **Plotly**: Trace objects with layout configuration
 
 ### Step 6: Responsive Design
-Mobile (<480px): stack legend below, reduce ticks, enlarge touch targets. Tablet (480-1024px): side legend, full interactivity. Desktop (>1024px): full layout, annotations, brush/zoom.
+Mobile (<480px): stack legend below, reduce ticks, enlarge touch targets. Tablet (480-1024px): side legend,
+full interactivity. Desktop (>1024px): full layout, annotations, brush/zoom.
 ### Step 7: Color & Accessibility
 Design accessible visualizations that work for everyone:
 
@@ -223,7 +228,6 @@ npm run test:charts
 npx storybook build --ci
 npx chromatic --exit-zero-on-changes
 ```
-
 1. **Data story first, chart second.** Communication goal first.
 2. **Accessibility not optional.** Data table + colorblind-safe + screen reader.
 3. **Responsive by default.** Works at 320px, 768px, 1440px.
@@ -292,57 +296,4 @@ CHART BUILD REPORT:
 | Bundle impact | +<N> KB (gzipped) |
 | Render time | <N> ms (largest chart) |
 | Verdict | PASS | NEEDS REVISION |
-```
-## TSV Logging
-
-Log every chart creation for tracking:
-
-```
-timestamp	skill	chart_type	library	data_points	render_ms	a11y_table	status
-2026-03-20T14:00:00Z	chart	bar	recharts	240	45	yes	pass
-2026-03-20T14:05:00Z	chart	line	d3	12000	180	yes	pass
-```
-## Success Criteria
-
-The chart skill is complete when ALL of the following are true:
-1. Chart renders correctly with real or representative data
-2. Chart is responsive (resizes without distortion on mobile through desktop)
-3. A data table alternative exists for screen reader accessibility
-4. Color palette is colorblind-safe (tested with a simulator or verified palette)
-5. Axes are labeled with units, and the chart has a descriptive title
-6. Tooltips show exact values on hover/touch
-7. Chart respects `prefers-reduced-motion` (no gratuitous animation)
-8. Bundle size impact is documented and within project budget
-
-## Error Recovery
-
-Blank chart: check console errors, verify data loads before mount, confirm container width/height, test with hardcoded data.
-Slow chart (>500ms): switch to canvas/WebGL for >1K points, enable data decimation, debounce resize handlers.
-## Data Visualization Audit Loop
-Performance targets: < 1K points render < 100ms, 1K-10K < 500ms,
-tooltip/hover < 50ms, resize < 100ms. Max 8 rounds.
-## Keep/Discard Discipline
-```
-After EACH chart implementation or optimization:
-  1. MEASURE: Render time, accessibility checks (12-point checklist), responsive behavior at 320/768/1440px.
-  2. COMPARE: Did rendering performance stay within targets? Did accessibility score hold or improve?
-  3. DECIDE:
-     - KEEP if: renders within target time AND all a11y checks pass AND responsive at all breakpoints
-     - DISCARD if: render time exceeds target OR accessibility regresses OR layout breaks at any breakpoint
-  4. COMMIT kept changes. Revert discarded changes before the next chart.
-
-Never keep a chart optimization that breaks colorblind safety or removes the data table alternative.
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All charts render within performance targets (< 100ms for < 1K points, < 500ms for 1K-10K)
-  - All 12 accessibility checks pass for every chart
-  - Charts are responsive at 320px, 768px, and 1440px
-  - User explicitly requests stop
-
-DO NOT STOP because:
-  - One chart type is complex to make responsive (provide a simplified mobile version)
-  - Colorblind palette looks less appealing than the original (accessibility is non-negotiable)
 ```

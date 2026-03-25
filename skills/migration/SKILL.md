@@ -106,6 +106,14 @@ FOR each component (fewest dependencies first):
   7. REMOVE old after 2-week stability
 ```
 
+
+```bash
+# Run and verify migrations
+npm run migrate:status
+python manage.py showmigrations
+npx prisma migrate status
+```
+
 ## Hard Rules
 1. NEVER big-bang rewrite > 50K LOC.
 2. EVERY step MUST have documented rollback plan.

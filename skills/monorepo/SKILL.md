@@ -79,6 +79,11 @@ Deep chains (4+ levels) -> flatten.
 Centralize in `packages/config/`: TypeScript base,
 ESLint, Prettier. All packages extend shared config.
 
+## Quality Targets
+- Target: <30s affected-package detection
+- Target: <120s incremental build for changed packages
+- Target: >80% cache hit rate across CI runs
+
 ## Hard Rules
 1. NEVER monorepo without build orchestrator.
 2. EVERY package: explicit dependencies, no phantom.

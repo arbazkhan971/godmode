@@ -23,7 +23,8 @@ WHILE tasks remain:
 ```
 
 ## Output Format
-Print: `Build: {completed}/{total} tasks in {rounds} rounds. Merged: {merged}. Reverted: {reverted}. Conflicts: {conflicts}.`
+Print: `Build: {completed}/{total} tasks in {rounds} rounds. Merged: {merged}. Reverted: {reverted}.
+Conflicts: {conflicts}.`
 
 ## Deterministic Merge Order
 Agents complete in parallel but MERGE in dispatch order (not completion order).
@@ -79,6 +80,13 @@ STOP when FIRST of:
 4. Run `build_cmd && lint_cmd && test_cmd` after every merge — pass to keep, fail to revert.
 5. Repeat rounds until all tasks complete or stop conditions trigger.
 
+
+```bash
+# Run build and measure output
+npm run build 2>&1
+npx bundlesize --config bundlesize.config.json
+```
+
 ## Rules
 1. One task per agent. Commit message: `feat({module}): {task.title}`. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = discard.
@@ -104,6 +112,12 @@ If your platform lacks `Agent()` or worktree isolation:
 | Test failure after merge | Run `/godmode:fix` with specific test failure. Max 2 retries, then `git revert HEAD` and re-queue with broader context. |
 | Agent touches files outside scope | Discard agent output entirely. Log scope violation. Re-dispatch with explicit file list. |
 | Build command fails post-merge | Check for missing imports or circular dependencies introduced by merge. Revert and re-queue. |
+
+## Quality Targets
+- Target: <60s incremental build time
+- Target: <300s full clean build time
+- Target: <500KB compressed bundle for web apps
+- Cache hit rate: >80% for repeated builds
 
 ## Success Criteria
 1. All plan tasks completed and merged (or explicitly logged as reverted/backlogged).

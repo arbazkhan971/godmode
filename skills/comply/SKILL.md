@@ -1,7 +1,12 @@
 ---
 name: comply
 description: |
-  Compliance and governance skill. Activates when user needs to verify regulatory compliance (GDPR, HIPAA, SOC2, PCI-DSS), design audit trails, implement privacy controls, manage data retention policies, or audit license compliance across dependencies. Systematically evaluates codebase against regulatory frameworks, produces findings with evidence and remediation, and generates compliance documentation. Triggers on: /godmode:comply, "GDPR compliance", "audit trail", "are we compliant?", "privacy review", or when shipping features that handle personal data.
+  Compliance and governance skill. Activates when user needs to verify regulatory compliance (GDPR, HIPAA, SOC2,
+    PCI-DSS), design audit trails, implement privacy controls, manage data retention policies, or audit license
+    compliance across dependencies. Systematically evaluates codebase against regulatory frameworks, produces findings
+    with evidence and remediation, and generates compliance documentation. Triggers on: /godmode:comply, "GDPR
+    compliance", "audit trail", "are we compliant?", "privacy review", or when shipping features that handle personal
+    data.
 ---
 
 # Comply — Compliance & Governance
@@ -36,7 +41,6 @@ Data classification:
   Sensitive data: <files/modules handling health/financial/auth data>
   Public data: <files/modules with non-sensitive data>
 ```
-
 ### Step 2: GDPR Compliance Check
 If personal data of EU residents is processed:
 
@@ -97,7 +101,6 @@ HIPAA — SAFEGUARDS ASSESSMENT:
 | Workstation security | YES/NO | <ref> |
 | Device and media controls | YES/NO | <ref> |
 ```
-
 ### Step 4: SOC2 Compliance Check
 If operating as a service organization:
 
@@ -117,11 +120,7 @@ Key SOC2 Controls:
 - [ ] Encryption in transit and at rest
 - [ ] Monitoring and alerting for security events
 - [ ] Incident response plan tested within last 12 months
-- [ ] Vendor risk assessments completed
-- [ ] Data backup and recovery tested
-- [ ] Vulnerability scanning and penetration testing
 ```
-
 ### Step 5: PCI-DSS Compliance Check
 If payment card data is processed:
 
@@ -141,7 +140,6 @@ PCI-DSS — REQUIREMENTS CHECK:
 | 10. Log and monitor all access | PASS/FAIL |
 | 11. Test security regularly | PASS/FAIL |
 ```
-
 ### Step 6: Audit Trail Design & Validation
 Verify that all security and compliance events are logged:
 
@@ -160,7 +158,6 @@ AUDIT TRAIL ASSESSMENT:
 | Admin operations | YES/NO | who, what, when |
 
 ```
-
 ### Step 7: Data Retention & Deletion
 Verify data lifecycle management:
 
@@ -180,12 +177,10 @@ Deletion workflow:
 - [ ] Deletion request → verification → execution → confirmation
 - [ ] Deletion cascades to all copies (backups, caches, replicas)
 - [ ] Deletion is verifiable (can prove data no longer exists)
-- [ ] Deletion timeline meets regulatory requirements (GDPR: 30 days)
-- [ ] Soft delete vs hard delete strategy documented
 ```
-
 ### Step 8: License Compliance
-Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace or verify no copyleft trigger. Unlicensed = investigate/replace. Verify NOTICE/LICENSE files included in distribution.
+Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace or verify no copyleft
+trigger. Unlicensed = investigate/replace. Verify NOTICE/LICENSE files included in distribution.
 
 ### Step 9: Compliance Report
 
@@ -202,7 +197,6 @@ Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace
   MEDIUM:   <N> (should fix within 90 days)
   LOW:      <N> (best practice, not required)
 ```
-
 ### Step 10: Commit and Transition
 1. Save report as `docs/compliance/<date>-compliance-audit.md`
 2. Commit: `"comply: <scope> — <verdict> (<N> findings across <regulations>)"`
@@ -217,7 +211,6 @@ npx license-checker --production --failOn "GPL-3.0;AGPL-3.0"
 grep -rn "email\|ssn\|password" src/ --include="*.ts" | head -20
 git log --oneline --since="30 days" -- docs/compliance/
 ```
-
 IF CRITICAL findings > 0: block launch until resolved.
 WHEN HIGH findings > 0: remediation plan with < 30 day SLA.
 IF license scan finds GPL/AGPL in proprietary code: replace immediately.
@@ -237,6 +230,11 @@ IF license scan finds GPL/AGPL in proprietary code: replace immediately.
 | (none) | Full compliance audit across all applicable regulations |
 | `--gdpr` | GDPR compliance check only |
 | `--hipaa` | HIPAA compliance check only |
+
+## Quality Targets
+- Critical controls: >99% passing rate
+- High-severity findings: <1 per audit cycle
+- Audit log retention: >90 days minimum
 
 ## HARD RULES
 
@@ -268,7 +266,8 @@ On activation, automatically detect compliance scope:
 ```
 AUTO-DETECT:
 1. Data types handled:
-   grep -r "email\|password\|ssn\|credit.card\|phone\|address\|dob\|birth" src/ --include="*.ts" --include="*.py" -l 2>/dev/null
+   grep -r "email\|password\|ssn\|credit.card\|phone\|address\|dob\|birth" src/ --include="*.ts" --include="*.py" -l
+     2>/dev/null
    # Determines: PII present -> GDPR/CCPA scope
 
 2. Health data:
@@ -280,9 +279,7 @@ AUTO-DETECT:
    # Determines: Payment data -> PCI-DSS scope
 
 4. Existing compliance artifacts:
-   ls docs/compliance/ docs/privacy/ PRIVACY.md DPA.md 2>/dev/null
 ```
-
 ## Output Format
 
 Every comply invocation must produce a structured report:
@@ -299,43 +296,3 @@ Every comply invocation must produce a structured report:
   License risk: <CLEAR | REVIEW NEEDED | RISK>
   Verdict: <COMPLIANT | CONDITIONAL | NON-COMPLIANT>
 ```
-
-## TSV Logging
-
-Log every compliance audit to `.godmode/compliance-audit.tsv`:
-
-```
-timestamp	regulation	scope	critical	high	medium	low	audit_trail	license_risk	verdict
-```
-
-Append one row per regulation assessed. Never overwrite previous rows.
-
-## Success Criteria
-
-COMPLIANT: Zero CRITICAL + zero HIGH findings, all findings reference regulation article + actual code, audit trail complete, data retention enforced, no GPL/AGPL in proprietary distribution.
-CONDITIONAL: Zero CRITICAL, HIGH findings have remediation plans with <30-day SLA, no active exposure.
-
-## Error Recovery
-
-Close-to-launch gaps: CRITICAL blocks launch (GDPR: minimum consent + rights; HIPAA: encryption; PCI: tokenized payments). Document gap + remediation + timeline. Consult legal counsel.
-Remediation introduces new gaps: Re-run audit. Revert if new gap is equal or higher severity. Document trade-offs.
-Audit trail data lost: Treat as compliance incident. Reconstruct from logs. Implement redundant storage. File incident report.
-
-## Keep/Discard Discipline
-```
-After EACH compliance finding:
-  KEEP if: finding references specific regulation article AND points to actual code (file:line)
-  DISCARD if: finding is theoretical (no code evidence) OR duplicates an existing finding
-  On discard: log discard reason. Do not count toward compliance gap totals.
-  Never keep a finding without a specific regulation article reference.
-```
-
-## Stop Conditions
-```
-STOP when FIRST of:
-  - target_reached: all applicable regulations fully assessed and report generated
-  - budget_exhausted: max iterations across all regulations
-  - diminishing_returns: 3 consecutive regulation checks produce 0 new findings
-  - stuck: >5 findings discarded for lack of code evidence
-```
-

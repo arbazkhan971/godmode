@@ -81,6 +81,13 @@ A/B test with traffic split, significance testing
 `prompts/<task>/`: prompt-spec.yaml, system-prompt.md,
 examples.yaml, tests.yaml, eval-results.md.
 
+
+```bash
+# Test prompt templates
+curl -X POST http://localhost:8080/api/chat -d '{"prompt":"test"}'
+pytest tests/test_prompts.py -v
+```
+
 ## Optimization Loop
 ```
 WHILE iteration < 5 AND accuracy < target:

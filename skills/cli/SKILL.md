@@ -1,7 +1,12 @@
 ---
 name: cli
 description: |
-  CLI tool development skill. Activates when building, polishing, or distributing command-line interfaces and terminal user interfaces. Covers argument parsing design (Commander, Clap, Cobra, Click), interactive prompts and TUI frameworks (Ink, Ratatui, Bubbletea, Rich), configuration management (config files, environment variables, XDG), shell completion generation, distribution strategies (npm, Homebrew, cargo, pip), and CLI UX best practices. Every recommendation includes concrete implementation and cross-platform considerations. Triggers on: /godmode:cli, "CLI tool", "command line", "terminal app", "TUI", "argument parser", "shell completion".
+  CLI tool development skill. Activates when building, polishing, or distributing command-line interfaces and terminal
+    user interfaces. Covers argument parsing design (Commander, Clap, Cobra, Click), interactive prompts and TUI
+    frameworks (Ink, Ratatui, Bubbletea, Rich), configuration management (config files, environment variables, XDG),
+    shell completion generation, distribution strategies (npm, Homebrew, cargo, pip), and CLI UX best practices. Every
+    recommendation includes concrete implementation and cross-platform considerations. Triggers on: /godmode:cli, "CLI
+    tool", "command line", "terminal app", "TUI", "argument parser", "shell completion".
 ---
 
 # CLI — CLI Tool Development
@@ -38,7 +43,6 @@ Interactive features:
   Progress bars: <yes | no>
   Spinners: <yes | no>
 ```
-
 ### Step 2: CLI Architecture
 
 #### Node.js/TypeScript CLI
@@ -136,7 +140,6 @@ Naming conventions:
 
 Standard flags (include in every CLI):
 ```
-
 ### Step 4: Interactive Prompts & TUI
 
 ```
@@ -156,7 +159,6 @@ Select (single choice):
 Multi-select:
   ? Features:
 ```
-
 ### Step 5: Configuration Management
 
 ```
@@ -176,7 +178,6 @@ XDG Base Directory compliance (Linux/macOS):
 
 Windows paths:
 ```
-
 ### Step 6: Shell Completion Generation
 
 ```
@@ -196,7 +197,6 @@ Fish:
   Generate: tool completion fish > ~/.config/fish/completions/tool.fish
   Mechanism: complete -c tool -s <short> -l <long> -d <description>
 ```
-
 ### Step 7: Distribution
 
 ```
@@ -216,7 +216,6 @@ Homebrew (macOS/Linux):
     brew tap org/tools
     brew install org/tools/tool
 ```
-
 ### Step 8: CLI Development Report
 
 ```
@@ -232,7 +231,6 @@ Homebrew (macOS/Linux):
   Config file: <TOML | YAML | JSON | none>
   Interactive prompts: <YES | NO>
 ```
-
 ### Step 9: Commit and Transition
 1. Commit CLI scaffold: `"cli: <language> — <tool> CLI scaffold with <parser>"`
 2. Commit commands: `"cli: <command> — implement <description>"`
@@ -249,7 +247,6 @@ node dist/cli.js --help
 node dist/cli.js --version
 echo '{}' | node dist/cli.js --json  # pipe test
 ```
-
 IF command execution > 5 seconds: add progress indicator.
 WHEN exit code != 0: write to stderr, not stdout.
 IF --json output is invalid JSON: treat as P1 bug.
@@ -268,6 +265,11 @@ IF --json output is invalid JSON: treat as P1 bug.
 | (none) | Full CLI project assessment and setup |
 | `--interactive` | Focus on interactive prompts and TUI |
 | `--completion` | Shell completion generation only |
+
+## Quality Targets
+- Startup time: <200ms
+- Binary size: <50MB compiled
+- Target: >90% commands with --help
 
 ## HARD RULES
 
@@ -294,60 +296,4 @@ AUTO-DETECT:
 1. Language:
    ls package.json 2>/dev/null && echo "node"
    ls Cargo.toml 2>/dev/null && echo "rust"
-   ls go.mod 2>/dev/null && echo "go"
-   ls pyproject.toml setup.py 2>/dev/null && echo "python"
-
-2. Existing CLI framework:
-   grep -r "commander\|yargs\|meow\|oclif" package.json 2>/dev/null  # Node
-   grep "clap\|argh" Cargo.toml 2>/dev/null  # Rust
-   grep "cobra\|urfave" go.mod 2>/dev/null  # Go
-   grep "click\|typer\|argparse" pyproject.toml requirements.txt 2>/dev/null  # Python
-
-3. Existing bin/entry point:
-   grep '"bin"' package.json 2>/dev/null
 ```
-
-## Keep/Discard Discipline
-```
-After EACH command implementation or output format change:
-  1. MEASURE: Run integration tests — does the command produce correct output, exit codes, and stderr/stdout separation?
-  2. COMPARE: Does the change improve UX without breaking existing callers (scripts, CI)?
-  3. DECIDE:
-     - KEEP if: tests pass AND --json output is valid AND exit codes are correct AND --help is present
-     - DISCARD if: tests fail OR backwards-incompatible change OR output breaks pipe usage
-  4. COMMIT kept changes. Revert discarded changes before implementing the next command.
-
-Never ship a command that breaks existing scripts relying on its output format.
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All planned commands implemented with passing tests and help text
-  - Shell completions generated for bash and zsh
-  - Distribution configured for at least one package manager
-  - User explicitly requests stop
-
-DO NOT STOP because:
-  - man pages are not yet generated (ship first, add man pages later)
-  - Only one distribution channel is configured (one is enough to ship)
-```
-
-## TSV Logging
-Append to `.godmode/cli-results.tsv`:
-`STEP\tCOMMAND\tLANGUAGE\tSTATUS\tDETAILS`
-
-## Success Criteria
-1. All commands parse args correctly. `--help` on every command.
-2. Exit codes: 0=success, 1=error, 2=usage. `--json` valid JSON.
-3. stdout = output only. stderr = errors/warnings/progress.
-4. NO_COLOR respected. `--yes` skips all prompts for CI.
-5. Tests cover: parsing, happy path, errors, exit codes.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Parser not detected | Check package manager files. Ask user preference. |
-| Command fails silently | All errors: stderr + non-zero exit code. |
-| Encoding issues | Force UTF-8. Test: `tool list | cat`. |
-

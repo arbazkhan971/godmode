@@ -241,6 +241,12 @@ Commit: `"grpc: <service> — <N> RPCs, streaming
 5. Streaming: grep stream in .proto files
 ```
 
+## Quality Targets
+- Target: <50ms p95 unary RPC latency
+- Max message size: <4MB default
+- Target: >99.9% RPC success rate
+- Connection pool: >=2 channels per backend
+
 ## Output Format
 ```
 gRPC: {N} services, {M} RPCs (unary/streaming).

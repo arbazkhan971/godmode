@@ -1,7 +1,10 @@
 ---
 name: automate
 description: |
-  Task automation skill. Activates when a developer needs to automate repetitive workflows, create scheduled jobs, set up webhooks, design GitHub Actions workflows, write automation scripts, or build Makefiles/Taskfiles. Triggers on: /godmode:automate, "automate this", "create a cron job", "set up webhook", "write a Makefile", "create GitHub Action", or when repetitive manual processes are identified.
+  Task automation skill. Activates when a developer needs to automate repetitive workflows, create scheduled jobs, set
+    up webhooks, design GitHub Actions workflows, write automation scripts, or build Makefiles/Taskfiles. Triggers on:
+    /godmode:automate, "automate this", "create a cron job", "set up webhook", "write a Makefile", "create GitHub
+    Action", or when repetitive manual processes are identified.
 ---
 
 # Automate -- Task Automation & Workflow Orchestration
@@ -15,7 +18,8 @@ description: |
 ## Workflow
 
 ### Step 1: Discover Context
-Detect existing: task runner (Make, Task, Justfile, npm scripts), CI/CD (GitHub Actions, GitLab CI), scheduler (crontab, k8s CronJob), scripts.
+Detect existing: task runner (Make, Task, Justfile, npm scripts), CI/CD (GitHub Actions, GitLab CI), scheduler
+(crontab, k8s CronJob), scripts.
 
 ### Step 2: Classify Type
 
@@ -49,7 +53,8 @@ Verify signature (HMAC-SHA256). Route by event type. Return 200 within 5 seconds
 Pin action versions (@v4). Set permissions. Set timeout. Release automation, PR automation, scheduled tasks.
 
 ### Step 6: Makefile/Taskfile
-Targets: help, setup, dev, lint, format, typecheck, test, build, deploy-staging, deploy-production (with confirmation), clean, ci-lint, ci-test, ci-build.
+Targets: help, setup, dev, lint, format, typecheck, test, build, deploy-staging, deploy-production (with
+confirmation), clean, ci-lint, ci-test, ci-build.
 
 ### Step 7: Script Template
 Every script: `set -euo pipefail`, logging, `--help`, `--dry-run`, `--verbose`, prerequisites check, main function.
@@ -59,6 +64,28 @@ Every script: `set -euo pipefail`, logging, `--help`, `--dry-run`, `--verbose`, 
 AUTOMATION REPORT:
 Task: <description> | Type: <cron | webhook | workflow | script>
 Trigger: <schedule | event | manual> | Error handling: <present>
+```
+
+
+```bash
+# Validate Makefile and list targets
+make -n ci-test
+crontab -l
+bash -n scripts/*.sh
+```
+
+```bash
+# Validate automation scripts and Makefile targets
+make -n ci-test
+crontab -l
+bash -n scripts/*.sh
+```
+
+```bash
+# Validate automation scripts
+crontab -l
+git status
+make -n test
 ```
 
 ## Key Behaviors
@@ -132,6 +159,12 @@ One row per automation artifact. Never overwrite previous rows.
 | Cron syntax invalid | Validate with crontab.guru. Common mistake: `*/5` means every 5 minutes, not the 5th minute. |
 | GitHub Actions workflow fails | Check runner OS, secrets exist in repo settings, actions versions pinned (`@v4` not `@latest`), timeout set. |
 | Script fails in CI but works locally | Check PATH, working directory, missing deps in lockfile, env vars not set in CI. Add `env` dump in debug mode. |
+
+## Quality Targets
+- Target: <10s for task runner cold start
+- Target: >95% automation success rate over 30 days
+- Webhook response: <5s acknowledgment
+- Cron job max runtime: <80% of schedule interval
 
 ## Success Criteria
 1. Automation script runs with `--dry-run` without side effects.

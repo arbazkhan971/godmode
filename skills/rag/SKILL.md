@@ -118,6 +118,13 @@ Targets:
   Faithfulness >= 90%, Hallucination < 5%
 ```
 
+
+```bash
+# RAG pipeline testing
+python -m pytest tests/test_rag.py -v
+curl -s http://localhost:8080/api/search?q=test | jq .results
+```
+
 ## Hard Rules
 1. NEVER ship without measuring hallucination rate.
 2. NEVER vector search alone — always hybrid (+ BM25).

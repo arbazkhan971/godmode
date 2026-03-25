@@ -1,7 +1,10 @@
 ---
 name: docs
 description: |
-  Documentation generation and maintenance skill. Activates when the project needs API docs (OpenAPI/Swagger), code docs (JSDoc, docstrings), README generation, runbook creation, or documentation quality audits. Detects stale docs, missing coverage, and obsolescence. Triggers on: /godmode:docs, "generate docs", "update documentation", "write a README", "create runbook", or when shipping reveals undocumented public APIs.
+  Documentation generation and maintenance skill. Activates when the project needs API docs (OpenAPI/Swagger), code
+    docs (JSDoc, docstrings), README generation, runbook creation, or documentation quality audits. Detects stale
+    docs, missing coverage, and obsolescence. Triggers on: /godmode:docs, "generate docs", "update documentation",
+    "write a README", "create runbook", or when shipping reveals undocumented public APIs.
 ---
 
 # Docs — Documentation Generation & Maintenance
@@ -27,7 +30,6 @@ SCOPE DETECTION:
 - AUDIT: Check existing docs for staleness, gaps, and quality issues
 - ALL: Full documentation sweep
 ```
-
 ### Step 2: Inventory Existing Documentation
 Survey the current state:
 
@@ -39,7 +41,6 @@ find . -name "*.md" -not -path "./node_modules/*" -not -path "./.git/*" | sort
 find . -name "openapi*" -o -name "swagger*" | head -20
 
 ```
-
 Present inventory:
 ```
 DOCUMENTATION INVENTORY:
@@ -65,7 +66,6 @@ info:
   title: <API name>
   version: <version>
 ```
-
 For each endpoint:
 1. Read the route definition and handler
 2. Extract request parameters, body schema, and response shape
@@ -123,7 +123,6 @@ For project or module READMEs:
 
 <Summary table of public exports with links to detailed docs>
 ```
-
 ### Step 6: Create Runbooks
 For operational documentation:
 
@@ -180,7 +179,6 @@ QUALITY AUDIT:
 | 4 | Outdated example: uses v1 API | MEDIUM | guide.md:8 |
 | 5 | Typo: "recieve" (x3) | LOW | multiple files |
 ```
-
 Staleness detection strategies:
 ```bash
 # Find docs referencing files/functions that no longer exist
@@ -225,11 +223,16 @@ IF broken links > 0: fix before committing.
 
 ## HARD RULES
 
-1. **Never generate documentation from function names alone.** Read the implementation body. `getUserById` can soft-delete check, cache-first, or throw specific errors. Describe actual behavior.
-2. **Never document stale code.** Before writing docs for a function, verify it still exists and matches the current signature. `git log -1 -- <file>` to check recency.
-3. **Never ship docs without a plain-text fallback.** Every HTML doc must have a Markdown or text equivalent. Screen readers, terminals, and search indexers depend on it.
-4. **Never commit docs with broken internal links.** Grep for `](./` and `](#` references and verify each target exists before committing.
-5. **Never include secrets, tokens, or real user data in documentation examples.** Use placeholder values like `sk-test-xxx`, `user@example.com`.
+1. **Never generate documentation from function names alone.** Read the implementation body. `getUserById` can
+soft-delete check, cache-first, or throw specific errors. Describe actual behavior.
+2. **Never document stale code.** Before writing docs for a function, verify it still exists and matches the
+current signature. `git log -1 -- <file>` to check recency.
+3. **Never ship docs without a plain-text fallback.** Every HTML doc must have a Markdown or text equivalent.
+Screen readers, terminals, and search indexers depend on it.
+4. **Never commit docs with broken internal links.** Grep for `](./` and `](#` references and verify each
+target exists before committing.
+5. **Never include secrets, tokens, or real user data in documentation examples.** Use placeholder values like
+`sk-test-xxx`, `user@example.com`.
 
 ## Auto-Detection
 ```
@@ -255,7 +258,6 @@ DOCUMENTATION REPORT:
 | Examples included | <N> code examples |
 | Verdict | PASS | NEEDS REVISION |
 ```
-
 ## TSV Logging
 
 Log every documentation action for tracking:
@@ -265,7 +267,6 @@ timestamp	skill	target	action	coverage_pct	stale_count	status
 2026-03-20T14:00:00Z	docs	src/api/	api_docs	85	3	needs_update
 2026-03-20T14:10:00Z	docs	runbooks/	runbook_create	100	0	pass
 ```
-
 ## Success Criteria
 1. Every public function/endpoint has description, params, return type, error cases
 2. Docs match actual code behavior (verified by reading source)
@@ -292,4 +293,3 @@ DISCARD if: broken links OR doc contradicts code OR describes deleted functions
 STOP when: all public APIs documented + 0 broken links + 0 stale docs.
 Guard: link-check passes. On failure: git reset --hard HEAD~1.
 ```
-

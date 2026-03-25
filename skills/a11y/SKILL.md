@@ -1,7 +1,10 @@
 ---
 name: a11y
 description: |
-  Accessibility testing and auditing skill. Activates when user needs to verify WCAG 2.1 AA/AAA compliance, audit color contrast, keyboard navigation, screen reader compatibility, or fix accessibility issues. Integrates with Axe, Pa11y, and Lighthouse. Combines automated scanning with manual checklist review. Triggers on: /godmode:a11y, "check accessibility", "WCAG audit", "a11y review", or as pre-ship quality gate.
+  Accessibility testing and auditing skill. Activates when user needs to verify WCAG 2.1 AA/AAA compliance, audit
+    color contrast, keyboard navigation, screen reader compatibility, or fix accessibility issues. Integrates with
+    Axe, Pa11y, and Lighthouse. Combines automated scanning with manual checklist review. Triggers on: /godmode:a11y,
+    "check accessibility", "WCAG audit", "a11y review", or as pre-ship quality gate.
 ---
 
 # A11y — Accessibility Testing & Auditing
@@ -273,6 +276,12 @@ timestamp	skill	page	severity	wcag	element	tool	description	status
 2026-03-20T14:01:00Z	a11y	/form	HIGH	1.4.3	.label	axe	contrast ratio 3.2:1 < 4.5:1	fixed
 ```
 
+## Quality Targets
+- Target: >90% Lighthouse accessibility score
+- Target: 0 critical WCAG 2.1 AA violations
+- Target: <2s time-to-interactive for assistive tech
+- Color contrast ratio: >=4.5:1 for normal text, >=3:1 for large text
+
 ## Success Criteria
 
 ```
@@ -287,22 +296,4 @@ After EACH accessibility fix:
 ## Stop Conditions
 ```
 STOP when ANY of these are true:
-  - Zero CRITICAL and zero HIGH violations remain
-  - Lighthouse accessibility score >= 95
-  - All WCAG 2.1 AA criteria have status PASS or N/A
-  - User explicitly requests stop
-
-DO NOT STOP because:
-  - MEDIUM or LOW findings remain (document them with remediation plan)
-  - One automated tool still shows warnings (verify manually)
-```
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| axe-core reports false positive | Verify with manual inspection. If confirmed false positive, add `// eslint-disable-next-line` with justification. Do not suppress without checking. |
-| Screen reader behaves differently than expected | Test in NVDA (Windows) and VoiceOver (macOS). ARIA roles may behave differently across readers. Use native HTML elements over ARIA when possible. |
-| Color contrast fails but design team insists | Document the exception. Provide alternative: large text (18px+) has lower ratio requirement (3:1 vs 4.5:1). Suggest adjacent high-contrast alternative. |
-| Keyboard trap in modal | Trap focus inside modal with `Tab`/`Shift+Tab`, and `Escape` closes it. Restore focus to trigger element on close. |
-  ...
 ```

@@ -101,6 +101,19 @@ SG: alb-sg (443 from 0.0.0.0/0)
 Defense in depth: WAF -> NACL -> SG -> NetworkPolicy
 ```
 
+
+```bash
+# Network diagnostics
+curl -w "@curl-format.txt" -o /dev/null -s http://localhost:8080/health
+dig +stats example.com
+```
+
+## Quality Targets
+- Target: <100ms DNS resolution time
+- TLS handshake: <200ms for new connections
+- Target: >99.9% packet delivery rate
+- Max connection pool: <1000 concurrent connections per host
+
 ## Hard Rules
 1. EVERY public endpoint: TLS 1.2+ with valid cert.
 2. NEVER expose DB ports to the internet.

@@ -96,6 +96,14 @@ Crash: Firebase Crashlytics / Sentry
 A11y: VoiceOver / TalkBack support
 ```
 
+
+```bash
+# Mobile build and test
+npx react-native run-ios --configuration Release
+npx expo doctor
+npx jest --config jest.mobile.config.js
+```
+
 ## Hard Rules
 1. NEVER store secrets in app binary (decompilable).
 2. NEVER lose Android release keystore.

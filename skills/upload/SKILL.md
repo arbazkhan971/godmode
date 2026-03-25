@@ -170,7 +170,8 @@ Log to `.godmode/upload-results.tsv`:
 `step\tcomponent\tprovider\tstatus\tdetails`
 
 ## Output Format
-Print: `Upload: pipeline {complete|partial}. Validation: {magic_bytes|ext}. Virus: {active|none}. CDN: {active|none}. Status: {DONE|PARTIAL}.`
+Print: `Upload: pipeline {complete|partial}. Validation: {magic_bytes|ext}. Virus: {active|none}. CDN:
+{active|none}. Status: {DONE|PARTIAL}.`
 
 ## Keep/Discard Discipline
 ```

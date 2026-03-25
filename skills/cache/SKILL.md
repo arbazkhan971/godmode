@@ -1,7 +1,11 @@
 ---
 name: cache
 description: |
-  Caching strategy skill. Activates when user needs to design cache layers (CDN, application, database, session), implement cache invalidation strategies (TTL, event-based, write-through, write-behind), configure Redis/Memcached/Varnish, or prevent cache stampedes. Triggers on: /godmode:cache, "add caching", "cache invalidation", "Redis setup", "cache strategy", "CDN configuration", "cache stampede", or when the orchestrator detects caching opportunities.
+  Caching strategy skill. Activates when user needs to design cache layers (CDN, application, database, session),
+    implement cache invalidation strategies (TTL, event-based, write-through, write-behind), configure
+    Redis/Memcached/Varnish, or prevent cache stampedes. Triggers on: /godmode:cache, "add caching", "cache
+    invalidation", "Redis setup", "cache strategy", "CDN configuration", "cache stampede", or when the orchestrator
+    detects caching opportunities.
 ---
 
 # Cache -- Caching Strategy
@@ -68,7 +72,8 @@ Problem: Popular key expires -> thousands of concurrent DB queries.
 4. **Pre-warming:** Scheduled job refreshes popular keys before expiry.
 
 ### Step 7: Monitoring
-Track: cache_hit_ratio (alert < 80%), cache_latency_seconds (P95 > 10ms), cache_eviction_total (> 100/min), cache_memory_bytes (> 85%), cache_error_total (> 0).
+Track: cache_hit_ratio (alert < 80%), cache_latency_seconds (P95 > 10ms), cache_eviction_total (> 100/min),
+cache_memory_bytes (> 85%), cache_error_total (> 0).
 
 ### Step 8: Validation
 ```
@@ -82,6 +87,13 @@ CACHE STRATEGY VALIDATION:
 - Sensitive data not cached unencrypted: PASS | FAIL
 - Graceful degradation on cache failure: PASS | FAIL
 VERDICT: <PASS | NEEDS REVISION>
+```
+
+
+```bash
+# Inspect cache status and flush
+redis-cli INFO stats | grep hit
+curl -s http://localhost:8080/cache/stats
 ```
 
 ## Key Behaviors

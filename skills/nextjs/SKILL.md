@@ -99,6 +99,11 @@ IF per-request: SSR. IF slow parts: Streaming.
 [ ] Metadata API (not manual <head>)
 ```
 
+## Quality Targets
+- Target: <200ms Time to First Byte (TTFB)
+- Target: <100KB initial JS bundle per route
+- Lighthouse performance score: >90
+
 ## Hard Rules
 1. NEVER add 'use client' to page.tsx or layout.tsx.
 2. NEVER useEffect+fetch when Server Component works.

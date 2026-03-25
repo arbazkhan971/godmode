@@ -91,6 +91,13 @@ IF write-heavy table (> 1000 writes/sec): limit to 3-5 indexes.
 # Check write performance — new indexes slow writes
 ```
 
+
+```bash
+# Analyze query performance
+psql -c "EXPLAIN (ANALYZE, BUFFERS) SELECT 1"
+npx prisma studio
+```
+
 ## Hard Rules
 1. NEVER claim optimized without EXPLAIN before/after.
 2. ALWAYS CREATE INDEX CONCURRENTLY in production PG.

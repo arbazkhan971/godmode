@@ -39,7 +39,8 @@ Print: "Coverage: {start}% -> {final}% in {N} iters"
 ```
 
 ## Output Format
-Print: `Test: coverage {start}% -> {final}% (target: {target}%). {N} tests added in {iters} iterations. Status: {DONE|PARTIAL}.`
+Print: `Test: coverage {start}% -> {final}% (target: {target}%). {N} tests added in {iters} iterations.
+Status: {DONE|PARTIAL}.`
 
 ## Hard Rules
 1. RED first -- test must fail before implementation.

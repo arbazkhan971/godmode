@@ -113,6 +113,12 @@ Use timeout budget: pass remaining time downstream.
 [ ] Rate limiting at API boundary
 ```
 
+## Quality Targets
+- Circuit breaker: open after >50% error rate in 10s window
+- Retry budget: <=3 attempts with exponential backoff
+- Timeout: <5s for downstream service calls
+- Bulkhead: <100 concurrent requests per downstream service
+
 ## Hard Rules
 1. NEVER retry non-idempotent without idempotency key.
 2. EVERY retry: exponential backoff WITH jitter.

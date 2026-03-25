@@ -80,6 +80,11 @@ fireEvent. MSW for API mocking.
 [ ] TypeScript strict
 ```
 
+## Quality Targets
+- Target: <16ms render cycle (60fps)
+- Target: <100KB component bundle size per route
+- Re-render count: 0 unnecessary re-renders detected by profiler
+
 ## Hard Rules
 1. NEVER use `any`. Use `unknown` + type guard.
 2. NEVER business logic in components.

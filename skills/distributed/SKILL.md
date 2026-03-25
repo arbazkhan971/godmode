@@ -1,7 +1,12 @@
 ---
 name: distributed
 description: |
- Distributed systems design skill. Activates when user needs CAP theorem trade-off analysis, consensus protocol selection (Raft, Paxos), distributed locking (Redlock, ZooKeeper), sharding and partitioning strategies, eventual consistency patterns, leader election, or distributed architecture design. Triggers on: /godmode:distributed, "distributed system", "CAP theorem", "consensus", "Raft", "Paxos", "sharding", "partitioning", "eventual consistency", "leader election", or when the orchestrator detects distributed systems work.
+ Distributed systems design skill. Activates when user needs CAP theorem trade-off analysis, consensus
+ protocol selection (Raft, Paxos), distributed locking (Redlock, ZooKeeper), sharding and partitioning
+ strategies, eventual consistency patterns, leader election, or distributed architecture design. Triggers on:
+ /godmode:distributed, "distributed system", "CAP theorem", "consensus", "Raft", "Paxos", "sharding",
+ "partitioning", "eventual consistency", "leader election", or when the orchestrator detects distributed
+ systems work.
 ---
 
 # Distributed -- Distributed Systems Design
@@ -32,7 +37,9 @@ Availability Requirement: <target uptime, e.g., 99.99%>
 Partition Tolerance: Must handle network partitions | Single data center only
   ...
 ```
-If the user has not provided context, ask: "What is the consistency requirement -- do all reads need to see the latest write, or is stale data acceptable for a bounded time? This is the most important distributed systems decision."
+If the user has not provided context, ask: "What is the consistency requirement -- do all reads need to see
+the latest write, or is stale data acceptable for a bounded time? This is the most important distributed
+systems decision."
 
 ### Step 2: CAP Theorem Trade-Off Analysis
 Analyze the fundamental trade-offs for the system:
@@ -229,7 +236,6 @@ docker compose up -d && sleep 5
 curl -s http://localhost:2379/health  # etcd health
 redis-cli cluster info | grep cluster_state
 ```
-
 IF quorum size < (N/2)+1: reconfigure for proper fault tolerance.
 WHEN network partition detected: verify system behavior matches CAP choice.
 IF replication lag > 100ms: investigate network or load issues.
@@ -266,30 +272,6 @@ Each design decision either passes validation or gets revised.
 - **CRASH**: Design reveals fundamental architectural conflict. Revisit CAP trade-off from scratch.
 - Log every design session to `.godmode/distributed-results.tsv`.
 
-## Stop Conditions
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-- CAP trade-off documented before any implementation begins.
-- Consistency level specified per operation, not per system.
-- Consensus protocol selected with fault tolerance calculated.
-- Partition handling strategy defined for during-partition and post-partition phases.
-- Every failure mode documented: "What happens when X is down?"
-
-## HARD RULES
-
-- NEVER skip the CAP theorem conversation before any distributed design work — this decision cascades through everything
-- NEVER use wall clocks for event ordering — use logical clocks (Lamport, vector) or hybrid logical clocks
-- NEVER deploy a leader election without fencing tokens — a stale leader WILL corrupt data
-- NEVER use 2-phase commit at scale — use sagas or compensation-based approaches instead
-- NEVER shard prematurely — start with single node, then replicas, then shard only when data volume or write throughput demands it
-- DOCUMENT ALL consistency levels per operation, not per system
-- DOCUMENT ALL failure modes for every component ("what happens when X is down?")
-- TEST ALL distributed systems with real network partitions via chaos engineering before production
-
-## Output Format
-Print on completion:
 ```
 DISTRIBUTED SYSTEM: {system_name}
 Topology: {topology} | Nodes: {N}
@@ -305,7 +287,8 @@ Leader election: {mechanism} | Fencing: {yes|no}
 ## TSV Logging
 Log every distributed systems session to `.godmode/distributed-results.tsv`:
 ```
-timestamp	system	topology	cap_choice	consistency_level	consensus	sharding_strategy	partition_key	conflict_resolution	verdict
+timestamp	system	topology	cap_choice	consistency_level
+consensus	sharding_strategy	partition_key	conflict_resolution	verdict
 ```
 Append one row per session. Create the file with headers on first run.
 
@@ -314,11 +297,4 @@ Append one row per session. Create the file with headers on first run.
 2. Consensus protocol with fault tolerance: tolerates (N-1)/2 failures.
 3. Partition handling defined. Fencing tokens on leader election.
 4. Every failure mode documented. Chaos test plan exists.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Split-brain | Use Raft/Paxos. Quorum writes. CP for financial data. |
-| Message ordering violated | Partition keys + sequence numbers. Idempotent consumers. |
-| Service discovery fails | Health check retries. DNS with TTL. Static fallback. |
-| Clock skew | Use logical clocks (Lamport/vector). Never wall clock for ordering. |
+```

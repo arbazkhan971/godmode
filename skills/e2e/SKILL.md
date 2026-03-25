@@ -128,6 +128,13 @@ Cross-browser: chromium PASS, firefox PASS, webkit PASS
 
 Commit: `"e2e: <project> — <N> tests across <N> flows"`
 
+
+```bash
+# Run end-to-end tests
+npx playwright test --reporter=list
+npx cypress run --browser chrome
+```
+
 ## Key Behaviors
 
 1. **Page objects mandatory.** No selectors in test files.

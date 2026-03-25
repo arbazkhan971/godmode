@@ -1,7 +1,11 @@
 ---
 name: deploy
 description: |
-  Advanced deployment strategies skill. Activates when user needs sophisticated deployment orchestration including blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and zero-downtime migrations. Designs and validates deployment plans with risk mitigation at every stage. Triggers on: /godmode:deploy, "deploy with zero downtime", "canary release", "blue-green deployment", "rollback strategy", or when shipping critical changes that require controlled rollout.
+  Advanced deployment strategies skill. Activates when user needs sophisticated deployment orchestration including
+    blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and
+    zero-downtime migrations. Designs and validates deployment plans with risk mitigation at every stage. Triggers on:
+    /godmode:deploy, "deploy with zero downtime", "canary release", "blue-green deployment", "rollback strategy", or
+    when shipping critical changes that require controlled rollout.
 ---
 
 # Deploy — Advanced Deployment Strategies
@@ -184,13 +188,20 @@ Phase 3: CUTOVER
 
 ## Key Behaviors
 
-1. **Strategy matches risk.** Low-risk changes can use rolling deploys. High-risk changes need canary with automated rollback. Never under-engineer deployment for risky changes.
-2. **Rollback is always planned.** Every deployment plan includes a rollback procedure. If you cannot define rollback, the deployment is not ready.
-3. **Database migrations are special.** Schema changes require the expand-contract pattern for zero downtime. Never run a breaking migration during deployment.
-4. **Feature flags decouple deploy from release.** Deploy code anytime. Release features when ready. These are separate concerns.
-5. **Monitoring is prerequisite.** Do not deploy without monitoring in place. You cannot canary without metrics to compare.
-6. **Automation over heroics.** Automated rollback at 2 AM is better than paging an engineer. Define thresholds and let the system react.
-7. **Communication is part of deployment.** Stakeholders, on-call, and dependent teams must know about high-risk deployments before they happen.
+1. **Strategy matches risk.** Low-risk changes can use rolling deploys. High-risk changes need canary with
+automated rollback. Never under-engineer deployment for risky changes.
+2. **Rollback is always planned.** Every deployment plan includes a rollback procedure. If you cannot define
+rollback, the deployment is not ready.
+3. **Database migrations are special.** Schema changes require the expand-contract pattern for zero downtime.
+Never run a breaking migration during deployment.
+4. **Feature flags decouple deploy from release.** Deploy code anytime. Release features when ready. These are
+separate concerns.
+5. **Monitoring is prerequisite.** Do not deploy without monitoring in place. You cannot canary without
+metrics to compare.
+6. **Automation over heroics.** Automated rollback at 2 AM is better than paging an engineer. Define
+thresholds and let the system react.
+7. **Communication is part of deployment.** Stakeholders, on-call, and dependent teams must know about
+high-risk deployments before they happen.
 
 ## Flags & Options
 

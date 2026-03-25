@@ -102,6 +102,11 @@ MEDIUM|src/utils/crypto.ts:15|Math.random() for
 Log to `.godmode/security-findings.tsv`:
 `iteration\tcategory\tpersona\tseverity\tfile_line\tdescription\tfix\tstatus\tvotes`
 
+## Quality Targets
+- Critical CVEs in deps: <1 allowed
+- SAST scan: <5min per 100KB source
+- Hardcoded secrets: <1 detected per scan
+
 ## Hard Rules
 1. Every finding: file:line + exploit + proof.
 2. Cover all OWASP Top 10 x 4 personas = 40 minimum.
@@ -141,4 +146,5 @@ IF finding cannot be reproduced:
 ```
 
 ## Output Format
-Print: `Secure: OWASP {N}/10, STRIDE {N}/6. {findings} findings. {kept} kept, {discarded} discarded. Status: {DONE|PARTIAL}.`
+Print: `Secure: OWASP {N}/10, STRIDE {N}/6. {findings} findings. {kept} kept, {discarded} discarded. Status:
+{DONE|PARTIAL}.`

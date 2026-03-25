@@ -171,6 +171,12 @@ Rules:
 Log to `.godmode/spring.tsv`:
 `timestamp\taction\tentities\tcontrollers\tmigrations\ttests_status`
 
+## Quality Targets
+- Target: <3s application startup time
+- Target: <200ms p95 endpoint response time
+- Target: >80% test coverage on service layer
+- Max heap usage: <512MB for standard microservice
+
 ## Output Format
 ```
 SPRING: {action}. Files: {N}. Entities: {N}.

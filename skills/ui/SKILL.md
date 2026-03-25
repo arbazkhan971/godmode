@@ -144,6 +144,11 @@ UI REPORT:
 4. **Consistency over cleverness.**
 5. **Never ask to continue. Loop autonomously.**
 
+## Quality Targets
+- Lighthouse score: >90 performance
+- Interaction-to-paint: <100ms latency
+- Cumulative Layout Shift: <1 score threshold
+
 ## HARD RULES
 1. NEVER mix CSS approaches in one project.
 2. NEVER create God components (>30 props, >500 lines).

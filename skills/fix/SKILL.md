@@ -96,6 +96,11 @@ iteration	error_type	file	line	fix_description	lines_changed	status
 4. Guessing without reading full error output.
 5. Fixing symptoms downstream instead of root cause.
 
+## Quality Targets
+- Fix success rate: >80% kept vs reverted
+- Lines changed per fix: <5 maximum
+- Attempts per error: <3 before skip
+
 ## Success Criteria
 - `build_cmd && lint_cmd && test_cmd` all exit 0
 - Every kept fix is a separate commit

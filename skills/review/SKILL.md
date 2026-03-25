@@ -51,6 +51,11 @@ Score: 0-10 (median of all agents).
 IF score < 8: author responds to every MUST + SHOULD.
 Re-review only modified parts. Max 3 iterations.
 
+## Quality Targets
+- Target: <30min average review turnaround
+- Target: 0 critical issues missed per review
+- Max PR size: <400 lines changed for effective review
+
 ## Hard Rules
 1. Every finding: file:line + suggested fix (code).
 2. MUST-FIX blocks merge. NIT = auto-fix if safe.

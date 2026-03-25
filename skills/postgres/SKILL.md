@@ -129,6 +129,26 @@ Red flags: Seq Scan on >10K rows, Nested Loop on
 large tables, estimates off >10x (run ANALYZE).
 ALWAYS use CONCURRENTLY for production index creation.
 
+
+```bash
+# PostgreSQL diagnostics
+psql -c "SELECT * FROM pg_stat_activity WHERE state = 'active'"
+psql -c "EXPLAIN ANALYZE SELECT 1"
+pg_dump --schema-only > schema.sql
+```
+
+```bash
+# PostgreSQL diagnostics
+psql -c "SELECT count(*) FROM pg_stat_activity WHERE state = 'active'"
+pg_dump --schema-only > schema.sql
+```
+
+```bash
+# PostgreSQL diagnostics
+curl -s http://localhost:8080/health/db
+grep -r "CREATE INDEX" migrations/ | wc -l
+```
+
 ## Hard Rules
 1. NEVER VACUUM FULL without maintenance window.
 2. NEVER disable autovacuum.

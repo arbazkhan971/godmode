@@ -143,6 +143,11 @@ Setup: wrote .godmode/config.yaml. Committed.
 Append to `.godmode/setup-log.tsv`:
 `timestamp\tlanguage\tframework\tplatform\ttest\tlint\tbuild`
 
+## Quality Targets
+- Target: <15min from git clone to running dev environment
+- Target: <5 manual steps in setup process
+- Target: 100% of required tools auto-installed
+
 ## Hard Rules
 1. Auto-detect before asking. Never ask "what language?"
    when package.json exists.

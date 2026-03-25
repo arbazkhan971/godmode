@@ -188,6 +188,11 @@ grep -L "permissions:" .github/workflows/*.yml
 grep -L "timeout-minutes:" .github/workflows/*.yml
 ```
 
+## Quality Targets
+- Target: <10min CI workflow runtime
+- Target: >95% workflow success rate over 30 days
+- Cache hit rate: >80% for dependency caching
+
 ## Output Format
 Print: `GHActions: {N} workflows, {M} jobs.
   Cache: {active|missing}. Concurrency: {status}.

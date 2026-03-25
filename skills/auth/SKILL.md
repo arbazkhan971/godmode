@@ -1,7 +1,12 @@
 ---
 name: auth
 description: |
-  Authentication and authorization skill. Activates when user needs to design or implement authentication flows (JWT, OAuth2, OIDC, SAML, API keys, mTLS), session management, multi-factor authentication, passwordless auth, token lifecycle management, or social login integration. Produces architecture decisions, implementation code, security configuration, and integration tests for the full identity stack. Triggers on: /godmode:auth, "authentication", "login flow", "OAuth setup", "JWT tokens", "session management", "MFA", or when building features that require user identity.
+  Authentication and authorization skill. Activates when user needs to design or implement authentication flows (JWT,
+    OAuth2, OIDC, SAML, API keys, mTLS), session management, multi-factor authentication, passwordless auth, token
+    lifecycle management, or social login integration. Produces architecture decisions, implementation code, security
+    configuration, and integration tests for the full identity stack. Triggers on: /godmode:auth, "authentication",
+    "login flow", "OAuth setup", "JWT tokens", "session management", "MFA", or when building features that require
+    user identity.
 ---
 
 # Auth — Authentication & Authorization
@@ -25,7 +30,6 @@ IDENTITY REQUIREMENTS:
 Application type: <SPA | SSR | Mobile | API-only | Microservices | Hybrid>
 User populations:
 ```
-
 ### Step 2: Auth Strategy Selection
 Select and design the authentication strategy based on requirements:
 
@@ -215,7 +219,6 @@ Generate the authentication implementation:
 IMPLEMENTATION ARTIFACTS:
 | File | Purpose |
 ```
-
 ### Step 9: Security Hardening Checklist
 Final security review of the authentication system:
 
@@ -223,18 +226,22 @@ Final security review of the authentication system:
 AUTH SECURITY HARDENING:
 | Category | Control | Status |
 ```
-
 ### Step 10: Auth Architecture Report
 
 ```
   AUTH ARCHITECTURE REPORT
 ```
-
 ### Step 11: Commit and Transition
 1. Save architecture as `docs/auth/<feature>-auth-architecture.md`
 2. Commit: `"auth: <feature> — <strategy> with <MFA type>, <N> endpoints"`
 3. If INCOMPLETE: "Auth design needs additional work. Address remaining items, then re-run `/godmode:auth`."
-4. If PRODUCTION READY: "Authentication architecture complete. Run `/godmode:rbac` to design access control, or `/godmode:build` to implement."
+4. If PRODUCTION READY: "Authentication architecture complete. Run `/godmode:rbac` to design access control,
+or `/godmode:build` to implement."
+
+## Quality Targets
+- Access token TTL: <15min
+- Auth round-trip: <500ms latency
+- Secrets exposure: 0% plaintext in codebase
 
 ## Key Behaviors
 
@@ -245,7 +252,6 @@ Never ask to continue. Loop autonomously until all auth flows pass and security 
 npm test -- --grep "auth"
 npx jest tests/auth/ --coverage --coverageThreshold='{"global":{"branches":80}}'
 ```
-
 IF access token TTL > 15 minutes: reduce to <= 15 min.
 WHEN login failures > 5 per account per hour: trigger rate limit.
 IF password hash cost factor < 12: increase to >= 12 (bcrypt).
@@ -276,13 +282,11 @@ FOR each flow:
   Security controls: <N passed> / <N total>
   Verdict: <PRODUCTION READY | NEEDS HARDENING | INCOMPLETE>
 ```
-
 ## TSV Logging
 
 ```
 timestamp	feature	strategy	mfa_type	endpoints	controls_passed	controls_total	verdict
 ```
-
 Append one row per invocation. Never overwrite previous rows.
 
 ```
@@ -292,49 +296,4 @@ PASS if ALL of the following:
   - Refresh tokens use rotation with family-based revocation
   - Token storage follows client-type recommendations (no localStorage for JWTs)
   - HTTPS enforced with HSTS header
-  - Rate limiting active on login and registration endpoints
-  - MFA available for production applications
-  - All security checklist items for the chosen strategy are YES
-
-FAIL if ANY of the following:
-  - Passwords stored in plaintext, MD5, or SHA-256
-  - Algorithm confusion possible (no explicit algorithm validation on JWT verify)
-  - Refresh tokens are not rotated
-  - Secrets hardcoded in source code
-  - No rate limiting on authentication endpoints
-  - Implicit grant used for any client type
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All auth flows audited and security checklist items pass
-  - Token lifecycle complete (issuance, validation, refresh, revocation, cleanup)
-  - MFA available for production applications
-  - User explicitly requests stop
-
-DO NOT STOP only because:
-  - Social login is not yet configured (if not requested)
-  - One auth flow has a known limitation documented with mitigation
-```
-## Error Recovery
-| Failure | Action |
-|--|--|
-| JWT verification fails after rotation | Accept old+new keys during rotation. Check `kid` header. |
-| OAuth callback error | Verify redirect URI exact match. Check client secret current. |
-| Password hash migration fails | Keep old algo as fallback. Re-hash on login. Never lock out users. |
-| Rate limiter blocks legit users | Ensure per-user threshold. Handle proxies (X-Forwarded-For). |
-
-## Success Criteria
-1. Authentication flow works end-to-end (register, login, refresh, logout).
-2. Password hashing uses bcrypt/argon2 with sufficient work factor.
-3. JWT tokens have expiry, refresh rotation, and revocation mechanism.
-4. Rate limiting active on login and registration endpoints.
-
-## Keep/Discard Discipline
-```
-After EACH auth change:
-  KEEP if: all auth flows pass AND no security regression AND tokens properly validated
-  DISCARD if: any auth flow broken OR secrets exposed OR rate limiting bypassed
-  On discard: revert immediately. Auth bugs are security bugs.
 ```

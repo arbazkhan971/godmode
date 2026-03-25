@@ -197,6 +197,11 @@ Commit: `"legacy: <action> — <target> (<impact>)"`
 5. Confidence: Tests+CI+Types=HIGH, None=NONE
 ```
 
+## Quality Targets
+- Target: >60% test coverage before major refactor
+- Max function complexity: <20 cyclomatic complexity
+- Target: <500 lines per file after extraction
+
 ## Output Format
 Print: `Legacy: {files} modernized. Dead: {removed}.
   Tests added: {N}. Deps upgraded: {M}.

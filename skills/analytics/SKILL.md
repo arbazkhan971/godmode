@@ -1,7 +1,11 @@
 ---
 name: analytics
 description: |
-  Analytics implementation skill. Activates when users need to design and implement product analytics, event tracking, funnel analysis, A/B test instrumentation, or privacy-respecting analytics. Supports Segment, Amplitude, Mixpanel, PostHog, Plausible, and Umami. Provides structured event taxonomies, data modeling, funnel design, and experiment instrumentation with full privacy compliance. Triggers on: /godmode:analytics, "add analytics", "track events", "set up A/B testing", "implement funnels", or when the orchestrator detects analytics-related work.
+  Analytics implementation skill. Activates when users need to design and implement product analytics, event tracking,
+    funnel analysis, A/B test instrumentation, or privacy-respecting analytics. Supports Segment, Amplitude, Mixpanel,
+    PostHog, Plausible, and Umami. Provides structured event taxonomies, data modeling, funnel design, and experiment
+    instrumentation with full privacy compliance. Triggers on: /godmode:analytics, "add analytics", "track events",
+    "set up A/B testing", "implement funnels", or when the orchestrator detects analytics-related work.
 ---
 
 # Analytics — Analytics Implementation
@@ -36,9 +40,7 @@ Framework: <React | Next.js | Vue | React Native | iOS | Android | backend>
 Privacy requirements: <GDPR | CCPA | HIPAA | none | strict — no third-party>
 Existing analytics: <none | GA4 | Segment | Amplitude | Mixpanel | custom>
 Budget: <free tier | startup plan | enterprise>
-Data warehouse: <BigQuery | Snowflake | Redshift | none>
 ```
-
 If the user hasn't specified, ask: "What do you want to learn about your users? What decisions will this data inform?"
 
 ### Step 2: Analytics Platform Selection
@@ -57,7 +59,6 @@ PLATFORM SELECTION:
 |  | funnel analysis, | EU data residency available |
 |  | retention tracking |  |
 ```
-
 ### Step 3: Event Taxonomy Design
 Design a structured, consistent event naming system:
 
@@ -75,7 +76,6 @@ EVENT CATALOG:
 |  |  | plan |
 | User Logged In | Server | method, mfa_used |
 ```
-
 ### Step 4: Event Property Standards
 Define property types and validation:
 
@@ -96,12 +96,13 @@ GLOBAL PROPERTIES (sent with every event):
 
 USER PROPERTIES (set once, updated on change):
 ```
-
 ### Step 5: Implementation
 Implement analytics tracking in the codebase:
 
 #### Provider Setup
-Configure the selected provider SDK (Segment, Amplitude, PostHog, etc.) with environment-keyed initialization. Build a unified abstraction layer (`AnalyticsProvider` interface with `track`, `identify`, `page` methods) so you swap providers without touching component code.
+Configure the selected provider SDK (Segment, Amplitude, PostHog, etc.) with environment-keyed initialization.
+Build a unified abstraction layer (`AnalyticsProvider` interface with `track`, `identify`, `page` methods) so
+you swap providers without touching component code.
 
 ### Step 6: Funnel Analysis Setup
 Design and instrument conversion funnels:
@@ -122,7 +123,6 @@ FUNNEL STEPS:
 | 6 | First core action | Feature Used | 40-50% |
 | 7 | Activation (aha moment) | Activation Done | 30-40% |
 ```
-
 ### Step 7: A/B Test Instrumentation
 Design and instrument experiments:
 
@@ -141,7 +141,6 @@ Power: 1 - beta = 0.80
 VARIANTS:
 | Variant | Description | Traffic % |
 ```
-
 #### Experiment Implementation
 ```typescript
 // experiments/ab-test.ts
@@ -168,7 +167,6 @@ COMMON QUERIES:
   - Funnel: sequential event matching with time constraints
   - Feature adoption: COUNT(DISTINCT user_id) WHERE event_name = '<feature>'
 ```
-
 ### Step 9: Privacy & Consent
 Implement privacy-compliant analytics:
 
@@ -185,7 +183,6 @@ PRIVACY IMPLEMENTATION:
 | User data deletion | API endpoint to delete all data |
 |  | for a user_id (GDPR Art. 17) |
 ```
-
 ### Step 10: Validation & Delivery
 Validate the analytics implementation:
 
@@ -205,7 +202,6 @@ ANALYTICS VALIDATION:
 | User deletion API works (GDPR compliance) | PASS | FAIL |
 | Events fire on correct triggers (not duplicated) | PASS | FAIL |
 ```
-
 ```
 ANALYTICS IMPLEMENTATION COMPLETE:
 
@@ -223,7 +219,6 @@ Platform: <platform(s)>
 Events tracked: <N> events across <M> categories
 Funnels: <N> funnels defined
 ```
-
 Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 
 ## Key Behaviors
@@ -235,7 +230,6 @@ Never ask to continue. Loop autonomously until all events are instrumented and v
 npm run test:analytics
 npx ts-node scripts/analytics-audit.ts --check-pii --check-taxonomy
 ```
-
 IF event count > 100: audit for redundancy, merge similar events.
 WHEN PII detected in event properties: remove immediately, purge from provider.
 IF consent gate bypassed: block deployment, treat as P0 bug.
@@ -268,7 +262,6 @@ AUTO-DETECT:
 6. Privacy: GDPR/CCPA references, EU deployment regions
 7. Auto-configure: recommend platform or audit existing for gaps
 ```
-
 ## Output Format
 
 ```
@@ -281,13 +274,11 @@ ANALYTICS IMPLEMENTATION REPORT:
   PII audit: CLEAN | <N> violations found
   Verdict: PASS | NEEDS REVISION
 ```
-
 ## TSV Logging
 
 ```
 timestamp	skill	action	platform	events	funnels	privacy_model	status
 ```
-
 ## Success Criteria
 
 Complete when ALL true:
@@ -305,15 +296,3 @@ Complete when ALL true:
 | Failure | Action |
 |--|--|
 | Events not appearing | Check console errors, verify API key, use analytics debugger, check ad blockers/CSP. |
-| PII detected | Remove from code, contact provider to delete data, add PII validation layer. |
-| Consent gate broken | Verify SDK loads only after consent. Test: revoke consent, verify 0 events fire. |
-
-## Keep/Discard Discipline
-- **KEEP** if: event fires correctly, no PII, funnel order verified.
-- **DISCARD** if: taxonomy violation, PII found, consent bypassed.
-- Run validation checklist before committing. Any FAIL = fix first.
-
-## Stop Conditions
-STOP when: all events instrumented, funnels correct, consent gate works,
-A/B assignments deterministic, 0 PII in events.
-

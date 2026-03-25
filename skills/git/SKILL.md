@@ -204,6 +204,11 @@ Commit: `"docs: git workflow — <model> with <strategy>"`
 4. Tooling: .commitlintrc, .husky
 ```
 
+## Quality Targets
+- Target: <50MB max file size in repository
+- Target: <10s for common git operations (status, diff, log)
+- Branch age limit: <30 days before stale cleanup
+
 ## Output Format
 Print: `Git: {operation} on {branch}. Commits: {N}.
   Conflicts: {N}. Stale: {N}. Verdict: {verdict}.`

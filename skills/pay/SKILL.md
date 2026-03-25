@@ -89,6 +89,11 @@ res.status(200).json({ received: true });
 Return 200 within 30s. Process async if slow.
 Store raw events. Reconcile daily.
 
+## Quality Targets
+- Processing latency: <500ms round-trip
+- Transaction consistency: >99% no double-charge
+- PII in logs: <1 cardholder data field
+
 ## Hard Rules
 1. NEVER process card numbers on your server.
 2. NEVER fulfill from client-side redirects.

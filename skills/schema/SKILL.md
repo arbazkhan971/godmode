@@ -193,3 +193,8 @@ STOP when:
   - Validation schema matches DB schema
   - User requests stop
 ```
+
+## Quality Targets
+- Target: 0 breaking schema changes without migration
+- Migration execution: <5s for DDL operations
+- Target: <30s for full schema validation

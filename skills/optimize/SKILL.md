@@ -107,3 +107,10 @@ On failure: git reset --hard HEAD~1. Never pause.
 | Noisy metric (>5%) | 10 runs, trim outliers, median 8 |
 | All 3 agents regress | Stuck recovery, opposite approach |
 | Agent timeout (>5m) | Kill worktree, discard, next round |
+
+```bash
+# Profile and benchmark
+npm run build -- --profile
+npx lighthouse http://localhost:3000 --output=json
+pytest --benchmark-only
+```

@@ -1,7 +1,11 @@
 ---
 name: cicd
 description: |
-  CI/CD pipeline design skill. Activates when user needs to create, optimize, or troubleshoot continuous integration and delivery pipelines. Supports GitHub Actions, GitLab CI, CircleCI, and Jenkins. Handles stage optimization, caching strategies, artifact management, pipeline templating, and matrix builds. Triggers on: /godmode:cicd, "create pipeline", "optimize CI", "add GitHub Actions", "fix pipeline", or when shipping requires CI/CD configuration.
+  CI/CD pipeline design skill. Activates when user needs to create, optimize, or troubleshoot continuous integration
+    and delivery pipelines. Supports GitHub Actions, GitLab CI, CircleCI, and Jenkins. Handles stage optimization,
+    caching strategies, artifact management, pipeline templating, and matrix builds. Triggers on: /godmode:cicd,
+    "create pipeline", "optimize CI", "add GitHub Actions", "fix pipeline", or when shipping requires CI/CD
+    configuration.
 ---
 
 # CICD — CI/CD Pipeline Design
@@ -33,8 +37,8 @@ PIPELINE CONTEXT:
   Existing Pipeline: <path to config or "none">
   Branch Strategy: <trunk-based | gitflow | github flow>
 ```
-
-If no pipeline exists: "No CI/CD configuration found. Shall I create one? Specify your preferred platform (GitHub Actions, GitLab CI, CircleCI, Jenkins)."
+If no pipeline exists: "No CI/CD configuration found. Shall I create one? Specify your preferred platform
+(GitHub Actions, GitLab CI, CircleCI, Jenkins)."
 
 ### Step 2: Pipeline Architecture Design
 Design the pipeline stages based on project needs:
@@ -52,9 +56,7 @@ PIPELINE ARCHITECTURE:
      |              |              |              |              |
    ~30s          ~2-5m          ~1-3m          ~1-2m          ~2-5m
                                                          (manual gate
-                                                          for prod)
 ```
-
 ### Step 3: Generate Pipeline Configuration
 
 #### GitHub Actions
@@ -99,7 +101,8 @@ Total estimated savings: 2-6 minutes per pipeline run
 ```
 
 #### Docker Layer Caching
-Multi-stage Dockerfile: deps layer (cached on lockfile hash) -> build layer (cached on source hash). Copy lockfile first, `npm ci`, then copy source.
+Multi-stage Dockerfile: deps layer (cached on lockfile hash) -> build layer (cached on source hash). Copy
+lockfile first, `npm ci`, then copy source.
 
 ### Step 5: Pipeline Optimization
 Analyze and improve pipeline performance:
@@ -211,6 +214,11 @@ ARTIFACT STRATEGY:
 6. If fixing pipeline: Show root cause and fix applied
 ```
 
+## Quality Targets
+- Pipeline runtime: <10min per PR
+- Success rate: >95% over 30 days
+- Dependency cache hit: >80% across runs
+
 ## Key Behaviors
 
 ```bash
@@ -231,18 +239,6 @@ npm run lint && npm run typecheck && npm test
 
 ## Flags & Options
 
-| Flag | Description |
-|--|--|
-| (none) | Analyze existing pipeline and suggest improvements |
-| `--create` | Generate new pipeline from scratch |
-| `--optimize` | Focus on performance optimization |
-
-## HARD RULES
-
-1. **NEVER STOP** until the pipeline is green or all failures are documented with root causes.
-2. **git commit BEFORE verify** — commit pipeline config, then trigger a run to verify.
-3. **Automatic revert on regression** — if a pipeline change increases total runtime by >20%, revert and reassess.
-4. **TSV logging** — log every pipeline optimization:
    ```
    timestamp	stage	before_duration	after_duration	savings_pct	technique	status
    ```
@@ -297,47 +293,7 @@ AUTO-DETECT:
 ```
 
 ## Output Format
-Print on completion: `CI/CD: {stage_count} stages, {job_count} jobs. Build: {build_time}. Test: {test_time}. Deploy: {deploy_target}. Cache: {cache_status}. Verdict: {verdict}.`
+Print on completion: `CI/CD: {stage_count} stages, {job_count} jobs. Build: {build_time}. Test: {test_time}.
+Deploy: {deploy_target}. Cache: {cache_status}. Verdict: {verdict}.`
 
-## TSV Logging
-Log every pipeline optimization to `.godmode/cicd-results.tsv`:
 ```
-iteration	stage	job_count	duration_before	duration_after	cache_hit_rate	status
-1	build	3	240s	90s	95%	optimized
-2	test	4	480s	180s	90%	sharded
-3	security	2	120s	60s	80%	added
-4	deploy	2	300s	300s	n/a	configured
-```
-Columns: iteration, stage, job_count, duration_before, duration_after, cache_hit_rate, status(optimized/sharded/added/configured/failed).
-
-## Success Criteria
-Pipeline under 10 minutes. Dependency cache hit rate >90%. Tests sharded when >3min. Security scanning included. Staging gate before production. All versions pinned (no `latest`). Secrets masked. Timeouts on every job. Zero flaky tests.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Pipeline times out | Add `timeout-minutes` to every job. Identify slow step, split into parallel jobs. |
-| Cache miss every run | Verify cache key includes lockfile hash. Check cache path matches install location. |
-| Secret not available | Check scope (repo/env/org). Secrets unavailable in fork PRs by default. |
-| Deploy fails, tests pass | Check env-specific config, verify artifact matches tested build. |
-| Flaky test blocks pipeline | Quarantine with skip annotation + linked issue. Fix root cause within 48h. |
-
-## Keep/Discard Discipline
-```
-After EACH pipeline optimization:
-  1. MEASURE: Run the pipeline — compare total duration and cache hit rate to baseline.
-  2. DECIDE:
-     - KEEP if: duration decreased OR cache hit rate improved AND all tests still pass
-     - DISCARD if: duration increased >5% OR cache hit rate dropped OR any test fails
-  3. COMMIT kept changes. Revert discarded changes before trying the next optimization.
-
-Never keep an optimization that makes the pipeline faster but breaks test reliability.
-```
-
-## Stop Conditions
-```
-STOP when: pipeline < 10 minutes OR all stages optimized
-  OR user requests stop OR max 15 iterations
-DO NOT STOP because one stage is at limit or cache > 90%.
-```
-

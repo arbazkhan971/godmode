@@ -1,7 +1,12 @@
 ---
 name: ddd
 description: |
-  Domain-Driven Design skill. Activates when user needs to model a complex domain, define bounded contexts, design aggregates, or facilitate event storming. Covers strategic design (bounded contexts, context mapping, ubiquitous language) and tactical design (aggregates, entities, value objects, domain events, repositories). Produces bounded context maps, aggregate boundary diagrams, domain event catalogs, and implementation scaffolds. Triggers on: /godmode:ddd, "model the domain", "bounded context", "aggregate design", "event storming", or when the orchestrator detects domain modeling needs.
+  Domain-Driven Design skill. Activates when user needs to model a complex domain, define bounded contexts, design
+    aggregates, or facilitate event storming. Covers strategic design (bounded contexts, context mapping, ubiquitous
+    language) and tactical design (aggregates, entities, value objects, domain events, repositories). Produces bounded
+    context maps, aggregate boundary diagrams, domain event catalogs, and implementation scaffolds. Triggers on:
+    /godmode:ddd, "model the domain", "bounded context", "aggregate design", "event storming", or when the
+    orchestrator detects domain modeling needs.
 ---
 
 # DDD — Domain-Driven Design
@@ -29,7 +34,6 @@ Generic domains: <commodity — auth, billing, email>
 Key stakeholders: <who are the domain experts?>
 Known pain points: <where does the current model break down?>
 ```
-
 **Identify the core domain.** This is where you invest the most modeling effort. Generic domains get off-the-shelf solutions. Supporting domains get simple implementations. Only the core domain gets full DDD treatment.
 
 ### Step 2: Ubiquitous Language
@@ -52,7 +56,6 @@ LANGUAGE RULES:
   different bounded contexts with different definitions
 - When a new term emerges, add it to this glossary immediately
 ```
-
 ### Step 3: Event Storming
 Facilitate a structured event storming session to discover domain events, commands, aggregates, and boundaries:
 
@@ -146,7 +149,6 @@ CONTEXT MAP:
   (Published Language)
   Reporting ──── ACL ────► Legacy ERP System
 ```
-
 ### Step 5: Tactical Design — Aggregate Internals
 For each aggregate in the core domain, design the internal structure:
 
@@ -167,7 +169,6 @@ Entities (within this aggregate):
 Value Objects:
   - <ValueObjectName>: <immutable, defined by attributes not identity>
 ```
-
 #### Aggregate Design Rules
 ```
 AGGREGATE BOUNDARY RULES:
@@ -202,7 +203,6 @@ DOMAIN EVENT CATALOG:
 |  |  | warehouseId, reservedAt |
 | OrderShipped | Fulfillment | shipmentId, orderId, trackingNo, |
 ```
-
 ### Step 7: Implementation Scaffold
 Generate the directory structure and skeleton code:
 
@@ -223,7 +223,6 @@ src/
 │   │   │   └── <Repository>.ts           # Repository interface (port)
 │   │   └── services/
 ```
-
 ### Step 8: Artifacts & Transition
 1. Save domain model: `docs/domain/<context>-domain-model.md`
 2. Save event catalog: `docs/domain/event-catalog.md`
@@ -242,7 +241,6 @@ src/
 grep -rn "class.*Aggregate\|class.*Entity\|class.*ValueObject" src/ --include="*.ts" --include="*.py"
 grep -rn "Event\|EventHandler\|DomainEvent" src/ --include="*.ts" --include="*.py" | head -20
 ```
-
 IF aggregate has > 4 entities: split into smaller aggregates.
 WHEN same term means different things in 2 contexts: correct — separate glossary entries.
 IF domain events > 50: group by context, verify no cross-context coupling.
@@ -263,6 +261,11 @@ IF domain events > 50: group by context, verify no cross-context coupling.
 | (none) | Full DDD session: discovery, event storming, contexts, tactical design |
 | `--strategic` | Strategic design only (bounded contexts, context map, ubiquitous language) |
 | `--tactical` | Tactical design only (aggregates, entities, value objects, events) |
+
+## Quality Targets
+- Cross-aggregate refs: <1 direct reference
+- Command latency: <500ms per aggregate
+- Aggregate size: <100 entities maximum
 
 ## HARD RULES
 
@@ -293,44 +296,4 @@ Print on completion:
 ```
 DDD SESSION: {domain_name}
 Core domain: {core_domain_name}
-Bounded contexts: {N} identified ({list})
-Aggregates: {N} designed
-Domain events: {N} cataloged
-Value objects: {N} defined
-Context map relationships: {N} mapped
-Artifacts: {list of files created}
 ```
-
-## TSV Logging
-Log every DDD session to `.godmode/ddd-results.tsv`:
-```
-timestamp	domain	bounded_contexts	aggregates	events	value_objects	context_relationships	verdict
-```
-Append one row per session. Create the file with headers on first run.
-
-## Success Criteria
-1. Core domain identified. >= 5 ubiquitous language terms defined.
-2. Event storming through Phase 4 (aggregates identified).
-3. All aggregates have invariants, commands, events.
-4. No aggregate > 4 entities. Cross-refs by ID only.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| User starts with DB schema | Redirect: model domain first. Schema is derived. |
-| Aggregate > 4 entities | Split. Use domain events between parts. |
-| Term collision across contexts | Correct DDD — separate glossary entries per context. |
-
-## Keep/Discard Discipline
-```
-KEEP if: invariants enforceable AND aggregate <= 4 entities
-DISCARD if: oversized OR inconsistent language within context
-```
-
-## Stop Conditions
-```
-STOP when: contexts + aggregates + events defined
-  AND glossary >= 5 terms AND context map complete
-  OR user requests stop
-```
-

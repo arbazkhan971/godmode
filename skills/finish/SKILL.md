@@ -148,6 +148,11 @@ FOR EACH dimension in [tests, coverage, lint, pr]:
 DECISION: ALL PASS → ship. ANY FAIL → block.
 ```
 
+## Quality Targets
+- Pre-merge checks: >99% passing rate
+- CI pipeline: <5min full completion
+- TODO/FIXME density: <1 per 1000 lines committed
+
 ## Hard Rules
 1. Never merge with failing tests.
 2. Never force-push main — use git revert.

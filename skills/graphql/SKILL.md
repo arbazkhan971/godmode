@@ -186,6 +186,11 @@ Commit: `"graphql: <service> — <N> types,
 5. **Do not federate prematurely.**
 6. **Test the schema, not only resolvers.**
 
+## Quality Targets
+- Query response: <200ms p95
+- Max depth: <10 levels
+- Max complexity: <1000 points
+
 ## HARD RULES
 
 1. Every relation resolver must use DataLoader.
@@ -218,6 +223,12 @@ FOR each entity (leaf first):
   6. IF breaking change: add new field, deprecate old
 POST: Add complexity/depth limits, validate schema
 ```
+
+## Quality Targets
+- Target: <200ms p95 query response time
+- Max query depth: <=10 levels
+- Max query complexity: <=1000 points
+- Target: 0 N+1 query patterns detected
 
 ## Output Format
 Print: `GraphQL: {types} types, {queries} queries,

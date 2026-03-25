@@ -173,6 +173,11 @@ grep -E "zod|yup|joi|valibot" package.json 2>/dev/null
 Log to `.godmode/type-results.tsv`:
 `phase\taction\tany_before\tany_after\terrors_fixed\tscore\tstatus`
 
+## Quality Targets
+- Target: 0 TypeScript errors (strict mode enabled)
+- Target: <30s type-check time for full project
+- Target: <5% any-typed values in codebase
+
 ## Output Format
 Print: `Type: score {before} -> {after}/100. any: {N} -> {N}. Strict: {status}. Schemas: {N}.`
 

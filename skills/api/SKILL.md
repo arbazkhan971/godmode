@@ -1,7 +1,11 @@
 ---
 name: api
 description: |
-  API design and specification skill. Activates when user needs to design, document, or validate REST, GraphQL, or gRPC APIs. Generates OpenAPI/Swagger specs, enforces versioning strategies, designs rate limiting and pagination, and produces standardized error responses. Every API endpoint gets a spec, example request/response, and validation. Triggers on: /godmode:api, "design an API", "create API spec", "validate my API", or when the orchestrator detects API-related work.
+  API design and specification skill. Activates when user needs to design, document, or validate REST, GraphQL, or
+    gRPC APIs. Generates OpenAPI/Swagger specs, enforces versioning strategies, designs rate limiting and pagination,
+    and produces standardized error responses. Every API endpoint gets a spec, example request/response, and
+    validation. Triggers on: /godmode:api, "design an API", "create API spec", "validate my API", or when the
+    orchestrator detects API-related work.
 ---
 
 # API — Design & Specification
@@ -73,12 +77,14 @@ Nested resources:
 | GET | /api/v1/<parents>/:id/<children> | List children of parent |
   ...
 ```
-For **GraphQL**: Define Query (single + list with filter/pagination), Mutation (create, update, delete), and typed response objects.
+For **GraphQL**: Define Query (single + list with filter/pagination), Mutation (create, update, delete), and
+typed response objects.
 
 For **gRPC**: Define service with rpc methods (Get, List, Create, Update, Delete) using typed request/response messages.
 
 ### Step 4: Versioning Strategy
-URL path versioning (`/api/v1/`) is recommended for public APIs (explicit, easy to route). Header versioning (`Accept: application/vnd...`) is cleaner but less discoverable. Choose one and apply consistently.
+URL path versioning (`/api/v1/`) is recommended for public APIs (explicit, easy to route). Header versioning
+(`Accept: application/vnd...`) is cleaner but less discoverable. Choose one and apply consistently.
 ### Step 5: Pagination Design
 Design pagination for all list endpoints:
 
@@ -202,7 +208,6 @@ npx @redocly/cli lint openapi.yaml
 npx swagger-cli validate openapi.yaml
 npx oasdiff diff openapi.yaml --base main --check
 ```
-
 IF response time P95 > 200ms: add pagination or caching.
 WHEN spec validation errors > 0: fix before implementing endpoints.
 IF list endpoint returns > 100 items: require cursor pagination.
@@ -242,6 +247,11 @@ AUTO-DETECT SEQUENCE:
    - Scan route files for HTTP method + path patterns
   ...
 ```
+## Quality Targets
+- Target: <200ms p95 response time
+- Target: >99.9% uptime for production APIs
+- Payload limit: <5MB max response size
+
 ## HARD RULES
 
 Never ask to continue. Loop autonomously until OpenAPI spec validates with zero errors.
@@ -286,63 +296,3 @@ DO NOT STOP because:
   - One endpoint lacks example responses (add it, but spec is functional)
 ```
 
-## Output Format
-
-```
-API DESIGN COMPLETE:
-  Spec: <path to OpenAPI/Swagger spec file>
-  Endpoints: <N> resources, <M> total operations
-  Versioning: <strategy> (URL path | header | query param)
-  Pagination: <cursor | offset> on all list endpoints
-  Auth: <mechanism> on <N> endpoints
-  Rate limiting: <configured | recommended>
-  Error schema: unified <format> across all endpoints
-  Validation: <PASS | FAIL> (<N> issues)
-
-ENDPOINT SUMMARY:
-|  Resource        | GET | POST | PUT | PATCH | DELETE | Notes  |
-  ...
-```
-## TSV Logging
-
-Append to `.godmode/api-results.tsv`:
-```
-timestamp	project	endpoints_designed	spec_format	validation_status	issues_found	issues_fixed	commit_sha
-```
-
-## Success Criteria
-
-```
-API DESIGN SUCCESS CRITERIA:
-|  Criterion                                  | Required         |
-|--|--|
-|  OpenAPI spec generated and valid           | YES              |
-|  All list endpoints paginated               | YES              |
-|  Unified error response schema              | YES              |
-|  Versioning strategy applied                | YES              |
-|  Auth defined for all non-public endpoints  | YES              |
-|  Rate limit headers documented              | YES              |
-|  Example request/response for each endpoint | YES              |
-|  Spec validates with spectral/redocly lint  | YES              |
-|  No breaking changes vs previous version    | YES (if exists)  |
-  ...
-```
-## Error Recovery
-
-```
-ERROR RECOVERY — API:
-1. Spec validation fails → Read error output, fix each violation, re-run until 0 errors.
-2. Breaking change detected → Compare with oasdiff, revert breaking fields, add new fields additively.
-3. Pagination missing → Add cursor-based parameters and PageInfo to response schema.
-4. Inconsistent error format → Create shared error component in components, reference everywhere.
-5. Auth model undefined → Add securitySchemes to components, apply security to each endpoint.
-```
-## Explicit Loop Protocol
-```
-WHILE resources remain AND NOT user_says_stop:
-  1. SELECT next resource by dependency order
-  2. DESIGN endpoints: GET, POST, PATCH, DELETE
-  3. ADD pagination, filtering, sorting to list endpoints
-  4. APPLY auth and rate limiting
-  5. VALIDATE spec with linter (0 errors required)
-```

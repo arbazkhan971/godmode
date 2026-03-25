@@ -199,6 +199,12 @@ Commit: `"test(integration): <module> — <N> tests
 5. Seeding: seeds/, fixtures/, factories/
 ```
 
+## Quality Targets
+- Target: <30s per integration test execution
+- Target: >90% integration test pass rate
+- Target: 0 flaky tests (>1% failure rate quarantined)
+- Test data cleanup: 100% of fixtures torn down after run
+
 ## Output Format
 Print: `Integration: {tests} tests, {boundaries}
   boundaries. Containers: {list}.

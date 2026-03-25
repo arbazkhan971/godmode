@@ -1,7 +1,13 @@
 ---
 name: devsecops
 description: |
- DevSecOps pipeline skill. Activates when user needs to integrate security into CI/CD pipelines, configure static analysis (SAST), dynamic analysis (DAST), software composition analysis (SCA), container scanning, secret scanning, or establish security gates in deployment workflows. Supports Semgrep, CodeQL, SonarQube, OWASP ZAP, Burp Suite, Trivy, Snyk, and other industry-standard tools. Produces pipeline configurations, security gate definitions, and remediation workflows. Triggers on: /godmode:devsecops, "secure pipeline", "add SAST", "security gate", "container scan", "shift left", or when building CI/CD that needs security controls.
+ DevSecOps pipeline skill. Activates when user needs to integrate security into CI/CD pipelines, configure
+ static analysis (SAST), dynamic analysis (DAST), software composition analysis (SCA), container scanning,
+ secret scanning, or establish security gates in deployment workflows. Supports Semgrep, CodeQL, SonarQube,
+ OWASP ZAP, Burp Suite, Trivy, Snyk, and other industry-standard tools. Produces pipeline configurations,
+ security gate definitions, and remediation workflows. Triggers on: /godmode:devsecops, "secure pipeline",
+ "add SAST", "security gate", "container scan", "shift left", or when building CI/CD that needs security
+ controls.
 ---
 
 # DevSecOps — Secure Pipeline Integration
@@ -237,7 +243,8 @@ SECURITY METRICS DASHBOARD:
 2. Save security gate config to `security/pipeline-policy.yml`
 3. Commit: "devsecops: <description> — <N> security controls, maturity level <N>"
 4. If gaps remain: "Pipeline security gaps identified. Address <specific gaps> to reach target maturity level."
-5. If fully configured: "DevSecOps pipeline complete. Security gates active. Run `/godmode:pentest` to validate or `/godmode:ship` to deploy."
+5. If fully configured: "DevSecOps pipeline complete. Security gates active. Run `/godmode:pentest` to
+validate or `/godmode:ship` to deploy."
 ```
 
 ## Key Behaviors
@@ -259,19 +266,10 @@ IF scanner runtime > 5 minutes in CI: scope to changed files only.
 3. **No secrets pass the gate.** Zero exceptions.
 4. **SBOM required.** Every release, SPDX or CycloneDX.
 5. **Scan every layer.** SAST, SCA, DAST, containers, IaC, secrets.
-## HARD RULES
-
-- NEVER allow secrets to pass the security gate — secret scanning has ZERO exceptions and NO override process
-- NEVER use `:latest` for scanner images in CI — pin scanner versions to prevent silent policy changes
-- NEVER scan only on main branch — CATCH security issues in PRs before merge
-- NEVER deploy unsigned container images to production — sign with cosign/notation and verify before deploy
-- NEVER store scanner tokens as plain environment variables — use CI/CD secret management
-- ALL CRITICAL/HIGH severity findings MUST block merge (no silent pass-through)
-- ALL security gate overrides MUST have documented justification, an expiry date (max 30 days), and a reviewing team
-- ALL releases MUST include an SBOM in SPDX or CycloneDX format
-SAST INTEGRATION VALIDATION:
-  ...
-```
+## Quality Targets
+- Critical CVEs: <1 in production deps
+- SAST scan time: <5min per PR
+- Remediation: >90% within 7 days
 
 ## Keep/Discard Discipline
 ```
@@ -296,40 +294,4 @@ secret scanning on 3 layers, SBOM generated per release.
  - Scan workflows for semgrep, codeql, sonar, snyk, trivy, gitleaks, trufflehog, checkov, tfsec
  - Check for.gitleaks.toml,.semgrep/, sonar-project.properties
  - Check for cosign, notation references (artifact signing)
- - Check for dependabot.yml or renovate.json (dependency updates)
-3. Check for container and IaC:
- - Scan for Dockerfile*, docker-compose*, kubernetes/, terraform/, cloudformation/
-  ...
 ```
-## Output Format
-Every devsecops invocation must produce a structured report:
-
-```
-  DEVSECOPS RESULT
-  CI platform: <GitHub Actions | GitLab CI | Jenkins | etc.>
-  Controls configured: <N> / 11
-  Security gates: <N blocking, N advisory>
-  Maturity level: <0-5> (before -> after)
-  Open findings: <N>C <N>H <N>M <N>L
-  Verdict: <PIPELINE SECURE | GAPS REMAIN | NOT CONFIGURED>
-```
-## TSV Logging
-Log to `.godmode/devsecops-audit.tsv`:
-```
-timestamp	ci_platform	controls_configured	controls_total	maturity_before	maturity_after	blocking_gates	open_critical	open_high	verdict
-```
-
-## Success Criteria
-
-```
-Level 3+: SAST on every PR, SCA with thresholds, secret scanning 3 layers,
-  container scanning, SBOM per release, scanners pinned.
-Level 5: additionally DAST on staging, IaC scanning, artifact signing.
-```
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Scanner times out in CI | Pin scanner version, reduce scope to changed files on PRs. Full scan weekly. |
-| False positives blocking PRs | Add to `.semgrepignore` or inline `# nosec` with justification. Never blanket-suppress. |
-| Secret detected in git history | Rotate immediately. Use `git filter-repo` or BFG to remove. Enable push protection. |
-| Container scan finds OS-level CVE | Rebuild from latest base. If no fix, document accepted risk with expiry date. |

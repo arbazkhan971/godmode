@@ -1,7 +1,10 @@
 ---
 name: crypto
 description: |
-  Cryptography implementation skill. Activates when user needs to implement encryption (at rest or in transit), key management, password hashing (Argon2, bcrypt), digital signatures, JWT security, TLS hardening, or any cryptographic operation. Triggers on: /godmode:crypto, "encryption", "hashing", "key management", "TLS setup", "digital signature", "JWT signing", or when code handles sensitive data.
+  Cryptography implementation skill. Activates when user needs to implement encryption (at rest or in transit), key
+    management, password hashing (Argon2, bcrypt), digital signatures, JWT security, TLS hardening, or any
+    cryptographic operation. Triggers on: /godmode:crypto, "encryption", "hashing", "key management", "TLS setup",
+    "digital signature", "JWT signing", or when code handles sensitive data.
 ---
 
 # Crypto — Cryptography Implementation
@@ -16,7 +19,8 @@ description: |
 ## Workflow
 
 ### Step 1: Requirements Assessment
-Classify data: at rest (passwords, PII, financial, API keys), in transit (TLS, mTLS, DB connections), integrity (signatures, HMAC, checksums), compliance (PCI-DSS, HIPAA, GDPR, FIPS).
+Classify data: at rest (passwords, PII, financial, API keys), in transit (TLS, mTLS, DB connections),
+integrity (signatures, HMAC, checksums), compliance (PCI-DSS, HIPAA, GDPR, FIPS).
 
 ### Step 2: Algorithm Selection
 
@@ -35,7 +39,8 @@ Classify data: at rest (passwords, PII, financial, API keys), in transit (TLS, m
 **Random:** CSPRNG only (crypto.randomBytes, secrets, crypto/rand). NEVER Math.random().
 
 ### Step 3: Encryption at Rest
-Use **envelope encryption**: unique DEK per record (AES-256-GCM) encrypted by KEK from KMS. Store encrypted data + encrypted DEK + IV + auth tag. Unique 96-bit IV per operation. Master key in KMS. Track key version.
+Use **envelope encryption**: unique DEK per record (AES-256-GCM) encrypted by KEK from KMS. Store encrypted
+data + encrypted DEK + IV + auth tag. Unique 96-bit IV per operation. Master key in KMS. Track key version.
 
 **Database:** TDE (physical theft) + column encryption (SQLi) + connection TLS (network).
 
@@ -46,7 +51,9 @@ Use **envelope encryption**: unique DEK per record (AES-256-GCM) encrypted by KE
 - Test: ssllabs.com/ssltest (target A+).
 
 ### Step 5: Password Hashing
-Argon2id with auto-generated salt, constant-time comparison. Hash never encrypt. No length limits (allow 128+). Check breach lists. No composition rules (NIST 800-63B). Min 8 chars. Upgrade old hashes on login. Rate limit auth. Never log passwords.
+Argon2id with auto-generated salt, constant-time comparison. Hash never encrypt. No length limits (allow
+128+). Check breach lists. No composition rules (NIST 800-63B). Min 8 chars. Upgrade old hashes on login. Rate
+limit auth. Never log passwords.
 
 ### Step 6: JWT Security
 - Single service: HS256 (256-bit+ key). Multiple services: RS256/ES256.
@@ -94,7 +101,8 @@ Verdict: <SECURE | NEEDS IMPROVEMENT | INSECURE>
 
 ## HARD RULES
 
-Never ask to continue. Loop autonomously until zero weak algorithms remain and all secrets are in env vars or secret managers.
+Never ask to continue. Loop autonomously until zero weak algorithms remain and all secrets are in env vars or
+secret managers.
 
 1. NEVER implement your own cryptographic primitives.
 2. NEVER reuse IVs/nonces with the same key.
@@ -127,7 +135,8 @@ IF bcrypt cost factor < 12: increase to >= 12.
 Run crypto tasks inline. All conventions apply identically.
 
 ## Output Format
-Print: `Crypto: {N} issues found, {M} fixed. Weak algorithms: {removed|none}. Key management: {env_vars|hardcoded}. Status: {DONE|PARTIAL}.`
+Print: `Crypto: {N} issues found, {M} fixed. Weak algorithms: {removed|none}. Key management:
+{env_vars|hardcoded}. Status: {DONE|PARTIAL}.`
 
 ## Error Recovery
 | Failure | Action |
@@ -136,6 +145,11 @@ Print: `Crypto: {N} issues found, {M} fixed. Weak algorithms: {removed|none}. Ke
 | Key rotation breaks decryption | Store key version with ciphertext. Support decryption with old key, encryption with new key during rotation window. |
 | CSPRNG not available | Use `crypto.randomBytes` (Node), `secrets` (Python), `crypto/rand` (Go). Never fall back to `Math.random` or `random`. |
 | TLS certificate expired | Automate renewal with Let's Encrypt/certbot. Set monitoring alert 30 days before expiry. |
+
+## Quality Targets
+- Minimum key length: >=256-bit for symmetric, >=2048-bit for RSA
+- Target: 0 deprecated algorithms (MD5, SHA1, DES, RC4)
+- Key rotation interval: <90 days
 
 ## Success Criteria
 1. No weak algorithms (MD5, SHA1, DES, ECB mode, `Math.random` for security).

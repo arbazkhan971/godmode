@@ -1,6 +1,7 @@
 ---
 name: cron
-description: Scheduled tasks, cron jobs, background job queues, recurring work. Use when user mentions cron, scheduler, background jobs, recurring tasks, Bull, BullMQ, Celery, Sidekiq, node-cron, APScheduler.
+description: Scheduled tasks, cron jobs, background job queues, recurring work. Use when user mentions cron,
+  scheduler, background jobs, recurring tasks, Bull, BullMQ, Celery, Sidekiq, node-cron, APScheduler.
 ---
 
 # Cron — Scheduled Tasks & Recurring Job Orchestration
@@ -278,11 +279,9 @@ npx cron-validate "0 9 * * 1-5"
 npm run test:cron -- --timeout 30000
 redis-cli KEYS "bull:*:repeat:*" | head -10
 ```
-
 IF job duration > 80% of interval: increase interval or optimize job.
 WHEN missed runs > 0 in 24h: alert and investigate.
 IF retry count > 3: move to dead letter queue.
-
 1. **Monitor every scheduled job.** Missed runs, failures, duration.
 2. **Idempotency mandatory.** Same result if called twice.
 3. **Distributed locking in production.** No duplicate fires.
@@ -295,64 +294,7 @@ IF retry count > 3: move to dead letter queue.
 | `--tech <name>` | Target specific scheduler (bullmq, celery, sidekiq, apscheduler, hangfire, quartz, node-cron) |
 | `--diagnose` | Diagnose missed or failing scheduled jobs |
 
-## HARD RULES
-
-Never ask to continue. Loop autonomously until all jobs have locking, idempotency, and monitoring.
-
-1. **NEVER use `setInterval` or `setTimeout` for production scheduling.** They do not survive restarts, have no distributed locking, no monitoring, and drift over time.
-2. **NEVER schedule jobs in local timezones.** DST transitions skip the 2 AM job in March and double-fire the 1 AM job in November. Use UTC for all system schedules.
-3. **NEVER assume single-instance execution.** If the app runs on 2+ instances, every cron job fires N times without distributed locking. Add locking from day one.
-4. **ALWAYS make every scheduled handler idempotent.** Schedulers fire duplicates during restarts, failovers, and Redis reconnections.
-5. **ALWAYS guard against overlap.** A job that runs every hour but takes 90 minutes will stack up and OOM the system. Use locks or `max_instances`.
-6. **NEVER put heavy work in the scheduler tick.** The scheduler should enqueue a job, not execute it. Blocking the scheduler loop delays all other schedules.
-7. **ALWAYS verify registered job count on startup.** If registration fails silently, jobs stop running with no alert.
-8. **ALWAYS use IANA timezone names** (America/New_York), never fixed offsets (UTC-5). Fixed offsets are wrong for half the year.
-
-## Auto-Detection
-
-On activation, detect the scheduling context:
-
-```bash
-# Detect scheduler libraries
-grep -r "bullmq\|bull\|agenda\|node-cron\|bree\|croner" package.json 2>/dev/null
-grep -r "celery\|apscheduler\|django-cron\|huey" requirements.txt setup.py pyproject.toml 2>/dev/null
-grep -r "sidekiq\|sidekiq-cron\|whenever\|clockwork" Gemfile 2>/dev/null
-
-# Detect existing cron jobs
-```
-iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitoring	status
-```
-
-## Success Criteria
-- All jobs use proper scheduler (not setInterval/setTimeout).
-- All schedules in UTC. Distributed locking configured.
-- All handlers idempotent. Overlap protection active.
-- Monitoring with alerting on miss/failure.
-
-## Keep/Discard Discipline
-```
-After EACH cron job change:
-  1. MEASURE: Run job in test mode.
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All detected jobs have proper scheduling, locking, idempotency, and monitoring
-  - User explicitly requests stop
-  - Max iterations (15) reached — report partial results with unconfigured jobs listed
-
-DO NOT STOP only because:
-  - One job is complex (still configure the simpler ones)
-  - Monitoring is not yet configured (handle that in a separate pass)
-
-On failure: revert the last cron configuration change with `git reset --hard HEAD~1` and retry with a narrower scope.
-```
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Job runs twice (no lock) | Add file-based lock or advisory lock. Check if cron expression fires more frequently than job duration. |
-| Job silently fails | Add exit code checking, stderr capture, and alerting. Log start/end with duration. |
-| Timezone confusion | Always use UTC in cron expressions. Convert display times to UTC. Document timezone in comments. |
-| Job overlaps with next scheduled run | Add `skip-if-running` guard. Set `concurrencyPolicy: Forbid` in K8s CronJobs. Increase interval or optimize job. |
-  ...
-```
+## Quality Targets
+- Job success rate: >99% over 30 days
+- Runtime per job: <80% of schedule interval
+- Alert after: >3 consecutive failures

@@ -154,6 +154,11 @@ Commit: `"event: <system> -- <N> event types,
    forward compatibility from day one.
 4. **Every consumer is idempotent.**
 
+## Quality Targets
+- Publish-to-consume: <100ms latency
+- Event delivery: >99% success rate
+- Max payload: <1MB per event
+
 ## HARD RULES
 
 1. Never use events as remote procedure calls.

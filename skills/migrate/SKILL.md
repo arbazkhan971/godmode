@@ -113,6 +113,11 @@ PRE-APPLY: validated, rollback tested, data verified,
 Print: `Migrate: {table}.{change} — risk: {level}.
   Rollback: {tested|untested}. Data: {preserved}.`
 
+## Quality Targets
+- Target: <5s per migration execution
+- Target: 0 data loss during migration rollback
+- Lock timeout: <5s for DDL operations
+
 ## Hard Rules
 1. NEVER generate migration without detecting the tool.
 2. EVERY migration MUST have matching DOWN/rollback.

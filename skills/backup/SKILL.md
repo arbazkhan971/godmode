@@ -1,7 +1,11 @@
 ---
 name: backup
 description: |
-  Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets, test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, "backup strategy", "disaster recovery", "what's our RPO?", "can we recover from", or when designing critical data infrastructure.
+  Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets,
+    test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive
+    backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, "backup
+    strategy", "disaster recovery", "what's our RPO?", "can we recover from", or when designing critical data
+    infrastructure.
 ---
 
 # Backup — Backup & Disaster Recovery
@@ -23,7 +27,6 @@ Identify all data that needs protection:
 DATA ASSET INVENTORY:
 | Asset | Type | Size | Growth | Critical |
 ```
-
 ### Step 2: Define RPO/RTO Targets
 Set recovery objectives for each data tier:
 
@@ -31,7 +34,6 @@ Set recovery objectives for each data tier:
 RECOVERY OBJECTIVES:
 | Data Tier | RPO | RTO | Justification |
 ```
-
 ### Step 3: Backup Strategy Design
 Design backup approach for each data tier:
 
@@ -204,6 +206,14 @@ pg_restore -d mydb_test backup_test.dump
 psql mydb_test -c "SELECT count(*) FROM users;"
 ```
 
+
+```bash
+# Verify backup and test restore
+pg_dump --format=custom -f backup.dump $DATABASE_URL
+pg_restore --list backup.dump
+curl -s http://localhost:8080/health
+```
+
 ## Auto-Detection
 ```
 1. Data stores: grep for postgres, mysql, mongodb, redis connection strings
@@ -248,6 +258,11 @@ WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
         "Last restore test: {last_restore_result}"
 ```
 
+## Quality Targets
+- RPO Tier 1: <1h data loss window
+- RTO Tier 1: <15min recovery time
+- Restore success: >99% verified
+
 ## HARD RULES
 
 Never ask to continue. Loop autonomously until all backup gaps are resolved or budget exhausted.
@@ -268,47 +283,16 @@ MECHANICAL CONSTRAINTS — NON-NEGOTIABLE:
 ```
 
 ## Output Format
-Print on completion: `Backup: {asset_count} assets covered. RPO: {rpo}. RTO: {rto}. Last restore test: {last_test_date}. Encryption: {encryption_status}. Cross-region: {cross_region}. Verdict: {verdict}.`
+Print on completion: `Backup: {asset_count} assets covered. RPO: {rpo}. RTO: {rto}. Last restore test:
+{last_test_date}. Encryption: {encryption_status}. Cross-region: {cross_region}. Verdict: {verdict}.`
 ```
 timestamp	asset	operation	size	duration_s	status	checksum
 2024-01-15T03:00:00Z	postgres-prod	backup	12GB	180	success	sha256:abc123
 2024-01-15T03:05:00Z	redis-prod	backup	2GB	30	success	sha256:def456
 2024-01-15T04:00:00Z	postgres-prod	restore-test	12GB	300	success	verified
 ```
-Columns: timestamp, asset, operation(backup/restore-test/dr-drill), size, duration_s, status(success/failed/partial), checksum.
+Columns: timestamp, asset, operation(backup/restore-test/dr-drill), size, duration_s,
+status(success/failed/partial), checksum.
 
 ## Success Criteria
-```
-IF >3 consecutive iterations fail to fix a backup gap:
-  1. Re-read the backup tool documentation — misconfigured parameters are the #1 cause.
-  2. Simplify: try a manual pg_dump/mongodump before automating with a complex backup tool.
-  3. Check infrastructure: permissions, storage bucket access, network between source and backup target.
-  4. If still stuck → log stop_reason=stuck, mark the gap as UNRESOLVED with details, move to next gap.
-```
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All critical data assets (Tier 1) have automated, verified backups
-  - All backup gaps from the initial audit are resolved or documented
-  - User explicitly requests stop
-  - Max iterations (10) reached — report remaining gaps
-
-DO NOT STOP only because:
-  - Tier 3 assets lack backup (address Tier 1 first)
-  - A restore test takes time to run (schedule it, do not skip it)
-```
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Backup fails silently | Add alerting. Check disk, permissions, exit codes. |
-| Restore test fails | Compare schema version. Test on fresh instance. |
-| Backup too slow | Switch to incremental. Compress during transfer. |
-| Storage fills up | Retention: daily 7d, weekly 4w, monthly 12m. |
-
-## Keep/Discard Discipline
-```
-KEEP if: backup completes AND restore succeeds AND alerting works
-DISCARD if: backup fails OR data mismatch OR no alerting
 ```

@@ -1,7 +1,11 @@
 ---
 name: architect
 description: |
-  Software architecture skill. Activates when user needs to design system architecture, select architecture patterns, create C4 diagrams, or apply domain-driven design at the strategic level. Evaluates trade-offs across monolith, microservices, serverless, event-driven, CQRS, and hexagonal architectures. Produces architecture decision records, C4 diagrams, and bounded context maps. Triggers on: /godmode:architect, "design the architecture", "system design", "how should I structure this", or when the orchestrator detects architecture-level decisions.
+  Software architecture skill. Activates when user needs to design system architecture, select architecture patterns,
+    create C4 diagrams, or apply domain-driven design at the strategic level. Evaluates trade-offs across monolith,
+    microservices, serverless, event-driven, CQRS, and hexagonal architectures. Produces architecture decision
+    records, C4 diagrams, and bounded context maps. Triggers on: /godmode:architect, "design the architecture",
+    "system design", "how should I structure this", or when the orchestrator detects architecture-level decisions.
 ---
 
 # Architect — Software Architecture Design
@@ -38,7 +42,8 @@ PATTERN: <Name>
 └── Best when: <conditions where this pattern wins>
 ```
 
-Candidate patterns: Modular Monolith, Microservices, Serverless/FaaS, Event-Driven, CQRS, Hexagonal (Ports & Adapters). Evaluate the top 3-6 for the system.
+Candidate patterns: Modular Monolith, Microservices, Serverless/FaaS, Event-Driven, CQRS, Hexagonal (Ports &
+Adapters). Evaluate the top 3-6 for the system.
 
 ### Step 3: Architecture Comparison Matrix
 Present a structured comparison:
@@ -149,6 +154,12 @@ Log every architecture session to `.godmode/architect-results.tsv`:
 timestamp	system	pattern_selected	patterns_compared	c4_levels	bounded_contexts	quality_attrs	adr_number	verdict
 ```
 Append one row per session. Create the file with headers on first run.
+
+## Quality Targets
+- Target: <500ms p99 latency for critical paths
+- Target: >80% code coverage on core modules
+- Target: 0 circular dependencies between bounded contexts
+- Max coupling: <5 imports between modules
 
 ## Success Criteria
 1. At least 3 architecture patterns compared in a weighted matrix before recommendation.

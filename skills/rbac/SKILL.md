@@ -99,6 +99,12 @@ Retention: minimum 1 year for compliance
 IF audit log not append-only: security risk.
 IF no audit log: MUST implement before launch.
 
+## Quality Targets
+- Target: <10ms permission check latency
+- Target: 0 privilege escalation paths in role hierarchy
+- Policy evaluation: <50ms for complex multi-role checks
+- Target: 100% of endpoints covered by authorization middleware
+
 ## Hard Rules
 1. DEFAULT DENY — no policy match = DENY.
 2. NEVER check roles in code — check permissions.

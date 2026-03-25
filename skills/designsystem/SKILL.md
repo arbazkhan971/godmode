@@ -1,7 +1,11 @@
 ---
 name: designsystem
 description: |
-  Design system architecture skill. Activates when user needs to build, maintain, or audit a design system including token architecture (colors, spacing, typography, shadows), component API standards, theme systems (light/dark, custom), design-to-code pipelines (Figma tokens to CSS variables), versioning and distribution, and Storybook documentation. Triggers on: /godmode:designsystem, "design system", "design tokens", "theme architecture", "Figma to code", or when building a shared component library.
+  Design system architecture skill. Activates when user needs to build, maintain, or audit a design system including
+    token architecture (colors, spacing, typography, shadows), component API standards, theme systems (light/dark,
+    custom), design-to-code pipelines (Figma tokens to CSS variables), versioning and distribution, and Storybook
+    documentation. Triggers on: /godmode:designsystem, "design system", "design tokens", "theme architecture", "Figma
+    to code", or when building a shared component library.
 ---
 
 # Design System — Design System Architecture
@@ -56,16 +60,22 @@ STANDARDS:
 ```
 
 ### Step 4: Theme System
-Light/dark via CSS custom properties on `[data-theme]`. ThemeProvider with system preference detection, localStorage persistence, flash-free SSR. Multi-brand via `[data-brand]` overriding primitive tokens.
+Light/dark via CSS custom properties on `[data-theme]`. ThemeProvider with system preference detection,
+localStorage persistence, flash-free SSR. Multi-brand via `[data-brand]` overriding primitive tokens.
 
 ### Step 5: Design-to-Code Pipeline
-Figma Variables/Tokens Studio -> tokens.json (W3C format) -> Style Dictionary -> outputs (CSS variables, TypeScript constants, Tailwind config). CI automation: Figma webhook -> generate -> PR -> visual regression test.
+Figma Variables/Tokens Studio -> tokens.json (W3C format) -> Style Dictionary -> outputs (CSS variables,
+TypeScript constants, Tailwind config). CI automation: Figma webhook -> generate -> PR -> visual regression
+test.
 
 ### Step 6: Versioning & Distribution
-Semantic versioning: MAJOR (remove token/component, rename, change defaults), MINOR (add component/token/variant), PATCH (fix values/bugs). Package structure: dist/css/, dist/js/, dist/tokens/. Release: version bump -> build -> changelog -> publish -> deploy Storybook.
+Semantic versioning: MAJOR (remove token/component, rename, change defaults), MINOR (add
+component/token/variant), PATCH (fix values/bugs). Package structure: dist/css/, dist/js/, dist/tokens/.
+Release: version bump -> build -> changelog -> publish -> deploy Storybook.
 
 ### Step 7: Storybook Documentation
-Initialize with essential addons (a11y, viewport, docs, designs). Structure: Introduction > Foundations (Colors, Typography, Spacing, Shadows) > Components (Atoms, Molecules, Organisms) > Patterns > Theming.
+Initialize with essential addons (a11y, viewport, docs, designs). Structure: Introduction > Foundations
+(Colors, Typography, Spacing, Shadows) > Components (Atoms, Molecules, Organisms) > Patterns > Theming.
 
 ### Step 8: Audit Report
 ```
@@ -79,7 +89,8 @@ DESIGN SYSTEM AUDIT:
 ```
 
 ### Step 9: Remediation Plan
-Priority 1 (Critical): blocks adoption. Priority 2 (High): degrades consistency. Priority 3 (Medium): improves DX. Priority 4 (Low): polish.
+Priority 1 (Critical): blocks adoption. Priority 2 (High): degrades consistency. Priority 3 (Medium): improves
+DX. Priority 4 (Low): polish.
 
 ### Step 10: Commit
 ```
@@ -144,7 +155,8 @@ MERGE: All -> visual regression test -> unified report
 ```
 
 ## TSV Logging
-Log to `.godmode/designsystem-results.tsv`: `timestamp\tskill\ttarget\taction\ttokens_count\tcomponents_count\tcoverage_pct\tstatus`
+Log to `.godmode/designsystem-results.tsv`:
+`timestamp\tskill\ttarget\taction\ttokens_count\tcomponents_count\tcoverage_pct\tstatus`
 
 ## Success Criteria
 1. All tokens in single source (Style Dictionary/Figma Tokens)
@@ -162,10 +174,12 @@ Log to `.godmode/designsystem-results.tsv`: `timestamp\tskill\ttarget\taction\tt
 - **Visual regression false positives:** Font rendering diffs, update baselines, use threshold tolerance.
 
 ## Platform Fallback
-Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-designsystem-{task}`. See `adapters/shared/sequential-dispatch.md`.
+Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b
+godmode-designsystem-{task}`. See `adapters/shared/sequential-dispatch.md`.
 
 ## Output Format
-Print: `DesignSystem: {tokens} tokens, {components} components. Theme: {light_dark|single}. Storybook: {passing|failing}. Status: {DONE|PARTIAL}.`
+Print: `DesignSystem: {tokens} tokens, {components} components. Theme: {light_dark|single}. Storybook:
+{passing|failing}. Status: {DONE|PARTIAL}.`
 
 ## Keep/Discard Discipline
 ```

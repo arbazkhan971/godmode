@@ -135,6 +135,11 @@ Coverage target: >80% statements, >70% branches.
 4. **Form actions over API routes.** Progressive.
 5. **Never ask to continue. Loop autonomously.**
 
+## Quality Targets
+- Initial JS per route: <50KB
+- Component render: <100ms paint time
+- Lighthouse score: >90 performance
+
 ## HARD RULES
 1. NEVER fetch data in onMount. Use load functions.
 2. NEVER create API routes for form submissions.

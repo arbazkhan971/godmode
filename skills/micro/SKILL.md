@@ -75,6 +75,12 @@ Single bounded context per service, no shared DBs,
 single team ownership, async where possible, circuit
 breakers on sync calls, saga for distributed txns.
 
+## Quality Targets
+- Target: <100ms inter-service call latency p95
+- Target: >99.9% service availability
+- Max service payload: <1MB per request
+- Circuit breaker threshold: >50% error rate triggers open
+
 ## Hard Rules
 1. NEVER share a database between services.
 2. NEVER decompose by technical layer.

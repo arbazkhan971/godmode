@@ -1,6 +1,7 @@
 ---
 name: apidocs
-description: API documentation generation, OpenAPI/Swagger specs, contract-first development, interactive docs. Use when user mentions API docs, Swagger, OpenAPI, API reference, Redoc, API specification.
+description: API documentation generation, OpenAPI/Swagger specs, contract-first development, interactive docs. Use
+  when user mentions API docs, Swagger, OpenAPI, API reference, Redoc, API specification.
 ---
 
 # APIDocs — Documentation Generation & Interactive Specs
@@ -24,8 +25,8 @@ APIDOCS DISCOVERY:
 Project: <name and purpose>
 Language/Framework: <Node/Express, Python/FastAPI, Java/Spring, Go, NestJS, etc.>
 ```
-
-If the user hasn't specified, ask: "Do you want to write the spec first and generate code from it (spec-first), or generate the spec from existing code (code-first)?"
+If the user hasn't specified, ask: "Do you want to write the spec first and generate code from it
+(spec-first), or generate the spec from existing code (code-first)?"
 
 ### Step 2: Spec-First — Writing OpenAPI from Scratch
 For spec-first (contract-first) development, produce a complete OpenAPI document:
@@ -35,7 +36,6 @@ For spec-first (contract-first) development, produce a complete OpenAPI document
 openapi: "3.1.0"
 info:
 ```
-
 Rules for spec-first:
 - Write the spec BEFORE any implementation. The spec is the contract.
 - Every field must have a `description` and an `example`.
@@ -52,7 +52,6 @@ For code-first, configure the framework's doc generation:
 CODE-FIRST SETUP BY FRAMEWORK:
 
 ```
-
 Framework-specific setup:
 - **Express**: `swagger-jsdoc` + `swagger-ui-express` with JSDoc `@openapi` annotations
 - **NestJS**: `@nestjs/swagger` with `DocumentBuilder` and `ApiProperty` decorators
@@ -68,7 +67,6 @@ Enforce DRY specs by extracting shared schemas:
 SCHEMA REUSE CHECKLIST:
 | Pattern | Extract to |
 ```
-
 Rules:
 - If a schema appears in 2+ places, extract it to `components/schemas`.
 - Pagination parameters go in `components/parameters` — never inline them.
@@ -80,7 +78,6 @@ Rules:
 CreateUserRequest:
   allOf:
 ```
-
 ### Step 5: Examples and Mocking
 Every operation must have realistic examples for documentation and mocking:
 
@@ -89,7 +86,6 @@ Every operation must have realistic examples for documentation and mocking:
 properties:
   email:
 ```
-
 Mock server setup:
 
 ```bash
@@ -97,7 +93,6 @@ Mock server setup:
 npm install -g @stoplight/prism-cli
 prism mock openapi.yaml                     # Start mock server on :4010
 ```
-
 ### Step 6: Documentation Renderers
 Set up interactive documentation from the OpenAPI spec:
 
@@ -113,7 +108,6 @@ docker run -p 8080:8080 -e SWAGGER_JSON=/spec/openapi.yaml \
 const swaggerUi = require("swagger-ui-express");
 const spec = require("./openapi.json");
 ```
-
 #### Redoc
 ```html
 <!-- Static HTML — zero dependencies -->
@@ -126,7 +120,6 @@ const spec = require("./openapi.json");
 npx @redocly/cli build-docs openapi.yaml -o docs/index.html
 
 ```
-
 #### Stoplight Elements
 ```html
 <!-- Embed in any HTML page -->
@@ -141,7 +134,6 @@ Handle API versioning within OpenAPI specs:
 SPEC VERSIONING STRATEGIES:
 | Strategy | How to Represent in OpenAPI |
 ```
-
 ### Step 8: CI Validation & Linting
 Validate specs in CI to prevent regressions:
 
@@ -150,19 +142,16 @@ Validate specs in CI to prevent regressions:
 name: API Docs CI
 on:
 ```
-
 ```yaml
 # .spectral.yaml — custom linting rules
 extends: ["spectral:oas"]
 
 ```
-
 ```bash
 # Optic — track breaking changes over time
 npx @useoptic/optic diff openapi.yaml --base main --check
 
 ```
-
 ### Step 9: SDK Generation
 Generate client SDKs from the OpenAPI spec:
 
@@ -171,19 +160,16 @@ Generate client SDKs from the OpenAPI spec:
 npm install -g @openapitools/openapi-generator-cli
 
 ```
-
 ```yaml
 # Alternative: openapi-typescript (lightweight, type-only)
 # Generates TypeScript types from OpenAPI — no runtime, types only
 npx openapi-typescript openapi.yaml -o src/api/schema.d.ts
 ```
-
 ```yaml
 # CI workflow for SDK generation
 name: Generate SDKs
 on:
 ```
-
 ### Step 10: Changelog Generation from Spec Diffs
 Automatically generate API changelogs from spec differences:
 
@@ -192,18 +178,15 @@ Automatically generate API changelogs from spec differences:
 npm install -g oasdiff
 # or
 ```
-
 ```
 CHANGELOG OUTPUT EXAMPLE:
   API Changelog: v1.0.0 → v2.0.0
 ```
-
 ```yaml
 # CI: auto-generate changelog on spec changes
 name: API Changelog
 on:
 ```
-
 ### Step 11: Validation & Quality Gate
 Validate the documentation setup against completeness standards:
 
@@ -211,7 +194,6 @@ Validate the documentation setup against completeness standards:
 APIDOCS VALIDATION:
 | Check | Status |
 ```
-
 ### Step 12: Deliverables
 Generate the final artifacts:
 
@@ -220,7 +202,6 @@ APIDOCS COMPLETE:
 
 Artifacts:
 ```
-
 Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation configured"`
 
 ## Key Behaviors
@@ -241,13 +222,18 @@ IF schema coverage < 100% (fields without descriptions): add descriptions.
 
 Never ask to continue. Loop autonomously until spec validates and all endpoints have examples.
 
-1. **NEVER write endpoint docs without realistic examples.** A schema without examples is a guessing game. Every request and response must have at least one realistic example.
+1. **NEVER write endpoint docs without realistic examples.** A schema without examples is a guessing game.
+Every request and response must have at least one realistic example.
 2. **NEVER duplicate schemas.** Extract shared shapes to `components/schemas` and use `$ref`. Duplicated schemas drift.
 3. **NEVER skip CI validation.** Lint and validate the OpenAPI spec on every PR. A spec valid last week can break today.
-4. **NEVER hand-edit generated specs in code-first workflows.** Modify annotations in code instead. The generator overwrites manual edits.
-5. **NEVER ignore breaking changes.** Use Optic or oasdiff in CI to catch removed endpoints, renamed parameters, and type changes.
-6. **NEVER skip security scheme documentation.** Undocumented auth forces every consumer to reverse-engineer your auth flow.
-7. **ALWAYS serve docs in all environments** or publish static docs. Docs behind `if (env === 'development')` are invisible to production consumers.
+4. **NEVER hand-edit generated specs in code-first workflows.** Modify annotations in code instead. The
+generator overwrites manual edits.
+5. **NEVER ignore breaking changes.** Use Optic or oasdiff in CI to catch removed endpoints, renamed
+parameters, and type changes.
+6. **NEVER skip security scheme documentation.** Undocumented auth forces every consumer to reverse-engineer
+your auth flow.
+7. **ALWAYS serve docs in all environments** or publish static docs. Docs behind `if (env === 'development')`
+are invisible to production consumers.
 8. **ALWAYS use `example:` with realistic values** -- `"jane.doe@example.com"` not `"string"`.
 
 ## TSV Logging
@@ -259,6 +245,11 @@ timestamp	skill	action	endpoints	schemas	lint_errors	breaking_changes	status
 2026-03-20T14:00:00Z	apidocs	generate_spec	12	8	0	0	pass
 2026-03-20T14:10:00Z	apidocs	validate	12	8	2	1	needs_fix
 ```
+## Quality Targets
+- Target: 100% endpoint coverage in documentation
+- Target: >90% of examples return 2xx on test run
+- Target: <30s to find any endpoint in docs
+- Max response example size: <50KB per endpoint
 
 ## Success Criteria
 
@@ -295,7 +286,6 @@ DO NOT STOP only because:
   - A non-critical check is pending (handle that in a follow-up pass)
 ```
 
-
 ## Error Recovery
 | Failure | Action |
 |--|--|
@@ -305,12 +295,4 @@ DO NOT STOP only because:
 | Docs build breaks after API change | Pin docs generator version. Run docs build in CI on every PR that touches API routes. |
 
 ## Output Format
-Print: `APIDocs: {endpoints} endpoints documented. Schema valid: {yes|no}. Examples: {N}/{M} passing. Coverage: {pct}%. Status: {DONE|PARTIAL}.`
-
-## Keep/Discard Discipline
-```
-After EACH documentation change:
-  KEEP if: spec validates AND examples pass AND docs build succeeds
-  DISCARD if: validation fails OR examples broken OR docs build errors
-  On discard: revert. Fix schema first, then update docs.
-```
+Print: `APIDocs: {endpoints} endpoints documented. Schema valid: {yes|no}. Examples: {N}/{M} passing.

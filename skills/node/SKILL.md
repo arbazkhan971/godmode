@@ -92,6 +92,14 @@ IF CPU task > 100ms: offload to worker thread.
 [ ] Env vars via validated config (zod/joi)
 ```
 
+
+```bash
+# Node.js health and profiling
+node --max-old-space-size=512 -e "console.log(process.memoryUsage())"
+npm test -- --coverage
+npm audit --audit-level=high
+```
+
 ## Hard Rules
 1. NEVER block the event loop. No sync I/O,
    no CPU-heavy on main thread.

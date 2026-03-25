@@ -1,7 +1,11 @@
 ---
 name: docker
 description: |
-  Docker mastery skill. Activates when user needs to create, optimize, or troubleshoot Docker configurations. Covers Dockerfile best practices (multi-stage builds, layer caching, minimal images), Docker Compose for local development, image size optimization, security scanning (Trivy, Snyk), networking, volumes, BuildKit features, and build arguments. Triggers on: /godmode:docker, "Dockerfile", "docker compose", "container image", "multi-stage build", "image size", "docker security", or when containerizing an application.
+  Docker mastery skill. Activates when user needs to create, optimize, or troubleshoot Docker configurations. Covers
+    Dockerfile best practices (multi-stage builds, layer caching, minimal images), Docker Compose for local
+    development, image size optimization, security scanning (Trivy, Snyk), networking, volumes, BuildKit features, and
+    build arguments. Triggers on: /godmode:docker, "Dockerfile", "docker compose", "container image", "multi-stage
+    build", "image size", "docker security", or when containerizing an application.
 ---
 
 # Docker — Docker Mastery
@@ -38,7 +42,6 @@ Current Docker state:
   Build time: <current build time>
   Layers: <number of layers>
 ```
-
 ### Step 2: Dockerfile Best Practices
 Create or optimize the Dockerfile using production-grade patterns:
 
@@ -89,7 +92,6 @@ MULTI-STAGE BUILD BY LANGUAGE:
 |  |  | 8.0-alpine |  |
 
 ```
-
 ### Step 3: Docker Compose for Local Development
 Set up a complete local development environment:
 
@@ -101,7 +103,6 @@ services:
   app:
     build:
 ```
-
 ```
 DOCKER COMPOSE PATTERNS:
 | Pattern | Purpose |
@@ -113,7 +114,6 @@ DOCKER COMPOSE PATTERNS:
 | profiles | Optional services (monitoring, debug) |
 | env_file | Keep secrets out of compose file |
 ```
-
 ### Step 4: Image Size Optimization
 Reduce image size systematically:
 
@@ -133,7 +133,6 @@ IMAGE SIZE OPTIMIZATION CHECKLIST:
 | Strip debug symbols (Go/Rust) | 20-40% binary size |
 | UPX compression (Go/Rust) | 50-70% binary size |
 ```
-
 ### Step 5: Security Scanning and Hardening
 Scan images for vulnerabilities and apply security best practices:
 
@@ -152,7 +151,6 @@ TRIVY SCANNING (recommended):
   trivy image --severity HIGH,CRITICAL <image:tag>
 
 ```
-
 ### Step 6: Docker Networking and Volumes
 Configure networking and persistent storage:
 
@@ -171,7 +169,6 @@ COMPOSE NETWORKING PATTERNS:
   networks:
     frontend:          # Public-facing services
 ```
-
 ### Step 7: BuildKit Features and Build Arguments
 Use advanced build capabilities:
 
@@ -191,7 +188,6 @@ BUILDKIT FEATURES:
 |  | EOF |
 | Multi-platform builds | docker buildx build --platform |
 ```
-
 ### Step 8: Docker Report
 
 ```
@@ -207,7 +203,6 @@ BUILDKIT FEATURES:
   Networks: <list>
   Security:
 ```
-
 ### Step 9: Commit and Transition
 1. Commit Dockerfile: `"build(docker): Dockerfile — multi-stage <language> with <base image>"`
 2. Commit Compose: `"build(docker): docker-compose — <N services> for local dev"`
@@ -222,7 +217,6 @@ docker images myapp --format "table {{.Tag}}\t{{.Size}}"
 trivy image --severity CRITICAL,HIGH myapp:latest
 docker history myapp:latest --no-trunc | head -20
 ```
-
 IF image size > 200MB (Node/Python) or > 50MB (Go/Rust): optimize with multi-stage and alpine.
 WHEN trivy reports > 0 CRITICAL CVEs: update base image before deploying.
 IF build time > 5 minutes: audit layer caching order and .dockerignore.
@@ -276,7 +270,9 @@ On failure: git reset --hard HEAD~1.
 ```
 
 ## Output Format
-Print on completion: `Docker: {image_count} images optimized. Size: {before_size} → {after_size} (-{savings}%). Layers: {layer_count}. Security: {vuln_count} vulnerabilities ({critical} critical). Build: {build_time}. Verdict: {verdict}.`
+Print on completion: `Docker: {image_count} images optimized. Size: {before_size} → {after_size}
+(-{savings}%). Layers: {layer_count}. Security: {vuln_count} vulnerabilities ({critical} critical). Build:
+{build_time}. Verdict: {verdict}.`
 
 ## TSV Logging
 Log to `.godmode/docker-results.tsv`:

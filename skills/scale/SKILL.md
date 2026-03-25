@@ -165,7 +165,8 @@ Log to `.godmode/scale-results.tsv`:
 `timestamp\tsystem\tcurrent_rps\ttarget_rps\tbottleneck\tdirection\tcost_delta_pct\tverdict`
 
 ## Output Format
-Print: `Scale: {bottleneck}. Strategy: {horizontal|vertical|caching}. Capacity: {before} -> {after}. Cost: {est}. Status: {DONE|PARTIAL}.`
+Print: `Scale: {bottleneck}. Strategy: {horizontal|vertical|caching}. Capacity: {before} -> {after}. Cost:
+{est}. Status: {DONE|PARTIAL}.`
 
 ## Keep/Discard Discipline
 ```
