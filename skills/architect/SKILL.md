@@ -117,13 +117,23 @@ Document the decision formally:
 
 Never ask to continue. Loop autonomously until architecture comparison matrix, C4 diagrams, and ADR are complete.
 
-1. **Requirements before patterns.** Never recommend an architecture without understanding scale expectations, team size, and constraints. A microservice architecture for a 2-person team is malpractice.
-2. **Always compare at least 3 options.** Even if the answer seems obvious, the comparison matrix forces rigorous thinking and documents why alternatives were rejected.
-3. **C4 diagrams are mandatory.** At minimum produce Level 1 (Context) and Level 2 (Container) diagrams. Level 3 and 4 are produced when the user asks for detail.
-4. **Trade-offs are honest.** Every pattern has real downsides. Never present an architecture as having no weaknesses.
-5. **ADRs capture the "why."** The Architecture Decision Record explains the reasoning, not only the decision. Future developers will thank you.
-6. **Bounded contexts before microservices.** If recommending microservices, the bounded context map must come first. Services without clear domain boundaries become a distributed monolith.
-7. **Validate against the team.** The best architecture is one the team can actually build and operate. Factor in team experience and operational maturity.
+```bash
+# Analyze architecture dependencies and coupling
+npx madge --circular --extensions ts src/
+npx dependency-cruiser --validate .dependency-cruiser.cjs src/
+```
+
+IF team size < 5: prefer modular monolith over microservices.
+WHEN afferent coupling > 10 on any module: refactor to reduce.
+IF circular dependencies > 0: break cycles before adding features.
+
+1. **Requirements before patterns.** Understand scale, team, constraints.
+2. **Compare >= 3 options.** Comparison matrix forces rigor.
+3. **C4 diagrams mandatory.** Minimum Level 1 + Level 2.
+4. **Trade-offs are honest.** Every pattern has real downsides.
+5. **ADRs capture the "why."** Reasoning, not just decision.
+6. **Bounded contexts before microservices.** Map first, split second.
+7. **Validate against the team.** Best arch = team can build it.
 
 ## Output Format
 Print on completion:
@@ -205,7 +215,7 @@ ARCHITECTURE HEALTH SCORECARD:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Architecture decision contested by team | Document tradeoffs in an ADR (Architecture Decision Record). Present alternatives with pros/cons. Let data decide — prototype competing approaches if needed. |
-| Chosen pattern does not fit after implementation starts | Revisit constraints. If <30% implemented, pivot early. If >30%, adapt the pattern rather than restarting. Document the pivot in the ADR. |
-| Dependency creates vendor lock-in | Introduce an adapter/port layer. Abstract the dependency behind an interface so you swap it easily. |
-| Performance bottleneck in chosen architecture | Profile first. Check if the bottleneck is in the architecture or implementation. Add caching, async processing, or read replicas before restructuring. |
+| Architecture decision contested | Document tradeoffs in ADR. Prototype if needed. |
+| Pattern doesn't fit after start | If < 30% done: pivot. If > 30%: adapt. Document. |
+| Vendor lock-in risk | Add adapter/port layer. Abstract behind interface. |
+| Performance bottleneck | Profile first. Add caching/async before restructuring. |

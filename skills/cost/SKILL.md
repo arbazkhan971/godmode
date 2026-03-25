@@ -199,13 +199,19 @@ Anomaly detection:
 
 ## Key Behaviors
 
-1. **Data-driven only.** Back every recommendation with actual utilization data. Never recommend changes based on assumptions.
-2. **Dollar impact required.** Every recommendation must include the projected savings in dollars. "This instance is oversized" is not actionable. "$180/month savings by downsizing from m5.2xl to m5.large" is actionable.
-3. **Risk assessment included.** Every change has a risk level. Deleting an unattached volume is LOW risk. Downsizing a production database is MEDIUM risk. Switching to spot instances is HIGH risk for stateful workloads.
-4. **Reversibility matters.** Prefer changes you undo quickly. Right-sizing reverses in minutes. Reserved instance purchases do not.
-5. **Environment awareness.** Production optimizations stay conservative. Dev/staging optimizations go aggressive. Never apply dev-level recommendations to production.
-6. **Tagging is foundational.** Cost optimization without proper tagging is guesswork. Fix tagging first, then optimize.
-7. **Continuous, not one-time.** Cost optimization is a recurring practice, not a project. Set up alerts and schedules for ongoing governance.
+```bash
+# Analyze cloud costs
+aws ce get-cost-and-usage --time-period Start=2026-02-01,End=2026-03-01 --granularity MONTHLY --metrics BlendedCost
+infracost diff --path .
+```
+
+1. **Data-driven only.** Actual utilization data, not assumptions.
+2. **Dollar impact required.** "$180/mo savings" not "oversized".
+3. **Risk assessment.** LOW/MEDIUM/HIGH per recommendation.
+4. **Reversibility matters.** Right-sizing > reserved purchases.
+5. **Environment awareness.** Conservative for prod, aggressive for dev.
+6. **Tagging is foundational.** Fix tags before optimizing.
+7. **Continuous, not one-time.** Alerts + monthly review.
 
 ## Flags & Options
 
@@ -332,12 +338,10 @@ All resources tagged. Idle resources cleaned up. Compute rightsized from utiliza
 | Cost alerts too frequent | Adjust thresholds. Separate by service/team. Use anomaly detection. |
 | Tagging gaps | Tag top 10 expensive resources first. Enforce policy for new resources. |
 
-## Iterative Loop Protocol
-Loop through categories [compute, storage, transfer, reserved, idle, tagging]: ANALYZE utilization -> IDENTIFY savings -> RANK by dollar impact -> RECOMMEND with action + savings -> APPLY if approved -> VERIFY billing -> LOG to TSV. Exit when all categories analyzed.
-
 ## Keep/Discard Discipline
-KEEP if: savings confirmed AND no performance regression AND no availability impact. DISCARD if: performance degraded OR availability dropped OR savings not realized. Revert discarded changes immediately. Never batch multiple optimizations without measuring between them.
+KEEP if: savings confirmed AND no performance/availability regression.
+DISCARD if: degraded OR savings not realized. Revert immediately.
 
 ## Stop Conditions
-STOP when: all categories analyzed and savings quantified, OR savings target met, OR remaining opportunities <$50/month each, OR user requests stop, OR max 20 iterations.
-DO NOT STOP because one category has no savings or reserved instance analysis is complex.
+STOP when: all categories analyzed OR savings target met
+OR remaining < $50/mo each OR max 20 iterations.

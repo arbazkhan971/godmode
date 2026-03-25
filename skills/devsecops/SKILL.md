@@ -242,11 +242,23 @@ SECURITY METRICS DASHBOARD:
 
 ## Key Behaviors
 
-1. **Shift left, not shift burden.** Keep CI security scanning fast enough that developers do not skip it. Baseline scans in PRs, full scans on schedule.
-2. **Block on critical, warn on the rest.** Only CRITICAL and HIGH severity findings should block merges. Medium and low get tracked but do not stop velocity.
-3. **No secrets pass the gate.** Secret scanning has zero exceptions. A leaked secret is an incident, not a finding to triage.
-4. **SBOM is a requirement, not optional.** Every release must have a Software Bill of Materials. This is a legal requirement.
-5. **Scan at every layer.** Source code (SAST), dependencies (SCA), running app (DAST), containers (Trivy), infrastructure (Checkov), secrets (gitleaks). Vulnerabilities hide at every layer.
+```bash
+# Run security scans locally
+npx semgrep scan --config auto src/
+trivy image --severity CRITICAL,HIGH myapp:latest
+gitleaks detect --source . --verbose
+npx @cyclonedx/cyclonedx-npm --output-file sbom.json
+```
+
+IF CRITICAL findings > 0: block merge, SLA < 24 hours.
+WHEN secret detected in git history: rotate immediately, BFG to remove.
+IF scanner runtime > 5 minutes in CI: scope to changed files only.
+
+1. **Shift left, not shift burden.** Fast scans developers don't skip.
+2. **Block CRITICAL/HIGH, warn the rest.** Don't stop velocity on LOW.
+3. **No secrets pass the gate.** Zero exceptions.
+4. **SBOM required.** Every release, SPDX or CycloneDX.
+5. **Scan every layer.** SAST, SCA, DAST, containers, IaC, secrets.
 ## HARD RULES
 
 - NEVER allow secrets to pass the security gate — secret scanning has ZERO exceptions and NO override process
@@ -262,32 +274,15 @@ SAST INTEGRATION VALIDATION:
 ```
 
 ## Keep/Discard Discipline
+```
+KEEP if: true positive, affects production, CRITICAL/HIGH severity
+DISCARD if: false positive with justification OR already excepted
+Exceptions: max 30 day expiry, documented, reviewed
+```
 
-```
-FOR each security scanner finding:
- KEEP if:
- - True positive confirmed by manual review or verified by second scanner
- - Affects production code path (not dead code, not test-only)
- - Severity warrants action per pipeline policy (CRITICAL/HIGH always kept)
- DISCARD if:
- - False positive confirmed (manual review + documented justification)
- - Already covered by existing exception with valid expiry date
- - In allowlisted path/pattern with documented reason
- EXCEPTION process for MEDIUM/LOW findings:
- - File exception with: CVE/rule ID, justification, expiry (max 30 days), reviewer
- - Track in.godmode/devsecops-exceptions.tsv:
-  ...
-```
 ## Stop Conditions
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-- All controls for the target maturity level are ACTIVE (not only configured).
-- CRITICAL and HIGH severity findings block merge (verified with a test PR).
-- Secret scanning active on pre-commit, CI, and push protection (3 layers minimum).
-- Scanner versions pinned, tokens stored in CI/CD secret management.
-- SBOM generated for every release in SPDX or CycloneDX format.
+STOP when: all target maturity controls ACTIVE, CRITICAL/HIGH block merge,
+secret scanning on 3 layers, SBOM generated per release.
 
 ## Auto-Detection
 
@@ -327,19 +322,9 @@ timestamp	ci_platform	controls_configured	controls_total	maturity_before	maturit
 ## Success Criteria
 
 ```
-PASS (Maturity Level 3+) if ALL of the following:
- - SAST configured and running on every PR (Semgrep or CodeQL)
- - SCA configured with severity thresholds (CRITICAL/HIGH block merge)
- - Secret scanning active on pre-commit, CI, and push protection (3 layers)
- - Container scanning active for all Dockerfile changes (Trivy or Snyk)
- - Security gates block merge for CRITICAL and HIGH findings
- - SBOM generated for every release in SPDX or CycloneDX format
- - Scanner versions are pinned (not :latest)
- - Scanner tokens stored in CI/CD secret management (not plain env vars)
-
-PASS (Maturity Level 5) additionally requires:
- - DAST running against staging on every deploy
-  ...
+Level 3+: SAST on every PR, SCA with thresholds, secret scanning 3 layers,
+  container scanning, SBOM per release, scanners pinned.
+Level 5: additionally DAST on staging, IaC scanning, artifact signing.
 ```
 ## Error Recovery
 | Failure | Action |

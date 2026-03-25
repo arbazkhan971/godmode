@@ -1,234 +1,208 @@
 ---
 name: email
 description: |
-  Email and notification systems skill. Activates when user needs to build email delivery, notification systems, or communication infrastructure. Covers email service integration (SendGrid, SES, Postmark, Resend), email template design (MJML, React Email), notification system architecture (email, push, SMS, in-app), delivery tracking and bounce handling, and transactional vs marketing email separation. Triggers on: /godmode:email, "send emails", "notification system", "email templates", "push notifications", "bounce handling", or when building user communication features.
+  Email and notification systems skill. SendGrid,
+  SES, Postmark, Resend. Templates (MJML, React
+  Email). Bounce handling, delivery tracking,
+  DNS auth, stream separation.
+  Triggers on: /godmode:email, "send emails",
+  "notification system", "email templates".
 ---
 
 # Email — Email & Notification Systems
 
 ## When to Activate
 - User invokes `/godmode:email`
-- User says "send emails", "email templates", "transactional email"
-- User says "notification system", "push notifications", "SMS alerts"
-- User says "bounce handling", "delivery tracking", "email deliverability"
-- User says "email service", "SendGrid", "SES", "Postmark", "Resend"
-- Application needs to send emails or build a notification system
+- User says "send emails", "email templates"
+- User says "notification system", "push notifications"
+- User says "bounce handling", "deliverability"
+- Application needs email or notification infrastructure
 
 ## Workflow
 
-### Step 1: Notification Requirements Discovery
-Identify channels, email types, volume, and compliance needs:
+### Step 1: Requirements Discovery
+
+```bash
+# Detect existing email infrastructure
+grep -r "resend\|sendgrid\|aws-sdk.*ses\|postmark" \
+  package.json pyproject.toml go.mod 2>/dev/null
+
+# Find existing templates
+find . -path ./node_modules -prune -o \
+  -name "*.mjml" -o -name "*.email.tsx" \
+  -o -path "*/emails/*" 2>/dev/null | head -20
+
+# Check for queue system
+grep -r "bullmq\|bull\|sqs\|celery" \
+  package.json pyproject.toml 2>/dev/null
+```
 
 ```
 NOTIFICATION REQUIREMENTS:
-Channels: Email (transactional|marketing|both), Push (web|mobile|both), SMS, In-app
-Email categories: Authentication (critical), Transactional (high), Product (medium), Marketing (low)
-Volume: Transactional <N>/day, Marketing <N>/month, SMS <N>/month, Push <N>/day
-Compliance: CAN-SPAM, GDPR, CASL, one-click unsubscribe
+  Channels: Email | Push | SMS | In-app
+  Email types: Auth (critical) | Transactional (high)
+    | Product (medium) | Marketing (low)
+  Volume: Trans <N>/day, Marketing <N>/month
+  Compliance: CAN-SPAM, GDPR, CASL
+
+IF no queue system: add one (never send sync)
+IF no provider: recommend based on needs
+IF no DNS auth: set up SPF/DKIM/DMARC
 ```
 
-### Step 2: Email Service Integration
+### Step 2: Email Service Selection
 
 ```
-EMAIL SERVICE COMPARISON:
-| Feature | SendGrid | SES | Postmark | Resend |
-|--|--|--|--|--|
-| Best for | Full-feat | Volume | Transact | Dev-DX |
-| Free tier | 100/day | 62K/mo* | 100/mo | 3K/mo |
-| Deliver. | Good | Good | Excellent | Good |
-| Templates | Yes | SES v2 | Yes | React |
-| Marketing | Yes | No | No | No |
+| Feature     | SendGrid | SES    | Postmark | Resend |
+|-------------|----------|--------|----------|--------|
+| Best for    | Full feat| Volume | Transact | Dev DX |
+| Free tier   | 100/day  | 62K/mo | 100/mo   | 3K/mo  |
+| Delivery    | Good     | Good   | Excellent| Good   |
+| Templates   | Yes      | SES v2 | Yes      | React  |
 
-RECOMMENDATION:
-- Startups/developer-focused: Resend (best DX, React Email)
-- High-volume transactional: Postmark (best deliverability)
-- Full marketing + transactional: SendGrid (most features)
-- AWS-native / cost-sensitive: SES (cheapest at scale)
+IF startup/dev-focused: Resend (best DX)
+IF high-volume transactional: Postmark
+IF full marketing + transactional: SendGrid
+IF AWS-native / cost-sensitive: SES
 ```
-
-Integration: use provider SDK, send with `from`, `to`, `subject`, `react`/`html`, `tags`, idempotency header. Queue all sends (never synchronous in request handlers).
 
 ### Step 3: Email Template Design
 
-Use React Email (recommended for modern projects) or MJML (cross-client compatibility).
-
 ```
 EMAIL DESIGN CHECKLIST:
-Layout: Single column, max 600px, large tap targets, preheader text
-Content: Plain text version, alt text on images, visible unsubscribe, physical address (CAN-SPAM)
-Technical: Inline CSS, table-based layout (Outlook), no JavaScript, web-safe fonts, CDN-hosted images
-Deliverability: Authenticated from-address, List-Unsubscribe header, text-to-image ratio > 60%, no URL shorteners
+  Layout: single column, max 600px, large tap targets
+  Content: plain text version, alt text on images
+  Legal: visible unsubscribe, physical address
+  Technical: inline CSS, table layout (Outlook)
+  Deliverability: authenticated from-address,
+    List-Unsubscribe header, text:image > 60%
+
+THRESHOLDS:
+  Max email size: 100KB (incl. HTML + inline CSS)
+  Image hosting: CDN only, no base64 in email
+  Preheader text: 40-130 characters
 ```
 
-### Step 4: Notification System Architecture
+### Step 4: Notification Architecture
 
 ```
-NOTIFICATION FLOW:
-Trigger (event) → Notification Service → User Prefs Check → Channel Router
-  → Email Queue → SendGrid/SES/Postmark/Resend
-  → Push Queue → FCM/APNs/Web Push
-  → SMS Queue → Twilio/SNS
-  → In-App Queue → WebSocket/SSE
+FLOW:
+  Event → Notification Service → User Prefs Check
+    → Channel Router → Queue → Provider
 
-CHANNEL MATRIX (per event type):
+CHANNEL MATRIX:
   Email verification: Email=YES
   Password reset: Email=YES
-  Order confirmed: Email=YES, Push=YES, In-App=YES
-  Payment failed: Email=YES, Push=YES, SMS=YES, In-App=YES
-  Comment on post: Email=OPT, Push=YES, In-App=YES
-  Marketing promo: Email=OPT
-  YES=always, OPT=user preference, --=never
+  Order confirmed: Email+Push+In-App=YES
+  Payment failed: Email+Push+SMS+In-App=YES
+  Comment on post: Push+In-App=YES, Email=OPT
+  Marketing: Email=OPT only
+
+THRESHOLDS:
+  Rate limit: max 5 non-critical per user per hour
+  Digest threshold: > 10 pending → batch to digest
+  Queue retry: 3 attempts with exponential backoff
+  Submission timeout: 30s per send attempt
 ```
 
-Rate-limit non-critical notifications per user. Batch excess into digest emails.
-
-### Step 5: Delivery Tracking and Bounce Handling
+### Step 5: Delivery Tracking & Bounces
 
 ```
-EMAIL LIFECYCLE: QUEUED → SENT → DELIVERED → OPENED → CLICKED
-  └→ BOUNCED (hard/soft) | DEFERRED | DROPPED | SPAM
+LIFECYCLE: QUEUED→SENT→DELIVERED→OPENED→CLICKED
+  └→ BOUNCED | DEFERRED | DROPPED | SPAM
 
 KEY METRICS:
-  Delivery rate > 97%, Open rate (trans.) > 50%, Bounce rate < 2%
-  Spam complaint rate < 0.1%, Unsubscribe rate < 1%
+  Delivery rate: > 97%
+  Open rate (transactional): > 50%
+  Bounce rate: < 2%
+  Spam complaint rate: < 0.1%
+  Unsubscribe rate: < 1%
 
 BOUNCE HANDLING:
-  Hard bounce → add to suppression list, never email again
-  Soft bounce → track; after 3 in 30 days, treat as hard bounce
-  Spam complaint → suppress all, unsubscribe from marketing, alert team
+  Hard bounce → suppression list, never email again
+  Soft bounce → after 3 in 30 days, treat as hard
+  Spam complaint → suppress all, alert team
 ```
 
-### Step 6: DNS Authentication & Stream Separation
+### Step 6: DNS Authentication & Streams
 
 ```
 DNS RECORDS (required):
-  SPF: TXT @ "v=spf1 include:<provider> ~all"
+  SPF: TXT "v=spf1 include:<provider> ~all"
   DKIM: TXT <selector>._domainkey with public key
-  DMARC: TXT _dmarc "v=DMARC1; p=none → quarantine → reject (30-day progression)"
+  DMARC: TXT _dmarc "v=DMARC1; p=none"
+    Progress: none → quarantine → reject (30 days)
 
 STREAM SEPARATION:
-  notifications.myapp.com — Transactional (dedicated IP, immediate, > 99% delivery)
-  marketing.myapp.com — Marketing (separate IP, batched, CAN-SPAM required)
-  Why: Marketing spam complaints must not affect transactional deliverability
+  notifications.myapp.com — Transactional (dedicated IP)
+  marketing.myapp.com — Marketing (separate IP)
 
-IP WARM-UP: 50/day → 100 → 500 → 2K → 10K → 50K → full (over 30 days)
-  Stop if bounce > 5% or spam complaints > 0.1%
+IP WARM-UP SCHEDULE:
+  50/day → 100 → 500 → 2K → 10K → 50K → full
+  Duration: 30 days minimum
+  IF bounce > 5% at any stage: pause and audit
+  IF spam complaints > 0.1%: pause immediately
 ```
 
-### Step 7: Commit and Report
-Save email service, templates, notification service, webhook handler, preference management. Commit: `"email: <description> — <components implemented>"`
+### Step 7: Commit
+Commit: `"email: <description> — <components>"`
 
 ## Key Behaviors
-
-1. **Separate transactional and marketing streams.** Different subdomains and IPs. Marketing complaints must never affect password reset delivery.
-2. **Authenticate your domain fully.** SPF, DKIM, DMARC non-negotiable. Progress DMARC to p=reject within 30 days.
-3. **Always send a plain text version.** Screen readers and security-conscious users rely on it.
-4. **Honor unsubscribe immediately.** Process synchronously, not batched.
-5. **Implement a suppression list.** Check before every send. Never email hard-bounced addresses.
-6. **Use queues for email sending.** Never synchronous in request handlers. Retry with exponential backoff.
-7. **Monitor deliverability metrics daily.** Alert when metrics degrade.
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full notification system design and implementation |
-| `--email` | Email service integration only |
-| `--templates` | Email template design only |
-| `--push` | Push notification setup only |
-| `--sms` | SMS notification setup only |
-| `--inapp` | In-app notification system only |
-| `--deliverability` | Email deliverability audit and fixes |
-| `--provider <name>` | Use specific provider (sendgrid, ses, postmark, resend) |
-| `--dns` | Email DNS authentication setup |
-| `--preferences` | Notification preference center design |
+1. **Separate transactional and marketing streams.**
+2. **Authenticate domain fully.** SPF+DKIM+DMARC.
+3. **Always send plain text version.**
+4. **Honor unsubscribe immediately.** Synchronously.
+5. **Suppression list before every send.**
+6. **Queue all email sends.** Never synchronous.
+7. **Monitor deliverability daily.**
 
 ## HARD RULES
-
-1. **Never send email synchronously in request handlers.** Always queue and return immediately.
-2. **Never mix transactional and marketing on same domain/IP.** Use separate subdomains.
-3. **Never email a hard-bounced address again.** Check suppression list before every send.
-4. **Never skip SPF, DKIM, and DMARC.** All three required. Progress DMARC to p=reject.
-5. **Never send notifications without checking user preferences.** Every non-critical notification must respect opt-out.
+1. Never send email synchronously in request handlers.
+2. Never mix transactional/marketing on same domain.
+3. Never email a hard-bounced address again.
+4. Never skip SPF, DKIM, and DMARC.
+5. Never send without checking user preferences.
 
 ## Auto-Detection
-
 ```
-Check for: existing email provider SDK (resend, @sendgrid/mail, aws-sdk ses, postmark),
-email templates (emails/, src/emails/), notification service, queue system (bullmq, sqs),
-DNS records, webhook endpoints, environment variables.
-Reuse existing provider. Match existing template tech. Identify gaps.
-```
-
-## Loop Protocol
-
-```
-FOR each notification_type in detected_types (batches of 3):
-  1. Define channels and priority
-  2. Design email template (React Email or MJML)
-  3. Implement send function with queue + retry
-  4. Add plain-text fallback, verify suppression check
-POST-LOOP: Verify DNS records, set up bounce/complaint webhook
-```
-
-## Multi-Agent Dispatch
-```
-Agent 1 (email-service): Provider client, queue with retry, suppression list
-Agent 2 (templates): Email templates, plain-text versions, responsive design
-Agent 3 (delivery-tracking): Bounce/complaint webhooks, delivery metrics, alerts
-Agent 4 (notification-system): Multi-channel service, preference center, rate limiting
-MERGE: Combine → end-to-end delivery test
+1. Provider SDK: resend, @sendgrid/mail, ses, postmark
+2. Templates: emails/, src/emails/, *.mjml
+3. Queue: bullmq, sqs, celery
+4. DNS: check TXT records for SPF/DKIM/DMARC
 ```
 
 ## Output Format
 ```
-EMAIL SYSTEM COMPLETE:
-Provider: <name>, Templates: <N>, Channels: <N>
-Queue: <system>, Suppression: YES/NO
-DNS: SPF/DKIM/DMARC <status>
-Delivery tracking: <webhook endpoint>
-Verdict: PASS | NEEDS REVISION
+Email: Provider={name}, Templates={N},
+  Channels={N}. DNS: {status}.
+  Queue: {system}. Verdict: {verdict}.
 ```
 
 ## TSV Logging
-Append to `.godmode/email-results.tsv`: `STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS`
-
-## Success Criteria
-1. `email.send()` works end-to-end (test email received)
-2. At least one template renders correctly with dynamic data
-3. Webhook endpoint receives delivery status events
-4. Suppression list exists with auto-add on hard bounce
-5. Email sending is async (queued)
-6. SPF, DKIM, DMARC documented or verified
-7. All new code has tests
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| API key missing | Print env var name, link to dashboard, verify with curl |
-| Template render error | Validate with preview API, fix syntax |
-| Webhook signature fails | Check signing secret, test with provider's test event |
-| Email lands in spam | Check SPF/DKIM/DMARC, sender reputation, from-domain |
-| Queue not processing | Verify connection, check worker status, inspect DLQ |
-| Bounce rate > 5% | Pause sending, audit suppression list, check list hygiene |
+```
+step	component	provider	status	details
+```
 
 ## Keep/Discard Discipline
 ```
-KEEP if: email lands in inbox AND template renders AND SPF/DKIM/DMARC pass
-DISCARD if: email lands in spam OR template breaks OR authentication fails
+KEEP if: email lands in inbox AND template renders
+  AND SPF/DKIM/DMARC pass
+DISCARD if: lands in spam OR template breaks
+  OR authentication fails
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-STOP when: All notification types implemented with templates and queue-based delivery
-  AND SPF+DKIM+DMARC passing AND suppression list enforced AND bounce webhook active
+STOP when: All notification types implemented
+  AND SPF+DKIM+DMARC passing
+  AND suppression list enforced
+  AND bounce webhook active
   OR user requests stop
 ```
 
-## Platform Fallback
-Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task. See `adapters/shared/sequential-dispatch.md`.
-
+## Error Recovery
+- API key missing: print env var name, link to docs.
+- Template render error: validate with preview API.
+- Webhook signature fails: check signing secret.
+- Lands in spam: check DNS auth, sender reputation.
+- Bounce rate > 5%: pause, audit suppression list.

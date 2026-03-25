@@ -1,348 +1,255 @@
 ---
 name: graphql
 description: |
-  GraphQL API development skill. Activates when user needs to design, build, optimize, or test GraphQL APIs. Covers schema design (SDL-first and code-first), resolver architecture, N+1 query detection with DataLoader patterns, subscription implementation, schema federation for microservices, and performance hardening (query complexity limits, depth limiting, persisted queries). Produces production-ready schemas, resolvers, and test suites. Triggers on: /godmode:graphql, "build a GraphQL API", "design GraphQL schema", "fix N+1 queries", "set up subscriptions", or when the orchestrator detects GraphQL-related work.
+  GraphQL API development skill. Schema design,
+  resolver architecture, N+1 detection with DataLoader,
+  subscriptions, federation, performance hardening.
+  Triggers on: /godmode:graphql, "GraphQL schema",
+  "fix N+1 queries", "set up subscriptions".
 ---
 
 # GraphQL — API Development
 
 ## When to Activate
 - User invokes `/godmode:graphql`
-- User says "build a GraphQL API", "design GraphQL schema", "add a query/mutation"
-- User says "fix N+1 queries", "add DataLoader", "optimize GraphQL performance"
-- User says "set up GraphQL subscriptions", "add real-time updates"
-- User says "federate my schema", "split schema across services"
-- When `/godmode:plan` identifies GraphQL-related tasks
-- When `/godmode:review` flags GraphQL performance or design issues
+- User says "build a GraphQL API", "design schema"
+- User says "fix N+1 queries", "add DataLoader"
+- User says "set up subscriptions", "federate schema"
 
 ## Workflow
 
 ### Step 1: Discovery & Context
-Understand the GraphQL API requirements before writing any schema:
+
+```bash
+# Detect GraphQL framework
+grep -l "apollo-server\|graphql-yoga\|mercurius\|\
+pothos\|nexus\|type-graphql\|strawberry\|gqlgen" \
+  package.json pyproject.toml go.mod 2>/dev/null
+
+# Check for DataLoader usage
+grep -rl "dataloader\|DataLoader" src/ 2>/dev/null
+
+# Find schema files
+find . -name "*.graphql" -o -name "*.gql" \
+  | head -10
+```
 
 ```
 GRAPHQL DISCOVERY:
-Project: <name and purpose>
 Approach: SDL-first | Code-first
-Framework: Apollo Server | GraphQL Yoga | Mercurius | Pothos | Nexus | TypeGraphQL | Strawberry | Ariadne | gqlgen
-Language: TypeScript | Python | Go | Rust | Java
-Consumers: <web app, mobile, third-party, internal services>
-Scale: <expected queries/sec, subscription connections>
-Auth model: <JWT, session, API key, none>
-Existing schema: <list any existing types for consistency>
-Real-time needs: <subscriptions, live queries, none>
-Federation: <monolith | gateway with subgraphs>
+Framework: Apollo | Yoga | Mercurius | Pothos | gqlgen
+Consumers: web app | mobile | third-party
+Auth: JWT | session | API key
+Federation: monolith | gateway + subgraphs
+
+IF no DataLoader and has relations: N+1 is likely
+IF no depth limit: production API is vulnerable
+IF no complexity limit: one query can DoS the server
 ```
 
-If the user hasn't specified, ask: "SDL-first or code-first? What framework are you using?"
-
-### Step 2: Schema Design — SDL-First Approach
-Design the schema using Schema Definition Language as the source of truth:
+### Step 2: Schema Design
 
 ```graphql
-# ============================================================
-# SCHEMA: <ServiceName>
-# Approach: SDL-first
-# ============================================================
+# SDL-first example
+type Query {
+  user(id: ID!): User
+  users(first: Int!, after: String): UserConnection!
+}
 
-# --- Scalars ---
-scalar DateTime
-scalar JSON
-scalar Upload
+type Mutation {
+  createUser(input: CreateUserInput!): CreateUserPayload!
+}
 
-# --- Enums ---
-enum <EntityStatus> {
-  ACTIVE
-  INACTIVE
-  ARCHIVED
+# Every mutation returns payload with errors array
+type CreateUserPayload {
+  user: User
+  errors: [UserError!]!
+}
 ```
 
-Rules:
-- Every mutation returns a payload type with the entity and an errors array — never throw for user errors
-- Use Relay-style connection pagination for all list fields
-- Input types are always separate from output types
-- Non-nullable fields use `!` — be intentional about nullability
-- Enums for fixed sets of values, never strings
-
-### Step 3: Schema Design — Code-First Approach
-For code-first projects, generate type-safe schema builders:
-
 ```
-CODE-FIRST SCHEMA DESIGN:
-Framework: <Pothos | Nexus | TypeGraphQL | gqlgen | Strawberry>
+SCHEMA RULES:
+  Mutations return payload types (never throw)
+  All lists use Relay connections (edges, pageInfo)
+  Input types separate from output types
+  Non-nullable uses ! intentionally
+  Enums for fixed sets, never strings
 
-Architecture:
-  src/
-    graphql/
-      schema.ts            # Schema builder entry point
-      types/
-        <entity>.ts        # Type definitions per domain entity
-        connections.ts      # Shared pagination types
-        errors.ts           # Error types and interfaces
-      resolvers/
-        <entity>.resolver.ts  # Resolvers per domain entity
-      inputs/
-        <entity>.input.ts   # Input type definitions
+THRESHOLDS:
+  Max query depth: 10 levels
+  Max query complexity: 1000 points
+  Connection max first/last: 100 items
+  IF depth > 10: reject query
+  IF complexity > 1000: reject query
 ```
 
-### Step 4: Resolver Architecture
-Design resolvers with clear separation of concerns:
+### Step 3: Resolver Architecture
+
+Resolvers are thin orchestration — no business logic.
+Business logic lives in service layer.
+
+### Step 4: N+1 Detection and DataLoader
 
 ```
-RESOLVER ARCHITECTURE:
-  Request
-  ▼
-|  | Middleware | Auth, logging, rate limiting, tracing |
-  └──────┬───────┘
-  ▼
-|  | Resolver | Orchestration only — no business logic |
-|  | (thin layer) | Calls services, returns results |
-  └──────┬───────┘
-  ▼
+N+1 DETECTION:
+| Pattern                     | Action          |
+|-----------------------------|-----------------|
+| List with nested relations  | Add DataLoader  |
+| Field resolver with DB call | Must use loader |
+| 3+ levels deep query        | Audit batch plan|
+
+DATALOADER RULES:
+  Every relation field MUST use DataLoader.
+  Create loaders per-request (not global).
+  Batch by ID, return in same order as input.
+
+IF query count > N+1 for list of N: DataLoader missing
+IF no DataLoader imports: flag all relation resolvers
 ```
 
-Resolver implementation pattern:
-```typescript
-// RESOLVER PATTERN (TypeScript + Apollo)
-const resolvers = {
-  Query: {
-    // Delegate to service layer
-    entity: (_, { id }, ctx) => ctx.services.entity.findById(id),
-    entities: (_, { filter, pagination }, ctx) =>
-```
-
-### Step 5: N+1 Detection and DataLoader Patterns
-Identify and eliminate N+1 query problems:
-
-```
-N+1 DETECTION CHECKLIST:
-| Pattern | Status |
-|--|--|
-| List query with nested relations | CHECK for N+1 |
-| Field resolver with DB call | MUST use DataLoader |
-| Nested connection within list | CHECK batch strategy |
-| Polymorphic relations (unions) | CHECK loader per type |
-| Deeply nested queries (3+ levels) | CHECK cumulative load |
-
-DATALOADER IMPLEMENTATION:
-  WITHOUT DataLoader (N+1):
-```
-
-DataLoader factory pattern:
-```typescript
-// DATALOADER FACTORY
-function createLoaders(db: Database) {
-  return {
-    user: new DataLoader<string, User>(async (ids) => {
-      const users = await db.user.findMany({ where: { id: { in: [...ids] } } });
-      const userMap = new Map(users.map(u => [u.id, u]));
-```
-
-### Step 6: Subscription Implementation
-Design real-time GraphQL subscriptions:
+### Step 5: Subscriptions
 
 ```
 SUBSCRIPTION ARCHITECTURE:
-  Transport: WebSocket (graphql-ws) | SSE (for HTTP/2)
-  Protocol: graphql-ws (preferred) | subscriptions-transport-ws (legacy)
-  Pub/Sub backend: In-memory | Redis | Kafka | NATS
-  ┌──────────┐    ┌──────────┐    ┌──────────┐
-|  | Client | ◄── | Gateway | ◄── | Pub/Sub |  |
-|  | (WebSocket) |  | Server |  | Backend |  |
-  └──────────┘    └──────────┘    └──────────┘
-  ▲
-  ┌───────┴───────┐
-|  | Mutation |  |
+  Transport: WebSocket (graphql-ws preferred)
+  Pub/Sub: Redis (production) | in-memory (dev)
+
+THRESHOLDS:
+  Max subscription connections: 10K per server
+  Heartbeat interval: 30 seconds
+  IF > 1 server instance: must use Redis pub/sub
+  IF using in-memory pub/sub in prod: fix immediately
 ```
 
-### Step 7: Schema Federation for Microservices
+### Step 6: Federation (if needed)
+
+Each subgraph owns its entities. Gateway handles
+query planning. Subgraphs never call each other.
+Run composition checks before every merge.
+
+### Step 7: Performance Hardening
 
 ```
-FEDERATION: Client -> Gateway (Router) -> Subgraphs (each owns domain types)
-Version: Apollo Federation v2 | GraphQL Mesh | Cosmo | Grafbase
+REQUIRED DEFENSES:
+  Depth limit: 10 (configurable per operation)
+  Complexity limit: 1000 per query
+  Persisted queries or allowlist in production
+  Rate limiting: per-client, per-operation
 
-SUBGRAPH RULES:
-  1. Each subgraph owns its entities — single source of truth
-  2. @key directive for entity lookup: type User @key(fields: "id") { ... }
-  3. Extend types across subgraphs with reference resolvers
-  4. @shareable for types used across subgraphs
-  5. Gateway handles query planning — subgraphs never call each other
-
-COMPOSITION CHECKS: @key fields have __resolveReference, no ownership conflicts,
-  shared types @shareable, no circular deps, composition succeeds
+FIELD COSTS:
+  Scalar field: 1 point
+  Object field: 2 points
+  List field: first * child_cost
+  Connection: first * (edge_cost + node_cost)
 ```
 
-### Step 8: Performance Hardening
-Protect the GraphQL API from abuse and verify performance:
+### Step 8: Testing
 
+```bash
+# Run schema validation
+npx graphql-inspector validate schema.graphql
+
+# Run N+1 regression tests
+npx vitest run tests/graphql/ --reporter=verbose
 ```
-PERFORMANCE DEFENSES:
-
-1. QUERY COMPLEXITY ANALYSIS:
-   ─────────────────────────
-   Assign cost to each field and reject queries exceeding threshold:
-
-   type Query {
-     users(first: Int): UserConnection  # cost: first * 2 (list multiplier)
-   }
-   type User {
-     name: String    # cost: 1
-     posts: [Post]   # cost: 10 (nested list)
-   }
-
-   Max complexity: 1000 per query
-```
-
-### Step 9: Testing GraphQL APIs
 
 ```
 TESTING LAYERS:
-  Schema validation: buildSchema — verify valid SDL
-  Resolver unit tests: mock context, test in isolation (Jest/Vitest)
-  Integration tests: full query execution against test server (supertest)
-  N+1 regression: instrument DB, assert query count per operation — fail CI on regression
-  Contract: graphql-inspector diff — block merge on breaking changes without version bump
-  Schema snapshot: snapshot printed schema, diff catches unintended changes
+  Schema validation: buildSchema succeeds
+  Resolver unit: mock context, test isolation
+  Integration: full query execution
+  N+1 regression: assert query count per operation
+  Contract: graphql-inspector diff (breaking changes)
 ```
 
-### Step 10: Artifacts & Completion
-Generate the deliverables:
+### Step 9: Artifacts & Completion
 
 ```
-GRAPHQL DESIGN COMPLETE:
-
-Artifacts:
-- Schema: src/graphql/schema.graphql (or generated from code-first)
-- Resolvers: src/graphql/resolvers/<entity>.resolver.ts
-- DataLoaders: src/graphql/loaders/<entity>.loader.ts
-- Subscriptions: src/graphql/subscriptions/<entity>.subscription.ts
-- Tests: tests/graphql/<entity>.test.ts
-- Performance config: src/graphql/plugins/{complexity,depth-limit}.ts
-
-Metrics:
-- Types: <N> object types, <M> input types, <K> enums
-- Operations: <N> queries, <M> mutations, <K> subscriptions
-- N+1 protection: DataLoaders for all relation fields
-- Performance: complexity limit <X>, depth limit <Y>
+GRAPHQL COMPLETE:
+Types: <N> objects, <M> inputs, <K> enums
+Operations: <N> queries, <M> mutations, <K> subs
+DataLoaders: <N> (all relation fields covered)
+Performance: depth <N>, complexity <N>
 ```
 
-Commit: `"graphql: <service> — <N> types, <M> operations, DataLoaders, subscriptions configured"`
+Commit: `"graphql: <service> — <N> types,
+  <M> operations, DataLoaders configured"`
 
 ## Key Behaviors
 
-1. **Schema is the contract.** Whether SDL-first or code-first, the schema is the source of truth. Design it before implementing resolvers.
-2. **DataLoaders are mandatory.** Every field resolver that fetches data must use a DataLoader. No exceptions. N+1 queries are bugs.
-3. **Mutations return payloads, not raw types.** Every mutation returns a payload with the entity and an errors array. Never throw for user-facing errors.
-4. **Performance defenses are not optional.** Every production GraphQL API must have depth limiting, complexity analysis, and either persisted queries or an allowlist.
-5. **Federation is an architecture decision.** Do not federate prematurely. Start monolithic and extract subgraphs when team boundaries or scaling demands require it.
-6. **Test the schema, not only the resolvers.** Schema snapshot tests catch accidental breaking changes. Query count tests catch N+1 regressions. Both run in CI.
-7. **Subscriptions need infrastructure.** In-memory pub/sub works for development. Production requires Redis, Kafka, or NATS — and connection limits.
+1. **Schema is the contract.** Design before resolvers.
+2. **DataLoaders are mandatory.** N+1 queries are bugs.
+3. **Mutations return payloads.** Never throw for
+   user-facing errors.
+4. **Performance defenses not optional.** Depth +
+   complexity limits on every production API.
+5. **Do not federate prematurely.**
+6. **Test the schema, not only resolvers.**
 
-## Flags & Options
+## HARD RULES
 
-| Flag | Description |
-|--|--|
-| (none) | Full GraphQL design workflow |
-| `--sdl` | SDL-first schema design |
-| `--code-first` | Code-first schema design (Pothos, Nexus, TypeGraphQL) |
+1. Every relation resolver must use DataLoader.
+2. Every mutation returns payload + errors array.
+3. Every list uses Relay-style connections.
+4. Never expose DB column names as GraphQL fields.
+5. Separate input types for create vs update.
+6. Always add depth and complexity limits.
+7. Always use persisted queries in production.
+8. Never share input types across operations.
+9. Always run schema snapshot tests in CI.
+10. Never federate prematurely.
 
 ## Auto-Detection
-
 ```
-1. Framework: apollo-server, graphql-yoga, mercurius, pothos, nexus, type-graphql, strawberry, gqlgen
-2. Approach: *.graphql files = SDL-first, schema builder imports = code-first
-3. DataLoader: scan for dataloader imports — flag if missing with relation resolvers
-4. Subscriptions: graphql-ws, Redis pub/sub config
-5. Federation: @apollo/subgraph, @apollo/gateway, federation directives
-6. Performance: query-complexity, depth-limit, persisted queries config
-7. N+1: field resolvers with direct DB calls (no DataLoader)
+1. Framework: apollo, yoga, mercurius, pothos, gqlgen
+2. Approach: *.graphql = SDL, builder imports = code
+3. DataLoader: scan for imports, flag if missing
+4. Performance: depth-limit, complexity config
 ```
 
-## Explicit Loop Protocol
-
+## Loop Protocol
 ```
-FOR each entity (dependency order, leaf entities first):
-  1. DESIGN types, connections, inputs, mutation payloads
-  2. IMPLEMENT resolvers (queries + mutations)
-  3. CREATE DataLoaders for all relation fields
-  4. WRITE tests (unit + integration + N+1 query count assertions)
-  5. REPORT: "Entity <N>/<total>: <name> — <X> queries, <Y> mutations"
-ON COMPLETION: Add complexity/depth limits, run schema validation
-```
-
-## Hard Rules
-
-```
-HARD RULES — GRAPHQL:
-1. EVERY field resolver that fetches data MUST use a DataLoader. No exceptions. N+1 queries are bugs.
-2. EVERY mutation MUST return a payload type with the entity and an errors array. Never throw for user-facing errors.
-3. EVERY list field MUST use Relay-style connection pagination (edges, pageInfo, totalCount).
-4. NEVER expose database column names directly as GraphQL fields. Design the schema for consumers, not the database.
-5. ALWAYS use separate input types for create vs update. They have different required fields and validation rules.
-6. ALWAYS add depth limiting and complexity analysis to production APIs. Without them, one query can bring down the server.
-7. ALWAYS use persisted queries or an allowlist in production. Arbitrary query strings are an attack surface.
-8. NEVER share message/input types across multiple operations. Each query/mutation gets its own input and output types.
-9. ALWAYS run schema snapshot tests and breaking change detection in CI. Accidental breaking changes break clients.
-10. NEVER federate prematurely. Start monolithic. Extract subgraphs only when team boundaries or scaling demands it.
+FOR each entity (leaf first):
+  1. Design types, connections, inputs, payloads
+  2. Implement resolvers (queries + mutations)
+  3. Create DataLoaders for all relation fields
+  4. Write tests (unit + integration + N+1 count)
+  5. IF N+1 detected: add DataLoader, re-test
+  6. IF breaking change: add new field, deprecate old
+POST: Add complexity/depth limits, validate schema
 ```
 
 ## Output Format
-Print: `GraphQL: {types} types, {queries} queries, {mutations} mutations, {dataloaders} DataLoaders. N+1: {status}. Performance: depth {N}, complexity {N}. Status: {DONE|PARTIAL}.`
+Print: `GraphQL: {types} types, {queries} queries,
+  {mutations} mutations, {dataloaders} DataLoaders.
+  N+1: {status}. Depth: {N}. Verdict: {verdict}.`
 
 ## TSV Logging
-
-Log every GraphQL design session to `.godmode/graphql-results.tsv`:
-
 ```
-Fields: timestamp\tproject\ttypes_count\tqueries_count\tmutations_count\tdataloaders_count\tn1_issues_found\tn1_issues_fixed\tvalidation_status\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-api\t24\t8\t12\t15\t3\t3\tPASS\tabc1234
-```
-
-Append after every completed design or extension pass. One row per session. If the file does not exist, create it with a header row.
-
-## Success Criteria
-
-```
-GRAPHQL SUCCESS CRITERIA:
-|  Criterion                                  | Required         |
-|--|--|
-|  Schema compiles without errors             | YES              |
-|  All list fields use Relay connections       | YES              |
-|  All relation fields have DataLoaders       | YES              |
-|  All mutations return payload types          | YES              |
-|  Depth limit configured                     | YES              |
-|  Complexity limit configured                | YES              |
-|  N+1 regression tests pass (query counts)   | YES              |
-|  Schema snapshot test passes                | YES              |
-|  No breaking changes vs previous schema     | YES (if exists)  |
-|  Persisted queries or allowlist in prod     | YES (production)  |
-
-VERDICT: ALL required criteria must PASS. Any FAIL → fix before commit.
-```
-
-## Error Recovery
-```
-Schema fails: fix syntax (missing types, circular refs, duplicates). N+1 detected: add DataLoader, re-test count.
-Breaking change: revert removals, add new fields, use @deprecated. Mutation raw error: wrap in payload type.
-Subscription silent: verify pub/sub connection and topic names. Limit blocks query: adjust limit or field cost overrides.
+timestamp	types	queries	mutations	dataloaders	n1_fixed	status
 ```
 
 ## Keep/Discard Discipline
 ```
-KEEP if: schema compiles, zero N+1, all mutations return payloads, depth/complexity configured, no breaking changes.
-DISCARD if: N+1 detected OR mutation throws OR list lacks Relay pagination OR breaking change without version bump.
-On discard: revert. Run schema snapshot + N+1 regression test before every commit.
+KEEP if: schema compiles AND zero N+1
+  AND mutations return payloads AND limits configured
+DISCARD if: N+1 detected OR mutation throws
+  OR breaking change without version bump
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
+STOP when ALL of:
+  - Schema compiles, snapshot test passes
+  - All relation fields have DataLoaders
+  - All mutations return payload types
+  - Depth + complexity limits configured
+  - No breaking changes vs previous schema
 ```
-1. Schema compiles without errors and snapshot test passes.
-2. All relation fields have DataLoaders (zero N+1 queries verified by query count assertions).
-3. All mutations return payload types with entity and errors array.
-4. Depth limit and complexity limit are configured for production.
-5. No breaking changes detected vs previous schema version.
 
+## Error Recovery
+- Schema fails: fix syntax, missing types, circular refs.
+- N+1 detected: add DataLoader, re-test query count.
+- Breaking change: revert removal, add new field,
+  use @deprecated.
+- Subscription silent: verify pub/sub connection.

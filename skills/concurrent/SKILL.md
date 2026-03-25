@@ -252,10 +252,21 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 
 ## Key Behaviors
 
-1. **Identify shared mutable state first.** Every concurrency bug starts with shared mutable state. Enumerate it before writing any concurrent code.
-2. **Prefer message passing over shared state.** Channels, actors, and events are safer than mutexes. Use shared mutable state only when message passing adds unacceptable overhead.
-3. **Always use the race detector.** If your language has a race detector, run it on every test. No exceptions. A clean race detector run is a minimum, not a guarantee.
-4. **Lock ordering prevents deadlocks.** If you must use multiple locks, define and enforce a global acquisition order. Document it.
+```bash
+# Run concurrency checks
+go test -race ./...
+cargo test -- --test-threads=1
+python -m pytest tests/ -x --timeout=30
+```
+
+IF race detector reports > 0 races: fix before merging.
+WHEN stress test (1000 iterations) shows any failure: investigate.
+IF mutex hold time > 100ms: refactor to reduce critical section.
+
+1. **Identify shared mutable state first.** Enumerate before coding.
+2. **Prefer message passing.** Channels > mutexes.
+3. **Always use race detector.** Run on every test. No exceptions.
+4. **Lock ordering prevents deadlocks.** Document global order.
 ## Flags & Options
 
 | Flag | Description |
@@ -265,18 +276,10 @@ Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdic
 | `--race` | Race condition detection and fixes |
 
 ## Auto-Detection
-
-Before prompting the user, automatically detect concurrency context:
-
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect language and concurrency model:
- - Go: goroutines + channels (CSP). Check: go.mod, *.go files
- - Rust: tokio/async-std. Check: Cargo.toml for tokio, async-std deps
- - Node.js: event loop + async/await. Check: package.json
- - Python: asyncio, threading, multiprocessing. Check: imports in *.py
- - Java/Kotlin: threads, virtual threads, coroutines. Check: pom.xml, build.gradle
- - Erlang/Elixir: actor model (OTP). Check: mix.exs, rebar.config
+Detect language and concurrency model:
+Go: goroutines+channels. Rust: tokio/async-std. Node: event loop.
+Python: asyncio/threading. Java: threads/virtual threads.
 ## Keep/Discard Discipline
 Each concurrency fix either passes the race detector or gets reverted.
 - **KEEP**: Race detector clean, stress test (1000 iterations) passes, no new deadlock risk introduced.
@@ -326,19 +329,16 @@ timestamp	component	language	model	shared_states	races_found	races_fixed	deadloc
 Append one row per session. Create the file with headers on first run.
 
 ## Success Criteria
-1. Every piece of shared mutable state identified and listed in the inventory.
-2. Every shared mutable state has a documented protection mechanism (mutex, atomic, channel, immutable).
-3. Race condition analysis completed using the 8-pattern checklist.
-4. Race detector run (go -race, TSan, etc.) on all concurrent code paths.
-5. Deadlock detection checklist completed with all items PASS.
-6. Cancellation paths verified — every concurrent operation supports cancellation.
-7. At least one stress test written: run 1000 iterations with maximum parallelism.
-8. Every mutex has a comment documenting what shared state it protects.
+1. All shared mutable state identified and protected.
+2. Race detector reports 0 races on all code paths.
+3. Deadlock checklist: all items PASS.
+4. Stress test: >= 1000 iterations, max parallelism, all pass.
+5. Every mutex has a comment documenting protected state.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Deadlock detected | Use consistent lock ordering. Add lock timeout. Use `NOWAIT` or `SKIP LOCKED` in SQL. Log lock acquisition order for debugging. |
-| Race condition in tests (flaky) | Run stress test 1000x to reproduce reliably. Add explicit synchronization or use deterministic scheduling in test harness. |
-| Thread pool exhaustion | Check for blocking calls in async code. Add backpressure. Monitor active thread count. Switch to a work-stealing scheduler. |
-| Data corruption under load | Add mutex/lock around shared state. Use atomic operations for counters. Verify all shared state is documented with protecting lock. |
+| Deadlock detected | Consistent lock ordering. Add timeout. Use NOWAIT in SQL. |
+| Race in tests (flaky) | Stress test 1000x to reproduce. Add synchronization. |
+| Thread pool exhaustion | Check blocking in async. Add backpressure. Monitor threads. |
+| Data corruption under load | Add mutex. Use atomics for counters. Document all locks. |

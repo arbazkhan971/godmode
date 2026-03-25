@@ -1,329 +1,133 @@
 ---
 name: query
-description: |
-  Query optimization and data analysis skill. Activates when a developer needs to analyze, optimize, or debug database queries. Interprets EXPLAIN plans, recommends indexes, rewrites queries for performance, detects N+1 problems, and profiles slow queries. Works across SQL databases (PostgreSQL, MySQL, SQLite, SQL Server), MongoDB, Redis, Elasticsearch, and ORM-generated queries (Prisma, Sequelize, TypeORM, Django ORM, ActiveRecord, SQLAlchemy, GORM). Triggers on: /godmode:query, "this query is slow", "optimize this query", "explain plan", "add an index", "N+1 problem", or when performance profiling reveals database bottlenecks.
+description: Query optimization and EXPLAIN analysis.
 ---
 
-# Query -- Query Optimization & Data Analysis
-
-## When to Activate
-- User invokes `/godmode:query`
-- User says "this query is slow," "optimize this query," "why is this taking so long?"
-- User shares an EXPLAIN plan and asks for interpretation
-- User asks about indexing strategy
-- Performance profiling reveals database queries as a bottleneck
-- User encounters N+1 query problems
-- User needs to write a complex query (aggregation, window functions, CTEs, subqueries)
-- User asks "should I add an index?" or "which indexes do I need?"
-- User needs to analyze data patterns or generate reports from the database
+## Activate When
+- `/godmode:query`, "this query is slow", "optimize"
+- EXPLAIN plan interpretation, indexing strategy
+- N+1 problem, complex aggregation, slow query log
 
 ## Workflow
 
-### Step 1: Identify Query Context
-
-Determine the database engine, access pattern, and the query to optimize:
-
+### 1. Query Context
 ```
-QUERY CONTEXT:
-Database:       <PostgreSQL | MySQL | SQLite | SQL Server | MongoDB | Redis | Elasticsearch>
-Access via:     <Raw SQL | Prisma | Sequelize | TypeORM | Django ORM | ActiveRecord | SQLAlchemy | GORM | Mongoose | Drizzle>
-Query source:   <user-provided | ORM-generated | slow query log | application code>
-Table(s):       <tables/collections involved>
-Estimated rows: <approximate row counts for involved tables>
-Current timing: <execution time if known>
-Target timing:  <acceptable execution time>
+Database: PostgreSQL|MySQL|SQLite|MongoDB|Redis
+Access via: Raw SQL|Prisma|Django ORM|ActiveRecord|GORM
+Table(s): <involved tables>
+Estimated rows: <approximate counts>
+Current time: <ms>  Target: <ms>
 ```
-If the query comes from an ORM, extract the generated SQL first:
 ```bash
-# Prisma: enable query logging
-# In prisma client initialization:
-# new PrismaClient({ log: ['query'] })
-
-# Django: use django.db.connection.queries or django-debug-toolbar
-python -c "
+# Extract ORM-generated SQL
+# Prisma: new PrismaClient({ log: ['query'] })
+# Django: django.db.connection.queries
+# Rails: ActiveRecord::Base.logger = Logger.new(STDOUT)
 ```
 
-### Step 2: Analyze Current Query Performance
-
-#### 2a: Run EXPLAIN (SQL Databases)
-
-Execute the correct EXPLAIN command for the database engine:
-
+### 2. EXPLAIN Analysis
 ```sql
 -- PostgreSQL (most informative)
 EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) <query>;
-
--- PostgreSQL: without executing (safe for destructive queries)
+-- Safe mode (no execution)
 EXPLAIN (COSTS, FORMAT JSON) <query>;
-
 ```
-#### 2b: Interpret EXPLAIN Output
-
-Read the EXPLAIN output and extract these signals:
-
 ```
-QUERY ANALYSIS:
-Scan type:        <Seq Scan | Index Scan | Index Only Scan | Bitmap Scan | Hash Join | Nested Loop | etc.>
-Rows estimated:   <planner estimate>
-Rows actual:      <actual rows, if ANALYZE used>
-Estimate accuracy: <ratio of estimated to actual -- off by 10x+ is a red flag>
-Cost:             <total cost from planner>
-Actual time:      <execution time in ms>
-Buffers:          <shared hit, shared read, shared written>
-  ...
+Red flags:
+[ ] Seq Scan on > 10K rows — needs index
+[ ] Nested Loop on large tables — use hash join
+[ ] Estimated vs actual off > 10x — stale stats
+[ ] Sort on disk — needs work_mem or index
+[ ] Filter removes > 90% scanned — index needed
+[ ] Seq Scan inside loop — N+1 pattern
 ```
-Key red flags:
-```
-RED FLAGS:
-[ ] Sequential scan on large table (> 10K rows) -- needs index
-[ ] Nested loop join on large tables -- switch to hash/merge join
-[ ] Rows estimated vs actual off by > 10x -- stale statistics
-[ ] Sort on disk (external merge) -- needs more work_mem or index
-[ ] Filter removing > 90% of scanned rows -- index needed
-[ ] Seq Scan inside a loop -- classic N+1 pattern
-[ ] High shared read / low shared hit -- data not in cache
-  ...
-```
+IF MongoDB: `db.collection.find().explain("executionStats")`
+  Check totalDocsExamined vs nReturned ratio.
+IF Redis: `SLOWLOG GET 10` for slow commands.
 
-#### 2c: Analyze MongoDB Queries
-
-```javascript
-// Get query execution stats
-db.collection.find(<query>).explain("executionStats")
-
-// Key fields to check:
-// executionStats.totalDocsExamined vs executionStats.nReturned
-//   (if ratio > 10:1, you need a better index)
+### 3. Diagnose Issues
 ```
-#### 2d: Analyze Redis Commands
-
-```bash
-# Check slow log
-SLOWLOG GET 10
-
-# Monitor commands in real-time (use briefly -- impacts performance)
-MONITOR
-
+Missing Index:
+  Evidence: Seq Scan on <table> filtering by <col>
+  Fix: CREATE INDEX idx_<table>_<col> ON <table>(<col>)
+N+1 Query:
+  Evidence: <N> identical queries in loop
+  Fix: JOIN or eager loading (includes/select_related)
+  ORM: Django select_related, Prisma include,
+    Rails includes, SQLAlchemy joinedload
+Inefficient Join:
+  Evidence: Nested Loop on <N>x<M> rows
+  Fix: Ensure join columns indexed both sides
+Over-fetching:
+  Evidence: SELECT * returning <N> unused columns
+  Fix: SELECT only needed columns
+Stale Statistics:
+  Evidence: Estimated <N> vs actual <M> (off by >10x)
+  Fix: ANALYZE <table>
 ```
-### Step 3: Diagnose Performance Issues
+IF improvement < 10% after optimization: diminishing returns.
+IF query still > 1s after indexes: consider materialized view.
 
-Identify the root cause of poor performance:
-
-#### Issue 1: Missing Index
+### 4. Index Recommendations
 ```
-DIAGNOSIS: Missing index
-Evidence: Sequential scan on <table> filtering by <column>
-         Scanned <N> rows, returned <M> rows (ratio: <N/M>:1)
-Solution: CREATE INDEX idx_<table>_<column> ON <table> (<column>);
-Impact:   Seq Scan -> Index Scan, estimated speedup: <X>x
+B-tree (default): equality, range, sort, LIKE 'prefix%'
+GIN: full-text search, JSONB, arrays
+BRIN: very large tables with natural ordering
+Partial: WHERE active=true (smaller, faster)
+Covering (INCLUDE): enables index-only scan
 ```
-
-#### Issue 2: N+1 Query Problem
-```
-DIAGNOSIS: N+1 query
-Evidence: <N> identical queries executed in a loop, each fetching one related record
-          Total queries: <N+1> (1 parent + N children)
-          Total time: <sum of all query times>
-Solution: Replace with a single JOIN or batch query
-          ORM solution: Use eager loading (includes/select_related/with/include)
-Impact:   <N+1> queries -> <1-2> queries, estimated speedup: <X>x
-```
-
-#### Issue 3: Inefficient Join
-```
-DIAGNOSIS: Inefficient join strategy
-Evidence: Nested Loop join between <table_a> (<N> rows) and <table_b> (<M> rows)
-          Resulting in <N*M> comparisons
-Solution: Verify join columns are indexed on both sides
-          Rewrite as a subquery or CTE if the join produces excessive rows
-Impact:   Nested Loop -> Hash Join, estimated speedup: <X>x
-```
-
-#### Issue 4: Over-fetching
-```
-DIAGNOSIS: Over-fetching data
-Evidence: SELECT * returning <N> columns when only <M> are used
-          Transferring <X>MB when <Y>MB would suffice
-Solution: SELECT only needed columns
-          Use covering index for index-only scan
-Impact:   Reduced I/O and network transfer, estimated speedup: <X>x
-```
-
-#### Issue 5: Stale Statistics
-```
-DIAGNOSIS: Stale table statistics
-Evidence: Planner estimated <N> rows, actual was <M> rows (off by <ratio>x)
-          Bad estimate leads to wrong join strategy and scan type
-Solution: ANALYZE <table>;  -- PostgreSQL
-          ANALYZE TABLE <table>;  -- MySQL
-Impact:   Planner makes better decisions with accurate statistics
-```
-
-#### Issue 6: Missing Composite Index
-```
-DIAGNOSIS: Multiple single-column indexes instead of composite
-Evidence: Bitmap AND/OR combining <N> indexes on <table>
-          Each index scan returns too many rows individually
-Solution: CREATE INDEX idx_<table>_<col1>_<col2> ON <table> (<col1>, <col2>);
-          Column order: most selective first, then range/sort columns
-Impact:   Bitmap scan -> single Index Scan, estimated speedup: <X>x
-```
-
-#### Issue 7: Unoptimized Aggregation
-```
-DIAGNOSIS: Full table scan for aggregation
-Evidence: Seq Scan + Sort + GroupAggregate on <table> (<N> rows)
-Solution: Add index matching GROUP BY columns
-          Use a materialized view for frequently-run aggregations
-          Use approximate counts (HyperLogLog) for cardinality estimation
-Impact:   Seq Scan -> Index Scan/Index Only Scan, estimated speedup: <X>x
-```
-
-### Step 4: Recommend and Implement Optimizations
-
-For each diagnosed issue, provide a concrete fix:
-
-#### 4a: Index Recommendations
-
-```
-INDEX RECOMMENDATION:
-Table:      <table>
-Columns:    <column(s)>
-Type:       <btree | hash | gin | gist | brin | partial | covering>
-Rationale:  <why this index helps>
-Trade-off:  <write overhead, storage cost>
-
-SQL:
-  ...
-```
-Index type selection guide:
-```
-B-tree (default):     Equality, range, sorting, LIKE 'prefix%'
-Hash:                 Equality only, slightly faster than B-tree for exact match
-GIN:                  Full-text search, JSONB containment, array operations
-GiST:                Geometric data, range types, full-text search
-BRIN:                 Very large tables with natural ordering (timestamps, sequential IDs)
-Partial:              Queries that always filter on a condition (WHERE active = true)
-Covering (INCLUDE):   Enables index-only scan by including non-key columns
-```
-
-#### 4b: Query Rewriting
-
-Present the original and optimized query side by side:
-
-```
-ORIGINAL QUERY:
-<original SQL>
-
-Time: <original time>
-Plan: <key plan details>
-
-OPTIMIZED QUERY:
-<rewritten SQL>
-  ...
-```
-Common rewrites:
 ```sql
--- ANTI-PATTERN: Correlated subquery
-SELECT u.*, (SELECT COUNT(*) FROM orders WHERE user_id = u.id) AS order_count
-FROM users u;
+-- ALWAYS use CONCURRENTLY in production PostgreSQL
+CREATE INDEX CONCURRENTLY idx_name ON table(col);
+```
+Trade-off: every index speeds reads, slows writes.
+IF write-heavy table (> 1000 writes/sec): limit to 3-5 indexes.
 
--- OPTIMIZED: JOIN with aggregation
-SELECT u.*, COALESCE(o.order_count, 0) AS order_count
+### 5. Verify
+```bash
+# Run EXPLAIN ANALYZE on optimized query
+# Run 3 times, take median
+# Run full test suite — verify correctness
+# Check write performance — new indexes slow writes
 ```
 
-#### 4c: ORM-Level Optimizations
-- **Django**: `select_related` / `prefetch_related` for N+1
-- **Prisma**: `include` in `findMany` queries
-- **Rails**: `includes` / `eager_load` at query site
+## Hard Rules
+1. NEVER claim optimized without EXPLAIN before/after.
+2. ALWAYS CREATE INDEX CONCURRENTLY in production PG.
+3. NEVER add index without stating write trade-off.
+4. NEVER SELECT * in production queries.
+5. NEVER OFFSET for deep pagination — use keyset.
+6. NEVER apply functions to indexed columns in WHERE.
+7. ALWAYS fix N+1 at ORM level, not just SQL.
 
-### Step 5: Verify Optimization
+## TSV Logging
+Append `.godmode/query-results.tsv`:
 ```
-1. Run EXPLAIN ANALYZE on optimized query -- confirm plan changed
-2. Run query 3 times -- take median execution time
-3. Run full test suite -- verify correctness preserved
-4. Check write performance -- new indexes slow down writes
+timestamp	database	queries_optimized	indexes_added	latency_pct	status
 ```
-Commit: `"query: optimize <description> -- <speedup>x improvement"`
 
-## HARD RULES
-
+## Keep/Discard
 ```
-HARD RULES — NEVER VIOLATE:
-1. NEVER claim a query is optimized without EXPLAIN ANALYZE before and after.
-2. ALWAYS use CREATE INDEX CONCURRENTLY in PostgreSQL production environments.
-3. NEVER add an index without stating the write overhead trade-off.
-4. NEVER use SELECT * in production queries — select only needed columns.
-5. NEVER use OFFSET for deep pagination — use keyset/cursor pagination.
-6. NEVER apply functions to indexed columns in WHERE clauses.
-7. ALWAYS fix N+1 at the ORM/application level, not only the SQL level.
-  ...
-```
-## Autonomous Operation
-- Loop until target or budget. Never pause.
-- On failure: git reset --hard HEAD~1.
-- Never ask to continue. Loop autonomously.
-
-## Key Behaviors
-
-1. **Measure before and after.** Never claim an optimization without numbers. Run EXPLAIN ANALYZE before the change, apply the fix, run EXPLAIN ANALYZE after.
-2. **Read the EXPLAIN output line by line.** Do not only check if there is a Seq Scan. Understand the full plan -- join order, filter conditions, sort methods, buffer usage.
-3. **Prefer index-only solutions.** Adding an index is cheaper and safer than rewriting application code. Start with indexes, escalate to query rewrites only if needed.
-4. **State write trade-offs.** Every index speeds up reads but slows down writes. State the trade-off explicitly.
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Interactive query optimization workflow |
-| `--explain` | Run EXPLAIN on a query and interpret the output |
-| `--indexes` | Analyze and recommend indexes for the database |
-
-## Keep/Discard Discipline
-```
-After EACH query optimization:
-  1. MEASURE: Run EXPLAIN ANALYZE on the optimized query. Record execution time and rows scanned.
-  2. COMPARE: Did execution time improve? Did rows scanned decrease?
-  3. DECIDE:
-     - KEEP if: execution time improved AND test suite passes AND write overhead is acceptable
-     - DISCARD if: query correctness changed OR write overhead exceeds read benefit OR no measurable improvement
-  4. COMMIT kept changes. Revert discarded changes before the next optimization.
-
-  ...
+KEEP if: time improved AND tests pass AND
+  write overhead acceptable.
+DISCARD if: correctness changed OR no improvement.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Query time meets target latency (default: < 50ms)
-  - No sequential scans on tables > 10K rows
-  - All N+1 patterns eliminated
-  - Improvement < 10% in last iteration (diminishing returns)
-  - User explicitly requests stop
-
-DO NOT STOP only because:
-  ...
+STOP when FIRST of:
+  - Query meets target (default < 50ms)
+  - No seq scans on > 10K row tables
+  - All N+1 eliminated
+  - Improvement < 10% last iteration
 ```
 
-## Output Format
-Print on completion: `Query: {queries_analyzed} analyzed, {queries_optimized} optimized. Indexes: +{added}/-{removed}. Latency: -{reduction_pct}%. Verdict: {verdict}.`
-
-## TSV Logging
-Log to `.godmode/query-results.tsv`:
-```
-timestamp	project	database	queries_analyzed	queries_optimized	indexes_added	indexes_removed	avg_latency_reduction_pct	commit_sha
-```
-
-## Success Criteria
-- EXPLAIN ANALYZE run before AND after every optimization
-- Every optimization measured with numbers
-- No sequential scan on tables > 10K rows
-- N+1 queries eliminated
-- No SELECT * in optimized queries
+## Autonomous Operation
+On failure: git reset --hard HEAD~1. Never pause.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Wrong results | Check JOIN conditions, WHERE clauses, NULL handling. Test with known data set. |
-| Still slow (>1s) | Run EXPLAIN ANALYZE. Check missing indexes, full scans, unnecessary JOINs. |
-| Fails in production | Check data volume differences, index existence, parameter sniffing. |
-| ORM inefficiency | Use raw SQL for complex queries. Check N+1. Profile ORM output. |
+| Wrong results | Check JOINs, WHERE, NULL handling |
+| Still slow > 1s | Check missing indexes, full scans |
+| ORM inefficiency | Use raw SQL for complex queries |

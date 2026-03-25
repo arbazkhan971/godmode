@@ -1,299 +1,173 @@
 ---
 name: postgres
-description: |
-  PostgreSQL mastery skill. Activates when a developer needs advanced PostgreSQL features, extension management, replication setup, partitioning strategies, performance tuning, or connection pooling configuration. Covers CTEs, window functions, JSONB, full-text search, PostGIS, pgvector, TimescaleDB, streaming and logical replication, declarative partitioning, VACUUM/ANALYZE tuning, pg_stat diagnostics, PgBouncer, and Supavisor. Triggers on: /godmode:postgres, "postgres performance", "set up replication", "partition this table", "configure pgbouncer", "pgvector", "full-text search in postgres", or when the orchestrator detects PostgreSQL-specific work.
+description: PostgreSQL mastery -- advanced features,
+  replication, partitioning, tuning, connection pooling.
 ---
 
-# Postgres -- PostgreSQL Mastery
-
-## When to Activate
-- User invokes `/godmode:postgres`
-- User says "postgres performance", "tune postgres", "postgres is slow"
-- User asks about CTEs, window functions, JSONB queries, or full-text search in PostgreSQL
-- User needs to set up replication (streaming or logical)
-- User asks about partitioning a large table
-- User needs to configure PgBouncer or Supavisor
-- User asks about PostgreSQL extensions (PostGIS, pgvector, TimescaleDB)
-- User says "VACUUM", "ANALYZE", "bloat", "pg_stat", "dead tuples"
-- When `/godmode:query` identifies PostgreSQL-specific optimization opportunities
-- When `/godmode:migrate` encounters PostgreSQL-specific DDL requirements
+## Activate When
+- `/godmode:postgres`, "postgres performance"
+- "tune postgres", "replication", "partition table"
+- "pgbouncer", "pgvector", "full-text search"
+- "VACUUM", "ANALYZE", "bloat", "pg_stat"
 
 ## Workflow
 
-### Step 1: PostgreSQL Environment Assessment
-
-Determine the PostgreSQL version, configuration, and workload profile:
-
-```
-POSTGRES CONTEXT:
-Version:          <PostgreSQL 14 | 15 | 16 | 17>
-Hosting:          <Self-managed | RDS | Aurora | Supabase | Neon | Crunchy | AlloyDB | CloudSQL>
-```
-
-Gather system configuration:
+### 1. Environment Assessment
 ```sql
--- PostgreSQL version and key settings
 SELECT version();
 SHOW shared_buffers;
+SHOW work_mem;
+SHOW max_connections;
+```
+```
+Version: PostgreSQL 14|15|16|17
+Hosting: self-managed|RDS|Aurora|Supabase|Neon
+Workload: OLTP|OLAP|mixed
+Size: <total GB>, Tables: <N>, Largest: <N rows>
 ```
 
-### Step 2: Advanced PostgreSQL Features
+### 2. Advanced Features
+**CTEs**: recursive for hierarchies, materialized
+for repeated subqueries (PG 12+ auto-optimizes).
 
-#### 2a: Common Table Expressions (CTEs)
+**Window Functions**: ROW_NUMBER, RANK, LAG/LEAD,
+running totals with SUM() OVER().
 
+**JSONB**: GIN index for containment (@>), use
+jsonb_path_query for complex extraction. Keep
+structured data in columns, metadata in JSONB.
+
+**Full-Text Search**: tsvector + GIN index.
+`to_tsvector('english', col)` with `@@` operator.
+IF FTS sufficient: skip Elasticsearch.
+
+### 3. Extensions
+- **pgvector**: vector similarity (RAG, embeddings).
+  Use ivfflat (fast, approximate) or hnsw (accurate).
+  IF <1M vectors: pgvector over Pinecone.
+- **PostGIS**: geospatial. ST_DWithin for proximity.
+- **TimescaleDB**: time-series. Hypertables with
+  automatic partitioning by time.
+- **pg_stat_statements**: ALWAYS install. Non-negotiable
+  for understanding query performance.
+
+### 4. Replication
+**Streaming (physical)**: byte-for-byte copy. Use for
+HA failover + read replicas. `wal_level=replica`.
+
+**Logical**: table-level, selective. Use for cross-
+version upgrades, specific table replication, CDC.
+Requires `wal_level=logical`.
+
+IF HA failover needed: streaming replication.
+IF selective table sync: logical replication.
+
+### 5. Partitioning
 ```sql
--- Recursive CTE: Organizational hierarchy
-WITH RECURSIVE org_tree AS (
-    -- Base case: top-level employees (no manager)
-```
-
-#### 2b: Window Functions
-
-```sql
--- Running totals and rankings
-SELECT
-    order_id,
-```
-
-#### 2c: JSONB Operations
-
-```sql
--- JSONB storage and querying
 CREATE TABLE events (
-    id          BIGSERIAL PRIMARY KEY,
+  id bigserial, created_at timestamptz, data jsonb
+) PARTITION BY RANGE (created_at);
+CREATE TABLE events_2024_q1 PARTITION OF events
+  FOR VALUES FROM ('2024-01-01') TO ('2024-04-01');
 ```
+- Range: time-series, logs (partition by month/quarter)
+- List: known categories (partition by region/status)
+- Hash: uniform distribution (partition by user_id)
 
-#### 2d: Full-Text Search
+IF table >10M rows: consider partitioning.
+IF queries always filter by time: range partition.
+ALWAYS include partition key in WHERE clause.
 
+### 6. VACUUM & Autovacuum
 ```sql
--- tsvector column with GIN index
-ALTER TABLE articles ADD COLUMN search_vector tsvector;
-
+SELECT relname, n_dead_tup,
+  last_autovacuum, last_autoanalyze
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 1000 ORDER BY n_dead_tup DESC;
 ```
+VACUUM: reclaims dead tuples. VACUUM FULL: rewrites
+table (EXCLUSIVE LOCK -- maintenance window only).
+ANALYZE: updates statistics for query planner.
 
-### Step 3: Extension Management
+IF dead_tuple_ratio > 10%: tune autovacuum.
+IF bloat > 50%: consider pg_repack (no lock).
 
-#### 3a: pgvector -- Vector Similarity Search
+### 7. Connection Pooling
+PgBouncer: transaction mode for web apps.
+Pool: `(cores * 2) + 1` per instance.
+PG degrades above ~100 active connections.
 
+IF multi-tenant SaaS on Supabase: use Supavisor.
+IF web app: PgBouncer in transaction mode.
+
+Coordinate: `pool_size * instances < max_conn * 0.8`.
+
+### 8. Performance Tuning
+```
+shared_buffers: 25% of RAM (start point)
+work_mem: RAM / (max_connections * 2)
+effective_cache_size: 75% of RAM
+random_page_cost: 1.1 (SSD) or 4.0 (HDD)
+```
 ```sql
--- Install pgvector
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Cache hit ratio (target >99%)
+SELECT sum(heap_blks_hit) /
+  nullif(sum(heap_blks_hit + heap_blks_read), 0)
+FROM pg_statio_user_tables;
 
+-- Index hit ratio (target >95%)
+SELECT sum(idx_blks_hit) /
+  nullif(sum(idx_blks_hit + idx_blks_read), 0)
+FROM pg_statio_user_indexes;
 ```
 
-#### 3b: PostGIS -- Geospatial Data
-
+### 9. EXPLAIN ANALYZE
 ```sql
--- Install PostGIS
-CREATE EXTENSION IF NOT EXISTS postgis;
+EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) <query>;
+```
+Red flags: Seq Scan on >10K rows, Nested Loop on
+large tables, estimates off >10x (run ANALYZE).
+ALWAYS use CONCURRENTLY for production index creation.
 
+## Hard Rules
+1. NEVER VACUUM FULL without maintenance window.
+2. NEVER disable autovacuum.
+3. ALWAYS CREATE INDEX CONCURRENTLY in production.
+4. ALWAYS install pg_stat_statements.
+5. NEVER exceed ~100 direct connections (use pooler).
+6. ALWAYS include partition key in WHERE clauses.
+7. ALWAYS EXPLAIN ANALYZE before claiming optimized.
+8. NEVER tune without measuring baseline first.
+
+## TSV Logging
+Append `.godmode/postgres-ops.tsv`:
+```
+timestamp	operation	table	metric_before	metric_after	improvement_pct	verdict
 ```
 
-#### 3c: TimescaleDB -- Time-Series Data
-
-```sql
--- Install TimescaleDB
-CREATE EXTENSION IF NOT EXISTS timescaledb;
-
+## Keep/Discard
 ```
-
-#### Extension Selection Guide
-```
-EXTENSION SELECTION:
-|  Need                        | Extension        | Notes       |
-```
-
-### Step 4: Replication Setup
-
-#### 4a: Streaming Replication (Physical)
-
-```
-STREAMING REPLICATION:
-Purpose:  Byte-for-byte copy of the primary for HA and read scaling
-Use when: You need identical replicas, failover, read replicas
-```
-
-#### 4b: Logical Replication
-
-```
-LOGICAL REPLICATION:
-Purpose:  Table-level, selective replication with transformation
-Use when: Replicating specific tables, cross-version upgrades, data integration
-```
-
-### Step 5: Partitioning Strategies
-
-```sql
--- Declarative Partitioning (PostgreSQL 10+)
-
--- RANGE PARTITIONING: Time-series data, logs, events
-```
-
-```
-PARTITIONING DECISION:
-|  Strategy   | Use When                    | Partition Key      |
-```
-
-### Step 6: VACUUM, ANALYZE, and pg_stat Tuning
-
-#### 6a: VACUUM and Autovacuum
-
-```sql
--- Check autovacuum status and dead tuple buildup
-SELECT schemaname, relname,
-       n_live_tup, n_dead_tup,
-```
-
-```
-VACUUM TYPES:
-|  Command              | What It Does          | When to Use    |
-```
-
-#### 6b: pg_stat_statements and Diagnostics
-
-```sql
--- Enable pg_stat_statements (essential for production)
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-
-```
-
-```
-DIAGNOSTIC CHECKLIST:
-|  Metric                    | Target         | Query            |
-```
-
-### Step 7: Connection Pooling
-
-#### 7a: PgBouncer
-
-```
-PGBOUNCER CONFIGURATION:
-
-pgbouncer.ini:
-```
-
-#### 7b: Supavisor (Elixir-based, Supabase)
-
-```
-SUPAVISOR:
-Purpose:  Cloud-native connection pooler built for multi-tenant PostgreSQL
-Use when: Running Supabase, multi-tenant SaaS, need per-tenant pool isolation
-```
-
-### Step 8: Performance Tuning Playbook
-
-```
-POSTGRESQL TUNING -- Quick Reference:
-
-MEMORY:
-```
-
-### Step 9: Report and Transition
-
-```
-|  POSTGRESQL MASTERY -- <description>                        |
-```
-
-Commit: `"postgres: <description> -- <key outcome>"`
-
-## Explicit Loop Protocol
-
-For iterative performance tuning workflows:
-
-```
-TUNING LOOP:
-current_iteration = 0
-max_iterations = 5
-```
-
-## HARD RULES
-
-```
-HARD RULES — NEVER VIOLATE:
-1. NEVER run VACUUM FULL on a production table without explicit user confirmation
-   and a maintenance window. It takes an EXCLUSIVE LOCK.
-```
-
-## Autonomous Operation
-- Loop until target or budget. Never pause.
-- On failure: git reset --hard HEAD~1.
-- Never ask to continue. Loop autonomously.
-
-## Key Behaviors
-
-1. **Check the version first.** PostgreSQL features vary significantly across versions. CTEs are optimized differently in 12+, partitioning improved dramatically in 11-14, and JSONB path queries require 12+.
-2. **Measure before tuning.** Run pg_stat_statements, check cache hit ratios, and identify the actual bottleneck before changing postgresql.conf. Random tuning is worse than defaults.
-3. **Use CONCURRENTLY for production DDL.** CREATE INDEX CONCURRENTLY, REINDEX CONCURRENTLY, and pg_repack avoid exclusive locks that block reads and writes.
-4. **Partition key in every query.** Partitioning only helps if the query planner can prune partitions. Always include the partition key in WHERE clauses.
-5. **Connection pooling is mandatory.** PostgreSQL forks a process per connection (~10MB each). Use PgBouncer in transaction mode for web applications.
-6. **Autovacuum is not optional.** Never disable autovacuum. Instead, tune its aggressiveness per table based on update/delete frequency.
-7. **Logical replication for selective sync.** When you need to replicate specific tables or across PostgreSQL versions, use logical replication. Use streaming for HA failover.
-8. **Extensions over external tools.** Before adding Elasticsearch, try pg_trgm + FTS. Before Pinecone, try pgvector. PostgreSQL extensions keep your data in one place.
-9. **EXPLAIN ANALYZE everything.** Never assume a query is optimized. Run EXPLAIN (ANALYZE, BUFFERS) and read every line of the plan.
-10. **pg_stat_statements is non-negotiable.** Install it on every PostgreSQL instance. It is the single most important tool for understanding query performance in production.
-
-## Keep/Discard Discipline
-```
-After EACH PostgreSQL optimization:
-  1. MEASURE: Run EXPLAIN (ANALYZE, BUFFERS) on the target query before and after.
-  2. COMPARE: Is execution time lower? Is the plan using the new index/config?
+KEEP if: execution time improved AND plan uses
+  new index/config AND tests pass.
+DISCARD if: no improvement OR regression OR
+  correctness changed.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Cache hit ratio > 99% and dead tuple ratio < 10% on all tables
-  - All top-5 queries by total_exec_time are under target latency
-```
-
-## Output Format
-
-Every postgres invocation must produce a structured report:
-
-```
-|  POSTGRES RESULT                                            |
-```
-
-## TSV Logging
-
-Log every PostgreSQL operation to `.godmode/postgres-ops.tsv`:
-
-```
-timestamp	operation	target_table	metric_before	metric_after	improvement_pct	verdict
-```
-
-Append one row per operation. Never overwrite previous rows.
-
-## Success Criteria
-
-```
-HEALTHY if ALL of the following:
+STOP when FIRST of:
   - Cache hit ratio > 99%
-  - Index hit ratio > 95%
+  - Dead tuple ratio < 10% all tables
+  - Top-5 queries under target latency
 ```
 
-## EXPLAIN ANALYZE Optimization Loop
-
-Autonomous loop that identifies the slowest queries, runs EXPLAIN ANALYZE, applies fixes, and verifies improvement. One change per iteration to isolate impact. Never stops until targets are met or diminishing returns detected.
-
-```
-EXPLAIN ANALYZE OPTIMIZATION LOOP:
-current_iteration = 0
-max_iterations = 20
-```
-
-### Index Tuning Reference
-
-```
-INDEX TUNING DECISION TABLE:
-| EXPLAIN ANALYZE Signal | Index Type | Action |
-```
-
+## Autonomous Operation
+On failure: git reset --hard HEAD~1. Never pause.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Query plan shows sequential scan on large table | Add correct index. Use `EXPLAIN (ANALYZE, BUFFERS)` to verify index is used. Check if statistics are stale (`ANALYZE table`). |
-| Lock contention on hot table | Use `SKIP LOCKED` for queue patterns. Reduce transaction duration. Partition the table. Check for long-running transactions with `pg_stat_activity`. |
-| Connection pool exhaustion | Increase pool size or use PgBouncer. Check for leaked connections. Set `idle_in_transaction_session_timeout`. Monitor with `pg_stat_activity`. |
-| Migration locks table for too long | Use `CREATE INDEX CONCURRENTLY`. Add columns with `DEFAULT` (Postgres 11+ is instant). Split large data migrations into batches. |
+| Seq scan on large table | Add index, ANALYZE table |
+| Lock contention | SKIP LOCKED, reduce txn duration |
+| Pool exhaustion | Increase pool, add PgBouncer |
+| Migration locks table | CREATE INDEX CONCURRENTLY |

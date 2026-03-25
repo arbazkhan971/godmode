@@ -167,7 +167,19 @@ UI library, tsconfig strict mode.
 
 ## HARD RULES
 
-Never ask to continue. Loop autonomously until `ng build` and `ng test` pass with zero errors.
+Never ask to continue. Loop autonomously until
+`ng build` and `ng test` pass with 0 errors.
+
+```bash
+# Build and test Angular project
+ng build --configuration production
+ng test --no-watch --code-coverage
+npx ng lint
+```
+
+IF bundle size > 500kB initial: investigate lazy loading gaps.
+WHEN `ng test` coverage < 80%: add tests before shipping.
+IF `ng build` produces > 0 errors: fix types first, then templates.
 
 1. EVERY component: OnPush change detection. No Default.
 2. No `any` types in application code.

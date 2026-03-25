@@ -217,13 +217,20 @@ Commit: `"chart: <component> — <chart type>, <library>, <N> data series, respo
 
 ## Key Behaviors
 
-1. **Data story first, chart second.** Understand what the visualization needs to communicate before selecting a chart type. The chart is a means, not an end.
-2. **Accessibility is not optional.** Every chart must have a data table alternative, colorblind-safe palette, and screen reader support. No exceptions.
-3. **Responsive by default.** Charts must work on mobile. If a chart cannot adapt to a small screen, provide a simplified alternative.
-4. **Performance scales with data.** Do not render 100K SVG nodes. Match the rendering strategy to the data volume.
-5. **Consistent dashboards.** All charts in a dashboard use the same color encoding, typography, and interaction patterns.
-6. **No misleading visualizations.** Bar charts start at 0. Dual axes are labeled clearly. Truncated axes are flagged.
-7. **Color is not the only channel.** Use patterns, labels, and position in addition to color. Verify information remains perceivable without color vision.
+```bash
+# Test chart rendering and accessibility
+npm run test:charts
+npx storybook build --ci
+npx chromatic --exit-zero-on-changes
+```
+
+1. **Data story first, chart second.** Communication goal first.
+2. **Accessibility not optional.** Data table + colorblind-safe + screen reader.
+3. **Responsive by default.** Works at 320px, 768px, 1440px.
+4. **Performance scales with data.** Canvas for > 1K points.
+5. **Consistent dashboards.** Same colors, typography, interactions.
+6. **No misleading visualizations.** Bar charts start at 0.
+7. **Color is not the only channel.** Patterns, labels, position too.
 
 ## Flags & Options
 
@@ -312,8 +319,8 @@ The chart skill is complete when ALL of the following are true:
 Blank chart: check console errors, verify data loads before mount, confirm container width/height, test with hardcoded data.
 Slow chart (>500ms): switch to canvas/WebGL for >1K points, enable data decimation, debounce resize handlers.
 ## Data Visualization Audit Loop
-
-Performance targets: <1K points render <100ms, 1K-10K <500ms, tooltip/hover <50ms, resize <100ms, no memory leaks on re-renders. Run iteratively (max 8 rounds) until all targets met.
+Performance targets: < 1K points render < 100ms, 1K-10K < 500ms,
+tooltip/hover < 50ms, resize < 100ms. Max 8 rounds.
 ## Keep/Discard Discipline
 ```
 After EACH chart implementation or optimization:

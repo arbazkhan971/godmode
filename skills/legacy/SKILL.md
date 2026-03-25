@@ -1,191 +1,234 @@
 ---
 name: legacy
 description: |
-  Legacy code modernization skill. Activates when a developer needs to understand, stabilize, and incrementally modernize legacy codebases. Covers legacy code characterization, adding tests to untested code (Approval Testing, Golden Master, Characterization Tests), incremental modernization strategies, dependency upgrade paths, technology obsolescence assessment, and dead code removal. Triggers on: /godmode:legacy, "understand this legacy code", "add tests to old code", "modernize", "upgrade dependencies", "tech debt", "dead code", or when working with codebases that lack tests, use deprecated APIs, or have outdated dependencies.
+  Legacy code modernization skill. Characterization
+  tests, golden master, incremental modernization,
+  dependency upgrades, dead code removal.
+  Triggers on: /godmode:legacy, "legacy code",
+  "modernize", "tech debt", "dead code".
 ---
 
-# Legacy -- Legacy Code Modernization
+# Legacy — Legacy Code Modernization
 
 ## When to Activate
 - User invokes `/godmode:legacy`
-- User says "understand this legacy code", "add tests to untested code"
-- User says "modernize this", "reduce tech debt", "upgrade dependencies", "dead code"
-- Codebase has no tests, deprecated APIs, EOL dependencies, or unclear intent
+- User says "understand this legacy code"
+- User says "modernize", "tech debt", "dead code"
+- Codebase has no tests, deprecated APIs, EOL deps
 
 ## Workflow
 
 ### Step 1: Legacy Code Characterization
-Never modify legacy code without first understanding it.
+
+```bash
+# Assess codebase age and activity
+git log --format='%ai' --reverse | head -1
+git shortlog -sn --all | head -10
+git log --since="6 months ago" --oneline | wc -l
+
+# Check test coverage
+ls -d test/ tests/ spec/ __tests__/ 2>/dev/null
+npx jest --coverage 2>/dev/null || \
+  pytest --cov 2>/dev/null || echo "No test runner"
+
+# Audit dependencies
+npm audit 2>/dev/null || pip-audit 2>/dev/null
+npm outdated 2>/dev/null || pip list --outdated 2>/dev/null
+
+# Find complexity hotspots
+find . -name "*.ts" -o -name "*.py" -o -name "*.js" \
+  | xargs wc -l 2>/dev/null | sort -rn | head -10
+```
 
 ```
-LEGACY CODE ASSESSMENT:
-  Language/Framework: <detected>  Age: <from git>  Size: <files, LOC>
-  Contributors: <active/total>  Last meaningful change: <date>
-  Test coverage: <% or "none">  Linter/CI/CD: <present/absent>
-  Dependencies: <total>, <outdated minor/major>, <deprecated/EOL>, <vulnerabilities>
-  Code quality: Dead code <LOC>, deprecated APIs, god classes (>500 LOC), circular deps
+LEGACY ASSESSMENT:
+  Language: <detected>, Age: <from git>
+  Size: <files, LOC>
+  Contributors: <active/total>
+  Test coverage: <% or "none">
+  Dependencies: <total>, <outdated>, <EOL>, <vulns>
+  Dead code: <estimated LOC>
   Change confidence: HIGH | MEDIUM | LOW | NONE
-```
 
-Detection: `git log` analysis, `npm audit`/`pip-audit`, coverage tools, `madge --circular`.
+CONFIDENCE LEVELS:
+  Tests + CI + Types = HIGH
+  Tests only = MEDIUM
+  No tests = LOW
+  Nothing = NONE
+
+IF confidence == NONE: add characterization tests first
+IF vulns > 0: prioritize security patches
+IF EOL deps > 0: flag for urgent migration planning
+IF files > 500 LOC: identify god classes to extract
+```
 
 ### Step 2: Understanding Legacy Code
-**Code Archaeology:** Git blame (who, when, why), dependency tracing (callers/callees/side effects), runtime observation (logging entry/exit), comment analysis (accurate or misleading?), existing test reverse-engineering.
+**Code Archaeology:**
+- Git blame: who, when, why for each section
+- Dependency tracing: callers, callees, side effects
+- Runtime observation: add logging at entry/exit
+- Comment analysis: accurate or misleading?
 
 ### Step 3: Adding Tests to Untested Code
 The most critical step. Tests before any changes.
 
-**Characterization Tests:** Capture CURRENT behavior, not intended. Run code with known inputs, record actual outputs — these become expected values. The test PASSES today by definition and FAILS if behavior changes.
-
-```typescript
-it('processes a standard order (characterization)', () => {
-  const result = processOrder(standardInput);
-  // Values captured from running system — documents what code DOES
-  expect(result).toMatchInlineSnapshot(`{ "total": 58.8404, "status": "pending" }`);
-});
-
-it('handles null customer (characterization)', () => {
-  expect(() => processOrder({ ...input, customer: null })).toThrow(TypeError);
-});
 ```
+TEST STRATEGIES:
+| Strategy          | When to Use              |
+|-------------------|--------------------------|
+| Characterization  | Capture current behavior |
+| Golden Master     | Complex outputs (HTML)   |
+| Approval Testing  | Snapshots as approval    |
 
-**Golden Master:** For complex outputs (HTML, PDFs, reports). Save entire output as golden master file, compare future outputs against it. Update with `UPDATE_GOLDEN=true`.
+CHARACTERIZATION TEST:
+  Run code with known input
+  Record actual output as expected value
+  Test PASSES today by definition
+  Test FAILS if behavior changes
 
-**Approval Testing:** Jest snapshots as approval tests. First run creates, subsequent runs compare, update with `-u`.
+THRESHOLDS:
+  Critical paths: 100% must have tests before change
+  Min characterization tests per module: 5
+  Golden master update: requires UPDATE_GOLDEN=true
+  IF test captures a bug: document, fix separately
+```
 
 ### Step 4: Incremental Modernization
-```
-PRIORITY:
-  P0 (urgent):  Security — patch vulns, fix auth, remove hardcoded secrets
-  P1 (high):    Stability — tests on critical paths, error handling, logging
-  P2 (medium):  Maintainability — extract god classes, reduce complexity, types, remove dead code
-  P3 (normal):  Performance — optimize hot paths, caching, fix N+1
-  P4 (low):     Modernization — upgrade frameworks, new patterns, DX
-```
 
-**Safe refactoring techniques:** Extract Method, Extract Class, Replace Conditional with Polymorphism, Introduce Parameter Object, Wrap External Dependency, Sprout Method/Class (new tested code called from legacy, legacy unchanged).
+```
+PRIORITY ORDER:
+  P0 (urgent): Security — patch vulns, fix auth
+  P1 (high): Stability — tests on critical paths
+  P2 (medium): Maintainability — extract god classes
+  P3 (normal): Performance — optimize hot paths
+  P4 (low): Modernization — upgrade frameworks
+
+SAFE REFACTORING TECHNIQUES:
+  Extract Method, Extract Class
+  Replace Conditional with Polymorphism
+  Introduce Parameter Object
+  Wrap External Dependency
+  Sprout Method/Class (new tested code from legacy)
+
+THRESHOLDS:
+  Max change size per PR: 200 lines
+  Each change must be independently revertable
+  IF change breaks characterization test: revert
+```
 
 ### Step 5: Dependency Upgrades
-Categorize: PATCH (safe, batch), MINOR (one at a time, read changelog), MAJOR (one at a time, read migration guide). Order: security vulns first, then patch, minor, major.
 
-### Step 6: Technology Obsolescence
-Assess each technology: EOL (no updates), Security (patches only), Maintenance (bugs+security), Active LTS (recommended), Current (latest). Flag EOL for urgent migration, Security for planning.
+```
+ORDER: security vulns → PATCH → MINOR → MAJOR
 
-### Step 7: Dead Code Removal
-Detect with: static analysis (ESLint, Ruff), coverage analysis, dependency analysis (depcheck), git history (files untouched for years), runtime tracking. Verify with multiple signals. Remove in dedicated commits. Deploy and monitor.
+RULES:
+  PATCH: safe to batch, apply all at once
+  MINOR: one at a time, read changelog
+  MAJOR: one at a time, read migration guide
 
-### Step 8: Report
+THRESHOLDS:
+  IF dep has known CVE: upgrade within 48 hours
+  IF dep is EOL: plan migration within 2 weeks
+  IF major upgrade breaks > 5 tests: pause, plan
+  Run full test suite between each major upgrade
+```
+
+### Step 6: Dead Code Removal
+
+```
+DETECTION (require 2+ signals):
+  Static analysis: ESLint no-unused, Ruff
+  Coverage analysis: 0% coverage = likely dead
+  Dependency analysis: depcheck/madge
+  Git history: untouched for > 1 year
+  Runtime tracking: instrumented but never called
+
+PROCESS:
+  1. Identify with static analysis
+  2. Verify with git log (last touched date)
+  3. Confirm with runtime tracking if available
+  4. Remove in dedicated commit
+  5. Deploy and monitor for errors
+  6. IF errors: revert immediately
+
+THRESHOLDS:
+  Require 2+ signals before removing
+  File untouched > 2 years: likely dead
+  Export with 0 importers: likely dead
+```
+
+### Step 7: Report
 ```
 LEGACY MODERNIZATION REPORT:
-  Change confidence: <level>
+  Confidence: <before> → <after>
   Critical issues: <vulns, EOL deps>
-  Phase 1 (Stabilize): characterization tests, fix vulns, set up CI
-  Phase 2 (Strengthen): replace deprecated deps, remove dead code, extract god classes
-  Phase 3 (Modernize): upgrade major deps, add types, improve DX
+  Phase 1: characterization tests + fix vulns
+  Phase 2: replace deprecated, remove dead code
+  Phase 3: upgrade major deps, add types
 ```
 
-Commit: `"legacy: <action> -- <target> (<impact>)"`
+Commit: `"legacy: <action> — <target> (<impact>)"`
 
 ## Key Behaviors
-1. **Understand before changing.** Git blame, dependency tracing, runtime observation first.
-2. **Tests before refactoring.** Characterization tests are the safety net.
-3. **Characterization tests document reality.** Expected exception on null IS correct.
-4. **Golden master for complex outputs.**
-5. **Small, reversible steps.** Every change reviewable and revertable.
-6. **Security first.** Patch vulns before refactoring.
-7. **Dead code is a liability.** Remove it.
-8. **Replace deprecated deps proactively.** The longer you wait, the harder it gets.
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| `--assess` | Full codebase health assessment |
-| `--characterize <path>` | Add characterization tests to module |
-| `--golden-master <path>` | Create golden master tests |
-| `--deps` | Dependency health check |
-| `--dead-code` | Detect dead code |
-| `--roadmap` | Generate modernization roadmap |
-| `--understand <path>` | Deep analysis of specific module |
+1. **Understand before changing.** Git blame first.
+2. **Tests before refactoring.** Characterization tests.
+3. **Small, reversible steps.** Every change revertable.
+4. **Security first.** Patch vulns before refactoring.
+5. **Dead code is a liability.** Remove it.
+6. **Replace deprecated deps proactively.**
 
 ## HARD RULES
-1. NEVER modify legacy code without characterization tests in place.
-2. NEVER rewrite from scratch — rewrites take 2-3x longer and lose accumulated fixes.
-3. NEVER fix bugs in characterization tests — document bug in comment, fix separately.
-4. NEVER upgrade all dependencies at once — one major at a time.
-5. NEVER remove code you're "pretty sure" is dead — verify with static + runtime + git.
-6. NEVER modernize code scheduled for replacement.
-7. ALWAYS make small, reversible changes.
-8. ALWAYS prioritize: security > stability > maintainability > performance > modernization.
+1. Never modify legacy code without tests in place.
+2. Never rewrite from scratch — takes 2-3x longer.
+3. Never fix bugs in characterization tests.
+4. Never upgrade all dependencies at once.
+5. Never remove code without 2+ signals it's dead.
+6. Never modernize code scheduled for replacement.
+7. Always make small, reversible changes.
+8. Always prioritize: security > stability >
+   maintainability > performance > modernization.
 
 ## Auto-Detection
 ```
 1. Git history: activity, contributors, age
 2. Test coverage: test dirs, config, run coverage
 3. Dependency health: audit, outdated, deprecated
-4. Code quality: linter, CI, types
-5. Complexity: files >500 LOC, circular deps, TODO/FIXME count
-6. Confidence: Tests+CI+Types=HIGH, Tests only=MEDIUM, None=LOW, Nothing=NONE
+4. Complexity: files > 500 LOC, circular deps
+5. Confidence: Tests+CI+Types=HIGH, None=NONE
 ```
-
-## Modernization Loop
-```
-ASSESS -> STABILIZE (characterization tests + fix vulns per critical module)
-  -> STRENGTHEN (replace deprecated deps, remove dead code, extract god classes)
-  -> MODERNIZE (upgrade major deps, add types, improve DX)
-```
-
-## Multi-Agent Dispatch
-```
-Agent 1 (legacy-assess): Full health assessment (read-only)
-Agent 2 (legacy-tests): Characterization tests for top 10 critical modules
-Agent 3 (legacy-deps): Patch vulns, replace deprecated packages
-Agent 4 (legacy-cleanup): Dead code removal, god class extraction
-MERGE ORDER: assess -> tests -> deps -> cleanup
-```
-
-## TSV Logging
-Log to `.godmode/legacy-results.tsv`: `timestamp\tproject\tlanguage\tage_years\tloc\ttest_coverage_pct\tchange_confidence\tvulns\tdeprecated_deps\tdead_code_loc\tphases\tverdict`
-
-## Success Criteria
-1. Full assessment before any modifications.
-2. Characterization tests on critical paths before refactoring.
-3. CRITICAL/HIGH vulnerabilities addressed first.
-4. Dead code verified with 2+ signals before removal.
-5. Each step small enough to review and revertable.
-6. Dependency upgrades one major at a time with test suite between.
-7. Priority order followed: security > stability > maintainability.
-
-## Error Recovery
-- **Zero tests, user wants to refactor:** Block. Add characterization tests first.
-- **Characterization test captures a bug:** Correct — document in comment, fix in separate commit.
-- **Dep upgrade breaks tests:** Revert, read migration guide, fix code first, re-apply.
-- **Dead code removal causes errors:** Revert, add runtime tracking for 1 week, re-attempt.
-- **God class extraction breaks callers:** Create facade, migrate callers incrementally.
-- **No one understands the code:** Prioritize understanding over changing. Code archaeology + characterization tests as documentation.
-
-## Platform Fallback
-Run sequentially if `Agent()` or `EnterWorktree` unavailable. Branch per task: `git checkout -b godmode-legacy-{task}`. See `adapters/shared/sequential-dispatch.md`.
 
 ## Output Format
-Print: `Legacy: {files} files modernized. Dead code: {removed}. Tests added: {N}. Deps upgraded: {M}. Status: {DONE|PARTIAL}.`
+Print: `Legacy: {files} modernized. Dead: {removed}.
+  Tests added: {N}. Deps upgraded: {M}.
+  Confidence: {before} -> {after}. Status: {status}.`
+
+## TSV Logging
+```
+timestamp	project	language	age_years	loc	coverage_pct	confidence	vulns	deprecated	dead_loc	verdict
+```
 
 ## Keep/Discard Discipline
 ```
-After EACH legacy modernization step:
-  KEEP if: all existing tests pass AND characterization tests cover changed code AND no behavior change
-  DISCARD if: existing tests break OR behavior changed without explicit approval OR dead code removal causes errors
-  On discard: revert. Add more characterization tests before retrying.
+KEEP if: existing tests pass AND characterization
+  tests cover changed code AND no behavior change
+DISCARD if: tests break OR behavior changed
+  OR dead code removal causes errors
+On discard: revert, add more tests, retry.
 ```
-
-## Autonomy
-Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
 STOP when ALL of:
-  - Characterization tests cover all modified code paths
-  - Dead code removed and verified with runtime tracking
+  - Characterization tests cover modified paths
+  - Dead code removed and verified
   - Dependencies upgraded to supported versions
-  - No behavior changes (unless explicitly approved)
+  - No behavior changes unless approved
 ```
+
+## Error Recovery
+- Zero tests, wants to refactor: block, add tests first.
+- Characterization captures bug: document, fix separately.
+- Dep upgrade breaks tests: revert, read migration guide.
+- Dead code removal errors: revert, add runtime tracking.
+- God class extraction breaks callers: use facade pattern.
+- No one understands code: archaeology + characterization.

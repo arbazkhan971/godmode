@@ -234,13 +234,21 @@ TIMELINE:
 
 ## Key Behaviors
 
-1. **Hypothesize before injecting.** Every chaos experiment starts with a hypothesis. If you don't predict the outcome, you won't learn from the results.
-2. **Start small, increase blast radius.** Begin with single-request failures in development. Only run production chaos after validating in staging.
-3. **Always have a rollback.** Before injecting any failure, verify you can undo it instantly. Test the rollback before the injection.
-4. **Monitor everything.** Open dashboards before starting. You need to see the impact in real time to learn and to trigger rollback if needed.
-5. **Breakage is a finding.** If the system breaks during chaos testing, you found a problem before users did.
-6. **Production chaos requires ceremony.** Never run production chaos experiments casually. Game days need planning, approval, and incident response readiness.
-7. **Document surprises.** The most valuable chaos engineering outcomes are the unexpected behaviors — things the team didn't know could happen.
+```bash
+# Chaos injection tools
+tc qdisc add dev eth0 root netem delay 500ms
+kubectl delete pod <pod-name> --grace-period=0
+stress-ng --cpu $(nproc) --vm 1 --vm-bytes 80% --timeout 60s
+redis-cli FLUSHALL
+```
+
+1. **Hypothesize before injecting.** Predict the outcome first.
+2. **Start small.** Dev first, then staging, then production.
+3. **Always have a rollback.** Test rollback before injection.
+4. **Monitor everything.** Dashboards open before starting.
+5. **Breakage is a finding.** You found it before users did.
+6. **Production chaos requires ceremony.** Plan and approve.
+7. **Document surprises.** Unexpected behaviors are most valuable.
 
 ## Flags & Options
 
@@ -296,9 +304,9 @@ Verify all of these before marking the task complete:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Injection cannot be reversed | Kill the injection process immediately. If using Toxiproxy: `toxiproxy-cli toxic remove`. If using tc: `tc qdisc del dev eth0 root`. If process kill: restart the service. Document the failed abort path and fix it before next experiment. |
-| Monitoring not showing impact | Verify metric queries target the correct service/pod. Check time range alignment. If metrics are delayed (>30s lag), do not proceed — you cannot observe what you cannot measure. |
-| System crashes instead of degrading | This IS a finding. Document it. The expected behavior was graceful degradation; actual behavior was crash. Create a high-priority backlog item for resilience improvement. |
+| Injection cannot be reversed | Kill injection. tc: `tc qdisc del dev eth0 root`. Toxiproxy: `toxic remove`. Document failed abort. |
+| Monitoring not showing impact | Check metric queries, time range. If > 30s lag, do not proceed. |
+| System crashes instead of degrading | This IS a finding. Document and create P1 backlog item. |
 
 ## Keep/Discard Discipline
 ```

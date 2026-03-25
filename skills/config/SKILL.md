@@ -217,12 +217,12 @@ SECRET AUDIT:
 
 ## Key Behaviors
 
-1. **Never commit secrets.** If a secret is found in code or git history, flag it as CRITICAL immediately. Secrets belong in environment variables or secret managers, never in source code.
-2. **Schema is the source of truth.** Define every config key in a schema with type, validation, and description. Undocumented keys are tech debt.
-3. **Parity before deploy.** Never deploy to an environment with missing required config keys. Fail fast on startup if config is invalid.
-4. **Flags have lifecycles.** Every feature flag must have an owner, creation date, and expected removal date. Flags without expiry become permanent tech debt.
-5. **A/B tests need math.** Don't eyeball results. Calculate required sample size, run until significant, and use proper statistical tests.
-6. **Environment drift is a bug.** Unexpected differences between environments cause "works on my machine" failures. Document expected drift, investigate unexpected drift.
+1. **Never commit secrets.** Flag as CRITICAL immediately.
+2. **Schema is source of truth.** Type, validation, description.
+3. **Parity before deploy.** Fail fast on missing keys.
+4. **Flags have lifecycles.** Owner + expiry date required.
+5. **A/B tests need math.** Sample size before launch.
+6. **Environment drift is a bug.** Document or fix.
 
 ## Flags & Options
 
@@ -296,55 +296,16 @@ All keys inventoried. Secrets in secret manager. Startup validation fails fast. 
 | Feature flag stuck at 100% | Schedule cleanup: remove flag check, delete flag, remove old code path. |
 | Startup validation too strict | Separate required/optional config. Use defaults for non-critical. |
 
-## Iterative Loop Protocol
-```
-current_env = 0
-environments = detect_environments()  // e.g., [dev, staging, production]
-
-WHILE current_env < len(environments):
-  env = environments[current_env]
-  1. INVENTORY: List all config keys and values for {env}
-  2. CLASSIFY: Separate secrets from non-secrets
-  3. VALIDATE: Check for missing keys, type mismatches, invalid values
-  4. DRIFT: Compare with other environments, flag unexpected differences
-  5. MIGRATE: Move secrets to secret manager if not already there
-  6. LOG to .godmode/config-results.tsv
-  7. current_env += 1
-  8. REPORT: "Environment {current_env}/{total}: {env} — {keys} keys, {secrets} secrets, {drift} drift"
-
-EXIT when all environments audited OR user requests stop
-```
-
 ## Keep/Discard Discipline
 ```
-After EACH config change or migration:
-  1. MEASURE: Run config validation (schema check, parity check, startup test)
-  2. COMPARE: Is the config state better than before? (fewer drift issues, more validated keys, secrets migrated)
-  3. DECIDE:
-     - KEEP if: validation passes AND parity improved AND no regressions introduced
-     - DISCARD if: validation fails OR new drift introduced OR startup breaks
-  4. COMMIT kept changes immediately. Revert discarded changes before next iteration.
-
-Every change is atomic — never leave config in a half-migrated state.
+KEEP if: validation passes AND parity improved AND no regressions
+DISCARD if: validation fails OR startup breaks OR new drift
+Every change is atomic — never half-migrated config.
 ```
-
-## Stuck Recovery
-If >3 consecutive failures: re-read all config files, check unexpected sources (CI vars, Docker env, cloud metadata). Simplify schema, focus one env at a time, verify secret manager connectivity. If still stuck, log `stop_reason=stuck` and move to next environment.
 
 ## Stop Conditions
 ```
-STOP the loop when ANY of these are true:
-  - All environments audited and all keys inventoried
-  - All critical drift resolved (suspicious drift documented)
-  - All secrets migrated to secret manager
-  - User explicitly requests stop
-  - Max iterations (15) reached — report partial results
-
-DO NOT STOP because:
-  - Expected drift exists (that is normal)
-  - Non-critical config keys lack schema (nice-to-have, not blocking)
+STOP when: all envs audited AND critical drift resolved AND secrets migrated
+  OR user requests stop OR max 15 iterations
 ```
-
-## Simplicity Criterion
-Prefer static defaults over per-env overrides. Limit schema to 3 constraints per key max. Audit and remove stale flags before adding more. Prefer built-in runtime checks over new dependencies. One config format per project.
 

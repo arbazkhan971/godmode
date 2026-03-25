@@ -211,13 +211,24 @@ Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace
 
 ## Key Behaviors
 
-1. **Regulation-specific, not generic.** Each finding must reference the specific regulation article or requirement it violates (e.g., "GDPR Article 17" not only "deletion missing").
-2. **Evidence from code.** Every finding must point to actual code — files, functions, database schemas, API endpoints. No theoretical assessments.
-3. **Risk-rated findings.** CRITICAL means regulatory penalty or data breach risk. HIGH means audit finding. MEDIUM means best practice gap. LOW means improvement opportunity.
-4. **Remediation is concrete.** "Implement consent management" is not remediation. Show the database schema for consent records, the API endpoints for consent capture, and the UI flow.
-5. **Privacy by design.** Don't only check boxes — evaluate whether the architecture minimizes data collection, limits data sharing, and defaults to privacy-protective settings.
-6. **License compliance is non-negotiable.** A single GPL dependency in a proprietary SaaS product can create legal exposure. Always check.
-7. **Audit trails are infrastructure.** Logging is not optional for regulated systems. Verify it exists, verify it captures the right events, verify it is tamper-resistant.
+```bash
+# Run compliance checks
+npx license-checker --production --failOn "GPL-3.0;AGPL-3.0"
+grep -rn "email\|ssn\|password" src/ --include="*.ts" | head -20
+git log --oneline --since="30 days" -- docs/compliance/
+```
+
+IF CRITICAL findings > 0: block launch until resolved.
+WHEN HIGH findings > 0: remediation plan with < 30 day SLA.
+IF license scan finds GPL/AGPL in proprietary code: replace immediately.
+
+1. **Regulation-specific.** Reference exact article (GDPR Art. 17).
+2. **Evidence from code.** File paths, line numbers, functions.
+3. **Risk-rated.** CRITICAL=penalty, HIGH=audit, MEDIUM=gap, LOW=improve.
+4. **Remediation is concrete.** Schema, endpoints, UI flow.
+5. **Privacy by design.** Minimize collection, limit sharing.
+6. **License compliance non-negotiable.** Single GPL = legal risk.
+7. **Audit trails are infrastructure.** Tamper-resistant logging.
 
 ## Flags & Options
 
@@ -242,25 +253,12 @@ Audit dependencies: MIT/Apache/BSD/ISC = safe. LGPL = review. GPL/AGPL = replace
 8. **NEVER log PII in audit trails** — log user IDs, not names/SSNs/emails.
 
 ## Explicit Loop Protocol
-
-When auditing across multiple regulations:
-
 ```
-current_iteration = 0
-regulations = [GDPR, HIPAA, SOC2, PCI_DSS, ...]  # applicable only
-all_findings = []
-
-WHILE regulations is not empty:
-    current_iteration += 1
-    regulation = regulations.pop(0)
-
-    # Scan codebase for this regulation
-    data_flows = trace_data_flows(regulation.data_types)
-    controls = check_controls(regulation.requirements)
-
-    FOR each requirement in regulation.requirements:
-        evidence = find_evidence(requirement)
-        IF evidence.status == NON_COMPLIANT:
+FOR each applicable regulation:
+  1. Scan codebase for data flows
+  2. Check controls against requirements
+  3. For each NON_COMPLIANT finding: record with evidence
+  4. STOP when all regulations assessed
 ```
 
 ## Auto-Detection

@@ -1,346 +1,224 @@
 ---
 name: forms
 description: |
-  Form architecture skill. Activates when user needs to build complex forms including multi-step wizards, validation patterns (client + server, async), file uploads, and accessible form design. Covers form state management (React Hook Form, Formik, native), error handling, focus management, and form UX best practices. Triggers on: /godmode:forms, "form validation", "multi-step form", "wizard form", "file upload", "form accessibility", or when building any non-trivial form.
+  Form architecture skill. Multi-step wizards,
+  validation (client + server, async), file uploads,
+  accessible form design. Triggers on: /godmode:forms,
+  "form validation", "multi-step form", "wizard",
+  "file upload", "form accessibility".
 ---
 
 # Forms — Form Architecture
 
 ## When to Activate
 - User invokes `/godmode:forms`
-- User says "form validation," "multi-step form," "wizard," "file upload"
-- When building any form beyond a simple single-field input
-- When implementing client-side and server-side validation
-- When building multi-step or wizard-style forms
-- When handling file uploads with progress and preview
-- When auditing form accessibility (labels, errors, focus management)
-- When choosing a form state management library
+- User says "form validation", "multi-step form", "wizard"
+- When building any form beyond a simple single input
+- When handling file uploads or auditing form a11y
 
 ## Workflow
 
 ### Step 1: Assess Form Requirements
-Determine the complexity and constraints of the form:
+
+```bash
+# Detect form libraries
+grep -l "react-hook-form\|formik\|@hookform" \
+  package.json 2>/dev/null
+
+# Detect validation libraries
+grep -l "zod\|yup\|joi\|superstruct" \
+  package.json 2>/dev/null
+
+# Count existing form components
+find src/ -name "*form*" -o -name "*Form*" \
+  2>/dev/null | wc -l
+```
 
 ```
-FORM REQUIREMENTS ASSESSMENT:
-Form purpose: <registration/checkout/settings/survey/data entry>
-Framework: <React/Vue/Angular/Svelte/vanilla>
+FORM REQUIREMENTS:
+Purpose: <registration/checkout/settings/survey>
+Framework: <React/Vue/Angular/Svelte>
 Fields: <N> total
-  Text inputs: <N>
-  Selects/dropdowns: <N>
-  Checkboxes/radios: <N>
-  File uploads: <N>
-  Custom components: <N>
+Multi-step: YES/NO (<N> steps)
+File uploads: YES/NO (<types, max size>)
+Async validation: YES/NO (uniqueness checks)
 
-Complexity:
-  Multi-step: YES/NO (<N> steps)
-  ...
+IF fields > 5: use React Hook Form (not useState)
+IF multi-step: persist state in sessionStorage
+IF file uploads: validate MIME, size, count client-side
 ```
+
 ### Step 2: Form State Management
-Choose and implement the right form state management approach:
 
-#### Decision Matrix
 ```
-FORM STATE MANAGEMENT DECISION:
-| Criterion | React Hook Form | Formik | Native | Server |
-|--|--|--|--|--|
-| Re-renders | Minimal | Frequent | Minimal | Zero |
-| Bundle size | ~9KB | ~15KB | 0KB | 0KB |
-| TypeScript | Excellent | Good | Manual | Good |
-| Validation | Resolver-based | Built-in | Manual | Server |
-| Performance | Excellent | Good | Depends | N/A |
-| Complex forms | Excellent | Good | Verbose | Limited |
-| File uploads | Good | Good | Manual | Good |
-| Multi-step | Excellent | Good | Complex | Complex |
-| Server integration | Good | Good | Good | Native |
-  ...
+DECISION MATRIX:
+| Criterion     | RHF    | Formik | Native |
+|--------------|--------|--------|--------|
+| Re-renders   | Min    | Freq   | Min    |
+| Bundle size  | ~9KB   | ~15KB  | 0KB    |
+| TypeScript   | Excl.  | Good   | Manual |
+| Complex forms| Excl.  | Good   | Verbose|
+
+IF fields <= 3 AND no validation: native useState OK
+IF fields > 3 OR has validation: React Hook Form
+IF existing Formik codebase: keep Formik
 ```
 
-#### React Hook Form + Zod Setup
-```typescript
-// schemas/registration.ts
-import { z } from 'zod';
+### Step 3: Validation Patterns
 
-export const registrationSchema = z.object({
-  name: z.string()
-    .min(2, 'Name requires at least 2 characters')
+```
+VALIDATION TIMING:
+  On blur (first visit): show after user leaves field
+  On change (after error): re-validate immediately
+  On submit: validate all, focus first error
+  Never on mount: no errors before interaction
+
+CLIENT + SERVER SHARED SCHEMA (Zod):
+  Single schema shared between client and server
+  Client: fast UX feedback
+  Server: security (never trust client)
+
+ASYNC VALIDATION:
+  Debounce: 500ms minimum
+  Show loading indicator during check
+  Cancel previous request on new input
+
+THRESHOLDS:
+  Debounce delay: 300-500ms for async validation
+  Max file size: 10MB default (configurable)
+  Max file count: 10 per upload field
+  Form submission timeout: 30 seconds
 ```
 
-```typescript
-// components/RegistrationForm.tsx
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { registrationSchema, type RegistrationFormData } from '../schemas/registration';
+### Step 4: Multi-Step Wizard
 
-export function RegistrationForm() {
-```
-### Step 3: Multi-Step Wizard Forms
-Implement wizard-style forms with step navigation, validation per step, and state persistence:
-
-#### Wizard Architecture
 ```
 WIZARD ARCHITECTURE:
-┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
-| Step 1 | ───> | Step 2 | ───> | Step 3 | ───> | Review |
-|--|--|--|--|--|--|---|
-| Personal |  | Address |  | Payment |  | Confirm |
-└─────────┘    └─────────┘    └─────────┘    └─────────┘
-     │              │              │              │
-  Schema 1       Schema 2      Schema 3      Full schema
-  validates      validates     validates     validates all
-  step 1         step 2        step 3
+  Step 1 → Step 2 → Step 3 → Review → Submit
+  Each step has its own Zod schema
+  Full schema validates on final submit
+  State persists in sessionStorage (survives refresh)
 
-State persistence: sessionStorage (survives refresh, clears on tab close)
-  ...
-```
-
-#### Multi-Step Form Implementation
-```typescript
-// hooks/useWizardForm.ts
-import { useState, useCallback } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-
-```
-
-#### Step Progress Indicator
-```typescript
-// components/StepProgress.tsx
-export function StepProgress({
-  steps,
-  currentStep,
-}: {
-  steps: { id: string; title: string }[];
-```
-
-### Step 4: Validation Patterns
-Implement comprehensive validation covering client-side, server-side, and async:
-
-#### Client-Side Validation
-```typescript
-// schemas/checkout.ts — Comprehensive validation example
-import { z } from 'zod'; // Zod for schema-based validation
-
-export const addressSchema = z.object({
-  street: z.string().min(1, 'Street address is required'),
-  city: z.string().min(1, 'City is required'),
-```
-
-#### Async Validation (Debounced)
-```typescript
-// hooks/useAsyncValidation.ts
-import { useCallback, useRef } from 'react';
-
-export function useAsyncValidation<T>(
-  validator: (value: T) => Promise<string | null>,
-  debounceMs = 500,
-```
-
-#### Server-Side Validation
-```typescript
-// app/api/register/route.ts (Next.js App Router)
-import { registrationSchema } from '@/schemas/registration';
-import { NextResponse } from 'next/server';
-
-export async function POST(request: Request) {
-  const body = await request.json();
-```
-
-#### Error Display Strategy
-```
-VALIDATION ERROR DISPLAY RULES:
-
-1. WHEN to show errors:
-   - On blur (first visit): Show after user leaves the field
-   - On change (after first error): Re-validate immediately after error shown
-   - On submit: Validate all, focus first error field
-   - Never on mount: Do not show errors before user interaction
-
-2. WHERE to show errors:
-   - Inline: Below the field, associated via aria-describedby
-   - Summary: At top of form for submit-time errors, linked to fields
-   - Toast: For server/network errors only
-  ...
+RULES:
+  IF user navigates back: restore previous values
+  IF browser refreshes: restore from sessionStorage
+  IF submit succeeds: clear sessionStorage
+  Progress indicator shows current step
 ```
 
 ### Step 5: File Upload Handling
-Implement file uploads with validation, progress, preview, and drag-and-drop:
 
-#### File Upload Component
-```typescript
-// components/FileUpload.tsx
-import { useCallback, useState, useRef } from 'react';
+```
+FILE VALIDATION CHECKLIST:
+  MIME type: validate against allowlist
+  Extension: cross-check with MIME type
+  File size: reject > max before upload starts
+  File count: enforce maximum per field
+  Preview: show for images (use createObjectURL)
+  Progress: show upload percentage
+  Drop zone: must be keyboard-accessible
 
-interface FileUploadProps {
-  accept?: string;
-  maxSize?: number; // bytes
+THRESHOLDS:
+  Image max: 5MB
+  Document max: 10MB
+  Total upload max: 50MB per form submission
 ```
 
 ### Step 6: Accessible Form Design
-Verify every form meets WCAG 2.1 AA accessibility requirements:
 
-#### Accessible FormField Component
-```typescript
-// components/FormField.tsx
-import { useId } from 'react';
-
-interface FormFieldProps {
-  label: string;
-  error?: string;
-```
-
-#### Form Accessibility Checklist
 ```
 FORM ACCESSIBILITY CHECKLIST:
+Labels:
+  [ ] Every input has visible <label> with htmlFor
+  [ ] Required fields marked (asterisk + sr text)
+  [ ] Placeholder is NOT used as label substitute
+  [ ] Related fields grouped in <fieldset>/<legend>
 
-Labels & Instructions:
-- [ ] Every input has a visible <label> associated via htmlFor/id
-- [ ] Required fields are indicated (asterisk + screen reader text)
-- [ ] Placeholder text is NOT used as a label substitute
-- [ ] Group related fields with <fieldset> and <legend>
-- [ ] Instructions appear before the form, not after
-- [ ] Input format hints are provided (e.g., "MM/YY" for expiry)
+Errors:
+  [ ] Errors via aria-describedby on field
+  [ ] aria-invalid="true" on fields with errors
+  [ ] Error summary at top on submit failure
+  [ ] role="alert" on error messages
 
-Error Handling:
-- [ ] Errors are associated with fields via aria-describedby
-  ...
+Focus:
+  [ ] On submit failure: focus first invalid field
+  [ ] On step change: focus first field of new step
+  [ ] Tab order follows visual order
+  [ ] All form controls keyboard-accessible
 ```
 
-#### Focus Management
-```typescript
-// hooks/useFocusOnError.ts
-import { useEffect, useRef } from 'react';
-import { FieldErrors } from 'react-hook-form';
+### Step 7: Report
 
-export function useFocusOnError(errors: FieldErrors, isSubmitted: boolean) {
-  const prevSubmitCount = useRef(0);
+```
+Form: <name>, Fields: <N>, Steps: <N>
+Library: <RHF/Formik/native>
+Validation: <Zod/Yup>, Mode: <onBlur/onChange>
+A11y: <PASS|FAIL>, Tests: <pass>/<total>
 ```
 
-#### Error Summary Component
-```typescript
-// components/ErrorSummary.tsx
-export function ErrorSummary({ errors }: { errors: Record<string, string> }) {
-  const errorEntries = Object.entries(errors);
-  if (errorEntries.length === 0) return null;
-
-  return (
-```
-
-### Step 7: Advanced Patterns
-
-#### Conditional Fields
-```typescript
-// Show/hide fields based on other field values
-const watchRole = watch('role');
-
-return (
-  <form>
-    <FormField label="Role" required>
-```
-
-#### Dynamic Field Arrays
-```typescript
-// Add/remove fields dynamically
-import { useFieldArray } from 'react-hook-form';
-
-function PhoneNumbersForm() {
-  const { control, register } = useForm({
-    defaultValues: { phones: [{ number: '', type: 'mobile' }] },
-```
-
-#### Autosave
-```typescript
-// hooks/useAutosave.ts
-import { useEffect, useRef } from 'react';
-import { UseFormWatch } from 'react-hook-form';
-
-export function useAutosave<T extends Record<string, any>>({
-  watch,
-```
-
-### Step 8: Form Architecture Report
-```
-Form: <name>, Fields: <N> (<N> required), Steps: <N>, Library: <RHF/Formik/native>
-Validation: <Zod/Yup>, Mode: <onBlur/onChange>, Client: <N>/<N>, Server: YES/NO, Async: <N>
-```
-### Step 9: Commit and Transition
-1. If form components were created: `"forms: implement <form-name> with <library> + <validation>"`
-2. If wizard was built: `"forms: add multi-step wizard with <N> steps and session persistence"`
-3. If accessibility was fixed: `"forms: fix <N> form accessibility issues (labels, errors, focus)"`
-4. Save report: `docs/forms/<form-name>-architecture.md`
-5. Transition: "Form architecture complete. Run `/godmode:a11y` for accessibility audit, `/godmode:test` for form testing, or `/godmode:responsive` for responsive layout."
+Commit: `"forms: <form-name> — <library> + <validation>"`
 
 ## Key Behaviors
 
-1. **Validation runs on both client and server.** Client-side validation is for UX (fast feedback). Server-side validation is for security (never trust the client). Share the schema (Zod) between both.
-2. **Errors are shown on blur, not on mount.** Showing errors before the user has interacted with a field is hostile UX. Validate on blur for first visit, on change after the first error is shown.
-3. **Focus management is mandatory.** On submit failure, focus must move to the first invalid field. On step transition, focus must move to the first field of the new step. Lost focus means lost users.
-4. **Every field has a visible label.** Placeholder text is not a label. Floating labels that disappear are not acceptable. Keep labels always visible, always associated via htmlFor/id.
-5. **Multi-step forms persist state.** Navigating back must restore previous values. Page refresh should not lose progress (use sessionStorage). Only clear on successful submission.
-6. **File uploads need comprehensive validation.** Check file type, file size, and file count before uploading. Show progress. Provide preview for images. Make the drop zone keyboard-accessible.
-7. **Form state libraries exist for a reason.** For anything beyond 3 fields, use React Hook Form (or equivalent). Manual state management with useState leads to re-render storms, validation inconsistency, and lost edge cases.
+1. **Validation on both client and server.**
+   Share the schema (Zod) between both.
+2. **Errors on blur, not on mount.**
+3. **Focus management mandatory.** Focus first invalid
+   field on submit failure.
+4. **Every field has a visible label.**
+5. **Multi-step forms persist state.**
+6. **File uploads need full validation.**
+7. **Use RHF for 5+ fields.** Manual useState leads
+   to re-render storms.
 
-## Flags & Options
+## HARD RULES
 
-| Flag | Description |
-|--|--|
-| (none) | Full form architecture — build or audit |
-| `--audit` | Audit all existing forms for completeness |
-| `--wizard` | Build a multi-step wizard form |
+1. Every input must have a visible `<label>`.
+2. Never show errors before user interaction.
+3. Always validate on both client and server.
+4. Always focus first invalid field on submit.
+5. Never use alert() for form errors.
+6. Always persist multi-step data in sessionStorage.
+7. Always validate file MIME, extension, size, count.
+8. Never manage 5+ fields with raw useState.
+9. Always use aria-invalid and aria-describedby.
+10. Always share same Zod schema client and server.
 
-## Hard Rules
-
+## Auto-Detection
 ```
-HARD RULES — FORMS:
-1. EVERY input field MUST have a visible <label> associated via htmlFor/id. Placeholder is NOT a label.
-2. NEVER show validation errors before the user has interacted with the field. Validate on blur first, onChange after.
-3. ALWAYS validate on BOTH client and server. Client validation is UX; server validation is security.
-4. ALWAYS move focus to the first invalid field on submit failure. Lost focus = lost users.
-5. NEVER use alert() for form errors. Use inline errors with aria-describedby and error summary.
-6. ALWAYS persist multi-step form data across steps and on browser refresh (sessionStorage).
-7. ALWAYS validate file uploads: check MIME type, file extension, file size, and count before uploading.
-8. NEVER manage more than 5 fields with raw useState. Use React Hook Form or equivalent.
-9. ALWAYS use aria-invalid="true" on fields with errors and role="alert" on error messages.
-10. ALWAYS share the same schema (Zod) between client and server validation. Two schemas = two sources of bugs.
+1. Libraries: react-hook-form, formik, zod, yup
+2. Components: *Form*, *Wizard*, *Step* files
+3. Validation: inline vs schema-based
 ```
+
 ## Output Format
-Print: `Forms: {form_name} — {fields} fields, {validation} validation, a11y {PASS|FAIL}, tests {pass}/{total}. Status: {DONE|PARTIAL}.`
+Print: `Forms: {name} — {fields} fields,
+  {validation}, a11y {PASS|FAIL}. Status: {status}.`
+
 ## TSV Logging
-Log to `.godmode/forms-results.tsv`: `timestamp\tform_name\tfields\tvalidation\ta11y_pass\ttests_pass\tstatus`
-## Success Criteria
-1. Every field has a visible `<label>` with `aria-describedby` and `aria-invalid` on errors.
-2. Validation schema shared between client and server (single source of truth).
-3. Validates on blur (first touch), on change (after first error). No errors on mount.
-4. Multi-step forms persist across steps and survive browser refresh.
-5. File uploads validate MIME type, extension, size, and count.
-6. All form interactions keyboard-accessible. Tests cover valid/invalid/edge cases.
+```
+timestamp	form_name	fields	validation	a11y	status
+```
 
 ## Keep/Discard Discipline
 ```
-After EACH form implementation or audit fix:
-  KEEP if: validation timing correct (blur first, change after) AND a11y passes AND server matches client
-  DISCARD if: errors on first keystroke OR focus lost on submit OR schemas diverge
-  On discard: git reset --hard HEAD~1 before the next form.
+KEEP if: validation timing correct AND a11y passes
+  AND server matches client schema
+DISCARD if: errors on first keystroke OR focus lost
+  OR schemas diverge between client/server
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - All forms have visible labels, inline errors with aria-describedby, and shared Zod schemas
-  - Multi-step forms persist data across steps and survive browser refresh
-  - Keyboard navigation works for all form interactions
-  - User explicitly requests stop
+STOP when ANY of:
+  - All forms have labels, inline errors, shared schemas
+  - Multi-step persists across steps and refresh
+  - Keyboard navigation works for all interactions
+  - User requests stop
 ```
 
 ## Error Recovery
-```
-Validation fires every keystroke: use onBlur mode, debounce async validation.
-State lost on navigation: persist in sessionStorage, use beforeunload warning.
-Server errors not displayed: map server field names to form fields, show inline.
-Multi-step loses progress: save to sessionStorage per step, restore on load.
-```
+- Fires every keystroke: switch to onBlur mode.
+- State lost on navigation: persist in sessionStorage.
+- Server errors not shown: map server fields to form.
+- Multi-step loses progress: save per step, restore.

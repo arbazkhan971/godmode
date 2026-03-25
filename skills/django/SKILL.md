@@ -99,46 +99,18 @@ app/
 │   ├── repository.py       # Database queries
 ```
 
-### Step 5: Async Django & ASGI Configuration
-Configure Django for async operation:
-
+### Step 5: Async Django & ASGI
 ```
-ASYNC DJANGO CONFIGURATION:
-
-1. ASGI setup (config/asgi.py):
-  import os
-  from django.core.asgi import get_asgi_application
-
-  os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
-  application = get_asgi_application()
-
-  # With channels for WebSocket support:
-  from channels.routing import ProtocolTypeRouter, URLRouter
-  from channels.auth import AuthMiddlewareStack
-
-  application = ProtocolTypeRouter({
-      "http": get_asgi_application(),
+ASGI setup: config/asgi.py with get_asgi_application().
+For WebSockets: channels ProtocolTypeRouter + AuthMiddlewareStack.
+Use httpx.AsyncClient (not requests) in async views.
 ```
 
-### Step 6: Django Admin Customization
-Design a powerful admin interface:
-
+### Step 6: Django Admin
 ```
-ADMIN CUSTOMIZATION PATTERNS:
-
-1. Model Admin — display, filtering, actions:
-
-  @admin.register(Product)
-  class ProductAdmin(admin.ModelAdmin):
-      # Display
-      list_display = ['name', 'sku', 'price_display', 'stock_status',
-                       'category', 'is_active', 'created_at']
-      list_display_links = ['name']
-      list_editable = ['is_active']
-
-      # Filtering and search
-      list_filter = ['category', 'is_active', 'created_at',
-                      ('price', admin.EmptyFieldListFilter)]
+Admin patterns: @admin.register(Model) + ModelAdmin.
+Required: list_display, list_filter, search_fields, list_select_related.
+Optional: list_editable, inlines, actions, readonly_fields.
 ```
 
 ### Step 7: Database Optimization
@@ -208,13 +180,25 @@ Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/asy
 
 ## Key Behaviors
 
-1. **Services own business logic.** Views parse requests, serializers validate data, services contain the actual logic. This separation makes testing straightforward and logic reusable.
-2. **Fat models, thin views — but not too fat.** Models define fields and relationships. Business rules spanning multiple models belong in services, not in model methods.
-3. **DRF serializers are contracts.** Never use `fields = '__all__'`. Explicitly list every field. Use separate serializers for create vs read to control what goes in and what comes out.
-4. **Eliminate N+1 queries aggressively.** Use `select_related` for ForeignKey, `prefetch_related` for ManyToMany. Use `django-debug-toolbar` in development to catch them.
-5. **FastAPI dependencies compose.** Build authentication, authorization, pagination, and database sessions as composable dependencies. Complex endpoints assemble simple deps.
-6. **Pydantic models are the source of truth.** In FastAPI, Pydantic schemas define validation, serialization, and documentation in one place. Never validate manually.
-7. **Admin is a power tool, not an afterthought.** Customize list_display, search, filters, and actions. Admin N+1 queries are the most common Django performance issue.
+```bash
+# Django diagnostics
+python manage.py check --deploy
+python manage.py test --parallel --verbosity=2
+python manage.py makemigrations --check --dry-run
+python manage.py showmigrations | grep '\[ \]'
+```
+
+IF query count per list view > 5: add select_related/prefetch_related.
+WHEN test coverage < 80%: add tests before shipping.
+IF response time P95 > 200ms: profile with django-debug-toolbar.
+
+1. **Services own business logic.** Views dispatch, serializers validate, services contain logic.
+2. **Fat models, thin views — but not too fat.** Cross-model rules belong in services.
+3. **DRF serializers are contracts.** Never `fields = '__all__'`. Separate create vs read serializers.
+4. **Eliminate N+1 queries.** select_related for FK, prefetch_related for M2M. Use django-debug-toolbar.
+5. **FastAPI dependencies compose.** Auth, pagination, DB sessions as composable deps.
+6. **Pydantic is source of truth.** Validation, serialization, documentation in one place.
+7. **Admin is a power tool.** Customize list_display, search, filters. Admin N+1 is the top perf issue.
 
 ## Flags & Options
 
@@ -235,34 +219,12 @@ Commit: `"django: <project> — <framework>, <N> apps, <M> endpoints, <admin/asy
 - ALL admin ModelAdmin classes MUST use list_select_related to prevent N+1 in the admin interface
 - ALL API list endpoints MUST have pagination configured — unbounded queries are not acceptable
 
-## Iterative Audit Loop Protocol
-```
-WHILE audit_queue is not empty:
-    batch = audit_queue.pop(next 3 apps)
-    FOR each app: check services.py, serializer fields, select_related, indexes, admin, pagination
-    run tests + python manage.py check --deploy
-    IF new issues in dependent apps: add to audit_queue
-    report: "Iteration {N}: {apps} audited, {violations} fixed, {remaining} remaining"
-```
-
 ## Auto-Detection
-
 ```
-1. Check for Django or FastAPI:
-   - Scan for manage.py, settings.py, wsgi.py, asgi.py → Django detected
-   - Scan for main.py with FastAPI/APIRouter imports → FastAPI detected
-   - Scan for both → hybrid project
-2. Check Django configuration:
-   - Scan settings for REST_FRAMEWORK config → DRF detected
-   - Scan for INSTALLED_APPS to count apps
-   - Check AUTH_USER_MODEL → custom user or default
-   - Check for DATABASES config → detect database engine
-3. Check project structure:
-   - Scan for services.py, selectors.py → proper layering
-   - Scan for factories.py in tests/ → Factory Boy usage
-   - Scan for Celery config → background task setup
-4. Determine maturity: scaffold | structured | optimized | production-ready
-5. Set assessment fields and proceed to Step 1
+1. Scan for manage.py, settings.py → Django; main.py with FastAPI → FastAPI; both → hybrid
+2. Check REST_FRAMEWORK config, AUTH_USER_MODEL, DATABASES engine
+3. Scan for services.py/selectors.py (layering), factories.py (testing), Celery (tasks)
+4. Maturity: scaffold | structured | optimized | production-ready
 ```
 
 ## Output Format
@@ -291,59 +253,33 @@ timestamp	project	action	files_count	models_count	views_count	migrations_count	t
 ```
 
 ## Success Criteria
-
-Every Django skill invocation must pass ALL of these checks before reporting success:
-
-1. `python manage.py check --deploy` passes with no critical warnings
-2. `python manage.py test` passes if test suite exists
-3. No business logic in views or serializers (use service functions)
-4. No `fields = '__all__'` in serializers (explicit field lists only)
-5. All querysets use `select_related`/`prefetch_related` for related objects
-6. All filterable/sortable fields have database indexes
-7. Custom user model in place (not default `auth.User`)
-8. All migrations are consistent (`python manage.py makemigrations --check`)
-9. No synchronous HTTP calls in async views (use `httpx.AsyncClient`)
-10. Admin classes have `list_display`, `search_fields`, and `list_filter` configured
-
-If any check fails, fix it before reporting success. If a fix is not possible, document the reason in the Notes field.
+1. `python manage.py check --deploy` passes with 0 critical warnings
+2. `python manage.py test` passes; coverage >= 80%
+3. No business logic in views/serializers — services only
+4. No `fields = '__all__'` — explicit field lists
+5. All querysets use select_related/prefetch_related; list views <= 5 queries, detail <= 3
+6. Filterable/sortable fields have DB indexes
+7. Custom user model (not default auth.User)
+8. Migrations consistent (`makemigrations --check`)
 
 ## Error Recovery
-- **manage.py check fails:** Fix CRITICAL issues first (security middleware, ALLOWED_HOSTS).
-- **Tests fail:** Check test database creation (permissions).
-- **Migration errors:** Conflicting migrations → `makemigrations --merge`.
-- **N+1 detected:** Add select_related() for FK/OneToOne.
-- **Serializer errors:** Check required fields have defaults or are provided.
-
-## Django Optimization Loop
-```
-Pass 1 — N+1 Audit: Instrument DB, baseline query count, fix with select_related/prefetch_related. Target: list <=5 queries, detail <=3.
-Pass 2 — Query Efficiency: Add indexes on filter/order_by fields, use .values()/.only(), bulk_create/bulk_update, .exists() over .count() > 0.
-```
+| Failure | Action |
+|--|--|
+| manage.py check fails | Fix CRITICAL first (middleware, ALLOWED_HOSTS) |
+| Tests fail | Check test DB permissions, fixtures |
+| Migration conflict | `makemigrations --merge` |
+| N+1 detected | Add select_related/prefetch_related |
 
 ## Keep/Discard Discipline
 ```
-After EACH implementation or optimization change:
-  1. MEASURE: Run tests / validate the change produces correct output.
-  2. COMPARE: Is the result better than before? (faster, safer, more correct)
-  3. DECIDE:
-     - KEEP if: tests pass AND quality improved AND no regressions introduced
-     - DISCARD if: tests fail OR performance regressed OR new errors introduced
-  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+KEEP if: tests pass AND quality improved AND no regressions
+DISCARD if: tests fail OR performance regressed. Revert before proceeding.
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
+STOP when: all tasks validated OR max iterations reached.
+Guard: python manage.py test && python manage.py check --deploy.
 On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - All identified tasks are complete and validated
-  - User explicitly requests stop
-  - Max iterations reached — report partial results with remaining items listed
-
-DO NOT STOP when:
-  - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (handle that in a follow-up pass)
 ```
 

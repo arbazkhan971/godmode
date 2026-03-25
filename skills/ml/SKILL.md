@@ -1,347 +1,137 @@
 ---
 name: ml
-description: |
-  ML development and experimentation skill. Activates when teams need to manage machine learning experiments, track hyperparameters, validate datasets, detect bias, and evaluate models systematically. Provides structured experiment tracking, reproducible training pipelines, and rigorous model evaluation. Triggers on: /godmode:ml, "train a model", "compare experiments", "evaluate model", "check for bias", or when ML workflow needs structure.
+description: ML development and experimentation.
 ---
 
-# ML — ML Development & Experimentation
-
-## When to Activate
-- User invokes `/godmode:ml`
-- User is training, evaluating, or comparing ML models
-- User says "run an experiment", "compare models", "check dataset quality"
-- User needs to track hyperparameters or reproduce results
-- User asks about model fairness, bias, or data quality
-- Godmode orchestrator detects ML-related code (model definitions, training loops, feature engineering)
+## Activate When
+- `/godmode:ml`, "train a model", "compare experiments"
+- "evaluate model", "check for bias", "dataset quality"
+- ML-related code detected (training loops, features)
 
 ## Workflow
 
-### Step 1: Experiment Definition
-
-Define the experiment with full reproducibility metadata:
-
+### 1. Experiment Definition
 ```
-EXPERIMENT DEFINITION:
 ID: EXP-<YYYY-MM-DD>-<NNN>
-Name: <descriptive experiment name>
-Hypothesis: <what you expect to happen and why>
-Objective: <metric to optimize — e.g., minimize validation loss>
-Baseline: <current best model or naive baseline to beat>
-
-Task type: <classification | regression | ranking | generation | clustering | detection>
-Dataset: <dataset name and version>
-Framework: <PyTorch | TensorFlow | scikit-learn | JAX | XGBoost | custom>
-Compute: <local | GPU type | cloud instance type>
-Estimated training time: <duration>
+Hypothesis: <what you expect and why>
+Objective: <metric to optimize>
+Baseline: <current best or naive baseline>
+Task: classification|regression|ranking|generation
+Framework: PyTorch|TensorFlow|scikit-learn|JAX|XGBoost
 ```
-#### Experiment Registry
-```
-EXPERIMENT REGISTRY:
-| ID | Name | Status | Metric | Score | vs Base |
-|--|--|--|--|--|--|
-| EXP-2025-03-15-1 | baseline | COMPLETE | F1 | 0.847 | — |
-| EXP-2025-03-15-2 | larger-lr | COMPLETE | F1 | 0.862 | +1.8% |
-| EXP-2025-03-15-3 | dropout-05 | RUNNING | F1 | (pending) | — |
-| EXP-2025-03-16-1 | aug-data | QUEUED | F1 | — | — |
+```bash
+# Check for ML frameworks
+pip list 2>/dev/null | grep -iE "torch|tensorflow|sklearn"
+cat requirements.txt 2>/dev/null | grep -iE "torch|tf"
 ```
 
-### Step 2: Hyperparameter Management
-
-Track all hyperparameters with structured configuration:
-
+### 2. Hyperparameter Management
 ```yaml
-HYPERPARAMETERS:
-# Model architecture
-model:
-  type: <architecture name>
-  layers: <layer configuration>
-  hidden_size: <N>
+search:
+  strategy: grid|random|bayesian|hyperband
+  space:
+    learning_rate: [1e-5, 1e-4, 1e-3, 1e-2]
+    batch_size: [16, 32, 64, 128]
+    dropout: uniform(0.1, 0.5)
+    hidden_size: [128, 256, 512, 1024]
+  trials: <total>
 ```
-#### Hyperparameter Search
+IF trials > 50: use Bayesian or Hyperband (not grid).
+IF search space > 4 dimensions: use random search minimum.
+
+### 3. Dataset Validation
 ```
-HYPERPARAMETER SEARCH:
-Strategy: <grid | random | bayesian | hyperband | population-based>
-Search space:
-  learning_rate: [1e-5, 1e-4, 1e-3, 1e-2]
-  batch_size: [16, 32, 64, 128]
-  dropout: uniform(0.1, 0.5)
-  hidden_size: [128, 256, 512, 1024]
-
-Trials: <total trials>
-Completed: <N>
-Best trial: <trial ID>
-Best params: <parameter values>
-Best score: <metric value>
-
-Search visualization:
-  learning_rate vs score: <trend description>
-  batch_size vs score: <trend description>
-  Parameter importance: <ranked list>
-```
-
-### Step 3: Dataset Validation
-
-Validate dataset quality before training:
-
-```
-DATASET VALIDATION:
-Dataset: <name and version>
 Total samples: <N>
-Split: train=<N> (<pct>%) / val=<N> (<pct>%) / test=<N> (<pct>%)
-
-Schema validation:
-  [ ] All required features present
-  [ ] Feature types match expected schema
-  [ ] No unexpected null/NaN values
-  [ ] Value ranges within expected bounds
-
+Split: train=<N>(<pct>%) / val=<N>(<pct>%) / test=<N>
 Quality checks:
-  Missing values: <count per feature, percentage>
-  Duplicates: <count of exact duplicate rows>
-  Outliers: <count per feature, method used>
+  Missing values: <count per feature>
+  Duplicates: <count exact duplicates>
+  Outliers: <count, method used>
+  Class balance: <ratio of majority/minority>
 ```
-### Step 4: Bias Detection
+IF class imbalance > 10:1: use stratified sampling
+  + class weights or oversampling.
+IF missing > 5% for any feature: investigate before
+  imputing.
 
-Systematically check for bias across protected attributes:
-
+### 4. Bias Detection
 ```
-BIAS DETECTION:
-Protected attributes analyzed: <list — e.g., gender, race, age, geography>
-
-Per-attribute analysis:
+Protected attributes: <gender, race, age, geography>
+Per-attribute:
 | Attribute | Group | Samples | Accuracy | FPR | FNR |
-|--|--|--:|--:|--:|--:|
-| Gender | Male | <N> | <val> | <val> | <val> |
-|  | Female | <N> | <val> | <val> | <val> |
-|  | Non-bin. | <N> | <val> | <val> | <val> |
-| Age group | 18-30 | <N> | <val> | <val> | <val> |
-|  | 31-50 | <N> | <val> | <val> | <val> |
-|  | 51+ | <N> | <val> | <val> | <val> |
+IF max_group_accuracy - min_group_accuracy > 5%:
+  FLAG bias. Investigate feature correlations.
+IF FNR disparity > 10% across groups:
+  BLOCK deployment until mitigated.
 ```
-### Step 5: Model Training and Tracking
 
-Execute training with full observability:
-
+### 5. Training and Tracking
 ```
-TRAINING RUN:
-Experiment: EXP-<ID>
-Started: <timestamp>
-Status: <RUNNING | COMPLETE | FAILED | STOPPED>
-
-Progress:
-  Epoch: <current>/<total>
-  Step: <current>/<total>
-  Elapsed: <duration>
-  ETA: <estimated remaining>
-
-Live metrics:
-  Training loss:    <value> (trend: <decreasing | plateauing | diverging>)
-  Validation loss:  <value> (trend: <decreasing | plateauing | increasing>)
-  Primary metric:   <value> (best: <value> at epoch <N>)
+Epoch: <current>/<total>
+Training loss: <value> (trend: decreasing|plateau)
+Validation loss: <value> (trend)
+Primary metric: <value> (best: <val> at epoch <N>)
 ```
-### Step 6: Model Evaluation
+IF val_loss increases 3 consecutive epochs: early stop.
+IF train_loss << val_loss (gap > 2x): overfitting.
 
-Rigorous evaluation on held-out test set:
-
+### 6. Model Evaluation
 ```
-MODEL EVALUATION:
-Model: <experiment ID and checkpoint>
-Test set: <dataset name, N samples>
-
-Classification metrics:
-  Accuracy:  <value>
-  Precision: <value> (macro | weighted)
-  Recall:    <value> (macro | weighted)
-  F1 Score:  <value> (macro | weighted)
-  AUC-ROC:   <value>
-  AUC-PR:    <value>
-
-Per-class metrics:
-| Class | Precision | Recall | F1 | Support |
+Test set: <N samples> (used ONCE for final eval)
+Accuracy: <val>  Precision: <val>  Recall: <val>
+F1: <val>  AUC-ROC: <val>  AUC-PR: <val>
+Statistical significance vs baseline:
+  p=<val> (paired bootstrap, 10K iterations)
 ```
-### Step 7: Experiment Comparison
+IF p > 0.05: improvement not significant, iterate.
+IF improvement < 1% absolute: likely noise.
 
-Compare experiments to select the best model:
-
+### 7. Experiment Comparison
 ```
-EXPERIMENT COMPARISON:
-| Experiment | F1 | AUC-ROC | Latency | Size | Params |
-|--|--:|--:|--:|--:|--:|
-| EXP-001 (base) | 0.847 | 0.912 | 45ms | 120MB | 12M |
-| EXP-002 (lr=3e4) | 0.862 | 0.928 | 45ms | 120MB | 12M |
-| EXP-003 (large) | 0.879 | 0.941 | 120ms | 450MB | 48M |
-| EXP-004 (dist) | 0.871 | 0.935 | 38ms | 85MB | 8M |
-
-Winner: EXP-004 (distilled)
-Rationale: Best accuracy/latency tradeoff. 2.8% F1 improvement over baseline
-           with 16% lower latency and 30% smaller model size.
-
-Statistical significance:
-  EXP-004 vs baseline: p=0.003 (significant at alpha=0.01)
-  Method: paired bootstrap test, 10000 iterations
+| Experiment | F1 | AUC | Latency | Size | Params |
+Winner selection: best accuracy/latency tradeoff.
 ```
-### Step 8: Commit and Transition
-1. Save experiment results as `docs/ml/EXP-<ID>-results.md`
-2. Save best hyperparameters as `configs/ml/EXP-<ID>-params.yaml`
-3. Commit: `"ml: EXP-<ID> — <model name> — <primary metric>=<value> (<vs baseline>)"`
-4. If best model found: "Experiment complete. Best model: EXP-<ID>. Run `/godmode:mlops` to deploy."
-5. If more experiments needed: "Results inconclusive. Recommend trying <suggestion>. Run `/godmode:ml` to continue."
-6. If bias detected: "Bias detected in <attribute>. Address before deployment. See mitigation recommendations."
 
-## Key Behaviors
+### 8. Commit and Transition
+Commit: `"ml: EXP-<ID> — <metric>=<value> (<delta>)"`
+IF best found: -> /godmode:mlops to deploy.
+IF bias detected: address before deployment.
 
-1. **Reproducibility is non-negotiable.** Every experiment must record: code version (git SHA), data version, hyperparameters, random seeds, and environment. Anyone reproduces the result by following these records.
-2. **Baselines first.** Never evaluate a model without a baseline. Even a naive baseline (majority class, mean prediction) provides essential context.
-3. **Statistical significance matters.** A 0.2% improvement could be noise. Test significance before claiming gains.
-4. **Evaluation on held-out test set.** Never tune hyperparameters on the test set. That is the final, one-time evaluation. Validation set is for tuning.
-5. **Bias is a blocker.** A model that performs well on average but poorly for a protected group is not ready to deploy. Check before shipping.
-6. **Track negative results.** Failed experiments are valuable. They tell you what does not work and prevent others from repeating dead ends.
+## Hard Rules
+1. NEVER evaluate on test set during development.
+2. EVERY experiment: git SHA, data version, params, seeds.
+3. NEVER report without comparing to baseline.
+4. NEVER deploy model failing bias checks.
+5. ALWAYS test significance (bootstrap, p < 0.05).
 
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Interactive experiment setup and tracking |
-| `--track` | Track a running experiment (attach to training process) |
-| `--compare <ids>` | Compare multiple experiments side by side |
-
-## Auto-Detection
-
-```
-IF directory contains requirements.txt OR setup.py OR pyproject.toml:
-  IF contains "torch" OR "tensorflow" OR "scikit-learn" OR "xgboost" OR "jax":
-    SUGGEST "ML framework detected. Activate /godmode:ml?"
-
-IF directory contains *.ipynb files:
-  notebook_count = count(*.ipynb)
-  IF notebook_count > 0:
-    SCAN notebooks for model training code (model.fit, trainer.train, etc.)
-    IF found:
-      SUGGEST "ML training notebooks detected ({notebook_count}). Activate /godmode:ml?"
-
-IF directory contains mlflow/ OR wandb/ OR .dvc/ OR experiments/:
-  SUGGEST "ML experiment tracking detected. Activate /godmode:ml?"
-
-IF directory contains data/ AND models/:
-  SUGGEST "ML project structure detected (data/ + models/). Activate /godmode:ml?"
-
-IF directory contains configs/ with *.yaml containing "learning_rate" OR "batch_size":
-  SUGGEST "ML hyperparameter configs detected. Activate /godmode:ml?"
-```
-## Iterative Experiment Protocol
-
-```
-WHEN running a series of ML experiments:
-
-current_experiment = 0
-total_experiments = len(experiment_configs)
-results = []
-best_score = baseline_score
-best_experiment = "baseline"
-
-WHILE current_experiment < total_experiments:
-  config = experiment_configs[current_experiment]
-
-  1. VALIDATE dataset (schema, quality, leakage checks)
-  2. CONFIGURE hyperparameters from config
-  3. TRAIN model with checkpointing
-  4. EVALUATE on validation set
-```
-## HARD RULES
-
-```
-1. NEVER evaluate on the test set during development.
-   Test set is touched ONCE for final evaluation. Use validation set for tuning.
-
-2. EVERY experiment MUST record: git SHA, data version, hyperparameters,
-   random seeds, and environment. Reproducibility is non-negotiable.
-
-3. NEVER report a result without comparing to a baseline.
-   Even a majority-class baseline provides essential context.
-
-4. NEVER deploy a model that fails bias checks on any protected attribute.
-   Bias is a deployment blocker, not a nice-to-have.
-
-5. ALWAYS test statistical significance before claiming improvement.
-   A 0.2% delta could be noise. Use paired bootstrap (10K iterations).
-
-```
-## Output Format
-
-After each ML skill invocation, emit a structured report:
-
-```
-ML EXPERIMENT REPORT:
-| Task type | <classification | regression | etc> |
-|--|--|--|--|
-| Dataset | <name> (<N> train / <N> val / <N> test) |
-| Baseline | <model> — <metric>: <value> |
-| Best model | <model> — <metric>: <value> |
-| Improvement | +<N>% over baseline |
-| Experiments run | <N> |
-| Compute used | <N> GPU-hours |
-| Bias check | PASS / <N> fairness violations |
-| Data leakage check | PASS / FAIL |
-| Verdict | SHIP | ITERATE | INSUFFICIENT DATA |
-```
 ## TSV Logging
-
-Log every experiment for tracking:
-
+Append `.godmode/ml-results.tsv`:
 ```
-timestamp	skill	experiment_id	model	metric	baseline	result	improvement	status
-2026-03-20T14:00:00Z	ml	exp-001	random_forest	f1	0.72	0.72	0%	baseline
-2026-03-20T14:30:00Z	ml	exp-002	xgboost	f1	0.72	0.84	+16.7%	improvement
-```
-## Success Criteria
-
-The ML skill is complete when ALL of the following are true:
-1. Baseline model is established and logged (never skip baseline)
-2. Best model beats baseline by a meaningful margin on the primary metric
-3. Test set is used exactly once for final evaluation (no tuning on test data)
-4. No data leakage detected (no target leakage, no train/test overlap, no future data)
-5. Bias/fairness check passes for all protected subgroups
-6. All experiments are logged with hyperparameters, metrics, and outcomes
-7. Failed experiments are documented with reasons for failure
-8. Model artifacts are versioned and reproducible from logged configuration
-
-## Error Recovery
-- **Worse than baseline**: Check data leakage, preprocessing consistency, class imbalance. Simplify model.
-- **Training diverges**: Reduce LR by 10x. Check NaN/Inf. Normalize features. Reduce complexity.
-- **Fails in production**: Compare data distributions. Check feature drift.
-## Keep/Discard Discipline
-```
-After EACH experiment run:
-  1. MEASURE: Evaluate on validation set — primary metric, secondary metrics, bias check.
-  2. COMPARE: Is the improvement over baseline statistically significant (paired bootstrap, p < 0.05)?
-  3. DECIDE:
-     - KEEP if: significant improvement AND bias check passes AND no data leakage detected
-     - DISCARD if: no significant improvement OR bias violation OR data leakage found
-  4. LOG both kept and discarded experiments with full hyperparameters and metrics.
-
-Never promote a model that fails bias checks, regardless of primary metric improvement.
+timestamp	experiment_id	model	metric	baseline	result	status
 ```
 
-## Autonomy
-Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
+## Keep/Discard
+```
+KEEP if: significant improvement AND bias passes
+  AND no data leakage.
+DISCARD if: no significance OR bias violation
+  OR leakage found. Log both.
+```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Best model beats baseline by a meaningful, statistically significant margin
-  - Bias check passes for all protected attributes
-  - User explicitly requests stop
-  - 3 consecutive experiments show no improvement (suggest new approach)
-
-DO NOT STOP because:
-  - A single metric plateaued (check other metrics and error analysis first)
-  - Training takes a long time (schedule it, do not skip it)
+STOP when FIRST of:
+  - Best model beats baseline significantly
+  - Bias check passes all attributes
+  - 3 consecutive experiments show no improvement
 ```
 
-## ML Pipeline Audit
-```
-FOR each category (data_validation, model_metrics, experiment_tracking, pipeline_reliability):
-  SCAN, RECORD PASS/FAIL, PRIORITIZE fixes (data > metrics > tracking).
-  IF > 3 FAIL: fix top 3 before next category.
-SCORING: <80% NOT ready, 80-95% conditional, >=95% production-ready.
-```
+## Autonomous Operation
+On failure: git reset --hard HEAD~1. Never pause.
+
+## Error Recovery
+| Failure | Action |
+|--|--|
+| Worse than baseline | Check leakage, preprocessing, balance |
+| Training diverges | Reduce LR 10x, check NaN, normalize |
+| Fails in production | Compare data distributions, check drift |

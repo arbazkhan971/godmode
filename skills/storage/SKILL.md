@@ -1,317 +1,165 @@
 ---
 name: storage
-description: |
-  File storage and CDN skill. Activates when user needs to design or implement file storage systems. Covers object storage (S3, GCS, Azure Blob), file upload architecture (presigned URLs, multipart, resumable), image and video processing pipelines, storage cost optimization, and backup and replication strategies. Triggers on: /godmode:storage, "file upload", "S3 bucket", "image processing", "storage optimization", "backup strategy", or when building features that handle user-generated content.
+description: >
+  File storage and CDN. Object storage, presigned
+  URLs, image/video processing, lifecycle policies.
 ---
 
-# Storage — File Storage & CDN
+# Storage -- File Storage & CDN
 
-## When to Activate
-- User invokes `/godmode:storage`
-- User says "file upload", "S3 bucket", "object storage", "presigned URL"
-- User says "image processing", "video transcoding", "thumbnail generation"
-- User says "storage costs too high", "optimize storage", "lifecycle policy"
-- User says "backup strategy", "replication", "disaster recovery for files"
-- Application needs to accept, store, or serve user-uploaded files
-- Media processing pipeline needs design or optimization
+## Activate When
+- `/godmode:storage`, "file upload", "S3 bucket"
+- "presigned URL", "image processing", "CDN"
+- "storage costs", "lifecycle policy", "backup"
 
 ## Workflow
 
-### Step 1: Storage Requirements Discovery
-Identify file storage needs and constraints:
+### Step 1: Requirements Discovery
+```
+File Types: images | docs | video | audio | archives
+Max Upload Size: images <10MB, video <500MB
+Storage Provider: S3 | GCS | Azure Blob | R2
+CDN: CloudFront | Cloud CDN | Cloudflare
+Scale: <uploads/day, total storage/year>
+```
 
-```
-STORAGE REQUIREMENTS:
-  File Types:
-  Images: <jpg, png, webp, svg>
-  Documents: <pdf, docx, xlsx>
-  Video: <mp4, webm>
-  Audio: <mp3, wav>
-  Other: <csv, json, zip>
-  Upload Constraints:
-  ...
-```
 ### Step 2: Object Storage Configuration
-Set up the storage backend:
+```bash
+# Create S3 bucket with versioning
+aws s3api create-bucket \
+  --bucket myapp-prod-uploads \
+  --region us-east-1
+aws s3api put-bucket-versioning \
+  --bucket myapp-prod-uploads \
+  --versioning-configuration Status=Enabled
 
-#### S3 Bucket Design
+# Verify bucket policy
+aws s3api get-bucket-policy --bucket myapp-prod-uploads
 ```
-S3 BUCKET ARCHITECTURE:
-  Bucket: <app-name>-<env>-uploads
-  Region: <region>
-  Versioning: Enabled
-  Encryption: AES-256 (SSE-S3) or KMS
-  Folder Structure:
-  /<tenant-id>/
-  /originals/<uuid>.<ext>     — Original uploads
-  ...
+```
+BUCKET STRUCTURE:
+  /<tenant-id>/originals/<uuid>.<ext>
+  /<tenant-id>/variants/<uuid>/<size>.<ext>
+  /<tenant-id>/thumbnails/<uuid>.webp
+
+PROVIDER COMPARISON:
+| Feature      | S3    | GCS   | Azure Blob |
+|-------------|-------|-------|-----------|
+| Max object  | 5 TB  | 5 TB  | 190.7 TB  |
+| Multipart   | 5 MB  | 5 MB  | N/A blocks|
+| Consistency | Strong| Strong| Strong    |
 ```
 
-#### Cross-Provider Comparison
-```
-OBJECT STORAGE COMPARISON:
-| Feature | S3 | GCS | Azure Blob |
-|--|--|--|--|
-| Max object size | 5 TB | 5 TB | 190.7 TB |
-| Multipart min | 5 MB | 5 MB | N/A (blocks) |
-| Consistency | Strong | Strong | Strong |
-| Versioning | Yes | Yes | Yes |
-| Lifecycle rules | Yes | Yes | Yes |
-  ...
+### Step 3: Upload Architecture
 ```
 PRESIGNED URL FLOW:
-Client → API (request URL) → API validates type+size, generates presigned PUT → Client PUTs directly to S3 → S3 event → Worker validates/scans/resizes → Client gets confirmation
+  Client -> API (request URL)
+  -> API validates type+size, generates presigned PUT
+  -> Client PUTs directly to S3
+  -> S3 event -> Worker validates/scans/resizes
+  -> Client gets confirmation
+
+IF file < 10MB: single presigned PUT
+IF file 10MB-5GB: multipart (5-100MB chunks,
+  3-5 concurrent, per-chunk retry)
+IF file > 5GB or mobile: resumable (tus protocol)
+WHEN server processing needed first: direct upload
 ```
 
-#### Multipart Upload (Large Files)
+### Step 4: Image Processing Pipeline
 ```
-MULTIPART UPLOAD FLOW:
-  Phase 1: INITIATE
-  - Client requests multipart upload
-  - Server creates upload session, returns upload ID
-  - Server generates presigned URLs for each part
-  Phase 2: UPLOAD PARTS
-  - Client splits file into 5-100 MB chunks
-  - Client uploads each chunk in parallel (3-5 concurrent)
-  ...
+PIPELINE:
+  Upload -> Validate (magic bytes) -> Virus Scan
+  -> Process (Sharp: resize, WebP/AVIF, strip EXIF)
+  -> Store variants -> CDN
+
+VARIANTS:
+  thumbnail: 200x200 crop, 80% quality
+  small: 400w, 80% quality
+  medium: 800w, 85% quality
+  large: 1600w, 90% quality
+  placeholder: 20x20, 20% quality, base64 LQIP
 ```
 
-#### Resumable Upload (Unstable Connections)
+### Step 5: Cost Optimization
 ```
-RESUMABLE UPLOAD (tus protocol):
-  Protocol: tus v1.0.0 (https://tus.io)
-  1. POST /uploads
-  Upload-Length: <total-size>
-  Upload-Metadata: filename <base64>, type <base64>
-  -> 201 Created, Location: /uploads/<id>
-  2. PATCH /uploads/<id>
-  Upload-Offset: <current-offset>
-  ...
+LIFECYCLE POLICIES:
+  Incomplete multipart: abort after 24h
+  Transition to IA: after 90 days (40% savings)
+  Transition to Glacier: after 365 days (80%)
+  Delete old versions: after 30 days
+
+OPTIMIZATION ACTIONS:
+| Action              | Savings | Effort |
+|--------------------|---------|--------|
+| Lifecycle to IA    | 40%     | Low    |
+| CDN (reduce egress)| 50%     | Medium |
+| WebP conversion    | 30%     | Medium |
+| Deduplicate files  | 15%     | Medium |
 ```
 
-### Step 4: Image and Video Processing Pipeline
-Design media processing workflows:
-
-#### Image Processing Pipeline
+### Step 6: Backup & Replication
 ```
-IMAGE PROCESSING PIPELINE:
-┌────────┐    ┌────────┐    ┌──────────┐    ┌─────────┐
-| Upload | ───> | Validate | ───> | Process | ───> | Store |
-|--|--|--|--|--|--|---|
-| (S3) |  | & Scan |  | & Resize |  | Variants |
-└────────┘    └────────┘    └──────────┘    └─────────┘
-     │              │              │               │
-  S3 Event     Virus scan    Sharp/ImageMagick   S3 + CDN
-  ...
+Tier 1: Same-region (automatic, 11 nines S3)
+Tier 2: Cross-region replication
+  Primary: us-east-1, Replica: eu-west-1
+  IF compliance requires geo-redundancy: enable
+  IF disaster recovery RTO < 1h: enable
 ```
 
-```typescript
-// Image processing with Sharp
-async function processImage(key: string): Promise<ProcessedImage> {
-  const original = await s3.getObject({ Bucket: BUCKET, Key: key }).promise();
-  const image = sharp(original.Body as Buffer);
-  const metadata = await image.metadata();
-
+### Step 7: Commit
 ```
-
-#### Video Processing Pipeline
-```
-VIDEO PROCESSING PIPELINE:
-  1. UPLOAD (multipart, resumable for large files)
-  -> S3 originals bucket
-  2. VALIDATE
-  - Verify container format (MP4, WebM, MOV)
-  - Check codec (H.264, H.265, VP9, AV1)
-  - Verify duration < max allowed
-  - Scan for malware
-  ...
-```
-STORAGE COST ANALYSIS:
-  Current Monthly Cost: $<amount>
-  Breakdown:
-  Storage:     $<amount> (<N> TB at $<rate>/GB)
-  Requests:    $<amount> (<N>M GET, <M>K PUT)
-  Egress:      $<amount> (<N> TB transferred)
-  Processing:  $<amount> (Lambda/MediaConvert)
-  Optimization Opportunities:
-|  | Action | Savings | Risk | Effort |  |
-|  | ────────────────────────────────────────────────── |  |
-|  | Lifecycle to IA (90d) | 40% | Low | Low |  |
-|  | Lifecycle to Glacier | 80% | Medium | Low |  |
-|  | (365d) |  |  |  |  |
-|  | Delete incomplete | 5% | None | Low |  |
-|  | multipart uploads |  |  |  |  |
-|  | Compress before store | 30% | Low | Med |  |
-|  | Deduplicate files | 15% | Low | Med |  |
-|  | Serve via CDN (reduce | 50% | None | Med |  |
-|  | S3 egress) | (egress) |  |  |  |
-|  | Delete orphaned files | 10% | Low | Med |  |
-|  | WebP conversion | 30% | None | Med |  |
-|  | (images) | (storage) |  |  |  |
-  Projected monthly cost after optimization: $<amount>
-  Projected savings: $<amount>/month (<N>% reduction)
-```
-
-#### Lifecycle Policy
-```json
-{
-  "Rules": [
-    {
-      "ID": "transition-to-ia",
-      "Status": "Enabled",
-  ...
-```
-
-### Step 6: Backup and Replication Strategies
-Design data durability and disaster recovery:
-
-```
-BACKUP AND REPLICATION STRATEGY:
-  Tier 1: SAME-REGION REDUNDANCY (automatic)
-  S3: 11 nines durability across 3+ AZs
-  GCS: Dual-region or multi-region
-  Azure: LRS (3 copies) or ZRS (3 AZ copies)
-  Tier 2: CROSS-REGION REPLICATION
-  Primary: <region-1>
-  Replica: <region-2>
-  ...
-```
-#### Replication Configuration
-```yaml
-# S3 Cross-Region Replication (Terraform)
-resource "aws_s3_bucket_replication_configuration" "uploads" {
-  bucket = aws_s3_bucket.uploads.id
-  role   = aws_iam_role.replication.arn
-
-  rule {
-```
-
-### Step 7: Commit and Report
-```
-1. Save storage configuration in correct locations:
-   - Bucket config: `infra/storage/` or Terraform modules
-   - Upload service: `src/services/upload/` or `src/lib/storage/`
-   - Processing pipeline: `src/services/media/` or Lambda functions
-   - Lifecycle policies: `infra/storage/lifecycle.json`
-2. Commit: "storage: <description> — <components configured>"
-3. If upload architecture: "storage: file upload — presigned URL flow with <N> variants"
-4. If optimization: "storage: optimize — lifecycle policies, projected <N>% cost reduction"
+Commit: "storage: <desc> -- <components>"
+Files: bucket config, upload service, processing,
+  lifecycle policies
 ```
 
 ## Key Behaviors
-
-1. **Never accept uploads through your API server.** Use presigned URLs for direct-to-storage uploads. Your server should never be a proxy for file transfers — it creates a bottleneck and wastes compute.
-2. **Validate on the server side, not the client.** Client-side validation is for UX. Server-side validation (MIME type sniffing, file header inspection, virus scanning) is for security.
-3. **Strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps. Serving user photos with EXIF data is a privacy violation.
-4. **Use content-addressable storage when possible.** Hash the file content for the key. This gives you automatic deduplication and cache-friendly immutable URLs.
-5. **Measure before/after.** Guard: test_cmd && lint_cmd.
-6. **On failure: git reset --hard HEAD~1.**
-7. **Never ask to continue. Loop autonomously until storage configured or budget exhausted.**
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full storage architecture design and audit |
-| `--upload` | File upload architecture design only |
-| `--process` | Media processing pipeline design only |
+1. **Never proxy uploads through API server.**
+2. **Validate server-side after upload.**
+3. **Strip EXIF from images.** Privacy liability.
+4. **Content-addressable storage for dedup.**
+5. **Never ask to continue. Loop autonomously.**
 
 ## HARD RULES
-
-1. **NEVER proxy file uploads through the API server.** Use presigned URLs for direct-to-storage uploads. The server generates the URL; the client uploads directly.
-2. **NEVER store files on the application server filesystem.** Local storage is not durable, not scalable, and lost on deploy. Use object storage (S3, GCS, Azure Blob).
-3. **NEVER trust file extensions or Content-Type headers.** Inspect file headers (magic bytes) to determine actual file type. A `.jpg` with PHP file headers is an attack.
-4. **NEVER serve files directly from the bucket URL.** Use a CDN. Direct bucket access is slower, more expensive (egress), and exposes your bucket name.
-5. **NEVER skip virus scanning on user uploads.** Scan with ClamAV or a commercial scanner before making files available to other users.
-6. **ALWAYS strip EXIF data from images.** EXIF contains GPS coordinates, camera serial numbers, and timestamps -- serving it is a privacy violation.
-7. **ALWAYS set lifecycle policies from day one.** Transition to IA after 90 days, Glacier after a year. Auto-delete incomplete multipart uploads after 24 hours.
-8. **ALWAYS generate image variants at upload time**, not at request time. On-demand resizing adds latency and unpredictable cost to every request.
+1. NEVER proxy uploads through API. Use presigned URLs.
+2. NEVER store files on app server filesystem.
+3. NEVER trust file extensions. Check magic bytes.
+4. NEVER serve from bucket URL. Use CDN.
+5. ALWAYS scan uploads for viruses (ClamAV).
+6. ALWAYS strip EXIF metadata from images.
+7. ALWAYS set lifecycle policies from day one.
+8. ALWAYS generate image variants at upload time.
 
 ## Auto-Detection
-
-On activation, detect the storage context:
-
 ```bash
-# Detect cloud provider
-ls ~/.aws/credentials ~/.config/gcloud/application_default_credentials.json 2>/dev/null
-grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage\|@azure/storage-blob" package.json 2>/dev/null
-
-# Detect existing storage configuration
-grep -rl "S3Client\|S3\|getSignedUrl\|presignedUrl\|Storage\|BlobServiceClient" src/ --include="*.ts" --include="*.js" 2>/dev/null | head -5
+grep -r "aws-sdk\|@aws-sdk\|@google-cloud/storage" \
+  package.json 2>/dev/null
+grep -r "S3Client\|getSignedUrl\|presignedUrl" \
+  src/ --include="*.ts" --include="*.js" -l \
+  2>/dev/null | head -5
 ```
+
 ## TSV Logging
-After each workflow step, append a row to `.godmode/storage-results.tsv`:
+Log to `.godmode/storage-results.tsv`:
+`step\tcomponent\tprovider\tstatus\tdetails`
+
+## Output Format
+Print: `Storage: {provider}. Upload: {presigned|direct}. CDN: {active|none}. Status: {DONE|PARTIAL}.`
+
+## Keep/Discard Discipline
 ```
-STEP\tCOMPONENT\tPROVIDER\tSTATUS\tDETAILS
-1\tstorage-client\ts3\tcreated\tS3Client wrapper with upload, download, delete, presign
-2\tpresigned-urls\ts3\tcreated\tPUT for upload, GET for download, 15min expiry
-3\tcdn\tcloudfront\tconfigured\tdistribution with OAC, cache policy, custom domain
-4\tlifecycle\ts3\tconfigured\tincomplete multipart cleanup 24h, transition to IA 90d
-5\timage-processing\tsharp\tcreated\tthumbnail + medium + large variants on upload
-```
-Print final summary: `Storage: {provider}, bucket: {name}. CDN: {cdn_provider}. Presigned URLs: {yes/no}. Image processing: {yes/no}. Lifecycle: {rules}. Backup: {strategy}.`
-
-## Success Criteria
-Verify all of these before marking the task complete:
-1. Storage client works: upload, download, delete, and presigned URL generation all succeed with test files.
-2. Presigned URLs expire correctly (test: URL works before expiry, returns 403 after expiry).
-3. CDN serves files with correct cache headers (`Cache-Control: public, max-age=31536000, immutable` for hashed filenames).
-4. Direct bucket access is blocked (only CDN or presigned URLs can access files).
-5. Lifecycle rules are active: incomplete multipart uploads cleaned up, old versions transitioned/expired.
-6. Image processing (if applicable) generates all required variants and strips EXIF metadata.
-7. CORS configuration allows uploads from the application's domain(s) only.
-8. All credentials come from environment variables or IAM roles, not hardcoded.
-
-## Error Recovery
-| Failure | Action |
-|--|--|
-| Access denied (403) | Check IAM policy: does the role/user have `s3:PutObject`, `s3:GetObject` on the correct bucket ARN? Check bucket policy for explicit denies. Check VPC endpoint policy if applicable. |
-| CORS error on upload | Verify bucket CORS config allows the origin, method (PUT), and headers (Content-Type, x-amz-*). CORS rules are cached by browsers — test in incognito. |
-| Presigned URL fails | Check clock skew between server and AWS (<15min). Verify signing credentials match the bucket region. Check that the URL hasn't expired. |
-## Storage Optimization Audit
-
-Comprehensive audit of access patterns, compression effectiveness, and lifecycle policy coverage:
-
-```
-STORAGE OPTIMIZATION AUDIT:
-Provider: <AWS S3 | GCS | Azure Blob>
-Bucket: <bucket name>
-Audit date: <date>
-Total storage: <size>
-Monthly cost: <amount>
-
-ACCESS PATTERN ANALYSIS:
-  ...
-```
-After EACH storage configuration change:
-  1. TEST: Upload a file end-to-end — presigned URL, upload, CDN serving, cleanup.
-  2. VERIFY: Direct bucket access blocked, lifecycle rules active, CORS correct.
-  3. DECIDE:
-     - KEEP if: end-to-end test passes AND no access regressions AND cost projection improved
-     - DISCARD if: upload fails OR direct bucket access possible OR CORS breaks
-  4. COMMIT kept changes. Revert discarded changes before next component.
-
-Never keep a storage change that exposes the bucket directly or breaks uploads.
+KEEP if: end-to-end upload works AND direct bucket
+  access blocked AND cost projection improved
+DISCARD if: upload fails OR bucket exposed OR CORS
+  breaks. Revert on discard.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - End-to-end upload works (presigned URL -> upload -> CDN serving)
-  - Direct bucket access blocked, lifecycle rules active
-  - All credentials from environment variables or IAM roles
-  - User explicitly requests stop
-
-DO NOT STOP only because:
-  - Cost optimization is incomplete (lifecycle rules are a start)
-  - Video processing is not yet implemented (if not requested)
-```
-## Output Format
-Print: `Storage: {provider} configured. Upload: {presigned|direct}. CDN: {active|none}. Direct access: {blocked|exposed}. Status: {DONE|PARTIAL}.`
-
-## Keep/Discard Discipline
-```
-After EACH storage configuration change:
-  KEEP if: end-to-end test passes AND no access regressions AND cost projection improved
-  DISCARD if: upload fails OR direct bucket access possible OR CORS breaks
-  On discard: revert. Never keep a storage change that exposes the bucket directly.
+STOP when:
+  - End-to-end upload works (presigned -> CDN)
+  - Direct bucket access blocked
+  - Lifecycle rules active
+  - All credentials from env vars or IAM roles
 ```

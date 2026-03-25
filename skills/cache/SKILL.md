@@ -86,6 +86,18 @@ VERDICT: <PASS | NEEDS REVISION>
 
 ## Key Behaviors
 
+```bash
+# Cache diagnostics
+redis-cli INFO stats | grep -E "hits|misses|evicted"
+redis-cli --bigkeys
+redis-cli DBSIZE
+redis-cli MEMORY USAGE <key>
+```
+
+IF cache hit rate < 80%: audit key design and TTL values.
+WHEN eviction rate > 100/min: increase maxmemory or audit key sizes.
+IF P95 cache latency > 10ms: check network, connection pooling, key sizes.
+
 1. **Cache the right things.** Frequently-read, rarely-changed data only.
 2. **Always set a TTL.** A cache without TTL is a memory leak.
 3. **Invalidation first.** Design invalidation before caching.

@@ -242,12 +242,24 @@ Homebrew (macOS/Linux):
 
 ## Key Behaviors
 
-1. **Error messages are UX.** A CLI that prints a stack trace on invalid input is hostile. Show what went wrong, why, and how to fix it. Include the correct usage example.
-2. **Make defaults safe.** Destructive commands require confirmation. Verbose mode is opt-in. Color respects NO_COLOR and terminal capability.
-3. **Machine-readable output is a feature.** Always support --json for output that other tools may consume. Human-readable is the default; machine-readable is the option.
-4. **Shell completions are expected.** Users who install CLIs via package managers expect tab completion to work. Generate completions for bash, zsh, fish, and PowerShell.
-5. **Exit codes are meaningful.** 0 = success, 1 = general error, 2 = usage error. Document non-zero exit codes. Scripts depend on them.
-6. **Respect the terminal.** Check if stdout is a TTY before using colors, spinners, or interactive prompts. Pipe-friendly output when not a TTY.
+```bash
+# Test CLI tool end-to-end
+npm test -- --grep "cli"
+node dist/cli.js --help
+node dist/cli.js --version
+echo '{}' | node dist/cli.js --json  # pipe test
+```
+
+IF command execution > 5 seconds: add progress indicator.
+WHEN exit code != 0: write to stderr, not stdout.
+IF --json output is invalid JSON: treat as P1 bug.
+
+1. **Error messages are UX.** Show what, why, and how to fix.
+2. **Make defaults safe.** Destructive = confirmation. Respect NO_COLOR.
+3. **Machine-readable output.** Support --json for piping.
+4. **Shell completions expected.** bash, zsh, fish, PowerShell.
+5. **Exit codes meaningful.** 0=success, 1=error, 2=usage.
+6. **Respect the terminal.** TTY check before colors/spinners.
 
 ## Flags & Options
 
@@ -321,30 +333,21 @@ DO NOT STOP because:
   - Only one distribution channel is configured (one is enough to ship)
 ```
 
-## Iteration Protocol
-Loop: REVIEW state -> IMPLEMENT next command with tests -> TEST (unit + integration) -> VERIFY (exit codes, stderr/stdout). If tests pass: commit, next command. If fail: fix (max 3 attempts). Stop when all commands implemented, tests pass, distribution configured.
-
 ## TSV Logging
 Append to `.godmode/cli-results.tsv`:
-```
-STEP	COMMAND	LANGUAGE	STATUS	DETAILS
-```
-Print: `CLI: {tool_name}, language: {lang}, commands: {N}. Parser: {library}. Distribution: {methods}. Tests: {pass}/{total}. Completions: {yes/no}.`
+`STEP\tCOMMAND\tLANGUAGE\tSTATUS\tDETAILS`
 
 ## Success Criteria
-1. All planned commands work with correct argument parsing (required args, optional flags, defaults).
-2. `--help` output present for every command and subcommand with descriptions and examples.
-3. Exit codes are correct: 0 for success, 1 for user error, 2 for system error.
-4. stdout contains only program output (machine-parseable). stderr contains errors, warnings, and progress.
-5. `--json` flag (or equivalent) produces valid JSON for all list/show commands.
-6. `NO_COLOR` environment variable is respected. `--no-color` flag works. Colors only when isatty.
-7. Non-interactive mode works (`--yes` or equivalent skips all prompts) for CI/CD usage.
-8. Tests cover: argument parsing, happy path output, error conditions, exit codes.
+1. All commands parse args correctly. `--help` on every command.
+2. Exit codes: 0=success, 1=error, 2=usage. `--json` valid JSON.
+3. stdout = output only. stderr = errors/warnings/progress.
+4. NO_COLOR respected. `--yes` skips all prompts for CI.
+5. Tests cover: parsing, happy path, errors, exit codes.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Parser library not detected | Check package manager files for known parsers. If none, ask user preference. |
-| Command fails silently | All error paths: write to stderr + non-zero exit code. |
-| Output encoding issues | Force UTF-8. Test with pipe: `tool list | cat` must not break. |
+| Parser not detected | Check package manager files. Ask user preference. |
+| Command fails silently | All errors: stderr + non-zero exit code. |
+| Encoding issues | Force UTF-8. Test: `tool list | cat`. |
 

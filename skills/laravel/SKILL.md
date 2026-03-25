@@ -1,346 +1,257 @@
 ---
 name: laravel
 description: |
-  Laravel mastery skill. Activates when user needs to build, configure, optimize, or debug Laravel applications. Covers Eloquent ORM patterns, service container, facades, contracts, queue system, events, broadcasting, Sanctum/Passport authentication, and testing with PHPUnit and Pest. Provides opinionated guidance on production-grade Laravel patterns. Triggers on: /godmode:laravel, "laravel app", "eloquent", "artisan", "blade", or when the orchestrator detects PHP backend work using Laravel.
+  Laravel mastery skill. Eloquent ORM, service container,
+  queues, events, Sanctum/Passport auth, Pest testing.
+  Triggers on: /godmode:laravel, "laravel app",
+  "eloquent", "artisan", "blade".
 ---
 
 # Laravel — Laravel Mastery
 
 ## When to Activate
 - User invokes `/godmode:laravel`
-- User says "build a Laravel app", "create a Laravel API", "set up Laravel"
-- User asks about Eloquent, Blade, Livewire, Artisan, or Laravel queues
-- When `/godmode:plan` identifies Laravel implementation tasks
-- When `/godmode:scaffold` detects a Laravel project
-- When working with PHP backend services using Laravel framework
+- User says "build a Laravel app", "Laravel API"
+- User asks about Eloquent, Blade, Livewire, queues
+- When working with PHP backend using Laravel
 
 ## Workflow
 
-### Step 1: Project Assessment & Architecture Decision
-Understand the project and choose the right Laravel setup:
+### Step 1: Project Assessment
+
+```bash
+# Detect Laravel version
+php artisan --version 2>/dev/null
+php -v | head -1
+
+# Check for common issues
+php artisan route:list --json | wc -l
+php artisan config:show app.debug 2>/dev/null
+```
 
 ```
 LARAVEL ASSESSMENT:
-Project: <name and purpose>
-Laravel version: <latest stable, e.g., 11.x>
-PHP version: <latest stable, e.g., 8.3.x>
-Architecture: Full-stack (Blade/Livewire) | API-only | Hybrid (Inertia)
-Database: MySQL | PostgreSQL | SQLite (dev) | MariaDB
-Queue driver: Redis | Database | SQS | Beanstalkd
-Real-time: Laravel Reverb | Pusher | Ably | None
-Auth: Sanctum (SPA/token) | Passport (OAuth2) | Breeze | Jetstream
-Frontend: Blade + Livewire | Inertia (Vue/React) | API-only
-CSS: Tailwind (default) | Bootstrap
-Cache: Redis | Memcached | File | Database
-  ...
+Laravel: <11.x>, PHP: <8.3.x>
+Architecture: Full-stack (Blade) | API-only | Inertia
+Database: MySQL | PostgreSQL | SQLite
+Queue: Redis | Database | SQS
+Auth: Sanctum | Passport | Breeze | Jetstream
+
+IF PHP < 8.2: recommend upgrade (performance + types)
+IF using $guarded = []: switch to explicit $fillable
+IF no preventLazyLoading: enable in AppServiceProvider
 ```
-```
-LARAVEL SETUP DECISIONS:
-| Decision | Choice & Justification |
-|--|--|
-| Full-stack vs API-only | Blade+Livewire: Server-rendered |
-|  | Inertia: SPA feel, Vue/React |
-|  | API-only: Separate frontend |
-| Auth starter kit | Breeze: Simple, Blade/Inertia |
-|  | Jetstream: Full-featured, teams |
-| API auth | Sanctum: SPA + mobile tokens |
-|  | Passport: Full OAuth2 server |
-| Queue driver | Redis: Fast, reliable, standard |
-|  | Database: No Redis dependency |
-  ...
-```
-Rules:
-- ALWAYS use the latest PHP version (8.3+) for performance and type system improvements
-- Laravel Sanctum for SPA + mobile token auth — Passport only when you need a full OAuth2 server
-- Pest is the modern Laravel testing standard — prefer it over raw PHPUnit for new projects
-- Use Laravel Reverb for WebSockets — it is the official, first-party solution
 
 ### Step 2: Eloquent ORM Patterns
-Master Laravel's ActiveRecord-style ORM:
 
-```php
-// Model with relationships, scopes, and casts
-class Order extends Model
-{
-    use HasFactory, SoftDeletes;
+```
+QUERY OPTIMIZATION:
+| Pattern                | Usage              |
+|------------------------|--------------------|
+| with('relation')       | Eager load (N+1)   |
+| withCount('relation')  | Count without load  |
+| select('col1','col2')  | Reduce memory       |
+| chunk(1000, fn)        | Large datasets      |
+| cursor()               | One-by-one stream   |
 
-    protected $fillable = [
+THRESHOLDS:
+  N+1 tolerance: 0 (use preventLazyLoading)
+  chunk size: 1000 records per batch
+  Model::all() in production: NEVER
+  IF query count > 10 per request: audit with Debugbar
 ```
-```
-ELOQUENT QUERY OPTIMIZATION:
-| Pattern | Usage |
-|--|--|
-| with('relation') | Eager load (prevent N+1) |
-| load('relation') | Lazy eager load (post-query) |
-| withCount('relation') | Count without loading |
-| select('col1', 'col2') | Reduce memory footprint |
-| pluck('column') | Extract array of values |
-| chunk(1000, fn) | Process large datasets |
-| chunkById(1000, fn) | Safe chunking with mutations |
-| lazy() | Lazy collection (memory safe) |
-| cursor() | One-by-one streaming |
-  ...
-```
-```php
-// Controller with optimized queries
-class OrderController extends Controller
-{
-    public function index(Request $request): JsonResponse
-    {
-        $orders = Order::query()
-```
-Rules:
-- ALWAYS use `with()` to eager load relationships displayed in responses
-- ALWAYS use API Resources — never return Eloquent models directly from controllers
-- Use `$preventLazyLoading` in `AppServiceProvider::boot()` to catch N+1 in development
-- Use backed enums (PHP 8.1+) for status fields — they provide type safety and IDE support
-- Use `chunk` or `cursor` for processing large datasets — never `Model::all()`
-- Add database indexes on all foreign keys and columns used in where/orderBy
 
-### Step 3: Service Container, Facades & Contracts
-Use Laravel's IoC container:
-
-```php
-// Contract (Interface)
-namespace App\Contracts;
-
-interface PaymentGateway
-{
-    public function charge(int $amountCents, string $currency, array $metadata = []): PaymentResult;
 ```
+RULES:
+  Always with() for displayed relationships
+  Always use API Resources (never raw models)
+  Always backed enums for status fields (PHP 8.1+)
+  Always index foreign keys and WHERE columns
+  IF processing > 100 records: use chunk/cursor
+```
+
+### Step 3: Service Container & Architecture
+
 ```
 SERVICE ARCHITECTURE:
-| Pattern | When to Use |
-|--|--|
-| Action classes (single method) | Complex operations (CreateOrder) |
-| Service classes (multiple methods) | Related operations (OrderService) |
-| Repository pattern | Abstract data access layer |
-| DTOs (Data Transfer Objects) | Typed input/output structures |
-| Contracts (interfaces) | Swappable implementations |
-| Service Providers | Binding interfaces to concrete |
-| Facades | Static-like access to services |
-| Pipeline pattern | Sequential processing steps |
-```
-Rules:
-- Bind interfaces (contracts) in service providers — swap implementations for testing
-- Use Action classes for complex single operations — one public method: `execute()`
-- Use DTOs instead of arrays for passing structured data between layers
-- Constructor injection over facade usage in application code — facades are for convenience, DI is for testability
-- Use `DB::transaction()` for operations requiring atomicity
+| Pattern             | When to Use          |
+|---------------------|---------------------|
+| Action classes      | Complex single ops   |
+| Service classes     | Related operations   |
+| Repository pattern  | Abstract data access |
+| DTOs                | Typed input/output   |
+| Contracts           | Swappable impls      |
+| Pipelines           | Sequential steps     |
 
-### Step 4: Queue System, Events & Broadcasting
-Handle async work and real-time updates:
+RULES:
+  Bind interfaces in service providers
+  Action classes: one public method (execute)
+  Constructor injection over facades
+  DB::transaction() for atomicity
+  IF business logic in controller: extract to service
+```
+
+### Step 4: Queue System & Events
 
 ```php
-// Job with retry, backoff, and middleware
-class ProcessOrderPayment implements ShouldQueue
+// Job with retry configuration
+class ProcessPayment implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    use Batchable; // For batch processing
+    use Dispatchable, InteractsWithQueue,
+        Queueable, SerializesModels;
+
+    public $tries = 3;
+    public $backoff = [10, 60, 300]; // seconds
+    public $timeout = 120;
+}
+```
 
 ```
-```
-ASYNC ARCHITECTURE:
-| Component | Purpose |
-|--|--|
-| Jobs (ShouldQueue) | Async task processing |
-| Events + Listeners | Decoupled event handling |
-| Notifications | Multi-channel alerts |
-| Broadcasting (ShouldBroadcast) | Real-time via WebSocket |
-| Mail (Mailable + queue) | Email sending |
-| Job Batches | Group related jobs |
-| Job Chains | Sequential job execution |
-| Rate Limiting (middleware) | Throttle job execution |
-| Unique Jobs (ShouldBeUnique) | Prevent duplicate processing |
-  ...
-```
-Rules:
-- Jobs MUST stay idempotent — safe to retry without side effects
-- Use `$backoff` array for exponential backoff on retries
-- Use `WithoutOverlapping` middleware to prevent concurrent processing of the same entity
-- Use events for side effects (email, notification, logging) — keep the main action clean
-- Use `ShouldBeUnique` to prevent duplicate jobs in the queue
-- Monitor queue with `php artisan queue:monitor` and Laravel Horizon (for Redis)
+ASYNC RULES:
+  Jobs MUST be idempotent (safe to retry)
+  Use $backoff array for exponential backoff
+  Use WithoutOverlapping for same-entity ops
+  Use ShouldBeUnique to prevent duplicates
+  Events for side effects (email, notification)
+  IF job runs > 30s: consider breaking into chain
 
-### Step 5: Authentication — Sanctum & Passport
-Implement secure authentication:
-
-```php
-// Sanctum — SPA + Token Authentication
-// config/sanctum.php
-'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', 'localhost,localhost:3000')),
-
-// API routes with Sanctum
-Route::middleware('auth:sanctum')->group(function () {
+THRESHOLDS:
+  Job timeout: 120s default, 300s max
+  Retry attempts: 3 (with backoff)
+  Queue monitoring: Horizon for Redis
+  IF queue depth > 1000: scale workers
 ```
-```
-AUTH ARCHITECTURE:
-| Auth Method | When to Use |
-|--|--|
-| Sanctum (SPA mode) | SPA with same-domain backend |
-| Sanctum (token mode) | Mobile apps, third-party tokens |
-| Passport | Full OAuth2 server needed |
-| Breeze | Simple auth scaffolding |
-| Jetstream | Auth + teams + 2FA + API tokens |
-| Socialite | OAuth social login providers |
 
-AUTHORIZATION LAYERS:
-- Gates: Simple closures for non-model actions
-  ...
-```
-### Step 6: Testing with PHPUnit & Pest
-Comprehensive testing strategy:
+### Step 5: Authentication
 
-```php
-// Pest test — Model
-describe('Order', function () {
-    it('has a customer relationship', function () {
-        $order = Order::factory()->create();
-        expect($order->customer)->toBeInstanceOf(Customer::class);
-    });
 ```
-```php
-// Factory with states
-class OrderFactory extends Factory
-{
-    protected $model = Order::class;
+AUTH SELECTION:
+| Method       | When to Use              |
+|-------------|--------------------------|
+| Sanctum SPA | Same-domain SPA          |
+| Sanctum token| Mobile, third-party     |
+| Passport     | Full OAuth2 server       |
+| Breeze       | Simple auth scaffold     |
+| Jetstream    | Auth + teams + 2FA       |
 
-    public function definition(): array
+RULES:
+  Every endpoint must check Policy or Gate
+  Authorization bugs are security bugs
+  IF API + SPA: Sanctum stateful cookies
+  IF API + mobile: Sanctum token-based
 ```
+
+### Step 6: Testing with Pest
+
+```bash
+# Run tests
+php artisan test --parallel
+
+# Run with coverage
+php artisan test --coverage --min=80
+```
+
 ```
 TESTING STRATEGY:
-| Layer | Approach |
-|--|--|
-| Models | Pest + Factories + Assertions |
-| API endpoints | Pest + Sanctum::actingAs |
-| Jobs/Listeners | Pest + Queue::fake + Event::fake |
-| Services/Actions | Pest + Mockery for dependencies |
-| Policies | Pest + authorize assertions |
-| Validation | Pest + assertUnprocessable |
-| Browser/E2E | Laravel Dusk (Selenium) |
-| Mail | Mail::fake + assertQueued |
-| Notifications | Notification::fake |
-  ...
+| Layer        | Approach                 |
+|-------------|--------------------------|
+| Models       | Pest + Factories         |
+| API          | Pest + actingAs          |
+| Jobs         | Queue::fake + assertions |
+| Events       | Event::fake              |
+| Policies     | authorize assertions     |
+| Validation   | assertUnprocessable      |
+
+RULES:
+  Use RefreshDatabase (wraps in transactions)
+  Use factory states for variations
+  Test authorization in every endpoint test
+  assertDatabaseHas for persistence verification
+  IF coverage < 80%: add tests for uncovered routes
+
+THRESHOLDS:
+  Coverage target: >= 80% overall
+  Endpoint coverage: 100% of routes
+  IF test suite > 60s: enable --parallel
 ```
-Rules:
-- Use Pest for new Laravel projects — it is the modern standard with cleaner syntax
-- Use `RefreshDatabase` trait — it wraps tests in transactions for speed
-- Use `Queue::fake()`, `Event::fake()`, `Mail::fake()` to test side effects without executing them
-- Use factory states for common variations (`:confirmed`, `:withItems`)
-- Test authorization rules in every endpoint test — authorization bugs are security bugs
-- Use `assertDatabaseHas` to verify persistence, not only response status codes
 
 ### Step 7: Validation & Delivery
-Verify the Laravel application:
 
 ```
 LARAVEL VALIDATION:
-| Check | Status | Notes |
-|--|--|--|
-| N+1 prevention (preventLazyLoading) | PASS | Enabled in dev |
-| Eager loading on all endpoints | PASS | with() used |
-| API Resources (no raw models) | PASS | JsonResource used |
-| Form Requests for validation | PASS | No inline rules |
-| Policies for authorization | PASS | All endpoints gated |
-| Jobs idempotent with backoff | PASS | Retry-safe |
-| Events for side effects | PASS | Decoupled listeners |
-| Config cached for production | PASS | config:cache |
-| Routes cached for production | PASS | route:cache |
-  ...
+| Check                         | Status |
+|-------------------------------|--------|
+| preventLazyLoading enabled    | ?      |
+| Eager loading on endpoints    | ?      |
+| API Resources (no raw models) | ?      |
+| Form Requests for validation  | ?      |
+| Policies on all endpoints     | ?      |
+| Jobs idempotent with backoff  | ?      |
+| Config cached for production  | ?      |
+| Routes cached for production  | ?      |
 ```
-```
-LARAVEL DELIVERY:
 
-Artifacts:
-- Application: <app-name> Laravel <version>
-- Models: <N> Eloquent models with relationships and scopes
-- Controllers: <N> API controllers with resources
-- Jobs: <N> queued jobs with retry policies
-- Events: <N> events with listeners
-- Tests: <N> Pest tests passing
-- Migrations: <N> database migrations
-- Validation: <PASS | NEEDS REVISION>
-
-  ...
-```
-Commit: `"laravel: <app> — <N> models, <M> endpoints, Eloquent, Pest"`
+Commit: `"laravel: <app> — <N> models,
+  <M> endpoints, Pest"`
 
 ## Key Behaviors
 
-1. **Laravel conventions first.** Follow the framework's patterns — Eloquent, Resources, Form Requests, Policies. Fighting Laravel's conventions creates maintenance debt.
-2. **API Resources, always.** Never return raw Eloquent models from controllers. API Resources control the shape of your response and decouple your API from your database schema.
-3. **Prevent lazy loading.** Enable `Model::preventLazyLoading()` in development to catch N+1 queries before they reach production.
-4. **Events for side effects.** Email, notifications, analytics, logging — put them in event listeners. Keep your primary action clean and testable.
-5. **Keep jobs idempotent.** The queue retries failed jobs. Design them so that running twice produces the same result as running once.
-6. **Pest for testing.** Pest's expressive syntax makes tests readable and maintainable. Use fake facades to isolate side effects.
-7. **Cache everything in production.** Run `config:cache`, `route:cache`, `view:cache`, and `event:cache` in production. The performance difference is significant.
+1. **Laravel conventions first.**
+2. **API Resources always.** Never return raw models.
+3. **Prevent lazy loading** in development.
+4. **Events for side effects.**
+5. **Keep jobs idempotent.**
+6. **Pest for testing.**
+7. **Cache everything in production:**
+   config:cache, route:cache, view:cache.
 
 ## HARD RULES
-1. NEVER return raw Eloquent models from controllers — always use API Resources (JsonResource).
-2. NEVER use `$guarded = []` — explicitly define `$fillable` on every model. Mass assignment vulnerabilities are real.
-3. NEVER put business logic in controllers — controllers receive requests and return responses. Logic belongs in Action/Service classes.
-4. NEVER use inline validation in controllers — use Form Request classes. They are reusable, testable, and self-documenting.
-5. NEVER process heavy work synchronously — queue email, PDF, payments, and external API calls.
-6. NEVER reference `env()` outside config files — use `config()` helper in application code.
-7. NEVER skip authorization — every endpoint must check Policies or Gates. No exceptions.
-8. ALWAYS enable `Model::preventLazyLoading()` in development — catch N+1 queries before production.
-9. ALWAYS use `DB::transaction()` for operations requiring atomicity.
-10. ALWAYS use backed enums (PHP 8.1+) for status fields and `$casts` for type safety.
+
+1. Never return raw Eloquent models from controllers.
+2. Never use $guarded = [] — explicit $fillable only.
+3. Never put business logic in controllers.
+4. Never use inline validation — Form Request classes.
+5. Never process heavy work synchronously — queue it.
+6. Never reference env() outside config files.
+7. Never skip authorization on any endpoint.
+8. Always enable preventLazyLoading in development.
+9. Always use DB::transaction() for atomicity.
+10. Always use backed enums for status fields.
 
 ## Auto-Detection
 ```
-1. Laravel: artisan file, composer.json laravel/framework, composer.lock version
-2. PHP: composer.json require.php, php -v
-3. Architecture: routes/web.php (full-stack), routes/api.php (API), resources/views/ (Blade)
+1. Laravel: artisan file, composer.json laravel/framework
+2. PHP: composer.json require.php version
+3. Architecture: routes/web.php, routes/api.php
 ```
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full Laravel setup workflow |
-| `--api` | API-only Laravel application |
-| `--auth sanctum` | Configure Sanctum auth |
 
 ## Output Format
-```
-LARAVEL RESULT:
-Action: <scaffold|model|controller|service|policy|optimize|test|audit|upgrade>
-Files: <N> created/modified. Models: <N>. Controllers: <N>. Migrations: <N>.
-Tests: <passing|failing|skipped>. Build: <passing|failing>. Issues fixed: <N>.
-```
+Print: `Laravel: {action}, {models} models,
+  {endpoints} endpoints. Tests: {status}.
+  Verdict: {verdict}.`
+
 ## TSV Logging
-
-Log every invocation to `.godmode/` as TSV. Create on first run.
-
 ```
-timestamp	project	action	files_count	models_count	controllers_count	migrations_count	tests_status	notes
+timestamp	project	models	controllers	migrations	tests	status
 ```
-## Success Criteria
-
-1. `php artisan test` passes. 2. No raw Eloquent from controllers. 3. No logic in controllers. 4. Explicit `$fillable`. 5. Form Request classes. 6. Heavy work queued. 7. `preventLazyLoading` enabled. 8. No `env()` outside config. 9. All endpoints authorized. 10. Migrations consistent.
-
-## Error Recovery
-- Test fails: check phpunit.xml test DB. Migration fails: check column type conflicts. N+1: add `with()`. Queue job fails: check serializability. Auth errors: verify Policy registration.
 
 ## Keep/Discard Discipline
 ```
-KEEP if: tests pass AND quality improved AND no regressions
-DISCARD if: tests fail OR performance regressed OR new errors
-On discard: revert before proceeding.
+KEEP if: tests pass AND quality improved
+DISCARD if: tests fail OR performance regressed
 ```
-
-## Autonomy
-Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All identified tasks are complete and validated
-  - User explicitly requests stop
-  - Max iterations reached — report partial results with remaining items listed
-
-DO NOT STOP because:
-  - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (handle that in a follow-up pass)
+STOP when ANY of:
+  - All tasks complete and validated
+  - User requests stop
+  - Max iterations reached
 ```
+
+## Error Recovery
+- Test fails: check phpunit.xml test DB config.
+- Migration fails: check column type conflicts.
+- N+1: add with() eager loading.
+- Queue job fails: check serializability.
+- Auth errors: verify Policy registration.

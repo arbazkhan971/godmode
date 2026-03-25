@@ -107,6 +107,17 @@ Transition: Run /godmode:ui for component audit, /godmode:a11y for accessibility
 | `--storybook` | Storybook documentation setup |
 | `--init` | Initialize complete design system from scratch |
 
+```bash
+# Build and test design system
+npx storybook build --ci
+npx chromatic --exit-zero-on-changes
+npx style-dictionary build
+```
+
+IF token coverage < 90%: audit for hardcoded values.
+WHEN Storybook build fails: fix imports, check addon compatibility.
+IF visual regression detected: review diff, update baseline if intentional.
+
 ## HARD RULES
 - NEVER use raw hex/rgb in component code — always reference semantic tokens
 - NEVER skip the semantic token layer

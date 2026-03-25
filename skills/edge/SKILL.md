@@ -1,340 +1,252 @@
 ---
 name: edge
 description: |
-  Edge computing and serverless development skill. Activates when user needs to design, build, deploy, or optimize edge functions and serverless applications. Covers edge function design (Cloudflare Workers, Vercel Edge, Deno Deploy), serverless architecture (AWS Lambda, GCP Cloud Functions, Azure Functions), cold start optimization, edge caching strategies, and distributed state at the edge (Durable Objects, KV stores). Produces production-ready edge functions, serverless configurations, and deployment pipelines. Triggers on: /godmode:edge, "build edge function", "deploy to Cloudflare Workers", "optimize Lambda cold start", "serverless API", or when the orchestrator detects edge or serverless work.
+  Edge computing and serverless skill. Covers Cloudflare
+  Workers, Vercel Edge, Deno Deploy, AWS Lambda, cold
+  start optimization, edge caching, distributed state.
+  Triggers on: /godmode:edge, "edge function",
+  "serverless API", "optimize Lambda cold start".
 ---
 
 # Edge — Edge Computing & Serverless
 
 ## When to Activate
 - User invokes `/godmode:edge`
-- User says "build edge function", "deploy to Cloudflare Workers", "Vercel Edge Function"
-- User says "serverless API", "AWS Lambda", "Cloud Functions", "Azure Functions"
-- User says "optimize cold start", "reduce Lambda latency"
-- User says "edge caching", "Durable Objects", "KV store at edge"
-- When `/godmode:deploy` targets a serverless or edge platform
-- When `/godmode:perf` identifies latency that edge deployment could reduce
+- User says "edge function", "Cloudflare Workers",
+  "Vercel Edge", "serverless API", "AWS Lambda"
+- User says "optimize cold start", "reduce latency"
+- User says "edge caching", "Durable Objects", "KV store"
 
 ## Workflow
 
 ### Step 1: Discovery & Context
-Understand the edge/serverless requirements:
+
+```bash
+# Detect platform config
+ls wrangler.toml vercel.json serverless.yml \
+  template.yaml deno.json 2>/dev/null
+
+# Check bundle size (warn if > 1MB)
+du -sh dist/ build/ .output/ 2>/dev/null
+
+# Check for platform CLIs
+which wrangler vercel serverless sam 2>/dev/null
+```
 
 ```
 EDGE DISCOVERY:
-Project: <name and purpose>
-Platform: Cloudflare Workers | Vercel Edge | Deno Deploy | AWS Lambda | GCP Cloud Functions | Azure Functions | Fastly Compute | Netlify Edge | Fly.io
-Runtime: V8 isolates (edge) | Node.js (Lambda) | Deno | WASM | custom
-Use case: <API gateway, SSR, image optimization, auth, geolocation routing, A/B testing>
+Platform: Cloudflare | Vercel | Deno Deploy |
+  AWS Lambda | GCP Cloud Functions | Azure Functions
+Runtime: V8 isolates (edge) | Node.js | Deno | WASM
 Latency target: <ms — e.g., p99 < 50ms>
-Traffic: <requests/sec, geographic distribution>
-State needs: <stateless | KV | durable objects | database>
-Data location: <where is the origin data — region, provider>
+State needs: stateless | KV | durable objects | DB
 Budget: <cost ceiling per million requests>
-Existing infra: <current deployment, migration or greenfield>
+
+IF platform not specified: ask user
+IF bundle > 1MB: flag cold start risk
+IF latency target < 50ms: recommend edge runtime
 ```
-If the user hasn't specified, ask: "Which platform are you targeting? What latency requirements do you have?"
 
 ### Step 2: Edge Function Design
-Design functions for edge runtime constraints:
 
 ```
-EDGE FUNCTION ARCHITECTURE:
-  Client → Edge Location (CDN PoP, ~300 locations) → Origin (if cache miss)
-  Components at edge:
-    Edge Function (V8 isolate): sub-ms cold start, limited CPU time
-    KV / Cache: distributed state across PoPs
-```
-Edge function patterns:
-```typescript
-// PATTERN: Cloudflare Worker
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
+ARCHITECTURE:
+  Client → Edge PoP (~300 locations) → Origin
 
-    // Early rejection
+Edge function constraints:
+  CPU time limit: 10-50ms (platform dependent)
+  Bundle size limit: 1MB (CF Workers), 4MB (Vercel)
+  No Node.js globals in edge (Buffer, fs, process)
+
+WHEN to use edge vs serverless:
+  Edge: latency-critical, geolocation, auth, A/B test
+  Serverless: CPU-heavy, long-running, DB-intensive
 ```
 
-### Step 3: Serverless Architecture
-Design serverless applications on traditional FaaS platforms:
+### Step 3: Cold Start Optimization
 
 ```
-SERVERLESS ARCHITECTURE:
-  Request path: Client → API Gateway (route, auth, throttle) → Lambda Function → Database/Service
-  Event-driven: Event Source (S3, SQS, DynamoDB) → Lambda Function → Output Target (DB, S3, SNS)
+COLD START BENCHMARKS:
+| Runtime      | Typical Cold Start |
+|--------------|-------------------|
+| V8 isolate   | < 5ms             |
+| Node.js 20   | 100-300ms         |
+| Python 3.12  | 150-400ms         |
+| Java 21      | 500-3000ms        |
+| .NET 8       | 200-500ms         |
+
+OPTIMIZATION CHECKLIST:
+- Bundle size < 1MB (tree-shake, remove unused deps)
+- Lazy-initialize DB connections and heavy modules
+- Use ESM imports (faster parse than CJS)
+- Provisioned concurrency for p99 < 100ms targets
+- IF cold start > 200ms: profile with --cpu-prof
+- IF bundle > 5MB: audit deps with bundlephobia
+
+THRESHOLDS:
+  Target cold start: < 200ms
+  Target bundle: < 1MB (edge), < 5MB (Lambda)
+  Target p99 latency: < 100ms (edge), < 500ms (Lambda)
 ```
-### Step 4: Cold Start Optimization
-Minimize function startup latency:
+
+### Step 4: Edge Caching Strategies
 
 ```
-COLD START ANALYSIS:
-  WHAT IS A COLD START?
-  When a function instance does not exist, the platform must:
-  1. Allocate resources (container or isolate)
-  2. Download and extract code
-  3. Initialize runtime (Node.js, Python, Java, etc.)
-  4. Run module initialization (imports, DB connections)
-  5. Execute handler
-  Steps 1-4 are the "cold start." Step 5 is normal execution.
-  COLD START DURATIONS:
-  ┌──────────────┬──────────┬───────────────────────┐
-```
-### Step 5: Edge Caching Strategies
-Design caching for edge and serverless:
-
-```
-EDGE CACHING ARCHITECTURE:
-  ┌──────┐   ┌──────────────────────────────┐   ┌──────────┐
-|  | Client | ──> | Edge Location | ──> | Origin |  |
-|  |  |  | ┌───────┐    ┌───────────┐ |  | Server |  |
-|  |  | <── |  | CDN |  | Edge Func |  | <── |  |  |
-| └──────┘ |  | Cache | <──> | (compute + |  | └──────────┘ |
-|  | └───────┘ | cache API) |  |  |
-|  | └───────────┘ |  |
-
 CACHING STRATEGIES:
+| Strategy              | TTL       | Use Case       |
+|-----------------------|-----------|----------------|
+| Cache-Control         | 60-3600s  | Static assets  |
+| stale-while-revalidate| 60s+300s  | Dynamic lists  |
+| KV cache              | 30-300s   | API responses  |
+| Cache API (CF)        | Custom    | Computed output|
+
+RULES:
+- IF response is per-user: Cache-Control: private
+- IF response is public: s-maxage + revalidate
+- IF hit rate < 80%: audit cache keys
+- Target CDN hit rate: > 80%
 ```
-### Step 6: Distributed State at the Edge
-Manage state in a globally distributed environment:
+
+### Step 5: Distributed State at the Edge
 
 ```
 EDGE STATE SOLUTIONS:
-| Solution | Consistency | Latency | Use Case |
-|--|--|--|--|
-| KV Store | Eventually | <10ms read | Config, flags |
-| (CF KV, | consistent | ~500ms write | sessions, |
-| Vercel KV) |  |  | feature gates |
-| Durable | Strongly | Varies (co- | Counters, |
-| Objects | consistent | located) | rate limiting |
-| (CF DO) |  |  | coordination |
-| D1/Turso | Strongly | <10ms read | Relational |
-| (edge SQL) | consistent | (replicas) | data at edge |
-| R2/S3 | Eventually | Varies | Large objects |
-  ...
+| Solution     | Consistency    | Latency   |
+|-------------|----------------|-----------|
+| KV Store    | Eventually     | <10ms read|
+| Durable Obj | Strongly       | Varies    |
+| D1/Turso    | Strongly       | <10ms read|
+| R2/S3       | Eventually     | Varies    |
+
+IF need strong consistency: use Durable Objects
+IF need global reads: use KV with write-behind
+IF need SQL at edge: use D1 or Turso replicas
 ```
-### Step 7: Serverless Infrastructure as Code
-Define serverless infrastructure with IaC:
 
+### Step 6: Infrastructure as Code
+
+```yaml
+# wrangler.toml (Cloudflare Workers)
+name = "my-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
 ```
-SERVERLESS IAC:
 
-AWS SAM (Serverless Application Model):
-  # template.yaml
-  AWSTemplateFormatVersion: '2010-09-09'
-  Transform: AWS::Serverless-2016-10-31
+### Step 7: Observability
 
-  Globals:
-    Function:
-      Timeout: 30
-      MemorySize: 256
-      Runtime: nodejs20.x
-  ...
+Structured JSON logs shipped to centralized service.
+Metrics: cold start duration, p99 latency, error rate.
+
+### Step 8: Testing
+
+```bash
+# Local testing with platform emulator
+npx wrangler dev               # Cloudflare
+npx vercel dev                  # Vercel
+sam local start-api             # AWS SAM
+
+# Run tests against local emulator
+npx vitest run tests/edge/
 ```
-### Step 8: Observability for Edge and Serverless
-Monitor distributed edge functions:
-
-```
-EDGE OBSERVABILITY:
-
-LOGGING:
-  Edge functions often lack traditional logging. Use structured
-  logs shipped to a centralized service.
-
-  // Structured logging at edge
-  function log(level: string, message: string, data: Record<string, unknown>) {
-    console.log(JSON.stringify({
-      level,
-      message,
-      timestamp: new Date().toISOString(),
-  ...
-```
-### Step 9: Testing Edge and Serverless
-Comprehensive testing strategy:
 
 ```
-EDGE/SERVERLESS TESTING:
-| Layer | What to Test | Tool |
-|--|--|--|
-| Unit | Handler logic with | Vitest / |
-|  | mocked env/context | Jest |
-| Integration | Full request/response | Miniflare / |
-|  | with local runtime | SAM local |
-| Edge simulation | Edge-specific APIs (KV, | Miniflare / |
-|  | Durable Objects, cache) | wrangler |
-| E2E | Deployed function with | Playwright |
-|  | real infrastructure |  |
-| Performance | Cold start, latency, | k6 / wrk |
-  ...
+TESTING MATRIX:
+| Layer       | Tool                    |
+|-------------|-------------------------|
+| Unit        | Vitest / Jest (mocked)  |
+| Integration | Miniflare / SAM local   |
+| E2E         | Playwright (deployed)   |
+| Performance | k6 / wrk               |
 ```
-### Step 10: Artifacts & Completion
-Generate the deliverables:
+
+### Step 9: Artifacts & Completion
 
 ```
-EDGE/SERVERLESS DESIGN COMPLETE:
-
-Artifacts:
-- Functions: src/functions/<name>.ts
-- Configuration: wrangler.toml / serverless.yml / template.yaml
-- Infrastructure: IaC definitions for all edge/serverless resources
-- Tests: tests/<name>.test.ts (unit + integration)
-- CI/CD: .github/workflows/deploy-edge.yml
-- Monitoring: Dashboards and alert definitions
-
-Metrics:
-- Functions: <N> edge functions, <M> serverless functions
-  ...
+EDGE/SERVERLESS COMPLETE:
+Platform: <platform>
+Functions: <N>, Cold start: <X>ms, Bundle: <N>KB
+Caching: <strategy>, Regions: <global | specific>
 ```
-Commit: `"edge: <service> — <N> functions, <platform>, p99 <X>ms, caching configured"`
+
+Commit: `"edge: <service> — <N> functions, p99 <X>ms"`
 
 ## Key Behaviors
 
-1. **Edge is for latency, serverless is for scale.** Edge functions run close to users for minimal latency. Serverless functions scale to zero for cost efficiency. Use both where each fits.
-2. **Cold starts are not a bug, they are an architecture constraint.** Design for them: minimize bundle size, lazy-initialize, use provisioned concurrency for latency-critical paths, or choose edge runtimes.
-3. **Cache aggressively at the edge.** The fastest request is one that never reaches the origin. Use stale-while-revalidate, cache keys, and purge strategies.
-4. **State at the edge is hard.** Understand the consistency model of your state store. KV is eventually consistent. Durable Objects are strongly consistent but single-homed. Choose based on requirements, not convenience.
-5. **Test locally with platform emulators.** Miniflare for Cloudflare, sam local for AWS, vercel dev for Vercel. Never develop by deploying to production.
-6. **Monitor cost as a first-class metric.** Serverless costs scale with traffic. A misconfigured function can generate surprising bills. Set budget alerts and estimate cost before deploying.
-7. **Keep functions small and focused.** One function per concern. Edge functions have CPU limits. Serverless functions have cold start penalties proportional to code size.
-8. **Fail gracefully.** Edge and serverless are distributed systems. Origin may be down, KV may be slow, function may time out. Design fallbacks at every step.
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full edge/serverless design workflow |
-| `--cloudflare` | Target Cloudflare Workers |
-| `--vercel` | Target Vercel Edge Functions |
+1. **Edge for latency, serverless for scale.**
+2. **Cold starts are architecture constraints.**
+   Design for them: minimize bundles, lazy init.
+3. **Cache aggressively.** Fastest request never
+   reaches origin.
+4. **State at edge is hard.** Know your consistency
+   model before choosing.
+5. **Test locally.** Miniflare, sam local, vercel dev.
+6. **Monitor cost.** Set budget alerts before deploying.
+7. **Keep functions small.** One function per concern.
+8. **Fail gracefully.** Fallbacks at every step.
 
 ## HARD RULES
 
-1. **Never put heavy computation in edge functions.** Edge runtimes have CPU time limits (10-50ms). Delegate CPU-intensive work to origin or a Lambda with higher limits.
-2. **Never cache authenticated responses in shared edge cache.** Private data in shared cache is a security vulnerability. Always use `Cache-Control: private` for per-user responses.
-3. **Never deploy edge functions without local testing.** Use Miniflare (Cloudflare), `sam local` (AWS), or `vercel dev` (Vercel). Untested edge functions affect all global traffic instantly.
-4. **Never store secrets in edge function source or environment variables in plain text.** Use platform secret managers (Wrangler secrets, AWS Secrets Manager, Vercel encrypted env vars).
-5. **Never use `latest` tag or unbounded dependencies in serverless deployments.** Pin all dependency versions. Reproducible builds prevent surprise cold start regressions.
+1. Never put heavy computation in edge functions
+   (CPU limit: 10-50ms).
+2. Never cache authenticated responses in shared cache.
+3. Never deploy without local testing first.
+4. Never store secrets in source or plain-text env vars.
+5. Never use `latest` tag or unbounded dependencies.
+
+## Auto-Detection
+```
+1. Platform: wrangler.toml, vercel.json, serverless.yml
+2. Runtime: V8 isolate, Node.js, Deno, WASM
+3. Functions: src/functions/, api/, workers/
+4. Bundle size: warn if > 5MB
+```
 
 ## Loop Protocol
-
 ```
-function_queue = detect_edge_functions()  // list of functions/routes to build or optimize
-current_iteration = 0
-
-WHILE function_queue is not empty:
-  batch = function_queue.take(3)
-  current_iteration += 1
-
-  FOR each function in batch:
-    1. Analyze function: bundle size, cold start, CPU time, cache strategy
-    2. Implement or optimize the function (tree-shake, lazy init, cache headers)
-    3. Test locally with platform emulator (miniflare, sam local, vercel dev)
-    4. Measure: cold start ms, p99 latency, bundle size KB
-  ...
+FOR each function in queue:
+  1. Analyze: bundle size, cold start, CPU, cache
+  2. Implement or optimize
+  3. Test locally with emulator
+  4. MEASURE: cold start ms, p99, bundle KB
+  5. IF cold start > 200ms: tree-shake, lazy init
+  6. IF bundle > 1MB: audit deps, split function
 ```
-## Auto-Detection
 
-```
-AUTO-DETECT edge/serverless context:
-  1. Check for platform config: wrangler.toml (Cloudflare), vercel.json (Vercel),
-     serverless.yml (Serverless Framework), template.yaml (SAM), deno.json (Deno Deploy)
-  2. Detect runtime: V8 isolate (edge), Node.js (Lambda), Deno, WASM
-  3. Scan for existing edge functions: src/functions/, api/, workers/
-  4. Check package.json for platform CLIs: wrangler, vercel, serverless, aws-cdk
-  5. Detect state stores: KV bindings, Durable Objects, DynamoDB tables, R2 buckets
-  6. Check for cold start issues: measure bundle size (warn if > 5MB)
-  7. Detect CI/CD: .github/workflows/deploy*, Makefile deploy targets
-
-  USE detected context to:
-    - Target the correct platform and runtime
-  ...
-```
 ## Output Format
+Print: `Edge: {platform}, {N} functions, p99 {X}ms,
+  bundle {N}KB, cache hit {X}%. Verdict: {verdict}.`
 
-```
-EDGE/SERVERLESS DEPLOYMENT COMPLETE:
-  Platform: <Cloudflare Workers | AWS Lambda | Vercel Edge | Deno Deploy | other>
-  Functions: <N> edge functions deployed
-  Cold start: <before>ms → <after>ms (<reduction>% improvement)
-  Bundle size: <N> KB (limit: <M> KB)
-  Runtime: <V8 isolate | Node.js | Deno | Bun>
-  State: <Durable Objects | DynamoDB | KV | R2 | none>
-  Caching: <Cache API | CDN | KV cache | none>
-  Regions: <N> regions / <global | specific regions>
-  Timeout: <N>ms (limit: <M>ms)
-
-FUNCTION SUMMARY:
-  ...
-```
 ## TSV Logging
-
-Log every invocation to `.godmode/` as TSV. Create on first run.
-
+Log to `.godmode/edge-results.tsv`:
 ```
-Fields: timestamp\tproject\tplatform\tfunctions_count\tcold_start_before_ms\tcold_start_after_ms\tbundle_size_kb\tregions\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-api\tcloudflare-workers\t6\t450\t120\t85\tglobal\tabc1234
-```
-## Success Criteria
-
-```
-EDGE/SERVERLESS SUCCESS CRITERIA:
-|  Criterion                                  | Required         |
-|--|--|
-|  Bundle size within platform limits         | YES              |
-|  Cold start < 200ms (or platform target)    | YES              |
-|  No Node.js-only APIs in edge runtime       | YES (edge)       |
-|  Environment secrets not in code            | YES              |
-|  Error handling with structured responses   | YES              |
-|  Timeout configured below platform max      | YES              |
-|  Caching strategy for repeated requests     | YES              |
-|  Observability (logs, traces, metrics)      | YES              |
-|  No long-running connections in serverless  | YES              |
-  ...
-```
-## Error Recovery
-
-```
-ERROR RECOVERY — EDGE:
-1. Cold start exceeds target:
-   → Reduce bundle size (tree-shake, remove unused deps). Use dynamic import for rarely-used code. Pre-warm with scheduled pings. Switch to edge runtime (V8 isolate) from Node.js.
-2. Bundle size exceeds platform limit:
-   → Audit dependencies (bundlephobia). Replace heavy libs with lightweight alternatives. Use platform-native APIs (fetch, crypto) instead of polyfills. Split into multiple functions.
-3. Function timeout:
-   → Profile execution. Move long operations to background queue (Queues API, SQS). Cache intermediate results. Reduce external API call count.
-4. Edge function crashes with "X is not defined":
-   → Check runtime compatibility. Edge runtimes lack Node.js globals (Buffer, process, fs). Use web-standard APIs. Add platform-specific polyfills if needed.
-5. State inconsistency across regions:
-   → Use eventually-consistent KV with conflict resolution. Or use Durable Objects / DynamoDB for strong consistency on specific operations. Document consistency model.
-6. Deployment fails silently (old version still serving):
-  ...
-```
-OPTIMIZATION PASSES:
-Pass 1 — Cold Start: Measure per function. Tree-shake, lazy init, increase Lambda memory. Target: <1MB bundle, <200ms cold start.
-Pass 2 — Payload: Trim JSON, gzip/brotli, streaming for >100KB. Target: <50KB gzipped for lists.
-Pass 3 — CDN: Audit Cache-Control. Static: immutable+max-age. Dynamic: s-maxage+stale-while-revalidate. Target: >80% hit rate.
-Pass 4 — Cost: Measure $/1M requests. Cache aggressively. Right-size Lambda memory.
+timestamp	platform	functions	cold_start_ms	bundle_kb	status
 ```
 
 ## Keep/Discard Discipline
 ```
-After EACH implementation or optimization change:
-  1. MEASURE: Run tests / validate the change produces correct output.
-  2. COMPARE: Is the result better than before? (faster, safer, more correct)
-  3. DECIDE:
-     - KEEP if: tests pass AND quality improved AND no regressions introduced
-     - DISCARD if: tests fail OR performance regressed OR new errors introduced
-  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+KEEP if: tests pass AND cold start < 200ms
+  AND bundle within limit
+DISCARD if: tests fail OR cold start regressed
+  OR new errors
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - All identified tasks are complete and validated
-  - User explicitly requests stop
-  - Max iterations reached — report partial results with remaining items listed
-
-DO NOT STOP when:
-  - One item is complex (complete the simpler ones first)
-  - A non-critical check is pending (handle that in a follow-up pass)
+STOP when ANY of:
+  - All functions deployed and validated
+  - Cold start < 200ms for all functions
+  - User requests stop
+  - Max iterations reached
 ```
+
+## Error Recovery
+- Cold start too high: tree-shake, lazy init,
+  increase Lambda memory, switch to edge runtime.
+- Bundle too large: audit deps, use platform-native
+  APIs, split into multiple functions.
+- Function timeout: profile, move work to queue.
+- "X is not defined": check runtime compatibility,
+  edge runtimes lack Node.js globals.

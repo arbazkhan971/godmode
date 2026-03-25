@@ -95,6 +95,17 @@ STOP when FIRST of:
 4. Max 5 min per technique. All techniques exhausted on a bug = discard it.
 5. Hand off specific root causes to `/godmode:fix`, not vague descriptions.
 
+```bash
+# Common debug commands
+npm test 2>&1 | tail -20
+git bisect start HEAD HEAD~20
+git log --oneline -10
+```
+
+IF test failures > 10: prioritize by severity, fix critical first.
+WHEN intermittent failure (< 50% reproduce rate): add to flaky list.
+IF stuck > 3 iterations on one bug: skip, move to next.
+
 ## Workflow
 1. Run `test_cmd`, count failures — this is the starting bug count.
 2. Pick highest-severity bug, reproduce it 3x to confirm it is real (not flaky).

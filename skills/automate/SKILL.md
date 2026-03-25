@@ -28,7 +28,19 @@ Detect existing: task runner (Make, Task, Justfile, npm scripts), CI/CD (GitHub 
 | CI/CD | Test on PR, deploy on merge | GitHub Actions, GitLab CI |
 
 ### Step 3: Cron Jobs
-Format: `minute hour day-of-month month day-of-week`. Every cron script: `set -euo pipefail`, lock file, logging, failure notification, cleanup trap. GitHub Actions: schedule + workflow_dispatch. K8s: CronJob with concurrencyPolicy: Forbid.
+Format: `minute hour day-of-month month day-of-week`.
+Every cron script: `set -euo pipefail`, lock file, logging,
+failure notification, cleanup trap.
+
+```bash
+# Validate cron syntax and test scripts
+crontab -l
+bash -n scripts/my-cron.sh
+make ci-test
+```
+
+IF job runtime > 80% of interval: increase interval or optimize.
+WHEN job fails > 3 times consecutively: alert and disable.
 
 ### Step 4: Webhooks
 Verify signature (HMAC-SHA256). Route by event type. Return 200 within 5 seconds.

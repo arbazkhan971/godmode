@@ -110,15 +110,8 @@ DOCKER COMPOSE PATTERNS:
 | target: development | Use dev stage of multi-stage build |
 | bind mount + anon vol | Hot reload without overwriting deps |
 | named volumes | Persist data across restarts |
-| init scripts | Seed database on first start |
-| profiles | Optional services (monitoring, etc.) |
+| profiles | Optional services (monitoring, debug) |
 | env_file | Keep secrets out of compose file |
-| networks | Isolate service communication |
-
-COMPOSE PROFILES (optional services):
-  docker compose --profile monitoring up    # Include Prometheus, Grafana
-  docker compose --profile debug up         # Include debug tools
-  docker compose up                         # Core services only
 ```
 
 ### Step 4: Image Size Optimization
@@ -222,13 +215,25 @@ BUILDKIT FEATURES:
 
 ## Key Behaviors
 
-1. **Multi-stage builds are non-negotiable.** Every production Dockerfile uses multi-stage builds. No exceptions. The build stage should never appear in the final image.
-2. **Layer caching is the first optimization.** Before anything else, verify dependency installation is cached separately from source code changes. This alone saves minutes per build.
-3. **Security is not optional.** Every image runs as non-root, has a .dockerignore, and passes vulnerability scanning. Secrets never appear in build layers.
-4. **Compose is for development.** Docker Compose is the standard for local development environments. Production uses Kubernetes or managed container services.
-5. **Smaller images are faster and safer.** They deploy faster, start faster, and have fewer vulnerabilities. Target the smallest base image that works for your runtime.
-6. **BuildKit is the default.** Always use BuildKit features (cache mounts, secret mounts, heredocs). They exist to solve real problems.
-7. **.dockerignore before Dockerfile.** Create the .dockerignore first. A missing .dockerignore is the most common cause of bloated images and leaked secrets.
+```bash
+# Docker diagnostics
+docker build --target test -t myapp:test .
+docker images myapp --format "table {{.Tag}}\t{{.Size}}"
+trivy image --severity CRITICAL,HIGH myapp:latest
+docker history myapp:latest --no-trunc | head -20
+```
+
+IF image size > 200MB (Node/Python) or > 50MB (Go/Rust): optimize with multi-stage and alpine.
+WHEN trivy reports > 0 CRITICAL CVEs: update base image before deploying.
+IF build time > 5 minutes: audit layer caching order and .dockerignore.
+
+1. **Multi-stage builds are non-negotiable.** Build stage never appears in final image.
+2. **Layer caching first.** Deps cached separately from source. Saves minutes per build.
+3. **Security is not optional.** Non-root, .dockerignore, vulnerability scanning. No secrets in layers.
+4. **Compose is for development.** Production uses K8s or managed container services.
+5. **Smaller images = faster + safer.** Target the smallest base image for your runtime.
+6. **BuildKit is the default.** Cache mounts, secret mounts, heredocs.
+7. **.dockerignore before Dockerfile.** Missing .dockerignore = bloated images + leaked secrets.
 
 ## Flags & Options
 
@@ -249,80 +254,25 @@ BUILDKIT FEATURES:
 - ALL container images MUST pass vulnerability scanning (Trivy/Snyk) with zero CRITICAL findings before deployment
 - ALL images MUST include a HEALTHCHECK directive
 
-## Iterative Optimization Loop Protocol
-
-When optimizing or auditing Docker configurations:
-
-```
-current_iteration = 0
-optimization_queue = [all_dockerfiles_and_compose_files]
-WHILE optimization_queue is not empty:
-    current_iteration += 1
-    file = optimization_queue.pop(next)
-    analyze: base image size, layer count, caching order, security issues
-    apply: multi-stage build, layer reordering, .dockerignore, non-root user, healthcheck
-    measure: image size, build time, vulnerability count
-    run: trivy image scan + trivy config scan
-    IF scan reveals CRITICAL/HIGH vulnerabilities:
-        fix and re-add to queue
-    report: "Iteration {current_iteration}: {file} — size={N}MB, layers={N}, vulns={N}, build_time={N}s"
-```
-
 ## Keep/Discard Discipline
 ```
-After EACH Docker optimization:
-  1. MEASURE: Build the image — check final size, layer count, build time, vulnerability count.
-  2. COMPARE: Is the image smaller/faster/more secure than before?
-  3. DECIDE:
-     - KEEP if: image size decreased AND vulnerability count did not increase AND container starts successfully
-     - DISCARD if: image size increased OR new critical vulnerability OR container fails to start
-  4. COMMIT kept changes. Revert discarded changes before the next optimization.
-
+KEEP if: image size decreased AND 0 new CVEs AND container starts successfully
+DISCARD if: image size increased OR new critical CVE OR container fails to start
 Never keep a size optimization that introduces a critical CVE.
-```
-
-## Stuck Recovery
-```
-IF >3 consecutive optimizations fail to reduce image size or fix vulnerabilities:
-  1. Re-examine the base image — switching from slim to alpine (or distroless) may unlock larger savings.
-  2. Use `dive` to inspect layer-by-layer — the bloat may be in an unexpected layer.
-  3. Check for musl vs glibc compatibility if alpine builds fail.
-  4. If still stuck → log stop_reason=stuck, document current image size and known issues.
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
+STOP when: multi-stage + non-root + healthcheck + 0 critical CVEs + size within target.
+Targets: Go <50MB, Node <200MB, Python <200MB. Max 10 iterations.
 On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - All images use multi-stage builds with non-root user and health checks
-  - Zero critical CVEs in vulnerability scan
-  - Image size is within target (varies by language: Go <50MB, Node <200MB, Python <200MB)
-  - User explicitly requests stop
-  - Max iterations (10) reached
-
-DO NOT STOP when:
-  - HIGH (non-critical) CVEs exist in the base image with no fix available
-  - Image size is slightly above target but all other criteria pass
-```
-
-## Simplicity Criterion
-```
-PREFER the simpler Docker configuration:
-  - Alpine base before distroless (unless you genuinely need zero shell access)
-  - Single Dockerfile with multi-stage before multiple Dockerfiles
-  - Docker Compose for local dev before Kubernetes for local dev
-  - COPY before ADD (unless you need tar extraction or URL fetch)
-  - Fewer layers over many small RUN commands (combine related operations)
 ```
 
 ## Auto-Detection
 ```
 1. Scan for Dockerfile*, docker-compose*, .dockerignore
-2. Detect language: package.json→Node, pyproject.toml→Python, go.mod→Go, Cargo.toml→Rust, pom.xml→Java
-3. Check image quality: FROM tag, USER directive, HEALTHCHECK, multi-stage patterns
-4. State: missing | exists-unoptimized | optimized | production-ready
+2. Detect language: package.json→Node, pyproject.toml→Python, go.mod→Go, Cargo.toml→Rust
+3. Check image quality: FROM tag, USER, HEALTHCHECK, multi-stage. State: missing | unoptimized | production-ready
 ```
 
 ## Output Format
@@ -340,10 +290,10 @@ iteration	image	size_before	size_after	layers	vulns_critical	vulns_high	build_ti
 - Zero critical CVEs. Build cache optimized (deps before source).
 
 ## Error Recovery
-- **Build fails at install**: Verify lockfile copied before install. Check base image system deps and network.
-- **Image too large**: Run `docker history --no-trunc`. Verify multi-stage copies only final artifact. Check `.dockerignore`.
-- **Container crashes**: Check `docker logs`. Verify CMD/ENTRYPOINT. Check non-root user permissions.
-- **Health check fails**: Verify endpoint exists. Check `--start-period`. Confirm health check tool in image.
-- **Critical CVEs**: Update base image tag or dep. If no fix, document accepted risk.
-- **Cache miss**: Verify COPY order (lockfile first). Check BuildKit enabled. Confirm CI preserves cache.
-
+| Failure | Action |
+|--|--|
+| Build fails at install | Verify lockfile copied before install. Check base image deps. |
+| Image too large | `docker history --no-trunc`. Check multi-stage + .dockerignore. |
+| Container crashes | Check `docker logs`, CMD/ENTRYPOINT, non-root permissions. |
+| Health check fails | Verify endpoint, --start-period, health tool in image. |
+| Critical CVEs | Update base image tag. If no fix, document accepted risk. |

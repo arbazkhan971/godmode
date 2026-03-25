@@ -240,34 +240,30 @@ AUTH SECURITY HARDENING:
 
 Never ask to continue. Loop autonomously until all auth flows pass and security checklist is complete.
 
-1. **Security by default.** Every design choice defaults to the most secure option. Weaker options require explicit justification. Never suggest HS256 for multi-service JWT. Never suggest implicit grant. Never suggest SMS as primary MFA.
-2. **Strategy must match architecture.** JWTs for stateless microservices. Server-side sessions for traditional web apps. OAuth2/OIDC for third-party integration. Do not force a strategy that does not fit the application type.
-3. **Token lifecycle is non-negotiable.** Every token must have issuance, validation, refresh, revocation, and cleanup. Missing any stage is a security gap.
-4. **MFA is not optional for production.** At minimum, provide TOTP support. WebAuthn/passkeys are the recommended primary factor for new applications.
-5. **Social login is account linking, not account creation.** Social providers give you identity signals, not user accounts. Design the linking strategy carefully to prevent account takeover.
-6. **Show the code, not the design.** Produce implementation artifacts: middleware, controllers, services, models, and tests. Architecture without code is a diagram.
-7. **Password handling has exactly one right answer.** Argon2id (preferred) or bcrypt with cost factor 12+. No MD5, no SHA-256, no PBKDF2 with low iterations. No exceptions.
+```bash
+# Test auth flows end-to-end
+npm test -- --grep "auth"
+npx jest tests/auth/ --coverage --coverageThreshold='{"global":{"branches":80}}'
+```
+
+IF access token TTL > 15 minutes: reduce to <= 15 min.
+WHEN login failures > 5 per account per hour: trigger rate limit.
+IF password hash cost factor < 12: increase to >= 12 (bcrypt).
+
+1. **Security by default.** Most secure option unless justified.
+2. **Strategy must match architecture.** JWT for stateless, sessions for SSR.
+3. **Token lifecycle non-negotiable.** Issue, validate, refresh, revoke, cleanup.
+4. **MFA not optional for production.** Minimum: TOTP support.
+5. **Social login = account linking.** Not account creation.
+6. **Show the code.** Artifacts, not just diagrams.
+7. **Password: Argon2id or bcrypt (cost >= 12).** No exceptions.
 
 ## Auth Flow Audit Loop
-
-Structured audit of authentication flows — session management, token handling, and OAuth verification:
-
 ```
-auth_flows = [session_management, token_lifecycle, oauth_verification,
-              mfa_flow, password_reset, social_login, api_key_handling]
-current_flow = 0
-```
-FOR each auth audit finding:
-  KEEP if:
-    - Failed check has concrete security impact (exploitable weakness)
-    - Finding affects production authentication path
-    - Finding has code evidence (file:line where the weakness exists)
-  DISCARD if:
-    - Check is not applicable to chosen auth strategy (e.g., SAML check on JWT-only system)
-    - Feature is intentionally not implemented with documented justification
-    - Already remediated in current codebase (verify with code evidence)
-  RECORD: Every discard logged with reason to .godmode/auth-discards.tsv:
-    timestamp	flow_name	check_name	discard_reason
+auth_flows = [session, token, oauth, mfa, password_reset, social, api_key]
+FOR each flow:
+  KEEP if: exploitable weakness with code evidence
+  DISCARD if: not applicable to chosen strategy OR already remediated
 ```
 
 ## Output Format
@@ -324,10 +320,10 @@ DO NOT STOP only because:
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| JWT verification fails after key rotation | Accept both old and new keys during rotation window. Check `kid` header in token matches available keys. |
-| OAuth callback returns error | Verify redirect URI matches exactly (including trailing slash). Check client secret is current. Inspect error parameter in callback URL. |
-| Password hash migration fails | Keep old hash algorithm as fallback. Re-hash on successful login with old algorithm. Never lock out users during migration. |
-| Rate limiter blocks legitimate users | Check threshold is per-user, not global. Verify IP detection handles proxies (X-Forwarded-For). Add allowlist for known IPs if needed. |
+| JWT verification fails after rotation | Accept old+new keys during rotation. Check `kid` header. |
+| OAuth callback error | Verify redirect URI exact match. Check client secret current. |
+| Password hash migration fails | Keep old algo as fallback. Re-hash on login. Never lock out users. |
+| Rate limiter blocks legit users | Ensure per-user threshold. Handle proxies (X-Forwarded-For). |
 
 ## Success Criteria
 1. Authentication flow works end-to-end (register, login, refresh, logout).

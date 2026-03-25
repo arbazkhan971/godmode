@@ -260,14 +260,9 @@ npm install <package>@1
 
 ## Key Behaviors
 
-```
-
-### Write migration guide
-```
-User: /godmode:changelog --migration v1 v2
-
-Changelog: Analyzing breaking changes between v1.x and v2.0...
-```
+IF breaking changes > 0: write migration guide before release.
+WHEN commits don't follow conventional format: parse PR titles as fallback.
+IF changelog entry count < commit count * 0.5: review for missed changes.
 
 ## HARD RULES
 

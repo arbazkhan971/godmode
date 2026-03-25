@@ -1,343 +1,189 @@
 ---
 name: ui
-description: |
-  UI component architecture skill. Activates when user needs to design component libraries, enforce design system consistency, set up Storybook, make CSS architecture decisions, or improve UI code quality. Covers component composition patterns, styling strategies, documentation, and design token management. Triggers on: /godmode:ui, "component architecture", "design system", "UI review", "Storybook setup", or when building reusable UI components.
+description: >
+  UI component architecture. Design systems,
+  Storybook, CSS architecture, design tokens,
+  component patterns.
 ---
 
-# UI — UI Component Architecture
+# UI -- UI Component Architecture
 
-## When to Activate
-- User invokes `/godmode:ui`
-- User says "design system review," "component architecture," "UI structure"
-- When creating a new component library or design system
-- When choosing CSS architecture (CSS Modules vs Tailwind vs CSS-in-JS)
-- Before building reusable components or shared UI packages
-- When Storybook needs setup, configuration, or story writing
-- When UI code review flags inconsistency with design system
+## Activate When
+- `/godmode:ui`, "component architecture"
+- "design system", "UI review", "Storybook setup"
+- Building reusable components or shared UI packages
 
 ## Workflow
 
-### Step 1: Analyze Current UI Architecture
-Survey the existing component structure and styling approach:
+### Step 1: Analyze Current Architecture
+```bash
+# Detect framework and CSS approach
+grep -r "react\|vue\|svelte\|@angular/core" \
+  package.json 2>/dev/null
+grep -r "tailwindcss\|styled-components\|@emotion\|sass" \
+  package.json 2>/dev/null
 
+# Count components
+find src/ -name "*.tsx" -o -name "*.vue" \
+  -o -name "*.svelte" 2>/dev/null | wc -l
 ```
-UI ARCHITECTURE ANALYSIS:
-Framework: <React/Vue/Angular/Svelte/vanilla>
-Styling approach: <CSS Modules/Tailwind/styled-components/Emotion/SCSS/vanilla CSS>
-Component library: <custom/MUI/Ant/Chakra/shadcn/Radix/none>
-Storybook: <yes (version)/no>
-Design tokens: <yes (format)/no>
+```
+UI AUDIT:
+Framework: <React | Vue | Svelte | Angular>
+Styling: <CSS Modules | Tailwind | CSS-in-JS>
+Component library: <custom | MUI | shadcn | none>
+Storybook: <yes (version) | no>
+Design tokens: <yes | no>
 Component count: <N>
-
-  ...
-```
-### Step 2: Component Composition Audit
-Evaluate how components are structured and composed:
-
-#### Component Hierarchy Analysis
-```
-COMPONENT HIERARCHY:
-| Level | Components | Examples |
-|--|--|--|
-| Atoms | <N> | Button, Input, Label, Icon |
-| Molecules | <N> | FormField, SearchBar, Card |
-| Organisms | <N> | Header, Sidebar, DataTable |
-| Templates | <N> | DashboardLayout, AuthLayout |
-| Pages | <N> | HomePage, SettingsPage |
-  ...
 ```
 
-#### Component Quality Checklist
-For each component, assess:
+### Step 2: Component Hierarchy
 ```
-COMPONENT: <Name>
-- [ ] Single responsibility — does one thing well
-- [ ] Props interface is minimal and well-typed
-- [ ] Default props for optional values
-- [ ] Forwards ref when wrapping native elements
-- [ ] Accepts className/style for customization
-- [ ] Has display name for dev tools
-- [ ] Memoized appropriately (React.memo, useMemo)
-  ...
+| Level     | Count | Examples              |
+|----------|-------|----------------------|
+| Atoms    | <N>   | Button, Input, Label  |
+| Molecules| <N>   | FormField, SearchBar  |
+| Organisms| <N>   | Header, DataTable     |
+| Templates| <N>   | DashboardLayout       |
+| Pages    | <N>   | HomePage, Settings    |
 ```
 
 ### Step 3: CSS Architecture Decision
-Evaluate and recommend the right CSS strategy:
-
-#### CSS Approach Comparison
 ```
-CSS ARCHITECTURE DECISION MATRIX:
-| Criterion | CSS Modules | Tailwind | CSS-in-JS | SCSS |
-|--|--|--|--|--|
-| Scoping | Automatic | Utility | Automatic | Manual |
-| Bundle size | Small | Small* | Variable | Small |
-| Runtime cost | None | None | Yes | None |
-| Type safety | With plugin | With plugin | Native | No |
-| DX/Speed | Good | Fast | Good | Good |
-  ...
+IF existing design system with tokens:
+  CSS Modules + CSS custom properties
+IF rapid prototyping or small team:
+  Tailwind CSS
+IF complex theming (dark, multi-brand):
+  CSS-in-JS (Emotion/styled-components)
+IF SSR is critical:
+  avoid runtime CSS-in-JS
+IF legacy SCSS: keep, migrate incrementally
 ```
-
-#### Recommendation Logic
 ```
-IF project has existing design system with tokens → CSS Modules + CSS custom properties
-IF rapid prototyping or small team → Tailwind CSS
-IF complex theming (dark mode, multi-brand) → CSS-in-JS (Emotion/styled-components)
-IF legacy project with established SCSS → Keep SCSS, migrate incrementally
-IF server-side rendering is critical → Avoid runtime CSS-in-JS
-IF using component library (MUI, Chakra) → Match library's approach
+| Criterion   | CSS Modules | Tailwind | CSS-in-JS |
+|------------|------------|---------|----------|
+| Scoping    | Automatic  | Utility | Automatic|
+| Bundle     | Small      | Small   | Variable |
+| Runtime    | None       | None    | Yes      |
+| Type safety| Plugin     | Plugin  | Native   |
 ```
 
-### Step 4: Design System Consistency
-Audit adherence to the design system:
-
-#### Design Token Inventory
-```
-DESIGN TOKEN AUDIT:
-| Token Category | Defined | Used | Hardcoded | Violations |
-|--|--|--|--|--|
-| Colors | 24 | 22 | 7 | 7 hardcoded |
-| Typography | 8 | 6 | 3 | 2 missing, 3 hc |
-| Spacing | 12 | 10 | 5 | 5 hardcoded |
-| Border radius | 4 | 4 | 1 | 1 hardcoded |
-| Shadows | 3 | 2 | 2 | 1 missing, 2 hc |
-  ...
-```
-
-#### Hardcoded Value Detection
+### Step 4: Design Token Audit
 ```bash
-# Find hardcoded colors (hex, rgb, hsl not using tokens)
-grep -rn "#[0-9a-fA-F]\{3,6\}" src/ --include="*.css" --include="*.tsx" --include="*.scss"
+# Find hardcoded colors
+grep -rn "#[0-9a-fA-F]\{3,6\}" src/ \
+  --include="*.css" --include="*.tsx" \
+  --include="*.scss" 2>/dev/null | head -20
 
-# Find hardcoded pixel values for spacing
-grep -rn "margin:\|padding:\|gap:" src/ --include="*.css" --include="*.scss" | grep -v "var(--"
-
+# Find hardcoded spacing
+grep -rn "margin:\|padding:\|gap:" src/ \
+  --include="*.css" --include="*.scss" \
+  | grep -v "var(--" | head -20
+```
+```
+| Token Category | Defined | Hardcoded | Violations |
+|---------------|---------|-----------|-----------|
+| Colors        | 24      | 7         | 7         |
+| Typography    | 8       | 3         | 3         |
+| Spacing       | 12      | 5         | 5         |
+| Border radius | 4       | 1         | 1         |
+| Shadows       | 3       | 2         | 2         |
 ```
 
 ### Step 5: Component Library Structure
-Define or validate the component library architecture:
-
-#### Recommended Directory Structure
 ```
-src/
-  components/
-    Button/
-      Button.tsx              # Component implementation
-      Button.module.css       # Component styles
-      Button.test.tsx         # Unit tests
-      Button.stories.tsx      # Storybook stories
-      Button.types.ts         # TypeScript interfaces
-  ...
+src/components/Button/
+  Button.tsx           Component
+  Button.module.css    Styles
+  Button.test.tsx      Tests
+  Button.stories.tsx   Storybook
+  Button.types.ts      TypeScript interfaces
+  index.ts             Public exports
 ```
 
-#### Component File Template
-```typescript
-// components/Button/Button.tsx
-import React, { forwardRef } from 'react';
-import type { ButtonProps } from './Button.types';
-import styles from './Button.module.css';
-import { clsx } from 'clsx';
-
-```
-
-```typescript
-// components/Button/Button.types.ts
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Visual style variant */
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-  /** Size of the button */
-  size?: 'small' | 'medium' | 'large';
-```
-### Step 6: Storybook Integration
-Set up or audit Storybook configuration:
-
-#### Storybook Setup
+### Step 6: Storybook Setup
 ```bash
-# Initialize Storybook (auto-detects framework)
 npx storybook@latest init
-
-# Add essential addons
-npm install --save-dev @storybook/addon-a11y @storybook/addon-viewport @storybook/addon-docs
+npm install --save-dev @storybook/addon-a11y \
+  @storybook/addon-viewport @storybook/addon-docs
 ```
 
-#### Story Template
-```typescript
-// components/Button/Button.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  title: 'Components/Button',
-```
-
-### Step 7: Component Documentation
-Verify every component is properly documented:
-
-Each component must have: purpose, props table (types/defaults/descriptions), usage examples, variant visuals, do/don't guidance, accessibility requirements, and related components.
-
-Use Storybook `tags: ['autodocs']` to auto-generate docs from JSDoc and TypeScript types.
-
-### Step 8: Pattern Consistency Rules
-Define and enforce component patterns across the codebase:
-
-#### Naming Conventions
+### Step 7: Pattern Consistency
 ```
 NAMING RULES:
-Components: PascalCase (Button, DataTable, NavigationBar)
-Files: PascalCase matching component (Button.tsx, DataTable.tsx)
-Styles: ComponentName.module.css (Button.module.css)
-Stories: ComponentName.stories.tsx (Button.stories.tsx)
-Tests: ComponentName.test.tsx (Button.test.tsx)
-Types: ComponentName.types.ts (Button.types.ts)
-Hooks: use<Purpose> (useMediaQuery, useFocusTrap)
-  ...
-```
+  Components: PascalCase (Button, DataTable)
+  Files: PascalCase matching component
+  Styles: ComponentName.module.css
+  Tests: ComponentName.test.tsx
+  Hooks: use<Purpose> (useMediaQuery)
 
-#### Component API Conventions
-```
 API CONVENTIONS:
-- Props extend native HTML element attributes
-- variant prop for visual styles (not "type" or "kind")
-- size prop for dimensions ("small" | "medium" | "large")
-- Render children via children prop (not "content" or "text")
-- Event handlers follow on<Event> convention (onClick, onChange)
-- Boolean props are positive (isOpen, not isClosed)
-- Ref forwarding for all components wrapping native elements
-  ...
+  variant for visual styles (not "type")
+  size: "small" | "medium" | "large"
+  children for content (not "text")
+  on<Event> for handlers (onClick)
+  Boolean props positive (isOpen, not isClosed)
+  forwardRef on all native-wrapping components
 ```
 
-#### Violations Report
+### Step 8: Report
 ```
-PATTERN VIOLATIONS:
-| Violation | Count | Files |
-|--|--|--|
-| Hardcoded colors | 7 | Card.css, Modal.css, ... |
-| Missing TypeScript types | 3 | Tooltip.tsx, Badge.tsx, ... |
-| No ref forwarding | 5 | Input.tsx, Select.tsx, ... |
-| Inconsistent prop naming | 2 | Tabs (kind vs variant) |
-| Missing Storybook stories | 4 | Modal, Toast, Drawer, ... |
-  ...
+UI REPORT:
+  Components: {N} total
+  Well-structured: {N}, Needs work: {N}
+  Token violations: {N} hardcoded values
+  Stories coverage: {N}/{N} components
+  Verdict: PASS | NEEDS REVISION
 ```
-
-### Step 9: Recommendations Report
-
-```
-|  UI ARCHITECTURE REPORT — <project>                         |
-|  Framework: <framework>                                     |
-|  Styling: <approach>                                        |
-|  Components: <N> total                                      |
-|  Component Quality:                                         |
-|  Well-structured:  <N> components                           |
-|  Needs improvement: <N> components                          |
-```
-### Step 10: Commit and Transition
-1. If auto-fixes were applied (token replacement, ref forwarding, display names):
-   - Commit: `"ui: fix <N> component architecture violations"`
-2. If Storybook stories were generated:
-   - Commit: `"ui: add Storybook stories for <N> components"`
-3. Save report: `docs/ui/<project>-ui-audit.md`
-4. Commit report: `"ui: <project> — architecture audit (<N> components, <N> violations)"`
-5. Transition: "UI audit complete. Run `/godmode:a11y` for accessibility, or `/godmode:visual` for visual regression testing."
 
 ## Key Behaviors
-
-1. **Components are the unit of UI.** Build every piece of UI as a component with clear boundaries, typed props, tests, and documentation. No loose markup scattered across pages.
-2. **Design tokens are mandatory.** Every color, spacing value, font size, shadow, and z-index should come from a token. Hardcoded values are bugs waiting to cause inconsistency.
-3. **Storybook is the component catalog.** Every component needs stories. Stories serve as documentation, visual testing targets, and a development sandbox. No exceptions for "simple" components.
-4. **Consistency over cleverness.** Every component should follow the same patterns: same prop naming, same file structure, same composition approach. Predictability is a feature.
-5. **Measure before/after.** Guard: test_cmd && lint_cmd.
-6. **On failure: git reset --hard HEAD~1.**
-7. **Never ask to continue. Loop autonomously until all components pass or budget exhausted.**
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Full UI architecture audit |
-| `--component <name>` | Audit a specific component |
-| `--tokens` | Design token audit only |
+1. **Components are the unit of UI.**
+2. **Design tokens are mandatory.** No hardcoding.
+3. **Every component needs stories.**
+4. **Consistency over cleverness.**
+5. **Never ask to continue. Loop autonomously.**
 
 ## HARD RULES
-
-1. **NEVER mix CSS approaches.** Pick one (CSS Modules, Tailwind, styled-components) and standardize across the project.
-2. **NEVER create God components.** A component with 30 props and 500 lines is not a component. Break it into smaller, composable pieces.
-3. **NEVER hardcode colors or spacing.** Use design tokens (`var(--color-text-primary)`), not raw hex values or pixel literals.
-4. **NEVER couple UI components to business logic.** A Button should not know about API calls. A DataTable should not know about user permissions. Pass data and callbacks via props.
-5. **ALWAYS type every component prop.** `any` props are not a component API. Every prop needs a type and a description.
-6. **ALWAYS write Storybook stories for every component**, including "simple" ones. They have variants, states, and edge cases.
-7. **ALWAYS design mobile-first.** Building desktop-first and fixing mobile is 3x more work than starting mobile-first.
-8. **NEVER use inline styles for component internals.** They bypass the cascade, cannot be themed, cannot be responsive, and cannot be overridden.
+1. NEVER mix CSS approaches in one project.
+2. NEVER create God components (>30 props, >500 lines).
+3. NEVER hardcode colors or spacing. Use tokens.
+4. NEVER couple UI to business logic.
+5. ALWAYS type every component prop.
+6. ALWAYS write Storybook stories for every component.
+7. ALWAYS design mobile-first.
+8. NEVER use inline styles for component internals.
 
 ## Auto-Detection
-
-On activation, detect the UI architecture context:
-
 ```bash
-# Detect framework
-grep -r "react\|vue\|svelte\|@angular/core" package.json 2>/dev/null
-
-# Detect CSS approach
-grep -r "tailwindcss\|styled-components\|@emotion\|css-modules\|sass\|less" package.json 2>/dev/null
-
+grep -r "storybook" package.json 2>/dev/null
+ls .storybook/ 2>/dev/null
+find src/ -name "*.stories.*" 2>/dev/null | wc -l
 ```
-## Output Format
 
-After each UI skill invocation, emit a summary table:
-
-```
-UI BUILD REPORT:
-| Components built | <N> |
-|--|--|
-| Components updated | <N> |
-| Storybook stories | <N> created / <N> updated |
-| Tests | <N> passing, <N> failing |
-| Tokens used | <N> design tokens referenced |
-| A11y checks | <N> passing, <N> violations |
-  ...
-```
 ## TSV Logging
+Log to `.godmode/ui-results.tsv`:
+`timestamp\tcomponent\taction\ttests\ta11y\tbundle_kb\tstatus`
 
-Log every UI skill run for tracking:
-
+## Output Format
 ```
-timestamp	skill	component	action	tests_pass	a11y_pass	bundle_kb	status
-2026-03-20T14:00:00Z	ui	Button	create	12/12	0 violations	2.1	pass
-2026-03-20T14:05:00Z	ui	DataTable	update	8/8	1 violation	4.3	needs_fix
+UI: Components {N}. Stories: {N}. Tokens: {N}.
+Violations: {N}. a11y: {N}. Status: {DONE|PARTIAL}.
 ```
-## Success Criteria
 
-The UI skill is complete when ALL of the following are true:
-1. Every component renders without errors in Storybook (or equivalent)
-2. Every component has TypeScript props with descriptions and default values
-3. Every component has at least one test covering its primary use case
-4. Zero accessibility violations from axe-core on all component stories
-5. All design tokens are referenced (no hardcoded colors, spacing, or typography)
-6. Bundle size impact is documented and within project budget
-7. The build passes with zero TypeScript errors and zero lint warnings
-
-## Error Recovery
-
+## Keep/Discard Discipline
 ```
-IF component fails to render in Storybook:
-  1. Check console for import errors or missing dependencies
-  2. Verify all peer dependencies are installed
-  3. Check for circular imports in component tree
-  4. Revert last change and re-test
+KEEP if: visual regression passes AND a11y clean
+  AND responsive at all breakpoints
+DISCARD if: visual regression OR a11y violation
+  OR layout breaks. Revert on discard.
+```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All components render in Storybook without errors
-  - Design token coverage >= 95% (no hardcoded visual values)
-  - Zero accessibility violations from axe-core
-  - User explicitly requests stop
-
-DO NOT STOP only because:
-  - One component has a low consistency score (fix it)
-  ...
-```
-## Keep/Discard Discipline
-```
-After EACH UI change:
-  KEEP if: visual regression test passes AND a11y audit clean AND responsive at all breakpoints
-  DISCARD if: visual regression detected OR a11y violation introduced OR layout breaks at any breakpoint
-  On discard: revert. Screenshot diff before and after to identify the regression.
+STOP when:
+  - All components render in Storybook
+  - Design token coverage >= 95%
+  - Zero a11y violations (axe-core)
+  - User requests stop
 ```

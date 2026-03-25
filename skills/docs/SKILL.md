@@ -204,12 +204,16 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 
 ## Key Behaviors
 
-1. **Derive, don't invent.** Documentation must come from reading actual code, not guessing. If you can't determine what a function does from the code, say so.
-2. **Examples from tests.** The best documentation examples come from test files. Use real test cases as doc examples whenever possible.
-3. **Coverage over perfection.** 80% coverage with good docs beats 20% coverage with perfect docs. Get the public API documented first.
-4. **Detect staleness ruthlessly.** A wrong doc is worse than no doc. Cross-reference everything against the actual codebase.
-5. **Match existing style.** If the project uses JSDoc, write JSDoc. If it uses NumPy-style docstrings, use those. Don't introduce a new convention.
-6. **Runbooks are commands, not prose.** Write every runbook step as a copy-pasteable command with expected output. Narrative text belongs in guides, not runbooks.
+IF doc coverage < 80% of public API: prioritize undocumented exports.
+WHEN doc modification date < code modification date: flag as stale.
+IF broken links > 0: fix before committing.
+
+1. **Derive, don't invent.** Read actual code, not guessing.
+2. **Examples from tests.** Use real test cases as doc examples.
+3. **Coverage over perfection.** 80% coverage beats 20% perfect.
+4. **Detect staleness ruthlessly.** Wrong doc is worse than no doc.
+5. **Match existing style.** JSDoc, NumPy-style, etc. No new conventions.
+6. **Runbooks are commands, not prose.** Copy-pasteable commands + expected output.
 
 ## Flags & Options
 
@@ -227,35 +231,11 @@ git commit -m "docs: <scope> — <summary of what was documented>"
 4. **Never commit docs with broken internal links.** Grep for `](./` and `](#` references and verify each target exists before committing.
 5. **Never include secrets, tokens, or real user data in documentation examples.** Use placeholder values like `sk-test-xxx`, `user@example.com`.
 
-## Loop Protocol
-
-```
-documentation_queue = detect_doc_targets()  // list of modules/APIs/runbooks needing docs
-current_iteration = 0
-
-WHILE documentation_queue is not empty:
-  batch = documentation_queue.take(5)
-  current_iteration += 1
-
-  FOR each target in batch:
-    1. Read the source code for the target (function, endpoint, module)
-    2. Read existing docs (if any) — check for staleness
-    3. Generate or update documentation (JSDoc, docstring, OpenAPI, README section)
-    4. Cross-reference links and examples against codebase
-    5. IF stale or broken references found → fix or flag
-
-  Log: "Iteration {current_iteration}: documented {batch.length} targets, {documentation_queue.remaining} remaining"
-
-  IF documentation_queue is empty:
-    Run full link-check and coverage report
-    BREAK
-```
-
 ## Auto-Detection
 ```
 1. Scan for doc configs: .jsdoc.json, typedoc.json, mkdocs.yml, sphinx conf.py, openapi.yaml
 2. Check package.json/pyproject.toml for doc scripts. Count documented vs undocumented exports.
-3. Detect framework (JSDoc/TSDoc, Sphinx, godoc, Javadoc). Match existing doc style.
+3. Detect framework (JSDoc/TSDoc, Sphinx, godoc, Javadoc). Match existing style.
 4. Prioritize undocumented public APIs. Skip recently documented items.
 ```
 
@@ -287,58 +267,29 @@ timestamp	skill	target	action	coverage_pct	stale_count	status
 ```
 
 ## Success Criteria
-
-The docs skill is complete when ALL of the following are true:
-1. Every public function/method/endpoint has a description, parameters, return type, and error cases
-2. Documentation matches the actual code behavior (verified by reading the source)
-3. Every throwable error is documented with its condition
-4. Code examples are included and syntactically correct (copy-pasteable)
-5. No stale documentation (docs last modified before code was last modified)
-6. All internal links resolve (no broken cross-references)
-7. Runbooks (if any) contain exact commands verified to work
+1. Every public function/endpoint has description, params, return type, error cases
+2. Docs match actual code behavior (verified by reading source)
+3. Code examples included and syntactically correct (copy-pasteable)
+4. 0 stale docs (doc modified date >= code modified date)
+5. 0 broken internal links
+6. Runbooks contain exact commands verified to work
 
 ## Error Recovery
-- **Docs don't match code:** Read actual source. Check git blame for code changes after docs written. Update docs to match current behavior.
-- **Doc generation tool fails:** Check syntax errors in comments. Verify tool version compatibility. Run verbose mode to find failing file.
-- **Broken links:** Run link checker (markdown-link-check, linkinator). Update moved references.
+| Failure | Action |
+|--|--|
+| Docs don't match code | Read source, check git blame, update docs |
+| Doc generation fails | Check comment syntax, tool version, run verbose |
+| Broken links | Run markdown-link-check/linkinator, update refs |
 
 ## Keep/Discard Discipline
 ```
-After EACH documentation batch:
-  1. MEASURE: Run link check — are all internal references valid? Does doc match current code?
-  2. COMPARE: Did coverage increase? Are stale docs reduced?
-  3. DECIDE:
-     - KEEP if: all links resolve AND doc matches current code behavior AND coverage increased
-     - DISCARD if: broken links OR doc contradicts code OR describes deleted functions
-  4. COMMIT kept changes. Fix discarded docs before the next batch.
-
-Never merge documentation that references functions or endpoints that no longer exist.
+KEEP if: all links resolve AND doc matches code AND coverage increased
+DISCARD if: broken links OR doc contradicts code OR describes deleted functions
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - All public functions/endpoints have descriptions, parameters, and error cases
-  - Zero broken internal links
-  - No stale docs (doc modification date >= code modification date)
-  - User explicitly requests stop
-
-DO NOT STOP when:
-  - Private/internal functions lack docs (public API is the priority)
-  - Runbooks are not yet created (code docs come first)
-```
-
-## Documentation Audit Loop
-```
-WHILE audit_phases remain (coverage_scoring, stale_detection, api_doc_validation, link_integrity, freshness):
-  coverage_scoring: inventory all public functions, types, endpoints, config vars → compute coverage %
-  stale_detection: compare doc modification dates vs code modification dates → flag stale
-  api_doc_validation: verify OpenAPI spec matches actual routes → flag missing/stale endpoints
-  link_integrity: check all internal links resolve → flag broken
-  freshness: verify doc dates >= code dates for all documented targets
+STOP when: all public APIs documented + 0 broken links + 0 stale docs.
+Guard: link-check passes. On failure: git reset --hard HEAD~1.
 ```
 

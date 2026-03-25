@@ -225,13 +225,17 @@ Commit: `"apidocs: <service> — OpenAPI spec, <renderer> setup, CI validation c
 
 ## Key Behaviors
 
-1. **Every field gets a description and an example.** An undocumented field is an undocumented bug. Consumers should never have to guess what a field means.
-2. **$ref everything shared.** Pagination parameters, error responses, auth schemes — extract once, reference everywhere. A duplicated schema is a schema that will drift.
-3. **Validate in CI, not only locally.** Specs break silently. Spectral catches lint issues, Optic catches breaking changes, Redocly catches structural problems. Run all three.
-4. **Use realistic examples.** `"string"` as an example for an email field is useless. Use `"jane.doe@example.com"`. Consumers copy-paste examples.
-5. **Generate, don't handwrite, when code exists.** If you have a NestJS app with decorators, generate the spec from code. If you have a greenfield project, write the spec first.
-6. **Publish docs automatically.** Docs that live in a YAML file nobody reads are not docs. Render them with Swagger UI, Redoc, or Stoplight and deploy on every merge.
-7. **Track breaking changes.** A spec diff in CI is worth a thousand "we accidentally broke the mobile app" incidents.
+IF Spectral lint errors > 0: fix before merging.
+WHEN breaking changes detected by oasdiff: block PR, require migration plan.
+IF schema coverage < 100% (fields without descriptions): add descriptions.
+
+1. **Every field gets a description and example.** No guessing.
+2. **$ref everything shared.** No duplicated schemas.
+3. **Validate in CI.** Spectral + Optic + Redocly on every PR.
+4. **Realistic examples.** `"jane.doe@example.com"` not `"string"`.
+5. **Generate from code when code exists.** Spec-first for greenfield.
+6. **Publish docs automatically.** Deploy on every merge.
+7. **Track breaking changes.** Spec diff in CI catches regressions.
 
 ## HARD RULES
 
@@ -269,20 +273,14 @@ The apidocs skill is complete when ALL of the following are true:
 8. No breaking changes vs main branch (or breaking changes are documented)
 9. Doc renderer builds and displays correctly
 
-## Iterative API Documentation Loop
-
+## Iterative Loop Protocol
 ```
-current_iteration = 0
 max_iterations = 12
-doc_tasks = [discovery, spec_writing, schema_extraction, examples, renderer_setup, ci_validation]
-```
-After EACH implementation or optimization change:
-  1. MEASURE: Run tests / validate the change produces correct output.
-  2. COMPARE: Is the result better than before? (faster, safer, more correct)
-  3. DECIDE:
-     - KEEP if: tests pass AND quality improved AND no regressions introduced
-     - DISCARD if: tests fail OR performance regressed OR new errors introduced
-  4. COMMIT kept changes with descriptive message. Revert discarded changes before proceeding.
+WHILE doc_tasks remain:
+  1. MEASURE: validate spec, check examples
+  2. KEEP if: 0 lint errors AND 0 breaking changes
+  3. DISCARD if: validation fails OR examples broken
+  4. COMMIT kept changes. Revert discarded.
 ```
 
 ## Stop Conditions

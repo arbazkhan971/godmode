@@ -105,13 +105,22 @@ Never ask to continue. Loop autonomously until zero weak algorithms remain and a
 7. ALWAYS use authenticated encryption (GCM, ChaCha20-Poly1305).
 8. ALWAYS track key version with encrypted data.
 
-## Auto-Detection
-
+```bash
+# Audit crypto usage in codebase
+grep -rn "md5\|sha1\|DES\|ECB\|Math.random" src/ --include="*.ts" --include="*.py"
+openssl s_client -connect localhost:443 -tls1_2 < /dev/null 2>&1 | grep Protocol
+npx audit-ci --moderate
 ```
-1. grep for crypto, encrypt, decrypt, hash, bcrypt, argon2, jwt, jose
-2. grep for password, bcrypt, argon2, scrypt, pbkdf2
-3. Check nginx.conf for ssl_protocols, ssl_ciphers
-4. grep for md5, sha1, des, ecb, Math.random — flag immediately
+
+IF weak algorithm found (MD5, SHA1, DES): replace immediately.
+WHEN TLS version < 1.2 detected: upgrade to TLS 1.2+ minimum.
+IF bcrypt cost factor < 12: increase to >= 12.
+
+## Auto-Detection
+```
+1. grep for crypto, encrypt, decrypt, hash, bcrypt, argon2, jwt
+2. Check nginx.conf for ssl_protocols, ssl_ciphers
+3. grep for md5, sha1, des, ecb, Math.random — flag immediately
 ```
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)

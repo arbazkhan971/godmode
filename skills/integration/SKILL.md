@@ -1,345 +1,233 @@
 ---
 name: integration
 description: |
- Integration testing skill. Activates when user needs to test how components work together across real boundaries — databases, APIs, message queues, and external services. Covers Testcontainers for Docker-based dependencies, database seeding and cleanup strategies, API integration testing with real HTTP, service-level integration patterns, and transaction management in tests. Supports all major frameworks and languages. Triggers on: /godmode:integration, "integration test", "test with real database", "test API endpoint", "testcontainers", or when /godmode:test identifies integration-level gaps.
+  Integration testing skill. Tests across real
+  boundaries — databases, APIs, message queues.
+  Covers Testcontainers, DB seeding/cleanup, API
+  integration. Triggers on: /godmode:integration,
+  "test with real database", "testcontainers".
 ---
 
 # Integration — Integration Testing
 
 ## When to Activate
 - User invokes `/godmode:integration`
-- User asks "test this with a real database" or "test the API endpoint"
-- User asks about Testcontainers or Docker-based test dependencies
-- User needs database seeding, migration, or cleanup in tests
-- User wants to test service-to-service interactions
+- User says "test with real database", "test API"
+- User asks about Testcontainers or Docker-based deps
 - `/godmode:test` identifies integration coverage gaps
-- `/godmode:unittest` recommends integration tests for heavily-mocked code
 
 ## Workflow
 
 ### Step 1: Assess Integration Boundaries
-Map the real external dependencies the code interacts with:
 
 ```bash
 # Identify external dependencies
-<trace database connections, API calls, message queue producers/consumers>
+grep -rn "createConnection\|createPool\|mongoose" \
+  src/ --include="*.ts" | head -10
 
 # Check for existing integration tests
-find. -name "*integration*" -o -name "*e2e*" -o -path "*/it/*"
+find . -name "*integration*" -o -path "*/it/*" \
+  | grep -v node_modules | head -10
 
+# Check Docker availability
+docker info > /dev/null 2>&1 && echo "Docker: OK" \
+  || echo "Docker: NOT AVAILABLE"
 ```
+
 ```
 INTEGRATION BOUNDARY MAP:
-Target: <module/service being tested>
-Language: <language>
-Framework: <test framework>
+Target: <module/service>
+Language: <language>, Framework: <test framework>
 
-External dependencies:
- Databases:
- - <PostgreSQL | MySQL | MongoDB | Redis | etc.> — <what data>
- APIs:
- - <external service name> — <what endpoints>
- Message queues:
- - <Kafka | RabbitMQ | SQS | etc.> — <what topics/queues>
-  ...
+Dependencies:
+  Databases: <PostgreSQL | MySQL | MongoDB | Redis>
+  APIs: <external services>
+  Queues: <Kafka | RabbitMQ | SQS>
+
+IF no integration tests exist: start with DB boundary
+IF heavily mocked code: replace mocks with containers
+IF Docker unavailable: use test DB instance instead
 ```
-### Step 2: Set Up Test Containers
 
-Testcontainers provides disposable Docker containers for integration tests — each test run gets a fresh, isolated instance.
-
-#### Testcontainers — Node.js / TypeScript
+### Step 2: Set Up Testcontainers
 
 ```typescript
-// testcontainers setup — Jest/Vitest
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { Client } from 'pg';
+// Node.js / TypeScript example
+import { PostgreSqlContainer } from
+  '@testcontainers/postgresql';
 
-describe('UserRepository (integration)', () => {
- let container: StartedPostgreSqlContainer;
+let container;
+beforeAll(async () => {
+  container = await new PostgreSqlContainer()
+    .start();
+  // container.getConnectionUri() for connection
+}, 60_000); // 60s timeout for container startup
 ```
-#### Testcontainers — Python
 
 ```python
+# Python example
 import pytest
 from testcontainers.postgres import PostgresContainer
-import psycopg2
 
 @pytest.fixture(scope="module")
 def postgres():
-```
-#### Testcontainers — Java (JUnit 5)
-
-```java
-@Testcontainers
-class UserRepositoryIntegrationTest {
-
- @Container
- static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-.withDatabaseName("testdb")
-```
-### Step 3: Database Seeding and Cleanup
-
-#### Seeding Strategies
-
-**1. Migration-based seeding (recommended for schema)**
-Run production migrations to create the schema, then seed test data:
-
-```typescript
-async function setupTestDatabase(client: Client) {
- // Step 1: Run the same migrations used in production
- await runMigrations(client);
-
- // Step 2: Seed reference data (enums, configs, lookup tables)
- await seedReferenceData(client);
-```
-**2. Fixture-based seeding (for test data)**
-Create reusable fixture factories:
-
-```typescript
-// fixtures/user-fixtures.ts
-export function createUser(overrides: Partial<User> = {}): User {
- return {
- id: randomUUID(),
- name: 'Test User',
- email: `test-${randomUUID()}@example.com`,
-```
-#### Cleanup Strategies
-
-**Strategy 1: TRUNCATE between tests (fastest)**
-```typescript
-beforeEach(async () => {
- // TRUNCATE is faster than DELETE for clearing all rows
- await client.query(`
- TRUNCATE TABLE orders, users, payments CASCADE
- `);
-});
+    with PostgresContainer("postgres:16-alpine") as pg:
+        yield pg
 ```
 
-**Strategy 2: Transaction rollback (zero cleanup needed)**
-```typescript
-// Wrap each test in a transaction that gets rolled back
-let transaction: Transaction;
-
-beforeEach(async () => {
- transaction = await db.beginTransaction();
-});
-```
-
-```python
-# pytest-django does this automatically with @pytest.mark.django_db(transaction=True)
-@pytest.mark.django_db
-def test_creates_user(client):
- response = client.post("/api/users/", {"name": "Alice"})
- assert response.status_code == 201
- # Database changes are automatically rolled back after this test
-```
-**Strategy 3: Unique data per test (no cleanup needed)**
-```typescript
-// Every test creates data with unique IDs — no conflicts, no cleanup
-it('finds user by email', async () => {
- const unique = randomUUID();
- const user = createUser({ email: `${unique}@test.com` });
- await repo.save(user);
+### Step 3: Database Seeding & Cleanup
 
 ```
+CLEANUP STRATEGIES:
+| Strategy           | Speed  | Isolation  |
+|-------------------|--------|-----------|
+| Transaction rollback| Fast  | High      |
+| TRUNCATE between   | Fast   | High      |
+| Unique data/test   | No cleanup| Parallel|
+| Fresh container    | Slow   | Maximum   |
 
-Use when: Tests modify schema, or cleanup is too complex.
-Cost: Each test class gets a new container (adds 2-5 seconds).
-```
+IF framework supports it: transaction rollback
+IF parallel tests: unique data per test
+IF schema tests: fresh container per class
 
-#### Cleanup Decision Matrix
-```
-CHOOSE YOUR CLEANUP STRATEGY:
-
-Fast + isolated: Transaction rollback (if framework supports it)
-Fast + simple: TRUNCATE between tests
-No cleanup needed: Unique data per test (best for parallel tests)
-Maximum isolation: Fresh container per test class (slow, use sparingly)
+THRESHOLDS:
+  Container startup timeout: >= 60 seconds
+  Avg test duration target: < 5 seconds
+  IF test > 10s: check query optimization
+  IF flaky: check cleanup, add retry for container
 ```
 
 ### Step 4: API Integration Testing
 
-Test real HTTP endpoints with actual request/response cycles:
+```bash
+# Run integration tests with longer timeout
+npx vitest run tests/integration/ --timeout=30000
 
-#### HTTP API Testing — Node.js
-
-```typescript
-import request from 'supertest';
-import { createApp } from '../src/app';
-
-describe('POST /api/users (integration)', () => {
-  ...
+# Python
+pytest tests/integration/ -m integration -v
 ```
 
-#### Testing Authenticated Endpoints
-
-```typescript
-describe('authenticated API routes', () => {
- let authToken: string;
-
- beforeAll(async () => {
- // Create a test user and get a real auth token
- await request(app)
+```
+API TEST PATTERNS:
+  POST → verify 201 + DB has record
+  GET → verify response matches seeded data
+  PUT → verify updated fields persist
+  DELETE → verify record removed
+  Auth: get real token, test protected endpoints
+  Errors: test 400, 401, 403, 404, 409
 ```
 
-### Step 5: Service-Level Integration Patterns
-
-#### Pattern 1: Service-to-Database Integration
-Test that your service layer correctly interacts with a real database:
-
-```typescript
-describe('OrderService (integration)', () => {
- // Real database, real repository, real service
- let orderService: OrderService;
- let orderRepo: OrderRepository;
- let inventoryRepo: InventoryRepository;
+### Step 5: Service-Level Integration
 
 ```
+PATTERNS:
+1. Service → Database: real DB, real repo, real service
+2. Service → Service: real services, mock external APIs
+3. Producer → Queue → Consumer: real broker container
 
-#### Pattern 2: Service-to-Service Integration
-Test that services communicate correctly through their real interfaces:
-
-```typescript
-describe('CheckoutFlow (integration)', () => {
- // Real services, but external payment gateway is a mock server
- let orderService: OrderService;
- let paymentService: PaymentService;
- let notificationService: NotificationService;
-
+IF testing queue: verify message delivery + processing
+IF testing transactions: verify full commit or rollback
+IF testing failure: simulate DB down, timeout, pool full
 ```
 
-#### Pattern 3: Message Queue Integration
-Test that producers and consumers work together through a real message broker:
-
-```typescript
-describe('Order Event Processing (integration)', () => {
- let kafkaContainer: StartedKafkaContainer;
- let producer: OrderEventProducer;
- let consumer: OrderEventConsumer;
-
- beforeAll(async () => {
-```
-
-### Step 6: Integration Test Configuration
-
-#### Test Tagging and Separation
-Keep integration tests separate from unit tests so they can run independently:
+### Step 6: Test Configuration
 
 ```json
-// package.json
+// package.json — separate from unit tests
 {
- "scripts": {
- "test": "jest --testPathPattern='tests/unit'",
- "test:integration": "jest --testPathPattern='tests/integration'",
- "test:all": "jest"
+  "scripts": {
+    "test": "jest --testPathPattern='tests/unit'",
+    "test:integration": "jest --testPathPattern=\
+'tests/integration'",
+    "test:all": "jest"
+  }
+}
 ```
 
-```toml
-# pyproject.toml
-[tool.pytest.ini_options]
-markers = [
- "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
-]
+```
+SEPARATION RULES:
+  Unit tests: fast, no containers, run on every save
+  Integration: slower, needs Docker, run on PR
+  IF mixed in same suite: tag and filter
+  CI pipeline: unit first, then integration
 ```
 
-```python
-# pytest — mark integration tests
-@pytest.mark.integration
-def test_with_real_database():
-...
-```
-
-```go
-// Go — build tags for integration tests
-//go:build integration
-
-package repository_test
-
-func TestWithRealDatabase(t *testing.T) {
-```
-
-### Step 7: Run, Verify, and Report
-
-```bash
-# Run integration tests (with longer timeout)
-<framework command> --testPathPattern='integration' --timeout=30000
-
-# Run with verbose output (integration failures need detail)
-<framework command> --verbose
-```
+### Step 7: Run, Verify, Report
 
 ```
 INTEGRATION TEST REPORT:
-Target: <module/service>. Tests: <N> (DB: <N>, API: <N>, Queue: <N>).
-Containers: <list>. Seeding: <strategy>. Cleanup: <strategy>. All passing: YES/NO.
+Target: <module>
+Tests: <N> (DB: <N>, API: <N>, Queue: <N>)
+Containers: <list>
+Seeding: <strategy>, Cleanup: <strategy>
+All passing: YES/NO
+Avg duration: <N>ms per test
 ```
-### Step 8: Commit and Transition
-Commit: `"test(integration): <module> — <N> tests with <containers>"`
+
+Commit: `"test(integration): <module> — <N> tests
+  with <containers>"`
 
 ## Key Behaviors
-1. **Real dependencies, not mocks.** Mocking the DB = unit test with extra steps.
-2. **Isolate between tests.** Clean state per test (truncate/rollback), real services.
-3. **Testcontainers over shared instances.** Fresh, disposable per run.
-4. **Test transaction boundaries.** Multi-step operations succeed or fully roll back.
-5. **Separate from unit tests in CI.** Integration tests are slower.
-6. **Seed minimally.** Each test owns its data. No global seeds.
-7. **Test failure modes.** DB down, timeout, pool exhaustion.
 
-## Keep/Discard Discipline
-Each integration test boundary either passes or gets reverted. No flaky tests remain.
-- **KEEP**: All tests pass deterministically, container setup is reproducible, cleanup verified.
-- **DISCARD**: Flaky test (passes sometimes, fails sometimes). Diagnose root cause before re-adding.
-- **CRASH**: Container startup failure or port conflict. Fix infrastructure, then retry once.
-- Log every boundary result to `.godmode/integration-results.tsv`.
-
-## Autonomy
-Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
-
-## Stop Conditions
-- All external boundaries have integration test coverage (database, API, cache, queue).
-- All integration tests pass with real containers, no mocks for external dependencies.
-- Test data isolation verified with no leakage between tests.
-- Average test duration under 5 seconds per test (excluding container startup).
+1. **Real dependencies, not mocks.**
+2. **Isolate between tests.** Clean state each time.
+3. **Testcontainers over shared instances.**
+4. **Test transaction boundaries.**
+5. **Separate from unit tests in CI.**
+6. **Seed minimally.** Each test owns its data.
+7. **Test failure modes.** DB down, timeout, pool full.
 
 ## HARD RULES
-1. NEVER mock DB in integration tests — use Testcontainers or real instances.
-2. NEVER share test DBs across parallel runs — each gets its own container.
-3. NEVER hardcode ports — use `container.getMappedPort()`.
-4. NEVER seed globally — each test owns its data.
-5. NEVER use production databases for testing.
-6. NEVER skip cleanup between tests.
-7. ALWAYS separate integration from unit tests in CI.
-8. ALWAYS test transaction boundaries (full success or full rollback).
-9. ALWAYS include container startup timeout (>= 60s).
-10. ALWAYS test failure modes (DB down, timeout, pool exhaustion).
-AUTO-DETECT:
-1. Test infra: docker-compose*.yml, testcontainers*, tests/integration/
-2. Framework: jest/vitest/mocha, pytest, JUnit/Testcontainers
-3. Dependencies: pg/mysql2/prisma/mongoose, kafkajs/amqplib, ioredis
-4. ORM: Prisma/Drizzle/Knex/TypeORM, Alembic, golang-migrate
-5. Seeding: seeds/, fixtures/, factories/, factory-boy/fishery/faker
+
+1. Never mock DB in integration tests.
+2. Never share test DBs across parallel runs.
+3. Never hardcode ports — use getMappedPort().
+4. Never seed globally — each test owns its data.
+5. Never use production databases for testing.
+6. Never skip cleanup between tests.
+7. Always separate integration from unit in CI.
+8. Always test transaction boundaries.
+9. Always include container startup timeout (>= 60s).
+10. Always test failure modes.
+
+## Auto-Detection
+```
+1. Test infra: docker-compose, testcontainers
+2. Framework: jest/vitest, pytest, JUnit
+3. Dependencies: pg/mysql2/prisma, kafkajs, ioredis
+4. ORM: Prisma/Drizzle/Knex, Alembic
+5. Seeding: seeds/, fixtures/, factories/
 ```
 
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Assess boundaries and write integration tests |
-| `--for <file>` | Write integration tests for a specific module |
-| `--container <type>` | Specify container type (postgres, mysql, redis, kafka, mongo) |
-
 ## Output Format
-Print on completion: `Integration: {total_tests} tests across {boundary_count} boundaries. Containers: {containers}. Pass rate: {pass_rate}%. Avg duration: {avg_ms}ms. Verdict: {verdict}.`
+Print: `Integration: {tests} tests, {boundaries}
+  boundaries. Containers: {list}.
+  Pass rate: {rate}%. Avg: {ms}ms. Verdict: {verdict}.`
 
 ## TSV Logging
 ```
-iteration	boundary	container	tests_written	tests_passing	avg_duration_ms	status
+iteration	boundary	container	tests	passing	avg_ms	status
 ```
 
-## Success Criteria
-- All external boundaries covered (database, API, cache, queue) with real containers.
-- Test data isolation verified, transaction boundaries tested, failure modes covered.
-- Average test duration under 5s per test. CI runs integration tests on every PR.
+## Keep/Discard Discipline
+```
+KEEP if: all tests pass deterministically
+  AND container setup reproducible AND cleanup verified
+DISCARD if: flaky (passes sometimes, fails sometimes)
+  Diagnose root cause before re-adding.
+```
+
+## Stop Conditions
+```
+STOP when ALL of:
+  - All external boundaries covered
+  - All tests pass with real containers
+  - Data isolation verified, no leakage
+  - Avg duration < 5s per test
+```
 
 ## Error Recovery
-  ...
+- Container fails to start: check Docker, increase timeout.
+- Port conflict: use getMappedPort(), never hardcode.
+- Test data leaks: switch to transaction rollback.
+- Flaky test: add retry for container, check cleanup.

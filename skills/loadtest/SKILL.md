@@ -1,350 +1,220 @@
 ---
 name: loadtest
 description: |
-  Load testing and performance testing skill. Activates when user needs to stress-test systems, establish performance baselines, identify bottlenecks, or validate capacity. Generates test scenarios for k6, Artillery, Locust, and JMeter. Covers stress testing, spike testing, soak testing, and statistical significance checking. Triggers on: /godmode:loadtest, "load test", "stress test", "performance test", "benchmark", or when ship skill needs capacity validation.
+  Load testing and performance testing skill. k6,
+  Artillery, Locust, JMeter. Stress, spike, soak
+  testing. Statistical significance checking.
+  Triggers on: /godmode:loadtest, "load test",
+  "stress test", "performance test", "benchmark".
 ---
 
-# Loadtest — Load Testing & Performance Testing
+# Loadtest — Load Testing & Performance
 
 ## When to Activate
 - User invokes `/godmode:loadtest`
-- User says "load test", "stress test", "benchmark", "capacity planning"
-- User asks "can it handle the load?" or "what's the breaking point?"
-- Ship skill needs performance validation before deployment
-- After optimize skill improves performance and needs verification
-- User wants to establish performance baselines
+- User says "load test", "stress test", "benchmark"
+- User asks "can it handle the load?"
+- Ship skill needs performance validation
 
 ## Workflow
 
 ### Step 1: Define Test Scope
-Understand what to test and what success looks like:
+
+```bash
+# Detect existing test infrastructure
+ls loadtest/ performance/ *.k6.js \
+  *.artillery.yml *_locust.py 2>/dev/null
+
+# Parse route files for endpoints
+grep -rn "app\.\(get\|post\|put\|delete\)" \
+  src/ routes/ --include="*.ts" 2>/dev/null | wc -l
+
+# Check tool availability
+k6 version 2>/dev/null || echo "k6: NOT INSTALLED"
+artillery version 2>/dev/null
+```
 
 ```
 LOAD TEST SCOPE:
-Target system: <API | web app | database | message queue | full stack>
-Target endpoints/operations (list each):
-  - e.g., GET /api/users — 500 req/s steady state
-  - e.g., POST /api/orders — 50 req/s with burst to 200
+  Target: <API | web app | database | full stack>
+  Endpoints: <list with expected RPS each>
+  Current metrics: <P50, P95, P99 or unknown>
+  Tool: <k6 | Artillery | Locust | JMeter>
 
-Current known metrics:
-  Avg response time: <Xms | unknown>
-  P95 response time: <Xms | unknown>
-  P99 response time: <Xms | unknown>
-  Error rate: <X% | unknown>
-  Current RPS capacity: <N | unknown>
-  Concurrent users: <N | unknown>
-
+IF no baseline exists: run baseline first
+IF no tool installed: recommend k6 (lightweight)
+IF testing production: coordinate with ops team
 ```
+
 ### Step 2: Select Test Type
-Choose the correct load test pattern:
 
-#### Load Test (Baseline)
 ```
-PURPOSE: Establish normal operating performance
-PATTERN: Ramp up to expected load, hold steady, ramp down
+| Type    | Purpose              | Pattern             |
+|---------|----------------------|---------------------|
+| Load    | Normal performance   | Ramp→steady→down    |
+| Stress  | Breaking point       | Continuous increase  |
+| Spike   | Sudden surge         | Normal→5x→normal    |
+| Soak    | Memory leaks         | Moderate for hours   |
 
-      Users
-  100 │          ┌──────────────┐
-      │         /│              │\
-   50 │        / │              │ \
-      │       /  │              │  \
-    0 │──────/   │              │   \──────
-      └──────┬───┬──────────────┬───┬──────
-             2m   5m            15m  17m
+LOAD: ramp 2min, steady 10min, ramp-down 2min
+STRESS: +50 users every 2min until failure
+SPIKE: 5min baseline, instant 5x for 2min, recover
+SOAK: 70-80% capacity for 4-8 hours minimum
 
-Ramp-up: 2 minutes (gradual increase to target)
-Steady: 10 minutes (sustained target load)
-Ramp-down: 2 minutes (graceful decrease)
-Target: Expected production traffic level
-```
-
-#### Stress Test (Breaking Point)
-```
-PURPOSE: Find the system's breaking point
-PATTERN: Continuously increase load until failure
-
-      Users
-  500 │                              X ← Breaking point
-      │                           /
-  300 │                        /
-      │                     /
-  100 │                  /
-      │               /
-   50 │            /
-      │         /
-   10 │──────/
-      └──────┬──┬──┬──┬──┬──┬──┬──┬──
-             2m 4m 6m 8m 10 12 14 16
-
-Step: Add 50 users every 2 minutes
-Hold: 1 minute at each level
-Stop: When error rate >10% or response time >10s
-Record: Last stable level = max capacity
-```
-
-#### Spike Test (Sudden Surge)
-```
-PURPOSE: Test behavior under sudden traffic surges
-PATTERN: Normal load, sudden spike, return to normal
-
-      Users
-  500 │      ┌──┐
-  400 │      │  │
-  100 │──────┘  └──────────
-      │
-   50 │
-      │
-    0 │
-      └──────┬──┬──┬───────
-             5m 7m 9m
-
-Baseline: 5 minutes at normal load
-Spike: Instant jump to 5x normal (2 minutes)
-Recovery: Return to normal, observe recovery time
-Measure: How long until metrics return to baseline
-```
-
-#### Soak Test (Endurance)
-```
-PURPOSE: Find memory leaks, connection exhaustion, gradual degradation
-PATTERN: Moderate load sustained for hours
-
-      Users
-  100 │   ┌────────────────────────────────────────────┐
-   50 │   │                                            │
-      │  /│                                            │\
-    0 │─/ │                                            │ \─
-      └───┬────────────────────────────────────────────┬──
-          5m                   4-8 hours               end
-
-Duration: 4-8 hours minimum
-Load: 70-80% of known capacity
-Monitor: Memory, CPU, disk, connection count over time
-Alert: Any metric that trends upward continuously = leak
+THRESHOLDS:
+  Stress stop: error rate > 10% OR P99 > 10s
+  Spike recovery: metrics return to baseline
+  Soak alert: any metric trending upward = leak
 ```
 
 ### Step 3: Generate Test Scripts
-Generate test scripts for the user's preferred tool:
 
-#### k6 (JavaScript)
-```javascript
-// loadtest/baseline.k6.js
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-import { Rate, Trend } from 'k6/metrics';
+k6 (JavaScript), Artillery (YAML), or Locust (Python).
+Include: custom metrics, thresholds, think time,
+realistic payloads, auth tokens, ramp patterns.
 
-// Custom metrics
-```
+```bash
+# Run baseline test
+k6 run --out json=results.json loadtest/baseline.k6.js
 
-#### Artillery (YAML)
-```yaml
-# loadtest/baseline.artillery.yml
-config:
-  target: "http://localhost:3000"
-  phases:
-    - duration: 120      # 2 min ramp-up
-      arrivalRate: 5
-```
+# Run with specific VUs and duration
+k6 run --vus 100 --duration 10m loadtest/baseline.k6.js
 
-#### Locust (Python)
-```python
-# loadtest/baseline_locust.py
-from locust import HttpUser, task, between, events
-import json
-import time
-import random
-
+# Artillery
+artillery run loadtest/baseline.artillery.yml
 ```
 
 ### Step 4: Establish Baseline
-Run initial tests to establish performance baselines:
 
 ```
 BASELINE RESULTS:
-Date: <ISO date>
-Environment: <dev | staging | prod-like>
-System specs: <CPU, memory, disk, network>
-Database: <type, size, connection pool>
+  Date: <ISO>, Environment: <dev|staging|prod-like>
+  System: <CPU, memory, DB type, pool size>
 
-| Metric | P50 | P95 | P99 | Max |
-|--|--|--|--|--|
-| Response time (ms) | <val> | <val> | <val> | <val> |
-| Throughput (rps) | <val> | — | — | <val> |
-| Error rate (%) | <val> | — | — | <val> |
-| CPU usage (%) | <val> | <val> | <val> | <val> |
-| Memory usage (MB) | <val> | <val> | <val> | <val> |
-| DB connections | <val> | <val> | <val> | <val> |
+| Metric           | P50  | P95  | P99  | Max  |
+|------------------|------|------|------|------|
+| Response (ms)    | <val>| <val>| <val>| <val>|
+| Throughput (rps)  | <val>| —    | —    | <val>|
+| Error rate (%)    | <val>| —    | —    | <val>|
+| CPU usage (%)     | <val>| <val>| <val>| <val>|
+| Memory (MB)       | <val>| <val>| <val>| <val>|
+
+THRESHOLDS:
+  P95 target: < 500ms
+  P99 target: < 1000ms
+  Error rate: < 1%
+  CV (coefficient of variation): < 10%
+  IF CV > 15%: eliminate noise, increase duration
 ```
+
 ### Step 5: Bottleneck Analysis
-Identify where performance breaks down:
 
 ```
-BOTTLENECK ANALYSIS:
-| Technique | Finding |
-|--|--|
-| Response time | P99 spikes at <N> concurrent users |
-| distribution | Bimodal distribution suggests caching |
-|  | miss vs hit pattern |
-| Resource | CPU saturates at <N>% under load |
-| saturation | Memory grows linearly (possible leak) |
-|  | DB connections max out at <N> |
-| Error analysis | Errors start at <N> RPS |
-|  | Error type: <timeout | 5xx | conn |
-|  | refused | OOM> |
+ANALYSIS:
+  Response distribution: bimodal = cache hit/miss
+  CPU saturation: at <N>% under <N> users
+  Memory trend: linear growth = possible leak
+  DB connections: max out at <N>
+  Error onset: starts at <N> RPS
+
+IF CPU saturates first: optimize hot paths
+IF memory grows linearly: check for leaks
+IF DB connections max: increase pool or optimize
+IF errors at low RPS: check application logic
 ```
+
 ### Step 6: Statistical Significance
-Validate that performance changes are real, not noise:
 
 ```
-STATISTICAL ANALYSIS:
-Comparison: <baseline vs optimized | version A vs version B>
-Test runs: <N> (minimum 5 per variant for reliable results)
-Confidence level: 95% (p < 0.05)
+COMPARISON RULES:
+  Same environment, warm cache, 5+ runs minimum
+  One change between variants, report variance
+  Use percentiles (averages hide tail latency)
 
-| Metric | Before | After | Change | Sig? |
-|--|--|--|--|--|
-| P50 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
-| P95 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
-| P99 response (ms) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
-| Throughput (rps) | <val>±<σ> | <val>±<σ> | <+X%> | YES/NO |
-| Error rate (%) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
-| CPU usage (%) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
-| Memory usage (MB) | <val>±<σ> | <val>±<σ> | <-X%> | YES/NO |
+  Method: Welch's t-test (unequal variance)
+  Confidence: 95% (p < 0.05)
+  Effect size: Cohen's d (small/medium/large)
+  Verdict: IMPROVEMENT | NO CHANGE | REGRESSION
 
-Statistical method: Welch's t-test (unequal variance assumed)
-Effect size: Cohen's d = <value> (<small | medium | large>)
-Verdict: <IMPROVEMENT CONFIRMED | NO SIGNIFICANT CHANGE | REGRESSION DETECTED>
-```
-#### Significance Rules
-```
-RULES FOR VALID COMPARISON:
-1. Same environment — Same hardware, same database size, same network
-2. Warm cache — Run a warm-up phase before measuring
-3. Multiple runs — Minimum 5 runs per variant (10+ preferred)
-4. Controlled variables — Only ONE change between variants
-5. Report variance — Mean without standard deviation is meaningless
-6. Use percentiles — Averages hide tail latency problems
-7. Check distribution — If bimodal, split analysis by mode
+THRESHOLDS:
+  Minimum runs per variant: 5 (10+ preferred)
+  IF bimodal distribution: split analysis by mode
+  IF p >= 0.05: NO SIGNIFICANT CHANGE
 ```
 
-### Step 7: Generate Performance Report
+### Step 7: Report
 
 ```
-  LOAD TEST REPORT — <target>
-  Test type: <load | stress | spike | soak>
-  Duration: <X> minutes
-  Max users: <N>
-  Total requests: <N>
-  PERFORMANCE:
+LOAD TEST REPORT:
+  Type: <load|stress|spike|soak>
+  Duration: <X>min, Max users: <N>
   P50: <X>ms  P95: <X>ms  P99: <X>ms
-  Throughput: <N> rps (peak: <N> rps)
+  Throughput: <N> rps (peak: <N>)
   Error rate: <X>%
-  CAPACITY:
-  Max stable load: <N> concurrent users / <N> rps
+  Max stable: <N> users / <N> rps
+  Breaking point: <N> users
+  Headroom: <X>x above production traffic
 ```
-### Step 8: Commit and Transition
-1. Save test scripts to `loadtest/` directory
-2. Save results to `loadtest/results/`
-3. Save report as `docs/performance/<target>-loadtest-report.md`
-4. Commit: `"loadtest: <target> — <verdict> (P95: <X>ms, <N>rps, <X>% errors)"`
-5. If NEEDS OPTIMIZATION: "Bottlenecks identified. Run `/godmode:optimize` to address them, then re-test."
-6. If MEETS SLOs: "Performance validated. Ready for `/godmode:ship`."
+
+Commit: `"loadtest: <target> — P95: <X>ms,
+  <N>rps, <X>% errors"`
 
 ## Key Behaviors
 1. **Baseline first.** Measure before optimizing.
-2. **Production-like environments.** Match hardware, data volume, network.
-3. **Percentiles, not averages.** Report P50, P95, P99.
-4. **Statistical rigor.** Multiple runs with variance analysis.
-5. **Correlate, don't guess.** Check CPU, memory, DB, network simultaneously.
-6. **Realistic scenarios.** Mixed read/write, think time, varied payloads.
-7. **Automate for regression.** Run in CI to catch regressions.
+2. **Production-like environments.** Match hardware.
+3. **Percentiles, not averages.** P50, P95, P99.
+4. **Statistical rigor.** Multiple runs with variance.
+5. **Realistic scenarios.** Think time, mixed workloads.
+6. **Automate for regression.** Run in CI.
 
 ## HARD RULES
-1. NEVER load test production without coordination — looks like DDoS.
-2. NEVER test without think time — overestimates capacity.
-3. NEVER compare single runs — run 5+ times minimum.
-4. NEVER test with empty databases — use production-scale data.
-5. NEVER skip warm-up — cold starts make first minutes unrepresentative.
-6. NEVER report averages without percentiles — always P50, P95, P99.
-7. ALWAYS baseline before optimizing. Production-like environments. Mixed workloads.
+1. Never load test production without coordination.
+2. Never test without think time between requests.
+3. Never compare single runs — 5+ minimum.
+4. Never test with empty databases.
+5. Never skip warm-up phase.
+6. Never report averages without percentiles.
+7. Always baseline before optimizing.
+8. Always use production-scale data volumes.
 
 ## Auto-Detection
 ```
-1. Endpoints: parse route files (routes/*.ts, app.py, main.go), extract paths/methods
-2. Existing tests: loadtest/, performance/, *.k6.js, *.artillery.yml, *_locust.py
-3. Baselines: loadtest/results/, performance/baselines/
-4. Infra: docker-compose.yml, k8s manifests, terraform
+1. Endpoints: parse route files for paths/methods
+2. Tests: loadtest/, *.k6.js, *.artillery.yml
+3. Baselines: loadtest/results/
+4. Infra: docker-compose, k8s manifests
 ```
-
-## Iterative Load Test Protocol
-Load testing follows an iterative cycle — baseline, stress, identify, optimize, re-test:
-```
-current_phase = "baseline"
-iteration = 0
-
-WHILE current_phase != "complete":
-  IF current_phase == "baseline":
-    1. RUN baseline load test (expected traffic, 10 min steady)
-    2. RECORD metrics: P50, P95, P99, throughput, error rate
-    3. SAVE baseline: loadtest/results/baseline-{date}.json
-    4. current_phase = "stress"
-
-  IF current_phase == "stress":
-    1. RUN stress test (ramp to 2x, 5x, 10x baseline)
-    2. IDENTIFY breaking point (error rate > 10% or P99 > 10s)
-    3. RECORD: max stable load, breaking point, bottleneck
-    4. current_phase = "analyze"
-```
-
-## Keep/Discard Discipline
-```
-KEEP if: statistically significant improvement (p < 0.05, min 5 runs) AND no new error types
-DISCARD if: no significant improvement OR regression in another metric
-Never declare improvement from a single run — variance matters.
-```
-
-## Autonomy
-Never ask to continue. Loop autonomously. On failure: git reset --hard HEAD~1.
-
-## Stop Conditions
-```
-STOP when ANY of these are true:
-  - All SLOs met with 2x headroom above current production traffic
-  - Breaking point identified and documented
-  - User explicitly requests stop
-  - Optimization plateau reached (5 consecutive no-improvement rounds)
-
-DO NOT STOP because:
-  - One endpoint has a slow P99 (report it but continue testing others)
-  - The load test tool reports warnings (investigate but do not abandon the test)
-```
-
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Baseline load test with standard ramp pattern |
-| `--stress` | Find the breaking point with increasing load |
-| `--spike` | Test sudden traffic surge behavior |
 
 ## Output Format
-Print on completion: `Loadtest: {test_type} — P95: {p95}ms, P99: {p99}ms, throughput: {rps} rps, errors: {error_rate}%. Breaking point: {breaking_point} users. Verdict: {verdict}.`
+Print: `Loadtest: {type} — P95: {p95}ms,
+  P99: {p99}ms, {rps} rps, {err}% errors.
+  Breaking: {N} users. Verdict: {verdict}.`
 
 ## TSV Logging
-Log every load test run to `.godmode/loadtest-results.tsv`:
 ```
 iteration	test_type	target_rps	actual_rps	p50_ms	p95_ms	p99_ms	error_rate	max_users	status
 ```
 
-## Success Criteria
-- Baseline: 5+ runs, CV < 10%. P95 < 500ms, P99 < 1000ms, errors < 1%.
-- Breaking point identified. 2x headroom above production traffic.
-- Bottlenecks ranked by impact. Results saved to `loadtest/results/` with timestamps.
+## Keep/Discard Discipline
+```
+KEEP if: statistically significant (p < 0.05,
+  min 5 runs) AND no new error types
+DISCARD if: no significant improvement
+  OR regression in another metric
+```
+
+## Stop Conditions
+```
+STOP when ANY of:
+  - All SLOs met with 2x headroom
+  - Breaking point identified and documented
+  - User requests stop
+  - 5 consecutive no-improvement rounds
+```
 
 ## Error Recovery
-- **Tool fails to start**: Verify installed (`k6 version`). Check target URL reachable.
-- **All requests error**: Check server running, auth tokens valid, firewall rules.
-- **Unrealistic numbers**: Verify think time. Check load generator not bottleneck.
-- **High variance (CV > 15%)**: Eliminate noise, increase duration, increase warm-up.
-- **Crashes at high concurrency**: `ulimit -n 65535`. Check connection pools.
-- **Cannot reproduce prod**: Match data volume, hardware, network latency.
+- Tool fails: verify installed, check target URL.
+- All errors: check server running, auth tokens.
+- Unrealistic numbers: verify think time.
+- High variance (CV > 15%): increase duration.
+- Crashes at high concurrency: `ulimit -n 65535`.

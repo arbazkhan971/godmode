@@ -195,34 +195,21 @@ Generate a comprehensive runbook document:
 ```
 
 ### Step 9: Commit and Transition
-1. Save runbook as `docs/dr/<date>-disaster-recovery-runbook.md`
+Save runbook as `docs/dr/<date>-disaster-recovery-runbook.md`
+
+```bash
+# Test backup and restore procedures
+pg_dump -Fc mydb > backup_test.dump
+pg_restore -d mydb_test backup_test.dump
+psql mydb_test -c "SELECT count(*) FROM users;"
 ```
-AUTO-DETECT SEQUENCE:
-1. Detect data stores:
-   - grep for database connection strings (postgres, mysql, mongodb, redis)
-   - Check docker-compose.yml for database services
-   - Check terraform/k8s configs for managed databases (RDS, Cloud SQL, etc.)
-2. Detect object storage:
-   - grep for S3, GCS, Azure Blob connection configs
-   - Check for file upload handling code
-3. Detect existing backup tooling:
-   - Check for pg_dump scripts, mysqldump scripts
-   - Check crontab for backup jobs
-   - Check for backup-related GitHub Actions or CI jobs
-   - Check for WAL archiving configuration (pg_basebackup, wal-g, pgbackrest)
-4. Detect secrets management:
-   - Check for Vault, AWS KMS, GCP KMS configs
-   - Check for .env files with database credentials
-5. Detect infrastructure-as-code:
-   - terraform, pulumi, cdk → check for backup configurations
-   - Check for RDS automated backups, snapshot configs
-6. Estimate data size:
-   - Check database migration count as proxy for schema complexity
-   - Check disk usage in docker volumes or persistent volume claims
-7. Auto-configure:
-   - No backups detected → flag as CRITICAL gap
-   - Backups exist but no verification → flag as HIGH gap
-   - No cross-region backup → flag for Tier 1 data
+
+## Auto-Detection
+```
+1. Data stores: grep for postgres, mysql, mongodb, redis connection strings
+2. Object storage: grep for S3, GCS, Azure Blob configs
+3. Existing backups: check crontab, CI jobs, WAL archiving configs
+4. No backups → CRITICAL gap. No verification → HIGH gap.
 ```
 
 ## Explicit Loop Protocol
@@ -312,36 +299,16 @@ DO NOT STOP only because:
   - A restore test takes time to run (schedule it, do not skip it)
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler backup approach:
-  - Cloud-native automated backups (RDS snapshots, S3 versioning) before custom backup scripts
-  - pg_dump with cron before pgBackRest for small databases
-  - Cross-region replication before custom backup-and-copy scripts
-  - Built-in encryption (AES-256 at rest) before custom encryption wrappers
-  - If rebuild-from-source is faster than restore → document the rebuild procedure instead of backing up
-```
-
-
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Backup job fails silently | Add alerting on backup completion. Check disk space, permissions, and network connectivity. Verify backup tool exit code is checked. |
-| Restore test fails | Compare backup format with current schema version. Check for schema drift since backup was taken. Test restore on a fresh instance. |
-| Backup takes too long | Switch to incremental backups. Check if WAL archiving (Postgres) or binlog (MySQL) is available. Compress during transfer. |
-| Backup storage fills up | Implement retention policy: keep daily for 7d, weekly for 4w, monthly for 12m. Automate cleanup of expired backups. |
-
-## TSV Logging
-Append to `.godmode/backup-results.tsv`:
-```
-timestamp	database	backup_type	size_mb	duration_s	restore_tested	status
-```
-One row per backup operation. Never overwrite previous rows.
+| Backup fails silently | Add alerting. Check disk, permissions, exit codes. |
+| Restore test fails | Compare schema version. Test on fresh instance. |
+| Backup too slow | Switch to incremental. Compress during transfer. |
+| Storage fills up | Retention: daily 7d, weekly 4w, monthly 12m. |
 
 ## Keep/Discard Discipline
 ```
-After EACH backup configuration change:
-  KEEP if: backup completes AND restore test succeeds AND alerting fires on failure
-  DISCARD if: backup fails OR restore produces data mismatch OR no alerting configured
-  On discard: revert. A backup you cannot restore is not a backup.
+KEEP if: backup completes AND restore succeeds AND alerting works
+DISCARD if: backup fails OR data mismatch OR no alerting
 ```

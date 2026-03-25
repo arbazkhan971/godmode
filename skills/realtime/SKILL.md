@@ -1,296 +1,147 @@
 ---
 name: realtime
-description: |
-  Real-time communication skill. Activates when teams need to design, build, or scale real-time features. Covers WebSocket architecture, Server-Sent Events (SSE), long polling, pub/sub patterns (Socket.io, Pusher, Ably), real-time collaboration (CRDT, Operational Transform), presence systems, typing indicators, live notifications, scaling real-time with Redis pub/sub and sticky sessions, and connection management. Triggers on: /godmode:realtime, "add websockets", "real-time updates", "live notifications", "typing indicator", "collaborative editing", or when the application needs bidirectional or server-push communication.
+description: Real-time communication -- WebSocket, SSE,
+  pub/sub, collaboration, presence systems.
 ---
 
-# Realtime — Real-time Communication & Collaboration
-
-## When to Activate
-- User invokes `/godmode:realtime`
-- User says "add websockets", "real-time updates", "live notifications"
-- User says "typing indicator", "presence system", "who's online"
-- User says "collaborative editing", "real-time sync", "live cursors"
-- User says "push notifications", "server-sent events", "live feed"
-- User needs bidirectional communication between client and server
-- User needs to broadcast updates to multiple connected clients
-- Application has features that require instant data synchronization
-- Godmode orchestrator detects polling patterns that need conversion to push-based delivery
+## Activate When
+- `/godmode:realtime`, "add websockets", "real-time"
+- "live notifications", "typing indicator", "presence"
+- "collaborative editing", "live cursors", "SSE"
+- Polling patterns that need push-based delivery
 
 ## Workflow
 
-### Step 1: Real-time Requirements Assessment
-
-Evaluate the communication needs, constraints, and correct protocol:
-
+### 1. Requirements Assessment
+```bash
+grep -r "socket.io\|ws\|websocket\|sse\|EventSource" \
+  --include="*.ts" --include="*.js" -l 2>/dev/null
+grep -r "redis.*pub\|redis.*sub\|createAdapter" \
+  --include="*.ts" --include="*.js" -l 2>/dev/null
 ```
-REAL-TIME REQUIREMENTS ASSESSMENT:
-| Dimension | Value |
 ```
-
-#### Protocol Selection Matrix
-```
-PROTOCOL SELECTION:
-| Protocol | Best for | Direction | Browser | Complexity | Scaling |
-```
-
-#### Technology Selection
-```
-TECHNOLOGY SELECTION:
-| Technology | Best for | Protocol | Scale | Ops cost | Features |
+Direction: server->client | bidirectional | both
+Latency: <100ms | <1s | <30s
+Concurrency: <1K | 1K-10K | 10K-100K | >100K
+Persistence: ephemeral | replay needed
 ```
 
-### Step 2: Connection Architecture
+### 2. Protocol Selection
+- **SSE**: server->client only, auto-reconnect, works
+  through HTTP proxies. Use for notifications, feeds.
+- **WebSocket**: bidirectional, low latency. Use for
+  chat, collaboration, gaming.
+- **Socket.io**: WebSocket + fallback, rooms, namespace.
+  Use for most real-time web apps.
+- **WebTransport**: HTTP/3, multi-stream. Bleeding edge.
 
-Design the WebSocket or SSE connection lifecycle:
+IF only server->client push: use SSE (simpler).
+IF bidirectional needed: use WebSocket/Socket.io.
 
-```
-CONNECTION ARCHITECTURE:
-```
+### 3. Connection Architecture
+Authenticate during handshake (not after). Reject
+unauthenticated connections immediately.
+Heartbeat: client+server exchange every 30s.
+Dead connection detection within 60s.
 
-#### Socket.io Server Implementation
-```typescript
-import { Server } from 'socket.io';
-import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
-```
+### 4. Pub/Sub & Channel Design
+Channel patterns: `room:{id}`, `user:{id}`,
+`team:{id}`, `presence:{room}`, `typing:{room}`.
+Use Redis pub/sub for multi-server fan-out.
 
-#### Server-Sent Events Implementation
-```typescript
-import express from 'express';
+### 5. Presence System
+Track online/offline per user+room in Redis sorted set.
+Score = last-seen timestamp. Expire after 60s.
+Debounce "user left" by 3-5s (prevents flicker on
+network blips).
 
-const app = express();
-```
+### 6. Typing Indicators
+Ephemeral state. Never persist. Broadcast at most
+once per 2s. Auto-expire after 5s. Send `stop_typing`
+on blur or submit.
 
-### Step 3: Pub/Sub & Channel Design
+### 7. Collaboration (CRDT/OT)
+- **CRDT (Yjs, Automerge)**: automatic conflict
+  resolution, no central server. Best for concurrent
+  editing (docs, whiteboards).
+- **OT (ShareJS)**: server-based transforms. Older
+  approach, more complex.
+- **Last-write-wins**: simplest. Use for settings,
+  non-collaborative fields.
 
-Design the channel structure and message routing:
+IF multiple users edit same document: use CRDT (Yjs).
+IF simple form fields: last-write-wins sufficient.
 
-```
-CHANNEL ARCHITECTURE:
-| Channel Pattern | Example | Use case |
-```
+### 8. Scaling
+Redis pub/sub adapter for Socket.io multi-instance.
+Sticky sessions (IP hash) for WebSocket at LB.
+Per-instance: ~10K connections. Cluster: scale
+horizontally with Redis adapter.
 
-### Step 4: Presence System
-
-Design online/offline status and presence tracking:
-
-```
-PRESENCE SYSTEM:
-| Component | Implementation |
-```
-
-#### Presence Implementation
-```typescript
-class PresenceManager {
-  constructor(private redis: Redis, private io: Server) {}
-
-```
-
-### Step 5: Typing Indicators & Ephemeral State
-
-Design real-time ephemeral state broadcasting:
-
-```
-TYPING INDICATOR DESIGN:
-| Behavior | Implementation |
-```
-
-#### Client-Side Typing Indicator
-```typescript
-class TypingIndicator {
-  private typingTimeout: ReturnType<typeof setTimeout> | null = null;
-  private isTyping = false;
-```
-
-### Step 6: Real-time Collaboration (CRDT & OT)
-
-Design collaborative editing with conflict resolution:
-
-```
-COLLABORATION STRATEGY SELECTION:
-| Strategy | Best for | Complexity |
-```
-
-#### CRDT Implementation with Yjs
-```typescript
-import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
-
-```
-
-#### Collaboration Architecture
-```
-COLLABORATION ARCHITECTURE:
-```
-
-### Step 7: Scaling Real-time Systems
-
-Design for horizontal scaling across multiple server instances:
-
-```
-SCALING ARCHITECTURE:
-```
-
-#### Nginx WebSocket Configuration
 ```nginx
 upstream websocket_backend {
-    # Sticky sessions using IP hash
     ip_hash;
+    server ws1:3000;
+    server ws2:3000;
+}
 ```
 
-#### Connection Scaling Metrics
-```
-SCALING TARGETS:
-| Metric | Per Instance | Cluster Total |
-```
+### 9. Client Reconnection
+Exponential backoff: base=1s, max=30s, max attempts=10.
+On reconnect: re-authenticate, rejoin rooms, fetch
+missed messages by last-received ID. Queue messages
+during disconnection.
 
-### Step 8: Client-Side Connection Management
-
-Design resilient client-side connection handling:
-
+### 10. Validation
 ```
-CLIENT CONNECTION MANAGEMENT:
-| Scenario | Behavior |
-```
-
-#### Reconnection Logic
-```typescript
-class RealtimeClient {
-  private socket: Socket | null = null;
-  private reconnectAttempts = 0;
+[ ] Auth on handshake
+[ ] Heartbeat configured (30s interval)
+[ ] Reconnection with state recovery
+[ ] Redis pub/sub for multi-instance
+[ ] Presence with debounce (3-5s)
+[ ] Rate limiting on incoming messages
+[ ] Server-side message validation
 ```
 
-### Step 9: Commit and Transition
+## Hard Rules
+1. NEVER send credentials in WebSocket messages.
+2. NEVER trust client data without server validation.
+3. ALWAYS authenticate on connection handshake.
+4. ALWAYS implement heartbeat (detect dead connections).
+5. ALWAYS design for disconnection (queue + sync).
+6. NEVER persist typing state.
+7. ALWAYS use Redis pub/sub for multi-server.
+8. Rate limit incoming messages per connection.
 
+## TSV Logging
+Append `.godmode/realtime-results.tsv`:
 ```
-1. Save WebSocket/SSE server config as `realtime/server.ts`
-2. Save channel definitions as `realtime/channels.ts`
-3. Save presence system as `realtime/presence.ts`
-```
-
-## Autonomous Operation
-- Loop until target or budget. Never pause.
-- Measure before/after. Guard: test_cmd && lint_cmd.
-- On failure: git reset --hard HEAD~1.
-- Never ask to continue. Loop autonomously.
-
-## Key Behaviors
-
-1. **SSE before WebSocket.** If you only need server-to-client push (notifications, feeds, dashboards), use SSE. It is simpler, works through HTTP proxies, and auto-reconnects. WebSocket is for bidirectional communication.
-2. **Authenticate on connect.** WebSocket connections bypass standard HTTP middleware. Authenticate during the handshake, not after. Reject unauthenticated connections immediately.
-3. **Heartbeats are mandatory.** Connections silently die (mobile networks, NAT timeouts, proxy kills). Client and server must exchange heartbeats to detect dead connections within 60 seconds.
-4. **Design for disconnection.** Every client will disconnect -- network switch, sleep mode, backgrounded tab. Queue messages, track last received ID, sync on reconnect. Assume unreliable connections.
-5. **Presence needs debouncing.** Do not broadcast "user left" the instant a WebSocket closes. Wait 3-5 seconds for reconnection. Otherwise, presence flickers on every network blip.
-6. **Redis pub/sub for multi-server.** A single server handles thousands of connections. Multiple servers need a message bus. Redis pub/sub is the standard approach for Socket.io scaling.
-7. **Typing indicators are ephemeral.** Never persist typing state. Broadcast it, auto-expire it in 5 seconds, and never send it faster than once per 2 seconds. Typing state is noise, not data.
-8. **CRDT for collaboration.** If multiple users edit the same document simultaneously, use CRDTs (Yjs, Automerge). They resolve conflicts automatically without a central server making decisions.
-
-## Iterative Implementation Loop
-
-```
-current_iteration = 0
-max_iterations = 12
-tasks_remaining = [list of realtime features to implement]
+timestamp	transport	event_types	rooms	presence	scaling	reconnection	status
 ```
 
-## HARD RULES
-
+## Keep/Discard
 ```
-MECHANICAL CONSTRAINTS — NEVER VIOLATE:
-1. NEVER send user credentials in WebSocket messages. Auth happens at connection handshake only.
-2. NEVER trust client-sent data without server-side validation.
-```
-
-## Keep/Discard Discipline
-```
-After EACH realtime feature implementation:
-  1. MEASURE: Simulate connection drop — does the client reconnect and recover state?
-  2. COMPARE: Is latency < 100ms p95, message ordering preserved, presence accurate?
+KEEP if: reconnection recovers state AND latency
+  < 100ms p95 AND ordering preserved.
+DISCARD if: messages lost on reconnect
+  OR cross-instance delivery fails.
 ```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - All requested features work (chat, presence, typing, or notifications)
-  - Reconnection with state recovery verified (rooms + missed messages)
+STOP when FIRST of:
+  - All features work (chat, presence, typing)
+  - Reconnection with state recovery verified
+  - Cross-instance delivery confirmed
 ```
 
-## Output Format
-
-```
-REALTIME SYSTEM COMPLETE:
-  Transport: <WebSocket | SSE | Socket.io | WebTransport>
-  Events: <N> event types (client→server: <M>, server→client: <K>)
-```
-
-## TSV Logging
-
-Log every realtime system session to `.godmode/realtime-results.tsv`:
-
-```
-Fields: timestamp\tproject\ttransport\tevent_types\trooms\tpresence\tscaling_backend\treconnection\tcommit_sha
-Example: 2025-01-15T10:30:00Z\tmy-app\twebsocket\t12\t4\tyes\tredis-pubsub\tauto\tabc1234
-```
-
-Append after every completed realtime design pass. One row per session. If the file does not exist, create it with a header row.
-
-## Success Criteria
-
-```
-REALTIME SUCCESS CRITERIA:
-|  Criterion                                  | Required         |
-```
-
-## Realtime Optimization Loop
-
-When optimizing an existing realtime system, run this systematic audit loop. Each pass targets a specific reliability and performance dimension with measurable before/after metrics.
-
-### Pass 1: WebSocket Connection Management Audit
-
-```
-CONNECTION MANAGEMENT AUDIT:
-  Step 1: Measure — track active connections, churn rate, duration (median, p95),
-    errors, and file descriptor usage per instance.
-```
-
-### Pass 2: Message Ordering & Delivery Audit
-
-```
-MESSAGE ORDERING & DELIVERY:
-  Ordering by channel type:
-    Chat messages: Required (per-room sequential via sequence numbers)
-```
-
-### Pass 3: Reconnection Strategy Audit
-
-```
-RECONNECTION CHECKLIST:
-  [ ] Exponential backoff with jitter (base=1s, max=30s, maxAttempts=10)
-  [ ] Auth token refreshed before reconnect attempt
-```
-
-### Pass 4: Scaling & Load Testing Audit
-
-```
-SCALING AUDIT:
-  Multi-instance test:
-    Client A on Instance 1, Client B on Instance 2, same room → verify cross-instance delivery.
-```
-
-### Optimization Loop Summary
-
-```
-REALTIME OPTIMIZATION REPORT:
-  Metric                       │  Before  │  After   │  Target
-  Connection churn rate (/min) │  <N>     │  <N>     │  Minimal
-```
-
+## Autonomous Operation
+On failure: git reset --hard HEAD~1. Never pause.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| WebSocket connections drop frequently | Implement automatic reconnection with exponential backoff. Check for idle timeouts on load balancers. Send heartbeat/ping frames. |
-| Messages delivered out of order | Add sequence numbers. Buffer and reorder on client. Use ordered channels/topics where available. |
-| Server memory grows with connected clients | Check for event listener leaks. Limit per-connection buffer size. Implement connection limits. Use pub/sub pattern to avoid per-connection state. |
-| Real-time updates not reaching all clients | Verify pub/sub fan-out. Check subscription filters. Verify sticky sessions or shared state across server instances. |
+| Connections drop often | Heartbeat + backoff reconnect |
+| Out-of-order messages | Add sequence numbers, reorder |
+| Memory grows per client | Check listener leaks, limit buffers |
+| Updates not reaching all | Verify Redis pub/sub fan-out |

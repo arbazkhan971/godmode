@@ -196,13 +196,24 @@ Commit: `"api: <service> — <N> endpoints, <M> resources, OpenAPI spec generate
 
 ## Key Behaviors
 
-1. **Spec before code.** Never implement an API without a spec. The spec IS the source of truth.
-2. **Consistency is king.** Every endpoint must follow the same naming, error format, pagination, and auth patterns. No snowflakes.
-3. **Design for consumers.** Think about who will call this API. Frontend devs want predictable responses. Third-party devs want clear docs. Internal services want performance.
-4. **Version from day one.** Even if you think you'll never change the API, version it. /api/v1/ is cheap insurance.
-5. **Error messages help developers.** "Bad Request" is useless. "Field 'email' requires a valid email address" is useful.
-6. **Rate limit everything.** Every public endpoint needs rate limiting. Internal endpoints need it too — they get higher limits.
-7. **Validate the spec.** Generate it, then validate it with tooling. A broken OpenAPI spec is worse than no spec.
+```bash
+# Validate and lint OpenAPI spec
+npx @redocly/cli lint openapi.yaml
+npx swagger-cli validate openapi.yaml
+npx oasdiff diff openapi.yaml --base main --check
+```
+
+IF response time P95 > 200ms: add pagination or caching.
+WHEN spec validation errors > 0: fix before implementing endpoints.
+IF list endpoint returns > 100 items: require cursor pagination.
+
+1. **Spec before code.** The spec IS the source of truth.
+2. **Consistency is king.** Same naming, errors, pagination everywhere.
+3. **Design for consumers.** Predictable, well-documented responses.
+4. **Version from day one.** /api/v1/ is cheap insurance.
+5. **Error messages help developers.** Field-specific, actionable.
+6. **Rate limit everything.** Public: 60/min. Internal: 6000/min.
+7. **Validate the spec.** Lint with tooling after every change.
 
 ## Flags & Options
 
@@ -327,20 +338,11 @@ ERROR RECOVERY — API:
 5. Auth model undefined → Add securitySchemes to components, apply security to each endpoint.
 ```
 ## Explicit Loop Protocol
-
 ```
-API ENDPOINT BUILD LOOP:
-current_iteration = 0
-resources = [resource_1, resource_2, ...]  // from resource modeling
-
-WHILE current_iteration < len(resources) AND NOT user_says_stop:
-  1. SELECT next resource by dependency order (independent resources first)
-  2. DESIGN endpoints: GET (single + list), POST, PATCH, DELETE per resource
-  3. DEFINE request/response schemas with examples
-  4. ADD pagination to list endpoints, filtering, sorting
-  5. APPLY auth and rate limiting to each endpoint
-  6. WRITE to OpenAPI spec file
-  7. VALIDATE spec with linter (spectral or redocly)
-  ...
-```
+WHILE resources remain AND NOT user_says_stop:
+  1. SELECT next resource by dependency order
+  2. DESIGN endpoints: GET, POST, PATCH, DELETE
+  3. ADD pagination, filtering, sorting to list endpoints
+  4. APPLY auth and rate limiting
+  5. VALIDATE spec with linter (0 errors required)
 ```

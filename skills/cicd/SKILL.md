@@ -213,14 +213,21 @@ ARTIFACT STRATEGY:
 
 ## Key Behaviors
 
-1. **Fast feedback first.** Lint and type check run before tests. Fail fast on the cheapest checks.
-2. **Cache aggressively.** Dependencies, Docker layers, build artifacts. Every second saved multiplies across every developer and every push.
-3. **Parallelize where possible.** Lint, type check, and security scan have no dependencies on each other. Run them concurrently.
-4. **Test sharding for speed.** Split test suites across parallel workers. A 6-minute test suite becomes 2 minutes on 3 shards.
-5. **Environments as gates.** Staging deploys automatically. Production requires manual approval. No exceptions.
-6. **Concurrency control.** Cancel redundant pipeline runs when new commits push. Do not waste compute on stale commits.
-7. **Timeouts are mandatory.** Every job must have a timeout. A hung pipeline that runs for 6 hours costs money and blocks deployments.
-8. **Secrets are injected, not stored.** Use platform-native secret management (GitHub Secrets, GitLab CI variables). Never echo secrets in logs.
+```bash
+# Run CI pipeline locally for testing
+act -j test --secret-file .env.ci
+docker build --target test -t app:test .
+npm run lint && npm run typecheck && npm test
+```
+
+1. **Fast feedback first.** Lint before tests. Fail fast.
+2. **Cache aggressively.** Dependencies, Docker layers, artifacts.
+3. **Parallelize where possible.** Lint + typecheck concurrently.
+4. **Test sharding.** 6 min suite -> 2 min on 3 shards.
+5. **Environments as gates.** Staging auto, prod manual approval.
+6. **Concurrency control.** Cancel stale pipeline runs.
+7. **Timeouts mandatory.** Every job has a timeout.
+8. **Secrets injected, not stored.** Never echo in logs.
 
 ## Flags & Options
 
@@ -327,22 +334,10 @@ After EACH pipeline optimization:
 Never keep an optimization that makes the pipeline faster but breaks test reliability.
 ```
 
-## Stuck Recovery
-If >5 consecutive optimizations produce no improvement: re-measure baseline, profile step by step, evaluate architectural changes (sharding, parallel stages, self-hosted runners). If still stuck, log `stop_reason=optimization_plateau`.
-
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Pipeline runs in under 10 minutes (or user-defined target)
-  - All stages optimized and no further improvements identified
-  - User explicitly requests stop
-  - Max iterations (15) reached
-
-DO NOT STOP only because:
-  - One stage cannot be optimized further (other stages can still improve)
-  - Cache hit rate is already >90% (there may be non-cache optimizations)
+STOP when: pipeline < 10 minutes OR all stages optimized
+  OR user requests stop OR max 15 iterations
+DO NOT STOP because one stage is at limit or cache > 90%.
 ```
-
-## Simplicity Criterion
-Prefer: single workflow file before splitting, built-in caching before custom, sequential before parallel (parallelize only when slow), platform-native features before third-party actions.
 

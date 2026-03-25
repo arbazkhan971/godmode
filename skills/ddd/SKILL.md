@@ -237,14 +237,24 @@ src/
 
 ## Key Behaviors
 
-1. **Start with events, not entities.** Events reveal the real behavior of the domain. Entities emerge from grouping events. Starting with entities leads to CRUD thinking.
-2. **Ubiquitous language is non-negotiable.** If developers use different terms than domain experts, the model is wrong. Code must speak the domain language.
-3. **Bounded contexts are social, not technical.** Context boundaries follow team boundaries and linguistic boundaries, not technology or deployment boundaries.
-4. **Aggregates are small.** If an aggregate contains more than 3-4 entities, it is too large. Small aggregates enable better concurrency and simpler code.
-5. **Reference by ID across aggregates.** Never hold direct object references to entities in other aggregates. Use IDs and resolve them when needed.
-6. **Eventual consistency between contexts.** Never force immediate consistency across contexts. Use domain events and accept eventual consistency.
-7. **Not everything needs DDD.** CRUD operations, reports, and generic domains do not benefit from tactical DDD patterns. Reserve the investment for the core domain.
-8. **Event storming is collaborative.** Even in a solo coding session, walk through the event storming phases. The structured thinking process catches model errors early.
+```bash
+# Detect domain model patterns in codebase
+grep -rn "class.*Aggregate\|class.*Entity\|class.*ValueObject" src/ --include="*.ts" --include="*.py"
+grep -rn "Event\|EventHandler\|DomainEvent" src/ --include="*.ts" --include="*.py" | head -20
+```
+
+IF aggregate has > 4 entities: split into smaller aggregates.
+WHEN same term means different things in 2 contexts: correct — separate glossary entries.
+IF domain events > 50: group by context, verify no cross-context coupling.
+
+1. **Start with events, not entities.** Events reveal behavior.
+2. **Ubiquitous language non-negotiable.** Code = domain language.
+3. **Bounded contexts are social.** Follow team/language boundaries.
+4. **Aggregates are small.** Max 3-4 entities per aggregate.
+5. **Reference by ID across aggregates.** Never direct object refs.
+6. **Eventual consistency between contexts.** Use domain events.
+7. **Not everything needs DDD.** CRUD and reports don't benefit.
+8. **Event storming is collaborative.** Structured thinking catches errors.
 
 ## Flags & Options
 
@@ -299,52 +309,28 @@ timestamp	domain	bounded_contexts	aggregates	events	value_objects	context_relati
 Append one row per session. Create the file with headers on first run.
 
 ## Success Criteria
-1. Core domain identified and distinguished from supporting and generic domains.
-2. Ubiquitous language glossary created with at least 5 terms defined unambiguously.
-3. Event storming completed through at least Phase 4 (aggregates identified).
-4. Every aggregate has documented invariants, commands, and events.
-5. Context map shows relationship types between all bounded contexts.
-6. No aggregate contains more than 4 entities.
-7. Cross-aggregate references use IDs only, never direct object references.
-8. Domain event catalog includes source context, payload fields, and schema version.
+1. Core domain identified. >= 5 ubiquitous language terms defined.
+2. Event storming through Phase 4 (aggregates identified).
+3. All aggregates have invariants, commands, events.
+4. No aggregate > 4 entities. Cross-refs by ID only.
 
 ## Error Recovery
-```
-IF user asks to start with database schema:
-  → Redirect: "Model the domain first. Schema is derived from the domain model."
-IF aggregate grows beyond 4 entities:
-  → Flag and split. Extracted entities communicate via domain events, not direct references.
-IF same term means different things in different contexts:
-  → Correct DDD behavior — create separate entries in each context's glossary.
-```
+| Failure | Action |
+|--|--|
+| User starts with DB schema | Redirect: model domain first. Schema is derived. |
+| Aggregate > 4 entities | Split. Use domain events between parts. |
+| Term collision across contexts | Correct DDD — separate glossary entries per context. |
 
 ## Keep/Discard Discipline
 ```
-After EACH aggregate design or context boundary decision:
-  1. MEASURE: Does the aggregate protect its invariants? Are cross-aggregate references by ID only?
-  2. COMPARE: Is the aggregate small (3-4 entities max)? Does the bounded context have a consistent language?
-  3. DECIDE:
-     - KEEP if: invariants are enforceable AND aggregate is small AND context language is consistent
-     - DISCARD if: aggregate exceeds 4 entities OR same term means different things within one context
-  4. Split oversized aggregates. Redraw context boundaries where language diverges.
-
-Never keep an aggregate that requires modifying two aggregates in the same transaction.
+KEEP if: invariants enforceable AND aggregate <= 4 entities
+DISCARD if: oversized OR inconsistent language within context
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never pause. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-
-STOP when ANY of these are true:
-  - Core domain has bounded contexts, aggregates, and event catalog defined
-  - Ubiquitous language glossary has 5+ terms with unambiguous definitions
-  - Context map shows relationships between all bounded contexts
-  - User explicitly requests stop
-
-DO NOT STOP when:
-  - Supporting/generic domains are not fully modeled (core domain is the priority)
-  - Implementation scaffold is not yet generated (model correctness comes first)
+STOP when: contexts + aggregates + events defined
+  AND glossary >= 5 terms AND context map complete
+  OR user requests stop
 ```
 

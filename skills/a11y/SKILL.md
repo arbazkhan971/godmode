@@ -150,7 +150,21 @@ For each issue found:
 ```
 
 Severity definitions:
-- **CRITICAL**: Complete blocker for assistive technology users. Missing form labels, keyboard traps, no alt text on functional images.
+- **CRITICAL**: Complete blocker for assistive technology users.
+  Missing form labels, keyboard traps, no alt text on functional images.
+
+IF Lighthouse a11y score < 90: treat as NEEDS REMEDIATION.
+WHEN axe reports > 0 critical violations: block deployment.
+IF contrast ratio < 4.5:1 for normal text: flag as HIGH severity.
+WHEN keyboard trap detected: flag as CRITICAL, fix before any other issue.
+
+```bash
+# Run full automated a11y scan pipeline
+npx axe-core/cli http://localhost:3000 --exit
+npx pa11y-ci --config .pa11yci.json
+npx lighthouse http://localhost:3000 --only-categories=accessibility --output=json
+```
+
 ```
 AUTO-FIXABLE ISSUES:
 1. Add missing alt="" to decorative images
@@ -189,7 +203,8 @@ WCAG: <criterion satisfied>
 ```
 
 Verdicts:
-- **PASS**: No CRITICAL or HIGH findings. Lighthouse score >= 90.
+- **PASS**: 0 CRITICAL/HIGH findings. Lighthouse score >= 90.
+  Color contrast >= 4.5:1 normal text, >= 3:1 large text (18px+).
 ```
 AUTO-DETECT SEQUENCE:
 1. Scan package.json / requirements.txt for framework:

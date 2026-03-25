@@ -1,350 +1,147 @@
 ---
 name: mlops
-description: |
-  MLOps and model deployment skill. Activates when ML models need to move from experimentation to production serving. Manages model serving infrastructure, inference optimization, model versioning, A/B testing, drift detection, and retraining triggers. Supports TensorFlow Serving, Triton Inference Server, SageMaker, and custom serving solutions. Triggers on: /godmode:mlops, "deploy model", "serving infrastructure", "model drift", "retrain", or when a trained model needs production readiness.
+description: MLOps and model deployment.
 ---
 
-# MLOps — MLOps & Model Deployment
-
-## When to Activate
-- User invokes `/godmode:mlops`
-- User has a trained model ready for deployment
-- User says "deploy this model", "set up model serving", "check for drift"
-- User needs to manage model versions in production
-- User wants to A/B test models or implement canary deployments
-- Monitoring detects model performance degradation or data drift
+## Activate When
+- `/godmode:mlops`, "deploy model", "model serving"
+- "model drift", "retrain", "A/B test models"
+- Trained model ready for production deployment
 
 ## Workflow
 
-### Step 1: Model Readiness Assessment
-
-Before deploying, verify the model is production-ready:
-
+### 1. Model Readiness
 ```
-MODEL READINESS CHECKLIST:
-Model: <model name and version>
-Source experiment: EXP-<ID>
-
-Functional readiness:
-  [ ] Model evaluation complete (test set metrics documented)
+Model: <name and version>
+Source: EXP-<ID>
+Checklist:
+  [ ] Evaluation complete (test metrics documented)
   [ ] Bias/fairness check passed
-  [ ] Model artifacts saved (weights, config, tokenizer/preprocessor)
+  [ ] Artifacts saved (weights, config, preprocessor)
   [ ] Input/output schema documented
-  [ ] Inference latency benchmarked (<target>ms p99)
-  [ ] Model size acceptable for target infrastructure (<N> MB)
-  [ ] Reproducibility verified (can retrain from config + data)
-  ...
+  [ ] Latency benchmarked (< target p99 ms)
+  [ ] Size acceptable (< N MB)
 ```
-### Step 2: Model Serving Infrastructure
+IF latency p99 > 100ms: apply optimization.
+IF model size > 500MB: consider distillation/pruning.
 
-Select and configure the serving infrastructure:
-
-#### Option A: TensorFlow Serving
-```yaml
-# tensorflow_serving config
-model_config_list:
-  config:
-    - name: "<model_name>"
-      base_path: "/models/<model_name>"
-      model_platform: "tensorflow"
+### 2. Serving Infrastructure
 ```
-
-#### Option B: NVIDIA Triton Inference Server
+Options:
+  TF Serving: TensorFlow models, gRPC/REST
+  Triton: multi-framework, ONNX/TensorRT
+  SageMaker: managed AWS, auto-scaling
+  FastAPI/Ray Serve: custom, flexible
 ```
-# Triton model repository structure
-model_repository/
-  <model_name>/
-    config.pbtxt
-    1/
-      model.onnx       # or model.plan (TensorRT)
-    2/
-      model.onnx
-
-# config.pbtxt
-name: "<model_name>"
-platform: "onnxruntime_onnx"
-  ...
+```bash
+# Check for serving frameworks
+pip list | grep -iE "fastapi|ray|triton|sagemaker"
+ls model_repository/ serve/ 2>/dev/null
 ```
 
-#### Option C: AWS SageMaker
-```python
-# SageMaker deployment
-import sagemaker
-from sagemaker.model import Model
+### 3. Inference Optimization
+```
+| Optimization | Latency | Size | Accuracy |
+| Baseline FP32 | <ms> | <MB> | <val> |
+| FP16 quant | <ms> | <MB> | <val> |
+| INT8 quant | <ms> | <MB> | <val> |
+| ONNX | <ms> | <MB> | <val> |
+| Distillation | <ms> | <MB> | <val> |
+```
+IF accuracy drop > 1% from quantization: use FP16 only.
+IF latency target not met: try TensorRT or distillation.
 
-model = Model(
-    image_uri=sagemaker.image_uris.retrieve("pytorch", region, version="2.0"),
+Batching: static (fixed workload), dynamic (variable
+  traffic, max_queue_delay_ms), adaptive (auto-tune).
+
+### 4. Model Versioning
+```
+| Version | Metric | Status | Traffic |
+| v3.1 | F1=0.891 | CHAMPION | 90% |
+| v3.2 | F1=0.903 | CANARY | 10% |
+| v3.0 | F1=0.879 | ARCHIVED | 0% |
+Lifecycle: STAGED->CANARY->CHAMPION->ARCHIVED
 ```
 
-#### Option D: Custom Serving (FastAPI / Ray Serve)
-```python
-# FastAPI model server
-from fastapi import FastAPI
-import torch
-
-app = FastAPI()
-model = None
+### 5. A/B Testing
 ```
-
-### Step 3: Inference Optimization
-
-Optimize model for production inference:
-
+Champion: v<N>  Challenger: v<N>
+Split: <champion%>/<challenger%>
+Routing: random|user-hash|feature-flag
+Duration: <minimum days>
+Sample size: <minimum per variant>
+Success: primary metric >= <threshold> improvement
+Guardrails: latency p99, error rate, business KPIs
 ```
-INFERENCE OPTIMIZATION:
-| Optimization | Latency | Throughput | Size | Accuracy |
-|--|--|--|--|--|
-| Baseline (FP32) | <ms> | <req/s> | <MB> | <metric> |
-| FP16 quantization | <ms> | <req/s> | <MB> | <metric> |
-| INT8 quantization | <ms> | <req/s> | <MB> | <metric> |
-| ONNX conversion | <ms> | <req/s> | <MB> | <metric> |
-| TensorRT | <ms> | <req/s> | <MB> | <metric> |
-| Pruning (50%) | <ms> | <req/s> | <MB> | <metric> |
-| Distillation | <ms> | <req/s> | <MB> | <metric> |
+IF p-value > 0.05 after min samples: no winner.
+IF guardrail regresses > 2%: stop test, revert.
 
-Selected: <optimization> — <rationale>
-  ...
+### 6. Drift Detection
 ```
-#### Batching Strategies
-```
-BATCHING CONFIGURATION:
-Strategy: <static | dynamic | adaptive>
-
-Static batching:
-  batch_size: <N>
-  Use when: fixed workload, predictable traffic
-
-Dynamic batching:
-  max_batch_size: <N>
-  max_queue_delay_ms: <N>
-  preferred_batch_sizes: [<sizes>]
-  Use when: variable traffic, latency-sensitive
-  ...
-```
-
-### Step 4: Model Versioning
-
-Manage model versions with structured lifecycle:
-
-```
-MODEL VERSION REGISTRY:
-| Version | Experiment | Metric | Status | Traffic | Deployed |
-|--|--|--|--|--|---|
-| v3.1 | EXP-042 | F1=0.891 | CHAMPION | 90% | 2025-03 |
-| v3.2 | EXP-047 | F1=0.903 | CANARY | 10% | 2025-03 |
-| v3.0 | EXP-038 | F1=0.879 | ARCHIVED | 0% | 2025-02 |
-| v2.9 | EXP-031 | F1=0.862 | ARCHIVED | 0% | 2025-01 |
-
-Version lifecycle:
-  STAGED    → Model uploaded, not yet serving
-  CANARY    → Serving small percentage of traffic
-  CHAMPION  → Serving majority of production traffic
-  ...
-```
-### Step 5: A/B Testing for Models
-
-Run controlled experiments comparing model versions:
-
-```
-A/B TEST CONFIGURATION:
-Test name: <descriptive name>
-Champion: v<N> (current production model)
-Challenger: v<N> (new model to evaluate)
-Traffic split: <champion%> / <challenger%>
-Routing: <random | user-hash | feature-flag>
-Duration: <minimum test duration>
-Sample size: <minimum samples per variant for significance>
-
-Success criteria:
-  Primary metric: <metric name> improvement >= <threshold>
-  Guardrail metrics:
-  ...
-```
-#### A/B Test Monitoring
-```
-A/B TEST RESULTS:
-Status: <RUNNING | SIGNIFICANT | NOT SIGNIFICANT | STOPPED>
-Duration: <elapsed> / <planned>
-Samples: champion=<N>, challenger=<N>
-
-Metrics:
-| Metric | Champion | Challenger | Delta | p-value |
-|--|--:|--:|--|--:|
-| <primary> | <value> | <value> | <change> | <p> |
-| <guardrail 1> | <value> | <value> | <change> | <p> |
-| <guardrail 2> | <value> | <value> | <change> | <p> |
-| Latency p99 | <value> | <value> | <change> | <p> |
-  ...
-```
-
-### Step 6: Drift Detection
-
-Monitor for data drift and model performance degradation:
-
-```
-DRIFT DETECTION:
-Monitoring window: <time range>
-Reference: <training data distribution or baseline period>
-
-Data drift (input features):
-| Feature | Test | Statistic | p-value | Status |
-|--|--|--:|--:|--|
-| <feature 1> | KS test | <val> | <p> | <status> |
-| <feature 2> | chi-sq | <val> | <p> | <status> |
-| <feature 3> | PSI | <val> | — | <status> |
-| <feature 4> | KS test | <val> | <p> | <status> |
-
-  ...
-```
-#### Drift Alert Thresholds
-```
-DRIFT THRESHOLDS:
 Feature drift (PSI):
-  < 0.1:  No drift
-  0.1-0.2: Moderate drift — monitor closely
-  > 0.2:  Significant drift — investigate and trigger retraining
-
-Performance degradation:
-  < 2% drop:  Normal variance
-  2-5% drop:  Warning — schedule review
-  > 5% drop:  Alert — trigger retraining pipeline
-
-Prediction distribution:
-  ...
+  < 0.1: no drift
+  0.1-0.2: moderate — monitor closely
+  > 0.2: significant — trigger retraining
+Performance:
+  < 2% drop: normal variance
+  2-5% drop: warning — schedule review
+  > 5% drop: alert — trigger retraining
 ```
 
-### Step 7: Retraining Triggers and Automation
-
-Define when and how to retrain:
-
+### 7. Retraining
 ```
-RETRAINING CONFIGURATION:
-Trigger strategy: <scheduled | drift-based | performance-based | hybrid>
-
-Scheduled retraining:
-  frequency: <daily | weekly | monthly>
-  data window: <last N days of data>
-  auto_deploy: <true | false — requires A/B test first>
-
-Drift-based retraining:
-  monitor: <list of features and metrics>
-  threshold: <drift severity level to trigger>
-  cooldown: <minimum time between retraining runs>
-  ...
-```
-#### Retraining Pipeline Status
-```
-RETRAINING STATUS:
-Last retrain: <timestamp>
-Trigger: <reason — scheduled | drift | performance>
-New model version: v<N>
-Training data: <N samples, date range>
-Result: <metric value> vs champion <metric value>
-Status: <PROMOTED | STAGED | REJECTED>
-Next scheduled retrain: <timestamp>
+Trigger: scheduled|drift-based|performance-based
+Frequency: daily|weekly|monthly
+Data window: last N days
+Auto_deploy: false (requires A/B or human gate)
+Cooldown: minimum time between retraining runs
 ```
 
-### Step 8: Production Monitoring Dashboard
-
+### 8. Monitoring Dashboard
 ```
-MODEL MONITORING DASHBOARD:
-  MODEL: <name> v<version>
-  Status: SERVING
-  Traffic:
-  Requests/sec:   <current>  (avg: <avg>, peak: <peak>)
-  Latency p50:    <ms>
-  Latency p95:    <ms>
-  Latency p99:    <ms>
-  Error rate:     <percentage>
-  Model Performance:
-  Primary metric (7d rolling): <value> (baseline: <value>)
-  Drift status:               <NONE | LOW | MODERATE | HIGH>
+Requests/sec: <current> (avg/peak)
+Latency p50/p95/p99: <ms>/<ms>/<ms>
+Error rate: <pct>
+Primary metric (7d rolling): <val>
+Drift status: NONE|LOW|MODERATE|HIGH
 ```
-### Step 9: Commit and Transition
-1. Save deployment config as `configs/mlops/<model>-serving.yaml`
-2. Save monitoring config as `configs/mlops/<model>-monitoring.yaml`
-3. Commit: `"mlops: <model> v<version> — <action> (<serving platform>)"`
-4. If deployed: "Model deployed. Monitoring active. Run `/godmode:mlops --status` to check health."
-5. If drift detected: "Drift detected. Retraining triggered. Run `/godmode:ml` to review training results."
-6. If A/B test complete: "A/B test concluded. <Recommendation>. Run `/godmode:mlops --promote` or `--rollback`."
 
-## Key Behaviors
-1. **Readiness check before deploy.** Check latency, resource usage, error handling, fallback.
-2. **Shadow mode first.** Compare against champion silently before live traffic.
-3. **Canary before full rollout.** Start 1-5%, increase only if stable.
-4. **Monitor continuously.** Alerts for degradation, not outages.
-5. **Automate retraining, gate deployment.** Require A/B test or human review.
-6. **Instant rollback.** Previous champion always ready. Seconds, not minutes.
+## Hard Rules
+1. NEVER deploy without readiness checklist complete.
+2. NEVER 100% traffic to new model on day one.
+   Start shadow->5% canary->ramp.
+3. ALWAYS keep previous champion ready for rollback.
+4. NEVER auto-promote without validation gate.
+5. Rollback must take < 5 minutes.
 
-## Flags & Options
-
-| Flag | Description |
-|--|--|
-| (none) | Interactive model deployment workflow |
-| `--status` | Show production monitoring dashboard |
-| `--deploy <model>` | Deploy a specific model version |
-
-## Auto-Detection
-```
-IF model files (*.pt, *.onnx, *.savedmodel, *.pkl, *.h5): SUGGEST mlops
-IF Dockerfile + model loading/serving code: SUGGEST mlops
-IF serving configs (triton, tf-serving, sagemaker): SUGGEST mlops
-IF fastapi/flask + model loading: SUGGEST mlops
-```
-## HARD RULES
-
-```
-1. NEVER deploy a model without completing the readiness checklist.
-   VERIFY latency, bias, input validation, and fallback.
-
-2. NEVER send 100% of traffic to a new model on day one.
-   Start with shadow mode, then 5% canary, then ramp.
-
-3. ALWAYS maintain the previous champion model ready for instant rollback.
-   Rollback must take seconds, not minutes.
-
-4. NEVER automate model promotion without a validation gate.
-   Automate retraining freely; deployment requires A/B test or human review.
-
-  ...
-```
-## Output Format
-Print: `MLOPS: {model} v{version}. Framework: {serving}. Deploy: {method}. Latency p50/p99: {N}/{N}ms. Throughput: {N} rps. Drift: {status}. Verdict: {verdict}.`
 ## TSV Logging
-
-Log every deployment action for tracking:
-
+Append `.godmode/mlops-results.tsv`:
 ```
-timestamp	skill	model	version	action	latency_p99_ms	throughput_rps	status
+timestamp	model	version	action	latency_p99	status
 ```
-## Success Criteria
-1. Gradual rollout (canary/blue-green/shadow). Latency meets SLA at p50/p99.
-2. Fallback tested. Drift monitoring configured. Versions tracked independently.
-3. Rollback < 5 min. A/B test has sufficient samples. Artifacts versioned and reproducible.
 
-## Autonomy
-Never ask to continue. Loop autonomously. Loop until target or budget. Never pause. Measure before/after. Guard: test_cmd && lint_cmd. On failure: git reset --hard HEAD~1.
+## Keep/Discard
+```
+KEEP if: metrics improve AND no guardrail regression
+  AND pipeline runs end-to-end.
+DISCARD if: metrics regress OR pipeline fails.
+  Revert and log reason.
+```
 
 ## Stop Conditions
 ```
-STOP when ANY of these are true:
-  - Model deployed with canary and stable at 100% traffic for 24h
-  - Drift monitoring configured with alerting thresholds
-  - Rollback tested and completes in < 5 minutes
-  - User explicitly requests stop
-
-DO NOT STOP because:
-  - A/B test is still running (wait for minimum sample size)
-  - Retraining pipeline is not yet automated (manual retraining is acceptable initially)
+STOP when FIRST of:
+  - Model stable at 100% for 24h
+  - Drift monitoring configured
+  - Rollback tested < 5 min
 ```
+
+## Autonomous Operation
+On failure: git reset --hard HEAD~1. Never pause.
+
 ## Error Recovery
-- **Training fails**: Check OOM. Resume from checkpoint. Reduce batch size.
-- **Performance degrades**: Check data drift. Trigger retraining if threshold exceeded.
-- **Stale features**: Verify freshness SLAs. Add monitoring for feature age.
-- **A/B no difference**: Verify sample size. Document null result.
-
-## Keep/Discard Discipline
-```
-KEEP if: metrics improve AND no guardrail regression AND pipeline runs end-to-end
-DISCARD if: metrics regress OR pipeline fails OR data quality fails. Revert and log reason.
-```
+| Failure | Action |
+|--|--|
+| OOM during training | Resume checkpoint, reduce batch |
+| Performance degrades | Check drift, trigger retrain |
+| A/B no difference | Verify sample size, document null |

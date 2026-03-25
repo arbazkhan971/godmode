@@ -272,10 +272,21 @@ Use Redis-backed (BullMQ, Sidekiq-Cron) when:
 ```
 ## Key Behaviors
 
-1. **Cron is not fire-and-forget.** Monitor every scheduled job for missed runs, failures, and duration anomalies. A job that silently stops running is worse than a job that loudly fails.
-2. **Idempotency is mandatory.** Schedulers fire duplicate runs during restarts, leader failovers, and clock skew. Every handler must produce the same result when called twice for the same schedule window.
-3. **Distributed locking is required in production.** If you run more than one instance of your application, you need a distributed lock to prevent duplicate job fires. No exceptions.
-4. **Overlap protection is not optional.** A job that runs every 5 minutes but takes 7 minutes will overlap and compound. Use `max_instances: 1`, `coalesce: true`, or a lock that spans the execution.
+```bash
+# Validate cron expressions and test jobs
+npx cron-validate "0 9 * * 1-5"
+npm run test:cron -- --timeout 30000
+redis-cli KEYS "bull:*:repeat:*" | head -10
+```
+
+IF job duration > 80% of interval: increase interval or optimize job.
+WHEN missed runs > 0 in 24h: alert and investigate.
+IF retry count > 3: move to dead letter queue.
+
+1. **Monitor every scheduled job.** Missed runs, failures, duration.
+2. **Idempotency mandatory.** Same result if called twice.
+3. **Distributed locking in production.** No duplicate fires.
+4. **Overlap protection.** Use max_instances: 1 or coalesce.
 ## Flags & Options
 
 | Flag | Description |
@@ -310,17 +321,18 @@ grep -r "sidekiq\|sidekiq-cron\|whenever\|clockwork" Gemfile 2>/dev/null
 # Detect existing cron jobs
 ```
 iteration	job_name	schedule	scheduler	locking	idempotent	overlap_guard	monitoring	status
-## Success Criteria
-- All jobs use a proper scheduler library (not `setInterval`/`setTimeout`).
-- All schedules defined in UTC (no local timezone, no fixed offsets).
-- Distributed locking configured for multi-instance deployments.
-- All job handlers are idempotent (safe to re-run).
-- Overlap protection configured (skip or queue, never stack).
-- Job monitoring with success/failure alerting.
-  ...
 ```
-After EACH cron job configuration change:
-  1. MEASURE: Run the job in test mode — does it complete without error?
+
+## Success Criteria
+- All jobs use proper scheduler (not setInterval/setTimeout).
+- All schedules in UTC. Distributed locking configured.
+- All handlers idempotent. Overlap protection active.
+- Monitoring with alerting on miss/failure.
+
+## Keep/Discard Discipline
+```
+After EACH cron job change:
+  1. MEASURE: Run job in test mode.
 ## Stop Conditions
 ```
 STOP when ANY of these are true:

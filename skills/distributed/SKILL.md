@@ -223,10 +223,21 @@ Commit: `"distributed: <system> -- <consistency model>, <consensus>, <N> shards,
 
 ## Key Behaviors
 
-1. **CAP is the first conversation.** Before any design work, establish whether the system prioritizes consistency or availability during partitions. This decision cascades through everything.
-2. **Consistency is per-operation, not per-system.** The same system can use strong consistency for payments and eventual consistency for read counters. Document the level for each operation.
-3. **Network partitions are inevitable.** Design for partitions, not around them. Every distributed system will experience network issues -- the question is how it behaves.
-4. **Fencing tokens prevent split-brain corruption.** A leader that does not know a new leader replaced it will issue stale writes. Fencing tokens are the only reliable protection.
+```bash
+# Test distributed system behavior
+docker compose up -d && sleep 5
+curl -s http://localhost:2379/health  # etcd health
+redis-cli cluster info | grep cluster_state
+```
+
+IF quorum size < (N/2)+1: reconfigure for proper fault tolerance.
+WHEN network partition detected: verify system behavior matches CAP choice.
+IF replication lag > 100ms: investigate network or load issues.
+
+1. **CAP is the first conversation.** CP or AP during partitions.
+2. **Consistency per-operation.** Strong for payments, eventual for counters.
+3. **Partitions are inevitable.** Design for them, not around them.
+4. **Fencing tokens required.** Prevent stale leader writes.
 ## Flags & Options
 
 | Flag | Description |
@@ -299,20 +310,15 @@ timestamp	system	topology	cap_choice	consistency_level	consensus	sharding_strate
 Append one row per session. Create the file with headers on first run.
 
 ## Success Criteria
-1. CAP trade-off explicitly documented before any design work.
-2. Consistency level specified per operation, not per system.
-3. Consensus protocol selected with fault tolerance calculated (tolerates (N-1)/2 failures).
-4. Partition handling strategy defined for during-partition and post-partition phases.
-5. Fencing tokens implemented on leader election — no leader election without fencing.
-6. Sharding strategy documented with partition key selection rationale.
-7. Every failure mode documented: "What happens when X is down?"
-8. Network partition test plan exists with specific chaos experiments defined.
-9. Replication topology diagrammed with sync/async paths labeled.
+1. CAP trade-off documented. Consistency per-operation.
+2. Consensus protocol with fault tolerance: tolerates (N-1)/2 failures.
+3. Partition handling defined. Fencing tokens on leader election.
+4. Every failure mode documented. Chaos test plan exists.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Split-brain during network partition | Use consensus protocol (Raft/Paxos). Configure quorum-based writes. Prefer CP over AP for financial data. |
-| Message ordering violated | Use partition keys for ordering guarantees. Add sequence numbers. Implement idempotent consumers for at-least-once delivery. |
-| Service discovery fails | Add health check retries. Use DNS-based discovery with TTL. Fall back to static configuration as last resort. |
-| Clock skew causes event ordering issues | Use logical clocks (Lamport/vector clocks). Never rely on wall clock for causal ordering across nodes. |
+| Split-brain | Use Raft/Paxos. Quorum writes. CP for financial data. |
+| Message ordering violated | Partition keys + sequence numbers. Idempotent consumers. |
+| Service discovery fails | Health check retries. DNS with TTL. Static fallback. |
+| Clock skew | Use logical clocks (Lamport/vector). Never wall clock for ordering. |

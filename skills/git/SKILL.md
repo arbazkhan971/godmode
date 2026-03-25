@@ -1,340 +1,237 @@
 ---
 name: git
 description: |
- Advanced Git workflows skill. Activates when user needs sophisticated version control strategies including branching models, merge vs rebase decisions, interactive rebase mastery, git bisect for regression hunting, cherry-picking, stashing, worktree management, and commit message conventions. Designs and validates Git workflows that scale from solo projects to large teams. Triggers on: /godmode:git, "branching strategy", "rebase vs merge", "git bisect", "interactive rebase", "cherry-pick", "git worktree", "conventional commits", or when the team needs a structured version control workflow.
+  Advanced Git workflows skill. Branching models,
+  merge vs rebase, interactive rebase, git bisect,
+  cherry-pick, worktrees, commit conventions.
+  Triggers on: /godmode:git, "branching strategy",
+  "rebase vs merge", "git bisect", "cherry-pick".
 ---
 
 # Git — Advanced Git Workflows
 
 ## When to Activate
 - User invokes `/godmode:git`
-- User says "branching strategy," "rebase vs merge," "git bisect," "interactive rebase"
-- User needs to find a regression in the commit history
-- User wants to set up commit conventions for a team
+- User says "branching strategy", "rebase vs merge"
+- User says "git bisect", "interactive rebase"
 - User needs parallel development with worktrees
-- User is restructuring commit history before a PR
-- Godmode orchestrator detects messy Git history during `/godmode:review` or `/godmode:ship`
+- Messy history detected during review or ship
 
 ## Workflow
 
 ### Step 1: Assess Repository Context
-Understand the project and team before recommending workflows:
 
-```
-GIT CONTEXT ASSESSMENT:
-Repository:
- Name: <repo name>
- Size: <commits, contributors, branches>
- CI/CD: <GitHub Actions | GitLab CI | Jenkins | CircleCI | none>
- Hosting: <GitHub | GitLab | Bitbucket | self-hosted>
+```bash
+# Repository stats
+git log --oneline | wc -l         # Total commits
+git branch -a | wc -l             # Total branches
+git shortlog -sn | wc -l          # Contributors
+git branch --merged main | wc -l  # Stale branches
 
-Team:
- Size: <solo | small (2-5) | medium (6-15) | large (15+)>
- Release cadence: <continuous | weekly | bi-weekly | monthly | ad-hoc>
- Environments: <dev | staging | production | multi-region>
- Code review: <required | optional | none>
+# Detect commit conventions
+git log --oneline -20 | head -10
 
-Current state:
- Default branch: <main | master | develop>
+# Check for tooling
+ls .commitlintrc* .husky/ .git/hooks/commit-msg \
+  2>/dev/null
 ```
 
-### Step 2: Branching Strategy Selection
-Choose the right branching model for the team:
-
-#### GitFlow (Complex Release Cycles)
 ```
-GITFLOW MODEL:
-  main ────●─────────────●──────────────●──── (releases)
-│ │ │ │ │
-| hotfix | ●──●─────┘ |  |
-| release | ●──●──●────────────┘ |
-  develop ─┴────●────┴───●────●────●────●──── (integration)
-  feature ●──●──●───────┘
+GIT CONTEXT:
+Team: solo | small (2-5) | medium (6-15) | large (15+)
+Release cadence: continuous | weekly | monthly
+Default branch: <main | master>
+Commit convention: <conventional | custom | none>
+Stale branches: <N branches merged but not deleted>
+Stash count: <N>
 
-```
-
-#### Trunk-Based Development (Continuous Delivery)
-```
-TRUNK-BASED MODEL:
-  main ──●──●──●──●──●──●──●──●──●──●──●──── (always
-|  |  |  |  | deployable) |
-  short ●──●──┘ ●──●──┘ ●──●──┘
-  lived
-  branches (< 2 days)
-  releases:
-  main ──────────●─────────────●──────────── (tagged)
-  v1.2.0 v1.3.0
-
+IF team == solo: GitHub Flow or trunk-based
+IF team == small: GitHub Flow or Ship/Show/Ask
+IF team == large: trunk-based with feature flags
+IF stale branches > 10: clean up immediately
+IF stash count > 3: convert to branches or drop
 ```
 
-#### GitHub Flow (Simple and Effective)
-```
-GITHUB FLOW MODEL:
-  main ──●────●────●────●────●────●──── (always deployable)
-│ │ │ │ │ │ │ │
-| PR ●─●──┘ |  |  |  |  |
-|--|--|--|--|--|
-| branch ●──●──●──┘ |  |  |
-| ●──●──●──●──┘ |  |
-  ●──●──┘
-
-Rules:
- 1. Main is always deployable
- 2. Create a descriptive branch for every change
-```
-
-#### Ship/Show/Ask (Trust-Based)
-```
-SHIP/SHOW/ASK MODEL:
-  SHIP — Merge directly to main. No PR. No review.
-  Use for: typos, config, CI fixes, docs, trivial
-  SHOW — Merge to main, THEN open a PR for visibility.
-  Use for: small refactors, non-critical features,
-  changes within your domain expertise
-  ASK — Open a PR and wait for review BEFORE merging.
-  Use for: architecture changes, security changes,
-  cross-team code, unfamiliar areas
-```
-
-### Step 3: Merge vs Rebase Strategy
-Choose the right integration strategy:
+### Step 2: Branching Strategy
 
 ```
-MERGE VS REBASE DECISION:
-| Criteria | Merge Commit | Squash | Rebase |
-|--|--|--|--|
-| History readability | Noisy | Clean | Clean |
-| Preserves context | Full | Summarized | Full |
-| Bisect effectiveness | Good | Limited | Best |
-| Conflict resolution | Once | Once | Per-com |
-| Reversibility | Easy revert | Easy revert | Hard |
-| Force push required | No | No | Yes |
-| CI re-runs | No | No | Yes |
-| Safe for shared branch | Yes | Yes | NO |
-
-RECOMMENDED STRATEGY BY CONTEXT:
+STRATEGY SELECTION:
+| Team Size  | Cadence    | Recommended        |
+|-----------|------------|-------------------|
+| Solo      | Continuous | Trunk-based       |
+| 2-5       | Weekly     | GitHub Flow       |
+| 6-15      | Bi-weekly  | Trunk-based + flags|
+| 15+       | Varied     | Trunk-based + flags|
+| Any       | Infrequent | GitFlow           |
 ```
 
-### Step 4: Interactive Rebase Mastery
-Restructure commit history before merging:
+### Step 3: Merge vs Rebase
 
 ```
-INTERACTIVE REBASE OPERATIONS:
-| Command | Use Case |
-|--|--|
-| pick | Keep commit as-is |
-| reword | Change commit message (keep changes) |
-| edit | Stop at commit to amend (split, modify) |
-| squash | Combine with previous commit (keep both messages) |
-| fixup | Combine with previous commit (discard this message) |
-| drop | Remove commit entirely |
-| reorder | Move commit lines to change order |
+| Criteria         | Merge  | Squash | Rebase |
+|-----------------|--------|--------|--------|
+| History         | Noisy  | Clean  | Clean  |
+| Bisect          | Good   | Limited| Best   |
+| Conflict pain   | Once   | Once   | Per-com|
+| Safe for shared | Yes    | Yes    | NO     |
 
-COMMON REBASE RECIPES:
+DECISION:
+  15 WIP commits → squash merge
+  3 clean commits → rebase + merge (preserve narrative)
+  Release branch → merge commit (--no-ff)
+  Hotfix to 2 branches → cherry-pick
+  Long feature (>1 week) → rebase onto main weekly
 
+THRESHOLDS:
+  Branch age limit: 2 days (trunk-based), 7 days max
+  IF branch > 7 days: rebase onto main immediately
+  IF conflicts > 5 files: merge main INTO feature
 ```
 
-### Step 5: Git Bisect for Finding Regressions
-Binary search through history to find the commit that introduced a bug:
+### Step 4: Interactive Rebase
 
 ```
-GIT BISECT WORKFLOW:
-  ●──●──●──●──●──●──●──●──●──●──●──●──●──● (100 commits)
-  ▲ ▲
-  GOOD BAD
-  (v1.2.0) (HEAD)
-  Bisect finds the bad commit in log2(100) = 7 steps
+OPERATIONS:
+| Command | Use Case                    |
+|---------|----------------------------|
+| pick    | Keep commit as-is          |
+| reword  | Change message only        |
+| squash  | Combine with previous      |
+| fixup   | Combine, discard message   |
+| drop    | Remove commit              |
 
-MANUAL BISECT:
- git bisect start
- git bisect bad # Current commit is broken
+SAFETY: Always create backup branch first:
+  git branch backup-<name>
 ```
 
-### Step 6: Cherry-Picking and Stashing Strategies
-Selective commit application and work-in-progress management:
+### Step 5: Git Bisect
 
 ```
-CHERRY-PICK PATTERNS:
-| Pattern | Command |
-|--|--|
-| Single commit | git cherry-pick <SHA> |
-| Range of commits | git cherry-pick A..B |
-| Multiple specific | git cherry-pick A B C |
-| Without committing | git cherry-pick -n <SHA> |
-| Resolve conflicts | git cherry-pick --continue |
-| Abort cherry-pick | git cherry-pick --abort |
+git bisect start
+git bisect bad                 # HEAD is broken
+git bisect good v1.2.0         # This tag was good
+# Git checks out middle commit — test it
+git bisect good                # or git bisect bad
+# Repeat until culprit found
 
-When to cherry-pick:
- ✓ Hotfix from develop to main (or vice versa)
- ✓ Backporting a fix to a release branch
+AUTOMATED BISECT (recommended for > 10 commits):
+  git bisect start HEAD v1.2.0
+  git bisect run npm test
+  # Finds the breaking commit automatically
+
+THRESHOLDS:
+  100 commits → bisect finds it in 7 steps
+  1000 commits → 10 steps
+  IF > 10 commits to search: always use automated
 ```
 
-### Step 7: Worktree Management for Parallel Development
-Work on multiple branches simultaneously without switching:
+### Step 6: Cherry-Pick & Stash
 
 ```
-GIT WORKTREE PATTERNS:
-  /project/ (main worktree — main branch)
-  /project-hotfix/ (linked worktree — hotfix/*)
-  /project-feature/ (linked worktree — feature/*)
-  /project-review/ (linked worktree — PR review)
+CHERRY-PICK RULES:
+  Single: git cherry-pick <SHA>
+  Range: git cherry-pick A..B
+  IF conflict: git cherry-pick --continue
+  IF abort: git cherry-pick --abort
 
-WORKTREE COMMANDS:
-| Operation | Command |
-|--|--|
-| Add worktree (existing br.) | git worktree add../proj-fix |
+STASH RULES:
+  IF stash survives > 1 day: convert to branch
+  IF stash count > 3: clean up immediately
+  Never use stash as long-term storage
 ```
 
-### Step 8: Commit Message Conventions
-Standardize commit messages for automation and readability:
+### Step 7: Worktree Management
 
-```
-CONVENTIONAL COMMITS FORMAT:
-  <type>[optional scope]: <description>
-  [optional body]
-  [optional footer(s)]
-
-TYPES:
-| Type | Description | SemVer Impact |
+```bash
+# Work on hotfix without switching branches
+git worktree add ../project-hotfix hotfix/fix-123
+# Work in ../project-hotfix independently
+# Clean up when done
+git worktree remove ../project-hotfix
 ```
 
-### Step 9: Git Workflow Report
+### Step 8: Commit Conventions
 
 ```
-  GIT WORKFLOW RECOMMENDATION
-  Team size: <N>
-  Release cadence: <cadence>
-  Branching model: <GitFlow | Trunk-Based | GitHub Flow |
-  Ship/Show/Ask>
-  Merge strategy: <merge commits | squash | rebase>
-  Commit convention: <Conventional Commits | custom>
-  Branch naming:
-  feature/<ticket>-<slug>
-  fix/<ticket>-<slug>
-  hotfix/<slug>
+CONVENTIONAL COMMITS:
+  <type>[scope]: <description>
+
+| Type     | SemVer | Usage              |
+|----------|--------|--------------------|
+| feat     | MINOR  | New feature        |
+| fix      | PATCH  | Bug fix            |
+| docs     | —      | Documentation      |
+| refactor | —      | Code restructuring |
+| test     | —      | Adding tests       |
+| chore    | —      | Maintenance        |
+
+RULES:
+  Subject line: < 72 characters
+  Body: wrap at 72 characters
+  Footer: BREAKING CHANGE: description
 ```
 
-### Step 10: Commit and Transition
-1. Save workflow configuration as `.github/CONTRIBUTING.md` or `docs/git-workflow.md`
-2. Commit: `"docs: git workflow — <branching model> with <merge strategy>"`
-3. After workflow setup: "Git workflow configured. Use `/godmode:pr` for pull request excellence or `/godmode:ship` to ship."
+Commit: `"docs: git workflow — <model> with <strategy>"`
 
 ## Key Behaviors
 
-1. **Match workflow to team.** A solo developer does not need GitFlow. A 50-person team should not use Ship/Show/Ask without safeguards. Always assess context first.
-2. **Consistency beats perfection.** A mediocre strategy applied consistently is better than a perfect strategy applied inconsistently. Get team buy-in.
-3. **History should tell a story.** Each commit on main should represent a logical, reviewable unit of work. Use interactive rebase to achieve this before merging.
-4. **Never rebase public branches.** Rebase your own feature branch onto main. Never rebase main onto anything. Never force-push shared branches.
-5. **Bisect is underused.** When a regression appears, reach for `git bisect` before reading through 100 commits manually. Automated bisect is even better.
-6. **Stashes are temporary.** If a stash survives more than a day, convert it to a WIP commit or a branch. Stash lists longer than 3 entries are a smell.
-7. **Worktrees eliminate context switching.** Instead of stashing, switching branches, and restoring state, open another worktree. Each worktree is isolated.
+1. **Match workflow to team.** Solo != 50-person team.
+2. **Consistency beats perfection.**
+3. **History should tell a story.**
+4. **Never rebase public branches.**
+5. **Bisect is underused.** Use before reading 100 commits.
+6. **Stashes are temporary.** Convert after 1 day.
+7. **Worktrees eliminate context switching.**
 
-## Flags & Options
+## HARD RULES
 
-| Flag | Description |
-|--|--|
-| (none) | Full workflow assessment and recommendation |
-| `--strategy` | Recommend branching strategy only |
-| `--merge` | Recommend merge strategy (merge vs rebase vs squash) |
+1. Never rebase public/shared branches.
+2. Never force-push shared branches. Use --force-with-lease.
+3. Never mix merge strategies on a team.
+4. Always use descriptive commit messages.
+5. Always backup before interactive rebase.
+6. Never accumulate > 3 stashes.
+7. Always rebase before opening a PR.
+8. Delete merged branches within 7 days.
+9. Use automated bisect for > 10 commits.
+10. Remove worktrees when done.
 
 ## Auto-Detection
 ```
-Detect: hosting (git remote -v), commit conventions (git log), branch count (git branch -a),
-stale branches (git branch --merged), CI config, commit tooling (.commitlintrc, .husky),
-merge strategy (recent merge commits), PR templates, contributor count (git shortlog -sn).
-```
-
-## Keep/Discard Discipline
-Each Git operation either improves the branch state or gets reverted.
-- **KEEP**: Rebase produces clean history, tests pass after merge, no conflicts remain.
-- **DISCARD**: Rebase introduces merge artifacts, tests fail, or history becomes less clear. Revert to backup branch.
-- **CRASH**: Rebase conflict too complex to resolve cleanly. Abort (`git rebase --abort`), reassess approach.
-- Always create a backup branch before interactive rebase: `git branch backup-<name>`.
-
-## Stop Conditions
-```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-On failure: git reset --hard HEAD~1.
-```
-- Branch strategy documented and team-agreed (one of: trunk-based, GitHub Flow, GitFlow, Ship/Show/Ask).
-- All commits on the branch follow the team's commit convention.
-- No stale branches older than 30 days remain. Merged branches deleted within 7 days.
-- All merge/rebase operations result in passing tests.
-- Stash count is under 3.
-
-## Hard Rules
-
-```
-HARD RULES — GIT:
-1. NEVER rebase public/shared branches. Rebase only YOUR branches onto main.
-2. NEVER use git push --force on shared branches. Use --force-with-lease on your own branches only.
-3. NEVER mix merge strategies on a team. Pick one (merge, squash, or rebase) and enforce consistently.
-4. ALWAYS use descriptive commit messages following the team's convention. "fix stuff" is never acceptable on main.
-5. ALWAYS create a backup branch before interactive rebase: git branch backup-<name>.
-6. NEVER accumulate more than 3 stashes. Convert stale stashes to branches or drop them.
-7. ALWAYS run interactive rebase before opening a PR. Clean, logical commits — not WIP sausage-making.
-8. NEVER leave stale branches. Delete merged branches within 7 days. Review inactive branches at 30 days.
-9. ALWAYS use automated bisect (git bisect run) when hunting regressions across >10 commits.
-10. ALWAYS remove worktrees when done. They share.git but consume disk space and create confusion.
+1. Hosting: git remote -v
+2. Conventions: git log patterns
+3. Stale branches: git branch --merged
+4. Tooling: .commitlintrc, .husky
 ```
 
 ## Output Format
-Print: `Git: {operation} on {branch}. Commits: {N} created/{N} cleaned. Conflicts: {N}. Stale branches: {N}. Tests: {PASS|FAIL}. Verdict: {CLEAN|NEEDS ATTENTION}.`
+Print: `Git: {operation} on {branch}. Commits: {N}.
+  Conflicts: {N}. Stale: {N}. Verdict: {verdict}.`
 
 ## TSV Logging
-
-Log every git operation for tracking:
-
 ```
-timestamp	skill	operation	branch	commits	conflicts	tests_pass	status
-2026-03-20T14:00:00Z	git	rebase	feature/auth	5	0	yes	clean
-2026-03-20T14:10:00Z	git	merge	release/v2.0	12	3	yes	resolved
+timestamp	operation	branch	commits	conflicts	status
 ```
 
-## Success Criteria
+## Keep/Discard Discipline
+```
+KEEP if: rebase clean AND tests pass AND no artifacts
+DISCARD if: rebase introduces artifacts OR tests fail
+  Abort with git rebase --abort, use backup branch
+```
 
-The git skill is complete when ALL of the following are true:
-1. Branch strategy is established and documented (trunk-based, gitflow, or GitHub flow)
-2. All commits follow the team's commit message convention
-3. No stale branches older than 30 days (merged branches deleted within 7 days)
-4. Stash count is < 3 (stale stashes converted to branches or dropped)
-5. All merge/rebase operations result in passing tests
-6. Worktrees are cleaned up after use
-7. Interactive rebase is performed before PR (clean, logical commits)
+## Stop Conditions
+```
+STOP when ALL of:
+  - Branch strategy documented and agreed
+  - All commits follow convention
+  - Stale branches < 30 days cleaned
+  - Stash count < 3
+  - All operations result in passing tests
+```
 
 ## Error Recovery
-```
-Merge conflict too complex: backup branch, abort, break into smaller commits, re-attempt.
-Rebase goes wrong: git reflog to find pre-rebase state, git reset --hard <hash>, re-attempt.
-Bisect wrong result: verify test script is deterministic, check for flaky tests.
-```
-
-ADVANCED MERGE/REBASE SCENARIOS:
-
-Scenario: Feature branch with 15 WIP commits, target is main
- → Squash merge. WIP history is noise. PR title becomes commit message.
-
-Scenario: Feature branch with 3 clean, logical commits, target is main
- → Rebase + merge (or merge --no-ff). Preserve the meaningful commit narrative.
-
-Scenario: Release branch merging back to main
- → Merge commit (--no-ff). The merge commit documents the release integration point.
-
-Scenario: Hotfix applying to both main and develop
- → Cherry-pick to the second branch. Do NOT merge between main and develop.
-
-Scenario: Long-running feature branch (>1 week) falling behind main
- → Rebase onto main weekly. Resolve conflicts incrementally, not all at once.
- → IF conflicts are too frequent: merge main INTO feature branch (pragmatic, preserves history).
-
-Scenario: Contributor's PR to open-source project
- → Squash merge. External contributor's commit style may not match project conventions.
-
-CONFLICT RESOLUTION STRATEGY:
- 1. ALWAYS rebase/merge from main BEFORE opening a PR (author's responsibility)
- 2. IF conflicts arise during PR review: author resolves, not reviewer
- 3. IF conflicts arise during merge: resolve in a separate commit (not hidden in the merge)
- 4. DOCUMENT non-obvious conflict resolutions in the PR comment thread
- 5. AFTER resolving: run full test suite to verify resolution correctness
-```
+- Merge conflict too complex: backup, abort, break
+  into smaller commits.
+- Rebase wrong: git reflog, reset to pre-rebase state.
+- Bisect wrong result: verify test script determinism.

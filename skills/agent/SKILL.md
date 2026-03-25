@@ -186,13 +186,22 @@ Commit: `"agent: <agent name> — <pattern>, <N> tools, completion=<val>, safety
 
 ## Key Behaviors
 
-1. **Guardrails before capabilities.** Define what the agent must NEVER do before defining what it can do. Safety constraints are non-negotiable and non-overridable.
-2. **Tools are the agent's hands.** A well-designed tool inventory determines agent effectiveness more than the LLM choice. Invest in tool design.
-3. **Loops need escape hatches.** Every agent loop must have termination conditions: max steps, max cost, max time, error thresholds. An agent without limits will loop forever.
-4. **Test trajectories, not only outcomes.** A correct final answer reached through unsafe or inefficient steps is not acceptable. Evaluate the full reasoning trace.
-5. **Memory is context engineering.** The agent's working memory (context window) is precious. Retrieve selectively from long-term memory, summarize aggressively, and never waste tokens on irrelevant history.
-6. **Human-in-the-loop for irreversible actions.** Any action that cannot be undone (delete, send, deploy, pay) requires explicit user confirmation. No exceptions.
-7. **Observability is mandatory.** Log every agent step. You cannot debug an agent you cannot observe. Traces are the debugging tool for agentic systems.
+1. **Guardrails before capabilities.** Safety constraints first.
+2. **Tools are the agent's hands.** Tool design > LLM choice.
+3. **Loops need escape hatches.** Max steps, cost, time limits.
+4. **Test trajectories, not only outcomes.** Evaluate full traces.
+5. **Memory is context engineering.** Retrieve selectively.
+6. **Human-in-the-loop for irreversible actions.** No exceptions.
+7. **Observability is mandatory.** Log every agent step.
+
+```bash
+# Run agent evaluation suite
+pytest tests/agents/ -v --timeout=120
+python -m agents.evaluate --test-inputs 3 --safety-check
+```
+
+IF completion rate < 80%: review tool definitions and prompts.
+WHEN safety violation detected: block deployment, fix immediately.
 
 ## Flags & Options
 
@@ -253,21 +262,21 @@ AUTO-DETECT agent context:
 
 ## Success Criteria
 Verify all of these before marking the task complete:
-1. Agent completes its target task end-to-end with correct output (verified on at least 3 test inputs).
-2. Max steps termination works (agent stops at limit, does not loop forever).
-3. Cost budget enforced (token counter tracks usage, agent stops when budget exceeded).
-4. Guardrails block unsafe actions (test with at least one adversarial input that the system rejects).
-5. Every agent step is logged with: step number, action, tool called, result, tokens used, latency.
-6. Irreversible actions (delete, send, deploy, pay) require explicit confirmation gate.
-7. Tool errors are handled gracefully (agent retries or reports failure, does not crash).
-8. Evaluation suite exists: test trajectories (not only final output), measure success rate, cost, and safety.
+1. Agent completes target task on >= 3 test inputs.
+2. Max steps termination works (limit <= 20 steps).
+3. Cost budget enforced (token limit per task <= 100K tokens).
+4. Guardrails block unsafe actions (>= 1 adversarial test).
+5. Every step logged: step, action, tool, result, tokens, latency.
+6. Irreversible actions require confirmation gate.
+7. Tool errors handled gracefully (max 2 retries).
+8. Evaluation suite measures success rate, cost, safety.
 
 ## Error Recovery
 | Failure | Action |
 |--|--|
-| Agent loops without progress | Check for: repeated tool calls with same args, no new information gained. Add loop detection: if same action repeated 3x, force different action or stop. |
-| Token budget exceeded | Implement token counting middleware. Set hard limit per task. When 80% consumed, switch to shorter prompts or cheaper model for remaining steps. |
-| Tool returns unexpected format | Add output validation on every tool result. If validation fails, retry with clearer instructions (max 2 retries), then report failure to user. |
+| Agent loops without progress | Add loop detection: if same action repeated 3x, force different action or stop. |
+| Token budget exceeded | Set hard limit per task. When 80% consumed, switch to shorter prompts. |
+| Tool returns unexpected format | Validate output. Retry max 2x, then report failure. |
 
 ## Keep/Discard Discipline
 ```

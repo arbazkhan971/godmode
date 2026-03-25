@@ -216,131 +216,46 @@ Phase 3: CUTOVER
     timestamp	feature	strategy	stages	duration	rollback_triggered	status
     ```
 
-## Explicit Loop Protocol
-
-When executing a progressive rollout:
-
-```
-current_iteration = 0
-stages = [
-    {pct: 0, type: "smoke", duration: "5m", gate: "auto"},
-    {pct: 1, type: "seed",  duration: "10m", gate: "auto"},
-    {pct: 5, type: "low",   duration: "15m", gate: "auto"},
-    {pct: 25, type: "med",  duration: "30m", gate: "manual"},
-    {pct: 50, type: "high", duration: "30m", gate: "manual"},
-    {pct: 100, type: "full", duration: "monitor", gate: "manual"},
-]
-
-WHILE stages is not empty:
-    current_iteration += 1
-    stage = stages.pop(0)
-
-    # Deploy to percentage
-```
-
 ## Keep/Discard Discipline
 ```
-After EACH canary/progressive stage:
-  1. MEASURE: Collect error rate, P99 latency, and business metrics for the observation window.
-  2. COMPARE: Are all metrics within threshold compared to baseline?
-  3. DECIDE:
-     - KEEP (promote to next stage) if: ALL success criteria pass for the full observation duration
-     - DISCARD (rollback) if: ANY rollback trigger fires OR manual approval denied
-  4. Log the stage result with metrics in .godmode/deploy-results.tsv.
-
-Never promote a canary stage if metrics are ambiguous — require them to be clearly within threshold for the full duration.
-```
-
-## Stuck Recovery
-```
-IF deployment is stuck (canary metrics are ambiguous — neither clearly healthy nor clearly failing):
-  1. EXTEND the observation window — ambiguous metrics often need more data points.
-  2. CHECK for confounding variables: is there a traffic pattern change, another deployment in progress, or a dependency issue?
-  3. HOLD at current percentage — do not promote or rollback while uncertain.
-  4. If metrics remain ambiguous after 2x the normal observation window → ROLLBACK to be safe, investigate offline.
-  5. Log stop_reason=ambiguous_metrics for post-deployment review.
+KEEP (promote) if: ALL metrics within threshold for full observation
+DISCARD (rollback) if: ANY trigger fires OR approval denied
 ```
 
 ## Stop Conditions
 ```
-Loop until target or budget. Never ask to continue — loop autonomously.
-Measure before/after. Guard: test_cmd && lint_cmd.
-
-STOP the deployment (rollback) when ANY of these are true:
-  - Error rate exceeds baseline + 1% for 2+ minutes
-  - P99 latency exceeds 2x baseline for 5+ minutes
-  - Health check failures on canary instances
-  - Business metric drops >10% for 15+ minutes
-  - Manual rollback triggered by on-call engineer
-
-COMPLETE the deployment when:
-  - 100% traffic on new version AND metrics stable for 15+ minutes
-  - Feature flags configured for any gated functionality
-  - Old version kept available for 1-hour rollback window
+ROLLBACK when: error rate > baseline+1% for 2+min OR P99 > 2x baseline
+  OR health check fails OR business metric drops > 10%
+COMPLETE when: 100% traffic, metrics stable 15+ min
 ```
 
-## Simplicity Criterion
-```
-PREFER the simpler deployment approach:
-  - Rolling update before canary (for low-risk changes)
-  - Canary before blue-green (canary uses fewer resources)
-  - Feature flags before deployment-level traffic splitting (decouples deploy from release)
-  - Expand-contract migrations before offline schema migrations (zero downtime)
-  - Fewer deployment stages with longer observation over many rapid micro-stages
-  - Automated rollback triggers over manual monitoring (humans are slow at 3 AM)
+```bash
+# Deploy and monitor
+kubectl rollout status deployment/app --timeout=300s
+kubectl get pods -l app=myapp --field-selector=status.phase!=Running
+curl -s http://localhost/healthz | jq .status
 ```
 
 ## Auto-Detection
-
-On activation, automatically detect deployment context:
-
 ```
-AUTO-DETECT:
-1. Infrastructure:
-   kubectl cluster-info 2>/dev/null && echo "kubernetes"
-   aws ecs list-clusters 2>/dev/null && echo "ecs"
-   ls vercel.json netlify.toml 2>/dev/null && echo "jamstack"
-
-2. Load balancer:
-   kubectl get ingress -A 2>/dev/null
-   aws elbv2 describe-load-balancers 2>/dev/null
-
-3. Existing deployment strategy:
-   grep -ri "strategy\|canary\|blue.green\|rolling" k8s/ helm/ .github/workflows/ 2>/dev/null
-
-4. Feature flag provider:
-   grep -ri "launchdarkly\|unleash\|flagsmith" src/ package.json 2>/dev/null
+kubectl cluster-info 2>/dev/null && echo "kubernetes"
+aws ecs list-clusters 2>/dev/null && echo "ecs"
+grep -ri "canary\|blue.green\|rolling" k8s/ helm/ 2>/dev/null
 ```
-
-## Output Format
-Print on completion: `Deploy: {strategy} to {environment}. Canary: {canary_pct}% → {final_pct}%. Health: {health_status}. Rollback: {rollback_status}. Duration: {duration}. Verdict: {verdict}.`
 
 ## TSV Logging
-Log every deployment step to `.godmode/deploy-results.tsv`:
-```
-step	environment	strategy	canary_pct	error_rate	latency_p99	rollback_triggered	status
-1	staging	canary	5	0.1	120ms	no	healthy
-2	production	canary	5	0.1	125ms	no	healthy
-3	production	canary	25	0.3	130ms	no	healthy
-4	production	canary	100	0.2	128ms	no	complete
-```
-Columns: step, environment, strategy, canary_pct, error_rate, latency_p99, rollback_triggered, status(healthy/degraded/rolled_back/complete).
+Log to `.godmode/deploy-results.tsv`:
+`step\tenvironment\tstrategy\tcanary_pct\terror_rate\tlatency_p99\tstatus`
 
 ## Success Criteria
-- Deployment strategy selected based on risk assessment (canary for high-risk, rolling for low-risk).
-- Rollback plan documented and tested before deploying.
-- Health checks pass at every canary stage before promotion.
-- Error rate stays below threshold at each stage (target: < 1%).
-- Latency P99 stays within baseline + 10% at each stage.
-- Database migrations are backward-compatible (expand-contract pattern).
-- Feature flags configured for risky changes.
-- Monitoring dashboard active during deployment with alerting.
+- Error rate < 1% at each stage. P99 within baseline + 10%.
+- Rollback tested. Health checks pass. Migrations backward-compatible.
 
 ## Error Recovery
-- **Canary health check fails**: Automatically rollback canary traffic to zero. Investigate logs for the canary pods/instances. Check for configuration drift between canary and stable versions.
-- **Database migration fails mid-deploy**: Do not retry the migration blindly. Check for partial schema changes. Use idempotent migrations that you re-run safely. If the migration is not reversible, restore from the pre-deploy backup.
-- **Rollback fails**: If automated rollback fails, manually set the deployment to the previous known-good image/version. Check that the rollback target is still available in the container registry. Verify database compatibility with the older version.
-- **Traffic spike during deployment**: Pause the canary promotion. Wait for traffic to stabilize. Resume only when error rate and latency return to baseline.
-- **Feature flag service is down**: Deploy without feature flags by keeping new code paths disabled by default. Never deploy with flags enabled if the flag service is unreachable.
-- **Monitoring shows anomalies but no clear failure**: Hold at current canary percentage. Extend the observation window. Only promote when metrics are clearly within threshold for the full observation period.
+| Failure | Action |
+|--|--|
+| Canary health fails | Rollback to 0%. Check config drift. |
+| Migration fails | Don't retry blindly. Check partial changes. Restore backup. |
+| Rollback fails | Manually set previous image. Verify registry + DB compat. |
+| Traffic spike | Pause canary. Resume when baseline restored. |
 

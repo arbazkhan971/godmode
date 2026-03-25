@@ -230,13 +230,23 @@ Commit: `"analytics: <platform> — <N> events, <M> funnels, <privacy model>"`
 
 Never ask to continue. Loop autonomously until all events are instrumented and validated.
 
-1. **Taxonomy first, tracking second.** Design the event catalog before writing any tracking code. Ad-hoc event naming creates an unmaintainable mess.
-2. **Privacy by default.** No tracking before consent. No PII in events. Respect DNT. Implement data deletion. These are not optional.
-3. **Measure what matters.** Track events that answer business questions. Do not track everything because you can. More events means more noise.
-4. **Consistent naming saves hours.** A well-designed event taxonomy prevents the "we have 47 different events that all mean page view" problem.
-5. **A/B tests need rigor.** Calculate sample size before launching. Define success metrics before seeing results. Run to completion, do not peek and stop early.
-6. **Abstraction layer over vendor lock-in.** Use a unified analytics interface so you can swap providers without touching every component.
-7. **Debug before shipping.** Verify every event fires correctly in a staging environment before deploying to production.
+```bash
+# Validate analytics implementation
+npm run test:analytics
+npx ts-node scripts/analytics-audit.ts --check-pii --check-taxonomy
+```
+
+IF event count > 100: audit for redundancy, merge similar events.
+WHEN PII detected in event properties: remove immediately, purge from provider.
+IF consent gate bypassed: block deployment, treat as P0 bug.
+
+1. **Taxonomy first, tracking second.** Design catalog before code.
+2. **Privacy by default.** No tracking before consent. No PII.
+3. **Measure what matters.** Track business questions only.
+4. **Consistent naming saves hours.** Enforce naming convention.
+5. **A/B tests need rigor.** Calculate sample size before launch.
+6. **Abstraction layer.** Unified interface over vendor SDK.
+7. **Debug before shipping.** Verify events in staging first.
 
 ## Flags & Options
 
@@ -280,51 +290,30 @@ timestamp	skill	action	platform	events	funnels	privacy_model	status
 
 ## Success Criteria
 
-The analytics skill is complete when ALL of the following are true:
-1. Event taxonomy is designed before any tracking code is written
-2. All events follow the naming convention consistently
-3. No PII in any event properties (verified with audit)
-4. Consent gate works correctly (no tracking before consent in GDPR jurisdictions)
-5. DNT/opt-out disables all tracking when activated
-6. All funnel steps fire in correct order (verified with analytics debugger)
-7. A/B test assignments are deterministic and sticky
-8. Analytics SDK does not block page load (async loading)
-9. Debug/dev events are filtered from production
+Complete when ALL true:
+1. Event taxonomy designed before tracking code
+2. All events follow naming convention (0 violations)
+3. 0 PII in event properties (verified with audit)
+4. Consent gate blocks tracking until granted
+5. DNT/opt-out disables all tracking
+6. Funnel steps fire in correct order
+7. A/B assignments deterministic and sticky
+8. Analytics SDK loads async (< 50ms impact on LCP)
+9. Debug/dev events filtered from production
 
 ## Error Recovery
-
-```
-IF events are not appearing in the analytics dashboard:
-  1. Check browser console for SDK initialization errors
-  2. Verify the API key/write key is correct for the environment
-  3. Use the analytics debugger (Segment Debugger, PostHog Toolbar) to inspect events
-  4. Check for ad blockers or CSP rules blocking the analytics endpoint
-
-IF PII is detected in event properties:
-  1. Identify the specific events and properties containing PII
-  2. Remove PII from the tracking code immediately
-  3. Contact the analytics platform to delete the affected data (GDPR requirement)
-  4. Add PII validation to the analytics abstraction layer to prevent recurrence
-
-IF consent gate is not working:
-  1. Verify the analytics SDK loads only after consent is granted
-  2. Test: revoke consent and verify no tracking events fire
-```
+| Failure | Action |
+|--|--|
+| Events not appearing | Check console errors, verify API key, use analytics debugger, check ad blockers/CSP. |
+| PII detected | Remove from code, contact provider to delete data, add PII validation layer. |
+| Consent gate broken | Verify SDK loads only after consent. Test: revoke consent, verify 0 events fire. |
 
 ## Keep/Discard Discipline
-
-After each analytics implementation pass, evaluate:
-- **KEEP** if: event fires correctly in debugger, property values match schema, no PII detected, funnel step order verified, A/B assignment is deterministic and sticky.
-- **DISCARD** if: event name violates taxonomy convention, property contains PII, consent gate bypassed, duplicate events detected, or auto-capture used as sole tracking method.
-- Run validation checklist (Step 10) before committing. Any FAIL means fix before merge.
-- Revert tracking code that introduces PII or breaks consent flow immediately — do not defer.
+- **KEEP** if: event fires correctly, no PII, funnel order verified.
+- **DISCARD** if: taxonomy violation, PII found, consent bypassed.
+- Run validation checklist before committing. Any FAIL = fix first.
 
 ## Stop Conditions
-
-Stop the analytics skill when:
-1. All events in the taxonomy are instrumented and verified in the analytics debugger.
-2. All defined funnels fire steps in correct order with no gaps.
-3. Consent gate blocks tracking before user grants consent (GDPR jurisdictions).
-4. A/B test assignments are deterministic, sticky, and balanced (chi-squared test passes).
-5. No PII exists in any event property (verified by audit scan).
+STOP when: all events instrumented, funnels correct, consent gate works,
+A/B assignments deterministic, 0 PII in events.
 
