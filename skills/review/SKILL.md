@@ -85,6 +85,17 @@ DISCARD if: vague, lacks evidence, or duplicate.
 On finding DISCARD: classify and append to `.godmode/review-failures.tsv`.
 False positive classes: `stale_context`, `framework_idiom`, `test_only_code`, `intentional_pattern`, `duplicate_finding`.
 
+## Cross-Model Review (Optional)
+
+For higher-confidence reviews, dispatch agents with different models:
+- Agent 1 (primary model): Correctness + Performance review
+- Agent 2 (secondary model): Security + Style review
+
+Findings caught by only one model are flagged as "cross-model finding" —
+these are the blind spots that self-play misses.
+
+Enable with: `--cross-model` flag or when reviewing security-critical code.
+
 ## Stop Conditions
 ```
 STOP when FIRST of:

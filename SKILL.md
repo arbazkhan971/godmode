@@ -66,14 +66,21 @@ Stop when ANY is true:
 
 Log `stop_reason` in session-log.tsv. Always print final summary.
 
-## 5. Stuck Recovery (3-step escalation)
+## 5. Stuck Recovery (4-step escalation)
 
 ```
-Step 1: try OPPOSITE of last approach
-Step 2: try RADICAL rewrite of hotspot
+Step 0: DIAGNOSE — read last 3 commit diffs + test output.
+        Write a 2-sentence diagnosis: what pattern the failures share,
+        and what constraint they all violate.
+        Example: "Last 3 attempts all added caching layers.
+        The metric is I/O-bound, not CPU-bound. Switch to async I/O."
+Step 1: try OPPOSITE of last approach (informed by diagnosis)
+Step 2: try RADICAL rewrite of hotspot (informed by diagnosis)
 Step 3: accept defeat — stop, log "stuck", report best result
 ```
 
+The diagnosis turns blind retries into informed pivots.
+Never skip Step 0. The 2-sentence diagnosis must reference specific code or test output.
 Never repeat a failed approach. Never loop without changing strategy.
 
 ## 6. Logging
@@ -98,6 +105,9 @@ Append only. Never overwrite. Create on first write.
 2. Read `skills/<skill>/SKILL.md` — follow it literally. This protocol overrides on conflict.
 3. Commit BEFORE verify. Revert on failure. Zero broken commits in history.
 4. Multi-agent: <=5 agents/round, worktree isolation. Merge sequentially, test after each.
+   For skills that support it, parallel hypothesis mode dispatches N agents
+   on different approaches to the same problem. Best wins, rest discarded.
+   This is different from multi-agent task dispatch (different parts of code).
 5. No worktrees? Sequential branches: `godmode-{skill}-{round}`, merge winner, delete rest.
 6. Metric = shell command outputting a single number. No subjective judgment. Ever.
 7. `Iterations: N` = exactly N rounds. No number = loop until stopped. Never ask to continue.
@@ -174,3 +184,55 @@ When Docker is NOT available (default):
 - Log variance in results.tsv as additional column.
 
 Docker is recommended but never required. The loop works identically either way.
+
+## 12. Session Resume
+
+After every iteration, atomically save state to `.godmode/session-state.json`:
+
+```json
+{
+  "skill": "optimize",
+  "round": 7,
+  "baseline": 847,
+  "current_best": 198,
+  "last_kept_commit": "abc1234",
+  "consecutive_discards": 0,
+  "approach_history": ["index", "gzip", "eager_load", "pool", "cache"],
+  "failure_classes": {"noise": 2, "regression": 1},
+  "stop_reason": null,
+  "timestamp": "2026-04-04T12:30:00Z"
+}
+```
+
+On session start:
+1. Check `.godmode/session-state.json`. If exists and `stop_reason` is null:
+   - Print: "Resuming from round {round}. Best so far: {current_best}."
+   - Verify `last_kept_commit` matches HEAD. If not, warn and ask.
+   - Continue the loop from round N+1.
+2. If `stop_reason` is set: previous session completed. Start fresh.
+3. If file doesn't exist: first run. Start fresh.
+
+On session end (normal or interrupted):
+- If loop completed: set `stop_reason` in state file.
+- If interrupted: state file has `stop_reason: null` → next session resumes.
+
+## 13. Lessons
+
+Persistent learning across sessions. File: `.godmode/lessons.md`
+
+**After each session**, append 1-3 lessons learned:
+```
+### Round N — {skill} — {date}
+- Lesson: {concrete, reusable insight}
+- Context: {what happened that taught this}
+```
+
+**Before each session**, read lessons.md:
+- Apply relevant lessons to the current task.
+- Never repeat a mistake that has a lesson entry.
+
+**Format rules:**
+- One lesson per bullet. Concrete and actionable.
+- Bad: "Be careful with caching."
+- Good: "Redis TTL must match DB write frequency. 60s TTL with 5min writes = stale reads."
+- Lessons are append-only. Never delete. Mark obsolete lessons with `[OBSOLETE]`.

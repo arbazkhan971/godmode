@@ -7,8 +7,17 @@ description: Implementation engine. Parallel agents in worktrees from plan.
 - `/godmode:build`, "build", "implement", "create"
 - Plan exists with unimplemented tasks
 
+## Lessons Integration
+Before planning: read `.godmode/lessons.md` for known build pitfalls.
+After session: append lessons about task decomposition or merge strategies that worked/failed.
+
 ## Input
 Read `.godmode/plan.yaml`. Missing → `/godmode:plan` first. Skip plan only for changes touching ≤2 files.
+
+## Session Resume
+On start: check `.godmode/session-state.json`. If resuming (`stop_reason` is null), load completed tasks and pending tasks from saved state. Skip completed tasks, continue from next pending.
+After each round: atomically save state (completed task IDs, pending task IDs, current round, agent results) to `.godmode/session-state.json`.
+On completion: set `stop_reason` in the state file.
 
 ## The Loop
 ```
@@ -69,6 +78,15 @@ If >3 `test_regression`: add pre-merge test run per agent before merge.
 Every change must help a CLASS of tasks, not one specific task.
 "If this test file was deleted, would this code change still be correct?" If NO → rethink.
 
+## Reflective Diagnosis on Failure
+```
+On 3+ task failures in a round:
+  Diagnose: read failed diffs and test output.
+  Write: "Tasks are failing because {shared pattern}.
+  The plan needs {specific adjustment}."
+  Apply diagnosis before next round.
+```
+
 ## Stop Conditions
 ```
 STOP when FIRST of:
@@ -108,6 +126,11 @@ npx bundlesize --config bundlesize.config.json
 5. Build exactly what the plan says. No unplanned refactoring, no TODOs, no stubs, no `// placeholder`.
 6. Every new function gets a test. Every merge gets a TSV row. No exceptions.
 7. Each agent receives: task.title, task.files, task.done_when, stack info. Nothing else.
+
+## Parallel Hypothesis Mode
+
+For ambiguous implementation decisions: dispatch 2 agents with different approaches.
+Merge the one that passes all tests with fewer lines. Discard the other.
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:

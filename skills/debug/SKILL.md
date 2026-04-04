@@ -6,6 +6,11 @@ description: Scientific debugging. Reproduce → investigate → prove root caus
 ## Activate When
 - `/godmode:debug`, "why is this happening?", "this doesn't work"
 
+## Lessons Integration
+
+Before investigation: read `.godmode/lessons.md` for known root causes and debugging shortcuts.
+After session: append lessons about root cause patterns discovered.
+
 ## The Loop
 ```
 failing_count = run_tests()  # test_cmd (from stack detection), count failures
@@ -43,6 +48,15 @@ IF stuck >3 iterations on same bug:
   → Discard bug, move to next
   → Log: bug_id, reason_stuck, root_cause_unknown, skipped=true
   → Max skipped bugs: 3. After 3 skipped → stop, report partial
+```
+
+## Reflective Diagnosis on Stuck
+```
+On 3+ iterations without finding root cause:
+  Read all attempted techniques and their outputs.
+  Write diagnosis: "Techniques X, Y, Z all assume {wrong assumption}.
+  The actual constraint is {insight}."
+  Use diagnosis to select the next technique.
 ```
 
 ## Timeout Per Technique

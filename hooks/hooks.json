@@ -15,6 +15,14 @@
       "description": "Platform-agnostic initialization. Performs the same stack detection and .godmode setup as session-start, and additionally detects the calling platform (Claude Code, Gemini CLI, Cursor, Codex, OpenCode) to print tailored guidance. Can be invoked from any platform's session start mechanism.",
       "timeout_ms": 10000,
       "required": false
+    },
+    {
+      "name": "session-end-notify",
+      "event": "session_end",
+      "command": "if [ -f .godmode/session-state.json ] && ! grep -q '\"stop_reason\"' .godmode/session-state.json 2>/dev/null; then echo 'GODMODE: Session interrupted. Run /godmode to resume from round '$(jq -r .round .godmode/session-state.json)'.'; fi",
+      "description": "Notify user to resume interrupted godmode session",
+      "timeout_ms": 5000,
+      "required": false
     }
   ],
   "configuration": {

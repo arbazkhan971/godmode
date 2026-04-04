@@ -11,6 +11,17 @@ description: |
 - `/godmode:<skill>` — read `skills/<skill>/SKILL.md`
 - Natural language request → match to skill
 
+## Step 0: Check for Resumable Session
+Read `.godmode/session-state.json` if it exists.
+IF `stop_reason` is null: resume the interrupted skill at the saved round.
+IF `stop_reason` is set OR file missing: proceed with fresh detection.
+Print resume status at start of every session.
+
+## Step 0b: Load Lessons
+Read `.godmode/lessons.md` if it exists.
+Surface relevant lessons for the detected skill.
+After session: append 1-3 new lessons.
+
 ## Step 1: Detect Stack (once, cache)
 
 ```bash
@@ -129,6 +140,31 @@ KEEP if: metric improved AND guard passed
 DISCARD if: metric worsened OR guard failed
 On discard: git reset --hard HEAD~1. Log reason.
 ```
+
+## Meta-Loop (Outer Loop)
+
+After each skill completes, analyze results and decide the next skill:
+
+```
+WHILE project_goal_not_met:
+  result = run_current_skill()
+  IF result.status == "DONE" AND result.findings > 0:
+    next_skill = route_findings(result)  # e.g., optimize found security issue → secure
+  ELIF result.status == "DONE" AND result.findings == 0:
+    next_skill = advance_phase()          # move to next phase in chain
+  ELIF result.status == "STUCK":
+    next_skill = escalate_or_skip()       # try alternative skill
+  LOG to session-log.tsv
+```
+
+The meta-loop enables: optimize → review finds issue → fix → re-optimize → secure → ship.
+Without it, each skill runs in isolation. With it, skills chain automatically.
+
+## Persistence
+
+If session ends mid-loop, .godmode/session-state.json preserves state.
+The stop hook notifies the user to run /godmode to resume.
+For fully autonomous overnight runs: use Ralph Loop or /loop with godmode.
 
 ## Stop Conditions
 ```

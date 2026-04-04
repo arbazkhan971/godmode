@@ -30,6 +30,15 @@ Guard failure -> DISCARD (terminal, counts against
   2-rework cap).
 ```
 
+## Session Resume
+On start: check `.godmode/session-state.json`. If resuming (`stop_reason` is null), restore baseline/round/approach_history and skip to saved round.
+After each iteration: atomically save state (round, baseline, current_best, last_kept_commit, consecutive_discards, approach_history, failure_classes) to `.godmode/session-state.json`.
+On completion: set `stop_reason` in the state file.
+
+## Lessons Integration
+Before IDEATE: read `.godmode/lessons.md` for optimization-specific insights.
+After session: append lessons (e.g., "Metric X is I/O-bound, not CPU-bound" or "Table Y too small for index benefit").
+
 ## The Loop
 ```
 WHILE current_round < max_rounds:
@@ -53,13 +62,32 @@ WHILE current_round < max_rounds:
 STOP: target | max rounds | diminishing | guard broken
 ```
 
+## Parallel Hypothesis Mode
+
+When stuck or when the search space is wide, test multiple approaches simultaneously:
+
+1. IDEATE 3 different optimization strategies (not 3 variations — 3 fundamentally different approaches).
+2. Dispatch 3 agents, each in a separate worktree, each implementing one strategy.
+3. All 3 run the same metric_cmd.
+4. KEEP only the best result. DISCARD the other 2.
+5. If all 3 are worse than baseline: discard all, log "parallel_exhausted".
+
+Trigger: after 2 consecutive single-agent discards, switch to parallel mode.
+Return to single-agent mode after a successful parallel keep.
+
+Log to results.tsv: `round | agent_1_change | agent_1_delta | agent_2_change | agent_2_delta | agent_3_change | agent_3_delta | winner | status`
+
 ## Stuck Recovery
 ```
 IF >5 consecutive discards:
-  1. Re-read ALL in-scope files (stale model)
-  2. Try OPPOSITE approach
-  3. If opposite fails -> radical rewrite
-  4. If radical fails -> accept defeat, log, stop
+  0. DIAGNOSE: Re-read ALL in-scope files (stale model)
+     On 3+ consecutive discards: PAUSE. Read the last 3 diffs and test outputs.
+     Write a 2-sentence diagnosis explaining the shared failure pattern.
+     Use the diagnosis to pick a fundamentally different approach.
+     Log the diagnosis to optimize-failures.tsv in the reason column.
+  1. Try OPPOSITE approach (informed by diagnosis)
+  2. If opposite fails -> radical rewrite (informed by diagnosis)
+  3. If radical fails -> accept defeat, log, stop
 ```
 
 ## Simplicity Criterion

@@ -2,7 +2,7 @@
 
 # Godmode — Autonomous AI Coding Skills (Inspired by Karpathy's Autoresearch)
 
-> The autoresearch-powered skill system for Claude Code, Cursor, Gemini CLI, OpenCode, and Codex. 126 autonomous skills. 7 subagents. Keep/discard discipline. Zero configuration.
+> Autoresearch-powered autonomous coding. 126 skills. 7 subagents. Keep/discard discipline. Failure memory. Session resume. Meta-loop chaining. Zero configuration.
 
 ### Turn on Godmode for Claude Code, Codex, Gemini CLI, Cursor & OpenCode.
 
@@ -18,6 +18,7 @@ Your AI writes code. Godmode makes it write *great* code.
 [![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-supported-4285F4.svg)](adapters/gemini/)
 [![Cursor](https://img.shields.io/badge/Cursor-supported-000000.svg)](adapters/cursor/)
 [![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
+[![Inspired by](https://img.shields.io/badge/inspired_by-autoresearch_%2B_autoagent_%2B_GEPA_%2B_ARIS-ff6b6b.svg)](docs/autoresearch-integration.md)
 
 </div>
 
@@ -53,6 +54,12 @@ Godmode brings autoresearch-inspired iterative optimization to your entire AI de
 - **126 expert skills** -- from architecture to deployment, security to performance, each encoding real engineering workflows
 - **Failure memory** -- every discarded change is classified and logged; the system learns what NOT to try
 - **Overfitting prevention** -- variance tests and generalization gates prevent chasing phantom improvements
+- **Session resume** -- if a run is interrupted, it picks up exactly where it left off
+- **Lessons memory** -- insights persist across sessions in `.godmode/lessons.md`; the same mistake never happens twice
+- **Reflective diagnosis** -- on consecutive failures, the agent analyzes WHY (not just tries the opposite)
+- **Parallel hypotheses** -- test 3 different approaches simultaneously, keep only the best
+- **Meta-loop** -- skills chain automatically: optimize → finds issue → fix → re-optimize → ship
+- **Cross-model review** -- optional adversarial review with different models to catch blind spots
 - **Cross-platform support** -- the same skills work on Claude Code, Codex, Gemini CLI, Cursor, and OpenCode
 
 Godmode turns your AI assistant from a code generator into an engineering system.
@@ -89,6 +96,9 @@ into engineering (knowing changes work by measurement).
 | Keep/Discard | git reset on worse | git reset + complexity tax thresholds |
 | Logging | results.tsv | .godmode/<skill>-results.tsv + session-log.tsv |
 | Loop | WHILE TRUE | WHILE goal_not_met AND budget_not_exhausted |
+| Resume | Start over on crash | Automatic resume from session-state.json |
+| Learning | No cross-run memory | lessons.md persists insights across sessions |
+| Failure analysis | Log and move on | 8-class classification + reflective diagnosis |
 
 Same DNA: measure everything, keep winners, discard losers, never stop.
 
@@ -116,6 +126,7 @@ Also inspired by [AutoAgent](https://github.com/kevinrgu/autoagent) (autonomous 
 | **Learning** | Repeats same mistakes | Failure classification prevents repeating exhausted approaches |
 | **Complex tasks** | One agent, sequential | Up to 5 parallel agents in isolated worktrees |
 | **Engineering rigor** | Varies wildly | Enforced by the skill protocol every time |
+| **Resilience** | Crashes lose all progress | Session state persists, auto-resume on restart |
 
 ---
 
@@ -243,6 +254,14 @@ Every iterative skill follows the same loop:
 This loop runs autonomously. No human approval needed between iterations.
 
 Every DISCARD is classified (noise, regression, overfitting, etc.) and logged to `.godmode/<skill>-failures.tsv`. Before each IDEATE, the agent reads past failures to avoid repeating the same mistake.
+
+### Failure Intelligence
+
+Every discard is classified (noise, regression, overfitting...) and logged to `.godmode/<skill>-failures.tsv`. On 3+ consecutive failures, the agent writes a 2-sentence diagnosis analyzing the shared pattern before trying again. Lessons learned persist in `.godmode/lessons.md` across sessions.
+
+### Session Persistence
+
+State is saved after every iteration to `.godmode/session-state.json`. If a session is interrupted, the next `/godmode` command resumes from exactly where it left off — same round, same baseline, same approach history.
 
 ### The Phases
 
@@ -532,6 +551,10 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide, including:
 - [AutoAgent](https://github.com/kevinrgu/autoagent) — Autonomous agent engineering with failure classification (inspired failure learning features)
 - [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) — Anthropic's CLI for Claude
 - [superpowers](https://github.com/danielmeloalencar/superpowers) — Claude Code skill framework
+- [GEPA](https://github.com/gepa-ai/gepa) — Reflective prompt evolution (ICLR 2026 Oral, inspired failure diagnosis)
+- [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) — Cross-model review loops (inspired adversarial review)
+- [codex-autoresearch](https://github.com/leo-lilinxiao/codex-autoresearch) — Resume + lessons + parallel experiments (inspired persistence features)
+- [Ralph Loop](https://github.com/frankbria/ralph-claude-code) — Stop hook auto-restart (inspired session persistence)
 
 ---
 

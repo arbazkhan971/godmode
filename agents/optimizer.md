@@ -71,6 +71,7 @@ You will receive:
 | Metric worsens | Revert the change. Log it. Do not attempt to "fix" the failed optimization — move on to a different candidate. |
 | No more candidates but target not reached | Stop. Report the best result achieved and list what was tried. |
 | Stuck (same change keeps failing) | Skip this candidate permanently. Move to the next one. Do not retry the same approach more than twice. |
+| 3+ consecutive DISCARD | Do not blindly try opposite. First: read the last 3 rejected diffs and their test outputs. Write a 2-sentence failure diagnosis. Use the diagnosis to guide your next proposal. Include the diagnosis in your output report. |
 | Git state is dirty mid-iteration | Stash or commit before proceeding. Never measure on a dirty working tree. |
 
 ## Output Format
@@ -121,6 +122,15 @@ AND all of the following are true:
 5. Every iteration is logged with before/after measurements
 6. Every revert was done cleanly via git
 7. The optimization report is produced in the exact format above
+
+## Parallel Hypothesis Mode
+
+When orchestrator requests parallel hypotheses:
+- Receive 1 of 3 approach assignments.
+- Implement ONLY your assigned approach.
+- Report: approach_name, metric_before, metric_after, delta%.
+- Do NOT look at other agents' approaches.
+The orchestrator picks the winner.
 
 ## Anti-Patterns
 
