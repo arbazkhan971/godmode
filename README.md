@@ -51,6 +51,8 @@ Godmode brings autoresearch-inspired iterative optimization to your entire AI de
 - **Mechanical verification** -- claims are proven with commands, not asserted in prose
 - **Multi-agent dispatch** -- complex tasks are decomposed and executed in parallel by specialized agents in isolated worktrees
 - **126 expert skills** -- from architecture to deployment, security to performance, each encoding real engineering workflows
+- **Failure memory** -- every discarded change is classified and logged; the system learns what NOT to try
+- **Overfitting prevention** -- variance tests and generalization gates prevent chasing phantom improvements
 - **Cross-platform support** -- the same skills work on Claude Code, Codex, Gemini CLI, Cursor, and OpenCode
 
 Godmode turns your AI assistant from a code generator into an engineering system.
@@ -67,6 +69,7 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch):
 **Simplicity first.** Complex changes that marginally improve metrics are discarded.
 **Never stop.** Loops run autonomously until goal met or budget exhausted.
 **Keep or discard.** Every iteration produces a binary decision. No maybes.
+**Learn from failure.** Every discard is classified and remembered. The same mistake never repeats.
 
 Godmode turns iterative improvement from art (hoping changes work)
 into engineering (knowing changes work by measurement).
@@ -89,6 +92,15 @@ into engineering (knowing changes work by measurement).
 
 Same DNA: measure everything, keep winners, discard losers, never stop.
 
+Also inspired by [AutoAgent](https://github.com/kevinrgu/autoagent) (autonomous agent engineering):
+
+| AutoAgent Idea | Godmode Implementation |
+|--|--|
+| Failure root cause classification | 8 failure classes + `.godmode/<skill>-failures.tsv` |
+| Overfitting prevention | Variance test + generalization test before every KEEP |
+| Discarded runs as learning signal | Failures log persists across sessions, informs next IDEATE |
+| Docker isolation for metrics | Optional containerized metric_cmd when variance >5% |
+
 ---
 
 ## How It's Different
@@ -100,7 +112,8 @@ Same DNA: measure everything, keep winners, discard losers, never stop.
 | **Bad changes** | Left in place, hope for the best | Automatically reverted via git |
 | **Performance** | No measurement | Baseline measured, every change benchmarked |
 | **Security** | Maybe a mention of best practices | STRIDE + OWASP audit with 4 red-team personas |
-| **Memory** | Forgets what it tried | Git log + results.tsv tracks every experiment |
+| **Memory** | Forgets what it tried | results.tsv + failures.tsv track every experiment and every failure |
+| **Learning** | Repeats same mistakes | Failure classification prevents repeating exhausted approaches |
 | **Complex tasks** | One agent, sequential | Up to 5 parallel agents in isolated worktrees |
 | **Engineering rigor** | Varies wildly | Enforced by the skill protocol every time |
 
@@ -228,6 +241,8 @@ Every iterative skill follows the same loop:
 6. **LOG** -- append to `.godmode/<skill>-results.tsv`
 
 This loop runs autonomously. No human approval needed between iterations.
+
+Every DISCARD is classified (noise, regression, overfitting, etc.) and logged to `.godmode/<skill>-failures.tsv`. Before each IDEATE, the agent reads past failures to avoid repeating the same mistake.
 
 ### The Phases
 
@@ -513,7 +528,8 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide, including:
 
 ## Related Projects
 
-- [autoresearch](https://github.com/karpathy/autoresearch) — Karpathy's autonomous ML research framework (inspiration)
+- [autoresearch](https://github.com/karpathy/autoresearch) — Karpathy's autonomous ML research framework (core inspiration)
+- [AutoAgent](https://github.com/kevinrgu/autoagent) — Autonomous agent engineering with failure classification (inspired failure learning features)
 - [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) — Anthropic's CLI for Claude
 - [superpowers](https://github.com/danielmeloalencar/superpowers) — Claude Code skill framework
 
