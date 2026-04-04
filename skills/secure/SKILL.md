@@ -124,6 +124,9 @@ DISCARD if: no code evidence OR 0/4 votes
   Every discard logged with reason.
 ```
 
+### Overfitting Prevention
+Every finding must be exploitable in the general case, not only in this specific commit state. If the finding depends on a transient condition → classify as noise.
+
 ## Stop Conditions
 ```
 STOP when FIRST of:

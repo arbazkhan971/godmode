@@ -32,7 +32,12 @@ ls yarn.lock pnpm-lock.yaml package-lock.json \
 node --version 2>/dev/null
 python3 --version 2>/dev/null
 go version 2>/dev/null
+
+# Detect Docker
+docker --version 2>/dev/null
 ```
+If Docker is present, note in `.godmode/config`.
+When Docker is available and a Dockerfile exists: offer containerized metric runs.
 ```
 DETECTION MATRIX:
 package.json + next.config.* -> Next.js

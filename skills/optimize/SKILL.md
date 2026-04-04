@@ -17,6 +17,8 @@ Direction (up/down), Scope (file globs).
 metric_cmd; metric_cmd; metric_cmd
 ```
 IF variance >5%: 10 runs, trim outliers, median of 8.
+If metric variance > 5% across 3 runs: consider Docker isolation for deterministic measurement.
+Log variance alongside metric in results.tsv.
 Commit baseline as iteration 0.
 
 ### Guard vs Metric
@@ -32,6 +34,7 @@ Guard failure -> DISCARD (terminal, counts against
 ```
 WHILE current_round < max_rounds:
   1. REVIEW: in-scope files + results.tsv + git log
+     Read last 10 rows of optimize-failures.tsv before proposing next change. Avoid repeating the most common failure class.
      Profile first: identify hotspot before changing.
      IF bounded AND remaining < 3: exploit only.
   2. HYPOTHESIZE: 3 independent untested changes
@@ -78,8 +81,9 @@ Tie-break: fewer lines wins
 ## TSV Logging
 Append `.godmode/optimize-results.tsv`:
 ```
-round	agent	change	metric_before	metric_after	delta_pct	status
+round	agent	change	metric_before	metric_after	delta_pct	status	failure_class
 ```
+On DISCARD: also append to `.godmode/optimize-failures.tsv` with `failure_class` and `reason`.
 
 ## Keep/Discard
 ```
@@ -87,6 +91,16 @@ KEEP if: metric improved AND guard passed.
 DISCARD if: metric worsened OR guard failed.
 On discard: git reset --hard HEAD~1.
 ```
+
+## Learning from Discards
+
+After DISCARD: read `optimize-failures.tsv`. Count by `failure_class`.
+If >3 in same class: announce "Approach category exhausted: {class}. Switching strategy."
+Before next IDEATE: skip any change similar to the top failure class.
+
+### Overfitting Prevention
+Before KEEP: run metric_cmd 3x. If stdev > |improvement|: DISCARD as noise.
+"Would this optimization help if the specific bottleneck moved?" If NO → DISCARD.
 
 ## Stop Conditions
 ```

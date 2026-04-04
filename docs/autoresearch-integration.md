@@ -87,6 +87,10 @@ This prevents the agent from adding 200 lines of caching for a 0.3% speedup.
 
 Autoresearch loops until budget. Godmode detects stuck states (5+ consecutive discards) and escalates through three strategies: opposite approach, radical rewrite, accept defeat. It also detects diminishing returns (last 3 keeps each < 1%) and stops early.
 
+### Environment isolation
+
+Optional Docker wrapping for metric commands. AutoAgent requires Docker; Godmode makes it optional but recommended when variance > 5%.
+
 ### Security and platform abstraction
 
 Autoresearch runs on one machine. Godmode enforces agent capability matrices (read-only agents cannot write, testers cannot touch production code) and adapts to 5 platforms (Claude Code, Gemini CLI, Codex, Cursor, OpenCode).

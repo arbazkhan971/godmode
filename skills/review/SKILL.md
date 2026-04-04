@@ -81,6 +81,10 @@ KEEP if: finding has file:line + severity + fix.
 DISCARD if: vague, lacks evidence, or duplicate.
 ```
 
+## Failure Classification
+On finding DISCARD: classify and append to `.godmode/review-failures.tsv`.
+False positive classes: `stale_context`, `framework_idiom`, `test_only_code`, `intentional_pattern`, `duplicate_finding`.
+
 ## Stop Conditions
 ```
 STOP when FIRST of:

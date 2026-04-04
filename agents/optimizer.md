@@ -36,6 +36,9 @@ You will receive:
 
 ## Protocol
 
+0. **Read failure history.** Read `.godmode/optimize-failures.tsv` if it exists.
+   Note the top 3 failure classes. Avoid proposing changes in the most common class.
+   If last 5 entries are all the same class: report BLOCKED with reason "approach category exhausted."
 1. **Read the skill file.** Open `skills/optimize/SKILL.md` and follow its loop protocol exactly.
 2. **Establish the baseline.** Run the measurement command and record the metric value. This is your starting point. If the measurement fails, fix the measurement setup first — do not start optimizing without a reliable baseline.
 3. **Commit the baseline.** If not already committed, ensure the current state is committed so you have a clean revert point. Tag it mentally as iteration 0.

@@ -35,6 +35,9 @@ You will receive:
 
 ## Protocol
 
+0. **Read failure history.** Read `.godmode/build-failures.tsv` if it exists.
+   If `merge_conflict` is the top class: request narrower file scoping from orchestrator.
+   If `test_regression` is top: run tests BEFORE merging (pre-merge verification).
 1. **Read the skill file.** Open `skills/<name>/SKILL.md` and internalize every step. Your implementation must follow this workflow — do not freelance.
 2. **Read the task scope.** Confirm which files you are allowed to touch, what the acceptance criteria are, and what the expected output is. If the scope is ambiguous, stop and ask the orchestrator.
 3. **Explore existing code.** Read the files you will modify and their immediate neighbors. Identify naming conventions, import patterns, error-handling style, and existing utilities you should reuse.

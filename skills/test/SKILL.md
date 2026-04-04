@@ -81,6 +81,9 @@ DISCARD if: coverage unchanged OR existing test broke
   Log reason. Move to next uncovered path.
 ```
 
+### Overfitting Prevention
+Tests must cover behavior, not implementation. If a test breaks when internals change but behavior is preserved → test is overfitted. Rewrite it.
+
 ## Stop Conditions
 ```
 STOP when FIRST of:

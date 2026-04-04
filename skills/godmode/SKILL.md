@@ -79,6 +79,12 @@ THRESHOLDS:
     → if still stuck: log reason, move to next task
 ```
 
+## Step 3b: Failure-Aware Routing
+
+Before routing to any skill, check `.godmode/<skill>-failures.tsv` if it exists.
+If the target skill has >10 consecutive failures: suggest an alternative skill or approach.
+Surface failure patterns in the session summary: "optimize had 5 noise failures — metric may be non-deterministic."
+
 ## Step 4: Execute
 Read `skills/{skill}/SKILL.md`. Follow it literally.
 Pass: `stack`, `test_cmd`, `lint_cmd`, `build_cmd`.

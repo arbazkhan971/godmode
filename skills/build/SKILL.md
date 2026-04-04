@@ -59,6 +59,16 @@ After EACH agent merge:
   Never keep a merge that breaks any guard check.
 ```
 
+## Learning from Discards
+
+After task DISCARD: check `build-failures.tsv` for patterns.
+If >3 `merge_conflict`: reduce to 2 agents per round.
+If >3 `test_regression`: add pre-merge test run per agent before merge.
+
+### Generalization Rule
+Every change must help a CLASS of tasks, not one specific task.
+"If this test file was deleted, would this code change still be correct?" If NO → rethink.
+
 ## Stop Conditions
 ```
 STOP when FIRST of:
@@ -134,3 +144,8 @@ Append to `.godmode/build-log.tsv`:
 round	task_id	agent_time_ms	status	conflicted_file	notes
 ```
 One row per agent per round. Status: merged, reverted, conflict, timeout.
+
+## Failure Classification
+On task DISCARD: classify failure and append to `.godmode/build-failures.tsv`.
+Build-specific failure classes: `merge_conflict`, `test_regression`, `scope_violation`, `timeout`, `dependency_error`.
+Before each round, read `build-failures.tsv`. If >3 `merge_conflict` entries: reduce agent parallelism.

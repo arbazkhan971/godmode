@@ -140,3 +140,7 @@ Append to `.godmode/debug-findings.tsv`:
 iteration	bug_id	symptom	root_cause	file_line	fix_commit	status	reason_stuck
 ```
 One row per bug investigated. Status: fixed, skipped, handed_off.
+
+## Failure Classification
+On bug SKIP: classify and append to `.godmode/debug-failures.tsv` with reason.
+Failure classes: `unreproducible`, `environment_dependent`, `insufficient_context`, `tooling_gap`, `intermittent`.
