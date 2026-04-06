@@ -1,14 +1,10 @@
 <div align="center">
 
-# Godmode — Autonomous AI Coding Skills (Inspired by Karpathy's Autoresearch)
+# Godmode — Autonomous AI Coding Agent for Claude Code, Cursor, Codex & Gemini
 
-> Autoresearch-powered autonomous coding. 126 skills. 7 subagents. Keep/discard discipline. Failure memory. Session resume. Meta-loop chaining. Zero configuration.
+### Your AI writes code. Godmode makes it write *great* code — then proves it.
 
-### Turn on Godmode for Claude Code, Codex, Gemini CLI, Cursor & OpenCode.
-
-**126 skills. 7 subagents. Zero configuration.**
-
-Your AI writes code. Godmode makes it write *great* code.
+The open-source autonomous coding agent that turns AI assistants into engineering systems. 126 skills for building, testing, optimizing, securing, and shipping software — with iterative optimization, parallel multi-agent execution, automatic rollback, and failure memory. Plugin for Claude Code, Cursor, Codex, Gemini CLI, and OpenCode.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-126-ff6b6b.svg)](skills/)
@@ -18,272 +14,164 @@ Your AI writes code. Godmode makes it write *great* code.
 [![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-supported-4285F4.svg)](adapters/gemini/)
 [![Cursor](https://img.shields.io/badge/Cursor-supported-000000.svg)](adapters/cursor/)
 [![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
-[![Inspired by](https://img.shields.io/badge/inspired_by-autoresearch_%2B_autoagent_%2B_GEPA_%2B_ARIS-ff6b6b.svg)](docs/autoresearch-integration.md)
 
 </div>
 
----
-
-### Quick Links
-
-[Why Godmode?](#why-godmode) · [Philosophy](#philosophy) · [Godmode vs Autoresearch](#godmode-vs-autoresearch) · [How It's Different](#how-its-different) · [See It In Action](#see-it-in-action) · [Quick Start](#quick-start) · [How It Works](#how-it-works) · [All Skills](#skills-126) · [Platforms](#platforms) · [Related Projects](#related-projects) · [Contributing](CONTRIBUTING.md) · [FAQ](docs/FAQ.md) · [Troubleshooting](docs/troubleshooting.md)
-
----
-
-## Why Godmode?
-
-AI coding assistants can write code. But writing code is the easy part.
-
-The hard part is everything that happens *after* the first draft: verifying it works, measuring its performance, catching regressions, iterating until it's actually good, and knowing when to throw a change away. That is engineering discipline, and no autonomous coding agent does it on its own.
-
-Godmode brings autoresearch-inspired iterative optimization to your entire AI development workflow — not just ML training, but every phase of software engineering.
-
-**Without Godmode**, AI assistants:
-- Generate code and hope it works
-- Have no way to measure if a change improved anything
-- Cannot roll back a bad change automatically
-- Do not iterate -- they produce one draft and stop
-- Skip verification, testing, and security review
-- Have no memory of what they tried before
-
-**With Godmode**, every AI assistant gains:
-- **Autonomous iteration loops** -- measure, modify, verify, keep or revert, repeat
-- **Git as memory** -- every experiment is committed *before* verification, so bad changes can be rolled back with `git reset --hard HEAD~1`
-- **Mechanical verification** -- claims are proven with commands, not asserted in prose
-- **Multi-agent dispatch** -- complex tasks are decomposed and executed in parallel by specialized agents in isolated worktrees
-- **126 expert skills** -- from architecture to deployment, security to performance, each encoding real engineering workflows
-- **Failure memory** -- every discarded change is classified and logged; the system learns what NOT to try
-- **Overfitting prevention** -- variance tests and generalization gates prevent chasing phantom improvements
-- **Session resume** -- if a run is interrupted, it picks up exactly where it left off
-- **Lessons memory** -- insights persist across sessions in `.godmode/lessons.md`; the same mistake never happens twice
-- **Reflective diagnosis** -- on consecutive failures, the agent analyzes WHY (not just tries the opposite)
-- **Parallel hypotheses** -- test 3 different approaches simultaneously, keep only the best
-- **Meta-loop** -- skills chain automatically: optimize → finds issue → fix → re-optimize → ship
-- **Cross-model review** -- optional adversarial review with different models to catch blind spots
-- **Cross-platform support** -- the same skills work on Claude Code, Codex, Gemini CLI, Cursor, and OpenCode
-
-Godmode turns your AI assistant from a code generator into an engineering system.
-
----
-
-## Philosophy
-
-Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch):
-
-**Discipline before speed.** Every change is measured. Bad changes are reverted.
-**Evidence before claims.** "Looks good" is rejected. Numeric proof is required.
-**Git is memory.** Commit history is the audit trail. Every experiment is logged.
-**Simplicity first.** Complex changes that marginally improve metrics are discarded.
-**Never stop.** Loops run autonomously until goal met or budget exhausted.
-**Keep or discard.** Every iteration produces a binary decision. No maybes.
-**Learn from failure.** Every discard is classified and remembered. The same mistake never repeats.
-
-Godmode turns iterative improvement from art (hoping changes work)
-into engineering (knowing changes work by measurement).
-
----
-
-## Godmode vs Autoresearch
-
-[Karpathy's autoresearch](https://github.com/karpathy/autoresearch) pioneered autonomous AI research: loop, measure, keep/discard, repeat. Godmode extends this to all software engineering:
-
-| | Autoresearch | Godmode |
-|--|--|--|
-| Scope | ML training (single file) | All software engineering (126 skills) |
-| Agent model | Single agent | Up to 5 parallel agents per round |
-| Metric | val_bpb (fixed) | Any shell command returning a number |
-| Platform | Local GPU | Claude Code, Cursor, Gemini CLI, OpenCode, Codex |
-| Keep/Discard | git reset on worse | git reset + complexity tax thresholds |
-| Logging | results.tsv | .godmode/<skill>-results.tsv + session-log.tsv |
-| Loop | WHILE TRUE | WHILE goal_not_met AND budget_not_exhausted |
-| Resume | Start over on crash | Automatic resume from session-state.json |
-| Learning | No cross-run memory | lessons.md persists insights across sessions |
-| Failure analysis | Log and move on | 8-class classification + reflective diagnosis |
-
-Same DNA: measure everything, keep winners, discard losers, never stop.
-
-Also inspired by [AutoAgent](https://github.com/kevinrgu/autoagent) (autonomous agent engineering):
-
-| AutoAgent Idea | Godmode Implementation |
-|--|--|
-| Failure root cause classification | 8 failure classes + `.godmode/<skill>-failures.tsv` |
-| Overfitting prevention | Variance test + generalization test before every KEEP |
-| Discarded runs as learning signal | Failures log persists across sessions, informs next IDEATE |
-| Docker isolation for metrics | Optional containerized metric_cmd when variance >5% |
-
----
-
-## How It's Different
-
-| | Plain AI Coding | With Godmode |
-|---|---|---|
-| **Approach** | Generate code in one shot | Iterate: measure, modify, verify, keep or revert |
-| **Verification** | "I believe this works" | Runs tests, benchmarks, linters -- proves it works |
-| **Bad changes** | Left in place, hope for the best | Automatically reverted via git |
-| **Performance** | No measurement | Baseline measured, every change benchmarked |
-| **Security** | Maybe a mention of best practices | STRIDE + OWASP audit with 4 red-team personas |
-| **Memory** | Forgets what it tried | results.tsv + failures.tsv track every experiment and every failure |
-| **Learning** | Repeats same mistakes | Failure classification prevents repeating exhausted approaches |
-| **Complex tasks** | One agent, sequential | Up to 5 parallel agents in isolated worktrees |
-| **Engineering rigor** | Varies wildly | Enforced by the skill protocol every time |
-| **Resilience** | Crashes lose all progress | Session state persists, auto-resume on restart |
+> **TL;DR:** Install with `claude plugin install godmode`. Say `/godmode optimize my API` and walk away. It measures, iterates, keeps improvements, reverts failures, and stops when done.
 
 ---
 
 ## See It In Action
 
-### Autonomous Performance Optimization
+### Performance Optimization — 847ms to 198ms, fully autonomous
 
 ```
 $ /godmode:optimize
 Goal: Reduce API response time
 Iterations: 20
 
-  ▸ BASELINE    847ms
-  ▸ ROUND 1     554ms ✓ KEPT  (-34.5%)  — added index on category_id
-  ▸ ROUND 2     382ms ✓ KEPT  (-31.0%)  — enabled gzip compression
-  ▸ ROUND 3     276ms ✓ KEPT  (-27.7%)  — eager loading for posts
-  ▸ ROUND 4     290ms ✗ REVERTED         — batch loader (guard failed)
-  ▸ ROUND 5     226ms ✓ KEPT  (-18.2%)  — connection pool to 20
-  ▸ ROUND 6     198ms ✓ KEPT  (-12.4%)  — Redis response cache
+  BASELINE    847ms
+  ROUND 1     554ms  KEPT  (-34.5%)  -- added index on category_id
+  ROUND 2     382ms  KEPT  (-31.0%)  -- enabled gzip compression
+  ROUND 3     276ms  KEPT  (-27.7%)  -- eager loading for posts
+  ROUND 4     290ms  REVERTED        -- batch loader (guard failed)
+  ROUND 5     226ms  KEPT  (-18.2%)  -- connection pool to 20
+  ROUND 6     198ms  KEPT  (-12.4%)  -- Redis response cache
 
-  === Optimize Complete (6/20 rounds) ===
-  847ms → 198ms (76.6% improvement)
+  === 847ms --> 198ms (76.6% improvement) ===
   Keeps: 5 | Discards: 1
 ```
 
-Every improvement **measured**. Every bad change **reverted**. Every experiment **committed**.
-
-### Multi-Agent Build
+### Multi-Agent Build — 4 agents, isolated worktrees, clean merge
 
 ```
 $ /godmode:build
 Goal: Add user authentication system
 
-  ▸ PLAN        Decomposed into 4 parallel tasks
-  ▸ AGENT 1     [worktree] Auth middleware + JWT tokens       ✓ DONE
-  ▸ AGENT 2     [worktree] User model + password hashing      ✓ DONE
-  ▸ AGENT 3     [worktree] Login/register API endpoints        ✓ DONE
-  ▸ AGENT 4     [worktree] Integration tests for auth flow     ✓ DONE
-  ▸ MERGE       Sequential merge + test after each             ✓ ALL PASS
-  ▸ REVIEW      4-agent code review (security, perf, style)    ✓ APPROVED
+  PLAN        Decomposed into 4 parallel tasks
+  AGENT 1     [worktree] Auth middleware + JWT tokens        DONE
+  AGENT 2     [worktree] User model + password hashing       DONE
+  AGENT 3     [worktree] Login/register API endpoints         DONE
+  AGENT 4     [worktree] Integration tests for auth flow      DONE
+  MERGE       Sequential merge + test after each              ALL PASS
+  REVIEW      4-agent code review (security, perf, style)     APPROVED
 
-  === Build Complete ===
-  4 tasks | 4 agents | 12 files | 47 tests passing
+  === 4 tasks | 4 agents | 12 files | 47 tests passing ===
 ```
 
-Parallel execution in isolated worktrees. Merge conflicts caught immediately. Tests run after every merge.
-
-### Security Audit
+### Security Audit — STRIDE + OWASP + red team
 
 ```
 $ /godmode:secure
 Target: src/api/
 
-  ▸ RECON       Mapped 23 endpoints, 4 auth flows, 2 data stores
-  ▸ STRIDE      6 threat categories analyzed
-  ▸ OWASP       Top 10 checklist applied
-  ▸ RED TEAM    4 personas: script kiddie, insider, APT, researcher
+  RECON       Mapped 23 endpoints, 4 auth flows, 2 data stores
+  STRIDE      6 threat categories analyzed
+  OWASP       Top 10 checklist applied
+  RED TEAM    4 personas: script kiddie, insider, APT, researcher
 
-  === Findings ===
   CRITICAL  1   SQL injection in /api/search (parameterize query)
   HIGH      2   Missing rate limit on /api/login, weak CORS policy
   MEDIUM    3   Verbose error messages, missing CSP header, session fixation
   LOW       1   Server version disclosed in headers
 
-  Report: docs/security/api-audit.md
-  Remediation: 7 findings with fix code + verification commands
+  7 findings with fix code + verification commands
 ```
 
-Every finding has code evidence, severity, and a concrete fix. Not just warnings -- actionable remediations.
-
-### Autonomous Bug Fix
-
-```
-$ /godmode:fix
-Error: Tests failing in CI — TypeError: Cannot read property 'id' of undefined
-
-  ▸ INVESTIGATE  Reproduced locally, traced to UserService.getProfile()
-  ▸ ROOT CAUSE   Null user returned when session expires mid-request
-  ▸ FIX          Added null guard + early return with 401
-  ▸ VERIFY       All 84 tests passing, error no longer reproducible
-  ▸ REGRESSION   Added test for expired-session edge case
-
-  === Fix Complete ===
-  1 root cause | 1 fix | 1 regression test | 84/84 tests passing
-```
-
-Scientific debugging: reproduce, hypothesize, fix, verify, add regression test. No guessing.
+Every finding comes with code evidence, severity, a concrete fix, and a command to verify the fix works.
 
 ---
 
 ## Quick Start
 
 ```bash
-# Install
+# Install (Claude Code)
 claude plugin install godmode
 
-# Use
-/godmode:optimize   # Autonomous performance iteration
-/godmode:build      # Build with parallel agents
-/godmode:secure     # STRIDE + OWASP security audit
-/godmode:ship       # Pre-flight + deploy + verify
+# Or install for other platforms
+bash adapters/cursor/install.sh
+bash adapters/gemini/install.sh
+bash adapters/opencode/install.sh
 ```
-
-Or let godmode figure it out:
 
 ```bash
-/godmode make this API faster       # → routes to optimize
-/godmode fix the failing tests      # → routes to fix
-/godmode build a rate limiter       # → routes to think → plan → build
+# Use specific skills
+/godmode:optimize   # Autonomous performance iteration
+/godmode:build      # Build with parallel agents
+/godmode:secure     # Security audit
+/godmode:ship       # Pre-flight + deploy + verify
+
+# Or just describe what you want
+/godmode make this API faster       # --> routes to optimize
+/godmode fix the failing tests      # --> routes to fix
+/godmode build a rate limiter       # --> routes to think --> plan --> build
 ```
+
+Godmode auto-detects what you need and routes to the right skill.
+
+---
+
+## What Is Godmode?
+
+Godmode is an open-source plugin that adds autonomous coding capabilities to AI assistants like Claude Code, Cursor, Codex, Gemini CLI, and OpenCode. Instead of generating code once and hoping it works, Godmode runs a disciplined engineering loop: **measure, modify, verify, keep or revert, repeat** — until the goal is met.
+
+It ships with 126 expert skills (performance optimization, security auditing, TDD, deployment, database tuning, and more), 7 specialized subagents that work in parallel, and a failure memory system that learns from every discarded change.
+
+## How Godmode Compares to Plain AI Coding
+
+| Problem | Godmode's answer |
+|---|---|
+| AI generates code once and stops | Autonomous iteration loops that run until the goal is met |
+| No way to know if a change helped | Every change is benchmarked against a mechanical metric |
+| Bad changes stay in the codebase | Automatic git revert on any regression |
+| Complex tasks bottleneck on one agent | Up to 5 parallel agents in isolated git worktrees |
+| AI repeats the same mistakes | Failure memory classifies and logs every failed approach |
+| Crashes lose all progress | Session state persists and auto-resumes |
+| Improvements might be noise | Variance testing and generalization gates prevent overfitting |
 
 ---
 
 ## How It Works
 
-Every iterative skill follows the same loop:
+Every iterative skill follows the same disciplined loop:
 
-1. **REVIEW** -- read state, logs, git history
-2. **IDEATE** -- pick the next change
-3. **MODIFY** -- make the change, commit before verify
-4. **VERIFY** -- run guard (tests + lint + build must all pass)
-5. **DECIDE** -- improved --> KEEP. Worse --> DISCARD (git reset)
-6. **LOG** -- append to `.godmode/<skill>-results.tsv`
+```
+1. REVIEW   -- read state, logs, git history
+2. IDEATE   -- pick the next change (informed by past failures)
+3. MODIFY   -- make ONE atomic change, commit before verify
+4. VERIFY   -- run guard (tests + lint + build must all pass)
+5. DECIDE   -- improved --> KEEP. Worse --> DISCARD (git reset)
+6. LOG      -- append to .godmode/<skill>-results.tsv
+7. REPEAT   -- until goal met or iteration budget exhausted
+```
 
-This loop runs autonomously. No human approval needed between iterations.
+No human approval needed between iterations. Every experiment is committed to git. Every discard is classified and remembered.
 
-Every DISCARD is classified (noise, regression, overfitting, etc.) and logged to `.godmode/<skill>-failures.tsv`. Before each IDEATE, the agent reads past failures to avoid repeating the same mistake.
+### The Full Pipeline
+
+```
+THINK --> PLAN --> BUILD --> TEST --> FIX --> OPTIMIZE --> SECURE --> SHIP
+```
+
+Godmode detects which phase you're in and routes to the right skill. Skills chain automatically — optimize finds an issue, triggers fix, re-optimizes, then ships.
 
 ### Failure Intelligence
 
-Every discard is classified (noise, regression, overfitting...) and logged to `.godmode/<skill>-failures.tsv`. On 3+ consecutive failures, the agent writes a 2-sentence diagnosis analyzing the shared pattern before trying again. Lessons learned persist in `.godmode/lessons.md` across sessions.
-
-### Session Persistence
-
-State is saved after every iteration to `.godmode/session-state.json`. If a session is interrupted, the next `/godmode` command resumes from exactly where it left off — same round, same baseline, same approach history.
-
-### The Phases
-
-```
-THINK → PLAN → BUILD → TEST → FIX → OPTIMIZE → SECURE → SHIP
-```
-
-Godmode auto-detects which phase you're in and routes to the right skill.
+Every discard is classified into one of 8 failure types and logged to `.godmode/<skill>-failures.tsv`. On 3+ consecutive failures, the agent writes a reflective diagnosis analyzing the pattern before trying again. Lessons persist in `.godmode/lessons.md` across sessions.
 
 ### Multi-Agent Execution
 
-For complex tasks, godmode dispatches parallel agents in isolated git worktrees:
+Complex tasks are decomposed and run in parallel:
 
 ```
-Round 1:  Agent 1 [worktree] ──┐
-          Agent 2 [worktree] ───┼── merge + test
-          Agent 3 [worktree] ──┘
-Round 2:  Agent 4 [worktree] ──┐
-          Agent 5 [worktree] ───┼── merge + test
+Round 1:  Agent 1 [worktree] --\
+          Agent 2 [worktree] ---+-- merge + test
+          Agent 3 [worktree] --/
+Round 2:  Agent 4 [worktree] --\
+          Agent 5 [worktree] ---+-- merge + test
 ```
 
-Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge sequentially, test after each merge.
+Max 5 agents per round. Each gets its own git worktree. Merge sequentially, test after each merge.
 
 ---
 
@@ -292,9 +180,9 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 | Agent | Role |
 |-------|------|
 | **planner** | Decomposes goals into parallel tasks |
-| **builder** | Implements tasks with TDD in worktrees |
-| **reviewer** | Code review for correctness + security |
-| **optimizer** | Autonomous measure → modify → verify loop |
+| **builder** | Implements tasks with TDD in isolated worktrees |
+| **reviewer** | Code review for correctness, security, performance, style |
+| **optimizer** | Autonomous measure --> modify --> verify loop |
 | **explorer** | Read-only codebase reconnaissance |
 | **security** | STRIDE + OWASP audit with 4 adversarial personas |
 | **tester** | TDD test generation, RED-GREEN-REFACTOR |
@@ -303,231 +191,56 @@ Max 5 agents per round. Each agent: one task, one commit, scoped files. Merge se
 
 ## Skills (126)
 
-### Core Workflow (15)
+Godmode includes 126 skills across 12 domains. Each skill encodes a real engineering workflow — not just instructions, but a complete protocol with verification steps.
 
-| Skill | Purpose |
-|--|--|
-| `godmode` | Orchestrator — detects phase, routes to skill |
-| `think` | Brainstorm approaches, produce a spec |
-| `predict` | 5 expert personas evaluate your design |
-| `scenario` | Explore edge cases across 12 dimensions |
-| `plan` | Decompose spec into atomic tasks with deps |
-| `build` | Execute with TDD + parallel agents |
-| `test` | Write tests, enforce RED-GREEN-REFACTOR |
-| `review` | 4-agent code review (correctness, security, perf, style) |
-| `optimize` | Autonomous iteration loop with mechanical verification |
-| `debug` | Scientific bug investigation (7 techniques) |
-| `fix` | Autonomous error remediation loop |
-| `ship` | Checklist → dry-run → deploy → verify → monitor |
-| `finish` | Branch finalization (merge/PR/keep/discard) |
-| `setup` | Configure Godmode for your project |
-| `verify` | Evidence gate — prove claims with commands |
+| Domain | Count | Highlights |
+|--------|-------|------------|
+| **Core Workflow** | 15 | `godmode` `think` `plan` `build` `test` `review` `optimize` `debug` `fix` `ship` `verify` |
+| **Architecture & Design** | 10 | `architect` `rfc` `ddd` `pattern` `schema` `distributed` `scale` `migration` |
+| **API & Backend** | 14 | `api` `graphql` `grpc` `orm` `cache` `queue` `event` `realtime` `webhook` |
+| **Frameworks** | 12 | `react` `nextjs` `vue` `svelte` `node` `fastapi` `django` `rails` `spring` |
+| **Security & Compliance** | 8 | `secure` `auth` `rbac` `pentest` `devsecops` `comply` |
+| **Testing** | 7 | `e2e` `integration` `loadtest` `perf` `webperf` |
+| **DevOps & Infra** | 16 | `k8s` `docker` `cicd` `ghactions` `infra` `observe` `resilience` |
+| **Frontend & UI** | 9 | `ui` `a11y` `seo` `mobile` `designsystem` `responsive` |
+| **Databases** | 3 | `postgres` `redis` `nosql` |
+| **AI & ML** | 5 | `ml` `mlops` `rag` `prompt` `eval` |
+| **Developer Experience** | 13 | `docs` `refactor` `git` `pr` `monorepo` `changelog` `slo` |
+| **Integrations** | 14 | `i18n` `pay` `cli` `agent` `feature` `chaos` `experiment` |
 
-### Architecture & Design (10)
-
-| Skill | Purpose |
-|--|--|
-| `architect` | System architecture design |
-| `rfc` | Technical proposal writing |
-| `ddd` | Domain-Driven Design |
-| `pattern` | Design pattern selection |
-| `schema` | Database/API schema design |
-| `concurrent` | Concurrency patterns |
-| `distributed` | Distributed systems design |
-| `scale` | Scalability engineering |
-| `legacy` | Legacy code modernization |
-| `migration` | System migration |
-
-### API & Backend (14)
-
-| Skill | Purpose |
-|--|--|
-| `api` | REST API design and implementation |
-| `graphql` | GraphQL schema and resolvers |
-| `grpc` | gRPC services |
-| `orm` | ORM setup and query optimization |
-| `query` | Database query optimization |
-| `cache` | Caching strategy |
-| `queue` | Message queues and job processing |
-| `event` | Event-driven architecture |
-| `realtime` | WebSocket / real-time |
-| `edge` | Edge computing and CDN |
-| `micro` | Microservices |
-| `search` | Full-text search |
-| `ratelimit` | Rate limiting |
-| `webhook` | Webhook design and delivery |
-
-### Frameworks (12)
-
-| Skill | Purpose |
-|--|--|
-| `react` | React architecture |
-| `nextjs` | Next.js |
-| `vue` | Vue.js |
-| `svelte` | SvelteKit |
-| `angular` | Angular |
-| `node` | Node.js backend |
-| `fastapi` | FastAPI |
-| `django` | Django |
-| `rails` | Ruby on Rails |
-| `laravel` | Laravel |
-| `spring` | Spring Boot |
-| `tailwind` | Tailwind CSS |
-
-### Databases (3)
-
-| Skill | Purpose |
-|--|--|
-| `postgres` | PostgreSQL |
-| `redis` | Redis |
-| `nosql` | NoSQL design |
-
-### Security & Compliance (8)
-
-| Skill | Purpose |
-|--|--|
-| `secure` | STRIDE + OWASP audit with red-team |
-| `auth` | Authentication flows |
-| `rbac` | Role-based access control |
-| `secrets` | Secrets management |
-| `crypto` | Cryptographic review |
-| `pentest` | Penetration testing |
-| `devsecops` | Security pipeline |
-| `comply` | Compliance (GDPR, HIPAA, SOC 2) |
-
-### Testing (7)
-
-| Skill | Purpose |
-|--|--|
-| `e2e` | End-to-end testing |
-| `integration` | Integration testing |
-| `loadtest` | Load and stress testing |
-| `lint` | Linter setup and custom rules |
-| `type` | Type system design |
-| `perf` | Performance profiling |
-| `webperf` | Web vitals optimization |
-
-### DevOps & Infrastructure (16)
-
-| Skill | Purpose |
-|--|--|
-| `deploy` | Deployment strategies |
-| `k8s` | Kubernetes |
-| `infra` | Infrastructure as Code |
-| `cicd` | CI/CD pipelines |
-| `ghactions` | GitHub Actions |
-| `pipeline` | Data/build pipelines |
-| `docker` | Docker |
-| `backup` | Backup and disaster recovery |
-| `incident` | Incident response |
-| `observe` | Observability (metrics, traces, logs) |
-| `logging` | Structured logging |
-| `network` | Network configuration |
-| `resilience` | Circuit breakers, retries |
-| `config` | Configuration management |
-| `cost` | Cloud cost optimization |
-| `cron` | Scheduled tasks |
-
-### Frontend & UI (9)
-
-| Skill | Purpose |
-|--|--|
-| `ui` | Component design |
-| `a11y` | Accessibility audit |
-| `seo` | SEO optimization |
-| `mobile` | Mobile development |
-| `chart` | Data visualization |
-| `state` | State management |
-| `designsystem` | Design system architecture |
-| `forms` | Form architecture |
-| `responsive` | Responsive design |
-
-### AI & ML (5)
-
-| Skill | Purpose |
-|--|--|
-| `ml` | ML pipeline design |
-| `mlops` | Model deployment |
-| `rag` | Retrieval-Augmented Generation |
-| `prompt` | Prompt engineering |
-| `eval` | LLM evaluation |
-
-### Developer Experience (13)
-
-| Skill | Purpose |
-|--|--|
-| `docs` | Documentation |
-| `onboard` | Developer onboarding |
-| `refactor` | Safe refactoring workflows |
-| `git` | Git workflow automation |
-| `pr` | Pull request management |
-| `monorepo` | Monorepo management |
-| `npm` | Package management |
-| `changelog` | Changelog generation |
-| `opensource` | Open source project management |
-| `analytics` | Analytics instrumentation |
-| `apidocs` | OpenAPI/Swagger docs |
-| `reliability` | SRE practices |
-| `slo` | SLO/SLI definition |
-
-### Integrations (14)
-
-| Skill | Purpose |
-|--|--|
-| `i18n` | Internationalization |
-| `email` | Email templates and delivery |
-| `pay` | Payment integration (Stripe) |
-| `cli` | CLI tool development |
-| `automate` | Task automation |
-| `migrate` | Database migrations |
-| `storage` | File storage (S3, blob) |
-| `agent` | AI agent design |
-| `feature` | Feature flags |
-| `notify` | Push/SMS/in-app notifications |
-| `experiment` | A/B testing |
-| `seed` | Database seeding |
-| `upload` | File uploads |
-| `chaos` | Chaos engineering |
+Full skill reference: [skills/](skills/)
 
 ---
 
 ## Platforms
 
-| Platform | Status | Agents | Setup |
-|----------|--------|--------|-------|
-| **Claude Code** | Full support | Parallel via `Agent` tool + worktrees | `claude plugin install godmode` |
-| **Codex** | Full support | Native `.codex/agents/*.toml` | Clone + use `.codex/` config |
-| **Cursor** | Full support | Background agents | `bash adapters/cursor/install.sh` |
-| **Gemini CLI** | Full support | Sequential execution | `bash adapters/gemini/install.sh` |
-| **OpenCode** | Full support | Sequential execution | `bash adapters/opencode/install.sh` |
+| Platform | Agents | Setup |
+|----------|--------|-------|
+| **Claude Code** | Parallel (worktrees) | `claude plugin install godmode` |
+| **Codex** | Native agents | Clone + use `.codex/` config |
+| **Cursor** | Background agents | `bash adapters/cursor/install.sh` |
+| **Gemini CLI** | Sequential | `bash adapters/gemini/install.sh` |
+| **OpenCode** | Sequential | `bash adapters/opencode/install.sh` |
 
-All 126 skills work on every platform. Skills that use parallel agents (build, optimize, review) automatically degrade to sequential execution on platforms without native agent dispatch.
+All 126 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch.
 
-Each platform adapter includes a verification script to confirm correct installation:
-
-```bash
-bash adapters/gemini/verify.sh      # Verify Gemini CLI setup
-bash adapters/opencode/verify.sh    # Verify OpenCode setup
-bash adapters/cursor/verify.sh      # Verify Cursor setup
-bash adapters/codex/verify.sh       # Verify Codex setup
-```
-
-See [adapters/](adapters/) for platform-specific setup and [docs/platform-comparison.md](docs/platform-comparison.md) for a detailed comparison.
+Verify your installation: `bash adapters/<platform>/verify.sh`
 
 ---
 
-## What Users Say
+## Philosophy
 
-> *"I pointed godmode:optimize at a slow endpoint and walked away. Came back to a 76% improvement with every change individually committed and verified."*
-> -- **Example quote** (placeholder)
+**Discipline before speed.** Every change is measured. Bad changes are reverted.
 
-> *"The security audit found a SQL injection I missed in code review. It didn't just flag it -- it gave me the fix and a command to verify the fix worked."*
-> -- **User testimonial** (placeholder)
+**Evidence before claims.** "Looks good" is rejected. Numeric proof is required.
 
-> *"We used godmode:build to add a full auth system. Four agents worked in parallel, and the merge was clean. That would have been a full day of work."*
-> -- **Success story** (placeholder)
+**Git is memory.** Every experiment is committed. Every revert is in the log.
 
-*These are example quotes illustrating typical use cases. If you have a real testimonial, [open a discussion](https://github.com/arbazkhan971/godmode/discussions) and we will feature it here.*
+**Keep or discard.** Binary decisions only. No maybes.
+
+**Learn from failure.** Every discard is classified and remembered.
+
+**Simplicity first.** Complex changes that marginally improve metrics are discarded.
 
 ---
 
@@ -535,26 +248,53 @@ See [adapters/](adapters/) for platform-specific setup and [docs/platform-compar
 
 Every skill is a Markdown file. If you can write clear instructions, you can add a skill.
 
-See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide, including:
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the complete guide:
 
-- [Adding a New Skill](CONTRIBUTING.md#complete-skill-creation-guide) -- step-by-step from directory creation to PR
-- [Skill Quality Checklist](CONTRIBUTING.md#skill-quality-checklist) -- every required section and standard
-- [Adding a New Platform Adapter](CONTRIBUTING.md#adding-a-new-platform-adapter) -- how to support a new AI coding tool
-- [Testing Your Changes](CONTRIBUTING.md#testing-your-skill) -- 6 test levels from readability to live execution
-- [Style Guide](CONTRIBUTING.md#skill-writing-style-guide) -- how to write skills that AI agents execute reliably
+- [Adding a New Skill](CONTRIBUTING.md#complete-skill-creation-guide)
+- [Skill Quality Checklist](CONTRIBUTING.md#skill-quality-checklist)
+- [Adding a New Platform Adapter](CONTRIBUTING.md#adding-a-new-platform-adapter)
+- [Testing Your Changes](CONTRIBUTING.md#testing-your-skill)
+- [Style Guide](CONTRIBUTING.md#skill-writing-style-guide)
 
 ---
 
-## Related Projects
+## Frequently Asked Questions
 
-- [autoresearch](https://github.com/karpathy/autoresearch) — Karpathy's autonomous ML research framework (core inspiration)
-- [AutoAgent](https://github.com/kevinrgu/autoagent) — Autonomous agent engineering with failure classification (inspired failure learning features)
-- [Claude Code](https://docs.anthropic.com/en/docs/build-with-claude/claude-code) — Anthropic's CLI for Claude
-- [superpowers](https://github.com/danielmeloalencar/superpowers) — Claude Code skill framework
-- [GEPA](https://github.com/gepa-ai/gepa) — Reflective prompt evolution (ICLR 2026 Oral, inspired failure diagnosis)
-- [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) — Cross-model review loops (inspired adversarial review)
-- [codex-autoresearch](https://github.com/leo-lilinxiao/codex-autoresearch) — Resume + lessons + parallel experiments (inspired persistence features)
-- [Ralph Loop](https://github.com/frankbria/ralph-claude-code) — Stop hook auto-restart (inspired session persistence)
+<details>
+<summary><strong>How does Godmode differ from Copilot, Cursor, or other AI coding tools?</strong></summary>
+
+Godmode is not a replacement for these tools — it's a plugin that makes them better. Copilot and Cursor generate code in a single pass. Godmode adds autonomous iteration: it measures results, keeps improvements, reverts failures, and repeats until the goal is met. It works *inside* Cursor and Claude Code, not instead of them.
+</details>
+
+<details>
+<summary><strong>Does Godmode work with any programming language?</strong></summary>
+
+Yes. Godmode skills are language-agnostic — they define engineering workflows (test, measure, verify), not language-specific syntax. If your AI assistant supports a language, Godmode's skills work with it. Framework-specific skills (React, Django, Rails, etc.) provide additional specialized guidance.
+</details>
+
+<details>
+<summary><strong>Can I use Godmode for free?</strong></summary>
+
+Godmode itself is free and open source (MIT license). You need a working installation of one of the supported AI coding tools (Claude Code, Cursor, Codex, Gemini CLI, or OpenCode), which may have their own pricing.
+</details>
+
+<details>
+<summary><strong>What does "autonomous" mean? Does it run without human input?</strong></summary>
+
+Yes. Once you set a goal and a metric (e.g., "reduce API latency, measured by `curl -w '%{time_total}'`"), Godmode runs the optimization loop autonomously — modifying code, verifying results, keeping improvements, reverting failures — without asking for approval between iterations. You can set an iteration limit or let it run until interrupted.
+</details>
+
+<details>
+<summary><strong>Is it safe? Can it break my code?</strong></summary>
+
+Every change is committed to git *before* verification. If a change makes things worse, it's automatically reverted with `git reset`. Your codebase never stays in a broken state. Guard commands (tests, linting, build) must pass for any change to be kept.
+</details>
+
+<details>
+<summary><strong>How do I add my own skills?</strong></summary>
+
+Every skill is a Markdown file. Copy an existing skill, modify it, and drop it in the `skills/` directory. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+</details>
 
 ---
 
@@ -568,6 +308,6 @@ MIT -- see [LICENSE](LICENSE).
 
 **Discipline before speed. Evidence before claims. Git is memory.**
 
-**[Install](https://github.com/arbazkhan971/godmode)** · **[Docs](docs/)** · **[Discuss](https://github.com/arbazkhan971/godmode/discussions)**
+**[Install](#quick-start)** | **[Docs](docs/)** | **[FAQ](docs/FAQ.md)** | **[Troubleshooting](docs/troubleshooting.md)** | **[Discuss](https://github.com/arbazkhan971/godmode/discussions)**
 
 </div>
