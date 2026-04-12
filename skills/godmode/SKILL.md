@@ -11,6 +11,14 @@ description: |
 - `/godmode:<skill>` — read `skills/<skill>/SKILL.md`
 - Natural language request → match to skill
 
+## Step 0a: Check Terse Mode
+IF `$GODMODE_TERSE` is set OR `/godmode:terse on` was invoked this session:
+compress all emitted output per `skills/terse/SKILL.md`. TSV rows, code blocks,
+error messages, commit messages, and the final user-facing summary stay
+verbose. Terse is an emit contract only — loops, decisions, commits, and
+TSV writes are identical in both modes. See `skills/terse/SKILL.md` for the
+full contract and the before/after examples.
+
 ## Step 0: Check for Resumable Session
 Read `.godmode/session-state.json` if it exists.
 IF `stop_reason` is null: resume the interrupted skill at the saved round.
@@ -21,6 +29,13 @@ Print resume status at start of every session.
 Read `.godmode/lessons.md` if it exists.
 Surface relevant lessons for the detected skill.
 After session: append 1-3 new lessons.
+
+IF `lessons.md` exceeds 100 lines: compress before loading. Keep entries from
+the last 30 days AND entries referenced (cited) more than twice. Mark stale
+entries `[OBSOLETE]` rather than deleting — the file is append-only history.
+After compression, re-read and continue. Target post-compression length: ≤60
+lines. This keeps the lesson-loading context lean on long-running sessions
+where the file would otherwise grow unbounded.
 
 ## Step 1: Detect Stack (once, cache)
 
@@ -63,10 +78,12 @@ IF lockfile found: use matching package manager
 | "test", "coverage"                | test     |
 | "secure", "vulnerabilities"       | secure   |
 | "review", "check my code"         | review   |
+| "research", "prior art", "existing patterns" | research |
 | "build", "implement", "create"    | build    |
 | "plan", "break down"              | plan     |
 | "ship", "deploy"                  | ship     |
 | "done", "finish", "clean up"      | finish   |
+| "terse", "compress output"        | terse    |
 
 IF no match: fall through to phase detection
 ```
