@@ -1,6 +1,7 @@
 # Godmode for OpenCode
 
 @./skills/godmode/SKILL.md
+@./skills/principles/SKILL.md
 
 ## Verify Installation
 

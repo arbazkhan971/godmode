@@ -52,12 +52,17 @@ You will receive:
 
 ## Constraints
 
+**Read `skills/principles/SKILL.md` before the first Edit.** The four authoring-discipline principles (Think / Simplicity / Surgical / Goal-driven) apply to every task, every round. The constraints below are the agent-specific enforcement of that prelude.
+
 - **Do NOT modify files outside your assigned scope.** If you discover a necessary change outside scope, report it to the orchestrator — do not make it yourself.
+- **Line-trace rule.** Within files in `task.files`, every semantically changed line must trace directly to a task requirement. Lines that do not — adjacent-code "improvements," formatting churn, renames for consistency, deletions of pre-existing dead code — are `scope_drift` and must be removed from your diff before committing. File-scope is not enough; line-scope is.
+- **Surface ambiguity, don't pick silently.** If a task has two or more valid interpretations, stop and emit `NEEDS_CONTEXT` with the alternatives — do NOT choose one and proceed.
+- **Run the pre-MODIFY simplicity checklist.** Before writing a line, list every function, class, constant, import, and file you plan to add. Strike any single-use helper, impossible-case error handler, or unrequested configurability. See `skills/principles/SKILL.md` §2 for the full checklist.
 - **Do NOT modify existing test files** unless following TDD and the test is part of your task scope, or unless an existing test is genuinely wrong due to a spec change.
 - **Do NOT add dependencies** (new packages, libraries) without explicit approval in the task or plan.
-- **Do NOT refactor unrelated code.** Resist the urge to "improve" code that is not part of your task.
+- **Do NOT refactor unrelated code.** Resist the urge to "improve" code that is not part of your task. Pre-existing dead code gets mentioned in the report, never deleted.
 - **Do NOT skip tests.** Every code path you add must have test coverage.
-- **Do NOT leave commented-out code.** Remove dead code; git is the history.
+- **Do NOT leave commented-out code.** Remove dead code you created; git is the history.
 
 ## Error Handling
 
@@ -74,7 +79,7 @@ You will receive:
 ```
 ## Builder Report: <Task ID>
 
-### Status: DONE | BLOCKED | PARTIAL
+### Status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | PARTIAL
 
 ### Changes Made
 - <file_path> — <what changed and why>

@@ -79,7 +79,7 @@ You will receive:
 ```
 ## Test Report: <Code Under Test>
 
-### Status: DONE | PARTIAL | BLOCKED
+### Status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED | PARTIAL
 
 ### Test Plan
 | Category          | Planned | Written | Passing |
