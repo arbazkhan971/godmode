@@ -135,6 +135,8 @@ Coverage target: >80% statements, >70% branches.
 4. **Form actions over API routes.** Progressive.
 5. **Never ask to continue. Loop autonomously.**
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Initial JS per route: <50KB
 - Component render: <100ms paint time

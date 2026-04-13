@@ -10,7 +10,7 @@ description: |
 
 # Event -- Event-Driven Architecture
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:event`
 - User says "event sourcing", "CQRS", "message broker"
 - User says "Kafka", "RabbitMQ", "dead letter queue"
@@ -155,6 +155,8 @@ Never ask to continue. Loop autonomously until done.
 3. **Schema evolution is mandatory.** Backward and
    forward compatibility from day one.
 4. **Every consumer is idempotent.**
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Publish-to-consume: <100ms latency

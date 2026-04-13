@@ -11,7 +11,7 @@ description: |
 
 # Agent — AI Agent Development
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:agent`
 - User says "build an AI agent", "create an agent", "add tools to my agent"
 - User says "design agent memory", "agent keeps looping", "agent safety"
@@ -269,6 +269,8 @@ Verify all of these before marking the task complete:
 6. Irreversible actions require confirmation gate.
 7. Tool errors handled gracefully (max 2 retries).
 8. Evaluation suite measures success rate, cost, safety.
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

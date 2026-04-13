@@ -10,7 +10,7 @@ description: |
 
 # GraphQL — API Development
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:graphql`
 - User says "build a GraphQL API", "design schema"
 - User says "fix N+1 queries", "add DataLoader"
@@ -187,6 +187,8 @@ Never ask to continue. Loop autonomously until done.
    complexity limits on every production API.
 5. **Do not federate prematurely.**
 6. **Test the schema, not only resolvers.**
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Query response: <200ms p95

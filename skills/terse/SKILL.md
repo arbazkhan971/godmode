@@ -42,6 +42,13 @@ Long autonomous loops don't need verbose output — no human is reading intermed
 - Skill-level printed output: the `Godmode: ...` lines
 - Intermediate "verify", "measure", "dispatching" progress prints
 
+**Pairs with rtk for compound savings.** Terse compresses what godmode
+*emits*. The [rtk](https://github.com/rtk-ai/rtk) Rust CLI compresses
+what godmode *reads* (tool output from git, ls, tests, etc.) by 60-90%
+before it enters model context. Installing both stacks both sides:
+input-side via rtk's shell hook, output-side via terse mode. Optional —
+terse works standalone and rtk is a separate binary.
+
 ## What Stays Verbose (Never Compress)
 
 - **TSV rows** — column count, delimiters, field meaning are contracts

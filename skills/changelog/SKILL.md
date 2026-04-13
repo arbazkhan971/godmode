@@ -10,7 +10,7 @@ description: |
 
 # Changelog — Changelog & Release Notes
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:changelog`
 - User says "update changelog", "write release notes", "what changed?"
 - User says "generate migration guide", "breaking change documentation"
@@ -260,6 +260,8 @@ npm install <package>@1
 IF breaking changes > 0: write migration guide before release.
 WHEN commits don't follow conventional format: parse PR titles as fallback.
 IF changelog entry count < commit count * 0.5: review for missed changes.
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: 100% PRs tagged with changelog category

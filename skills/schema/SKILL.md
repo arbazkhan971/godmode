@@ -194,6 +194,8 @@ STOP when:
   - User requests stop
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: 0 breaking schema changes without migration
 - Migration execution: <5s for DDL operations

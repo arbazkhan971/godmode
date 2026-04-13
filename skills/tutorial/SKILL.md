@@ -148,10 +148,35 @@ natural language: `/godmode "make this faster"` dispatches `optimize`.
   write any custom skill; every skill file inherits its conventions.
 - `skills/optimize/SKILL.md` — the canonical iterative loop. Step 5
   above is a 3-iteration subset of what's described here.
+- `skills/principles/SKILL.md` — the Karpathy authoring-discipline
+  prelude. Every agent reads this before the first Edit.
+- `skills/terse/SKILL.md` — output compression for long autonomous
+  loops. Pairs with rtk (below) for compound token savings.
 - `docs/PHILOSOPHY.md` — the design principles behind keep/discard,
   git-as-memory, and mechanical verification.
+- `docs/coordination-patterns.md` — the 6 named patterns planners
+  pick from when decomposing tasks.
 - `docs/getting-started.md` and `docs/quick-start.md` — longer-form
   onboarding if 5 minutes wasn't enough.
+
+## Optional: Pair With rtk for Input-Side Compression
+
+Godmode's `terse` skill compresses what agents *emit*. For even
+bigger savings, install [rtk](https://github.com/rtk-ai/rtk) —
+a Rust CLI that compresses what agents *read* (tool output from
+git, ls, tests, grep, etc.) by 60-90% before it hits the model
+context. Claims 80% savings on a 30-minute Claude session.
+
+Install (optional):
+
+```bash
+brew install rtk
+rtk init -g      # installs the auto-rewrite shell hook
+```
+
+rtk and terse are complementary — one compresses the input side,
+the other the output side. Installing both gives compound savings
+on long autoresearch loops.
 
 ## Output Format
 ```

@@ -148,6 +148,8 @@ FOR EACH dimension in [tests, coverage, lint, pr]:
 DECISION: ALL PASS → ship. ANY FAIL → block.
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Pre-merge checks: >99% passing rate
 - CI pipeline: <5min full completion

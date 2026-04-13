@@ -11,7 +11,7 @@ description: |
 
 # CLI — CLI Tool Development
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:cli`
 - User says "CLI tool", "command line", "terminal app", "console application"
 - User mentions "TUI", "terminal UI", "interactive prompt"
@@ -267,6 +267,8 @@ On failure: revert with git reset --hard HEAD~1.
 | (none) | Full CLI project assessment and setup |
 | `--interactive` | Focus on interactive prompts and TUI |
 | `--completion` | Shell completion generation only |
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Startup time: <200ms

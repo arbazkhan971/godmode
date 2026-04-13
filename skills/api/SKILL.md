@@ -10,7 +10,7 @@ description: |
 
 # API — Design & Specification
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:api`
 - User says "design an API", "create API spec", "write API docs"
 - User says "validate my API", "is this API well-designed?"
@@ -247,6 +247,8 @@ AUTO-DETECT SEQUENCE:
    - Scan route files for HTTP method + path patterns
   ...
 ```
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <200ms p95 response time
 - Target: >99.9% uptime for production APIs

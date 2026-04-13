@@ -83,6 +83,8 @@ fireEvent. MSW for API mocking.
 [ ] TypeScript strict
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <16ms render cycle (60fps)
 - Target: <100KB component bundle size per route

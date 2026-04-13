@@ -97,6 +97,8 @@ IF no fix available: assess exploitability, document risk.
 | Build fails | Delete node_modules + lock, reinstall |
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <30s npm install with warm cache
 - Target: 0 critical vulnerabilities in npm audit

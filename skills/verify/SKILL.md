@@ -128,6 +128,8 @@ STOP when FIRST of:
   - >5 consecutive ambiguous results
 ```
 
+<!-- tier-3 -->
+
 ## Error Recovery
 - **Command not found:** FAIL. Suggest correct cmd.
 - **Timeout >120s:** FAIL. Suggest --bail or smaller.

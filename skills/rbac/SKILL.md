@@ -99,6 +99,8 @@ Retention: minimum 1 year for compliance
 IF audit log not append-only: security risk.
 IF no audit log: MUST implement before launch.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <10ms permission check latency
 - Target: 0 privilege escalation paths in role hierarchy

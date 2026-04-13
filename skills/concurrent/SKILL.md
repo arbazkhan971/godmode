@@ -10,7 +10,7 @@ description: |
 
 # Concurrent -- Concurrency & Parallelism
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:concurrent`
 - User says "thread safety", "race condition", "deadlock", "lock-free"
 - User says "async/await", "actor model", "parallelism", "concurrent"
@@ -253,6 +253,8 @@ Artifacts:
   ...
 ```
 Commit: `"concurrent: <feature> -- <model>, <N> shared states protected, <verdict>"`
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Lock contention: <10ms per critical section

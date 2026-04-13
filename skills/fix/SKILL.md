@@ -98,6 +98,8 @@ Never ask to continue. Loop autonomously until done.
 4. Guessing without reading full error output.
 5. Fixing symptoms downstream instead of root cause.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Fix success rate: >80% kept vs reverted
 - Lines changed per fix: <5 maximum

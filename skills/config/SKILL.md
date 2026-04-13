@@ -9,7 +9,7 @@ description: |
 
 # Config — Environment & Configuration Management
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:config`
 - User says "manage environments", "config validation", "feature flags"
 - User needs dev/staging/prod parity checking
@@ -292,6 +292,8 @@ status(audited/drift_found/migrated/configured/failed).
 ## Success Criteria
 All keys inventoried. Secrets in secret manager. Startup validation fails fast. Drift detected and explained.
 Flags have expiry + cleanup plans. Typed config parsing (no raw `process.env`). Config changes auditable.
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

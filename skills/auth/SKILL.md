@@ -11,7 +11,7 @@ description: |
 
 # Auth — Authentication & Authorization
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:auth`
 - User says "authentication", "login flow", "OAuth setup", "JWT tokens", "session management"
 - User says "MFA", "two-factor", "passwordless", "social login", "SSO"
@@ -237,6 +237,8 @@ AUTH SECURITY HARDENING:
 3. If INCOMPLETE: "Auth design needs additional work. Address remaining items, then re-run `/godmode:auth`."
 4. If PRODUCTION READY: "Authentication architecture complete. Run `/godmode:rbac` to design access control,
 or `/godmode:build` to implement."
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Access token TTL: <15min

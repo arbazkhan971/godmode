@@ -10,7 +10,7 @@ description: |
 
 # Git — Advanced Git Workflows
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:git`
 - User says "branching strategy", "rebase vs merge"
 - User says "git bisect", "interactive rebase"
@@ -205,6 +205,8 @@ Never ask to continue. Loop autonomously until done.
 3. Stale branches: git branch --merged
 4. Tooling: .commitlintrc, .husky
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <50MB max file size in repository

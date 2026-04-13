@@ -73,6 +73,8 @@ Append `.godmode/predict-results.tsv`: one row per
 persona with timestamp, feature, persona, verdict,
 confidence, risk_count, top_risk, mitigation, gate.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Model accuracy target: >85% on validation set
 - Prediction latency: <100ms p95

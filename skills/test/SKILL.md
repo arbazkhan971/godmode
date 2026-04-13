@@ -38,6 +38,8 @@ WHILE coverage < target:
 Print: "Coverage: {start}% -> {final}% in {N} iters"
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Coverage target: >=80% line coverage (configurable)
 - Test execution: <30s for unit suite, <120s for integration

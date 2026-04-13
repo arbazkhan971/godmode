@@ -9,7 +9,7 @@ description: |
 
 # A11y — Accessibility Testing & Auditing
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:a11y`
 - User says "check accessibility," "is this accessible?", "WCAG compliance"
 - Pre-ship quality gate during `/godmode:ship` workflow
@@ -275,6 +275,8 @@ timestamp	skill	page	severity	wcag	element	tool	description	status
 2026-03-20T14:00:00Z	a11y	/home	CRITICAL	2.1.2	.modal	manual	keyboard trap in modal	fixed
 2026-03-20T14:01:00Z	a11y	/form	HIGH	1.4.3	.label	axe	contrast ratio 3.2:1 < 4.5:1	fixed
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: >90% Lighthouse accessibility score

@@ -10,7 +10,7 @@ description: |
 
 # Analytics — Analytics Implementation
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:analytics`
 - User says "add analytics", "track events", "set up tracking"
 - User says "create a funnel", "A/B test", "implement experiments"
@@ -293,6 +293,8 @@ Complete when ALL true:
 7. A/B assignments deterministic and sticky
 8. Analytics SDK loads async (< 50ms impact on LCP)
 9. Debug/dev events filtered from production
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

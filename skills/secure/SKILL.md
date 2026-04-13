@@ -102,6 +102,8 @@ MEDIUM|src/utils/crypto.ts:15|Math.random() for
 Log to `.godmode/security-findings.tsv`:
 `iteration\tcategory\tpersona\tseverity\tfile_line\tdescription\tfix\tstatus\tvotes`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Critical CVEs in deps: <1 allowed
 - SAST scan: <5min per 100KB source

@@ -10,7 +10,7 @@ description: |
 
 # Architect — Software Architecture Design
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:architect`
 - User says "design the architecture", "system design", "how should I structure this"
 - User asks about monolith vs. microservices, serverless, or event-driven decisions
@@ -154,6 +154,8 @@ Log every architecture session to `.godmode/architect-results.tsv`:
 timestamp	system	pattern_selected	patterns_compared	c4_levels	bounded_contexts	quality_attrs	adr_number	verdict
 ```
 Append one row per session. Create the file with headers on first run.
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <500ms p99 latency for critical paths

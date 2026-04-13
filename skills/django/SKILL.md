@@ -11,7 +11,7 @@ description: |
 
 # Django — Django & FastAPI Development
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:django`
 - User says "Django", "Django project", "Django app"
 - User mentions "FastAPI", "Pydantic", "dependency injection"
@@ -277,6 +277,8 @@ timestamp	project	action	files_count	models_count	views_count	migrations_count	t
 6. Filterable/sortable fields have DB indexes
 7. Custom user model (not default auth.User)
 8. Migrations consistent (`makemigrations --check`)
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

@@ -87,6 +87,8 @@ Match governance to project size.
 ```
 IF governance mismatch: document and update.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <48h response time for new issues
 - Target: >80% of PRs reviewed within 7 days

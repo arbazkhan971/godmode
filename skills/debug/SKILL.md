@@ -134,6 +134,8 @@ IF stuck > 3 iterations on one bug: skip, move to next.
 4. Max 5 min per technique. No progress → abandon technique, try next. All techniques exhausted → discard bug.
 5. Hand off specific root causes, not vague descriptions. Include file:line, variable state, and reproduce steps.
 
+<!-- tier-3 -->
+
 ## Error Recovery
 | Failure | Action |
 |--|--|

@@ -10,7 +10,7 @@ description: |
 
 # Angular — Angular Architecture
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:angular`
 - User says "build an Angular app", "Angular component", "NgRx", "Angular signals", "RxJS"
 - User says "standalone components", "Angular modules", "lazy loading"
@@ -212,6 +212,8 @@ Append to `.godmode/angular.tsv`:
 1. `ng build` zero errors. 2. `ng test` passes. 3. All OnPush. 4. No `any`. 5. All subscriptions cleaned up.
 6. No nested subscriptions. 7. All features lazy-loaded. 8. No direct DOM manipulation. 9. Strict TypeScript.
 10. All services use proper injection.
+
+<!-- tier-3 -->
 
 ## Error Recovery
 ```

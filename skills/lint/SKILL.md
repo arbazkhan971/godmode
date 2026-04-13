@@ -10,7 +10,7 @@ description: |
 
 # Lint — Linting & Code Standards
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:lint`
 - User says "set up linting", "fix code style"
 - User asks about ESLint, Prettier, Biome, Ruff
@@ -200,6 +200,8 @@ STOP when ANY of:
   - CI enforcement with --max-warnings=0
   - User requests stop
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Rule conflicts: check eslint-config-prettier compat.

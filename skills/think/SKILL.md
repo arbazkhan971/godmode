@@ -161,6 +161,8 @@ STOP when FIRST of:
   - >5 validation failures on spec
 ```
 
+<!-- tier-3 -->
+
 ## Error Recovery
 - **Ambiguous goal:** Offer 2 interpretations.
 - **All approaches disqualified:** Narrow scope.

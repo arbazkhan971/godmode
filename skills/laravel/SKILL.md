@@ -9,7 +9,7 @@ description: |
 
 # Laravel — Laravel Mastery
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:laravel`
 - User says "build a Laravel app", "Laravel API"
 - User asks about Eloquent, Blade, Livewire, queues
@@ -265,6 +265,8 @@ STOP when ANY of:
   - User requests stop
   - Max iterations reached
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Test fails: check phpunit.xml test DB config.

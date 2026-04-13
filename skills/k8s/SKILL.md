@@ -10,7 +10,7 @@ description: |
 
 # K8s — Kubernetes & Container Orchestration
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:k8s`
 - User says "deploy to kubernetes", "create helm chart"
 - User says "pod crashing", "OOMKilled", "CrashLoopBackOff"
@@ -231,6 +231,8 @@ STOP when ANY of:
   - User requests stop
   - Rollback triggered (investigate first)
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - CrashLoopBackOff: check logs --previous, probes.

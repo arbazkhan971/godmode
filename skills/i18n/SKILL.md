@@ -10,7 +10,7 @@ description: |
 
 # I18n — Internationalization & Localization
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:i18n`
 - User says "internationalize", "translate", "localize"
 - User mentions "RTL support", "pluralization"
@@ -242,6 +242,8 @@ STOP when ALL of:
   - Pluralization correct for all target locales
   - CI check validates no missing keys
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Missing key at runtime: add fallback chain

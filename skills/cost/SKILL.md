@@ -10,7 +10,7 @@ description: |
 
 # Cost — Cloud Cost Optimization
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:cost`
 - User says "reduce cloud costs," "optimize spending," "why is our bill so high?"
 - User asks about right-sizing, reserved instances, or spot pricing

@@ -113,6 +113,8 @@ PRE-APPLY: validated, rollback tested, data verified,
 Print: `Migrate: {table}.{change} — risk: {level}.
   Rollback: {tested|untested}. Data: {preserved}.`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <5s per migration execution
 - Target: 0 data loss during migration rollback

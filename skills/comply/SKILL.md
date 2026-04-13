@@ -11,7 +11,7 @@ description: |
 
 # Comply — Compliance & Governance
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:comply`
 - User says "are we GDPR compliant?", "audit trail", "privacy review", "compliance check"
 - Team builds features handling personal data, health data, or payment data
@@ -230,6 +230,8 @@ IF license scan finds GPL/AGPL in proprietary code: replace immediately.
 | (none) | Full compliance audit across all applicable regulations |
 | `--gdpr` | GDPR compliance check only |
 | `--hipaa` | HIPAA compliance check only |
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Critical controls: >99% passing rate

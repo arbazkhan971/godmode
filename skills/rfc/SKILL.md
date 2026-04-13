@@ -68,6 +68,8 @@ git add docs/rfcs/<NNN>-<title>.md
 git commit -m "rfc: RFC-<NNN> -- <title> (<status>)"
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <2 weeks from draft to decision
 - Target: >=3 reviewers for architecture RFCs

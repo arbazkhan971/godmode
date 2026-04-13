@@ -73,6 +73,8 @@ Key anti-patterns:
 Save: `docs/patterns/<feature>-pattern-analysis.md`
 Commit: `"pattern: <feature> -- <pattern> (<confidence>)"`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Cyclomatic complexity: <20 per function
 - Injected services: <7 per class

@@ -128,6 +128,8 @@ On stop: always write summary.md and commit results.tsv, even on abort.
 4. `bench-summary.md` names the winner, loser, baseline, and flags any noisy variants.
 5. `git rev-parse HEAD` after the run matches the snapshotted starting sha.
 
+<!-- tier-3 -->
+
 ## Error Recovery
 | Failure | Action |
 |--|--|

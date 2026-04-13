@@ -51,6 +51,8 @@ Score: 0-10 (median of all agents).
 IF score < 8: author responds to every MUST + SHOULD.
 Re-review only modified parts. Max 3 iterations.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <30min average review turnaround
 - Target: 0 critical issues missed per review

@@ -10,7 +10,7 @@ description: |
 
 # Edge — Edge Computing & Serverless
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:edge`
 - User says "edge function", "Cloudflare Workers",
   "Vercel Edge", "serverless API", "AWS Lambda"
@@ -243,6 +243,8 @@ STOP when ANY of:
   - User requests stop
   - Max iterations reached
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Cold start too high: tree-shake, lazy init,

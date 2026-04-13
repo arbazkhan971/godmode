@@ -132,6 +132,8 @@ npx bundlesize --config bundlesize.config.json
 For ambiguous implementation decisions: dispatch 2 agents with different approaches.
 Merge the one that passes all tests with fewer lines. Discard the other.
 
+<!-- tier-3 -->
+
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 If your platform lacks `Agent()` or worktree isolation:
 - Execute ONE task at a time instead of up to 5 parallel agents.

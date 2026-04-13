@@ -10,7 +10,7 @@ description: |
 
 # Logging — Structured Logging
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:logging`
 - User says "structured logging", "JSON logs"
 - User says "log levels", "correlation ID", "trace ID"
@@ -204,6 +204,8 @@ Never ask to continue. Loop autonomously until done.
 4. **PII redaction at logger level.** Not call site.
 5. **Async writing.** Never block the event loop.
 6. **Runtime log level control.** No redeploy needed.
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Log write latency: <5ms per entry

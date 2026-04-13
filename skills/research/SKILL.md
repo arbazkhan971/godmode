@@ -170,6 +170,8 @@ Append to `.godmode/research-log.tsv`:
 timestamp	feature	patterns	deps	docs	gaps	starting_point	lines
 ```
 
+<!-- tier-3 -->
+
 ## Error Recovery
 
 | Failure | Action |

@@ -10,7 +10,7 @@ description: |
 
 # Docker — Docker Mastery
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:docker`
 - User says "Dockerfile", "docker compose", "container image", "multi-stage build"
 - User says "image size", "docker security", "container optimization"
@@ -286,6 +286,8 @@ iteration	image	size_before	size_after	layers	vulns_critical	vulns_high	build_ti
 - Multi-stage builds, Alpine/distroless base, pinned tags, non-root user, HEALTHCHECK.
 - .dockerignore excludes .git, node_modules, .env. No secrets in layers.
 - Zero critical CVEs. Build cache optimized (deps before source).
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

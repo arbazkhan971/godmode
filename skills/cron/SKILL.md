@@ -6,7 +6,7 @@ description: Scheduled tasks, cron jobs, background job queues, recurring work. 
 
 # Cron — Scheduled Tasks & Recurring Job Orchestration
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:cron`
 - User says "schedule a job", "cron job", "recurring task", "run every hour"
 - User says "background scheduler", "periodic task", "timed execution"
@@ -297,6 +297,8 @@ On failure: revert with git reset --hard HEAD~1.
 | (none) | Full scheduled task design workflow |
 | `--tech <name>` | Target specific scheduler (bullmq, celery, sidekiq, apscheduler, hangfire, quartz, node-cron) |
 | `--diagnose` | Diagnose missed or failing scheduled jobs |
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Job success rate: >99% over 30 days

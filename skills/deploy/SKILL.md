@@ -10,7 +10,7 @@ description: |
 
 # Deploy — Advanced Deployment Strategies
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:deploy`
 - User says "deploy with zero downtime," "canary release," "blue-green deployment"
 - User needs rollback strategy for a risky change
@@ -266,6 +266,8 @@ Log to `.godmode/deploy-results.tsv`:
 ## Success Criteria
 - Error rate < 1% at each stage. P99 within baseline + 10%.
 - Rollback tested. Health checks pass. Migrations backward-compatible.
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

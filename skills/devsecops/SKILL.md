@@ -12,7 +12,7 @@ description: |
 
 # DevSecOps — Secure Pipeline Integration
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:devsecops`
 - User says "secure pipeline", "add SAST", "security scanning", "shift left"
 - User says "container scan", "dependency scan", "secret scanning in CI"
@@ -268,6 +268,9 @@ IF scanner runtime > 5 minutes in CI: scope to changed files only.
 3. **No secrets pass the gate.** Zero exceptions.
 4. **SBOM required.** Every release, SPDX or CycloneDX.
 5. **Scan every layer.** SAST, SCA, DAST, containers, IaC, secrets.
+
+<!-- tier-3 -->
+
 ## Quality Targets
 - Critical CVEs: <1 in production deps
 - SAST scan time: <5min per PR

@@ -150,6 +150,8 @@ STOP when ALL of:
 ## Autonomous Operation
 On failure: git reset --hard HEAD~1. Never pause.
 
+<!-- tier-3 -->
+
 ## Error Recovery
 | Failure | Action |
 |--|--|

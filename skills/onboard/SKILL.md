@@ -99,6 +99,8 @@ Key files: <N> identified
 Setup: <N> steps to first run
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <15min from clone to running dev server
 - Target: <5 manual steps in setup process
