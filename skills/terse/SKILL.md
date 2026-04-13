@@ -25,6 +25,16 @@ TSV-driven workflow.
 
 Deactivate: `/godmode:terse off` or unset the env var.
 
+## Auto-Activation
+
+Long autonomous loops don't need verbose output — no human is reading intermediate rounds. After 5 consecutive rounds with no user interaction, terse mode auto-enables for the rest of the session.
+
+- **Trigger.** `.godmode/session-state.json` tracks `consecutive_rounds_without_human`. The orchestrator increments it at the end of each loop round (after DECIDE/LOG) and resets it to 0 on any user interaction (new prompt, slash command, explicit mode change). When the counter reaches 5, terse auto-enables for this and subsequent rounds.
+- **Emit on activation.** Print once: `Terse: AUTO ON (reason: 5+ autonomous rounds, session={session_id})`. Do not re-print on every round thereafter.
+- **Auto-deactivation.** On the next explicit user prompt, reset `consecutive_rounds_without_human` to 0 and emit: `Terse: AUTO OFF (user interaction)`. This reset happens regardless of whether terse was auto or manually enabled.
+- **User opt-out is sticky.** If the user ran `/godmode:terse off` at any point this session, set `terse_user_opted_out=true` in session state. Auto-activation is disabled for the remainder of the session, even if the counter later crosses 5.
+- **Interaction with manual mode.** If `$GODMODE_TERSE` is already set in the environment, terse is on regardless — auto-activation is a no-op. If `/godmode:terse on` was invoked explicitly, the counter is irrelevant. Auto-activation only fires when neither manual switch is on AND no opt-out flag is set.
+
 ## What Compresses
 
 - Round summaries and status lines: `Round 7: kept change.` → `R7 keep`

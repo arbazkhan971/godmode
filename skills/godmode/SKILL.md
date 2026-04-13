@@ -19,6 +19,16 @@ verbose. Terse is an emit contract only — loops, decisions, commits, and
 TSV writes are identical in both modes. See `skills/terse/SKILL.md` for the
 full contract and the before/after examples.
 
+Also check `.godmode/session-state.json` for auto-activation. If the file
+exists and `consecutive_rounds_without_human >= 5` AND
+`terse_user_opted_out != true`: auto-enable terse for this round and emit
+the activation message defined in `skills/terse/SKILL.md § Auto-Activation`.
+This check runs at the START of every round, before the loop body. The
+counter is incremented at the END of each round (immediately after DECIDE
+and LOG) and reset to 0 at the START of any round that was triggered by a
+new user prompt. A user-issued `/godmode:terse off` sets `terse_user_opted_out`
+to true for the remainder of the session and disables auto-activation.
+
 ## Step 0: Check for Resumable Session
 Read `.godmode/session-state.json` if it exists.
 IF `stop_reason` is null: resume the interrupted skill at the saved round.

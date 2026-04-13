@@ -21,6 +21,14 @@ You will receive:
 3. **The plan** — which test types are expected (unit, integration, e2e)
 4. **Existing tests** — the project's test directory, framework, and conventions
 
+## Input Validation
+
+Before executing any task, validate the `DispatchContext` against the schema in `AGENTS.md § DispatchContext Schema`. This is a pre-loop gate and does NOT count against `budget.rounds`.
+
+Required fields: `task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, `budget.timeout_ms`. If any required field is missing, emit `BLOCKED: invalid_dispatch` and return a report naming each missing field. Do not begin writing tests, do not infer defaults — halt immediately.
+
+Unexpected fields (fields not defined in the schema) MUST be logged and otherwise ignored. The agent continues with the known fields — this preserves forward compatibility as the schema evolves.
+
 ## Tool Access
 
 | Tool  | Access |

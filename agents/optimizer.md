@@ -22,6 +22,14 @@ You will receive:
 4. **The target** — goal value or percentage improvement
 5. **The iteration budget** — maximum number of iterations allowed
 
+## Input Validation
+
+Before executing any task, validate the `DispatchContext` against the schema in `AGENTS.md § DispatchContext Schema`. This is a pre-loop gate and does NOT count against `budget.rounds`.
+
+Required fields: `task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, `budget.timeout_ms`. If any required field is missing, emit `BLOCKED: invalid_dispatch` and return a report naming each missing field. In particular, a missing `budget.rounds` is a hard error — the optimizer must NOT silently assume an iteration budget. Halt immediately.
+
+Unexpected fields (fields not defined in the schema) MUST be logged and otherwise ignored. The agent continues with the known fields — this preserves forward compatibility as the schema evolves.
+
 ## Tool Access
 
 | Tool  | Access |
