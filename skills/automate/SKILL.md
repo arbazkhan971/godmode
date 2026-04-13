@@ -9,7 +9,7 @@ description: |
 
 # Automate -- Task Automation & Workflow Orchestration
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:automate`
 - User says "automate this", "create a cron job", "set up a webhook"
 - User says "write a Makefile", "create GitHub Action", "schedule this task"
@@ -141,6 +141,8 @@ Error handling: present | Dry-run: supported | Timeout: set
 3. ls package.json pyproject.toml go.mod
 4. ls scripts/ bin/ tools/
 ```
+
+<!-- tier-3 -->
 
 ## Platform Fallback
 Run sequentially: scripts, then CI workflows, then scheduler configuration.

@@ -6,7 +6,7 @@ description: API documentation generation, OpenAPI/Swagger specs, contract-first
 
 # APIDocs — Documentation Generation & Interactive Specs
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:apidocs`
 - User says "generate API docs", "write OpenAPI spec", "set up Swagger"
 - User says "add Redoc", "create API reference", "document my API"
@@ -245,6 +245,8 @@ timestamp	skill	action	endpoints	schemas	lint_errors	breaking_changes	status
 2026-03-20T14:00:00Z	apidocs	generate_spec	12	8	0	0	pass
 2026-03-20T14:10:00Z	apidocs	validate	12	8	2	1	needs_fix
 ```
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: 100% endpoint coverage in documentation
 - Target: >90% of examples return 2xx on test run

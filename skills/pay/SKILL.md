@@ -92,6 +92,8 @@ res.status(200).json({ received: true });
 Return 200 within 30s. Process async if slow.
 Store raw events. Reconcile daily.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Processing latency: <500ms round-trip
 - Transaction consistency: >99% no double-charge

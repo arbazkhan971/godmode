@@ -77,26 +77,70 @@ IF no match: ask user for test/lint/build commands
 IF lockfile found: use matching package manager
 ```
 
-## Step 2: Match Skill
+## Step 2: Match Skill (Tier 1 routing)
+
+Read ONLY Tier 1 of each skill file to match the user's request. Tier 1 =
+frontmatter + the `## Activate When` block. The Tier 1 boundary is the
+first `## ` header that follows `## Activate When`. Everything after that
+boundary is Tier 2 (loaded only once a skill is matched) or Tier 3 (loaded
+only on edge cases, marked by a literal `tier-3` HTML comment).
+
+```bash
+# Tier 1 extractor — POSIX awk, reads only the Activate When block
+for f in skills/*/SKILL.md; do
+  awk '/^## Activate When/{found=1} found && /^## /{if(seen++)exit} {print}' "$f"
+done
+```
+
+Tier 1 never exceeds ~25 lines per skill. Total routing cost across 134
+skills is ~2,700 lines — ~90% less than reading every skill in full (~27k
+lines). Stacks with `skills/terse/` (output-side compression), `skills/stdio/`
+(input-side canonical commands), and rtk (if installed) for compound
+context savings.
+
+Match process:
+1. Scan all Tier 1 blocks for keyword hits in frontmatter `description:`
+   plus `## Activate When` bullets.
+2. Pick the skill with the most trigger hits. Tie-break: shorter
+   `## Activate When` list wins (more specific trigger).
+3. Once matched, read the FULL matched skill file up to the
+   `tier-3` HTML comment marker if present (Tier 2 auto-included).
+4. If the skill has a Tier 3 section AND the loop hits a failure class
+   from `SKILL.md §8` (error recovery, quality target verification,
+   platform fallback), read past the marker.
+
+Canonical trigger shortcuts (fastest path — if a request matches one of
+these exactly, skip the Tier 1 scan):
 
 ```
 | Trigger                            | Skill    |
 |------------------------------------|----------|
 | "make faster", "optimize"          | optimize |
-| "fix", "broken", "error"          | fix      |
-| "debug", "why is this"            | debug    |
-| "test", "coverage"                | test     |
-| "secure", "vulnerabilities"       | secure   |
-| "review", "check my code"         | review   |
-| "research", "prior art", "existing patterns" | research |
-| "build", "implement", "create"    | build    |
-| "plan", "break down"              | plan     |
-| "ship", "deploy"                  | ship     |
-| "done", "finish", "clean up"      | finish   |
-| "terse", "compress output"        | terse    |
+| "fix", "broken", "error"           | fix      |
+| "debug", "why is this"             | debug    |
+| "test", "coverage"                 | test     |
+| "secure", "vulnerabilities"        | secure   |
+| "review", "check my code"          | review   |
+| "research", "prior art"            | research |
+| "build", "implement", "create"     | build    |
+| "plan", "break down"               | plan     |
+| "ship", "deploy"                   | ship     |
+| "done", "finish", "clean up"       | finish   |
+| "terse", "compress output"         | terse    |
+| "tokens", "token budget"           | tokens   |
+| "stdio", "command patterns"        | stdio    |
+| "team", "bundle"                   | team     |
+| "tutorial", "onboarding"           | tutorial |
+| "bench", "benchmark"               | bench    |
 
-IF no match: fall through to phase detection
+IF no match: fall through to phase detection (Step 3).
 ```
+
+Skills whose Tier 1 block fails to parse (missing `## Activate When`,
+malformed frontmatter) are routing-invisible. The only skill without
+`## Activate When` is `skills/principles/SKILL.md`, which is imported
+directly as a prelude via `@./skills/principles/SKILL.md` and not
+routable — this is intentional.
 
 ## Step 3: Detect Phase (State Machine)
 

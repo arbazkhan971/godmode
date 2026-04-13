@@ -160,6 +160,8 @@ Coverage target: >80% statements, >70% branches.
 6. **Choose rendering per route** (Nuxt hybrid).
 7. **Never ask to continue. Loop autonomously.**
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Initial JS per route: <100KB bundle
 - Render cycle: <16ms per frame (60fps)

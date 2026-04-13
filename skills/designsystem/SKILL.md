@@ -10,7 +10,7 @@ description: |
 
 # Design System — Design System Architecture
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:designsystem`
 - User says "design system," "design tokens," "theme architecture," "Figma to code"
 - Creating a shared component library or establishing token architecture
@@ -166,6 +166,8 @@ Log to `.godmode/designsystem-results.tsv`:
 5. Every component has Storybook story with all variants
 6. Token pipeline generates CSS custom properties
 7. Token coverage >= 90%
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - **Tokens out of sync with Figma:** Re-export, rebuild, diff, update only if changed.

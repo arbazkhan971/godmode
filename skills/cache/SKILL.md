@@ -10,7 +10,7 @@ description: |
 
 # Cache -- Caching Strategy
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:cache`
 - User says "add caching", "cache invalidation", "stale data", "cache consistency"
 - User says "Redis setup", "Memcached config", "CDN configuration"
@@ -164,6 +164,8 @@ Hit rate target: <N>%
 3. Patterns: grep for .get(, .set(, .setex( in service code
 4. Monitoring: grep for cache_hit, cache_miss metrics
 ```
+
+<!-- tier-3 -->
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 Run caching tasks sequentially: design, then infrastructure, then monitoring.

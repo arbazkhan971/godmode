@@ -9,7 +9,7 @@ description: |
 
 # Feature — Feature Flags & Progressive Delivery
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:feature`
 - User says "feature flag", "gradual rollout"
 - User says "kill switch", "A/B test"
@@ -208,6 +208,8 @@ STOP when ALL of:
   - Kill switch tested and verified
   - Cleanup scheduled (within 2 weeks)
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - SDK init fails: check API key, implement fallbacks.

@@ -11,7 +11,7 @@ description: |
 
 # DDD — Domain-Driven Design
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:ddd`
 - User says "model the domain", "define bounded contexts", "design aggregates"
 - User says "event storming", "domain events", "ubiquitous language"
@@ -265,6 +265,8 @@ On failure: revert with git reset --hard HEAD~1.
 | (none) | Full DDD session: discovery, event storming, contexts, tactical design |
 | `--strategic` | Strategic design only (bounded contexts, context map, ubiquitous language) |
 | `--tactical` | Tactical design only (aggregates, entities, value objects, events) |
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Cross-aggregate refs: <1 direct reference

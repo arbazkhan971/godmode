@@ -100,6 +100,43 @@ Read skills/principles/SKILL.md   # Authoring discipline prelude — every task,
 
 This ensures no agent inherits stale or conflicting state from a prior dispatch, and that every agent internalizes the four authoring-discipline principles (Think / Simplicity / Surgical / Goal-driven) before making any edits. Agents that skip these checks and operate on a dirty worktree or without the prelude risk silent merge failures and unnecessary scope drift.
 
+## Progressive Disclosure Tiers
+
+Every routable skill file under `skills/*/SKILL.md` is implicitly organized
+into three tiers for progressive loading. The convention (not a marker
+format) is:
+
+- **Tier 1** — frontmatter + the `## Activate When` block. Always loaded at
+  orchestrator route time. Never exceeds ~25 lines per skill. Used by
+  `skills/godmode/SKILL.md § Step 2` to match triggers without reading
+  the full skill corpus. Routing cost: ~2,700 lines across 134 skills,
+  ~90% less than full-read routing.
+
+- **Tier 2** — the workflow, hard rules, keep/discard discipline, stop
+  conditions, TSV schema, and failure classification. Loaded once a skill
+  is matched. The tier boundary is the first `## ` header after
+  `## Activate When`.
+
+- **Tier 3** — error recovery tables, quality targets, platform fallback
+  notes, and example output blocks. Loaded only if the loop hits an edge
+  case that needs them. Marked by a single `tier-3` HTML comment line on its
+  own; everything after that line is Tier 3. The marker is optional — a
+  skill without it has no Tier 3.
+
+Agents MUST respect tier boundaries when loading skill files. The
+orchestrator reads Tier 1 only at route time, reads Tier 2 on skill
+activation, and reads Tier 3 only if a failure class from `SKILL.md §8`
+triggers an edge-case lookup. The prelude `skills/principles/SKILL.md`
+is not routable and has no tier structure — it is imported via
+`@./skills/principles/SKILL.md` from the adapter entry files and is
+always fully loaded.
+
+Skills authored before Phase D used two inconsistent headers —
+`## Activate When` and `## When to Activate`. Phase D normalized all
+routable skills to `## Activate When` so the Tier 1 extractor in
+`skills/godmode/SKILL.md § Step 2` (a POSIX awk snippet) works on
+every skill.
+
 ## DispatchContext Schema
 
 The `DispatchContext` schema formalizes what was previously an ad-hoc prose dispatch message into a typed, validated input contract. It is versioned implicitly via the git history of `AGENTS.md` — any change to the fields or their semantics is recorded as a commit against this file.

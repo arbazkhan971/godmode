@@ -10,7 +10,7 @@ description: |
 
 # Chart — Data Visualization
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:chart`
 - User says "create a chart", "visualize this data", "make a graph"
 - User says "build a dashboard", "display metrics", "plot this"

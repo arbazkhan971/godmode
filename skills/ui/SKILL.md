@@ -144,6 +144,8 @@ UI REPORT:
 4. **Consistency over cleverness.**
 5. **Never ask to continue. Loop autonomously.**
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Lighthouse score: >90 performance
 - Interaction-to-paint: <100ms latency

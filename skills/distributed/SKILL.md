@@ -11,7 +11,7 @@ description: |
 
 # Distributed -- Distributed Systems Design
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:distributed`
 - User says "distributed system", "CAP theorem", "consensus protocol"
 - User says "Raft", "Paxos", "leader election", "distributed lock"

@@ -10,7 +10,7 @@ description: |
 
 # Backup — Backup & Disaster Recovery
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:backup`
 - User says "backup strategy," "disaster recovery," "what happens if we lose the database?"
 - User is designing data infrastructure that needs durability guarantees
@@ -260,6 +260,8 @@ WHILE gaps_remaining > 0 AND current_iteration < max_iterations:
         "Tier 2 coverage: {tier2_status}"
         "Last restore test: {last_restore_result}"
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - RPO Tier 1: <1h data loss window

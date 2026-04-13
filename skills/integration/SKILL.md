@@ -10,7 +10,7 @@ description: |
 
 # Integration — Integration Testing
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:integration`
 - User says "test with real database", "test API"
 - User asks about Testcontainers or Docker-based deps
@@ -200,6 +200,8 @@ Never ask to continue. Loop autonomously until done.
 4. ORM: Prisma/Drizzle/Knex, Alembic
 5. Seeding: seeds/, fixtures/, factories/
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <30s per integration test execution

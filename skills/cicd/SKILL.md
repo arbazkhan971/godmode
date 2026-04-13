@@ -10,7 +10,7 @@ description: |
 
 # CICD — CI/CD Pipeline Design
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:cicd`
 - User says "create pipeline", "set up CI/CD", "add GitHub Actions"
 - User says "optimize CI", "pipeline is slow", "fix failing pipeline"
@@ -213,6 +213,8 @@ ARTIFACT STRATEGY:
 5. If new pipeline: "Pipeline created. Push to trigger first run."
 6. If fixing pipeline: Show root cause and fix applied
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Pipeline runtime: <10min per PR

@@ -10,7 +10,7 @@ description: |
 
 # gRPC — Protocol Buffers & Service Development
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:grpc`
 - User says "build a gRPC service", "design proto"
 - User says "add streaming", "bidirectional stream"
@@ -242,6 +242,8 @@ Never ask to continue. Loop autonomously until done.
 4. Health check: grep grpc.health in source
 5. Streaming: grep stream in .proto files
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <50ms p95 unary RPC latency

@@ -108,6 +108,8 @@ curl -w "@curl-format.txt" -o /dev/null -s http://localhost:8080/health
 dig +stats example.com
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <100ms DNS resolution time
 - TLS handshake: <200ms for new connections

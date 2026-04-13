@@ -9,7 +9,7 @@ description: |
 
 # FastAPI — FastAPI Mastery
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:fastapi`
 - User says "build a FastAPI app", "async API"
 - User asks about Pydantic, DI, async endpoints
@@ -241,6 +241,8 @@ STOP when ANY of:
   - User requests stop
   - Max iterations reached
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - mypy fails: fix models → schemas → services → routers.

@@ -9,7 +9,7 @@ description: |
 
 # Chaos — Chaos Engineering
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:chaos`
 - User says "chaos test", "resilience test", "failure injection", "break it on purpose"
 - User asks "what happens when X fails?" or "is this resilient?"

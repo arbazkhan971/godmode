@@ -99,6 +99,8 @@ IF per-request: SSR. IF slow parts: Streaming.
 [ ] Metadata API (not manual <head>)
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <200ms Time to First Byte (TTFB)
 - Target: <100KB initial JS bundle per route

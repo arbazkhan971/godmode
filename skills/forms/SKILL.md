@@ -10,7 +10,7 @@ description: |
 
 # Forms — Form Architecture
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:forms`
 - User says "form validation", "multi-step form", "wizard"
 - When building any form beyond a simple single input
@@ -218,6 +218,8 @@ STOP when ANY of:
   - Keyboard navigation works for all interactions
   - User requests stop
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Fires every keystroke: switch to onBlur mode.

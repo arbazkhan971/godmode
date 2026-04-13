@@ -78,6 +78,8 @@ Single bounded context per service, no shared DBs,
 single team ownership, async where possible, circuit
 breakers on sync calls, saga for distributed txns.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <100ms inter-service call latency p95
 - Target: >99.9% service availability

@@ -173,6 +173,8 @@ STOP when FIRST of:
   - criterion_failed:  every skill DONE but success_criterion non-zero
 ```
 
+<!-- tier-3 -->
+
 ## Error Recovery
 | Failure | Action |
 |---|---|

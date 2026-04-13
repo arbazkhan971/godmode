@@ -9,7 +9,7 @@ description: |
 
 # Crypto — Cryptography Implementation
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:crypto`
 - User says "encryption", "hashing", "password storage", "bcrypt", "argon2"
 - User says "key management", "digital signature", "JWT signing"
@@ -130,6 +130,8 @@ IF bcrypt cost factor < 12: increase to >= 12.
 2. Check nginx.conf for ssl_protocols, ssl_ciphers
 3. grep for md5, sha1, des, ecb, Math.random — flag immediately
 ```
+
+<!-- tier-3 -->
 
 ## Platform Fallback (Gemini CLI, OpenCode, Codex)
 Run crypto tasks inline. All conventions apply identically.

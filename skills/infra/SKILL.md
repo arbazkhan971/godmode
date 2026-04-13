@@ -10,7 +10,7 @@ description: |
 
 # Infra — Infrastructure as Code
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:infra`
 - User says "terraform plan", "provision infrastructure"
 - User says "check drift", "estimate costs"
@@ -204,6 +204,8 @@ Never ask to continue. Loop autonomously until done.
 2. Provider: aws/google/azurerm blocks
 3. State: backend "s3"/"gcs"/"azurerm"
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <5min for infrastructure plan generation

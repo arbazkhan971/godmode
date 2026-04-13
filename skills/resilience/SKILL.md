@@ -113,6 +113,8 @@ Use timeout budget: pass remaining time downstream.
 [ ] Rate limiting at API boundary
 ```
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Circuit breaker: open after >50% error rate in 10s window
 - Retry budget: <=3 attempts with exponential backoff

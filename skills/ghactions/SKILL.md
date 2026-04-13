@@ -10,7 +10,7 @@ description: |
 
 # GHACTIONS — GitHub Actions Expert
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:ghactions`
 - User says "create workflow", "add GitHub Actions"
 - User says "matrix build", "reusable workflow"
@@ -189,6 +189,8 @@ grep -rn "uses:.*@v[0-9]" .github/workflows/
 grep -L "permissions:" .github/workflows/*.yml
 grep -L "timeout-minutes:" .github/workflows/*.yml
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: <10min CI workflow runtime

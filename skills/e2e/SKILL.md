@@ -10,7 +10,7 @@ description: |
 
 # E2E — End-to-End Testing
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:e2e`
 - User says "E2E test", "browser test", "integration test"
 - User asks about Playwright, Cypress, or Selenium
@@ -207,6 +207,8 @@ STOP when ANY of:
   - User requests stop
   - Max 10 iterations reached
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Tests fail on first run: check dev server, baseURL,

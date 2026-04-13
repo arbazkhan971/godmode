@@ -10,7 +10,7 @@ description: |
 
 # Legacy — Legacy Code Modernization
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:legacy`
 - User says "understand this legacy code"
 - User says "modernize", "tech debt", "dead code"
@@ -198,6 +198,8 @@ Never ask to continue. Loop autonomously until done.
 4. Complexity: files > 500 LOC, circular deps
 5. Confidence: Tests+CI+Types=HIGH, None=NONE
 ```
+
+<!-- tier-3 -->
 
 ## Quality Targets
 - Target: >60% test coverage before major refactor

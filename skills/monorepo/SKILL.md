@@ -79,6 +79,8 @@ Deep chains (4+ levels) -> flatten.
 Centralize in `packages/config/`: TypeScript base,
 ESLint, Prettier. All packages extend shared config.
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <30s affected-package detection
 - Target: <120s incremental build for changed packages

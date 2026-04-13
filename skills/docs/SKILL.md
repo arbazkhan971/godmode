@@ -9,7 +9,7 @@ description: |
 
 # Docs — Documentation Generation & Maintenance
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:docs`
 - User says "generate docs", "document this", "write a README"
 - User asks for runbooks, API docs, or onboarding guides
@@ -276,6 +276,8 @@ timestamp	skill	target	action	coverage_pct	stale_count	status
 4. 0 stale docs (doc modified date >= code modified date)
 5. 0 broken internal links
 6. Runbooks contain exact commands verified to work
+
+<!-- tier-3 -->
 
 ## Error Recovery
 | Failure | Action |

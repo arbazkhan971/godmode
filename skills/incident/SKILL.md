@@ -10,7 +10,7 @@ description: |
 
 # Incident — Incident Response & Post-Mortem
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:incident`
 - User reports production outage or degradation
 - User says "production is down", "write a post-mortem"
@@ -246,6 +246,8 @@ STOP post-mortem when:
   - All sections complete
   - All action items have owners and deadlines
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Cannot find root cause: widen to 24h before incident.

@@ -9,7 +9,7 @@ description: |
 
 # Experiment — A/B Testing & Experimentation
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:experiment`
 - User says "A/B test", "split test", "experiment"
 - User says "statistical significance", "sample size"
@@ -227,6 +227,8 @@ STOP when ALL of:
   - Guardrails defined and monitored
   - Cleanup plan scheduled
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - SRM detected: halt, check assignment + bot filtering.

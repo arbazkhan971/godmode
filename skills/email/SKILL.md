@@ -11,7 +11,7 @@ description: |
 
 # Email — Email & Notification Systems
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:email`
 - User says "send emails", "email templates"
 - User says "notification system", "push notifications"
@@ -201,6 +201,8 @@ STOP when: All notification types implemented
   AND bounce webhook active
   OR user requests stop
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - API key missing: print env var name, link to docs.

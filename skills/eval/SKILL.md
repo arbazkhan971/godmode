@@ -9,7 +9,7 @@ description: |
 
 # Eval — AI/LLM Evaluation
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:eval`
 - User says "evaluate my model", "benchmark this"
 - User says "LLM-as-judge", "compare models", "run evals"
@@ -221,6 +221,8 @@ STOP when ANY of:
   - Statistical significance computed for all metrics
   - User requests stop
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Noisy scores: increase sample, use multiple judges.

@@ -148,6 +148,8 @@ Setup: wrote .godmode/config.yaml. Committed.
 Append to `.godmode/setup-log.tsv`:
 `timestamp\tlanguage\tframework\tplatform\ttest\tlint\tbuild`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <15min from git clone to running dev environment
 - Target: <5 manual steps in setup process

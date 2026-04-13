@@ -122,6 +122,8 @@ timestamp	feature	dimension	scenario	L	I	score	severity	test_file	code_ref	statu
 ```
 Status: `TEST_PASS`, `TEST_FAIL`, `BUG_FOUND`, `NO_TEST`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: >90% of critical user paths covered
 - Scenario execution: <60s per end-to-end scenario

@@ -10,7 +10,7 @@ description: |
 
 # Loadtest — Load Testing & Performance
 
-## When to Activate
+## Activate When
 - User invokes `/godmode:loadtest`
 - User says "load test", "stress test", "benchmark"
 - User asks "can it handle the load?"
@@ -213,6 +213,8 @@ STOP when ANY of:
   - User requests stop
   - 5 consecutive no-improvement rounds
 ```
+
+<!-- tier-3 -->
 
 ## Error Recovery
 - Tool fails: verify installed, check target URL.

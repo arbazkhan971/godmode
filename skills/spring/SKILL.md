@@ -171,6 +171,8 @@ Rules:
 Log to `.godmode/spring.tsv`:
 `timestamp\taction\tentities\tcontrollers\tmigrations\ttests_status`
 
+<!-- tier-3 -->
+
 ## Quality Targets
 - Target: <3s application startup time
 - Target: <200ms p95 endpoint response time
