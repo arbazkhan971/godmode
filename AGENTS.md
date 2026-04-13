@@ -20,6 +20,17 @@ THINK  -->  BUILD  -->  OPTIMIZE  -->  SHIP
 - **Atomic changes.** One logical change per commit. Small, reviewable, reversible.
 - **Automatic rollback.** If a change makes things worse (tests fail, performance degrades, errors increase), revert it immediately. No exceptions.
 
+## Authoring Discipline
+
+The execution-discipline principles above govern how changes are verified and kept. A complementary authoring-discipline layer governs what gets written in the first place — read `skills/principles/SKILL.md` before the first Edit on any task that changes behavior.
+
+- **Think Before Coding.** State assumptions in one line. If multiple interpretations exist, present them and emit `NEEDS_CONTEXT` — do NOT pick silently.
+- **Simplicity First.** Run the pre-MODIFY checklist: inline single-use helpers, delete impossible-case error handlers, reject unrequested configurability. Catch complexity before it is written.
+- **Surgical Changes.** Every semantically changed line must trace directly to the user's request. Adjacent-code "improvements," formatting churn, and deletions of pre-existing dead code are `scope_drift` — discard.
+- **Goal-Driven Execution.** Replace subjective criteria ("works well," "looks good," "is faster") with a shell command that exits zero.
+
+These four rules apply to every agent, every skill, every round. They never override the Universal Protocol loop, keep/discard thresholds, or metric commands defined in `SKILL.md`.
+
 ## How to Use Skills
 
 When a user invokes a skill (e.g., `/godmode:secure`, `/godmode:test`, `/godmode:deploy`), **read the full skill file** at:
@@ -84,9 +95,33 @@ At task start, every agent must:
 git status          # Verify clean worktree
 git log -1 --oneline # Confirm latest commit
 If dirty → stash or commit before proceeding
+Read skills/principles/SKILL.md   # Authoring discipline prelude — every task, every round
 ```
 
-This ensures no agent inherits stale or conflicting state from a prior dispatch. Agents that skip this check and operate on a dirty worktree risk silent merge failures.
+This ensures no agent inherits stale or conflicting state from a prior dispatch, and that every agent internalizes the four authoring-discipline principles (Think / Simplicity / Surgical / Goal-driven) before making any edits. Agents that skip these checks and operate on a dirty worktree or without the prelude risk silent merge failures and unnecessary scope drift.
+
+## DispatchContext Schema
+
+The `DispatchContext` schema formalizes what was previously an ad-hoc prose dispatch message into a typed, validated input contract. It is versioned implicitly via the git history of `AGENTS.md` — any change to the fields or their semantics is recorded as a commit against this file.
+
+| Field | Required | Type | Meaning |
+|---|---|---|---|
+| `task_id` | yes | string | Unique identifier for this dispatch |
+| `agent_role` | yes | enum | `planner` / `builder` / `reviewer` / `optimizer` / `explorer` / `security` / `tester` |
+| `skill` | yes | string | Which `skills/<name>/SKILL.md` workflow to follow |
+| `scope.files` | yes | `string[]` | Files this agent may modify |
+| `scope.read_extra` | no | `string[]` | Additional files agent may read beyond scope.files and working tree |
+| `context.prior_reports` | no | `object[]` | Reports from previous agents in the chain |
+| `context.past_failures` | no | string | Path to failures.tsv relevant subset |
+| `constraints` | no | `string[]` | Additional restrictions (e.g. "no new dependencies") |
+| `budget.rounds` | yes | integer | Max iterations allowed |
+| `budget.timeout_ms` | yes | integer | Hard deadline in milliseconds |
+
+**Validation is mandatory at dispatch time.** Every agent MUST validate its incoming `DispatchContext` against this schema before beginning any task work. Validation is a pre-loop gate — it runs before the agent enters its normal protocol, and any failure to validate is a structural dispatch error, not a task error. Validation failures are NOT counted against `budget.rounds`.
+
+**Missing required fields are hard errors.** On a missing required field (`task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, or `budget.timeout_ms`), the agent MUST emit `BLOCKED: invalid_dispatch` and return a report that explicitly lists every missing field. The agent MUST NOT start the task, and MUST NOT attempt to recover by inferring, defaulting, or guessing. In particular, fields must NEVER silently default — a missing `budget.rounds` is a hard error, not an implicit "assume 10."
+
+**Unexpected fields are logged, not fatal.** If the dispatch contains fields not defined in this schema, the agent MUST log the unexpected field names and continue processing the known fields. This is intentional forward compatibility: the schema is allowed to grow, and older agents must tolerate newer dispatches without crashing. Unknown fields are never acted on — only logged — so additive changes are always safe.
 
 ## Agent Communication Protocol
 
@@ -126,7 +161,7 @@ Every agent must end its report with exactly one of these status codes:
 |--------|---------|---------------------|
 | `DONE` | Task completed successfully, all gates passed | Proceed to next stage |
 | `DONE_WITH_CONCERNS` | Task completed but agent flagged non-blocking issues | Proceed, but queue issues for follow-up |
-| `NEEDS_CONTEXT` | Agent cannot proceed without additional information | Orchestrator provides missing context and re-dispatches |
+| `NEEDS_CONTEXT` | Agent cannot proceed without additional information — missing files, missing context, OR ambiguous requirements with multiple valid interpretations. Use this whenever you would otherwise silently pick one interpretation. | Orchestrator provides missing context (or presents the alternatives and disambiguates) and re-dispatches |
 | `BLOCKED` | Agent hit an unresolvable issue after max retries | Orchestrator logs the blocker, skips or re-queues the task |
 | `PARTIAL` | Some subtasks completed, others failed or were skipped | Orchestrator keeps completed work, re-queues failures |
 

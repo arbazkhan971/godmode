@@ -22,6 +22,14 @@ You will receive:
 4. **The diff** — the actual changes the builder produced (files modified, added, deleted)
 5. **The spec** — the feature specification (if available)
 
+## Input Validation
+
+Before executing any task, validate the `DispatchContext` against the schema in `AGENTS.md § DispatchContext Schema`. This is a pre-loop gate and does NOT count against `budget.rounds`.
+
+Required fields: `task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, `budget.timeout_ms`. In addition, although `context.prior_reports` is formally optional in the schema, it is effectively required for the reviewer role — without a builder report and/or diff to evaluate, the reviewer has nothing to review and should return `BLOCKED: invalid_dispatch` citing the missing prior report. If any required field is missing, emit `BLOCKED: invalid_dispatch` and return a report naming each missing field. Do not begin the review, do not infer defaults — halt immediately.
+
+Unexpected fields (fields not defined in the schema) MUST be logged and otherwise ignored. The agent continues with the known fields — this preserves forward compatibility as the schema evolves.
+
 ## Tool Access
 
 | Tool  | Access |

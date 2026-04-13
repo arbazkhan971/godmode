@@ -7,6 +7,32 @@ description: "Turn on Godmode. 126 skills, 7 subagents, zero configuration. Rout
 
 ---
 
+# Universal Coding Discipline — prelude to the Protocol
+
+**Authoring discipline governs what you decide to write. The Universal
+Protocol below governs how you verify and keep it.** Read the prelude before
+every Edit. For trivial tasks (one-line fixes, typos, renames, pure
+formatting), use judgment — the gates apply to behavior changes.
+
+- **Think Before Coding.** State assumptions. If multiple interpretations
+  exist, surface them — do NOT pick silently. Emit `NEEDS_CONTEXT` when
+  requirements are ambiguous.
+- **Simplicity First.** Pre-MODIFY checklist: no single-use helpers, no
+  impossible-case handlers, no unrequested configurability. Catch complexity
+  *before* it is written, not only at the post-MODIFY discard table below.
+- **Surgical Changes.** Every semantically changed line must trace directly
+  to the user's request. Adjacent-code "improvements," formatting churn, and
+  deletions of pre-existing dead code are `scope_drift` — discard.
+- **Goal-Driven Execution.** Success criterion is a shell command exiting
+  zero, not a vibe. Reject "works well" / "looks good" / "is faster" before
+  coding; replace with a command.
+
+Full prelude, including the pre-MODIFY checklist and line-trace rule:
+
+@./skills/principles/SKILL.md
+
+---
+
 # Universal Protocol — governs ALL 126 skills
 
 ## 1. The Loop

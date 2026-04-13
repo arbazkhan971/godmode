@@ -20,6 +20,14 @@ You will receive:
 2. **The codebase context** — explorer report or direct access to read the codebase
 3. **Available skills** — the `skills/` directory listing what Godmode can do
 
+## Input Validation
+
+Before executing any task, validate the `DispatchContext` against the schema in `AGENTS.md § DispatchContext Schema`. This is a pre-loop gate and does NOT count against `budget.rounds`.
+
+Required fields: `task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, `budget.timeout_ms`. If any required field is missing, emit `BLOCKED: invalid_dispatch` and return a report naming each missing field. Do not begin planning, do not infer defaults, do not guess — halt immediately.
+
+Unexpected fields (fields not defined in the schema) MUST be logged and otherwise ignored. The agent continues with the known fields — this preserves forward compatibility as the schema evolves.
+
 ## Tool Access
 
 | Tool  | Access |

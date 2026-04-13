@@ -1,6 +1,7 @@
 # Godmode for Gemini CLI
 
 @./skills/godmode/SKILL.md
+@./skills/principles/SKILL.md
 
 ## Verify Installation
 
