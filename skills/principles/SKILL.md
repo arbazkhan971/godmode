@@ -57,8 +57,13 @@ This checklist catches complexity *before* it is written.
 Touch only what you must. Clean up only your own mess.
 
 **Line-trace rule.** Every semantically changed line must trace directly to
-the user's request. If not, classify as `scope_drift` and remove from your
-diff before committing.
+the user's request. If not, classify as `line_scope_drift` and remove from
+your diff before committing. The pre-commit audit specified in
+`docs/discard-audit.md` enforces this mechanically: it reads
+`git diff --cached`, classifies each hunk, and drops untraceable hunks via
+`git restore -p --staged` before the commit lands. A Cost-2 revert that
+could have been caught by this audit is logged as `escaped_discard`
+feedback against this checklist.
 
 *In scope:* lines implementing the requested behavior, tests covering it,
 orphans YOUR changes created (imports/vars/helpers your edit made unused).

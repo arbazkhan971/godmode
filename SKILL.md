@@ -68,6 +68,22 @@ KEEP    if  same metric + fewer lines                    # free simplification
 On discard: `git reset --hard HEAD~1`. Never leave broken commits.
 On keep: update baseline, continue.
 
+**Cheapest-discard-first precedence.** Discards have a cost hierarchy:
+
+- **Cost-0: pre-MODIFY strike.** The item is never written. See
+  `skills/principles/SKILL.md §2` pre-MODIFY checklist.
+- **Cost-1: pre-commit audit.** Written, but dropped via
+  `git restore -p --staged` before the commit lands. See
+  `docs/discard-audit.md` for the spec.
+- **Cost-2: post-commit revert.** This section's rules. `git reset
+  --hard HEAD~1` after the guard fails or the metric regresses.
+
+A Cost-2 discard that could have been caught at Cost-0 or Cost-1 is
+logged as `escaped_discard` in `.godmode/lessons.md` in addition to its
+primary failure class. Escaped discards are feedback for the pre-MODIFY
+checklist — 3+ escapes in a session means the checklist is drifting and
+the agent should re-read `skills/principles/SKILL.md §2` before IDEATE.
+
 ## 3. Simplicity Criterion
 
 Concrete thresholds — apply universally:
@@ -154,7 +170,8 @@ round	change	delta%	failure_class	reason	files_touched
 | measurement_error | Metric command flaky or non-deterministic (stdev > delta) |
 | noise | Delta within variance threshold (<0.5%) |
 | regression | Change broke something unrelated |
-| scope_drift | Change touched files outside assigned scope |
+| file_scope_drift | Change touched files outside `task.files` (wrong file). Recovery: revert whole commit, re-dispatch with narrower `task.files`. |
+| line_scope_drift | Change touched right file but added unrelated lines (formatting churn, adjacent "improvements," renames for consistency, deleted pre-existing dead code, auto-formatter reflows). Recovery: surgically drop drift hunks via `git restore -p --staged`, keep in-scope hunks, re-run guard. See `docs/discard-audit.md`. |
 | complexity_tax | Improvement too small for lines added |
 | infrastructure | Docker/env/dependency/tooling issue |
 | already_tried | Similar approach discarded in last 10 rounds |
