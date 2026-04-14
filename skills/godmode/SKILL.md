@@ -20,9 +20,12 @@ TSV writes are identical in both modes. See `skills/terse/SKILL.md` for the
 full contract and the before/after examples.
 
 Also check `.godmode/session-state.json` for auto-activation. If the file
-exists and `consecutive_rounds_without_human >= 5` AND
+exists and `consecutive_rounds_without_human >= 2` AND
 `terse_user_opted_out != true`: auto-enable terse for this round and emit
 the activation message defined in `skills/terse/SKILL.md § Auto-Activation`.
+**The threshold was lowered from 5 to 2 in Phase E** so that normal `/godmode`
+commands get terse compression by round 2 instead of waiting 5 rounds —
+first round stays verbose for human context, all subsequent rounds are terse.
 This check runs at the START of every round, before the loop body. The
 counter is incremented at the END of each round (immediately after DECIDE
 and LOG) and reset to 0 at the START of any round that was triggered by a
@@ -46,6 +49,15 @@ entries `[OBSOLETE]` rather than deleting — the file is append-only history.
 After compression, re-read and continue. Target post-compression length: ≤60
 lines. This keeps the lesson-loading context lean on long-running sessions
 where the file would otherwise grow unbounded.
+
+## Step 0c: Enable Token Logging (default on)
+Unless `GODMODE_TOKENS=0` is set in the environment, token logging per
+`skills/tokens/SKILL.md` is ON by default for this session. At the end of
+every round (after DECIDE and LOG), append one row to `.godmode/token-log.tsv`
+with the 10-column schema defined in the tokens skill. The logger uses the
+`chars / 4` heuristic documented there. Opt out with `GODMODE_TOKENS=0` only
+for privacy-sensitive workflows. This is part of Phase E Default Activations
+(`SKILL.md §14`) — no explicit `/godmode:tokens` invocation needed.
 
 ## Step 1: Detect Stack (once, cache)
 
@@ -146,13 +158,14 @@ routable — this is intentional.
 
 ```
 PHASE DETECTION:
-  no spec, no plan                → THINK
-  spec exists, no plan            → PLAN
-  plan exists, tasks incomplete   → BUILD
-  code exists, tests failing      → FIX
-  tests passing, unreviewed       → REVIEW
-  reviewed, metrics unoptimized   → OPTIMIZE
-  all green                       → SHIP
+  non-trivial feature, no research  → RESEARCH  (see auto-dispatch below)
+  no spec, no plan                  → THINK
+  spec exists, no plan              → PLAN
+  plan exists, tasks incomplete     → BUILD
+  code exists, tests failing        → FIX
+  tests passing, unreviewed         → REVIEW
+  reviewed, metrics unoptimized     → OPTIMIZE
+  all green                         → SHIP
 
 THRESHOLDS:
   Stuck recovery: > 5 consecutive discards
@@ -160,6 +173,19 @@ THRESHOLDS:
     → if still stuck: escalate to previous phase
     → if still stuck: log reason, move to next task
 ```
+
+**Research auto-dispatch rule** (Phase E Default Activations — `SKILL.md §14`).
+Before routing to THINK, check whether the task is "non-trivial":
+
+- Task mentions an external library, framework, or standard by name
+- Task scope is >5 files (estimated from the user's phrasing)
+- No `.godmode/research.md` exists for the feature
+
+If ANY of these is true AND the user did NOT pass `--no-research`: dispatch
+`skills/research/SKILL.md` first. Research writes `.godmode/research.md`;
+THINK then reads it at its own Step 2 (Scan Codebase) instead of rescanning.
+Research auto-dispatch turns the "prior art gap" into a no-op for every
+normal command. Skip for trivial tasks (one-line fixes, typos, renames).
 
 ## Step 3b: Failure-Aware Routing
 

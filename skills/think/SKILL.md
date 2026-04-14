@@ -136,8 +136,9 @@ Append to `.godmode/think-log.tsv`:
 `timestamp\tfeature\tapproaches\tchosen\tfiles_modify\tfiles_create\tspec_lines\trisks`
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude (Think/Simplicity/Surgical/Goal-driven), pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy, and coordination patterns all fire by default. Do NOT require explicit flags; do NOT skip any of them.
 1. Max 3 approaches. Pick one, move on.
-2. Always scan existing code first (unless greenfield).
+2. Always scan existing code first (unless greenfield). Read `.godmode/research.md` if it exists — research auto-dispatched before think per `SKILL.md §14`.
 3. Success criteria = shell command, never prose.
 4. Spec under 100 lines. Longer = decompose.
 5. Never commit spec with invalid file paths.

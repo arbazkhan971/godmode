@@ -110,6 +110,7 @@ Log to `.godmode/security-findings.tsv`:
 - Hardcoded secrets: <1 detected per scan
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default.
 1. Every finding: file:line + exploit + proof.
 2. Cover all OWASP Top 10 x 4 personas = 40 minimum.
 3. Never approve with Critical findings open.

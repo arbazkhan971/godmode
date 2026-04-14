@@ -80,11 +80,13 @@ git commit -m "plan: decompose {feature} into {N} tasks"
 ```
 
 ## Hard Rules
-1. EVERY task: `done_when` is shell command exiting 0.
-2. Max 5 files per task.
-3. No circular dependencies.
-4. Same-round tasks: zero file overlap.
-5. Commit plan to git, validate YAML before proceeding.
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default on every `/godmode:plan` invocation.
+1. **Declare a coordination pattern on the first line of every plan.** Pick one of the 6 from `docs/coordination-patterns.md`: Pipeline, Fan-out/Fan-in, Expert Pool, Producer-Reviewer, Supervisor, Hierarchical Delegation. Plans without a declared pattern are invalid — the executor returns `BLOCKED: invalid_plan`. Example first line: `Pattern: Producer-Reviewer`.
+2. EVERY task: `done_when` is shell command exiting 0.
+3. Max 5 files per task.
+4. No circular dependencies.
+5. Same-round tasks: zero file overlap.
+6. Commit plan to git, validate YAML before proceeding.
 
 ## TSV Logging
 Append `.godmode/plan-log.tsv`:

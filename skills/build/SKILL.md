@@ -97,6 +97,7 @@ STOP when FIRST of:
 ```
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude (Think/Simplicity/Surgical/Goal-driven), pre-commit audit (agents/builder.md step 10a), terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy, and coordination patterns all fire by default. Do NOT require explicit flags.
 1. One task per agent — never batch multiple tasks. One commit per task.
 2. Agent may only modify files listed in task.files. Touching other files = immediate discard.
 3. After every merge: `build_cmd && lint_cmd && test_cmd`. Any non-zero exit = stop round, fix before next merge.

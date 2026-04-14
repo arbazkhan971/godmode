@@ -96,9 +96,10 @@ git status          # Verify clean worktree
 git log -1 --oneline # Confirm latest commit
 If dirty → stash or commit before proceeding
 Read skills/principles/SKILL.md   # Authoring discipline prelude — every task, every round
+Read skills/stdio/SKILL.md        # Canonical command patterns — prefer terse equivalents for every Bash invocation
 ```
 
-This ensures no agent inherits stale or conflicting state from a prior dispatch, and that every agent internalizes the four authoring-discipline principles (Think / Simplicity / Surgical / Goal-driven) before making any edits. Agents that skip these checks and operate on a dirty worktree or without the prelude risk silent merge failures and unnecessary scope drift.
+This ensures no agent inherits stale or conflicting state from a prior dispatch, and that every agent internalizes the four authoring-discipline principles (Think / Simplicity / Surgical / Goal-driven) before making any edits, and knows which command patterns to prefer when reading tool output. Agents that skip these checks and operate on a dirty worktree, or without the prelude, or without stdio patterns, risk silent merge failures, unnecessary scope drift, and wasteful context loads.
 
 ## Progressive Disclosure Tiers
 

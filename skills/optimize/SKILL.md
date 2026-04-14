@@ -99,6 +99,7 @@ Tie-break: fewer lines wins
 ```
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit (agents/optimizer.md step 10a), terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default. Token logging to `.godmode/token-log.tsv` happens per round unless `GODMODE_TOKENS=0`.
 1. Metric = shell command outputting single number.
 2. One change per agent per round. Max 3 agents.
 3. Never modify test files. Never trade readability
