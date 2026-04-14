@@ -65,6 +65,7 @@ Status: {DONE|PARTIAL}.`
 10. **FINAL REPORT**: print summary with start coverage, final coverage, iterations, tests added, and status.
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit (agents/tester.md step 11a), terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default.
 1. RED first -- test must fail before implementation.
    If passes immediately: wrong test, delete.
 2. One test per iteration -- atomic, revertable.

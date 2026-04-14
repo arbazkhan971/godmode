@@ -279,3 +279,91 @@ Persistent learning across sessions. File: `.godmode/lessons.md`
 - Bad: "Be careful with caching."
 - Good: "Redis TTL must match DB write frequency. 60s TTL with 5min writes = stale reads."
 - Lessons are append-only. Never delete. Mark obsolete lessons with `[OBSOLETE]`.
+
+## 14. Default Activations
+
+Every `/godmode:*` invocation — and every natural-language `/godmode` request
+that routes to a pipeline skill (think, plan, build, test, fix, optimize,
+secure, ship) — fires the full default stack below. No explicit flags
+required. This section is the single source of truth for what runs by default.
+
+### Authoring discipline (Karpathy family)
+
+1. **Principles prelude** — `skills/principles/SKILL.md` is imported via
+   `@./skills/principles/SKILL.md` from `SKILL.md`, `GEMINI.md`, `OPENCODE.md`.
+   Every agent reads it before the first Edit. Governs: Think Before Coding,
+   Simplicity First (pre-MODIFY strike), Surgical Changes (line-trace rule),
+   Goal-Driven Execution.
+2. **Pre-commit discard audit** — `agents/builder.md § Protocol 10a`,
+   `agents/tester.md § Protocol 12a`, `agents/optimizer.md § Protocol 11a`.
+   Before every `git commit`, drops `line_scope_drift` hunks via
+   `git restore -p --staged`. Spec: `docs/discard-audit.md`.
+3. **DispatchContext schema validation** — `AGENTS.md § DispatchContext
+   Schema`. All 7 subagents validate input at dispatch time; missing required
+   field → `BLOCKED: invalid_dispatch`.
+4. **Discard cost hierarchy** — Cost-0 (pre-MODIFY strike), Cost-1 (pre-commit
+   audit), Cost-2 (post-commit revert). Cost-2 discards that should have been
+   caught earlier are logged as `escaped_discard` in `lessons.md`.
+5. **Scope-drift taxonomy** — `file_scope_drift` (wrong file → revert whole
+   commit) vs `line_scope_drift` (right file, wrong lines → drop hunks
+   surgically). See `SKILL.md §8 Failure Classification`.
+
+### Token optimization (caveman / rtk / Harness family)
+
+6. **Progressive Disclosure routing** — `skills/godmode/SKILL.md § Step 2`
+   reads ONLY Tier 1 (~20 lines) of each skill at route time via a POSIX awk
+   extractor. ~90% routing-time context reduction across 134 skills.
+7. **Stdio input-side compression** — `skills/stdio/SKILL.md`. Canonical
+   command patterns (git log → git log --oneline -20, cat → wc -l, etc.)
+   that every agent prefers. Referenced from `AGENTS.md § Context Refresh`.
+8. **Terse output-side compression** — `skills/terse/SKILL.md`. Auto-activates
+   from round 2 onward (lowered from 5 in Phase E) unless
+   `terse_user_opted_out=true`. Compresses round summaries, status lines,
+   agent reports. TSVs, code, errors, commit messages, final summary stay
+   verbose.
+9. **Token observability** — `skills/tokens/SKILL.md`. Logs per-round
+   input/output token counts to `.godmode/token-log.tsv`. Default ON per
+   session; opt out via `GODMODE_TOKENS=0`.
+10. **Lessons compression** — `skills/godmode/SKILL.md § Step 0b` compresses
+    `lessons.md` if it exceeds 100 lines before loading.
+
+### Coordination and observability (Harness + best-practice family)
+
+11. **Named coordination patterns** — `docs/coordination-patterns.md`.
+    Every plan declares its outermost pattern (Pipeline, Fan-out/Fan-in,
+    Expert Pool, Producer-Reviewer, Supervisor, Hierarchical Delegation)
+    in its first line. Enforced in `skills/plan/SKILL.md`.
+12. **Research auto-dispatch** — `skills/godmode/SKILL.md § Step 3` routes
+    to `skills/research/SKILL.md` before `skills/think/` when the task
+    mentions an external library/framework, spans >5 files, or has no prior
+    `.godmode/research.md`.
+
+### How the 8 pipeline skills inherit
+
+Each of `think`, `plan`, `build`, `test`, `fix`, `optimize`, `secure`, `ship`
+has a rule in its `## Hard Rules` section:
+
+> **0. Inherits Default Activations per `SKILL.md §14`.** Principles prelude,
+> pre-commit audit, terse, stdio, tokens, DispatchContext validation,
+> Progressive Disclosure routing, discard cost hierarchy, and coordination
+> patterns all fire by default. Do NOT require explicit flags; do NOT skip
+> any of them unless the user opts out via documented env vars or slash
+> commands.
+
+Non-pipeline skills (like `bench`, `tutorial`, `team`) inherit §14 indirectly
+through `skills/godmode/SKILL.md` — the orchestrator applies Step 0a, 0b,
+and Step 3b checks regardless of which skill is dispatched.
+
+### Opt-outs (the only way to disable a default)
+
+| Default | Opt-out |
+|---|---|
+| Terse auto-activation | `/godmode:terse off` (sticky for session) or `GODMODE_TERSE=0` |
+| Token logging | `GODMODE_TOKENS=0` env var |
+| Pre-commit audit | Cannot opt out — it's a mechanical gate |
+| Principles prelude | Cannot opt out — imported as `@./` prelude |
+| DispatchContext validation | Cannot opt out — it's a hard gate |
+| Progressive Disclosure | Cannot opt out — Tier 2/3 always loadable on demand |
+| Research auto-dispatch | Pass `--no-research` flag OR run `/godmode:think` directly |
+
+Everything else runs on every normal command.

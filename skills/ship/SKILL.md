@@ -105,6 +105,7 @@ Append to `.godmode/ship-results.tsv`:
 Print: `Ship: {type} completed. {outcome}. URL: {url}.`
 
 ## Hard Rules
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default. Ship logs to `.godmode/token-log.tsv` per round unless `GODMODE_TOKENS=0`.
 1. Never ship with failing build, lint, or test.
 2. Always show dry-run + rollback before executing.
 3. One ship per invocation: PR, release, or deploy.

@@ -56,9 +56,10 @@ Unexpected fields (fields not defined in the schema) MUST be logged and otherwis
 7. **Commit the change.** Use message format: `optimize(<scope>): iter <N> — <what changed>`. The commit is your savepoint.
 8. **Measure the metric.** Run the exact same measurement command as the baseline. Record the new value.
 9. **Decide: keep or revert.** If the metric improved (or held steady with a structural improvement), keep the commit. If the metric worsened or tests broke, revert the commit with `git revert` — never `git reset --hard`.
-10. **Log the iteration.** Record: iteration number, what changed, before value, after value, decision (keep/revert), reasoning.
+10. **Log the iteration.** Record: iteration number, what changed, before value, after value, decision (keep/revert), reasoning. Also append one row to `.godmode/token-log.tsv` per `skills/tokens/SKILL.md` unless `GODMODE_TOKENS=0`.
+10a. **Pre-commit discard audit** (before every `git commit`, Phase E Default Activation). Run the mechanical hunk classifier from `docs/discard-audit.md`. For each hunk in `git diff --cached`, classify as `requirement` (directly moves the metric), `test_for_requirement`, `orphan_cleanup` (imports/vars your edits made unused), or `line_scope_drift`. Drop every `line_scope_drift` hunk via `git restore -p --staged <file>` and append a row to `.godmode/optimize-failures.tsv` with class `line_scope_drift`. Whitespace-only and comment-only hunks default to `line_scope_drift`. Re-run the measurement command after dropping hunks to confirm the metric delta is still valid. If the metric degraded because of the drops, restore the hunks and classify the original round as `noise` instead.
 11. **Repeat from step 5** until: the target is reached, the iteration budget is exhausted, or no more candidates remain.
-12. **Produce the optimization report.** Summarize all iterations, net improvement, and remaining opportunities.
+12. **Produce the optimization report.** Summarize all iterations, net improvement, and remaining opportunities. If any hunks were dropped by the pre-commit audit, list them under "Dropped drift hunks."
 
 ## Constraints
 

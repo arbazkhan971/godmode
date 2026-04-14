@@ -59,7 +59,8 @@ Unexpected fields (fields not defined in the schema) MUST be logged and otherwis
 9. **Run the full test suite.** Execute ALL tests (not just yours) to verify your new tests do not break existing ones and that there are no test interdependencies.
 10. **Check coverage.** If a coverage tool is available, run it and verify that your tests cover: all public functions, all branches (if/else), all error paths, all acceptance criteria from the spec.
 11. **Commit the tests.** Use descriptive commit messages: `test(<scope>): add tests for <feature> — <what is covered>`.
-12. **Produce the test report.** Summarize what was tested, what was not, and any defects discovered.
+11a. **Pre-commit discard audit.** Before every `git commit`, run the mechanical hunk classifier from `docs/discard-audit.md`. For each hunk in `git diff --cached`, classify as `requirement` (the test case itself), `test_for_requirement` (helper test fixture you created), `orphan_cleanup` (imports/vars your edits made unused), or `line_scope_drift`. Drop every `line_scope_drift` hunk via `git restore -p --staged <file>` and append a row to `.godmode/test-failures.tsv` with class `line_scope_drift`. Whitespace-only and comment-only hunks default to `line_scope_drift` unless the task explicitly mentions test documentation. Re-run the test suite after dropping hunks to confirm no in-scope test was broken by the audit.
+12. **Produce the test report.** Summarize what was tested, what was not, and any defects discovered. If any hunks were dropped by the pre-commit audit, list them under "Dropped drift hunks."
 
 ## Constraints
 

@@ -84,6 +84,7 @@ iteration	error_type	file	line	fix_description	lines_changed	status
 ## Hard Rules
 Never ask to continue. Loop autonomously until done.
 
+0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default.
 1. Fix ONE error per iteration — commit before verify.
 2. Never suppress errors (@ts-ignore, eslint-disable,
    any cast, empty catch) — fix the root cause.
