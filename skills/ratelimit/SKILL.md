@@ -8,6 +8,7 @@ description: Rate limiting algorithms, quota management,
 - `/godmode:ratelimit`, "rate limit", "throttle"
 - "API quota", "token bucket", "sliding window"
 - "DDoS protection", "abuse prevention", "429"
+- "rate limiting", "rate limit middleware", "throttling", "request throttle"
 
 ## Workflow
 

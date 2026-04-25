@@ -12,8 +12,8 @@ description: |
 
 ## Activate When
 - User invokes `/godmode:cicd`
-- User says "create pipeline", "set up CI/CD", "add GitHub Actions"
-- User says "optimize CI", "pipeline is slow", "fix failing pipeline"
+- User says "create pipeline", "ci/cd pipeline", "ci cd pipeline", "set up CI/CD", "add GitHub Actions"
+- User says "optimize CI", "pipeline is slow", "fix failing pipeline", "build pipeline tuning", "release pipeline"
 - User says "add deployment stage", "set up matrix builds"
 - Project has no CI/CD configuration
 - Shipping workflow requires automated pipeline

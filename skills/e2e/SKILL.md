@@ -12,6 +12,7 @@ description: |
 
 ## Activate When
 - User invokes `/godmode:e2e`
+- User says "end to end", "end-to-end", "e2e test", "user flow test", "checkout flow"
 - User says "E2E test", "browser test", "integration test"
 - User asks about Playwright, Cypress, or Selenium
 - User needs to fix flaky E2E tests

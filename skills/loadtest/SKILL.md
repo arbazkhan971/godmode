@@ -12,6 +12,7 @@ description: |
 
 ## Activate When
 - User invokes `/godmode:loadtest`
+- User says "load test", "stress test", "performance under load"
 - User says "load test", "stress test", "benchmark"
 - User asks "can it handle the load?"
 - Ship skill needs performance validation

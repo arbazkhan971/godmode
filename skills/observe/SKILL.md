@@ -7,6 +7,7 @@ description: Monitoring and observability (metrics/logs/traces).
 - `/godmode:observe`, "add monitoring", "set up logging"
 - "create alerts", "define SLOs", "build dashboard"
 - Shipping without observability instrumentation
+- "prometheus", "metrics", "observability stack", "monitoring metrics"
 
 ## Workflow
 

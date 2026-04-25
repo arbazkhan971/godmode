@@ -8,6 +8,8 @@ description: >
 ## Activate When
 - `/godmode:secure`, "security audit", "vulnerabilities"
 - "harden", "pentest", "threat model"
+- "sql injection", "owasp", "owasp top 10", "vulnerability scan"
+- "check owasp", "owasp issues", "security issues"
 
 ## Workflow
 

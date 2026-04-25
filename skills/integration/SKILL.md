@@ -12,6 +12,7 @@ description: |
 
 ## Activate When
 - User invokes `/godmode:integration`
+- User says "integration test", "integration testing", "test integration between services"
 - User says "test with real database", "test API"
 - User asks about Testcontainers or Docker-based deps
 - `/godmode:test` identifies integration coverage gaps

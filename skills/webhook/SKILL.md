@@ -8,7 +8,8 @@ description: >
 # Webhook -- Design, Delivery & Security
 
 ## Activate When
-- `/godmode:webhook`, "webhook delivery", "callback URL"
+- `/godmode:webhook`, "write a webhook", "webhook handler"
+- "webhook delivery", "callback URL"
 - "verify webhook signature", "retry failed webhooks"
 - "dead letter queue", "event notifications"
 - When API needs to notify external systems

@@ -13,6 +13,7 @@ description: |
 ## Activate When
 - User invokes `/godmode:graphql`
 - User says "build a GraphQL API", "design schema"
+- User says "write a graphql resolver", "resolver", "graphql resolver"
 - User says "fix N+1 queries", "add DataLoader"
 - User says "set up subscriptions", "federate schema"
 

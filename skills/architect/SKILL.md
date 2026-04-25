@@ -12,7 +12,7 @@ description: |
 
 ## Activate When
 - User invokes `/godmode:architect`
-- User says "design the architecture", "system design", "how should I structure this"
+- User says "design the architecture", "system architecture", "architectural design", "system design"
 - User asks about monolith vs. microservices, serverless, or event-driven decisions
 - When starting a greenfield project that needs structural decisions
 - When `/godmode:think` identifies architecture as the primary concern
