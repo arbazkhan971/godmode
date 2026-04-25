@@ -69,9 +69,12 @@ canonical_match() {
 # Activate When block, ending at the next `##`), not the buggy awk.
 tier1_block() {
   awk '
-    /^## Activate When/ { in_block = 1; print; next }
-    in_block && /^## / { exit }
-    in_block { print }
+    NR == 1 && $0 == "---" { in_fm = 1; print; next }
+    in_fm && $0 == "---" { in_fm = 0; print; next }
+    in_fm { print; next }
+    /^## Activate When/ { in_aw = 1; print; next }
+    in_aw && /^## / { exit }
+    in_aw { print }
   ' "$1"
 }
 
