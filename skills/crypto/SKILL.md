@@ -1,10 +1,6 @@
 ---
 name: crypto
-description: |
-  Cryptography implementation skill. Activates when user needs to implement encryption (at rest or in transit), key
-    management, password hashing (Argon2, bcrypt), digital signatures, JWT security, TLS hardening, or any
-    cryptographic operation. Triggers on: /godmode:crypto, "encryption", "hashing", "key management", "TLS setup",
-    "digital signature", "JWT signing", or when code handles sensitive data.
+description: Crypto. encryption, hashing, Argon2, bcrypt, key management, JWT signing, TLS hardening, digital signatures, sensitive data.
 ---
 
 # Crypto — Cryptography Implementation

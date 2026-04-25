@@ -1,10 +1,6 @@
 ---
 name: docs
-description: |
-  Documentation generation and maintenance skill. Activates when the project needs API docs (OpenAPI/Swagger), code
-    docs (JSDoc, docstrings), README generation, runbook creation, or documentation quality audits. Detects stale
-    docs, missing coverage, and obsolescence. Triggers on: /godmode:docs, "generate docs", "update documentation",
-    "write a README", "create runbook", or when shipping reveals undocumented public APIs.
+description: Docs. OpenAPI/Swagger, JSDoc, docstrings, README, runbook, API docs, stale docs audit, missing coverage.
 ---
 
 # Docs — Documentation Generation & Maintenance

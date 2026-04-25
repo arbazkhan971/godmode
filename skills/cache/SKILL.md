@@ -1,11 +1,6 @@
 ---
 name: cache
-description: |
-  Caching strategy skill. Activates when user needs to design cache layers (CDN, application, database, session),
-    implement cache invalidation strategies (TTL, event-based, write-through, write-behind), configure
-    Redis/Memcached/Varnish, or prevent cache stampedes. Triggers on: /godmode:cache, "add caching", "cache
-    invalidation", "Redis setup", "cache strategy", "CDN configuration", "cache stampede", or when the orchestrator
-    detects caching opportunities.
+description: Cache. Redis, Memcached, Varnish, CDN, cache invalidation, TTL, write-through, cache stampede, thundering herd.
 ---
 
 # Cache -- Caching Strategy
