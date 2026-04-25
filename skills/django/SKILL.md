@@ -1,12 +1,6 @@
 ---
 name: django
-description: |
-  Django and FastAPI development skill. Activates when building, architecting, or optimizing Python web applications.
-    Covers Django project structure and app architecture, Django REST Framework with serializers and viewsets, FastAPI
-    dependency injection and Pydantic models, async Django with ASGI configuration, admin customization, database
-    optimization with the Django ORM, and production deployment. Every recommendation includes concrete code and
-    architectural rationale. Triggers on: /godmode:django, "Django", "FastAPI", "DRF", "Django REST Framework",
-    "Pydantic", "ASGI", "Django admin", "Python web", "viewsets", "serializers".
+description: Django + FastAPI development. Project structure, DRF serializers/viewsets, Pydantic, async Django with ASGI, admin, ORM optimization, deployment.
 ---
 
 # Django — Django & FastAPI Development
