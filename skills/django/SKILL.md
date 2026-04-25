@@ -18,6 +18,7 @@ description: |
 - User asks about "DRF", "Django REST Framework", "serializers", "viewsets"
 - User mentions "Django admin", "admin customization"
 - User asks about "ASGI", "async Django", "Uvicorn", "Daphne"
+- User says "django view", "views.py", "Django view for"
 - When `/godmode:plan` identifies a Python web project
 - When `/godmode:review` flags Django or FastAPI architecture issues
 

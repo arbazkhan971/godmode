@@ -11,6 +11,7 @@ description: >
 - `/godmode:svelte`, "Svelte app", "SvelteKit"
 - "Svelte stores", "runes", "$state", "load functions"
 - "form actions", "SvelteKit routing"
+- "work in svelte", "svelte component", "write svelte"
 
 ## Auto-Detection
 ```bash

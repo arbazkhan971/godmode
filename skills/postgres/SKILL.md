@@ -9,6 +9,7 @@ description: PostgreSQL mastery -- advanced features,
 - "tune postgres", "replication", "partition table"
 - "pgbouncer", "pgvector", "full-text search"
 - "VACUUM", "ANALYZE", "bloat", "pg_stat"
+- "postgres migration", "write a migration", "postgres schema"
 
 ## Workflow
 

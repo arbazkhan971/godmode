@@ -17,6 +17,7 @@ description: |
 - When building a new service or microservice that exposes endpoints
 - When `/godmode:plan` identifies API-related tasks
 - When `/godmode:review` flags API design issues
+- User says "add an endpoint", "api endpoint", "add api endpoint"
 
 ## Workflow
 
