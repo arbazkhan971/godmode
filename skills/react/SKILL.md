@@ -8,6 +8,7 @@ description: React architecture -- components, state,
 - `/godmode:react`, "React app", "component architecture"
 - "state management", "React performance", "re-renders"
 - "hooks", "Server Components", "React Testing Library"
+- "React component", "build a react", "react component"
 
 ## Workflow
 

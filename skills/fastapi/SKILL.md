@@ -14,6 +14,7 @@ description: |
 - User says "build a FastAPI app", "async API"
 - User asks about Pydantic, DI, async endpoints
 - When working with Python async backend services
+- User says "fastapi route", "FastAPI endpoint", "route for orders"
 
 ## Workflow
 

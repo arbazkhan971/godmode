@@ -8,6 +8,7 @@ description: Next.js mastery -- App Router, Server Components,
 - `/godmode:nextjs`, "Next.js", "App Router"
 - "Server Components", "server actions", "ISR"
 - "SSG", "SSR", "next/image", "middleware"
+- "nextjs page", "Next.js page", "nextjs dashboard"
 
 ## Workflow
 

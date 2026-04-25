@@ -7,6 +7,7 @@ description: Redis architecture and system design.
 - `/godmode:redis`, "design a cache", "redis cluster"
 - "pub/sub", "rate limiting", "session store"
 - "leaderboard", "Lua scripting", "redis streams"
+- "redis caching", "tune redis", "redis cache"
 
 ## Workflow
 

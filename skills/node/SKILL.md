@@ -7,6 +7,7 @@ description: Node.js backend development.
 - `/godmode:node`, "Node.js backend", "REST API"
 - "Express", "Fastify", "Hono", "NestJS"
 - "middleware", "streams", "worker threads", "event loop"
+- "node service", "spin up a node", "Node.js service"
 
 ## Workflow
 
