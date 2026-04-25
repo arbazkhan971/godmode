@@ -1,12 +1,6 @@
 ---
 name: ddd
-description: |
-  Domain-Driven Design skill. Activates when user needs to model a complex domain, define bounded contexts, design
-    aggregates, or facilitate event storming. Covers strategic design (bounded contexts, context mapping, ubiquitous
-    language) and tactical design (aggregates, entities, value objects, domain events, repositories). Produces bounded
-    context maps, aggregate boundary diagrams, domain event catalogs, and implementation scaffolds. Triggers on:
-    /godmode:ddd, "model the domain", "bounded context", "aggregate design", "event storming", or when the
-    orchestrator detects domain modeling needs.
+description: Domain-Driven Design. Bounded contexts, context mapping, ubiquitous language, aggregates, entities, value objects, domain events, repositories, event storming.
 ---
 
 # DDD — Domain-Driven Design

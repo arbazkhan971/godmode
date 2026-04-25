@@ -1,12 +1,6 @@
 ---
 name: auth
-description: |
-  Authentication and authorization skill. Activates when user needs to design or implement authentication flows (JWT,
-    OAuth2, OIDC, SAML, API keys, mTLS), session management, multi-factor authentication, passwordless auth, token
-    lifecycle management, or social login integration. Produces architecture decisions, implementation code, security
-    configuration, and integration tests for the full identity stack. Triggers on: /godmode:auth, "authentication",
-    "login flow", "OAuth setup", "JWT tokens", "session management", "MFA", or when building features that require
-    user identity.
+description: Authentication and authorization. JWT, OAuth2, OIDC, SAML, API keys, mTLS, MFA, passwordless, social login, session management, identity providers (Auth0, Okta, Cognito).
 ---
 
 # Auth — Authentication & Authorization

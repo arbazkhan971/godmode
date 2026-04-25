@@ -1,12 +1,6 @@
 ---
 name: agent
-description: |
-  AI agent development skill. Activates when users need to design, build, or evaluate AI agents. Covers agent
-    architecture patterns (ReAct, plan-and-execute, multi-agent), tool design and integration, memory systems
-    (short-term, long-term, episodic), guardrails and safety, orchestration, and evaluation. Every agent gets a
-    structured architecture spec, tool inventory, safety guardrails, and test suite. Triggers on: /godmode:agent,
-    "build an AI agent", "design agent tools", "add memory to agent", or when the orchestrator detects agent-related
-    work.
+description: AI agent development. ReAct/plan-and-execute/multi-agent architectures, tool design, memory systems, guardrails, orchestration (LangChain, LlamaIndex, CrewAI, AutoGen).
 ---
 
 # Agent — AI Agent Development

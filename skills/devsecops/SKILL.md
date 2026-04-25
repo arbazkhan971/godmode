@@ -1,13 +1,6 @@
 ---
 name: devsecops
-description: |
- DevSecOps pipeline skill. Activates when user needs to integrate security into CI/CD pipelines, configure
- static analysis (SAST), dynamic analysis (DAST), software composition analysis (SCA), container scanning,
- secret scanning, or establish security gates in deployment workflows. Supports Semgrep, CodeQL, SonarQube,
- OWASP ZAP, Burp Suite, Trivy, Snyk, and other industry-standard tools. Produces pipeline configurations,
- security gate definitions, and remediation workflows. Triggers on: /godmode:devsecops, "secure pipeline",
- "add SAST", "security gate", "container scan", "shift left", or when building CI/CD that needs security
- controls.
+description: DevSecOps pipeline security. SAST/DAST/SCA scanning, secret scanning, container scanning (Trivy, Snyk, Semgrep, CodeQL), security gates, shift-left CI/CD integration.
 ---
 
 # DevSecOps — Secure Pipeline Integration
