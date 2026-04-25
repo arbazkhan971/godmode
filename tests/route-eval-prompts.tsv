@@ -1,0 +1,109 @@
+# prompt	expected_skill
+# 100-row routing-accuracy eval set for godmode.
+# Format: <prompt><TAB><expected_skill>. Lines starting with # are skipped.
+# Authoring discipline: half are direct trigger-table hits (sanity floor),
+# half are real-world phrasings a developer actually types.
+#
+# === Tier A: canonical-trigger sanity floor (50 prompts) ===
+make this faster	optimize
+optimize the hot path	optimize
+fix the broken build	fix
+something is broken	fix
+why is this failing	debug
+debug this crash	debug
+add tests for the auth module	test
+improve test coverage	test
+secure this endpoint	secure
+audit for vulnerabilities	secure
+review my code	review
+check my code for issues	review
+research prior art on rate limiting	research
+gather prior art	research
+build a webhook receiver	build
+implement a feature flag system	build
+create a new microservice	build
+plan the migration	plan
+break down this task	plan
+ship it	ship
+deploy to staging	ship
+finish up and clean up	finish
+clean up the leftovers	finish
+turn on terse mode	terse
+compress output	terse
+log the token budget	tokens
+track token usage	tokens
+pick the right command patterns	stdio
+use stdio canonical commands	stdio
+bundle these skills as a team	team
+compose a team workflow	team
+walk me through the tutorial	tutorial
+do the onboarding	tutorial
+run a benchmark	bench
+benchmark the latest change	bench
+add an api endpoint	api
+design the api spec	api
+write a graphql resolver	graphql
+add a grpc service	grpc
+write a postgres migration	postgres
+tune redis caching	redis
+build a react component	react
+add a vue page	vue
+work in svelte	svelte
+django view for users	django
+fastapi route for orders	fastapi
+spin up a node service	node
+add an angular module	angular
+nextjs page for the dashboard	nextjs
+rails controller for posts	rails
+spring boot endpoint	spring
+# === Tier B: real-world phrasing (50 prompts) ===
+the api is slow	optimize
+response times are creeping up	optimize
+endpoint p99 is too high	optimize
+auth is broken in prod	fix
+login keeps failing	fix
+the build is red	fix
+ci is failing	fix
+deploy errored out	fix
+why is memory leaking	debug
+cant figure out why this hangs	debug
+trace this segfault	debug
+no tests for this module	test
+i want better test coverage	test
+write integration tests	integration
+end to end tests for checkout	e2e
+load test the api	loadtest
+sql injection scan	secure
+check for owasp issues	secure
+add rate limiting	ratelimit
+add jwt auth	auth
+add role based access	rbac
+encrypt these secrets	secrets
+hash passwords properly	crypto
+need a code review	review
+look over this pr	review
+break this epic into tasks	plan
+draft an rfc for the redesign	rfc
+design the architecture	architect
+domain driven design for billing	ddd
+research how others do this	research
+deploy to production	ship
+release the v2	ship
+ready to ship	ship
+wrap up loose ends	finish
+make output less verbose	terse
+how many tokens did this round use	tokens
+add a benchmark harness	bench
+help me get started	tutorial
+write a kubernetes manifest	k8s
+docker image build is huge	docker
+github actions workflow needs work	ghactions
+ci cd pipeline tuning	cicd
+log structured events	logging
+add observability	observe
+prometheus metrics	observe
+add a feature flag	feature
+seed the database	seed
+write a webhook	webhook
+add a queue worker	queue
+process events asynchronously	event
