@@ -1,12 +1,6 @@
 ---
 name: cli
-description: |
-  CLI tool development skill. Activates when building, polishing, or distributing command-line interfaces and terminal
-    user interfaces. Covers argument parsing design (Commander, Clap, Cobra, Click), interactive prompts and TUI
-    frameworks (Ink, Ratatui, Bubbletea, Rich), configuration management (config files, environment variables, XDG),
-    shell completion generation, distribution strategies (npm, Homebrew, cargo, pip), and CLI UX best practices. Every
-    recommendation includes concrete implementation and cross-platform considerations. Triggers on: /godmode:cli, "CLI
-    tool", "command line", "terminal app", "TUI", "argument parser", "shell completion".
+description: CLI tool development. Argument parsing (Commander, Clap, Cobra, Click), TUI frameworks (Ink, Ratatui, Bubbletea, Rich), shell completions, config management, cross-platform distribution.
 ---
 
 # CLI — CLI Tool Development
