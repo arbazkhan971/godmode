@@ -42,7 +42,7 @@ canonical_match() {
     *"rate limiting"*|*"rate limit"*|*"throttling"*)     echo ratelimit ;;
     *"make faster"*|*"optimize"*|*"slow"*|*"response time"*|*"p99"*|*"latency"*)  echo optimize ;;
     *"why is this"*|*"debug"*|*"leaking"*|*"segfault"*|*"trace this"*)            echo debug ;;
-    *"failing"*|*"errored"*|*"red"*|*"broken"*|*"error"*|*"fix"*)                 echo fix ;;
+    *"is red"*|*" red "*|*"failing"*|*"errored"*|*"broken"*|*"error"*|*"fix"*)    echo fix ;;
     *"vulnerabilities"*|*"secure"*)                                               echo secure ;;
     *"check my code"*|*"look over this pr"*|*"pull request"*|*"review"*)          echo review ;;
     *"prior art"*|*"research"*)                                                   echo research ;;

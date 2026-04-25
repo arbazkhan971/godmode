@@ -134,7 +134,7 @@ these exactly, skip the Tier 1 scan):
 | "rate limiting", "rate limit", "throttling"                  | ratelimit   |
 | "make faster", "optimize", "slow", "response time", "p99", "latency" | optimize |
 | "debug", "why is this", "leaking", "segfault", "trace this"  | debug       |
-| "failing", "errored", "red", "fix", "broken", "error"        | fix         |
+| "is red", "failing", "errored", "fix", "broken", "error"     | fix         |
 | "secure", "vulnerabilities"                                  | secure      |
 | "review", "check my code", "look over this pr", "pull request" | review    |
 | "research", "prior art"                                      | research    |
