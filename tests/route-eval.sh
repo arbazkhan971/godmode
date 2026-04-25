@@ -29,27 +29,34 @@ if [ ! -f "$PROMPTS" ]; then
 fi
 
 # Canonical trigger shortcuts (skills/godmode/SKILL.md § Step 2).
-# Keyed by lowercase substring; first match wins.
+# Keyed by lowercase substring; first match wins. ORDER MATTERS:
+# narrower domain triggers come before generic "build"/"test"/"implement"
+# so the latter don't intercept domain-specific prompts.
 canonical_match() {
   local p; p="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
   case "$p" in
-    *"make faster"*|*"optimize"*)            echo optimize ;;
-    *"why is this"*|*"debug"*)               echo debug ;;
-    *"vulnerabilities"*|*"secure"*)          echo secure ;;
-    *"check my code"*|*"review"*)            echo review ;;
-    *"prior art"*|*"research"*)              echo research ;;
-    *"break down"*|*"plan"*)                 echo plan ;;
-    *"deploy"*|*"ship"*)                     echo ship ;;
-    *"clean up"*|*"finish"*|*"done"*)        echo finish ;;
-    *"compress output"*|*"terse"*)           echo terse ;;
-    *"token budget"*|*"tokens"*)             echo tokens ;;
-    *"command patterns"*|*"stdio"*)          echo stdio ;;
-    *"bundle"*|*"team"*)                     echo team ;;
-    *"onboarding"*|*"tutorial"*)             echo tutorial ;;
-    *"benchmark"*|*"bench"*)                 echo bench ;;
-    *"coverage"*|*"test"*)                   echo test ;;
-    *"broken"*|*"error"*|*"fix"*)            echo fix ;;
-    *"implement"*|*"create"*|*"build"*)      echo build ;;
+    *"integration test"*|*"integration testing"*)        echo integration ;;
+    *"end to end"*|*"end-to-end"*|*"e2e test"*)          echo e2e ;;
+    *"load test"*|*"stress test"*)                       echo loadtest ;;
+    *"docker image"*|*"dockerfile"*|*"container image"*) echo docker ;;
+    *"rate limiting"*|*"rate limit"*|*"throttling"*)     echo ratelimit ;;
+    *"make faster"*|*"optimize"*|*"slow"*|*"response time"*|*"p99"*|*"latency"*)  echo optimize ;;
+    *"why is this"*|*"debug"*|*"leaking"*|*"segfault"*|*"trace this"*)            echo debug ;;
+    *"failing"*|*"errored"*|*"red"*|*"broken"*|*"error"*|*"fix"*)                 echo fix ;;
+    *"vulnerabilities"*|*"secure"*)                                               echo secure ;;
+    *"check my code"*|*"look over this pr"*|*"pull request"*|*"review"*)          echo review ;;
+    *"prior art"*|*"research"*)                                                   echo research ;;
+    *"break down"*|*"plan"*)                                                      echo plan ;;
+    *"deploy"*|*"ship"*)                                                          echo ship ;;
+    *"wrap up"*|*"clean up"*|*"finish"*|*"done"*)                                 echo finish ;;
+    *"compress output"*|*"terse"*)                                                echo terse ;;
+    *"token budget"*|*"tokens"*)                                                  echo tokens ;;
+    *"command patterns"*|*"stdio"*)                                               echo stdio ;;
+    *"bundle"*|*"team"*)                                                          echo team ;;
+    *"get started"*|*"first run"*|*"onboarding"*|*"tutorial"*)                    echo tutorial ;;
+    *"benchmark"*|*"bench"*)                                                      echo bench ;;
+    *"coverage"*|*"test"*)                                                        echo test ;;
+    *"implement"*|*"create"*|*"build"*)                                           echo build ;;
     *) return 1 ;;
   esac
 }
