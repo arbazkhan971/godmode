@@ -1,10 +1,6 @@
 ---
 name: eval
-description: |
-  AI/LLM evaluation skill. Covers benchmark creation,
-  LLM-as-judge, regression testing, statistical
-  significance. Triggers on: /godmode:eval, "evaluate
-  my model", "benchmark this", "run evals".
+description: AI/LLM evaluation. Benchmark creation, regression testing, statistical significance, LLM-as-judge, promptfoo.
 ---
 
 # Eval — AI/LLM Evaluation

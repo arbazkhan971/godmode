@@ -1,11 +1,6 @@
 ---
 name: edge
-description: |
-  Edge computing and serverless skill. Covers Cloudflare
-  Workers, Vercel Edge, Deno Deploy, AWS Lambda, cold
-  start optimization, edge caching, distributed state.
-  Triggers on: /godmode:edge, "edge function",
-  "serverless API", "optimize Lambda cold start".
+description: Edge computing and serverless. Deno Deploy, distributed state, Cloudflare Workers, Vercel Edge, AWS Lambda.
 ---
 
 # Edge — Edge Computing & Serverless

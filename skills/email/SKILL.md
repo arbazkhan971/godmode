@@ -1,12 +1,6 @@
 ---
 name: email
-description: |
-  Email and notification systems skill. SendGrid,
-  SES, Postmark, Resend. Templates (MJML, React
-  Email). Bounce handling, delivery tracking,
-  DNS auth, stream separation.
-  Triggers on: /godmode:email, "send emails",
-  "notification system", "email templates".
+description: Email and notifications. SendGrid, SES, Postmark, Resend, MJML, React Email, delivery tracking, DNS auth.
 ---
 
 # Email — Email & Notification Systems

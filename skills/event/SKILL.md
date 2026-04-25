@@ -1,11 +1,6 @@
 ---
 name: event
-description: |
-  Event-driven architecture skill. Covers event sourcing,
-  CQRS, message brokers (Kafka, RabbitMQ, SQS, NATS),
-  schema versioning, DLQ, retry policies, idempotency.
-  Triggers on: /godmode:event, "event sourcing", "CQRS",
-  "Kafka", "dead letter queue", "idempotency".
+description: Event-driven architecture. SQS, NATS, schema versioning, DLQ, retry policies, idempotency.
 ---
 
 # Event -- Event-Driven Architecture

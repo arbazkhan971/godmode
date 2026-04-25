@@ -1,7 +1,6 @@
 ---
 name: apidocs
-description: API documentation generation, OpenAPI/Swagger specs, contract-first development, interactive docs. Use
-  when user mentions API docs, Swagger, OpenAPI, API reference, Redoc, API specification.
+description: API documentation. OpenAPI, Swagger, Redoc, contract-first development, spec-first, code-first, interactive docs.
 ---
 
 # APIDocs — Documentation Generation & Interactive Specs
