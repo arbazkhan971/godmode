@@ -1,11 +1,6 @@
 ---
 name: api
-description: |
-  API design and specification skill. Activates when user needs to design, document, or validate REST, GraphQL, or
-    gRPC APIs. Generates OpenAPI/Swagger specs, enforces versioning strategies, designs rate limiting and pagination,
-    and produces standardized error responses. Every API endpoint gets a spec, example request/response, and
-    validation. Triggers on: /godmode:api, "design an API", "create API spec", "validate my API", or when the
-    orchestrator detects API-related work.
+description: API design and specification. REST, GraphQL, gRPC, OpenAPI, design an API, create API spec, validate my API, endpoint.
 ---
 
 # API — Design & Specification

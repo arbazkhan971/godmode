@@ -1,11 +1,6 @@
 ---
 name: chart
-description: |
-  Data visualization skill. Activates when users need to create charts, graphs, dashboards, or any visual
-    representation of data. Supports chart type selection (bar, line, scatter, heatmap, treemap, sankey), integrates
-    with D3.js, Chart.js, Recharts, and Plotly, enforces dashboard design principles, responsive layouts, and
-    accessibility standards for data visualizations. Triggers on: /godmode:chart, "create a chart", "visualize this
-    data", "build a dashboard", or when the orchestrator detects data visualization work.
+description: Data visualization. chart, graph, dashboard, visualize data, plot, analytics, D3.js, Chart.js, Recharts, Plotly.
 ---
 
 # Chart — Data Visualization

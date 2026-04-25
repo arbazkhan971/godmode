@@ -1,11 +1,6 @@
 ---
 name: backup
-description: |
-  Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets,
-    test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive
-    backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, "backup
-    strategy", "disaster recovery", "what's our RPO?", "can we recover from", or when designing critical data
-    infrastructure.
+description: Backup and disaster recovery. backup strategy, disaster recovery, RPO/RTO, data integrity, durability, runbook.
 ---
 
 # Backup — Backup & Disaster Recovery

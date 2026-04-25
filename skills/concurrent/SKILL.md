@@ -1,11 +1,6 @@
 ---
 name: concurrent
-description: |
- Concurrency and parallelism skill. Activates when user needs thread safety analysis, race condition
- detection, async/await pattern guidance, lock-free data structures, actor model design, deadlock detection
- and prevention, or concurrent testing strategies. Triggers on: /godmode:concurrent, "thread safety", "race
- condition", "async await", "deadlock", "lock-free", "actor model", "concurrent", "parallelism", or when the
- orchestrator detects concurrency work.
+description: Concurrency and parallelism. thread safety, race condition, deadlock, lock-free, async/await, actor model, mutex, goroutine.
 ---
 
 # Concurrent -- Concurrency & Parallelism

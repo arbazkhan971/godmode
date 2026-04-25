@@ -1,7 +1,6 @@
 ---
 name: cron
-description: Scheduled tasks, cron jobs, background job queues, recurring work. Use when user mentions cron,
-  scheduler, background jobs, recurring tasks, Bull, BullMQ, Celery, Sidekiq, node-cron, APScheduler.
+description: Scheduled tasks and cron jobs. cron, recurring task, background jobs, BullMQ, Celery, Sidekiq, node-cron, APScheduler.
 ---
 
 # Cron — Scheduled Tasks & Recurring Job Orchestration
