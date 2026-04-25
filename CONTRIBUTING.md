@@ -474,7 +474,7 @@ If your platform needs a top-level Markdown guide (like `GEMINI.md` or `OPENCODE
 
 1. A reference to the godmode orchestrator skill (`@./skills/godmode/SKILL.md`)
 2. A tool mapping table (if tool names differ from Claude Code)
-3. The full skill catalog (126 skills)
+3. The full skill catalog (134 skills)
 4. Sequential execution instructions (if the platform does not support parallel agents)
 5. A "Verify Installation" section pointing to `adapters/your-platform/verify.sh`
 
@@ -788,7 +788,7 @@ The best examples come from real projects. If you have used a skill and can shar
 If you have encountered a failure mode that a skill does not warn about, add it as an anti-pattern. Real failure modes are more valuable than theoretical ones.
 
 ### 5. Add a Platform Adapter
-If you use an AI coding tool that Godmode does not support yet, adding an adapter makes all 126 skills available on that platform. See [Adding a New Platform Adapter](#adding-a-new-platform-adapter) for the guide.
+If you use an AI coding tool that Godmode does not support yet, adding an adapter makes all 134 skills available on that platform. See [Adding a New Platform Adapter](#adding-a-new-platform-adapter) for the guide.
 
 ---
 
