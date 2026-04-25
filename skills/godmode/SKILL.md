@@ -125,25 +125,25 @@ Canonical trigger shortcuts (fastest path — if a request matches one of
 these exactly, skip the Tier 1 scan):
 
 ```
-| Trigger                            | Skill    |
-|------------------------------------|----------|
-| "make faster", "optimize"          | optimize |
-| "fix", "broken", "error"           | fix      |
-| "debug", "why is this"             | debug    |
-| "test", "coverage"                 | test     |
-| "secure", "vulnerabilities"        | secure   |
-| "review", "check my code"          | review   |
-| "research", "prior art"            | research |
-| "build", "implement", "create"     | build    |
-| "plan", "break down"               | plan     |
-| "ship", "deploy"                   | ship     |
-| "done", "finish", "clean up"       | finish   |
-| "terse", "compress output"         | terse    |
-| "tokens", "token budget"           | tokens   |
-| "stdio", "command patterns"        | stdio    |
-| "team", "bundle"                   | team     |
-| "tutorial", "onboarding"           | tutorial |
-| "bench", "benchmark"               | bench    |
+| Trigger                                                      | Skill    |
+|--------------------------------------------------------------|----------|
+| "make faster", "optimize", "slow", "response time", "p99", "latency" | optimize |
+| "debug", "why is this", "leaking", "segfault", "trace this"  | debug    |
+| "failing", "errored", "red", "fix", "broken", "error"        | fix      |
+| "test", "coverage"                                           | test     |
+| "secure", "vulnerabilities"                                  | secure   |
+| "review", "check my code", "look over this pr", "pull request" | review |
+| "research", "prior art"                                      | research |
+| "build", "implement", "create"                               | build    |
+| "plan", "break down"                                         | plan     |
+| "ship", "deploy"                                             | ship     |
+| "finish", "done", "clean up", "wrap up"                      | finish   |
+| "terse", "compress output"                                   | terse    |
+| "tokens", "token budget"                                     | tokens   |
+| "stdio", "command patterns"                                  | stdio    |
+| "team", "bundle"                                             | team     |
+| "tutorial", "onboarding", "get started", "first run"         | tutorial |
+| "bench", "benchmark"                                         | bench    |
 
 IF no match: fall through to phase detection (Step 3).
 ```
