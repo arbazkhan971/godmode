@@ -1,11 +1,6 @@
 ---
 name: angular
-description: |
-  Angular architecture skill. Activates when user needs to build, architect, or optimize Angular applications. Covers
-    module architecture vs standalone components, RxJS patterns, state management (NgRx, Signals), dependency
-    injection, lazy loading, Angular CLI optimization, and testing with Jasmine/Karma and Jest. Triggers on:
-    /godmode:angular, "build an Angular app", "Angular component", "NgRx store", "Angular signals", or when the
-    orchestrator detects Angular-related work.
+description: Angular architecture. NgRx, Signals, RxJS, standalone components, lazy loading, dependency injection, Jasmine, Jest.
 ---
 
 # Angular — Angular Architecture

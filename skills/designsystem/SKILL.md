@@ -1,11 +1,6 @@
 ---
 name: designsystem
-description: |
-  Design system architecture skill. Activates when user needs to build, maintain, or audit a design system including
-    token architecture (colors, spacing, typography, shadows), component API standards, theme systems (light/dark,
-    custom), design-to-code pipelines (Figma tokens to CSS variables), versioning and distribution, and Storybook
-    documentation. Triggers on: /godmode:designsystem, "design system", "design tokens", "theme architecture", "Figma
-    to code", or when building a shared component library.
+description: Design system architecture. design tokens, theme systems, Figma to code, component API, Storybook, light/dark, versioning.
 ---
 
 # Design System — Design System Architecture

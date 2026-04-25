@@ -1,10 +1,6 @@
 ---
 name: chaos
-description: |
-  Chaos engineering skill. Activates when user needs to test system resilience through controlled failure injection,
-    validate circuit breakers, plan game days, or verify disaster recovery procedures. Covers network failures, disk
-    pressure, process crashes, dependency outages, and data corruption scenarios. Triggers on: /godmode:chaos, "chaos
-    test", "resilience test", "failure injection", "game day", or when ship skill needs resilience validation.
+description: Chaos engineering. failure injection, circuit breakers, game day, disaster recovery, resilience test, network failures.
 ---
 
 # Chaos — Chaos Engineering

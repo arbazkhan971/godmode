@@ -1,10 +1,6 @@
 ---
 name: automate
-description: |
-  Task automation skill. Activates when a developer needs to automate repetitive workflows, create scheduled jobs, set
-    up webhooks, design GitHub Actions workflows, write automation scripts, or build Makefiles/Taskfiles. Triggers on:
-    /godmode:automate, "automate this", "create a cron job", "set up webhook", "write a Makefile", "create GitHub
-    Action", or when repetitive manual processes are identified.
+description: Task automation. cron jobs, webhooks, GitHub Actions, Makefile, Taskfile, scripts, CI/CD, scheduled tasks.
 ---
 
 # Automate -- Task Automation & Workflow Orchestration

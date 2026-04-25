@@ -1,11 +1,6 @@
 ---
 name: cost
-description: |
-  Cloud cost optimization skill. Activates when user needs to analyze, reduce, or govern cloud spending across AWS,
-    GCP, and Azure. Performs resource utilization analysis, right-sizing recommendations, waste detection, cost
-    allocation tagging, and budget alerting. Uses evidence-based analysis of actual usage data to produce actionable
-    savings recommendations with projected dollar impact. Triggers on: /godmode:cost, "reduce cloud costs", "optimize
-    spending", "why is our bill so high?", or when infrastructure costs need governance.
+description: Cloud cost optimization. AWS/GCP/Azure, right-sizing, waste detection, cost allocation, budget alerting, reserved instances.
 ---
 
 # Cost — Cloud Cost Optimization
