@@ -1,11 +1,6 @@
 ---
 name: architect
-description: |
-  Software architecture skill. Activates when user needs to design system architecture, select architecture patterns,
-    create C4 diagrams, or apply domain-driven design at the strategic level. Evaluates trade-offs across monolith,
-    microservices, serverless, event-driven, CQRS, and hexagonal architectures. Produces architecture decision
-    records, C4 diagrams, and bounded context maps. Triggers on: /godmode:architect, "design the architecture",
-    "system design", "how should I structure this", or when the orchestrator detects architecture-level decisions.
+description: Software architecture design — system architecture, monolith/microservices/serverless/event-driven trade-offs, C4 diagrams, ADRs, CQRS, hexagonal.
 ---
 
 # Architect — Software Architecture Design

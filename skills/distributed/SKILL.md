@@ -1,12 +1,6 @@
 ---
 name: distributed
-description: |
- Distributed systems design skill. Activates when user needs CAP theorem trade-off analysis, consensus
- protocol selection (Raft, Paxos), distributed locking (Redlock, ZooKeeper), sharding and partitioning
- strategies, eventual consistency patterns, leader election, or distributed architecture design. Triggers on:
- /godmode:distributed, "distributed system", "CAP theorem", "consensus", "Raft", "Paxos", "sharding",
- "partitioning", "eventual consistency", "leader election", or when the orchestrator detects distributed
- systems work.
+description: Distributed systems design — CAP theorem, consensus (Raft/Paxos), sharding, partitioning, eventual consistency, leader election, distributed locking.
 ---
 
 # Distributed -- Distributed Systems Design

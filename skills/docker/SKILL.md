@@ -1,11 +1,6 @@
 ---
 name: docker
-description: |
-  Docker mastery skill. Activates when user needs to create, optimize, or troubleshoot Docker configurations. Covers
-    Dockerfile best practices (multi-stage builds, layer caching, minimal images), Docker Compose for local
-    development, image size optimization, security scanning (Trivy, Snyk), networking, volumes, BuildKit features, and
-    build arguments. Triggers on: /godmode:docker, "Dockerfile", "docker compose", "container image", "multi-stage
-    build", "image size", "docker security", or when containerizing an application.
+description: Docker containerization — Dockerfile, multi-stage builds, Docker Compose, image size optimization, security scanning, networking, volumes.
 ---
 
 # Docker — Docker Mastery

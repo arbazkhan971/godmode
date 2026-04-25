@@ -1,11 +1,6 @@
 ---
 name: analytics
-description: |
-  Analytics implementation skill. Activates when users need to design and implement product analytics, event tracking,
-    funnel analysis, A/B test instrumentation, or privacy-respecting analytics. Supports Segment, Amplitude, Mixpanel,
-    PostHog, Plausible, and Umami. Provides structured event taxonomies, data modeling, funnel design, and experiment
-    instrumentation with full privacy compliance. Triggers on: /godmode:analytics, "add analytics", "track events",
-    "set up A/B testing", "implement funnels", or when the orchestrator detects analytics-related work.
+description: Product analytics implementation — event tracking, funnel analysis, A/B testing, Segment/Amplitude/Mixpanel/PostHog, privacy-compliant instrumentation.
 ---
 
 # Analytics — Analytics Implementation

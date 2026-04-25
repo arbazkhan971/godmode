@@ -1,12 +1,6 @@
 ---
 name: comply
-description: |
-  Compliance and governance skill. Activates when user needs to verify regulatory compliance (GDPR, HIPAA, SOC2,
-    PCI-DSS), design audit trails, implement privacy controls, manage data retention policies, or audit license
-    compliance across dependencies. Systematically evaluates codebase against regulatory frameworks, produces findings
-    with evidence and remediation, and generates compliance documentation. Triggers on: /godmode:comply, "GDPR
-    compliance", "audit trail", "are we compliant?", "privacy review", or when shipping features that handle personal
-    data.
+description: Compliance and governance — GDPR, HIPAA, SOC2, PCI-DSS, audit trails, privacy controls, data retention, license compliance.
 ---
 
 # Comply — Compliance & Governance
