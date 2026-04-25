@@ -1,10 +1,6 @@
 ---
 name: a11y
-description: |
-  Accessibility testing and auditing skill. Activates when user needs to verify WCAG 2.1 AA/AAA compliance, audit
-    color contrast, keyboard navigation, screen reader compatibility, or fix accessibility issues. Integrates with
-    Axe, Pa11y, and Lighthouse. Combines automated scanning with manual checklist review. Triggers on: /godmode:a11y,
-    "check accessibility", "WCAG audit", "a11y review", or as pre-ship quality gate.
+description: Accessibility. WCAG 2.1 AA/AAA, a11y audit, color contrast, keyboard navigation, screen reader, Axe, Pa11y, Lighthouse.
 ---
 
 # A11y — Accessibility Testing & Auditing

@@ -1,11 +1,6 @@
 ---
 name: team
-description: |
-  Invoke a named bundle of existing godmode skills as a single unit.
-  A team bundle is a YAML file that lists skills + a coordination pattern;
-  this skill resolves the bundle, validates it, and dispatches the skills
-  in pattern order. Ships the primitive only — no pre-made teams.
-  Triggers on: /godmode:team <name>.
+description: Team bundles. Invoke named skill bundles, YAML coordination pattern, dispatch pipeline/parallel/swarm, /godmode:team.
 ---
 
 ## Activate When

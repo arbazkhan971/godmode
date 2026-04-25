@@ -1,11 +1,6 @@
 ---
 name: stdio
-description: >
-  Canonical command patterns — the in-skill convention for reading tool
-  output without wasting context. Ships 13 high-value terse equivalents
-  every skill should prefer over verbose defaults. Pure documentation,
-  zero binary deps. Complements terse (emit side) and pairs with rtk
-  (shell-hook side) for users who install it.
+description: Stdio. Canonical terse command patterns, 13 terse equivalents, context-efficient bash, pairs with terse and rtk.
 ---
 
 # Stdio — Canonical Command Patterns

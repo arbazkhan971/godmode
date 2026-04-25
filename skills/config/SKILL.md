@@ -1,10 +1,6 @@
 ---
 name: config
-description: |
-  Environment and configuration management skill. Activates when user needs to manage dev/staging/prod configs,
-    validate environment parity, design feature flags, or plan A/B test rollouts. Ensures config consistency, secret
-    safety, and environment drift detection. Triggers on: /godmode:config, "manage environments", "feature flags",
-    "config validation", "A/B test setup", or when ship skill needs environment verification.
+description: Config. dev/staging/prod, feature flags, A/B test rollout, config validation, env parity, secret safety, drift detection.
 ---
 
 # Config — Environment & Configuration Management
