@@ -98,17 +98,26 @@ boundary is Tier 2 (loaded only once a skill is matched) or Tier 3 (loaded
 only on edge cases, marked by a literal `tier-3` HTML comment).
 
 ```bash
-# Tier 1 extractor — POSIX awk, reads only the Activate When block
+# Tier 1 extractor — POSIX awk. Reads frontmatter + the Activate When block,
+# stopping at the next `##` header. Skills without `## Activate When`
+# (currently only `principles`) emit only their frontmatter.
 for f in skills/*/SKILL.md; do
-  awk '/^## Activate When/{found=1} found && /^## /{if(seen++)exit} {print}' "$f"
+  awk '
+    NR == 1 && $0 == "---" { in_fm = 1; print; next }
+    in_fm && $0 == "---" { in_fm = 0; print; next }
+    in_fm { print; next }
+    /^## Activate When/ { in_aw = 1; print; next }
+    in_aw && /^## / { exit }
+    in_aw { print }
+  ' "$f"
 done
 ```
 
-Tier 1 never exceeds ~25 lines per skill. Total routing cost across 134
-skills is ~2,700 lines — ~90% less than reading every skill in full (~27k
-lines). Stacks with `skills/terse/` (output-side compression), `skills/stdio/`
-(input-side canonical commands), and rtk (if installed) for compound
-context savings.
+Measured Tier 1 cost (via `tests/token-bench.sh`): about 4,000 tokens
+across 134 skills, vs. about 54,000 tokens for full reads — roughly 92%
+reduction. Stacks with `skills/terse/` (output-side compression),
+`skills/stdio/` (input-side canonical commands), and rtk (if installed)
+for compound context savings.
 
 Match process:
 1. Scan all Tier 1 blocks for keyword hits in frontmatter `description:`
