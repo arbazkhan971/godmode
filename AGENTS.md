@@ -1,6 +1,6 @@
 # AGENTS.md — Godmode for AI Coding Agents
 
-Godmode is a skill plugin with 126 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
+Godmode is a skill plugin with 134 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
 
 ## Core Workflow: The Godmode Loop
 
@@ -340,7 +340,7 @@ Cursor supports background agents with its own dispatch model. Godmode adapts as
 
 **Limitations:** Cursor background agents do not support worktree isolation. File scoping is the primary isolation mechanism. The orchestrator must be extra careful about file scope partitioning to prevent conflicts.
 
-## Skill Catalog (126 Skills)
+## Skill Catalog (134 Skills)
 
 | Skill | Description |
 |-------|-------------|

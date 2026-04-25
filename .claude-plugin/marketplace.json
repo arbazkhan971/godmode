@@ -1,7 +1,7 @@
 {
   "name": "godmode",
   "version": "1.0.0",
-  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 126 skills, 7 subagents, 5 platforms. Zero configuration. One command.",
+  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 134 skills, 7 subagents, 5 platforms. Zero configuration. One command.",
   "author": "godmode-team",
   "license": "MIT",
   "skills": [
@@ -54,6 +54,11 @@
       "name": "backup",
       "description": "Backup and disaster recovery skill. Activates when user needs to design backup strategies, define RPO/RTO targets, test recovery procedures, verify data integrity, or generate disaster recovery runbooks. Produces comprehensive backup plans with automated verification and tested recovery procedures. Triggers on: /godmode:backup, \"backup strategy\", \"disaster recovery\", \"what's our RPO?\", \"can we recover from\", or when critical data infrastructure is being designed.",
       "path": "skills/backup/SKILL.md"
+    },
+    {
+      "name": "bench",
+      "description": "Formal benchmark harness skill. Runs a metric command N times across 2-3 variants (git refs or state-prep shell commands), checks variance, computes delta vs. declared baseline, and emits a reproducible TSV plus a one-paragraph summary. Read-only to source. Inspired by caveman's 3-arm eval. Triggers on: /godmode:bench, \"benchmark\", \"measure variance\", \"compare variants\", or when an iterative skill needs a stable measurement substrate.",
+      "path": "skills/bench/SKILL.md"
     },
     {
       "name": "build",
@@ -262,7 +267,7 @@
     },
     {
       "name": "integration",
-      "description": "Integration testing skill. Activates when user needs to test how components work together across real boundaries \u2014 databases, APIs, message queues, and external services. Covers Testcontainers for Docker-based dependencies, database seeding and cleanup strategies, API integration testing with real HTTP, service-level integration patterns, and transaction management in tests. Supports all major frameworks and languages. Triggers on: /godmode:integration, \"integration test\", \"test with real database\", \"test API endpoint\", \"testcontainers\", or when /godmode:test identifies integration-level gaps.",
+      "description": "Integration testing skill. Activates when user needs to test how components work together across real boundaries — databases, APIs, message queues, and external services. Covers Testcontainers for Docker-based dependencies, database seeding and cleanup strategies, API integration testing with real HTTP, service-level integration patterns, and transaction management in tests. Supports all major frameworks and languages. Triggers on: /godmode:integration, \"integration test\", \"test with real database\", \"test API endpoint\", \"testcontainers\", or when /godmode:test identifies integration-level gaps.",
       "path": "skills/integration/SKILL.md"
     },
     {
@@ -307,7 +312,7 @@
     },
     {
       "name": "migration",
-      "description": "System migration skill. Activates when a developer needs to plan or execute large-scale technology migrations: language/framework transitions (JS to TS, REST to GraphQL, monolith to microservices), data migrations with zero downtime, strangler fig pattern implementation, parallel run verification, and rollback planning. Distinct from /godmode:migrate (database schema changes) \u2014 this skill handles system-level architecture migrations. Triggers on: /godmode:migration, \"migrate from X to Y\", \"convert to TypeScript\", \"move to microservices\", \"rewrite in\", \"modernize the stack\", or when a project needs systematic technology transition planning.",
+      "description": "System migration skill. Activates when a developer needs to plan or execute large-scale technology migrations: language/framework transitions (JS to TS, REST to GraphQL, monolith to microservices), data migrations with zero downtime, strangler fig pattern implementation, parallel run verification, and rollback planning. Distinct from /godmode:migrate (database schema changes) — this skill handles system-level architecture migrations. Triggers on: /godmode:migration, \"migrate from X to Y\", \"convert to TypeScript\", \"move to microservices\", \"rewrite in\", \"modernize the stack\", or when a project needs systematic technology transition planning.",
       "path": "skills/migration/SKILL.md"
     },
     {
@@ -377,7 +382,7 @@
     },
     {
       "name": "optimize",
-      "description": "Core autonomous iteration loop \u2014 the heart of Godmode. Activates when user wants to improve code quality, performance, or any measurable metric through autonomous experimentation. Runs a disciplined loop: measure baseline, hypothesize, modify, verify mechanically, keep if better or revert if worse, repeat. Git-as-memory ensures every experiment is tracked. Triggers on: /godmode:optimize, \"make this faster\", \"improve this\", \"optimize\", or when godmode orchestrator detects OPTIMIZE phase.",
+      "description": "Core autonomous iteration loop — the heart of Godmode. Activates when user wants to improve code quality, performance, or any measurable metric through autonomous experimentation. Runs a disciplined loop: measure baseline, hypothesize, modify, verify mechanically, keep if better or revert if worse, repeat. Git-as-memory ensures every experiment is tracked. Triggers on: /godmode:optimize, \"make this faster\", \"improve this\", \"optimize\", or when godmode orchestrator detects OPTIMIZE phase.",
       "path": "skills/optimize/SKILL.md"
     },
     {
@@ -431,6 +436,11 @@
       "path": "skills/predict/SKILL.md"
     },
     {
+      "name": "principles",
+      "description": "Authoring discipline prelude (Karpathy family). Four rules every agent reads before the first Edit: Think Before Coding (state assumptions, surface alternatives, emit NEEDS_CONTEXT on ambiguity), Simplicity First (pre-MODIFY checklist strikes single-use helpers, impossible-case handlers, unrequested configurability), Surgical Changes (line-trace rule — every changed line must trace to the user's request), Goal-Driven Execution (success is a shell command exiting zero). Imported as a prelude via @./skills/principles/SKILL.md from SKILL.md, GEMINI.md, OPENCODE.md.",
+      "path": "skills/principles/SKILL.md"
+    },
+    {
       "name": "prompt",
       "description": "Prompt engineering skill. Activates when users need to design, test, version, or optimize prompts for LLMs. Covers prompt design patterns (few-shot, chain-of-thought, ReAct, tree-of-thought), structured output (JSON mode, function calling), system prompt design, prompt injection prevention, A/B testing, and evaluation. Every prompt gets a versioned spec, test suite, and performance baseline. Triggers on: /godmode:prompt, \"design a prompt\", \"test this prompt\", \"optimize my prompt\", or when the orchestrator detects prompt engineering work.",
       "path": "skills/prompt/SKILL.md"
@@ -482,13 +492,18 @@
     },
     {
       "name": "refactor",
-      "description": "Large-scale refactoring skill. Activates when code needs structural transformation \u2014 extracting, inlining, moving, renaming, or reorganizing code at scale. Performs impact analysis before changes, uses a pattern library of proven refactoring techniques, plans migration strategies for large changes, and verifies correctness with test suites after every transformation. Triggers on: /godmode:refactor, \"refactor this\", \"extract\", \"rename\", \"move\", \"reorganize\", or when /godmode:review identifies maintainability issues.",
+      "description": "Large-scale refactoring skill. Activates when code needs structural transformation — extracting, inlining, moving, renaming, or reorganizing code at scale. Performs impact analysis before changes, uses a pattern library of proven refactoring techniques, plans migration strategies for large changes, and verifies correctness with test suites after every transformation. Triggers on: /godmode:refactor, \"refactor this\", \"extract\", \"rename\", \"move\", \"reorganize\", or when /godmode:review identifies maintainability issues.",
       "path": "skills/refactor/SKILL.md"
     },
     {
       "name": "reliability",
       "description": "Site reliability engineering skill. Activates when user needs SLO/SLI/SLA definition and tracking, error budgets and burn rate alerts, toil identification and elimination, on-call rotation design, runbook automation, or incident management process design. Triggers on: /godmode:reliability, \"SRE\", \"SLO\", \"SLI\", \"SLA\", \"error budget\", \"toil\", \"on-call\", \"runbook\", \"site reliability\", or when the orchestrator detects reliability engineering work.",
       "path": "skills/reliability/SKILL.md"
+    },
+    {
+      "name": "research",
+      "description": "Prior-art gathering phase. Auto-dispatched before THINK on non-trivial tasks (mentions external library/framework, scope >5 files, no prior .godmode/research.md). Uses the explorer subagent to read existing implementations, RFCs, and lessons.md, then writes .godmode/research.md as a structured prior-art summary that THINK reads at its Step 2 instead of rescanning. Skip for trivial fixes or with --no-research. Triggers on: /godmode:research, \"prior art\", \"research X\", or auto-dispatch from godmode orchestrator.",
+      "path": "skills/research/SKILL.md"
     },
     {
       "name": "resilience",
@@ -576,6 +591,11 @@
       "path": "skills/state/SKILL.md"
     },
     {
+      "name": "stdio",
+      "description": "Input-side token compression skill. 13 canonical command patterns every agent prefers to minimize tool-output token waste (git log → git log --oneline -20, cat → wc -l, ls -la → ls -1, find without depth → find -maxdepth, etc.). Godmode-native alternative/complement to rtk-ai/rtk's shell-hook level enforcement. Referenced from AGENTS.md § Context Refresh. Triggers on: /godmode:stdio, \"command patterns\", \"reduce tool output\", or auto-applied per AGENTS.md before any tool call that produces large stdout.",
+      "path": "skills/stdio/SKILL.md"
+    },
+    {
       "name": "storage",
       "description": "File storage and CDN skill. Activates when user needs to design or implement file storage systems. Covers object storage (S3, GCS, Azure Blob), file upload architecture (presigned URLs, multipart, resumable), image and video processing pipelines, storage cost optimization, and backup and replication strategies. Triggers on: /godmode:storage, \"file upload\", \"S3 bucket\", \"image processing\", \"storage optimization\", \"backup strategy\", or when building features that handle user-generated content.",
       "path": "skills/storage/SKILL.md"
@@ -591,6 +611,16 @@
       "path": "skills/tailwind/SKILL.md"
     },
     {
+      "name": "team",
+      "description": "Team bundle primitive. Compose existing skills into named sequences via YAML bundles in .godmode/teams/<name>.yaml, declaring one of 6 coordination patterns (Pipeline, Fan-out/Fan-in, Expert Pool, Producer-Reviewer, Supervisor, Hierarchical Delegation) per docs/coordination-patterns.md. Lets users build reusable multi-skill workflows without writing new skill files. Triggers on: /godmode:team, \"build a team\", \"compose skills\", \"reusable workflow\", or any request that names an existing bundle.",
+      "path": "skills/team/SKILL.md"
+    },
+    {
+      "name": "terse",
+      "description": "Output-side token compression skill. Auto-activates from round 2 onward (lowered from 5 in Phase E) unless terse_user_opted_out=true. Compresses round summaries, status lines, and agent reports by 40-60%. TSV rows, code blocks, error messages, commit messages, and the final user-facing summary stay verbose — terse is an emit contract only. Sticky opt-out via /godmode:terse off or GODMODE_TERSE=0. Triggers on: /godmode:terse, auto-activation in long autonomous loops, or when round 2 begins on any pipeline skill.",
+      "path": "skills/terse/SKILL.md"
+    },
+    {
       "name": "test",
       "description": "TDD enforcement skill. Activates when user needs to write tests, improve test coverage, or add missing test cases. Enforces RED-GREEN-REFACTOR discipline. Can generate tests from specs, scenarios, or existing code. Triggers on: /godmode:test, \"write tests\", \"add test coverage\", \"test this\", or when build skill needs test writing guidance.",
       "path": "skills/test/SKILL.md"
@@ -599,6 +629,16 @@
       "name": "think",
       "description": "Brainstorming and design skill. Activates when user needs to explore ideas, design a feature, evaluate approaches, or create a spec before building. Triggers on: /godmode:think, \"let's brainstorm\", \"help me design\", \"what's the best way to\", or when godmode orchestrator detects THINK phase. Produces a written spec as output.",
       "path": "skills/think/SKILL.md"
+    },
+    {
+      "name": "tokens",
+      "description": "Token-budget observability skill. Measures approximate input + output tokens consumed by each round of the Universal Protocol using the chars/4 heuristic, appends one row per round to .godmode/token-log.tsv with a 10-column schema, and emits a terse session-end summary with per-skill breakdown and delta vs. prior sessions. Read-only to source. Inspired by rtk-ai/rtk's gain/discover/session analytics. Fills the observability gap next to results.tsv (metric deltas) and failures.tsv (discard reasons). Default ON; opt out with GODMODE_TOKENS=0.",
+      "path": "skills/tokens/SKILL.md"
+    },
+    {
+      "name": "tutorial",
+      "description": "Day-0 walkthrough skill. 7 steps, ≤5 minutes, guides a first-time user through their first /godmode:optimize run on a fresh repo. Covers stack detection, metric command selection, baseline measurement, first iteration, KEEP/DISCARD decision, log inspection, and stop-reason interpretation. Triggers on: /godmode:tutorial, \"getting started\", \"first run\", \"how do I use godmode\", or auto-suggested when no .godmode/ directory exists in the project.",
+      "path": "skills/tutorial/SKILL.md"
     },
     {
       "name": "type",

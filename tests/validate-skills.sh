@@ -162,11 +162,11 @@ fi
 separator "Check 4: marketplace.json Completeness"
 
 if [ -f "$MARKETPLACE" ]; then
-  # Get all skill keys from marketplace.json
+  # Extract skill names from `"path": "skills/<name>/SKILL.md"` entries.
   marketplace_skills=()
   while IFS= read -r skill; do
     marketplace_skills+=("$skill")
-  done < <(grep -o '"[^"]*": "skills/[^"]*"' "$MARKETPLACE" | sed 's/"\([^"]*\)".*/\1/')
+  done < <(grep -oE '"path"\s*:\s*"skills/[^/]+/' "$MARKETPLACE" | sed -E 's|.*"skills/([^/]+)/.*|\1|' | sort -u)
 
   # Get all skill directories that have SKILL.md
   actual_skills=()

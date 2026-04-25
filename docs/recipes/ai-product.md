@@ -161,7 +161,7 @@ Answer Generation Prompt:
   Conversation: {history}
   Question: {question}
   Rules:
-    - Cite sources as [Doc Title](url)
+    - Cite sources as: [Doc Title] -> URL
     - If multiple docs are relevant, synthesize the answer
     - If context is insufficient, say so explicitly
 

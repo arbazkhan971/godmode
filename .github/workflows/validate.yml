@@ -1,0 +1,28 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validate skills (frontmatter, marketplace coverage, command refs)
+        run: bash tests/validate-skills.sh
+      - name: validate structure (links, orphan files)
+        run: bash tests/validate-structure.sh
+      - name: confirm skill count consistency
+        run: |
+          actual=$(find skills -name SKILL.md -type f | wc -l | tr -d ' ')
+          marketplace=$(jq '.skills | length' .claude-plugin/marketplace.json)
+          pkg=$(jq '."claude-plugin".skills' package.json)
+          echo "skills on disk:        $actual"
+          echo "marketplace.json:      $marketplace"
+          echo "package.json:          $pkg"
+          if [ "$actual" != "$marketplace" ] || [ "$actual" != "$pkg" ]; then
+            echo "skill count drift detected"
+            exit 1
+          fi

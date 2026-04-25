@@ -1,7 +1,7 @@
 {
   "name": "@godmode/claude-code-plugin",
   "version": "1.0.0",
-  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 126 skills, 7 subagents, 5 platforms.",
+  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 134 skills, 7 subagents, 5 platforms.",
   "main": "index.js",
   "type": "module",
   "keywords": [
@@ -46,9 +46,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "validate": "node scripts/validate-plugin.js",
+    "validate": "bash tests/validate-skills.sh && bash tests/validate-structure.sh",
     "lint:md": "markdownlint '**/*.md' --ignore node_modules",
-    "test": "node scripts/validate-plugin.js && echo 'All validations passed'"
+    "test": "bash tests/validate-skills.sh && bash tests/validate-structure.sh"
   },
   "devDependencies": {
     "markdownlint-cli2": "^0.12.0"
@@ -58,7 +58,7 @@
   },
   "claude-plugin": {
     "manifest": ".claude-plugin/marketplace.json",
-    "skills": 126,
+    "skills": 134,
     "commands": 118,
     "agents": 7
   }

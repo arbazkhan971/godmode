@@ -1,6 +1,6 @@
 ---
 name: godmode
-description: "Turn on Godmode. 126 skills, 7 subagents, zero configuration. Routes to the right skill automatically."
+description: "Turn on Godmode. 134 skills, 7 subagents, zero configuration. Routes to the right skill automatically."
 ---
 
 @./skills/godmode/SKILL.md
@@ -33,7 +33,7 @@ Full prelude, including the pre-MODIFY checklist and line-trace rule:
 
 ---
 
-# Universal Protocol — governs ALL 126 skills
+# Universal Protocol — governs ALL 134 skills
 
 ## 1. The Loop
 

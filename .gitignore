@@ -1,1 +1,17 @@
+# Editor / OS artifacts
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Memory + runtime state
 .memory/
+.godmode/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Local secrets / env
+.env
+.env.local
