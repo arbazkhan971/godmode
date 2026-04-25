@@ -35,17 +35,26 @@ fi
 canonical_match() {
   local p; p="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
   case "$p" in
+    *"prior art"*|*"research"*)                                                   echo research ;;
     *"integration test"*|*"integration testing"*)        echo integration ;;
     *"end to end"*|*"end-to-end"*|*"e2e test"*)          echo e2e ;;
     *"load test"*|*"stress test"*)                       echo loadtest ;;
     *"docker image"*|*"dockerfile"*|*"container image"*) echo docker ;;
     *"rate limiting"*|*"rate limit"*|*"throttling"*)     echo ratelimit ;;
+    *"react component"*|*"react hook"*|*"jsx"*)          echo react ;;
+    *"vue page"*|*"vue component"*|*"composition api"*)  echo vue ;;
+    *"nextjs"*|*"next.js"*|*"app router"*)               echo nextjs ;;
+    *"django view"*|*"django model"*|*"django orm"*)     echo django ;;
+    *"fastapi route"*|*"fastapi endpoint"*)              echo fastapi ;;
+    *"rails controller"*|*"rails model"*|*"active record"*)  echo rails ;;
+    *"openapi spec"*|*"openapi schema"*|*"rest api spec"*)   echo api ;;
+    *"design the architecture"*|*"system architecture"*)     echo architect ;;
+    *"event sourcing"*|*"event-driven architecture"*)        echo event ;;
     *"make faster"*|*"optimize"*|*"slow"*|*"response time"*|*"p99"*|*"latency"*)  echo optimize ;;
     *"why is this"*|*"debug"*|*"leaking"*|*"segfault"*|*"trace this"*)            echo debug ;;
     *"is red"*|*" red "*|*"failing"*|*"errored"*|*"broken"*|*"error"*|*"fix"*)    echo fix ;;
     *"vulnerabilities"*|*"secure"*)                                               echo secure ;;
     *"check my code"*|*"look over this pr"*|*"pull request"*|*"review"*)          echo review ;;
-    *"prior art"*|*"research"*)                                                   echo research ;;
     *"break down"*|*"plan"*)                                                      echo plan ;;
     *"deploy"*|*"ship"*)                                                          echo ship ;;
     *"wrap up"*|*"clean up"*|*"finish"*|*"done"*)                                 echo finish ;;

@@ -132,6 +132,15 @@ these exactly, skip the Tier 1 scan):
 | "load test", "stress test"                                   | loadtest    |
 | "docker image", "dockerfile", "container image"              | docker      |
 | "rate limiting", "rate limit", "throttling"                  | ratelimit   |
+| "react component", "react hook", "jsx"                       | react       |
+| "vue page", "vue component", "composition api"               | vue         |
+| "nextjs", "next.js", "app router"                            | nextjs      |
+| "django view", "django model", "django orm"                  | django      |
+| "fastapi route", "fastapi endpoint"                          | fastapi     |
+| "rails controller", "rails model", "active record"           | rails       |
+| "openapi spec", "openapi schema", "rest api spec"            | api         |
+| "design the architecture", "system architecture"             | architect   |
+| "event sourcing", "event-driven architecture"                | event       |
 | "make faster", "optimize", "slow", "response time", "p99", "latency" | optimize |
 | "debug", "why is this", "leaking", "segfault", "trace this"  | debug       |
 | "is red", "failing", "errored", "fix", "broken", "error"     | fix         |
