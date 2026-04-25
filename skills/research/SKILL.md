@@ -1,11 +1,6 @@
 ---
 name: research
-description: >
-  Research phase. Runs before think on non-trivial features. Dispatches the
-  explorer subagent plus a docs/ecosystem scan to gather prior art, existing
-  patterns, and relevant dependencies. Writes .godmode/research.md as input
-  for the think skill. Fills the gap where think only scans the local
-  codebase, not external references.
+description: Prior art and context gathering. Explorer subagent, docs/ecosystem scan, existing patterns, relevant dependencies, writes research.md for the think skill.
 ---
 
 # Research — Prior Art & Context Gathering

@@ -1,11 +1,6 @@
 ---
 name: cicd
-description: |
-  CI/CD pipeline design skill. Activates when user needs to create, optimize, or troubleshoot continuous integration
-    and delivery pipelines. Supports GitHub Actions, GitLab CI, CircleCI, and Jenkins. Handles stage optimization,
-    caching strategies, artifact management, pipeline templating, and matrix builds. Triggers on: /godmode:cicd,
-    "create pipeline", "optimize CI", "add GitHub Actions", "fix pipeline", or when shipping requires CI/CD
-    configuration.
+description: CI/CD pipeline design. GitHub Actions, GitLab CI, CircleCI, Jenkins, stage optimization, caching strategies, artifact management, matrix builds, pipeline templating.
 ---
 
 # CICD — CI/CD Pipeline Design

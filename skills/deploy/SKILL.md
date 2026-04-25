@@ -1,11 +1,6 @@
 ---
 name: deploy
-description: |
-  Advanced deployment strategies skill. Activates when user needs sophisticated deployment orchestration including
-    blue-green deployments, canary releases, progressive rollouts, automated rollback, feature flag coordination, and
-    zero-downtime migrations. Designs and validates deployment plans with risk mitigation at every stage. Triggers on:
-    /godmode:deploy, "deploy with zero downtime", "canary release", "blue-green deployment", "rollback strategy", or
-    when shipping critical changes that require controlled rollout.
+description: Advanced deployment strategies. Blue-green, canary releases, progressive rollouts, automated rollback, feature flag coordination, zero-downtime migrations, risk mitigation.
 ---
 
 # Deploy — Advanced Deployment Strategies

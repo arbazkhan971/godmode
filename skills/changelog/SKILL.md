@@ -1,11 +1,6 @@
 ---
 name: changelog
-description: |
-  Changelog and release notes management skill. Activates when user needs to create, maintain, or auto-generate
-    changelogs and release notes. Supports Keep a Changelog format, Conventional Commits for auto-generation,
-    audience-specific release notes (developers vs end users), breaking change communication, and migration guide
-    generation. Triggers on: /godmode:changelog, "update changelog", "write release notes", "generate migration
-    guide", or when preparing a release.
+description: Changelog and release notes management. Keep a Changelog format, Conventional Commits auto-generation, breaking change communication, migration guides, audience-specific notes.
 ---
 
 # Changelog — Changelog & Release Notes

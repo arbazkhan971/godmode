@@ -1,6 +1,6 @@
 ---
 name: tokens
-description: Token-budget observability for godmode loops. Measures approximate input + output tokens consumed by each round of the Universal Protocol, appends one row per round to .godmode/token-log.tsv, and emits a terse session-end summary with per-skill breakdown and delta vs. prior sessions. Read-only to source. Inspired by rtk-ai/rtk's `gain`, `discover`, and `session` analytics. Fills the observability gap next to results.tsv (metric deltas) and failures.tsv (discard reasons) — tokens.tsv answers "what did this round COST in context?"
+description: Token-budget observability for godmode loops. Per-round cost tracking, token-log.tsv append, session-end summary, per-skill breakdown, delta vs prior sessions.
 ---
 
 ## Activate When
