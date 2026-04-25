@@ -7,6 +7,7 @@
 # Memory + runtime state
 .memory/
 .godmode/
+.claude/
 
 # Node
 node_modules/
