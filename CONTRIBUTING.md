@@ -585,6 +585,8 @@ bash adapters/your-platform/verify.sh
 # 3. Run install again to confirm idempotency
 bash adapters/your-platform/install.sh
 bash adapters/your-platform/verify.sh
+
+# 4. Also run bash adapters/pi/models.sh selftest when touching routing or adapters/pi
 ```
 
 ### For Documentation Changes

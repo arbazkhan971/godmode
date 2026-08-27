@@ -93,6 +93,44 @@ summary it has to trust.
 
 ---
 
+## Multi-model routing
+
+Every dispatch names a role. 2.0 lets those roles map to different
+models, and the zero-config default is a complete contract on its own:
+with no config, every role inherits the session model, and tiering is
+opt-in.
+
+Resolution is one rule per role:
+
+`GODMODE_MODEL_<ROLE>` env -> `godmode.models.json` roles -> session model.
+
+An env override is the uppercased role name:
+
+```bash
+GODMODE_MODEL_REVIEWER=anthropic/claude-opus-4
+```
+
+Durable mappings live in `godmode.models.json` at the repo root (or
+`~/.config/godmode/models.json`), keyed by open-ended role:
+
+```json
+{"roles": {"optimizer": "zai/glm-5.3", "builder": "openai/gpt-5.2"}}
+```
+
+Illustrative only: in a 20-round optimize loop, routing builder and
+optimizer rounds to a fast executor model while reviews run on a strong
+model shifts spend toward the rounds that benefit -- no benchmark backs
+a specific number here. And to be clear about what 2.x does not do:
+no daemon, no proxy, no runtime binary. The routing ships as
+orchestrator prose in the installed skills plus an optional validator
+gate; the orchestrator resolves each role at dispatch time and passes
+per-child model parameters.
+
+The routing table is inspectable before a run: `bash adapters/pi/models.sh
+doctor` prints role -> model -> source for every role.
+
+---
+
 ## What 2.0 does not do
 
 No daemon. No hosted service. No telemetry. Godmode 2.0 is a set of

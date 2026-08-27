@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Multi-model role routing: optional `godmode.models.json` (project root, merged per-key over `~/.config/godmode/models.json`) plus `GODMODE_MODEL_<ROLE>` env overrides, with a valid zero-config default where every role inherits the session model. Ships the pi reference resolver (`adapters/pi/models.sh` `resolve`/`doctor`/`selftest`), orchestrator Step 3c role resolution at dispatch time, the `setup` Step 6b routing wizard, the `verify` doctor check, and validator Check 7.
+
 ### Planned
 
 - Plugin marketplace listing

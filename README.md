@@ -272,16 +272,16 @@ Full skill reference: [skills/](skills/)
 
 ## Platforms
 
-| Harness | Install | Integration | Agents |
-|---|---|---|---|
-| **Claude Code** | `claude plugin install godmode` | Plugin (`commands/`, `agents/`, `.claude-plugin/` marketplace) | Parallel (worktrees) |
-| **pi** | `bash adapters/pi/install.sh` | Skills dir — `$HOME/.pi/agent/skills/godmode/` | Skills only |
-| **omp** | `PREFIX=<omp-skills-dir> bash adapters/pi/install.sh` | Skills dir via the pi installer — omp exact dir is undocumented; the installer prints both candidate paths | Skills only |
-| **Codex** | `bash adapters/codex/install.sh` | Copies `.codex/` agents into your repo; harness reads root `AGENTS.md` | Native (sequential) |
-| **OpenCode** | `bash adapters/opencode/install.sh` | Plugin (`plugin.json` + adapter entry) | Sequential |
-| **Gemini CLI** | `bash adapters/gemini/install.sh` | Generated files in your repo (`GEMINI.md` + config) | Sequential |
-| **Cursor** | `bash adapters/cursor/install.sh` | Generated files in your repo (`.cursorrules`) | Background agents |
-| **Amp** | — (no adapter yet) | Manual — the skills are plain Markdown; wiring is on you today | — |
+| Harness | Install | Integration | Agents | Models |
+|---|---|---|---|---|
+| **Claude Code** | `claude plugin install godmode` | Plugin (`commands/`, `agents/`, `.claude-plugin/` marketplace) | Parallel (worktrees) | Full |
+| **pi** | `bash adapters/pi/install.sh` | Skills dir — `$HOME/.pi/agent/skills/godmode/` | Skills only | Full |
+| **omp** | `PREFIX=<omp-skills-dir> bash adapters/pi/install.sh` | Skills dir via the pi installer — omp exact dir is undocumented; the installer prints both candidate paths | Skills only | Same as pi |
+| **Codex** | `bash adapters/codex/install.sh` | Copies `.codex/` agents into your repo; harness reads root `AGENTS.md` | Native (sequential) | Partial |
+| **OpenCode** | `bash adapters/opencode/install.sh` | Plugin (`plugin.json` + adapter entry) | Sequential | Partial |
+| **Gemini CLI** | `bash adapters/gemini/install.sh` | Generated files in your repo (`GEMINI.md` + config) | Sequential | Session-level |
+| **Cursor** | `bash adapters/cursor/install.sh` | Generated files in your repo (`.cursorrules`) | Background agents | Session-level |
+| **Amp** | — (no adapter yet) | Manual — the skills are plain Markdown; wiring is on you today | — | — |
 
 > **omp:** served by the same pi installer via `PREFIX`; its exact skill directory is undocumented, so the installer prints the candidates (`~/.omp/agent/skills`, `~/.config/omp/skills`) and you re-run with `PREFIX=<candidate>`.
 > **Amp:** no adapter exists yet — no install command is provided because none is real. Contributions welcome ([CONTRIBUTING.md](CONTRIBUTING.md#adding-a-new-platform-adapter)).
@@ -289,6 +289,65 @@ Full skill reference: [skills/](skills/)
 All 135 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
 
 Verify your installation: `bash adapters/<platform>/verify.sh` (pi family: point it at your skills dir, e.g. `PREFIX=<dir> bash adapters/pi/verify.sh` for an omp install)
+
+## Multi-model routing
+
+Zero config is a valid, complete default: with no configuration at all,
+every role inherits the session model, and godmode works fully with zero
+setup. A missing `godmode.models.json` is a valid state, and model tiering is
+opt-in only. When a role *is* pinned, resolution is exactly one chain:
+
+`GODMODE_MODEL_<ROLE>` env -> `godmode.models.json` roles -> session model.
+
+The repo-root `godmode.models.json` wins per key over
+`~/.config/godmode/models.json` when both exist: a role pinned in the repo
+file wins, while roles set only in the user file still apply.
+
+A one-off override is an env var per role — role name uppercased, dashes to
+underscores (`code-review` -> `GODMODE_MODEL_CODE_REVIEW`):
+
+```bash
+GODMODE_MODEL_EXECUTE=zai/glm-5.3-flash GODMODE_MODEL_PLAN=anthropic/claude-opus-4 godmode optimize
+```
+
+Durable config lives in `godmode.models.json` — at your project root (commit
+it to share team-wide routing) or in `~/.config/godmode/models.json` (personal,
+machine-wide). Mix providers freely:
+
+```json
+{
+  "roles": {
+    "plan": "anthropic/claude-opus-4",
+    "review": "anthropic/claude-opus-4",
+    "build": "openai/gpt-5.2",
+    "optimize": "zai/glm-5.3-flash"
+  }
+}
+```
+
+> **Illustrative example:** a 20-round optimize loop can run fast/cheap
+> executors under strong reviewer models — spend shifts toward the rounds that
+> benefit instead of paying premium prices for every round. Actual savings
+> depend on your providers and pricing.
+
+Capability tiers — which harnesses accept per-child model params:
+
+| Harness | Model routing |
+|---|---|
+| **pi** | Full — per-child model params |
+| **Claude Code** | Full |
+| **OpenCode** | Partial |
+| **Codex** | Partial |
+| **Cursor** | Session-level |
+| **Gemini CLI** | Session-level |
+
+Inspect what will run before you start: `godmode doctor` (`/godmode:doctor`)
+prints the resolved role -> model table with each value's source
+(env / file / session).
+
+Roles are open-ended — there is no fixed enum — and any unknown or unpinned
+role simply falls back to the session model. Details and the full reference
+resolver: [`adapters/pi/README.md`](adapters/pi/README.md).
 
 ---
 

@@ -154,12 +154,16 @@ The `DispatchContext` schema formalizes what was previously an ad-hoc prose disp
 | `constraints` | no | `string[]` | Additional restrictions (e.g. "no new dependencies") |
 | `budget.rounds` | yes | integer | Max iterations allowed |
 | `budget.timeout_ms` | yes | integer | Hard deadline in milliseconds |
+| `model` | no | string | Optional per-child model hint "provider/id" (advisory) |
+| `model_profile` | no | string | Optional named model-profile hint for this dispatch (advisory) |
 
-**Validation is mandatory at dispatch time.** Every agent MUST validate its incoming `DispatchContext` against this schema before beginning any task work. Validation is a pre-loop gate — it runs before the agent enters its normal protocol, and any failure to validate is a structural dispatch error, not a task error. Validation failures are NOT counted against `budget.rounds`.
+**Validation is mandatory at dispatch time.** Every agent MUST validate its incoming `DispatchContext` against this schema before beginning any task work. Validation is a pre-loop gate — it runs before the agent enters its normal protocol, and any failure to validate is a structural dispatch error, not a task error. Validation failures are NOT counted against `budget.rounds`. Unknown or optional model fields (`model`, `model_profile`) follow the existing log-if-unknown rule — never a hard error.
 
 **Missing required fields are hard errors.** On a missing required field (`task_id`, `agent_role`, `skill`, `scope.files`, `budget.rounds`, or `budget.timeout_ms`), the agent MUST emit `BLOCKED: invalid_dispatch` and return a report that explicitly lists every missing field. The agent MUST NOT start the task, and MUST NOT attempt to recover by inferring, defaulting, or guessing. In particular, fields must NEVER silently default — a missing `budget.rounds` is a hard error, not an implicit "assume 10."
 
 **Unexpected fields are logged, not fatal.** If the dispatch contains fields not defined in this schema, the agent MUST log the unexpected field names and continue processing the known fields. This is intentional forward compatibility: the schema is allowed to grow, and older agents must tolerate newer dispatches without crashing. Unknown fields are never acted on — only logged — so additive changes are always safe.
+
+**Model hints are advisory.** `model` and `model_profile` are hints honored only when neither `GODMODE_MODEL_<ROLE>` env nor `godmode.models.json` pins the role; unknown values are logged, never a hard fail. The binding order is env -> `godmode.models.json` -> session model.
 
 ## Agent Communication Protocol
 
