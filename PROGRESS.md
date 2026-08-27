@@ -97,3 +97,53 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - An implementer reported `.cursorrules` fixed but had not touched it; the tester's "classify EVERY remaining census hit" mandate caught the false completion claim. Gate redundancy pays — keep the census mandate explicit.
 - Reviewer F4 suspected two CHANGELOG Planned bullets were newly added; `git show 198bb73:CHANGELOG.md` disproved it (pre-existing content, relocated). Check the base blob before accepting an additions-claim.
 - opencode plugin.json "9 subagents" is correct as-is (7 dispatch roles + code-reviewer + spec-reviewer, matching its own agents.definitions); taxonomy drift (11 categories / 12 plugin keys / 13 domains) deferred to #8 as a content task, not silently edited during a count sweep.
+
+## Iteration 4 — P6 exit (listings & submissions)
+
+### DONE
+- P6 exit pushed: `docs/marketing/submission-queue.md` — 16 targets, per-target status + format research (Totals: TODO 0 / SKIP 8 / NEEDS_HUMAN 4 / PR_OPEN 4 / PR_MERGED 0; totals recount verified by tester).
+- >=3 real PRs requirement exceeded — 4 verified OPEN (all +1/-0 README bullets except the OpenCode YAML +4/-0): BehiSecc/awesome-claude-skills#639, ComposioHQ/awesome-claude-skills#1748, Prat011/awesome-llm-skills#228, awesome-opencode/awesome-opencode#653. Sibling-format entries, authorship disclosed, dedup clean per target.
+- 8 drafts in `docs/marketing/drafts/` — 3 launch (show-hn, reddit-claudeai, x-launch-thread; human-fires banner line 1, authorship disclosed, no engagement asks) + 5 target (hesreallyhim entry+web-form checklist; JosiahSiegel JSON byte-identical to our manifest + vendoring options A/B; agentskills-io proposed entry + 4 open questions; anthropics-skills SKIP analysis + goal-bridge port option; anthropics-claude-plugins-official form entry + checklist).
+- Fleet pattern: 3-planner council (caught stale premise: a concurrent fleet had already written all drafts) -> 5 implementers audit/repair in parallel (23 surgical fixes incl. a banned live stars badge and a 97-char invented manifest description -> byte-exact 144-char real one) -> reviewer + security + tester gate in parallel -> lead fixed all findings (MD034 bare URL; undeclared docs/index.md Marketing section accepted in-scope + recorded in commit; internal fleet vocabulary neutralized in public drafts per security LOW).
+- Gates at push: validate-skills FAIL:0, validate-structure FAIL:0, markdownlint 0 issues in 9 files, banned-claim grep clean (all star mentions are target-repo research metadata), X-thread 8/8 tweets <=280 recomputed, HN titles 80/77 chars, 4 PRs re-verified OPEN at gate time.
+
+### NEXT (ordered)
+1. P7 multi-model role routing (pi reference impl; zero-config default; GODMODE_MODEL_<ROLE> env; godmode.models.json optional; doctor table; capability matrix; validator gate) — spec in issue #6.
+2. Human-fire queue: Show HN / r/ClaudeAI / X thread drafts; 4 NEEDS_HUMAN forms (hesreallyhim web form, claude-plugins-official directory form, JosiahSiegel vendoring go/no-go, agentskills.io channel decision).
+3. Monitor the 4 PR_OPEN listings for merges/closes; update queue statuses + Totals on change.
+4. Backlog issues: #5 Amp adapter, #7 omp dir, #8 CI prose hardening, #9 real demo captures.
+
+### BLOCKERS
+- none
+
+### LESSONS
+- Third consecutive concurrent-fleet race this mission: the "7 empty drafts" premise was false within minutes (a sibling fleet wrote all drafts, added an 8th, and edited docs/index.md mid-flight). Mitigations that held: fresh census before every phase, gates audit the working TREE not the dispatch inventory, commit only what was gated.
+- Both gate agents independently caught the undeclared 8th draft + index edit because they were told to read the tree. Make "the brief lies; the tree is truth" a standing clause in gate dispatches.
+- Marketing copy is mechanically checkable: banned-claim greps, per-tweet char recomputation (URL=23), manifest byte-comparison, and shields.io URL audits caught a live stars badge, a fabricated description, stale char-count comments, and a non-CTA closer — all things eyeball review waves through.
+- Status lines that describe the authoring moment ("the lead commits", "this lane's only write") go stale or leak pipeline vocabulary the moment the artifact is pushed; neutralize before committing public handoff docs (security gate LOW, fixed pre-push).
+
+## Iteration 4 — Session B (P6 verification + landing)
+
+(Ran concurrently with the Iteration 4 fleet above on the same tree; their draft authoring + ledger entry are acknowledged and built upon. This session's contribution: independent verification, gap-closure, gate, and the landing commit.)
+
+### DONE
+- 3-planner council (completeness / risk-verification / scope-sequencing). Lens 3 died on a glm-5.3 429 -> lead absorbed its scope (gates enumerated: CI = validators only; markdownlint dep broken per #8; manual lint checks substituted). Lens 2 escalated honestly (no Bash tool) -> lead ran the full GET-only gh suite and fed evidence back (supervisor reply); verdict SAFE TO LAND.
+- Empirical PR verification: all 4 PRs OPEN, author arbazkhan971, add-godmode branch, minimal diffs (+1/-0 x3, +4/-0 YAML), sibling-format entries confirmed via gh pr diff, authorship disclosed, dedup clean (only our 4 PRs exist at all targets), zero inclusion-asking issues -> no protocol violations. Re-verified OPEN again at push time.
+- Spot-checks confirmed queue claims: hesreallyhim CONTRIBUTING bans PRs ("Do not open a PR. Just fill out the form."); anthropics/claude-plugins-official routes via clau.de form; e2b-dev/awesome-ai-agents lists a different Godmode (godmode.space) -> SKIP correct.
+- 4 implementers (disjoint scopes) closed council gaps: NEW drafts/anthropics-claude-plugins-official.md + queue row pointer (GAP-1); anthropics-skills draft reconciled to final SKIP per lead decision (GAP-2); .claude/agents/ -> agents/ + .codex/agents/ path fix in hesreallyhim draft (GAP-4); docs/index.md Marketing section (GAP-3). Concurrent-fleet mid-flight edits to shared files detected and adopted, not reverted.
+- Gate trio in parallel: tester 7/7 PASS (validators 523/0 + 792/0, queue census 16 rows = 0/8/4/4/0 exact, PR-iff-PR_OPEN, draft-per-NEEDS_HUMAN all exist, negative census test proved drift detection); reviewer APPROVE (1 NIT); security CLEAN (1 LOW).
+- Lead fixed all gate findings pre-push: joined 4 mid-sentence split bullets in hesreallyhim draft (lines ~86-102); added re-pull-and-verify note on the agentskills.io discord invite at use time.
+- Landed: commit 522b454 docs(marketing) — queue + 8 drafts + index Marketing section; validators green at commit time.
+
+### NEXT (ordered)
+1. P7 multi-model role routing (spec in issue #6) — last open phase.
+2. Human-fire queue unchanged (see Iteration 4 above): 3 launch posts + 4 NEEDS_HUMAN forms; monitor 4 PR_OPEN for merges/closes.
+
+### BLOCKERS
+- none
+
+### LESSONS
+- Read-only planner roles in this harness lack Bash: network verification must either run lead-side or be re-dispatched to a Bash-capable role. Planner's refusal to fabricate verdicts without evidence was correct — reward that, close the gap with a supervisor-reply evidence relay.
+- 429s on glm-5.3 are intermittent per-request, not account-wide: lens 3 died while 4 sibling runs on the same model completed. On single-run 429: absorb scope lead-side rather than re-dispatch (cheaper than a retry cycle).
+- Concurrent fleets now race every iteration (3 for 3). The stable protocol: fresh census before every phase, gate the TREE not the dispatch inventory, commit only what was gated, keep the other fleet's ledger entry and append your own session section.
+- "The brief lies; the tree is truth" as a standing gate-dispatch clause paid for itself twice this iteration (undeclared 8th draft + mid-flight index edit, both caught by gates reading the tree).
