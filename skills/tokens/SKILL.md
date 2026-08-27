@@ -115,6 +115,7 @@ This prints every session chronologically with its total. Piping to `awk 'NR>1 {
 6. Respect `GODMODE_TOKENS=0` unconditionally. Opt-out wins over every other flag, including `--verbose`.
 7. Persists across sessions. The file lives in `.godmode/`, which is committed with the rest of godmode state. Never gitignore token-log.tsv.
 8. No external deps beyond `awk`, `wc`, `gzip`, `date`, and standard Unix utilities. No python, no jq, no node, no tiktoken.
+9. `.godmode/last-round-emit.txt` is a disposable scratch cache: it holds only the previous round's emit text and is atomically rewritten every round. Projects that commit `.godmode/` state SHOULD still gitignore this one file (the project maintainer adds `.godmode/last-round-emit.txt` to `.gitignore`) — it frequently quotes repo code and can carry secrets surfaced in prior output. This is the one deliberate exception to Rule 7: `token-log.tsv` (append-only history) stays committed; `last-round-emit.txt` (rewritten scratch) does not need to be.
 
 ## Keep / Discard Discipline
 This skill does not keep or discard anything — it only observes. Rounds driven by other skills may themselves be kept or discarded per the Universal Protocol; the token row is logged either way, with the driving skill's final keep/discard status inferred from `results.tsv` (not re-measured here). Observing a discarded round is still valuable signal: expensive discards point to skills that burn context without moving the metric.
