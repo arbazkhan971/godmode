@@ -27,11 +27,11 @@ Sleep 500ms
 
 Type "python3 -m unittest -q test_slow_fib"
 Enter
-Sleep 500ms
+Sleep 3s
 
 Type "bash metric.sh && bash metric.sh && bash metric.sh"
 Enter
-Sleep 500ms
+Sleep 6s
 
 Type 'git add -A && git commit -qm "baseline"'
 Enter
