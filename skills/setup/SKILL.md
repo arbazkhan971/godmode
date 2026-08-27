@@ -125,12 +125,98 @@ Write `.godmode/config.yaml` with keys:
 project, commands, platform, optimization,
 scope, guard_rails.
 
+### Step 6b: Model Tiering (optional)
+Only if user wants per-role models. Max 3 questions total,
+then stop asking. Model values are opaque strings passed
+as parameters to child dispatches -- never evaluated.
+Resolution order: `GODMODE_MODEL_<ROLE>` env ->
+godmode.models.json (per-role merge: current project root
+file wins per-key over ~/.config/godmode/models.json) ->
+session model. Missing config = VALID zero-config default;
+every role inherits the session model.
+
+```bash
+# 1) Detect authed providers WITHOUT asking first.
+# Key NAMES only -- never print values.
+printenv | grep -E '_(API_KEY|TOKEN)=' | cut -d= -f1 || true
+# Harness-native checks where available (the harness's own
+# auth/model-registry status commands, if present):
+command -v pi >/dev/null 2>&1 && pi auth check 2>/dev/null || true
+```
+
+```
+DETECTED AUTH -> WORKS-ON-THIS-MACHINE LIST:
+  *_API_KEY / *_TOKEN env name -> provider authed via env
+  harness auth/registry check  -> provider authed via harness
+
+IF none detected OR user skips:
+  Print the zero-config promise: every role inherits the
+  session model -- valid default, nothing to configure.
+  STOP this step.
+```
+
+2) Propose a tiering derived from what works on this
+machine -- never hard-coded vendor names as "required":
+```
+STRONG tier -> review, security, plan
+FAST tier   -> build, optimize, docs, explore
+  (placeholders: vendor/strong, vendor/fast -- substitute
+  whatever the detected providers actually offer)
+```
+Ask AT MOST 3 questions, then stop asking:
+  Q1: use this proposal as-is? Fold the target-file choice
+      in here: ~/.config/godmode/models.json (personal,
+      default) or godmode.models.json at repo root
+      (share with team).
+  Q2: which model for strong roles?
+  Q3: which model for fast roles?
+Roles are open-ended user keys; unknown role -> session
+model. Case-folded roles (Plan/plan) collapse to one env
+var -- document, do not special-case. Zero-file
+alternative: `GODMODE_MODEL_<ROLE>` env one-liners win
+over the file.
+
+3) Validate BEFORE writing; never write unvalidated config.
+File shape: {"roles": {<role>: "provider/id"}}. A value is
+valid iff it fully matches ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$
+or is the literal string "session". An invalid value at ANY
+layer: one stderr warning ("[models] warning: ignoring
+invalid model value for role <role>") + treat as absent
+(fall through to the next layer).
+```bash
+# chosen = answers to Q1-Q3; e.g. vendor/strong, vendor/fast
+python3 -c 'import json, re, sys
+roles = {"review": "vendor/strong", "build": "vendor/fast"}
+pat = r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+assert all(re.fullmatch(pat, v) or v == "session"
+           for v in roles.values()), "invalid model value"
+json.dump({"roles": roles}, open(sys.argv[1], "w"), indent=2)' "$file"
+```
+Env name per role: `printf '%s' "$role" |
+tr '[:lower:]._-' '[:upper:]___'` -> GODMODE_MODEL_<that>;
+read with `printenv "$name" 2>/dev/null || true`;
+set-but-empty = NOT an override (fall through).
+
+4) Verify the write. ALWAYS the json check (mirrors Step
+7's yaml check); doctor ONLY inside a godmode repo checkout
+(skills-only installs have no adapters/):
+```bash
+python3 -m json.tool "$file"
+if [ -f adapters/pi/models.sh ]; then
+  bash adapters/pi/models.sh doctor  # role -> model + source
+fi
+```
+Emit the applicable "Setup: models:" Output Format line(s).
+
 ### Step 7: Final Validation
 ```bash
 {test_cmd} && {lint_cmd} && {build_cmd}
 python3 -c 'import yaml; yaml.safe_load(
   open(".godmode/config.yaml"))'
-git add .godmode/config.yaml \
+if [ -f godmode.models.json ]; then python3 -c 'import json
+r = json.load(open("godmode.models.json"))["roles"]
+assert all("/" in v for v in r.values())'; fi
+git add .godmode/config.yaml [godmode.models.json] \
   && git commit -m "setup: configure godmode"
 ```
 
@@ -142,6 +228,9 @@ Setup: test ({cmd}) -- PASS ({time}s).
 Setup: lint ({cmd}) -- PASS ({time}s).
 Setup: build ({cmd}) -- PASS ({time}s).
 Setup: wrote .godmode/config.yaml. Committed.
+Setup: models: proposal made ({n} providers detected).
+Setup: models: wrote {path} (validated).
+Setup: models: zero-config kept (roles -> session model).
 ```
 
 ## TSV Logging
