@@ -184,13 +184,15 @@ layer: one stderr warning ("[models] warning: ignoring
 invalid model value for role <role>") + treat as absent
 (fall through to the next layer).
 ```bash
-# chosen = answers to Q1-Q3; e.g. vendor/strong, vendor/fast
+# chosen = answers to Q1-Q3; pass role/model pairs as ARGV (never splice
+# user answers into python source); validate BEFORE writing
 python3 -c 'import json, re, sys
-roles = {"review": "vendor/strong", "build": "vendor/fast"}
 pat = r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+roles = dict(zip(sys.argv[2::2], sys.argv[3::2]))
 assert all(re.fullmatch(pat, v) or v == "session"
            for v in roles.values()), "invalid model value"
-json.dump({"roles": roles}, open(sys.argv[1], "w"), indent=2)' "$file"
+json.dump({"roles": roles}, open(sys.argv[1], "w"), indent=2)' \
+  "$file" review "$strong" build "$fast"
 ```
 Env name per role: `printf '%s' "$role" |
 tr '[:lower:]._-' '[:upper:]___'` -> GODMODE_MODEL_<that>;
@@ -215,7 +217,7 @@ python3 -c 'import yaml; yaml.safe_load(
   open(".godmode/config.yaml"))'
 if [ -f godmode.models.json ]; then python3 -c 'import json
 r = json.load(open("godmode.models.json"))["roles"]
-assert all("/" in v for v in r.values())'; fi
+assert all(v == "session" or "/" in v for v in r.values())'; fi
 git add .godmode/config.yaml [godmode.models.json] \
   && git commit -m "setup: configure godmode"
 ```
