@@ -4,7 +4,7 @@
 
 ### Your AI writes code. Godmode makes it write *great* code — then proves it.
 
-Godmode turns any AI coding assistant into an autonomous engineering loop — 135 skills that measure every change, keep what improves, and revert what doesn't — installable on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp.
+Godmode turns any AI coding assistant into an autonomous engineering loop — 135 skills that measure every change, keep what improves, and revert what doesn't — installable on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-135-ff6b6b.svg)](skills/)
@@ -15,6 +15,7 @@ Godmode turns any AI coding assistant into an autonomous engineering loop — 13
 [![Cursor](https://img.shields.io/badge/Cursor-supported-000000.svg)](adapters/cursor/)
 [![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
 [![pi](https://img.shields.io/badge/pi-supported-20B2AA.svg)](adapters/pi/)
+[![Amp](https://img.shields.io/badge/Amp-supported-2257D7.svg)](adapters/amp/)
 
 </div>
 
@@ -281,10 +282,10 @@ Full skill reference: [skills/](skills/)
 | **OpenCode** | `bash adapters/opencode/install.sh` | Plugin (`plugin.json` + adapter entry) | Sequential | Partial |
 | **Gemini CLI** | `bash adapters/gemini/install.sh` | Generated files in your repo (`GEMINI.md` + config) | Sequential | Session-level |
 | **Cursor** | `bash adapters/cursor/install.sh` | Generated files in your repo (`.cursorrules`) | Background agents | Session-level |
-| **Amp** | — (no adapter yet) | Manual — the skills are plain Markdown; wiring is on you today | — | — |
+| **Amp** | `bash adapters/amp/install.sh` | Skills dir — `.agents/skills/` in your repo (Amp-native) + root `AGENTS.md` | Skills only | — |
 
 > **omp:** served by the same pi installer via `PREFIX`; its exact skill directory is undocumented, so the installer prints the candidates (`~/.omp/agent/skills`, `~/.config/omp/skills`) and you re-run with `PREFIX=<candidate>`.
-> **Amp:** no adapter exists yet — no install command is provided because none is real. Contributions welcome ([CONTRIBUTING.md](CONTRIBUTING.md#adding-a-new-platform-adapter)).
+> **Amp:** reads root `AGENTS.md` and the `.agents/skills/` project skills directory natively ([docs](https://ampcode.com/docs/customize/skills)); the adapter wires godmode's skills there. Subagents and model routing are Amp's own — the adapter wires neither.
 
 All 135 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
 
