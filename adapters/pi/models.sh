@@ -117,8 +117,10 @@ except Exception:
 PYEOF
 }
 
-# File layer for one role. Sets FILE_VALUE / FILE_ORIGIN; rc 0 = value found
-# (may still be invalid — validated by the caller), rc 1 = not found.
+# File layer for one role. Sets FILE_VALUE / FILE_ORIGIN; rc 0 = VALID value
+# found, rc 1 = not found in any file. An invalid value in one file is
+# warned about once and treated as absent — the next file is still consulted
+# (same contract as the inline resolvers in the skills).
 models_file_lookup() {
     FILE_VALUE=""
     FILE_ORIGIN=""
@@ -140,6 +142,10 @@ models_file_lookup() {
         fi
         [ -f "$f" ] || continue
         if val="$(read_models_json "$f" "$role")"; then
+            if ! models_valid_value "$val"; then
+                models_warn_invalid "$role"
+                continue  # invalid value = absent: try the next file/layer
+            fi
             FILE_VALUE="$val"
             if [ "$f" = "$root/godmode.models.json" ]; then
                 FILE_ORIGIN="godmode.models.json (project)"
@@ -403,6 +409,15 @@ cmd_selftest() {
     printf '{"roles":{"build":"session"}}' >"$repo/godmode.models.json"
     st_run -- resolve build
     st_check "session literal valid" "$(printf 'session\tfile')" "$ST_OUT"
+    rm -f "$repo/godmode.models.json" "$home/.config/godmode/models.json"
+
+    # 12. Invalid value in the project file falls through to the home file
+    # (invalid = absent at every layer — cross-resolver contract).
+    printf '{"roles":{"build":"garbage"}}' >"$repo/godmode.models.json"
+    printf '{"roles":{"build":"t/home"}}' >"$home/.config/godmode/models.json"
+    st_run -- resolve build
+    st_check "invalid project value falls through to home" "$(printf 't/home\tfile')" "$ST_OUT"
+    st_err_has "invalid project value warning" "ignoring invalid model value for role build"
     rm -f "$repo/godmode.models.json" "$home/.config/godmode/models.json"
 
     # 8. Doctor with zero GODMODE_MODEL_* env: header, >= 8 rows, trailer,
