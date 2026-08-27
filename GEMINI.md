@@ -32,7 +32,7 @@ When a skill says "use Read to examine the file," use `read_file`. When it says 
 
 ## How to Use Skills
 
-Godmode has **134 skills** and **7 subagents**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
+Godmode has **135 skills** and **7 subagents**. The orchestrator (`/godmode`) auto-detects which to invoke. Users can also invoke directly: `/godmode:skillname`.
 
 **When a user invokes a skill** (e.g., `/godmode:secure`), read the full skill file before executing:
 ```
@@ -61,7 +61,7 @@ Godmode ships with 7 specialized agents. For complex tasks, use the planner to d
 
 Note: Gemini CLI does not support parallel subagent dispatch. Execute agent roles sequentially: plan → explore → build → review → optimize.
 
-## Skill Catalog (134 skills)
+## Skill Catalog (135 skills)
 
 | Skill | Description |
 |---|---|
@@ -109,6 +109,7 @@ Note: Gemini CLI does not support parallel subagent dispatch. Execute agent role
 | fix | Autonomous error fixing |
 | forms | Form architecture |
 | ghactions | GitHub Actions workflow design and optimization |
+| goal-bridge | Machine-checkable goal-mode completion contracts (metric command, threshold, evidence, rollback) |
 | git | Advanced Git workflows |
 | godmode | Orchestrator (auto-detect phase and route) |
 | graphql | GraphQL API development |

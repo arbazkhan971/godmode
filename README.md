@@ -4,16 +4,17 @@
 
 ### Your AI writes code. Godmode makes it write *great* code — then proves it.
 
-The open-source autonomous coding agent that turns AI assistants into engineering systems. 134 skills for building, testing, optimizing, securing, and shipping software — with iterative optimization, parallel multi-agent execution, automatic rollback, failure memory, Karpathy-style authoring discipline, pre-commit discard audit, and a four-layer token optimization stack that cuts routing context by ~90%. Plugin for Claude Code, Cursor, Codex, Gemini CLI, and OpenCode.
+The open-source autonomous coding agent that turns AI assistants into engineering systems. 135 skills for building, testing, optimizing, securing, and shipping software — with iterative optimization, parallel multi-agent execution, automatic rollback, failure memory, Karpathy-style authoring discipline, pre-commit discard audit, and a four-layer token optimization stack that cuts routing context by ~90%. Plugin for Claude Code, Cursor, Codex, Gemini CLI, and OpenCode.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-134-ff6b6b.svg)](skills/)
+[![Skills](https://img.shields.io/badge/skills-135-ff6b6b.svg)](skills/)
 [![Agents](https://img.shields.io/badge/subagents-7-ff9f43.svg)](agents/)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-supported-4A90D9.svg)](adapters/)
 [![Codex](https://img.shields.io/badge/Codex-supported-10A37F.svg)](adapters/codex/)
 [![Gemini CLI](https://img.shields.io/badge/Gemini_CLI-supported-4285F4.svg)](adapters/gemini/)
 [![Cursor](https://img.shields.io/badge/Cursor-supported-000000.svg)](adapters/cursor/)
 [![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
+[![pi](https://img.shields.io/badge/pi-supported-20B2AA.svg)](adapters/pi/)
 
 </div>
 
@@ -92,6 +93,7 @@ claude plugin install godmode
 bash adapters/cursor/install.sh
 bash adapters/gemini/install.sh
 bash adapters/opencode/install.sh
+bash adapters/pi/install.sh
 ```
 
 ```bash
@@ -115,7 +117,7 @@ Godmode auto-detects what you need and routes to the right skill.
 
 Godmode is an open-source plugin that adds autonomous coding capabilities to AI assistants like Claude Code, Cursor, Codex, Gemini CLI, and OpenCode. Instead of generating code once and hoping it works, Godmode runs a disciplined engineering loop: **measure, modify, verify, keep or revert, repeat** — until the goal is met.
 
-It ships with 134 expert skills across 12 domains (performance optimization, security auditing, TDD, deployment, database tuning, and more), 7 specialized subagents that work in parallel, a failure memory system that learns from every discarded change, and a built-in authoring-discipline prelude that prevents the most common LLM coding mistakes before they hit the repo.
+It ships with 135 expert skills across 13 domains (performance optimization, security auditing, TDD, deployment, database tuning, and more), 7 specialized subagents that work in parallel, a failure memory system that learns from every discarded change, and a built-in authoring-discipline prelude that prevents the most common LLM coding mistakes before they hit the repo.
 
 ## How Godmode Compares to Plain AI Coding
 
@@ -226,13 +228,13 @@ Each of these skills has a `Rule 0` in its Hard Rules section explicitly inherit
 
 ---
 
-## Skills (134)
+## Skills (135)
 
-Godmode includes 134 skills across 13 domains. Each skill encodes a real engineering workflow — not just instructions, but a complete protocol with verification steps.
+Godmode includes 135 skills across 13 domains. Each skill encodes a real engineering workflow — not just instructions, but a complete protocol with verification steps.
 
 | Domain | Count | Highlights |
 |--------|-------|------------|
-| **Core Workflow** | 15 | `godmode` `think` `plan` `build` `test` `review` `optimize` `debug` `fix` `ship` `verify` |
+| **Core Workflow** | 16 | `godmode` `think` `plan` `build` `test` `review` `optimize` `debug` `fix` `ship` `verify` `goal-bridge` **(new)** |
 | **Discipline & Context** | 8 | `principles` `terse` `stdio` `tokens` `research` `bench` `team` `tutorial` **(new)** |
 | **Architecture & Design** | 10 | `architect` `rfc` `ddd` `pattern` `schema` `distributed` `scale` `migration` |
 | **API & Backend** | 14 | `api` `graphql` `grpc` `orm` `cache` `queue` `event` `realtime` `webhook` |
@@ -272,8 +274,9 @@ Full skill reference: [skills/](skills/)
 | **Cursor** | Background agents | `bash adapters/cursor/install.sh` |
 | **Gemini CLI** | Sequential | `bash adapters/gemini/install.sh` |
 | **OpenCode** | Sequential | `bash adapters/opencode/install.sh` |
+| **pi** | Global skills dir | `bash adapters/pi/install.sh` |
 
-All 134 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
+All 135 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
 
 Verify your installation: `bash adapters/<platform>/verify.sh`
 

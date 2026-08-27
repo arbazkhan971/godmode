@@ -1,6 +1,6 @@
 # AGENTS.md — Godmode for AI Coding Agents
 
-Godmode is a skill plugin with 134 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
+Godmode is a skill plugin with 135 specialized skills and 7 subagents that turn AI coding agents into disciplined engineers. Every change is measured, every bad change is reverted, and every experiment is committed.
 
 ## Core Workflow: The Godmode Loop
 
@@ -110,7 +110,7 @@ format) is:
 - **Tier 1** — frontmatter + the `## Activate When` block. Always loaded at
   orchestrator route time. Never exceeds ~25 lines per skill. Used by
   `skills/godmode/SKILL.md § Step 2` to match triggers without reading
-  the full skill corpus. Routing cost: ~2,700 lines across 134 skills,
+  the full skill corpus. Routing cost: ~2,700 lines across 135 skills,
   ~90% less than full-read routing.
 
 - **Tier 2** — the workflow, hard rules, keep/discard discipline, stop
@@ -340,7 +340,7 @@ Cursor supports background agents with its own dispatch model. Godmode adapts as
 
 **Limitations:** Cursor background agents do not support worktree isolation. File scoping is the primary isolation mechanism. The orchestrator must be extra careful about file scope partitioning to prevent conflicts.
 
-## Skill Catalog (134 Skills)
+## Skill Catalog (135 Skills)
 
 | Skill | Description |
 |-------|-------------|
@@ -464,6 +464,7 @@ Cursor supports background agents with its own dispatch model. Godmode adapts as
 | `experiment` | A/B testing and statistical analysis |
 | `feature` | Feature flags and gradual rollouts |
 | `ghactions` | GitHub Actions workflow design and optimization |
+| `goal-bridge` | Machine-checkable goal-mode completion contracts (metric command, threshold, evidence, rollback) |
 | `notify` | Push, SMS, and in-app notifications |
 | `ratelimit` | Rate limiting algorithms and middleware |
 | `seed` | Database seeding and factory patterns |

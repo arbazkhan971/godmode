@@ -2,7 +2,7 @@
 # =============================================================================
 # token-bench.sh — Token cost benchmark for godmode skill routing.
 # =============================================================================
-# Measures the approximate token cost of Tier 1 routing across all 134 skills,
+# Measures the approximate token cost of Tier 1 routing across all 135 skills,
 # using the chars/4 heuristic documented in skills/tokens/SKILL.md.
 #
 # Two numbers are produced:
