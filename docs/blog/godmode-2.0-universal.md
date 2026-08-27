@@ -64,7 +64,9 @@ subagents run one at a time, identical results at lower throughput.
 | OpenCode | plugin + `AGENTS.md` | sequential execution |
 | Gemini | `GEMINI.md` + `.godmode/` | sequential execution |
 | Cursor | `.cursorrules` + `.godmode/` | background agents, file-scoped |
-| Amp | none yet | adapter pending |
+| Amp | `bash adapters/amp/install.sh` | skills via `.agents/skills/` + `AGENTS.md` copy |
+
+*Amp shipped after this post -- see `adapters/amp/`.*
 
 Every install is idempotent, and each adapter-backed install gets a
 one-command smoke test through its `verify.sh` (Claude Code verifies via
@@ -140,7 +142,8 @@ yourself.
 
 Coverage is incomplete, on the record: omp's exact skill directory is
 still undocumented upstream, so installs there rely on the `PREFIX`
-override; the Amp adapter has not been written; and the sequential path
+override; the Amp adapter has not been written (an Amp adapter now ships
+in `adapters/amp/`); and the sequential path
 trades throughput for fidelity on platforms without parallel agents.
 
 The loop is unchanged from 1.0: measure, keep, discard. What changed is

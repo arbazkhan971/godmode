@@ -859,6 +859,7 @@ When adding a new agent:
 | **Gemini CLI** | Full | Sequential only | Not supported | Sequential fallback | `adapters/gemini/` |
 | **OpenCode** | Full | Sequential only | Not supported | Sequential fallback | `adapters/opencode/` |
 | **Cursor** | Full | Sequential only | Not supported | Sequential fallback | `adapters/cursor/` |
+| **Amp** | Full | Not injected (Amp has its own) | Not supported | Sequential via Amp subagents (manual) | `adapters/amp/` |
 
 **Key:** "Sequential only" means the platform runs one agent at a time using the fallback protocol in `adapters/shared/sequential-dispatch.md`. "Full" means the platform supports the feature natively.
 

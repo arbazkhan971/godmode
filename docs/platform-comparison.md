@@ -1,27 +1,27 @@
 # Platform Comparison
 
-Godmode runs on 5 platforms. All 135 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
+Godmode runs on 6 platforms. All 135 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
 
 ---
 
 ## Feature Matrix
 
-| Feature | Claude Code | Codex | Gemini CLI | OpenCode | Cursor |
-|---------|:-----------:|:-----:|:----------:|:--------:|:------:|
-| **Skills available** | 135 | 135 | 135 | 135 | 135 |
-| **Subagents** | 7 | 7 | 7 | 7 | 7 |
-| **Skill discovery** | Native `SKILL.md` | System prompt (`AGENTS.md`) | System prompt (`GEMINI.md`) | Plugin system (`plugin.json`) | Rules file (`.cursorrules`) |
-| **Slash commands** | `/godmode:skill` | Batch prompt prefix | Chat commands | `/godmode:skill` (native) | `@godmode skill` or `/godmode:skill` |
-| **Parallel agent dispatch** | Native (`Agent` tool) | No -- sequential | No -- sequential | No -- sequential | Background agents |
-| **Git worktree isolation** | Native (`EnterWorktree`) | Branch-based fallback | Manual `git worktree` via shell | Not available | Manual / background agent scoped |
-| **Tool names** | Native (Read, Write, Edit, Bash, Grep, Glob) | Mapped (generic file/shell ops) | Mapped (read_file, write_file, replace, run_shell_command, grep_search, glob) | Native (Read, Write, Edit, Bash, Grep, Glob) | Native (Read, Write, Edit, Bash, Grep, Glob) |
-| **Session hooks** | Yes (session-start) | No | No | Yes (session_start in plugin.json) | No |
-| **Interactive setup** | `/godmode:setup` wizard | No -- batch mode only | `/godmode:setup` in chat | `/godmode:setup` in chat | `@godmode setup` in chat |
-| **Loop behavior** | Parallel (multi-agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Parallel (background agents) |
-| **Background execution** | Agent tool runs in parallel | Entire session is batch | No | No | Background agents |
-| **Config file format** | `.godmode/config.yaml` | `.godmode/config.yaml` + `.codex/config.toml` + `.codex/agents/*.toml` | `.godmode/config.yaml` | `.godmode/config.yaml` + `.opencode/plugins/godmode/plugin.json` | `.godmode/config.yaml` + `.cursorrules` |
-| **Install method** | `claude plugin install godmode` | `bash adapters/codex/install.sh` | `bash adapters/gemini/install.sh` | `bash adapters/opencode/install.sh` | `bash adapters/cursor/install.sh` |
-| **Agent definitions** | `agents/*.md` | `.codex/agents/*.toml` | `agents/*.md` (read manually) | `agents/*.md` (read manually) | `agents/*.md` (read manually) |
+| Feature | Claude Code | Codex | Gemini CLI | OpenCode | Cursor | Amp |
+|---------|:-----------:|:-----:|:----------:|:--------:|:------:|:----:|
+| **Skills available** | 135 | 135 | 135 | 135 | 135 | 135 |
+| **Subagents** | 7 | 7 | 7 | 7 | 7 | 0 (Amp's own) |
+| **Skill discovery** | Native `SKILL.md` | System prompt (`AGENTS.md`) | System prompt (`GEMINI.md`) | Plugin system (`plugin.json`) | Rules file (`.cursorrules`) | Project skills (`.agents/skills/`) + `AGENTS.md` |
+| **Slash commands** | `/godmode:skill` | Batch prompt prefix | Chat commands | `/godmode:skill` (native) | `@godmode skill` or `/godmode:skill` | n/a (Amp skill invocation) |
+| **Parallel agent dispatch** | Native (`Agent` tool) | No -- sequential | No -- sequential | No -- sequential | Background agents | No -- sequential via Amp subagents |
+| **Git worktree isolation** | Native (`EnterWorktree`) | Branch-based fallback | Manual `git worktree` via shell | Not available | Manual / background agent scoped | Not available |
+| **Tool names** | Native (Read, Write, Edit, Bash, Grep, Glob) | Mapped (generic file/shell ops) | Mapped (read_file, write_file, replace, run_shell_command, grep_search, glob) | Native (Read, Write, Edit, Bash, Grep, Glob) | Native (Read, Write, Edit, Bash, Grep, Glob) | Amp-native |
+| **Session hooks** | Yes (session-start) | No | No | Yes (session_start in plugin.json) | No | No |
+| **Interactive setup** | `/godmode:setup` wizard | No -- batch mode only | `/godmode:setup` in chat | `/godmode:setup` in chat | `@godmode setup` in chat | `setup` skill via Amp |
+| **Loop behavior** | Parallel (multi-agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Sequential (one agent per round) | Parallel (background agents) | Sequential (manual subagent prompts) |
+| **Background execution** | Agent tool runs in parallel | Entire session is batch | No | No | Background agents | No |
+| **Config file format** | `.godmode/config.yaml` | `.godmode/config.yaml` + `.codex/config.toml` + `.codex/agents/*.toml` | `.godmode/config.yaml` | `.godmode/config.yaml` + `.opencode/plugins/godmode/plugin.json` | `.godmode/config.yaml` + `.cursorrules` | `.godmode/config.yaml` + `AGENTS.md` (or `AGENTS.godmode.md` sidecar) |
+| **Install method** | `claude plugin install godmode` | `bash adapters/codex/install.sh` | `bash adapters/gemini/install.sh` | `bash adapters/opencode/install.sh` | `bash adapters/cursor/install.sh` | `bash adapters/amp/install.sh` |
+| **Agent definitions** | `agents/*.md` | `.codex/agents/*.toml` | `agents/*.md` (read manually) | `agents/*.md` (read manually) | `agents/*.md` (read manually) | Not injected (Amp's own subagents) |
 
 ---
 
@@ -29,17 +29,17 @@ Godmode runs on 5 platforms. All 135 skills work everywhere. This document cover
 
 Sequential execution produces identical results. Only wall-clock time differs.
 
-| Skill | Parallel Tasks | Claude Code | Codex | Gemini CLI | OpenCode | Cursor |
-|-------|---------------|:-----------:|:-----:|:----------:|:--------:|:------:|
-| **Single-threaded skills** | 1 | 1x | 1x | 1x | 1x | 1x |
-| **Build** (per round) | 5 agents | 1x | ~5x | ~5x | ~5x | ~1x |
-| **Optimize** (per round) | 3 agents | 1x | ~3x | ~3x | ~3x | ~1x |
-| **Review** (total) | 4 passes | 1x | ~4x | ~4x | ~4x | ~1x |
+| Skill | Parallel Tasks | Claude Code | Codex | Gemini CLI | OpenCode | Cursor | Amp |
+|-------|---------------|:-----------:|:-----:|:----------:|:--------:|:------:|:----:|
+| **Single-threaded skills** | 1 | 1x | 1x | 1x | 1x | 1x | 1x |
+| **Build** (per round) | 5 agents | 1x | ~5x | ~5x | ~5x | ~1x | ~5x |
+| **Optimize** (per round) | 3 agents | 1x | ~3x | ~3x | ~3x | ~1x | ~3x |
+| **Review** (total) | 4 passes | 1x | ~4x | ~4x | ~4x | ~1x | ~4x |
 
 **Key takeaways:**
 
 - **Claude Code** and **Cursor** run multi-agent skills in parallel -- same wall-clock time as a single agent.
-- **Codex**, **Gemini CLI**, and **OpenCode** run the same tasks sequentially -- correct results, longer runtime.
+- **Codex**, **Gemini CLI**, **OpenCode**, and **Amp** run the same tasks sequentially -- correct results, longer runtime.
 - Single-threaded skills (think, plan, debug, fix, secure, ship, and all 111 domain skills) run at identical speed on every platform.
 - The slowdown is purely wall-clock. Verification logic, rollback behavior, output format, and decision quality are the same everywhere.
 
@@ -70,11 +70,11 @@ Every platform writes the same tab-separated log format. Columns, keep/revert de
 
 ### Skills are identical -- only invocation syntax differs
 
-| Action | Claude Code | Codex | Gemini CLI | OpenCode | Cursor |
-|--------|-------------|-------|------------|----------|--------|
-| Run optimize | `/godmode:optimize` | `codex "Run /godmode:optimize ..."` | `/godmode:optimize` | `/godmode:optimize` | `@godmode optimize` |
-| Run secure | `/godmode:secure` | `codex "Run /godmode:secure ..."` | `/godmode:secure` | `/godmode:secure` | `@godmode secure` |
-| Auto-route | `/godmode make it faster` | `codex "Run /godmode -- make it faster"` | `/godmode make it faster` | `/godmode make it faster` | `@godmode make it faster` |
+| Action | Claude Code | Codex | Gemini CLI | OpenCode | Cursor | Amp |
+|--------|-------------|-------|------------|----------|--------|-----|
+| Run optimize | `/godmode:optimize` | `codex "Run /godmode:optimize ..."` | `/godmode:optimize` | `/godmode:optimize` | `@godmode optimize` | Ask Amp to run the optimize skill |
+| Run secure | `/godmode:secure` | `codex "Run /godmode:secure ..."` | `/godmode:secure` | `/godmode:secure` | `@godmode secure` | Ask Amp to run the secure skill |
+| Auto-route | `/godmode make it faster` | `codex "Run /godmode -- make it faster"` | `/godmode make it faster` | `/godmode make it faster` | `@godmode make it faster` | Ask Amp (skills auto-discovered) |
 
 The underlying SKILL.md files are the same. Only the invocation surface changes.
 
@@ -131,6 +131,13 @@ The underlying SKILL.md files are the same. Only the invocation surface changes.
 - **Auto-detection works.** Describe what you want in natural language and Cursor routes to the right skill, just like Claude Code. Example: "make this API faster" routes to optimize.
 - **Symlinked skills and agents.** The installer symlinks `skills/` and `agents/` from the Godmode repo. If you move the Godmode clone, re-run the installer to fix broken symlinks.
 
+### Amp
+
+- **Install via adapter.** `bash adapters/amp/install.sh` wires Amp's `.agents/skills/` project skills directory (symlinked from the Godmode repo for live sync) and copies `AGENTS.md` into the project root. Amp reads both natively. Where symlinks are not an option, `cp -rL` copies the tree instead.
+- **User-authored `AGENTS.md` is preserved.** The installer never clobbers an existing user-authored `AGENTS.md`; it writes the godmode instructions to an `AGENTS.godmode.md` sidecar for you to merge.
+- **Subagents are Amp's own.** Godmode's 7 role definitions are not injected. When a skill calls for `Agent(builder, ...)`, prompt one of Amp's own subagents with the godmode role's workflow -- dispatch is sequential and manual.
+- **No model routing or worktree integration.** Role-based model routing and worktree isolation are not wired on Amp; run tasks on the current branch, as on Gemini CLI and OpenCode.
+
 ---
 
 ## Quick Reference: Which Platform When?
@@ -141,6 +148,7 @@ The underlying SKILL.md files are the same. Only the invocation surface changes.
 | CI/CD integration | Codex | Batch mode, no interactive prompts |
 | Quick single-skill runs | Any | All platforms handle single-threaded skills identically |
 | Existing Cursor workflow | Cursor | Background agents + familiar UX |
+| Amp workflow | Amp | All 135 skills via `.agents/skills/`; roles run in Amp's own subagents |
 | Gemini ecosystem | Gemini CLI | System prompt integration via GEMINI.md |
 | OpenCode ecosystem | OpenCode | Native slash commands + plugin system |
 
