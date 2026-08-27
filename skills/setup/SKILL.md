@@ -144,7 +144,7 @@ printenv | grep -E '_(API_KEY|TOKEN)=' | cut -d= -f1 || true
 command -v pi >/dev/null 2>&1 && pi auth check 2>/dev/null || true
 ```
 
-```
+```text
 DETECTED AUTH -> WORKS-ON-THIS-MACHINE LIST:
   *_API_KEY / *_TOKEN env name -> provider authed via env
   harness auth/registry check  -> provider authed via harness
@@ -157,7 +157,7 @@ IF none detected OR user skips:
 
 2) Propose a tiering derived from what works on this
 machine -- never hard-coded vendor names as "required":
-```
+```text
 STRONG tier -> review, security, plan
 FAST tier   -> build, optimize, docs, explore
   (placeholders: vendor/strong, vendor/fast -- substitute
@@ -218,8 +218,9 @@ python3 -c 'import yaml; yaml.safe_load(
 if [ -f godmode.models.json ]; then python3 -c 'import json
 r = json.load(open("godmode.models.json"))["roles"]
 assert all(v == "session" or "/" in v for v in r.values())'; fi
-git add .godmode/config.yaml [godmode.models.json] \
-  && git commit -m "setup: configure godmode"
+git add .godmode/config.yaml
+[ -f godmode.models.json ] && git add godmode.models.json
+git commit -m "setup: configure godmode"
 ```
 
 ## Output Format

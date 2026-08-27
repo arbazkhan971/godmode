@@ -51,7 +51,7 @@ gm_route()-style resolver:
 # /godmode:doctor, path B -- inline sweep; TSV, no ANSI, exit 0 ALWAYS
 set -euo pipefail
 ROLES="plan build review optimize explore security test docs"
-PROJ="godmode.models.json"
+PROJ="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/godmode.models.json"
 HOME_CFG="${HOME:-}/.config/godmode/models.json"
 py_warned=0
 
@@ -80,7 +80,7 @@ try:
 except Exception:
     print("[models] warning: %s is invalid JSON -- ignoring" % sys.argv[1], file=sys.stderr)
     sys.exit(0)
-roles = cfg.get("roles", cfg) if isinstance(cfg, dict) else {}
+roles = cfg.get("roles", {}) if isinstance(cfg, dict) else {}
 if isinstance(roles, dict):
     for key in sorted(roles):
         if isinstance(roles[key], str):
@@ -124,13 +124,14 @@ if [ -f "$PROJ" ]; then PROJ_KV="$(read_cfg "$PROJ")" || true; fi
 HOME_KV=""
 if [ -f "$HOME_CFG" ]; then HOME_KV="$(read_cfg "$HOME_CFG")" || true; fi
 
-for e in $(printenv | grep '^GODMODE_MODEL_' | cut -d= -f1 || true); do
-  r="$(printf '%s' "${e#GODMODE_MODEL_}" | tr '[:upper:]' '[:lower:]')"
+while IFS= read -r e; do
+  r="$(printf '%s' "${e#GODMODE_MODEL_}" | tr '[:upper:]_' '[:lower:]-')"
   case " $ROLES " in *" $r "*) ;; *) ROLES="$ROLES $r" ;; esac
-done
-for k in $(printf '%s\n%s\n' "$PROJ_KV" "$HOME_KV" | cut -f1 | grep -v '^$' || true); do
+done < <(printenv | grep '^GODMODE_MODEL_' | cut -d= -f1 || true)
+while IFS= read -r k; do
+  case "$k" in ''|*[!A-Za-z0-9._-]*) continue ;; esac # skip unrepresentable keys
   case " $ROLES " in *" $k "*) ;; *) ROLES="$ROLES $k" ;; esac
-done
+done < <(printf '%s\n%s\n' "$PROJ_KV" "$HOME_KV" | cut -f1 | grep -v '^$' || true)
 
 printf 'role\tmodel\tsource\torigin\n'
 for r in $ROLES; do gm_route "$r"; done
