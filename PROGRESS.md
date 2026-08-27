@@ -177,3 +177,30 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - Validator contracts must mirror documented runtime contracts exactly: Check 7 initially allowed empty strings (spec violation), rejected the documented 'session' literal, and .strip()ed values the runtime validates raw — each divergence found by a different gate agent (tester/reviewer/security). Cross-gate redundancy catches what single review waves through.
 - Skill-prose python snippets that interpolate user answers into python -c source are injection surfaces even when 'never evaluated' is claimed; pass answers as argv and validate before writing.
 - A command referenced in README (/godmode:doctor) needs a real commands/godmode/*.md file — command/skill mismatch is WARN-only in validators, so the gate trio (not CI) is what catches phantom slash commands.
+
+## Iteration 5 — Session B (independent council→build→gate; residuals closed; mission verified closed)
+
+(Ran concurrently with the Session A fleet above on the same tree — same prompt window, two lead agents. This session's contribution: an independent 3-lens planning council, a 6-implementer disjoint-scope build of the P7 reference design, a 3-agent gate that caught 14+7+5 findings, and the closure of every residual the races left open.)
+
+### DONE
+- Council (3 lenses, parallel): architecture (models.sh CLI surface, per-key merge, python3-heredoc reader, inline-resolver-in-skill decision D1-D6) + risk red-team (15 ranked findings incl. newline-bypass, dot-normalization bug, skills-only install boundary, sandboxed negative path) + scope partition (6 disjoint implementer scopes, gate briefs, push checklist). Two lenses failed first pass (planner agent classifier rejected analysis briefs) — re-dispatched to security/reviewer agents, zero stall.
+- Build: 6 implementers in parallel, disjoint scopes — adapters/pi/models.sh + tests/models-routing.sh + adapter README; skills/godmode Step 3c + Rule 9 + capability matrix; skills/setup Step 6b wizard; skills/verify doctor Step 0; validate-structure Check 7; README/blog/AGENTS/CHANGELOG/CONTRIBUTING docs. 6 atomic commits (96fdbee..9d32936).
+- Race reconciliation mid-build (5th and 6th races): sibling fleet wrote conflicting Step 0d/Role-Dispatch-Table/Step-4a sections into the same files; siblings then self-deduped against this fleet's landed design, then committed 6 more commits (e952606..93052f6) fixing most of this fleet's gate findings and pushing the tree + ledger.
+- Gate trio (reviewer+security+tester parallel over the merged diff): REQUEST_CHANGES x3 — 14 reviewer findings (cross-resolver divergence, path-B cwd-vs-toplevel, 2 new MD040s, untested inline resolvers...), 7 security findings (newline bypass already fixed by sibling, unquoted loops, setup Step 7 session rejection...), 5 tester findings (in-flight sibling edits during gate, empty-string Check 7 contradiction — resolved by sibling spec-literally: non-empty or 'session').
+- Residual closure lead-side (3 commits 50001a9..6ca234a): models.sh invalid-project-value now falls through to home file (cross-resolver contract proven empirically both ways + selftest case 12); verify path B resolves project config from git toplevel (works from subdirs), quoted while-read loops (glob-safe against attacker config keys), strict roles unwrap; setup fences labeled (MD040 back to pre-P7 count), conditional git add replaces literal-bracket line; NEW extraction tests C18-C20 source gm_route out of skills/godmode/SKILL.md and the whole path-B doctor out of skills/verify/SKILL.md and prove behavior + cross-implementation parity.
+- Final battery at 6ca234a: validate-skills FAIL:0, validate-structure FAIL:0, models-routing 22/22, selftest 23/23, claude-allowlist intact, zero new markdownlint errors, tree clean. Pushed.
+- Issue #6 CLOSED with full exit-criteria evidence (zero-config, env override, wizard, doctor, wiring, matrix docs, validator gate).
+- Mission verified complete: P0-P6 exits recorded in prior iterations, P7 exit evidenced above; MISSION_STATUS: COMPLETE stands at line 1 backed by 6ca234a.
+
+### NEXT (ordered)
+1. Mission complete. Post-mission upkeep only: human-fire queue (3 launch posts, 4 NEEDS_HUMAN forms), monitor 4 PR_OPEN listings, backlog #5/#7/#8/#9.
+2. Minor polish deferred to backlog (non-blocking NITs): selftest case renumbering, omp row in the skill capability matrix (blocked on #7 omp confirmation), AGENTS.md hint-vs-session precedence sentence, README doctor-invocation wording.
+
+### BLOCKERS
+- none
+
+### LESSONS
+- The pi 'planner' agent classifier rejects briefs it reads as implementation tasks ("enumerate mitigations", "partition into scopes") even when read-only; analysis-shaped dispatches belong on security/reviewer agents. Cost: one 4.5-min re-dispatch round.
+- Gate the TREE, then commit fast: the sibling fleet's push raced past this fleet's open gate findings. Recovery protocol that held: verify every finding empirically at the new HEAD, fix only what's actually still broken, push fixes as separate atomic commits, never revert the sibling's coherent work.
+- "Fix all findings before push" under a two-fleet race becomes "fix all findings before YOUR push, on top of whatever landed": the mission invariant is the pushed end-state, not any single fleet's diff.
+- Extraction tests (sed the function out of the SKILL.md, source it, assert behavior) are the cheapest possible guard that skill-embedded bash stays executable — skills prose rots silently otherwise; C18-C20 now pin gm_route and the path-B doctor to their documented contracts.
