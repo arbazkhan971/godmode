@@ -332,7 +332,7 @@ MODELS_JSON="$ROOT_DIR/godmode.models.json"
 if [ ! -f "$MODELS_JSON" ]; then
   pass "godmode.models.json absent — zero-config default (valid)"
 elif ! command -v python3 >/dev/null 2>&1; then
-  warn "godmode.models.json present but python3 unavailable — format check skipped"
+  fail "godmode.models.json present but python3 unavailable — install python3 or remove the file (fail-closed)"
 else
   if out="$(python3 - "$MODELS_JSON" 2>&1 <<'PYEOF'
 import json
@@ -356,19 +356,28 @@ if not isinstance(roles, dict):
     sys.exit(1)
 
 bad = 0
+seen = {}
 for key, value in roles.items():
-    valid = isinstance(value, str) and (
-        value == ""
-        or re.fullmatch(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", value.strip())
+    valid = isinstance(value, str) and value != "" and len(value) <= 128 and (
+        value == "session"
+        or re.fullmatch(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", value)
     )
     if not valid:
-        print('roles.%s: value must be "provider/id" or ""' % key)
+        print('roles.%s: value must be non-empty "provider/id" or "session"' % key)
         bad += 1
+    # env-name normalization identical to runtime tr '\''[:lower:]._- '\'' '\''[:upper:]___'\''
+    norm = "".join("_" if ch in "._-" else ch for ch in key.upper())
+    if norm in seen:
+        print("roles.%s and roles.%s map to the same GODMODE_MODEL_<ROLE> env name (%s)"
+              % (seen[norm], key, norm))
+        bad += 1
+    else:
+        seen[norm] = key
 
 sys.exit(1 if bad else 0)
 PYEOF
 )"; then
-    pass "godmode.models.json — all role values are provider/id (or empty)"
+    pass "godmode.models.json — all role values are non-empty provider/id (or \"session\")"
   else
     fail "godmode.models.json — invalid (see below)"
     if [ -n "$out" ]; then
