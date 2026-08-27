@@ -59,7 +59,7 @@ subagents run one at a time, identical results at lower throughput.
 | --- | --- | --- |
 | Claude Code | `.claude-plugin/` plugin | native agents + worktrees |
 | pi | skills into `~/.pi/agent/skills/godmode/` | skills only, no symlinks |
-| omp | pi installer + `PREFIX` | dir undocumented; candidates printed |
+| omp | pi installer + `PREFIX` | skills via `~/.omp/agent/skills` + one-line `customDirectories` registration |
 | Codex | `.codex/` + `AGENTS.md` | sequential execution |
 | OpenCode | plugin + `AGENTS.md` | sequential execution |
 | Gemini | `GEMINI.md` + `.godmode/` | sequential execution |
@@ -67,6 +67,8 @@ subagents run one at a time, identical results at lower throughput.
 | Amp | `bash adapters/amp/install.sh` | skills via `.agents/skills/` + `AGENTS.md` copy |
 
 *Amp shipped after this post -- see `adapters/amp/`.*
+
+*omp's skills directory was confirmed upstream after this post (`~/.omp/agent/skills`, omp v18 source `dirs.ts`/`builtin.ts` + `docs/skills.md`); the pi installer serves it via `PREFIX` plus a one-line `skills.customDirectories` registration.*
 
 Every install is idempotent, and each adapter-backed install gets a
 one-command smoke test through its `verify.sh` (Claude Code verifies via
@@ -141,9 +143,10 @@ instruction files, validation scripts, and installers that you run
 yourself.
 
 Coverage is incomplete, on the record: omp's exact skill directory is
-still undocumented upstream, so installs there rely on the `PREFIX`
-override; the Amp adapter has not been written (an Amp adapter now ships
-in `adapters/amp/`); and the sequential path
+now confirmed upstream (see `adapters/pi/README.md`), so installs there
+rely on the `PREFIX` override plus a one-line `skills.customDirectories`
+registration; the Amp adapter has not been written (an
+Amp adapter now ships in `adapters/amp/`); and the sequential path
 trades throughput for fidelity on platforms without parallel agents.
 
 The loop is unchanged from 1.0: measure, keep, discard. What changed is
