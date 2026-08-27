@@ -20,6 +20,19 @@ GODMODE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DEFAULT_PREFIX="$HOME/.pi/agent/skills"
 PREFIX="${1:-${PREFIX:-$DEFAULT_PREFIX}}"
 
+# Refuse prefixes that would install (or delete) directly under the filesystem root.
+while [ -n "$PREFIX" ] && [ "${PREFIX%/}" != "$PREFIX" ]; do
+    PREFIX="${PREFIX%/}"
+done
+# Lexical normalization catches root-equivalent forms like "/.", "/..", "//.".
+PREFIX="$(realpath -ms -- "$PREFIX" 2>/dev/null || printf '%s' "$PREFIX")"
+case "$PREFIX" in
+    ""|"/")
+        echo "Error: refusing unsafe PREFIX (empty or '/'): would install/delete directly under the filesystem root." >&2
+        exit 1
+        ;;
+esac
+
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
@@ -52,9 +65,9 @@ fi
 
 # Deterministic re-install: prune the destination first so skills removed
 # upstream do not linger (a plain overwrite cannot self-heal a stale dir).
-rm -rf "$PREFIX/godmode"
-mkdir -p "$PREFIX/godmode"
-cp -R "$GODMODE_ROOT/skills/." "$PREFIX/godmode/"
+rm -rf -- "$PREFIX/godmode"
+mkdir -p -- "$PREFIX/godmode"
+cp -R -- "$GODMODE_ROOT/skills/." "$PREFIX/godmode/"
 
 SOURCE_COUNT="$(find "$GODMODE_ROOT/skills" -type f -name SKILL.md | wc -l | tr -d ' ')"
 DEST_COUNT="$(find "$PREFIX/godmode" -type f -name SKILL.md | wc -l | tr -d ' ')"
