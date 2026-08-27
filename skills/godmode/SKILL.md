@@ -216,6 +216,103 @@ Before routing to any skill, check `.godmode/<skill>-failures.tsv` if it exists.
 If the target skill has >10 consecutive failures: suggest an alternative skill or approach.
 Surface failure patterns in the session summary: "optimize had 5 noise failures — metric may be non-deterministic."
 
+## Step 3c: Resolve Model Per Role (dispatch time)
+Resolve each dispatched role's model at dispatch time. Zero-config = every
+role inherits the session model; per-role model tiering is opt-in only.
+Resolution order: `GODMODE_MODEL_<ROLE>` env -> `godmode.models.json`
+(per-role merge: current project root file wins per-key over
+`~/.config/godmode/models.json`) -> session model. Missing config = VALID
+zero-config default; every role inherits the session model.
+
+A model value is valid iff it fully matches
+`^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$` OR is the literal string `session`. An
+INVALID value at ANY layer emits one stderr warning —
+`[models] warning: ignoring invalid model value for role <role>` — and is
+treated as absent (fall through to the next layer). Values are pasted into
+agent dispatch text, never shell-eval'd; still validate.
+
+Inline resolver — portable subset, NO adapters/ dependency (skills-only
+installs never ship adapters/). Mirrors `adapters/pi/models.sh`, the full
+reference implementation (doctor/selftest live there):
+
+```bash
+gm_route() {  # usage: gm_route <role> -> "<model>\t<source>" on stdout
+  local role name val f
+  role="${1:?usage: gm_route <role>}"
+  name="GODMODE_MODEL_$(printf '%s' "$role" | tr '[:lower:]._-' '[:upper:]___')"
+  val="$(printenv "$name" 2>/dev/null || true)"  # set-but-empty = fall through
+  if [ "$val" = session ] || \
+     printf '%s' "$val" | grep -Eq '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'; then
+    printf '%s\tenv\n' "$val"; return 0
+  elif [ -n "$val" ]; then
+    printf '[models] warning: ignoring invalid model value for role %s\n' "$role" >&2
+  fi
+  for f in "$(git rev-parse --show-toplevel 2>/dev/null || pwd)/godmode.models.json" \
+           "$HOME/.config/godmode/models.json"; do
+    [ -f "$f" ] || continue
+    command -v python3 >/dev/null 2>&1 || continue  # no python3: skip file layer
+    if val="$(python3 - "$f" "$role" <<'EOF'
+import json, re, sys
+try:
+    roles = json.load(open(sys.argv[1], encoding="utf-8-sig")).get("roles", {})
+except Exception:
+    sys.exit(3)  # unreadable/invalid file: treat as absent
+val = roles.get(sys.argv[2])
+if val is None:
+    sys.exit(3)  # role absent in this file: try next layer
+if isinstance(val, str) and (val == "session" or
+        re.fullmatch(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$", val)):
+    print(val)
+else:
+    print("[models] warning: ignoring invalid model value for role %s"
+          % sys.argv[2], file=sys.stderr)
+    sys.exit(4)  # present but invalid: warn once, fall through
+EOF
+)"; then
+      printf '%s\tfile\n' "$val"; return 0
+    fi  # helper exit 3/4 consumed by the if: fall through to next layer
+  done
+  printf 'session\tsession\n'
+}
+```
+
+Dispatch table (godmode role -> pi-subagents child kind; the model param is
+resolved at dispatch time):
+
+| godmode role  | pi child kind                          | model param        |
+|---------------|----------------------------------------|--------------------|
+| planner       | planner                                | `gm_route planner` |
+| builder       | implementer                            | `gm_route builder` |
+| reviewer      | reviewer                               | `gm_route reviewer`|
+| optimizer     | implementer (worker also acceptable)   | `gm_route optimizer` |
+| explorer      | scout                                  | `gm_route explorer` |
+| security      | security                               | `gm_route security` |
+| tester        | tester                                 | `gm_route tester`   |
+
+These are the canonical dispatch roles (AGENTS.md); verb aliases (plan,
+build, review, optimize, explore, test, docs — the doctor's default sweep)
+resolve identically because role keys are open-ended. Stamp the resolved
+model on the dispatch via the optional DispatchContext `model` field
+(`model_profile` for named profiles); unknown dispatch fields are logged,
+never a hard fail.
+
+Zero-config rule: when `gm_route <role>` resolves to `session`, OMIT the
+model param entirely — the child inherits the session model. Example:
+`GODMODE_MODEL_REVIEW=vendor/strong` stamps `model: vendor/strong` on review
+dispatches only; every other role stays on the session model.
+
+Roles are open-ended, not a fixed enum: unknown or custom roles resolve
+through `gm_route` identically (unknown -> session). `STRONG`/`FAST`-style
+names are user-defined aliases living in the user's own config — nothing
+built-in.
+
+Env normalization: role -> env name by uppercasing and turning every hyphen,
+dot, and underscore into an underscore — exactly
+`tr '[:lower:]._-' '[:upper:]___'` — then prefixing `GODMODE_MODEL_`
+(`code-review` -> `GODMODE_MODEL_CODE_REVIEW`). Case-folded roles (`Plan` and
+`plan`) collapse to one env var — document, do not special-case. A value that
+is set but empty is NOT an override; fall through.
+
 ## Step 4: Execute
 Read `skills/{skill}/SKILL.md`. Follow it literally.
 Pass: `stack`, `test_cmd`, `lint_cmd`, `build_cmd`.
@@ -252,6 +349,9 @@ Never ask to continue. Loop autonomously until done.
 7. Multi-agent: <= 5 agents/round, worktree isolation.
 8. Chain: think → plan → [predict] → build → test
    → fix → review → optimize → secure → ship.
+9. Model routing: resolve each role's model at dispatch time (Step 3c);
+   stamp a model param only when it resolves to something other than
+   session.
 
 ## Keep/Discard Discipline
 ```
@@ -313,4 +413,15 @@ timestamp	skill	iterations	kept	discarded	stop_reason	outcome
 ls package.json pyproject.toml Cargo.toml go.mod 2>/dev/null
 git log --oneline -5
 ```
+
+## Model Routing Capability Matrix
+
+| Platform | Per-child model | Routing resolution | Notes |
+|----------|-----------------|--------------------|-------|
+| pi | full — per-child `model:` param | resolves via Step 3c (`gm_route`) | Reference implementation for role routing |
+| plugin-marketplace harness (commands + agents) | full — per-child `model:` param | resolves via Step 3c (`gm_route`) | Translate the Step 3c dispatch table to native spawn syntax |
+| OpenCode | partial — env + config resolve, sequential dispatch, no per-child param | resolves via Step 3c (`gm_route`) | Roles run sequentially on one session |
+| Codex | partial — same as OpenCode | resolves via Step 3c (`gm_route`) | Roles run sequentially on one session |
+| Cursor | session-level degrade — routing resolves but all children share the session model | resolves via Step 3c (`gm_route`) | File scoping, not model params, is the isolation mechanism |
+| Gemini | session-level degrade — same as Cursor | resolves via Step 3c (`gm_route`) | Sequential execution, session model only |
 
