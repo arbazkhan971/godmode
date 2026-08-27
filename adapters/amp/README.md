@@ -18,7 +18,7 @@ bash adapters/amp/install.sh /path/to/your/project
 
 Defaults to the current directory if no target is specified.
 
-The installer is idempotent — every step is skip-if-present, so re-running it is always safe. Re-run it after moving or re-cloning godmode to re-report the wiring.
+The installer is idempotent — every step is skip-if-present, so re-running it is always safe. One exception: while a user-authored `AGENTS.md` differs from godmode's, each re-run refreshes the `AGENTS.godmode.md` sidecar from source (hand-edits to the sidecar are not preserved — merge into your `AGENTS.md` instead). Re-run after moving or re-cloning godmode to re-report the wiring.
 
 If the target already has a user-authored `AGENTS.md`, the installer never clobbers it. It writes godmode's content to `AGENTS.godmode.md` alongside your file instead. Amp does not auto-load that filename — merge the godmode sections into your `AGENTS.md` to activate them (see Troubleshooting).
 
@@ -177,10 +177,13 @@ Rename or remove the colliding global skill to let the godmode one load, or keep
 The `.agents/skills` symlink keeps skills in sync with your clone but cannot be committed usefully — it points at an absolute path on your machine. For a committable install, replace the symlink with a dereferenced real copy:
 
 ```bash
+rm -rf .agents/skills.real
 cp -rL "$(readlink -f .agents/skills)" .agents/skills.real
 rm .agents/skills
 mv .agents/skills.real .agents/skills
 ```
+
+The root `skills/` and `agents/` symlinks point at the same absolute path and are equally uncommittable — either give them the same `cp -rL` treatment or gitignore all three paths and document that teammates run the installer themselves.
 
 Trade-off: the copy no longer tracks the clone — repeat the copy after updating godmode. (`verify.sh` counts skills through either form.)
 

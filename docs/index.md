@@ -28,7 +28,7 @@ Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github
 - [CI/CD Integration](ci-cd.md) — Using godmode in continuous integration pipelines
 
 ## Platforms
-- [Platform Comparison](platform-comparison.md) — Feature matrix across 5 platforms
+- [Platform Comparison](platform-comparison.md) — Feature matrix across 6 platforms
 - [AWS](platforms/aws.md) — AWS-specific skills and configuration
 - [Azure](platforms/azure.md) — Azure-specific skills and configuration
 - [GCP](platforms/gcp.md) — GCP-specific skills and configuration
