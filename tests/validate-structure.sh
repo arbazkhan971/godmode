@@ -3,10 +3,12 @@
 # validate-structure.sh — Structure Validation Script for Godmode Plugin
 # =============================================================================
 # Validates:
-#   1. Directory structure follows conventions
-#   2. No orphaned files (files outside expected locations)
-#   3. All command files have correct format
-#   4. No broken cross-references in docs
+#   1. Required top-level directories and files exist
+#   2. Skill directory conventions
+#   3. No orphaned files (files outside expected locations)
+#   4. All command files have correct format
+#   5. No broken cross-references in docs
+#   6. No harness-specific "claude" wording in skills (allowlist below)
 #
 # Usage: bash tests/validate-structure.sh
 # Exit code: 0 = all pass, 1 = failures found
@@ -23,6 +25,12 @@ DOCS_DIR="$ROOT_DIR/docs"
 AGENTS_DIR="$ROOT_DIR/agents"
 HOOKS_DIR="$ROOT_DIR/hooks"
 PLUGIN_DIR="$ROOT_DIR/.claude-plugin"
+
+# Files exempt from the claude-wording check (justified factual mentions only).
+CLAUDE_ALLOWLIST=(
+  "skills/research/SKILL.md"
+  "skills/tokens/SKILL.md"
+)
 
 PASS=0
 FAIL=0
@@ -273,6 +281,44 @@ if [ -f "$ROOT_DIR/README.md" ]; then
       fail "README.md -> $link_path (BROKEN — file not found)"
     fi
   done < <(grep -oP '\]\(\K[^)]+' "$ROOT_DIR/README.md" 2>/dev/null || true)
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECK 6: No "claude" wording in skills content
+# ─────────────────────────────────────────────────────────────────────────────
+separator "Check 6: No Claude Wording in Skills"
+
+is_allowlisted() {
+  local rel="$1"
+  local allowed
+  for allowed in "${CLAUDE_ALLOWLIST[@]}"; do
+    if [ "$rel" = "$allowed" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+claude_offenses=0
+while IFS= read -r file; do
+  rel_path="${file#"$ROOT_DIR"/}"
+  if is_allowlisted "$rel_path"; then
+    continue
+  fi
+  # Single grep capture: avoids a second grep whose exit 1 could trip
+  # pipefail under set -e if matches vanished between the two greps.
+  matches="$(grep -in "claude" "$file" 2>/dev/null || true)"
+  if [ -n "$matches" ]; then
+    claude_offenses=$((claude_offenses + 1))
+    fail "$rel_path contains 'claude':"
+    echo "$matches" | while IFS= read -r line; do
+      echo "    $rel_path:$line"
+    done
+  fi
+done < <(find "$SKILLS_DIR" -type f 2>/dev/null | sort)
+
+if [ "$claude_offenses" -eq 0 ]; then
+  pass "No 'claude' wording in skills (allowlist size: ${#CLAUDE_ALLOWLIST[@]})"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
