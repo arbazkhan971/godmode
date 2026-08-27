@@ -47,6 +47,44 @@ If the installed optimize skill is actually in the agent's context, pi replies `
 
 ---
 
+## Multi-model routing
+
+Per-role model routing ships inside the installed skills: the godmode
+orchestrator skill resolves each role's model at dispatch time. A reference
+implementation lives at `adapters/pi/models.sh`.
+
+Zero-config by default: with no env vars and no config file, every role
+inherits the session model. Resolution order, per role: `GODMODE_MODEL_<ROLE>`
+env -> `godmode.models.json` at the current project root ->
+`~/.config/godmode/models.json` -> session model. "Project root" means the
+user's current project (cwd-based), not the godmode repo.
+
+Env override — role uppercased, with `.`, `_`, and `-` all mapped to `_`
+(`code-review` and `v2.review` become `GODMODE_MODEL_CODE_REVIEW` and
+`GODMODE_MODEL_V2_REVIEW`):
+
+```bash
+GODMODE_MODEL_REVIEW=anthropic/claude-sonnet-4.5
+```
+
+Config file — `godmode.models.json`. Commit it at a repo root to share that
+project's routing with everyone who clones it, or keep it under
+`~/.config/godmode/` for personal defaults; the project file wins per key:
+
+```json
+{"roles": {"review": "anthropic/claude-sonnet-4.5", "optimize": "openai/gpt-5.2"}}
+```
+
+Diagnostics (the installed verify skill prints the same doctor table):
+
+```bash
+bash adapters/pi/models.sh resolve review   # "<model>\t<source>"
+bash adapters/pi/models.sh doctor           # one TSV row per role
+bash adapters/pi/models.sh selftest         # internal routing tests
+```
+
+---
+
 ## Uninstall
 
 ```bash
