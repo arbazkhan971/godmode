@@ -25,9 +25,142 @@ Godmode turns any AI coding assistant into an autonomous engineering loop — 13
 
 ## See It In Action
 
-> **Note:** The traces below are representative illustrations of the loop output shape — not captured transcripts. Metrics, timings, and findings are illustrative.
+Real captures from live pi sessions (zai/glm-5.3, recorded with [vhs](https://github.com/charmbracelet/vhs)) — tapes and targets in [demo/](demo/).
 
-<!-- TODO(docs): replace these representative traces with real captured asciinema casts / GIF recordings of actual runs. -->
+### 1. Skill routing — request to matched skill
+
+*godmode Tier-1 matching routes a checkout rate-limiting request to the ratelimit skill.*
+
+<p align="center"><img src="demo/skill-routing.gif" alt="Terminal capture: godmode routing — Tier-1 matching dispatches a checkout rate-limiting request to the ratelimit skill (secondary: pay) and exits ROUTED_OK" width="880"></p>
+
+<details><summary>Transcript (accessible text fallback)</summary>
+
+```text
+Real session excerpt — demo/tapes/skill-routing.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ timeout 240 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/godmode/SKILL.md "Route only. The user request is: \
+    we keep getting rate limited by the payment provider during checkout. [...]"
+
+Tier 1 match complete.
+
+- **Stack detected:** Godmode skill-plugin repo (skills/ + agents/, no runtime app code in scope)
+- **Tier 1 hits:** `ratelimit` ("rate limit", "throttle", 429 — direct match); `pay` (payments context, secondary)
+- **Phase:** THINK — rate limiting against a third-party provider is a design problem (client-side throttle/queue/backoff) before any build
+
+`DISPATCH: skill=ratelimit phase=THINK (secondary=pay) task=rate-limited-by-payment-provider-at-checkout`
+
+ROUTED_OK
+
+$ git status --short
+(no output — the routing session modified nothing)
+```
+
+</details>
+
+### 2. Optimize loop — real keep, real revert
+
+*baseline 189ms, lru_cache KEEP at 0ms, fib(32) regression DISCARD at 517ms, reverted with git reset — real metric, real revert.*
+
+<p align="center"><img src="demo/optimize-loop.gif" alt="Terminal capture: optimize loop — baseline 189ms, lru_cache KEEP at 0ms, fib(32) regression DISCARD at 517ms, reverted with git reset --hard HEAD~1" width="880"></p>
+
+<details><summary>Transcript (accessible text fallback)</summary>
+
+<!-- markdownlint-disable no-hard-tabs -->
+```text
+Real session excerpt — demo/tapes/optimize-loop.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ python3 -m unittest -q test_slow_fib
+Ran 1 test in 0.230s
+OK
+
+$ bash metric.sh && bash metric.sh && bash metric.sh      # timing runs — the session derives its own baseline below
+278
+217
+211
+
+$ timeout 300 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/optimize/SKILL.md "Setup answers: Goal = reduce the \
+    runtime of work() in slow_fib.py. [...] Test exactly these two hypotheses in order: \
+    (1) add functools lru_cache memoization to fib; (2) remove the lru_cache decorator and \
+    change work() to return fib(32), claiming batch amortization. [...] A DISCARD must be \
+    reverted with git reset --hard HEAD~1. [...]"
+
+**Session complete** — baseline 189 ms → best 0 ms (−100%).
+
+- **Baseline:** median 189 ms (3 runs, variance <5%)
+- **R1 · H1 KEEP:** @lru_cache(maxsize=None) on fib → 0 ms (0,0,0), guard OK (work()=832040)
+- **R2 · H2 DISCARD:** removed cache, work()=fib(32) → 517 ms AND guard failed (2178309 ≠ 832040); reverted via git reset --hard HEAD~1
+- Stop: budget exhausted (2 rounds); kept commit 0c162a0; lessons + failures logged in .godmode/*
+
+$ cat .godmode/optimize-results.tsv
+round	agent	change	metric_before	metric_after	delta_pct	status	failure_class
+0	baseline	initial measurement	-	189	-	baseline	-
+1	1	add lru_cache(maxsize=None) to fib	189	0	-100.0	KEEP	-
+2	1	remove lru_cache, work()=fib(32) batch amortization	0	517	+51700.0	DISCARD	guard_fail+metric_regression
+
+$ git log --oneline
+d26b093 (HEAD -> master) round2 discard logged; session complete
+7b6bc53 round1 keep: 189ms -> 0ms
+0c162a0 round1: add functools.lru_cache memoization to fib
+230bf5e iteration 0: baseline metric 189ms
+2e2ab07 baseline
+
+OPT_DONE
+```
+<!-- markdownlint-enable no-hard-tabs -->
+
+</details>
+
+### 3. Goal-bridge — machine-checkable completion contract
+
+*a failing test goes red to green under a 4-field contract (metric / threshold / evidence / rollback) with exit-0 proof.*
+
+<p align="center"><img src="demo/goal-bridge.gif" alt="Terminal capture: goal-bridge — 4-field contract, evidence appended each round, ends with CONTRACT MET — exit 0" width="880"></p>
+
+<details><summary>Transcript (accessible text fallback)</summary>
+
+```text
+Real session excerpt — demo/tapes/goal-bridge.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ python3 -m unittest -q test_counter                  # baseline: real failure (red)
+FAILED (failures=2) — AssertionError: 1 != 0 (total([])), AssertionError: 7 != 6 (total([1, 2, 3])) — off-by-one (result = 1)
+
+$ timeout 240 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/goal-bridge/SKILL.md "Goal: make the test suite pass. \
+    Derive the Goal-Bridge contract FIRST and print its exact 4-field block: metric, \
+    threshold, evidence, rollback. [...] Then fix counter.py, run the metric each round \
+    appending to the evidence file, and stop as soon as it exits 0. [...]"
+
+Metric exited 0 → **DONE** (round 2/3, rollback never fired).
+
+Goal-Bridge Contract (mandatory final output):
+- metric: python3 -m unittest -q test_counter
+- threshold: exit 0
+- evidence: .godmode/goal-evidence.txt
+- rollback: metric fails 2 consecutive rounds
+
+Summary:
+- Round 1: metric exit=1 (2 failures) → appended to evidence; fixed `counter.py` off-by-one (`result = 1` → `result = 0`)
+- Round 2: metric exit=0 (`OK`, 2 tests) → appended to evidence; stopped
+- Rollback trigger: never fired (max 1 consecutive failure); no revert needed
+- Files written: `counter.py` (edit), `.godmode/goal-evidence.txt` (new)
+
+$ cat .godmode/goal-evidence.txt
+=== Round 1: 2026-08-27T21:40:11Z ===
+exit=1
+=== Round 2: 2026-08-27T21:40:15Z ===
+exit=0
+
+$ python3 -m unittest -q test_counter && echo "CONTRACT MET — exit 0"
+CONTRACT MET — exit 0
+```
+
+</details>
+
+The three captures above are real sessions; the blocks below are illustrative output shapes of other skills — not captured transcripts.
+
+<details><summary>More output shapes (illustrative, not captured runs)</summary>
 
 ### Performance Optimization — 847ms to 198ms, fully autonomous
 
@@ -85,6 +218,8 @@ Target: src/api/
 ```
 
 Every finding comes with code evidence, severity, a concrete fix, and a command to verify the fix works.
+
+</details>
 
 ---
 
