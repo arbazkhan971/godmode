@@ -4,7 +4,7 @@
 
 ### Your AI writes code. Godmode makes it write *great* code — then proves it.
 
-The open-source autonomous coding agent that turns AI assistants into engineering systems. 135 skills for building, testing, optimizing, securing, and shipping software — with iterative optimization, parallel multi-agent execution, automatic rollback, failure memory, Karpathy-style authoring discipline, pre-commit discard audit, and a four-layer token optimization stack that cuts routing context by ~90%. Plugin for Claude Code, Cursor, Codex, Gemini CLI, and OpenCode.
+Godmode turns any AI coding assistant into an autonomous engineering loop — 135 skills that measure every change, keep what improves, and revert what doesn't — installable on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-135-ff6b6b.svg)](skills/)
@@ -24,9 +24,13 @@ The open-source autonomous coding agent that turns AI assistants into engineerin
 
 ## See It In Action
 
+> **Note:** The traces below are representative illustrations of the loop output shape — not captured transcripts. Metrics, timings, and findings are illustrative.
+
+<!-- TODO(docs): replace these representative traces with real captured asciinema casts / GIF recordings of actual runs. -->
+
 ### Performance Optimization — 847ms to 198ms, fully autonomous
 
-```
+```text
 $ /godmode:optimize
 Goal: Reduce API response time
 Iterations: 20
@@ -45,7 +49,7 @@ Iterations: 20
 
 ### Multi-Agent Build — 4 agents, isolated worktrees, clean merge
 
-```
+```text
 $ /godmode:build
 Goal: Add user authentication system
 
@@ -62,7 +66,7 @@ Goal: Add user authentication system
 
 ### Security Audit — STRIDE + OWASP + red team
 
-```
+```text
 $ /godmode:secure
 Target: src/api/
 
@@ -90,6 +94,7 @@ Every finding comes with code evidence, severity, a concrete fix, and a command 
 claude plugin install godmode
 
 # Or install for other platforms
+bash adapters/codex/install.sh
 bash adapters/cursor/install.sh
 bash adapters/gemini/install.sh
 bash adapters/opencode/install.sh
@@ -141,7 +146,7 @@ It ships with 135 expert skills across 13 domains (performance optimization, sec
 
 Every iterative skill follows the same disciplined loop:
 
-```
+```text
 1. REVIEW   -- read state, logs, git history
 2. IDEATE   -- pick the next change (informed by past failures)
 3. MODIFY   -- make ONE atomic change, commit before verify
@@ -155,7 +160,7 @@ No human approval needed between iterations. Every experiment is committed to gi
 
 ### The Full Pipeline
 
-```
+```text
 THINK --> PLAN --> BUILD --> TEST --> FIX --> OPTIMIZE --> SECURE --> SHIP
 ```
 
@@ -169,7 +174,7 @@ Every discard is classified into one of 8 failure types and logged to `.godmode/
 
 Complex tasks are decomposed and run in parallel:
 
-```
+```text
 Round 1:  Agent 1 [worktree] --\
           Agent 2 [worktree] ---+-- merge + test
           Agent 3 [worktree] --/
@@ -206,7 +211,7 @@ Every `/godmode:*` invocation — and every natural-language request that routes
 
 ### The 8 pipeline skills inherit by default
 
-```
+```text
 THINK → PLAN → BUILD → TEST → FIX → OPTIMIZE → SECURE → SHIP
 ```
 
@@ -267,18 +272,23 @@ Full skill reference: [skills/](skills/)
 
 ## Platforms
 
-| Platform | Agents | Setup |
-|----------|--------|-------|
-| **Claude Code** | Parallel (worktrees) | `claude plugin install godmode` |
-| **Codex** | Native agents | Clone + use `.codex/` config |
-| **Cursor** | Background agents | `bash adapters/cursor/install.sh` |
-| **Gemini CLI** | Sequential | `bash adapters/gemini/install.sh` |
-| **OpenCode** | Sequential | `bash adapters/opencode/install.sh` |
-| **pi** | Global skills dir | `bash adapters/pi/install.sh` |
+| Harness | Install | Integration | Agents |
+|---|---|---|---|
+| **Claude Code** | `claude plugin install godmode` | Plugin (`commands/`, `agents/`, `.claude-plugin/` marketplace) | Parallel (worktrees) |
+| **pi** | `bash adapters/pi/install.sh` | Skills dir — `$HOME/.pi/agent/skills/godmode/` | Skills only |
+| **omp** | `PREFIX=<omp-skills-dir> bash adapters/pi/install.sh` | Skills dir via the pi installer — omp exact dir is undocumented; the installer prints both candidate paths | Skills only |
+| **Codex** | `bash adapters/codex/install.sh` | Copies `.codex/` agents into your repo; harness reads root `AGENTS.md` | Native (sequential) |
+| **OpenCode** | `bash adapters/opencode/install.sh` | Plugin (`plugin.json` + adapter entry) | Sequential |
+| **Gemini CLI** | `bash adapters/gemini/install.sh` | Generated files in your repo (`GEMINI.md` + config) | Sequential |
+| **Cursor** | `bash adapters/cursor/install.sh` | Generated files in your repo (`.cursorrules`) | Background agents |
+| **Amp** | — (no adapter yet) | Manual — the skills are plain Markdown; wiring is on you today | — |
+
+> **omp:** served by the same pi installer via `PREFIX`; its exact skill directory is undocumented, so the installer prints the candidates (`~/.omp/agent/skills`, `~/.config/omp/skills`) and you re-run with `PREFIX=<candidate>`.
+> **Amp:** no adapter exists yet — no install command is provided because none is real. Contributions welcome ([CONTRIBUTING.md](CONTRIBUTING.md#adding-a-new-platform-adapter)).
 
 All 135 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
 
-Verify your installation: `bash adapters/<platform>/verify.sh`
+Verify your installation: `bash adapters/<platform>/verify.sh` (pi family: point it at your skills dir, e.g. `PREFIX=<dir> bash adapters/pi/verify.sh` for an omp install)
 
 ---
 
