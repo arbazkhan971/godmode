@@ -1,0 +1,18 @@
+Real session excerpt — demo/tapes/skill-routing.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ timeout 240 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/godmode/SKILL.md "Route only. The user request is: \
+    we keep getting rate limited by the payment provider during checkout. [...]"
+
+Tier 1 match complete.
+
+- **Stack detected:** Godmode skill-plugin repo (skills/ + agents/, no runtime app code in scope)
+- **Tier 1 hits:** `ratelimit` ("rate limit", "throttle", 429 — direct match); `pay` (payments context, secondary)
+- **Phase:** THINK — rate limiting against a third-party provider is a design problem (client-side throttle/queue/backoff) before any build
+
+`DISPATCH: skill=ratelimit phase=THINK (secondary=pay) task=rate-limited-by-payment-provider-at-checkout`
+
+ROUTED_OK
+
+$ git status --short
+(no output — the routing session modified nothing)

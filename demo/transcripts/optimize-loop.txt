@@ -1,0 +1,39 @@
+Real session excerpt — demo/tapes/optimize-loop.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ python3 -m unittest -q test_slow_fib
+Ran 1 test in 0.230s
+OK
+
+$ bash metric.sh && bash metric.sh && bash metric.sh      # timing runs — the session derives its own baseline below
+278
+217
+211
+
+$ timeout 300 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/optimize/SKILL.md "Setup answers: Goal = reduce the \
+    runtime of work() in slow_fib.py. [...] Test exactly these two hypotheses in order: \
+    (1) add functools lru_cache memoization to fib; (2) remove the lru_cache decorator and \
+    change work() to return fib(32), claiming batch amortization. [...] A DISCARD must be \
+    reverted with git reset --hard HEAD~1. [...]"
+
+**Session complete** — baseline 189 ms → best 0 ms (−100%).
+
+- **Baseline:** median 189 ms (3 runs, variance <5%)
+- **R1 · H1 KEEP:** @lru_cache(maxsize=None) on fib → 0 ms (0,0,0), guard OK (work()=832040)
+- **R2 · H2 DISCARD:** removed cache, work()=fib(32) → 517 ms AND guard failed (2178309 ≠ 832040); reverted via git reset --hard HEAD~1
+- Stop: budget exhausted (2 rounds); kept commit 0c162a0; lessons + failures logged in .godmode/*
+
+$ cat .godmode/optimize-results.tsv
+round	agent	change	metric_before	metric_after	delta_pct	status	failure_class
+0	baseline	initial measurement	-	189	-	baseline	-
+1	1	add lru_cache(maxsize=None) to fib	189	0	-100.0	KEEP	-
+2	1	remove lru_cache, work()=fib(32) batch amortization	0	517	+51700.0	DISCARD	guard_fail+metric_regression
+
+$ git log --oneline
+d26b093 (HEAD -> master) round2 discard logged; session complete
+7b6bc53 round1 keep: 189ms -> 0ms
+0c162a0 round1: add functools.lru_cache memoization to fib
+230bf5e iteration 0: baseline metric 189ms
+2e2ab07 baseline
+
+OPT_DONE

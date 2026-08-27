@@ -1,0 +1,33 @@
+Real session excerpt — demo/tapes/goal-bridge.tape (recorded 2026-08-27, pi 0.84.3, zai/glm-5.3)
+
+$ python3 -m unittest -q test_counter                  # baseline: real failure (red)
+FAILED (failures=2) — AssertionError: 1 != 0 (total([])), AssertionError: 7 != 6 (total([1, 2, 3])) — off-by-one (result = 1)
+
+$ timeout 240 pi -p -ne --model zai/glm-5.3 \
+    --skill ~/.pi/agent/skills/godmode/goal-bridge/SKILL.md "Goal: make the test suite pass. \
+    Derive the Goal-Bridge contract FIRST and print its exact 4-field block: metric, \
+    threshold, evidence, rollback. [...] Then fix counter.py, run the metric each round \
+    appending to the evidence file, and stop as soon as it exits 0. [...]"
+
+Metric exited 0 → **DONE** (round 2/3, rollback never fired).
+
+Goal-Bridge Contract (mandatory final output):
+- metric: python3 -m unittest -q test_counter
+- threshold: exit 0
+- evidence: .godmode/goal-evidence.txt
+- rollback: metric fails 2 consecutive rounds
+
+Summary:
+- Round 1: metric exit=1 (2 failures) → appended to evidence; fixed `counter.py` off-by-one (`result = 1` → `result = 0`)
+- Round 2: metric exit=0 (`OK`, 2 tests) → appended to evidence; stopped
+- Rollback trigger: never fired (max 1 consecutive failure); no revert needed
+- Files written: `counter.py` (edit), `.godmode/goal-evidence.txt` (new)
+
+$ cat .godmode/goal-evidence.txt
+=== Round 1: 2026-08-27T21:40:11Z ===
+exit=1
+=== Round 2: 2026-08-27T21:40:15Z ===
+exit=0
+
+$ python3 -m unittest -q test_counter && echo "CONTRACT MET — exit 0"
+CONTRACT MET — exit 0
