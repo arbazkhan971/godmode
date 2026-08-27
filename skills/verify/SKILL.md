@@ -128,6 +128,15 @@ STOP when FIRST of:
   - >5 consecutive ambiguous results
 ```
 
+## Output Format
+After the evidence report, the agent MUST print the Goal-Bridge Contract for this verification as the mandatory final output — metric: the exact verify command used, where exit 0 = claim confirmed; threshold: the pass condition from Step 1; evidence: the evidence-report path; rollback: the trigger on which the verifier must call for revert. Full protocol: skills/goal-bridge/SKILL.md.
+
+Goal-Bridge Contract (mandatory final output):
+- metric: <single shell command; contract met iff it exits 0>
+- threshold: <numeric or boolean bound the metric must satisfy>
+- evidence: <file path where metric output/proof is written every round>
+- rollback: <exact trigger that reverts the work, e.g. "metric fails on 2 consecutive rounds">
+
 <!-- tier-3 -->
 
 ## Error Recovery

@@ -104,6 +104,14 @@ Append to `.godmode/ship-results.tsv`:
 ## Output Format
 Print: `Ship: {type} completed. {outcome}. URL: {url}.`
 
+After the ship summary line, the agent MUST print the Goal-Bridge Contract filled in for this ship as the mandatory final output — metric: the post-deploy verification command that exits 0 when the ship is healthy (e.g. the Verify row in Ship by Type); threshold: the health bound the metric must satisfy; evidence: the file path where metric output/proof is written every round; rollback: the exact trigger that reverts the work. Full protocol: skills/goal-bridge/SKILL.md.
+
+Goal-Bridge Contract (mandatory final output):
+- metric: <single shell command; contract met iff it exits 0>
+- threshold: <numeric or boolean bound the metric must satisfy>
+- evidence: <file path where metric output/proof is written every round>
+- rollback: <exact trigger that reverts the work, e.g. "metric fails on 2 consecutive rounds">
+
 ## Hard Rules
 0. **Inherits Default Activations per `SKILL.md §14`.** Principles prelude, pre-commit audit, terse/stdio/tokens, DispatchContext validation, Progressive Disclosure routing, discard cost hierarchy all fire by default. Ship logs to `.godmode/token-log.tsv` per round unless `GODMODE_TOKENS=0`.
 1. Never ship with failing build, lint, or test.
