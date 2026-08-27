@@ -1,7 +1,7 @@
 {
   "name": "godmode",
   "version": "1.0.0",
-  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 134 skills, 7 subagents, 5 platforms. Zero configuration. One command.",
+  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 135 skills, 7 subagents, 5 platforms. Zero configuration. One command.",
   "author": "godmode-team",
   "license": "MIT",
   "skills": [
@@ -229,6 +229,11 @@
       "name": "ghactions",
       "description": "GitHub Actions workflow skill. Activates when user needs CI/CD on GitHub, custom actions, matrix builds. Triggers on: /godmode:ghactions, \"GitHub Actions\", \"workflow\", \".github/workflows\", \"CI pipeline\", \"matrix strategy\".",
       "path": "skills/ghactions/SKILL.md"
+    },
+    {
+      "name": "goal-bridge",
+      "description": "Goal-bridge skill. Machine-checkable completion contracts for agent goal modes: metric command, threshold, evidence path, rollback trigger. Activates when a user sets a goal in a harness goal mode (/goal or equivalent) or asks how completion will be verified. Triggers on: /godmode:goal-bridge, \"goal contract\", \"completion contract\", \"exit-zero contract\", \"evaluator\".",
+      "path": "skills/goal-bridge/SKILL.md"
     },
     {
       "name": "git",
