@@ -1,3 +1,5 @@
+MISSION_STATUS: COMPLETE
+
 # PROGRESS — godmode 2.0 mission ledger
 
 Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / NEXT / BLOCKERS / LESSONS.
@@ -148,3 +150,30 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - 429s on glm-5.3 are intermittent per-request, not account-wide: lens 3 died while 4 sibling runs on the same model completed. On single-run 429: absorb scope lead-side rather than re-dispatch (cheaper than a retry cycle).
 - Concurrent fleets now race every iteration (3 for 3). The stable protocol: fresh census before every phase, gate the TREE not the dispatch inventory, commit only what was gated, keep the other fleet's ledger entry and append your own session section.
 - "The brief lies; the tree is truth" as a standing gate-dispatch clause paid for itself twice this iteration (undeclared 8th draft + mid-flight index edit, both caught by gates reading the tree).
+
+## Iteration 5 — P7 exit (multi-model role routing) + MISSION COMPLETE
+
+### DONE
+- P7 exit pushed (11 commits, 32ef237..c9a6ccb). ALL PHASES P0-P7 NOW EXIT; MISSION_STATUS: COMPLETE written per GOAL rule 8.
+- Fleet pattern honored: 3-planner council IN PARALLEL (architecture / risk-edge / scope-partition lenses) -> merged plan with 5 disjoint implementer packets (<=5/round per AGENTS.md) -> reviewer + security + tester gate IN PARALLEL -> lead fixed ALL findings pre-push.
+- Race #5 (fifth consecutive): a sibling fleet implemented P7 CONCURRENTLY in the same files. Reconciliation adopted the richer sibling implementations (orchestrator Step 3c with portable gm_route, setup Step 6b, verify Doctor Mode Path A/B, adapters/pi/models.sh resolver, tests/models-routing.sh) and deleted my fleet's duplicates (Step 0d, Step 4a, second dispatch table); kept my fleet's unique work (validator Check 7, AGENTS.md rows, README/blog/pi-doc); unified the dispatch table to AGENTS.md noun roles; aligned ALL sites to per-key merge semantics.
+- The sibling's 6 atomic commits landed at 19:57 absorbing the reconciled tree (shared-index race, benign); my 5 gate-fix commits layered on top: newline-bypass hardening (security MED: $'evil\\nx/y' spoofed grep line anchors in models_valid_value/gm_valid/gm_route), 128-char value cap, setup argv-templated config write (python -c quote breakout), Step 7 session-literal acceptance, Check 7 contract rewrite (non-empty, session literal, env-name collision detection, fail-closed python3, no .strip()), /godmode:doctor command file + meta row, blog per-key wording, CONTRIBUTING routing-tests reference.
+- Gates at push: validate-skills STATUS PASS, validate-structure STATUS PASS (WARN 6 baseline), models.sh selftest 21/0, models-routing.sh 17/0, zero-config + env-override + 8-fixture Check 7 matrix all verified empirically; tree clean.
+- P7 exit criteria all evidenced: zero-config default proven (no config = valid, all-session doctor, validator PASS), env override test (GODMODE_MODEL_REVIEWER=openai/gpt-5.2 -> reviewer row env), wizard step (6b, max 3 questions), doctor table (role/model/source/origin), orchestrator wiring (Step 3c + Rule 9 + capability matrix), capability matrix docs (skill harness-neutral + README Platforms Models column), validator gate (Check 7).
+
+### NEXT (ordered)
+1. Mission complete — remaining items are post-mission upkeep, not phases:
+   - Human-fire queue (unchanged): 3 launch posts + 4 NEEDS_HUMAN forms; monitor 4 PR_OPEN listings.
+   - Backlog issues #5 (Amp adapter), #7 (omp dir), #8 (CI hardening), #9 (real demo captures). Issue #6 (this P7 spec) can be closed as shipped.
+   - Verify CI green on c9a6ccb (validators passed locally; no new skills so count checks unaffected; commands 118->119 is WARN-only).
+
+### BLOCKERS
+- none
+
+### LESSONS
+- Concurrent-fleet races are now a structural property of this mission (5 for 5). Winning protocol this time: census before every phase, RECONCILE-and-adopt instead of revert (pick the richer implementation per file, delete your own duplicates, align semantics across all sites), gate the TREE, verify committed blobs after any suspiciously-short commit.
+- Shared-index commit absorption repeats: sibling commits landed the merged tree under their names mid-gate. Verify with `git show HEAD:<path>` before assuming loss; never rewrite history to reclaim authorship — append fix commits instead.
+- Grep-based validators of multi-line strings are bypassable via embedded newlines ($'evil\\nx/y' passes ^...$ grep). Whole-value guards (case *$'\\n'* rejection, length caps) or python re.fullmatch are mandatory whenever untrusted values reach grep -E anchors.
+- Validator contracts must mirror documented runtime contracts exactly: Check 7 initially allowed empty strings (spec violation), rejected the documented 'session' literal, and .strip()ed values the runtime validates raw — each divergence found by a different gate agent (tester/reviewer/security). Cross-gate redundancy catches what single review waves through.
+- Skill-prose python snippets that interpolate user answers into python -c source are injection surfaces even when 'never evaluated' is claimed; pass answers as argv and validate before writing.
+- A command referenced in README (/godmode:doctor) needs a real commands/godmode/*.md file — command/skill mismatch is WARN-only in validators, so the gate trio (not CI) is what catches phantom slash commands.
