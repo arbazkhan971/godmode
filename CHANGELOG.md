@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Amp adapter: `adapters/amp/` (`install.sh` + `verify.sh` + adapter docs) wires skills into Amp's `.agents/skills/` project skills directory (symlinked for live sync, with a `cp -rL` copy escape hatch) and copies `AGENTS.md` into the project root without clobbering a user-authored file (writes an `AGENTS.godmode.md` sidecar instead). Skills-only integration: godmode's 7 subagent roles are not injected, dispatch runs sequentially by prompting Amp's own subagents.
 - Multi-model role routing: optional `godmode.models.json` (project root, merged per-key over `~/.config/godmode/models.json`) plus `GODMODE_MODEL_<ROLE>` env overrides, with a valid zero-config default where every role inherits the session model. Ships the pi reference resolver (`adapters/pi/models.sh` `resolve`/`doctor`/`selftest`), orchestrator Step 3c role resolution at dispatch time, the `setup` Step 6b routing wizard, the `verify` doctor check, and validator Check 7.
 
+### Fixed
+
+- omp skills dir confirmed upstream at `~/.omp/agent/skills` (native provider scan root, can1357/oh-my-pi source `dirs.ts`/`builtin.ts` + `docs/skills.md`); installer, README row+footnote, adapter README, and blog now state the confirmed path plus the required `skills.customDirectories` registration (omp scans one level per skill — verified against omp v18.0.8); dead candidate dir under `~/.config` removed; `PREFIX` override retained (ref #7).
+
 ### Planned
 
 - Plugin marketplace listing
