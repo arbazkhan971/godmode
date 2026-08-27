@@ -586,7 +586,7 @@ bash adapters/your-platform/verify.sh
 bash adapters/your-platform/install.sh
 bash adapters/your-platform/verify.sh
 
-# 4. Also run bash adapters/pi/models.sh selftest when touching routing or adapters/pi
+# 4. Also run bash tests/models-routing.sh and bash adapters/pi/models.sh selftest when touching routing or adapters/pi
 ```
 
 ### For Documentation Changes

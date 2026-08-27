@@ -110,8 +110,9 @@ An env override is the uppercased role name:
 GODMODE_MODEL_REVIEWER=anthropic/claude-opus-4
 ```
 
-Durable mappings live in `godmode.models.json` at the repo root (or
-`~/.config/godmode/models.json`), keyed by open-ended role:
+Durable mappings live in `godmode.models.json` at the repo root or
+`~/.config/godmode/models.json` (per-role merge: the repo file wins per key,
+roles set only in the user file still apply), keyed by open-ended role:
 
 ```json
 {"roles": {"optimizer": "zai/glm-5.3", "builder": "openai/gpt-5.2"}}
