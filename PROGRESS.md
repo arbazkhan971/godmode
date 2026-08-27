@@ -121,6 +121,7 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - Both gate agents independently caught the undeclared 8th draft + index edit because they were told to read the tree. Make "the brief lies; the tree is truth" a standing clause in gate dispatches.
 - Marketing copy is mechanically checkable: banned-claim greps, per-tweet char recomputation (URL=23), manifest byte-comparison, and shields.io URL audits caught a live stars badge, a fabricated description, stale char-count comments, and a non-CTA closer — all things eyeball review waves through.
 - Status lines that describe the authoring moment ("the lead commits", "this lane's only write") go stale or leak pipeline vocabulary the moment the artifact is pushed; neutralize before committing public handoff docs (security gate LOW, fixed pre-push).
+- Fourth race, now at the git-index layer: while this fleet ran its 4-commit sequence, the sibling fleet's `git commit` consumed our staged index — their commit 522b454 landed our files+fixes under their (accurate, conventional) message, and commits 2-3 then found nothing to commit. Benign here, but two fleets sharing one worktree share one index: without a driver-side lock (flock on a godmode-run lockfile) a commit can be mislabeled or half-absorbed. Verify committed blobs (git show HEAD:<path>) after any suspicious commit failure — never assume the other lane's commit is wrong; never rewrite history to "reclaim" authorship.
 
 ## Iteration 4 — Session B (P6 verification + landing)
 
