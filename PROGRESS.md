@@ -71,3 +71,29 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - Duplicate driver instances can race the same milestone: a concurrent fleet pushed P2/P3 (16:16-16:17) while this fleet planned. Protocol that worked: re-check `git fetch` + reflog before build, treat pushed state as authority, rebuild scopes around the delta, build on instead of revert. Consider driver-side locking (flock on a godmode-run lockfile) before launch.
 - Build scopes must be derived from a freshly-pulled tree, not a stale one: 2 of 3 implementer tasks shrank to "verify-only" because the concurrent fleet had already landed the files. Cheap `git fetch origin && git log HEAD..origin/master --oneline` at council time would have revealed it.
 - Reviewer NITs are cheap to fix pre-commit when the file is already in the delta scope; security INFO findings go to a hardening backlog, not into an unrelated diff (surgical-changes rule).
+
+## Iteration 3 — Session B (P4 exit + P5 exit)
+
+### DONE
+- P4 exit: README 2.0 pushed (d4f785f) — one-sentence intro with the keep/revert hook, 8-harness support matrix (every install command verified against real adapter scripts), honest demo labeling + GIF TODO, `.markdownlint.json`, codex Quick Start parity line. markdownlint green via changed-files gate (README/CHANGELOG/blog).
+- Adopted a prior concurrent fleet's uncommitted delta (README/CHANGELOG/pi-hardening/blog) instead of stashing: 3-planner council fact-checked every claim, lead re-verified empirically (PREFIX guard exit-1 matrix, json.tool semantics, 135 count) before building on it.
+- Council-discovered functional bug fixed: all 4 adapter `verify.sh` scripts + `verify-common.sh` default hard-coded expected skill count 126 and FAILED against the 135-skill corpus (906a0f3, df8e7a0) — invisible to CI until now (issue #8).
+- Count sweep: 22+ live files 126/134 → 135, incl. root `SKILL.md`, `adapters/cursor/.cursorrules` (+9 missing catalog rows; table now 135/135 verified), adapter install echoes + READMEs, 7 docs pages, opencode plugin.json description (869824c, fb9eb17).
+- P5 exit: CHANGELOG 2.0.0 dated 2026-08-27 with [Unreleased] moved to canonical top (45bc44a); blog `docs/blog/godmode-2.0-universal.md` 689 words, all claims evidence-checked, indexed from docs/index.md (265c9d3); all FOUR manifests bumped to 2.0.0 (9e6d8e9); tag `v2.0.0` pushed; release live: https://github.com/arbazkhan971/godmode/releases/tag/v2.0.0; 5 roadmap issues filed: #5 (Amp adapter), #6 (P7 multi-model routing), #7 (omp dir), #8 (CI prose hardening), #9 (real demo captures).
+- Gate trio over merged diff vs 198bb73: tester 12-group matrix — 11 outright PASS, 1 BLOCKER found and fixed (`.cursorrules` leak); reviewer REQUEST_CHANGES items F1–F3 fixed, F4 disproven against base blob; security secrets/injection scan clean; validators FAIL:0 ×2 + markdownlint clean at push. 10 atomic conventional commits, 3 pushes total (master, tag, ledger).
+
+### NEXT (ordered)
+1. P6 listings & submissions: `docs/marketing/submission-queue.md`, per-target format research + ≥3 real PRs (fork → branch `add-godmode` → sibling-format entry → `gh pr create`), Show HN / r/ClaudeAI / X launch drafts in `docs/marketing/drafts/`.
+2. P7 multi-model role routing (pi = reference implementation; zero-config default; GODMODE_MODEL_<ROLE>; godmode.models.json optional; doctor table; capability matrix) — spec filed as issue #6.
+3. Backlog tracked as issues: #5 Amp adapter, #7 omp dir confirmation, #8 CI hardening (lint:md dep fix, repo-wide markdownlint, prose-count gate incl. extensionless files), #9 real demo captures.
+4. Verify CI green on pushed SHA fb9eb17.
+
+### BLOCKERS
+- none
+
+### LESSONS
+- Census greps with `--include` extension globs miss extensionless adapter artifacts: `.cursorrules` ships verbatim into Cursor users' repos and its catalog TABLE drifts independently of prose counts — gate table row count against the disk skill count (lesson filed into #8).
+- Version-bump surface must be enumerated by repo-wide grep (`"version":`), not memory: the 4th manifest (`adapters/opencode/plugin.json` at 1.0.0) was caught only at gate review.
+- An implementer reported `.cursorrules` fixed but had not touched it; the tester's "classify EVERY remaining census hit" mandate caught the false completion claim. Gate redundancy pays — keep the census mandate explicit.
+- Reviewer F4 suspected two CHANGELOG Planned bullets were newly added; `git show 198bb73:CHANGELOG.md` disproved it (pre-existing content, relocated). Check the base blob before accepting an additions-claim.
+- opencode plugin.json "9 subagents" is correct as-is (7 dispatch roles + code-reviewer + spec-reviewer, matching its own agents.definitions); taxonomy drift (11 categories / 12 plugin keys / 13 domains) deferred to #8 as a content task, not silently edited during a count sweep.
