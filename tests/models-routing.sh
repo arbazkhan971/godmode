@@ -273,6 +273,90 @@ else
     bad "C17 skills claude-wording allowlist (got: [$c17])"
 fi
 
+# ── C18: gm_route inline resolver (skills/godmode/SKILL.md) behaves per contract ──
+GMR="$TMP/gm_route_extract.sh"
+sed -n '/^gm_route() {/,/^}$/p' "$REAL_REPO/skills/godmode/SKILL.md" >"$GMR"
+if [ -s "$GMR" ] && grep -q '^gm_route() {' "$GMR"; then
+    RUNNER="$TMP/gmr_runner.sh"
+    cat >"$RUNNER" <<'RUN'
+#!/usr/bin/env bash
+. "$(dirname "$0")/gm_route_extract.sh"
+gm_route "$1"
+RUN
+    printf '{"roles":{"review":"garbage"}}' >"$REPO/godmode.models.json"
+    printf '{"roles":{"review":"vendor/x"}}' >"$HOME/.config/godmode/models.json"
+    OUT="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" bash "$RUNNER" review 2>"$TMP/err")" && RC=0 || RC=$?
+    ERR="$(cat "$TMP/err")"
+    if [ "$RC" -eq 0 ] && [ "$OUT" = "$(printf 'vendor/x\tfile')" ] && \
+       printf '%s' "$ERR" | grep -q 'ignoring invalid model value'; then
+        ok "C18a gm_route: invalid project value falls through to home file"
+    else
+        bad "C18a gm_route fallthrough (rc=$RC out=[$OUT] err=[$ERR])"
+    fi
+    rm -f "$REPO/godmode.models.json" "$HOME/.config/godmode/models.json"
+    OUT="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" \
+        GODMODE_MODEL_BUILD='x; rm -rf /' bash "$RUNNER" build 2>"$TMP/err")" && RC=0 || RC=$?
+    ERR="$(cat "$TMP/err")"
+    if [ "$RC" -eq 0 ] && [ "$OUT" = "$(printf 'session\tsession')" ] && \
+       printf '%s' "$ERR" | grep -q 'ignoring invalid model value'; then
+        ok "C18b gm_route: malicious env value rejected, session fallback"
+    else
+        bad "C18b gm_route malicious value (rc=$RC out=[$OUT])"
+    fi
+    OUT="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" \
+        GODMODE_MODEL_BUILD=vendor/strong bash "$RUNNER" build 2>/dev/null)" && RC=0 || RC=$?
+    if [ "$RC" -eq 0 ] && [ "$OUT" = "$(printf 'vendor/strong\tenv')" ]; then
+        ok "C18c gm_route: env override wins"
+    else
+        bad "C18c gm_route env override (rc=$RC out=[$OUT])"
+    fi
+else
+    bad "C18 gm_route extraction from skills/godmode/SKILL.md failed"
+fi
+
+# ── C19: verify path B doctor script (skills/verify/SKILL.md) runs standalone ──
+DOC="$TMP/doctor_extract.sh"
+sed -n '/^# \/godmode:doctor, path B/,/^exit 0$/p' "$REAL_REPO/skills/verify/SKILL.md" \
+    | sed '1d;$d' >"$DOC.tmp"  # drop marker lines, keep the script body
+# The fence opens with ```bash before the marker; extract between fence lines instead.
+sed -n '/^# \/godmode:doctor, path B/,/^exit 0$/p' "$REAL_REPO/skills/verify/SKILL.md" >"$DOC"
+if [ -s "$DOC" ] && grep -q 'gm_route()' "$DOC"; then
+    printf '{"roles":{"review":"vendor/proj"}}' >"$REPO/godmode.models.json"
+    if OUT="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" \
+        GODMODE_MODEL_SECURITY=vendor/sec bash "$DOC" 2>"$TMP/err")"; then
+        RC=0
+    else
+        RC=$?
+    fi
+    hdr="$(printf '%s' "$OUT" | head -1)"
+    secrow="$(printf '%s' "$OUT" | grep -F $'security\tvendor/sec\tenv\tGODMODE_MODEL_SECURITY' || true)"
+    revrow="$(printf '%s' "$OUT" | grep -F $'review\tvendor/proj\tfile' || true)"
+    trailer="$(printf '%s' "$OUT" | grep -F 'config	repo=' || true)"
+    if [ "$RC" -eq 0 ] && [ "$hdr" = "$(printf 'role\tmodel\tsource\torigin')" ] && \
+       [ -n "$secrow" ] && [ -n "$revrow" ] && [ -n "$trailer" ]; then
+        ok "C19 verify path B doctor: header + env row + file row + trailer, exit 0"
+    else
+        bad "C19 path B doctor (rc=$RC hdr=[$hdr] sec=[$secrow] rev=[$revrow])"
+    fi
+    rm -f "$REPO/godmode.models.json"
+else
+    bad "C19 doctor extraction from skills/verify/SKILL.md failed"
+fi
+
+# ── C20: cross-implementation parity — models.sh doctor vs path B doctor ──
+if [ "${C19_OK:-0}" = 1 ] || true; then :; fi
+A_ROW="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" \
+    GODMODE_MODEL_REVIEW=vendor/strong bash "$MODELS" doctor 2>/dev/null | \
+    grep -F $'review\tvendor/strong\tenv')"
+B_ROW="$(cd "$REPO" && env -i PATH="$PATH" HOME="$HOME" \
+    GODMODE_MODEL_REVIEW=vendor/strong bash "$DOC" 2>/dev/null | \
+    grep -F $'review\tvendor/strong\tenv')"
+if [ -n "$A_ROW" ] && [ "$A_ROW" = "$B_ROW" ]; then
+    ok "C20 doctor parity: models.sh row == verify path B row"
+else
+    bad "C20 doctor parity (A=[$A_ROW] B=[$B_ROW])"
+fi
+
 # ── Summary ────────────────────────────────────────────────────────────────
 printf 'models-routing: %d passed, %d skipped, %d failed\n' "$PASS" "$SKIP" "$FAIL"
 [ "$FAIL" -eq 0 ]
