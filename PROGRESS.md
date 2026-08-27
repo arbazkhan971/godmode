@@ -204,3 +204,31 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - Gate the TREE, then commit fast: the sibling fleet's push raced past this fleet's open gate findings. Recovery protocol that held: verify every finding empirically at the new HEAD, fix only what's actually still broken, push fixes as separate atomic commits, never revert the sibling's coherent work.
 - "Fix all findings before push" under a two-fleet race becomes "fix all findings before YOUR push, on top of whatever landed": the mission invariant is the pushed end-state, not any single fleet's diff.
 - Extraction tests (sed the function out of the SKILL.md, source it, assert behavior) are the cheapest possible guard that skill-embedded bash stays executable — skills prose rots silently otherwise; C18-C20 now pin gm_route and the path-B doctor to their documented contracts.
+
+## M2 Iteration 2 — M2-P2 exit (Amp adapter, issue #5)
+
+### DONE
+- M2-P2 exit pushed (6 commits, 53b503b..e121e10, CI green on e121e10): `adapters/amp/{install.sh,verify.sh,README.md,amp-config.md}` — AGENTS.md copy with never-clobber sidecar (`AGENTS.godmode.md`), root `skills/`+`agents/` symlinks, `.agents/skills/` wiring (Amp's documented project-skills dir; evidence: ampcode.com/docs/customize/skills + agents-md, fetched this session), `.godmode/` state dir; verify.sh is fail-closed with a godmode-marker grep, dynamically computed skill count, and a frontmatter name==dirname sweep (Amp silently drops mismatches; 135/135 pass). Honest capability: skills only — no injected subagents, no model routing, no `amp skill add` claims. README row/footnote/intro/badge, CONTRIBUTING matrix, platform-comparison section, blog stale-claim annotations, CHANGELOG entry.
+- Issue #5 CLOSED with full evidence comment; systemic gate findings filed as issue #10 (family-wide dangling-symlink write-through + shared printf format-string + platform-count drift).
+- M2-P0 capability matrix (logged here; no prior M2 ledger entry exists): vhs v0.11.0 ✓, ttyd 1.7.7-40e79c7 ✓, ffmpeg /usr/bin/ffmpeg ✓, npm NOT authed (ENEEDAUTH), GitHub Discussions DISABLED (P5 work), stars.log appending every 30min ✓ (25 stars / 7 forks at 22:16).
+- Fleet pattern honored: 3-lens council IN PARALLEL → 5 implementers IN PARALLEL (disjoint scopes) → reviewer+security+tester gate IN PARALLEL → all findings fixed pre-push. All subagents on zai/glm-5.3.
+- Gate results: tester PASS 6/6 groups (validators 523/0 + 798/0, 6-case /tmp e2e matrix incl. copy-mode + collision + user-AGENTS preservation, 135/135 name==dirname, honesty census clean, zero new markdownlint); reviewer APPROVE-with-notes (6×P2 — all fixed: docs/index platform count 5→6, dynamic count echo, root-symlink commit note, sidecar qualifier, comment wording); security CLEAN (5 LOW — fixed in-scope: PROJECT_NAME YAML-injection sanitize `tr -cd '[:alnum:]._-'` proven with a pwn-dirname regression test, source-count >0 guard, idempotent cp -rL escape hatch; family-wide items → #10).
+- Race status: sibling fleet mid-flight on M2-P1 (demo tapes committed 6332850, GIFs/transcripts/README-demo still uncommitted). My README commit used hunk-filtered `git apply --cached` — only my 4 Amp hunks committed, their demo region untouched. No index absorption this iteration.
+
+### NEXT (ordered)
+1. M2-P1: verify the sibling fleet's demo captures land (GIFs + README embeds still uncommitted); if stalled next iteration, land them with gates.
+2. M2-P3 (omp skills dir, issue #7) — gh api research on can1357/oh-my-pi.
+3. M2-P4 (CI hardening, issue #8) — markdownlint repo-wide, prose-count gate, markdownlint-cli2 devDependency fix.
+4. M2-P5 (discussions + star-history badge + README top demo GIF — needs P1 landed first).
+5. M2-P6 (coverage sweep: 3 more submission-queue targets).
+6. Marketing drafts (hesreallyhim:93, JosiahSiegel:98, show-hn:38) still say "Amp: no adapter yet" — refresh before any human fires them (tracked in ledger, not #10).
+
+### BLOCKERS
+- none. (amp CLI not installed on this machine → Amp-side symlink-traversal dogfood unverified; mitigated honestly: adapter README documents the `cp -rL` copy escape hatch and verify.sh passes in both modes.)
+
+### LESSONS
+- The pi 'planner' classifier rejected all 3 council briefs (again, 3/3). The standing recovery — re-dispatch to reviewer/security/oracle — worked first try, zero stall. Stop dispatching analysis to 'planner'.
+- My own gate-fix edit introduced a bash syntax error (quote/paren swap at a construct boundary: `_-'"` instead of `_-')"`) that would have shipped a broken installer; caught by the mandatory post-fix `bash -n` + e2e re-run, then reproduced in a minimal case to find the swapped bytes. Rule: after EVERY lead-side edit to shell, run `bash -n` + the e2e chain before committing — gate fixes are code too.
+- Hunk-filtered `git apply --cached` (python hunk-splitter keyed on added-line markers) cleanly separated my README hunks from the sibling's uncommitted demo region — first race-free shared-file commit of this mission. Cheap, deterministic, beats whole-file staging under a two-fleet race.
+- Council evidence packs pay for themselves: every Amp fact used by all 8 agents came from one lead-side curl session (2 doc pages); no implementer re-researched, no fabrication crept in.
+- Dynamic counts beat hardcoded ones at every layer: verify.sh derives expected from the source tree, install.sh echoes the live count — the 126→135 drift class (issue #8) is now structurally impossible in this adapter.
