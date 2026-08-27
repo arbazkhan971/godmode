@@ -1,6 +1,6 @@
 # Godmode for Cursor
 
-You are an AI coding agent enhanced with Godmode — a skill system with 126 specialized skills and 7 subagents that enforces disciplined engineering. Every change is measured, every bad change is reverted, and every experiment is committed.
+You are an AI coding agent enhanced with Godmode — a skill system with 135 specialized skills and 7 subagents that enforces disciplined engineering. Every change is measured, every bad change is reverted, and every experiment is committed.
 
 ## Core Workflow: The Godmode Loop
 
@@ -119,7 +119,7 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 5. Spawn `optimizer` to improve the merged result.
 6. Spawn `security` for a final audit before shipping.
 
-## Skill Catalog (126 Skills)
+## Skill Catalog (135 Skills)
 
 | Skill | Description |
 |---|---|
@@ -133,6 +133,7 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 | `auth` | Authentication and authorization |
 | `automate` | Task automation |
 | `backup` | Backup and disaster recovery |
+| `bench` | Formal benchmark harness — metric command N runs across variants, reproducible TSV. |
 | `build` | Build and execution (TDD enforcement) |
 | `cache` | Caching strategy |
 | `changelog` | Changelog and release notes management |
@@ -168,6 +169,7 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 | `forms` | Form architecture |
 | `ghactions` | GitHub Actions workflow design and optimization |
 | `git` | Advanced Git workflows |
+| `goal-bridge` | Machine-checkable goal-mode completion contracts (metric command, threshold, evidence, rollback). |
 | `godmode` | Orchestrator (auto-routes to the right skill) |
 | `graphql` | GraphQL API development |
 | `grpc` | gRPC and Protocol Buffers |
@@ -208,6 +210,7 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 | `postgres` | PostgreSQL mastery |
 | `pr` | Pull request excellence |
 | `predict` | Multi-persona prediction and evaluation |
+| `principles` | Authoring discipline prelude — Think / Simplicity / Surgical / Goal-driven. Read before any Edit. |
 | `prompt` | Prompt engineering |
 | `query` | Query optimization and data analysis |
 | `queue` | Message queue and job processing |
@@ -224,11 +227,13 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 | `responsive` | Responsive and adaptive design |
 | `review` | Code review |
 | `rfc` | RFC and technical proposal writing |
+| `research` | Prior art and context gathering — explorer dispatch, docs/ecosystem scan, research.md for think. |
 | `scale` | Scalability engineering |
 | `scenario` | Edge case and scenario exploration |
 | `schema` | Data modeling and schema design |
 | `search` | Search implementation |
 | `secrets` | Secrets management |
+| `stdio` | Canonical terse command patterns — context-efficient bash equivalents. |
 | `secure` | Security audit (STRIDE + OWASP + red-team) |
 | `seed` | Database seeding and factory patterns |
 | `seo` | SEO optimization and auditing |
@@ -240,8 +245,12 @@ Godmode ships with 7 specialized agents. Read their definitions before dispatchi
 | `storage` | File storage and CDN |
 | `svelte` | Svelte and SvelteKit mastery |
 | `tailwind` | Tailwind CSS mastery |
+| `team` | Team bundles — invoke named skill bundles, YAML coordination, dispatch pipeline/parallel/swarm. |
+| `terse` | Output-compression mode for long autonomous loops (GODMODE_TERSE=1). |
 | `test` | TDD enforcement (red-green-refactor) |
 | `think` | Brainstorming and design |
+| `tokens` | Token-budget observability — per-round cost tracking, token-log.tsv, session-end summary. |
+| `tutorial` | Day-0 onboarding walkthrough — fresh install to first successful session in under 5 minutes. |
 | `type` | Type system and schema validation |
 | `ui` | UI component architecture |
 | `upload` | File uploads and media processing |

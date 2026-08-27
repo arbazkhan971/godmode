@@ -1,6 +1,6 @@
 # Godmode for Codex (OpenAI)
 
-**126 skills. 7 subagents. Zero configuration.**
+**135 skills. 7 subagents. Zero configuration.**
 
 Godmode turns Codex into a disciplined engineering environment. Every change is measured, every bad change is reverted, and every experiment is committed.
 
@@ -99,19 +99,19 @@ Codex runs in batch mode with single-threaded execution. This affects two areas:
 | Parallel agents | Yes (Agent tool + worktrees) | No -- sequential only |
 | Git worktrees | Native support | Not available |
 | Interactive mode | Yes | No -- batch mode only |
-| Skill count | 126 | 126 |
+| Skill count | 135 | 135 |
 | Subagent definitions | 7 (agents/*.md) | 7 (.codex/agents/*.toml) |
 
 **What this means in practice:**
 
 - Multi-agent workflows (e.g., `plan` dispatching 3 builders in parallel) execute one task at a time instead of concurrently. The planner still decomposes work the same way -- builders just run sequentially.
 - Worktree-based isolation is not available. Agents work on the active branch directly. Atomic commits and automatic rollback still function normally.
-- All 126 skills work identically. No skill is degraded or unavailable.
+- All 135 skills work identically. No skill is degraded or unavailable.
 - Codex does not support interactive prompts mid-execution. All input must be provided upfront in the task description.
 
 ---
 
-## Skills (126)
+## Skills (135)
 
 ### Core Workflow (15)
 

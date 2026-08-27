@@ -115,7 +115,7 @@ skill. Natural next commands:
 - `/godmode:secure` — STRIDE + OWASP audit over a target path
 - `/godmode:ship` — preflight checks before deploy
 
-The full 126-skill catalog lives in `AGENTS.md` and
+The full 135-skill catalog lives in `AGENTS.md` and
 `docs/COMPLETE-SKILL-LIST.md`. Godmode's orchestrator also routes
 natural language: `/godmode "make this faster"` dispatches `optimize`.
 
@@ -142,7 +142,7 @@ natural language: `/godmode "make this faster"` dispatches `optimize`.
 - `README.md` — the 30-second pitch and the worked examples at the
   top are the shortest path to "why godmode exists."
 - `SKILL.md` (repo root) — the Universal Protocol that governs all
-  126 skills. Short, dense, worth one full read.
+  135 skills. Short, dense, worth one full read.
 - `skills/godmode/SKILL.md` — the orchestrator. Read this before you
   write any custom skill; every skill file inherits its conventions.
 - `skills/optimize/SKILL.md` — the canonical iterative loop. Step 5

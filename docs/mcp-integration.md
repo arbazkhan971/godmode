@@ -24,7 +24,7 @@ No custom forks, no third-party shims.
 
 Why these three and not more?
 Godmode's skill catalog already covers an enormous surface area through local tools; the goal of the template is to add the smallest set of servers that meaningfully broadens what read-only and research-heavy skills can see.
-Filesystem, git, and fetch are the three capability gaps that recur most often across the 126 skills — everything else (databases, browsers, issue trackers) is workload-specific and better left to the user to opt into.
+Filesystem, git, and fetch are the three capability gaps that recur most often across the 135 skills — everything else (databases, browsers, issue trackers) is workload-specific and better left to the user to opt into.
 
 ## Installation
 
@@ -56,7 +56,7 @@ To confirm a client has picked up the template, open a fresh session in the repo
 
 Adapters without MCP support simply ignore `.mcp.json`.
 Godmode skills still function on those adapters using the built-in `Read`, `Grep`, `Glob`, `Bash`, and `Edit` tools — MCP is additive, never a hard dependency.
-No skill in the 126-skill catalog requires MCP to reach its stopping conditions, and the iteration loop's keep/discard rules are identical whether a run uses MCP-exposed tools or native ones.
+No skill in the 135-skill catalog requires MCP to reach its stopping conditions, and the iteration loop's keep/discard rules are identical whether a run uses MCP-exposed tools or native ones.
 If you maintain a cross-adapter project, keep the template in the repo; adapters that cannot use it will not complain.
 
 ## Customizing the Template

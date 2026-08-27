@@ -58,9 +58,9 @@ Autoresearch assumes the goal is implicit in `program.md`. Godmode adds an expli
 
 Autoresearch has one phase: optimize. Godmode has four: THINK -> BUILD -> OPTIMIZE -> SHIP. The orchestrator detects which phase the project is in and routes to the right skill automatically.
 
-### 126 specialized skills
+### 135 specialized skills
 
-Autoresearch has one `program.md`. Godmode has 126 domain-specific SKILL.md files (React, Postgres, Kubernetes, security audits, etc.), each encoding domain expertise while following the universal protocol.
+Autoresearch has one `program.md`. Godmode has 135 domain-specific SKILL.md files (React, Postgres, Kubernetes, security audits, etc.), each encoding domain expertise while following the universal protocol.
 
 ### Guard vs metric separation
 
@@ -103,7 +103,7 @@ Autoresearch runs on one machine. Godmode enforces agent capability matrices (re
 
 Autoresearch's single file works for "optimize one thing." Real projects need different protocols for testing, security auditing, deployment, and refactoring. Each SKILL.md is a self-contained program.md for its domain. The root SKILL.md is the universal protocol that governs all of them.
 
-**When simpler is better:** If your task is "make this function faster," you do not need 126 skills. Use `/godmode:optimize` directly -- it behaves almost identically to autoresearch.
+**When simpler is better:** If your task is "make this function faster," you do not need 135 skills. Use `/godmode:optimize` directly -- it behaves almost identically to autoresearch.
 
 ### Why git instead of file backup
 
@@ -166,4 +166,4 @@ Never add a "maybe" or "partial keep" state. Changes are atomic: they either imp
 
 ## Summary
 
-Godmode is autoresearch scaled to full software engineering. The core loop (modify, measure, keep or discard) is unchanged. The extensions (multi-agent, planning, security, 126 skills) exist because real projects are larger than one file and one metric. When in doubt, default to autoresearch's simpler approach. Add complexity only when the project demands it.
+Godmode is autoresearch scaled to full software engineering. The core loop (modify, measure, keep or discard) is unchanged. The extensions (multi-agent, planning, security, 135 skills) exist because real projects are larger than one file and one metric. When in doubt, default to autoresearch's simpler approach. Add complexity only when the project demands it.

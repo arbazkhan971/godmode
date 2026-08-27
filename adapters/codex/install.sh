@@ -230,7 +230,7 @@ done
 echo ""
 echo "Godmode installed successfully for Codex."
 echo ""
-echo "  126 skills available via /godmode:skillname"
+echo "  135 skills available via /godmode:skillname"
 echo "  7 subagents defined in .codex/agents/*.toml"
 echo "  Sequential execution (single-threaded, batch mode)"
 echo ""

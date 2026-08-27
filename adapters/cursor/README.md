@@ -1,6 +1,6 @@
 # Godmode Adapter for Cursor
 
-**126 skills. 7 subagents. Zero configuration.**
+**135 skills. 7 subagents. Zero configuration.**
 
 Godmode turns Cursor into a disciplined engineering environment. Every change is measured, every bad change is reverted, and every experiment is committed.
 
@@ -78,11 +78,11 @@ Cursor supports background agents, which Godmode uses for parallel task dispatch
 - **Parallel optimization:** The `optimize` skill tries 3 approaches per round in parallel background agents, keeping only the best result.
 - **Parallel review:** The `review` skill runs 4 review passes (correctness, security, performance, style) as concurrent background agents.
 
-All 126 skills work in Cursor. Parallel features use Cursor's background agent capability for concurrent execution.
+All 135 skills work in Cursor. Parallel features use Cursor's background agent capability for concurrent execution.
 
 ---
 
-## Skills (126)
+## Skills (135)
 
 ### Core Workflow (15)
 

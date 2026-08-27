@@ -1,6 +1,6 @@
 # Godmode Documentation
 
-Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch). 126 skills, 7 subagents, 5 platforms.
+Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch). 135 skills, 7 subagents, 7 platforms.
 
 ## Getting Started
 - [Quick Start Guide](quick-start.md) — Install and run your first skill in 2 minutes
@@ -9,7 +9,7 @@ Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github
 - [FAQ](FAQ.md) — Frequently asked questions
 
 ## Skill Catalog
-- [Skill Index](skill-index.md) — Browse all 126 skills by category
+- [Skill Index](skill-index.md) — Browse all 135 skills by category
 - [Complete Skill List](COMPLETE-SKILL-LIST.md) — Flat list of every skill with descriptions
 - [Skill Matrix](skill-matrix.md) — Compare skills by type, loop model, and use case
 - [Domain Guide](domain-guide.md) — Pick the right skill for your domain
@@ -95,3 +95,7 @@ Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github
 - [Contributing Guide](../CONTRIBUTING.md) — How to add skills and improve godmode
 - [Philosophy](PHILOSOPHY.md) — Design philosophy and principles
 - [Security](SECURITY.md) — Security policy and reporting
+
+## Blog
+- [Godmode 2.0: One Loop, Every Harness](blog/godmode-2.0-universal.md) — The 2.0 universal-core port: harness-neutral skills, adapters, and goal-bridge
+- [Godmode Meets Autoresearch](blog/godmode-meets-autoresearch.md) — How the keep/discard loop descends from Karpathy's autoresearch

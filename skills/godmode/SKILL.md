@@ -114,7 +114,7 @@ done
 ```
 
 Measured Tier 1 cost (via `tests/token-bench.sh`): about 4,000 tokens
-across 134 skills, vs. about 54,000 tokens for full reads — roughly 92%
+across 135 skills, vs. about 54,000 tokens for full reads — roughly 92%
 reduction. Stacks with `skills/terse/` (output-side compression),
 `skills/stdio/` (input-side canonical commands), and rtk (if installed)
 for compound context savings.

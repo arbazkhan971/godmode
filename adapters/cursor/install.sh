@@ -180,7 +180,7 @@ done
 echo ""
 echo "Godmode installed successfully for Cursor."
 echo ""
-echo "  126 skills available via @godmode or /godmode:skillname"
+echo "  135 skills available via @godmode or /godmode:skillname"
 echo "  7 subagents (parallel execution via Cursor background agents)"
 echo ""
 echo "  Config:       $CONFIG_FILE"

@@ -316,11 +316,11 @@ This principle eliminates the class of bugs where an AI says "done" but the test
 
 ### 31. Does godmode work on Gemini CLI?
 
-Yes. All 126 skills work. Install with `bash adapters/gemini/install.sh`. Skills that use parallel agents run sequentially — same results, slower throughput.
+Yes. All 135 skills work. Install with `bash adapters/gemini/install.sh`. Skills that use parallel agents run sequentially — same results, slower throughput.
 
 ### 32. Does godmode work on OpenCode?
 
-Yes. All 126 skills work. Install with `bash adapters/opencode/install.sh`. OpenCode supports native slash commands (`/godmode:optimize`).
+Yes. All 135 skills work. Install with `bash adapters/opencode/install.sh`. OpenCode supports native slash commands (`/godmode:optimize`).
 
 ### 33. Does godmode work on Cursor?
 
@@ -332,7 +332,7 @@ Yes. Codex has native agent definitions at `.codex/agents/*.toml`. Install with 
 
 ### 35. What features are lost on non-Claude Code platforms?
 
-No features are lost. Parallel agent dispatch degrades to sequential execution (slower but identical results). Git worktree isolation degrades to branch-based isolation. All 126 skills, all verification, all rollback behavior works identically.
+No features are lost. Parallel agent dispatch degrades to sequential execution (slower but identical results). Git worktree isolation degrades to branch-based isolation. All 135 skills, all verification, all rollback behavior works identically.
 
 ### 36. Can I use the same project with multiple platforms?
 

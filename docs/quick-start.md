@@ -1,6 +1,6 @@
 # Godmode Quick Start
 
-**126 skills. 7 subagents. 5 platforms. Zero configuration.**
+**135 skills. 7 subagents. 7 platforms. Zero configuration.**
 
 ---
 
@@ -49,7 +49,7 @@ Clone the repo, then run one command to install:
 | **Codex** | `bash godmode/adapters/codex/install.sh .` | `codex "Run /godmode:think design a rate limiter"` |
 | **OpenCode** | `bash godmode/adapters/opencode/install.sh .` | `/godmode:think design a rate limiter` |
 
-Replace `godmode/` with the actual path to your clone. All 126 skills work identically on every platform. The only difference is execution model (parallel agents on Claude Code/Cursor, sequential on others).
+Replace `godmode/` with the actual path to your clone. All 135 skills work identically on every platform. The only difference is execution model (parallel agents on Claude Code/Cursor, sequential on others).
 
 ---
 
@@ -320,7 +320,7 @@ When you type `/godmode` or `/godmode:<skill>`:
 ## Next Steps
 
 - **[FAQ](FAQ.md)** -- Common questions and troubleshooting
-- **[Full Skill Catalog](COMPLETE-SKILL-LIST.md)** -- All 126 skills with descriptions
+- **[Full Skill Catalog](COMPLETE-SKILL-LIST.md)** -- All 135 skills with descriptions
 - **[Platform Details](../adapters/)** -- Deep-dive into each adapter
 - **[Recipes](recipes/)** -- Pre-built skill chains for common workflows
 - **[CONTRIBUTING](../CONTRIBUTING.md)** -- Add your own skills (every skill is just a Markdown file)

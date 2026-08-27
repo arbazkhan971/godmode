@@ -193,7 +193,7 @@ done
 echo ""
 echo "Godmode installed successfully."
 echo ""
-echo "  126 skills available via /godmode:skillname"
+echo "  135 skills available via /godmode:skillname"
 echo "  9 subagents (sequential execution in OpenCode)"
 echo ""
 echo "  Config:  $CONFIG_FILE"

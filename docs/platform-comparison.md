@@ -1,6 +1,6 @@
 # Platform Comparison
 
-Godmode runs on 5 platforms. All 126 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
+Godmode runs on 5 platforms. All 135 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
 
 ---
 
@@ -8,7 +8,7 @@ Godmode runs on 5 platforms. All 126 skills work everywhere. This document cover
 
 | Feature | Claude Code | Codex | Gemini CLI | OpenCode | Cursor |
 |---------|:-----------:|:-----:|:----------:|:--------:|:------:|
-| **Skills available** | 126 | 126 | 126 | 126 | 126 |
+| **Skills available** | 135 | 135 | 135 | 135 | 135 |
 | **Subagents** | 7 | 7 | 7 | 7 | 7 |
 | **Skill discovery** | Native `SKILL.md` | System prompt (`AGENTS.md`) | System prompt (`GEMINI.md`) | Plugin system (`plugin.json`) | Rules file (`.cursorrules`) |
 | **Slash commands** | `/godmode:skill` | Batch prompt prefix | Chat commands | `/godmode:skill` (native) | `@godmode skill` or `/godmode:skill` |
@@ -117,7 +117,7 @@ The underlying SKILL.md files are the same. Only the invocation surface changes.
 ### OpenCode
 
 - **Native slash commands.** OpenCode supports `/godmode:skill` natively -- no workarounds or chat prefix hacks needed. This is the cleanest invocation surface outside Claude Code.
-- **Plugin system.** OpenCode uses `plugin.json` for skill registration. The manifest at `.opencode/plugins/godmode/plugin.json` declares all 126 skills, 7 agents, and the session hook.
+- **Plugin system.** OpenCode uses `plugin.json` for skill registration. The manifest at `.opencode/plugins/godmode/plugin.json` declares all 135 skills, 7 agents, and the session hook.
 - **Session hooks.** OpenCode supports `session_start` hooks for auto-loading project state. This runs automatically when you open a session.
 - **Tool names match.** OpenCode uses the same tool names as Claude Code (Read, Write, Edit, Bash, Grep, Glob). No translation needed.
 - **Sequential dispatch only.** Like Gemini CLI and Codex, multi-agent skills run one task at a time. The planner still decomposes work into rounds -- builders just execute sequentially within each round.

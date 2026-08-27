@@ -187,7 +187,7 @@ done
 echo ""
 echo "Godmode installed successfully for Gemini CLI."
 echo ""
-echo "  126 skills available via /godmode:skillname"
+echo "  135 skills available via /godmode:skillname"
 echo "  7 subagents available via agents/"
 echo ""
 echo "  Config:  $CONFIG_FILE"

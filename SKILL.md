@@ -1,6 +1,6 @@
 ---
 name: godmode
-description: "Turn on Godmode. 134 skills, 7 subagents, zero configuration. Routes to the right skill automatically."
+description: "Turn on Godmode. 135 skills, 7 subagents, zero configuration. Routes to the right skill automatically."
 ---
 
 @./skills/godmode/SKILL.md
@@ -33,7 +33,7 @@ Full prelude, including the pre-MODIFY checklist and line-trace rule:
 
 ---
 
-# Universal Protocol — governs ALL 134 skills
+# Universal Protocol — governs ALL 135 skills
 
 ## 1. The Loop
 
@@ -312,7 +312,7 @@ required. This section is the single source of truth for what runs by default.
 
 6. **Progressive Disclosure routing** — `skills/godmode/SKILL.md § Step 2`
    reads ONLY Tier 1 (~20 lines) of each skill at route time via a POSIX awk
-   extractor. ~90% routing-time context reduction across 134 skills.
+   extractor. ~90% routing-time context reduction across 135 skills.
 7. **Stdio input-side compression** — `skills/stdio/SKILL.md`. Canonical
    command patterns (git log → git log --oneline -20, cat → wc -l, etc.)
    that every agent prefers. Referenced from `AGENTS.md § Context Refresh`.

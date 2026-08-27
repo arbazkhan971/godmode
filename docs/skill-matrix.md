@@ -1,6 +1,6 @@
 # Skill Matrix — Which Skill Do I Use?
 
-The definitive reference for picking the right Godmode skill. 126 skills across 11 categories.
+The definitive reference for picking the right Godmode skill. 135 skills across 11 categories.
 
 ---
 
@@ -320,7 +320,7 @@ think → predict → plan → build → test → review → fix → optimize �
 | **Destructive** | May revert commits (`git reset --hard HEAD~1`). This is intentional — bad changes get rolled back automatically. Skills: `optimize`, `fix`, `debug`, `build`. Always safe: every revert undoes a commit made seconds earlier. |
 | **Needs Prior Skill** | Requires output from another skill. `plan` needs `think` (spec.md). `build` needs `plan` (plan.yaml). `predict` needs `think` (spec.md). Other skills can run standalone. |
 | **Human Input** | What the user must provide. Ranges from "nothing" (auto-detected) to "confirm dry-run" (`ship`) to "metric command" (`optimize`). |
-| **Platform** | All 126 skills work on all platforms. Multi-agent skills auto-degrade to sequential on platforms without agent dispatch (Gemini CLI, OpenCode). |
+| **Platform** | All 135 skills work on all platforms. Multi-agent skills auto-degrade to sequential on platforms without agent dispatch (Gemini CLI, OpenCode). |
 
 ---
 
