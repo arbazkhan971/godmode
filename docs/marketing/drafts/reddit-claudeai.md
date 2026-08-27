@@ -42,6 +42,6 @@ Links:
 - Authorship disclosed in the first line of the body, not buried; the author stays in the comments for the life of the thread.
 - Links point to source under an open license; no paywall, no signup, no tracking, nothing to buy.
 - No engagement asks of any kind appear anywhere in the post - verified line by line against the project's own banned-phrase list.
-- Limitations are stated inside the post itself (Amp adapter missing, bad metrics get optimized honestly, README traces are illustrative).
+- Limitations are stated inside the post itself (Amp adapter missing, bad metrics get optimized honestly, the top three README captures are real vhs recordings while the lower output-shape blocks are illustrative).
 - One post to this community only. If it lands poorly, it is not reposted or resubmitted in another form.
 - Poster verifies their own account's self-promotion ratio (9:1) against the current reddit content policy and the subreddit sidebar immediately before submitting, since those change.

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Real demo captures: three vhs tapes under `demo/` recording live pi sessions (zai/glm-5.3) — godmode skill routing, the optimize keep/revert loop (real metric, real KEEP, real `git reset --hard` revert), and a goal-bridge completion contract (red test → green, evidence file); rendered GIFs embedded in the README "See It In Action" section replacing the former illustrative-traces TODO, with text transcript fallbacks in `demo/transcripts/` and re-renderable via `bash demo/render.sh`.
 - Amp adapter: `adapters/amp/` (`install.sh` + `verify.sh` + adapter docs) wires skills into Amp's `.agents/skills/` project skills directory (symlinked for live sync, with a `cp -rL` copy escape hatch) and copies `AGENTS.md` into the project root without clobbering a user-authored file (writes an `AGENTS.godmode.md` sidecar instead). Skills-only integration: godmode's 7 subagent roles are not injected, dispatch runs sequentially by prompting Amp's own subagents.
 - Multi-model role routing: optional `godmode.models.json` (project root, merged per-key over `~/.config/godmode/models.json`) plus `GODMODE_MODEL_<ROLE>` env overrides, with a valid zero-config default where every role inherits the session model. Ships the pi reference resolver (`adapters/pi/models.sh` `resolve`/`doctor`/`selftest`), orchestrator Step 3c role resolution at dispatch time, the `setup` Step 6b routing wizard, the `verify` doctor check, and validator Check 7.
 

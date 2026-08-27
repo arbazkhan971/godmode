@@ -90,6 +90,7 @@ Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github
 - [API Feature](examples/api-feature.md) — Build an API feature end-to-end
 - [Bug Fix](examples/bug-fix.md) — Walk through a bug fix with godmode
 - [Optimization](examples/optimization.md) — Performance optimization example
+- [Demo Captures](../demo/) — Real vhs captures of routing, optimize keep/revert loop, and goal-bridge sessions, with text transcripts
 
 ## Contributing
 - [Contributing Guide](../CONTRIBUTING.md) — How to add skills and improve godmode
