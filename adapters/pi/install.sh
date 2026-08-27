@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Godmode Installer for pi (and omp-compatible forks)
+# Usage: bash install.sh [PREFIX]
+# PREFIX = skill root dir. Resolution order:
+#   1. first positional argument
+#   2. $PREFIX environment variable (exists for omp and other forks whose
+#      skill directory differs from pi's default)
+#   3. $HOME/.pi/agent/skills
+# Copies all godmode skills into $PREFIX/godmode/. pi loads skills only —
+# no symlinks, no agents/, no commands/. Idempotent — safe to re-run.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Resolve paths
+# ---------------------------------------------------------------------------
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GODMODE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DEFAULT_PREFIX="$HOME/.pi/agent/skills"
+PREFIX="${1:-${PREFIX:-$DEFAULT_PREFIX}}"
+
+# ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+if [ ! -f "$GODMODE_ROOT/AGENTS.md" ]; then
+    echo "Error: cannot find AGENTS.md in $GODMODE_ROOT"
+    echo "Make sure you are running this script from the godmode repository."
+    exit 1
+fi
+
+if [ ! -d "$GODMODE_ROOT/skills" ]; then
+    echo "Error: cannot find skills/ directory in $GODMODE_ROOT"
+    exit 1
+fi
+
+echo "Godmode installer for pi"
+echo "  Source: $GODMODE_ROOT"
+echo "  Prefix: $PREFIX"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Install skills (idempotent overwrite)
+# ---------------------------------------------------------------------------
+
+if [ -d "$PREFIX/godmode" ]; then
+    echo "[ok]   $PREFIX/godmode exists — refreshing skills (idempotent overwrite)"
+else
+    echo "[done] Creating $PREFIX/godmode"
+fi
+
+# Deterministic re-install: prune the destination first so skills removed
+# upstream do not linger (a plain overwrite cannot self-heal a stale dir).
+rm -rf "$PREFIX/godmode"
+mkdir -p "$PREFIX/godmode"
+cp -R "$GODMODE_ROOT/skills/." "$PREFIX/godmode/"
+
+SOURCE_COUNT="$(find "$GODMODE_ROOT/skills" -type f -name SKILL.md | wc -l | tr -d ' ')"
+DEST_COUNT="$(find "$PREFIX/godmode" -type f -name SKILL.md | wc -l | tr -d ' ')"
+echo "[ok]   SKILL.md files — source: $SOURCE_COUNT, installed: $DEST_COUNT"
+
+if [ "$SOURCE_COUNT" -ne "$DEST_COUNT" ]; then
+    echo "Error: skill copy incomplete (source has $SOURCE_COUNT SKILL.md files,"
+    echo "$PREFIX/godmode has $DEST_COUNT). Re-run this installer to retry."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Activation + smoke test
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "Godmode installed successfully for pi."
+echo ""
+echo "  Skills auto-load in the next pi session — no config edits needed."
+echo ""
+echo "Verify the install:"
+echo "  bash $GODMODE_ROOT/adapters/pi/verify.sh"
+echo ""
+echo "One-line smoke test:"
+echo "  pi -p -ne --skill \"$PREFIX/godmode/optimize/SKILL.md\" \"Reply GODMODE_SKILL_OK if the optimize skill description is in your context\""
+
+# ---------------------------------------------------------------------------
+# Non-default PREFIX note (omp-compatible forks)
+# ---------------------------------------------------------------------------
+
+if [ "$PREFIX" != "$DEFAULT_PREFIX" ]; then
+    echo ""
+    echo "Note: PREFIX is not pi's default skill dir ($DEFAULT_PREFIX)."
+    echo "omp's exact skill directory is undocumented — candidate paths to try:"
+    echo "  $HOME/.omp/agent/skills"
+    echo "  $HOME/.config/omp/skills"
+    echo "Set PREFIX=<candidate> and re-run this installer."
+fi
