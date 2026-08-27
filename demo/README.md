@@ -14,11 +14,14 @@ sessions running godmode workflows, plus the fixture code they operate on.
 - `demo/targets/optimize/` (`slow_fib.py`, `test_slow_fib.py`, `metric.sh`)
   and `demo/targets/goal-bridge/` (`counter.py`, `test_counter.py`) — fixture
   source the tapes copy into scratch repos.
+- `demo/transcripts/<stem>.txt` — text transcripts of each captured
+  session; the accessible fallback text in the README embeds is drawn
+  from these.
 - `demo/<stem>.gif` — the rendered captures, one per tape.
 
 ## Re-render
 
-```
+```bash
 bash demo/render.sh              # render all three tapes
 bash demo/render.sh <stem>       # render one tape, e.g. optimize-loop
 bash demo/render.sh --check      # verify deps/tapes/targets, no rendering
@@ -51,6 +54,6 @@ warn above 2.5 MB.
 
 | gif | bytes |
 | --- | ----- |
-| `demo/skill-routing.gif` | TBD |
-| `demo/optimize-loop.gif` | TBD |
-| `demo/goal-bridge.gif` | TBD |
+| `demo/skill-routing.gif` | 256,880 |
+| `demo/optimize-loop.gif` | 1,155,608 |
+| `demo/goal-bridge.gif` | 1,993,066 |

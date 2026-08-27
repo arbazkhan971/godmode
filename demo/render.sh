@@ -70,17 +70,32 @@ if [ "$CHECK" = 1 ]; then
     'gh pr'
     'gh issue'
     'gh api'
+    'gh auth'
+    'sk-[A-Za-z0-9]'
+    'ghp_[A-Za-z0-9]'
+    'github_pat_'
+    'gho_[A-Za-z0-9]'
+    'xox[baprs]-'
+    'AIza[A-Za-z0-9_-]'
+    'glpat-'
+    '-----BEGIN'
+    'AKIA[A-Z0-9]'
+    '[Bb]earer [A-Za-z0-9]'
+    '[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]'
+    '[Pp]assword[ =:,.]'
+    'printenv|export -p'
     '(^|[^a-z])env([^a-z]|$)'
     '(^|[^a-z])history([^a-z]|$)'
+    '(^|[^a-z])set([^a-z]|$)'
   )
-  for tape in demo/tapes/*.tape; do
+  for tape in demo/tapes/*.tape demo/transcripts/*.txt; do
     [ -f "$tape" ] || continue
     for pat in "${BANNED[@]}"; do
       hit="$(grep -nE -- "$pat" "$tape" || true)"
       [ -z "$hit" ] || { echo "FAIL: banned pattern '$pat' in $tape:" >&2; echo "$hit" >&2; exit 1; }
     done
   done
-  echo "  [ok] no banned patterns in demo/tapes/*.tape"
+  echo "  [ok] no banned patterns in demo/tapes/*.tape demo/transcripts/*.txt"
   echo "CHECK PASSED"
   exit 0
 fi
