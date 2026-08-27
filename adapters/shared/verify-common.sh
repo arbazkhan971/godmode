@@ -120,7 +120,7 @@ verify_dir_exists() {
 
 count_skills() {
     local skills_dir="$1"
-    local expected="${2:-126}"
+    local expected="${2:-135}"
     local count=0
     local missing_md=0
 
@@ -227,7 +227,7 @@ validate_json_basic() {
 
     # Try python3 json validation, fall back to basic check
     if command -v python3 &>/dev/null; then
-        if python3 -c "import json; json.load(open('$file'))" 2>/dev/null; then
+        if python3 -m json.tool "$file" >/dev/null 2>/dev/null; then
             check_pass "$label" "$file (valid JSON)"
             return 0
         else
