@@ -231,14 +231,14 @@
       "path": "skills/ghactions/SKILL.md"
     },
     {
-      "name": "goal-bridge",
-      "description": "Goal-bridge skill. Machine-checkable completion contracts for agent goal modes: metric command, threshold, evidence path, rollback trigger. Activates when a user sets a goal in a harness goal mode (/goal or equivalent) or asks how completion will be verified. Triggers on: /godmode:goal-bridge, \"goal contract\", \"completion contract\", \"exit-zero contract\", \"evaluator\".",
-      "path": "skills/goal-bridge/SKILL.md"
-    },
-    {
       "name": "git",
       "description": "Advanced Git workflows skill. Activates when user needs sophisticated version control strategies including branching models, merge vs rebase decisions, interactive rebase mastery, git bisect for regression hunting, cherry-picking, stashing, worktree management, and commit message conventions. Designs and validates Git workflows that scale from solo projects to large teams. Triggers on: /godmode:git, \"branching strategy\", \"rebase vs merge\", \"git bisect\", \"interactive rebase\", \"cherry-pick\", \"git worktree\", \"conventional commits\", or when the team needs a structured version control workflow.",
       "path": "skills/git/SKILL.md"
+    },
+    {
+      "name": "goal-bridge",
+      "description": "Machine-checkable completion contracts for agent goal modes. goal mode, /goal, goal contract, completion contract, evaluator, metric command, exit-zero contract, evidence path, rollback trigger.",
+      "path": "skills/goal-bridge/SKILL.md"
     },
     {
       "name": "godmode",
