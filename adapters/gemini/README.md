@@ -1,6 +1,6 @@
 # Godmode Adapter for Gemini CLI
 
-Use all 126 Godmode skills and 7 subagents from Gemini CLI.
+Use all 135 Godmode skills and 7 subagents from Gemini CLI.
 
 ## Installation
 
