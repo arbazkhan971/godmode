@@ -48,10 +48,10 @@ verify_symlink "$PLUGIN_DIR/commands" "commands/ directory linked (plugin)"
 verify_dir_exists "$TARGET_DIR/.godmode" ".godmode/ directory exists"
 
 # ---------------------------------------------------------------------------
-# Check 2: Count skills (expect 126)
+# Check 2: Count skills (expect 135)
 # ---------------------------------------------------------------------------
 
-count_skills "$PLUGIN_DIR/skills" 126
+count_skills "$PLUGIN_DIR/skills" 135
 
 # ---------------------------------------------------------------------------
 # Check 3: Check agent definitions (expect >= 7)

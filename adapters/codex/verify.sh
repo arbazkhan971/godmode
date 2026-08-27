@@ -49,10 +49,10 @@ verify_symlink "$TARGET_DIR/commands" "commands/ directory linked"
 verify_dir_exists "$TARGET_DIR/.godmode" ".godmode/ directory exists"
 
 # ---------------------------------------------------------------------------
-# Check 2: Count skills (expect 126)
+# Check 2: Count skills (expect 135)
 # ---------------------------------------------------------------------------
 
-count_skills "$TARGET_DIR/skills" 126
+count_skills "$TARGET_DIR/skills" 135
 
 # ---------------------------------------------------------------------------
 # Check 3: Check agent definitions (expect >= 7 in both locations)
