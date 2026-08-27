@@ -38,7 +38,7 @@ Exact tokenization varies per model and is not worth a dependency on model-speci
 approx_tokens = ceil(char_count / 4)
 ```
 
-Rationale: for English prose and code, 1 token averages ~3.8-4.2 characters across GPT-4, Claude, and Llama tokenizers. Dividing by 4 gives a stable, model-agnostic estimate that is wrong by a consistent factor. Since this skill measures *trends* (is my loop getting more or less expensive?), a stable-biased estimator is sufficient. It is NOT accurate enough for billing, and the skill never claims to be.
+Rationale: for English prose and code, 1 token averages ~3.8-4.2 characters across mainstream BPE tokenizers (GPT-4 and Llama families). Dividing by 4 gives a stable, model-agnostic estimate that is wrong by a consistent factor. Since this skill measures *trends* (is my loop getting more or less expensive?), a stable-biased estimator is sufficient. It is NOT accurate enough for billing, and the skill never claims to be.
 
 Computed with `awk` — no python, no tiktoken, no external tokenizer binary:
 ```

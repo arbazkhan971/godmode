@@ -27,9 +27,9 @@ HOOKS_DIR="$ROOT_DIR/hooks"
 PLUGIN_DIR="$ROOT_DIR/.claude-plugin"
 
 # Files exempt from the claude-wording check (justified factual mentions only).
+# Justified: research/SKILL.md matches CLAUDE.md by filename (find -name) — functional reference to on-disk instruction files, not harness-specific wording.
 CLAUDE_ALLOWLIST=(
   "skills/research/SKILL.md"
-  "skills/tokens/SKILL.md"
 )
 
 PASS=0
