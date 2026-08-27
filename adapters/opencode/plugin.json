@@ -1,7 +1,7 @@
 {
   "name": "godmode",
-  "version": "1.0.0",
-  "description": "Turn on Godmode for OpenCode. 126 skills. 9 subagents. Zero configuration.",
+  "version": "2.0.0",
+  "description": "Turn on Godmode for OpenCode. 135 skills. 9 subagents. Zero configuration.",
   "author": "arbazkhan971",
   "homepage": "https://github.com/arbazkhan971/godmode",
   "repository": "https://github.com/arbazkhan971/godmode.git",
@@ -10,7 +10,7 @@
   "entry_point": "skills/godmode/SKILL.md",
   "skills": {
     "directory": "skills/",
-    "count": 126,
+    "count": 135,
     "pattern": "skills/*/SKILL.md",
     "categories": {
       "core": ["godmode", "think", "predict", "scenario", "plan", "build", "test", "review", "optimize", "debug", "fix", "ship", "finish", "setup", "verify"],

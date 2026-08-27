@@ -1,7 +1,7 @@
 {
   "name": "@godmode/claude-code-plugin",
-  "version": "1.0.0",
-  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 135 skills, 7 subagents, 5 platforms.",
+  "version": "2.0.0",
+  "description": "Godmode: Autonomous AI coding skills inspired by Karpathy's autoresearch. 135 skills, 7 subagents, 7 platforms.",
   "main": "index.js",
   "type": "module",
   "keywords": [

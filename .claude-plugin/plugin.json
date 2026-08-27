@@ -1,7 +1,7 @@
 {
   "name": "godmode",
-  "description": "Turn on Godmode for Claude Code. 126 skills. 7 subagents. Zero configuration.",
-  "version": "1.0.0",
+  "description": "Turn on Godmode for Claude Code. 135 skills. 7 subagents. Zero configuration.",
+  "version": "2.0.0",
   "author": {
     "name": "arbazkhan971"
   },
