@@ -9,6 +9,7 @@
 #   4. All command files have correct format
 #   5. No broken cross-references in docs
 #   6. No harness-specific "claude" wording in skills (allowlist below)
+#   7. godmode.models.json role values match provider/id (optional file; missing = valid)
 #
 # Usage: bash tests/validate-structure.sh
 # Exit code: 0 = all pass, 1 = failures found
@@ -148,7 +149,7 @@ separator "Check 3: Orphaned Files Detection"
 while IFS= read -r file; do
   filename="$(basename "$file")"
   case "$filename" in
-    README.md|LICENSE|CHANGELOG.md|CONTRIBUTING.md|package.json|package-lock.json|.gitignore|.markdownlint.json|.markdownlintrc|icon.png|index.js)
+    README.md|LICENSE|CHANGELOG.md|CONTRIBUTING.md|package.json|package-lock.json|.gitignore|.markdownlint.json|.markdownlintrc|icon.png|index.js|godmode.models.json)
       pass "Root file $filename — expected"
       ;;
     *.md|*.json|*.js|*.ts|*.yaml|*.yml)
@@ -319,6 +320,63 @@ done < <(find "$SKILLS_DIR" -type f 2>/dev/null | sort)
 
 if [ "$claude_offenses" -eq 0 ]; then
   pass "No 'claude' wording in skills (allowlist size: ${#CLAUDE_ALLOWLIST[@]})"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHECK 7: godmode.models.json
+# ─────────────────────────────────────────────────────────────────────────────
+separator "Check 7: godmode.models.json"
+
+MODELS_JSON="$ROOT_DIR/godmode.models.json"
+
+if [ ! -f "$MODELS_JSON" ]; then
+  pass "godmode.models.json absent — zero-config default (valid)"
+elif ! command -v python3 >/dev/null 2>&1; then
+  warn "godmode.models.json present but python3 unavailable — format check skipped"
+else
+  if out="$(python3 - "$MODELS_JSON" 2>&1 <<'PYEOF'
+import json
+import re
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8-sig") as f:
+        data = json.load(f)
+except ValueError as e:
+    print("invalid JSON: %s" % e)
+    sys.exit(1)
+
+if not isinstance(data, dict):
+    print("top level must be a JSON object")
+    sys.exit(1)
+
+roles = data.get("roles", {})
+if not isinstance(roles, dict):
+    print('"roles" must be a JSON object')
+    sys.exit(1)
+
+bad = 0
+for key, value in roles.items():
+    valid = isinstance(value, str) and (
+        value == ""
+        or re.fullmatch(r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", value.strip())
+    )
+    if not valid:
+        print('roles.%s: value must be "provider/id" or ""' % key)
+        bad += 1
+
+sys.exit(1 if bad else 0)
+PYEOF
+)"; then
+    pass "godmode.models.json — all role values are provider/id (or empty)"
+  else
+    fail "godmode.models.json — invalid (see below)"
+    if [ -n "$out" ]; then
+      while IFS= read -r line; do
+        echo "    $line"
+      done <<<"$out"
+    fi
+  fi
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
