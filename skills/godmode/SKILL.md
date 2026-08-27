@@ -241,6 +241,8 @@ gm_route() {  # usage: gm_route <role> -> "<model>\t<source>" on stdout
   role="${1:?usage: gm_route <role>}"
   name="GODMODE_MODEL_$(printf '%s' "$role" | tr '[:lower:]._-' '[:upper:]___')"
   val="$(printenv "$name" 2>/dev/null || true)"  # set-but-empty = fall through
+  case "$val" in *$'\n'*|*$'\r'*) val="" ;; esac  # newline would spoof grep anchors
+  [ "${#val}" -le 128 ] || val=""
   if [ "$val" = session ] || \
      printf '%s' "$val" | grep -Eq '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'; then
     printf '%s\tenv\n' "$val"; return 0
@@ -258,9 +260,9 @@ try:
 except Exception:
     sys.exit(3)  # unreadable/invalid file: treat as absent
 val = roles.get(sys.argv[2])
-if val is None:
-    sys.exit(3)  # role absent in this file: try next layer
-if isinstance(val, str) and (val == "session" or
+if not isinstance(val, str) or val == "":
+    sys.exit(3)  # absent, non-string, or empty: silently try the next layer
+if len(val) <= 128 and (val == "session" or
         re.fullmatch(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$", val)):
     print(val)
 else:

@@ -52,10 +52,12 @@ gm_route()-style resolver:
 set -euo pipefail
 ROLES="plan build review optimize explore security test docs"
 PROJ="godmode.models.json"
-HOME_CFG="$HOME/.config/godmode/models.json"
+HOME_CFG="${HOME:-}/.config/godmode/models.json"
 py_warned=0
 
-gm_valid() { # valid iff it matches the regex OR is the literal "session"
+gm_valid() { # whole-value: no embedded newlines, <=128 chars, regex or "session"
+  case "$1" in *$'\n'*|*$'\r'*) return 1 ;; esac
+  [ "${#1}" -le 128 ] || return 1
   printf '%s' "$1" | grep -Eq '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$' || [ "$1" = "session" ]
 }
 
@@ -76,6 +78,7 @@ try:
     with open(sys.argv[1], encoding="utf-8-sig") as fh:
         cfg = json.load(fh)
 except Exception:
+    print("[models] warning: %s is invalid JSON -- ignoring" % sys.argv[1], file=sys.stderr)
     sys.exit(0)
 roles = cfg.get("roles", cfg) if isinstance(cfg, dict) else {}
 if isinstance(roles, dict):

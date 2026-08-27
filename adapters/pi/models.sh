@@ -67,6 +67,12 @@ models_valid_value() {
     case "$1" in
         session) return 0 ;;
     esac
+    # Whole-value guards: an embedded newline would let grep's line anchors
+    # match one line of a multi-line value; cap length against bloat.
+    case "$1" in
+        *$'\n'*|*$'\r'*) return 1 ;;
+    esac
+    [ "${#1}" -le 128 ] || return 1
     printf '%s' "$1" | grep -qE '^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$'
 }
 
@@ -379,6 +385,26 @@ cmd_selftest() {
     st_run GODMODE_MODEL_BUILD= -- resolve build
     st_check "empty env ignored" "$(printf 't/file\tfile')" "$ST_OUT"
 
+    # 9. Embedded-newline value cannot spoof grep line anchors (SEC guard).
+    printf '{"roles":{"build":"evil\\nx/y"}}' >"$repo/godmode.models.json"
+    st_run -- resolve build
+    st_check "newline value rejected" "$(printf 'session\tsession')" "$ST_OUT"
+    st_err_has "newline value warning" "ignoring invalid model value for role build"
+
+    # 10. Per-key merge: repo key wins; home-only role still applies.
+    printf '{"roles":{"build":"t/home","homeonly":"t/home"}}' >"$home/.config/godmode/models.json"
+    printf '{"roles":{"build":"t/repowin"}}' >"$repo/godmode.models.json"
+    st_run -- resolve build
+    st_check "repo file wins per key" "$(printf 't/repowin\tfile')" "$ST_OUT"
+    st_run -- resolve homeonly
+    st_check "home-only role applies" "$(printf 't/home\tfile')" "$ST_OUT"
+
+    # 11. The literal "session" is a valid explicit pin.
+    printf '{"roles":{"build":"session"}}' >"$repo/godmode.models.json"
+    st_run -- resolve build
+    st_check "session literal valid" "$(printf 'session\tfile')" "$ST_OUT"
+    rm -f "$repo/godmode.models.json" "$home/.config/godmode/models.json"
+
     # 8. Doctor with zero GODMODE_MODEL_* env: header, >= 8 rows, trailer,
     #    exit 0, no ANSI escapes.
     rm -f "$repo/godmode.models.json"
@@ -400,7 +426,7 @@ cmd_selftest() {
         printf 'FAIL: doctor config trailer missing or malformed\n' >&2
         fail=$((fail + 1))
     fi
-    if printf '%s' "$ST_OUT" | grep -qP '\033'; then
+    if printf '%s' "$ST_OUT" | grep -qF "$(printf '\033')"; then
         printf 'FAIL: doctor output contains ANSI escapes\n' >&2
         fail=$((fail + 1))
     else
