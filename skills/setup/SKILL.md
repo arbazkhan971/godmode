@@ -64,7 +64,7 @@ LOCKFILE -> PACKAGE MANAGER:
 ### Step 2: Detect Platform
 ```
 PLATFORM DETECTION (first match):
-  IF Agent() + EnterWorktree: Claude Code
+  IF subagent spawn + worktree isolation available: Parallel-capable harness
   IF read_file + run_shell_command: Gemini CLI
   IF slash commands + no Agent(): OpenCode
   IF .codex/ directory: Codex
@@ -73,7 +73,7 @@ PLATFORM DETECTION (first match):
 
 | Platform    | Parallel | Worktrees    |
 |------------|---------|-------------|
-| Claude Code| yes     | native       |
+| Parallel-capable harness | yes     | native       |
 | Gemini CLI | no      | manual       |
 | Codex      | no      | branch-based |
 | Cursor     | no      | manual       |

@@ -13,19 +13,18 @@ description: >
 - User asks "what should I try first"
 
 ## Before You Begin
-Terminal, git repo, one supported agent (Claude Code, Codex, Gemini
-CLI, Cursor, or OpenCode). Don't use a branch you care about:
+Terminal, git repo, one supported coding agent/harness (detected in
+Step 1 below). Don't use a branch you care about:
 `git checkout -b godmode-tutorial`.
 
 ## Walkthrough
 
 ### Step 1: Detect your platform (30s)
 ```bash
-command -v claude    && echo "-> Claude Code"
-command -v codex     && echo "-> Codex"
-command -v gemini    && echo "-> Gemini CLI"
-command -v cursor    && echo "-> Cursor"
-command -v opencode  && echo "-> OpenCode"
+AGENT_CLIS="codex gemini cursor opencode"  # extend with your harness's CLI
+for cli in $AGENT_CLIS; do
+  command -v "$cli" >/dev/null 2>&1 && echo "-> $cli detected"
+done
 ```
 Expected: at least one line prints. Pitfall: if two print, pick the
 one you actually intend to drive this session — skills are invoked
@@ -165,7 +164,7 @@ Godmode's `terse` skill compresses what agents *emit*. For even
 bigger savings, install [rtk](https://github.com/rtk-ai/rtk) —
 a Rust CLI that compresses what agents *read* (tool output from
 git, ls, tests, grep, etc.) by 60-90% before it hits the model
-context. Claims 80% savings on a 30-minute Claude session.
+context. Claims 80% savings on a typical 30-minute coding-agent session.
 
 Install (optional):
 

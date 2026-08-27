@@ -62,7 +62,7 @@ Design the core agent execution loop:
 AGENT LOOP DESIGN:
 
 Pattern: <selected pattern>
-Model: <LLM for agent reasoning — e.g., Claude 3.5 Sonnet, GPT-4>
+Model: <LLM for agent reasoning — any frontier model supported by your harness>
 
 ReAct loop:
   while not done and steps < max_steps:
