@@ -27,7 +27,35 @@ PREFIX="$HOME/.omp/agent/skills" bash adapters/pi/install.sh
 
 ### Using the skills with omp
 
-The omp agent also reads a global skills directory, but its exact location is undocumented. The known candidates are `~/.omp/agent/skills` and `~/.config/omp/skills`. Install with `PREFIX` pointing at one of them and check whether omp picks the skills up — this has not been confirmed on every omp build.
+omp is a pi fork served by this same installer. Its user skills dir is `~/.omp/agent/skills`, but omp scans only one level per skill (`<skills-root>/<skill-name>/SKILL.md`), so the installer's `godmode/` wrapper is not auto-discovered. Register the collection once in `~/.omp/agent/config.yml` — `skills.customDirectories` is omp's documented mechanism for nested collections.
+
+```bash
+PREFIX="$HOME/.omp/agent/skills" bash adapters/pi/install.sh
+```
+
+Required one-time registration — add to `~/.omp/agent/config.yml` if not present. Without it, omp reports `Unknown skill: optimize`. Confirmed from upstream source (can1357/oh-my-pi @ main, 2026-08-27) and verified against omp v18.0.8 (linux-x64):
+
+```yaml
+skills:
+  customDirectories:
+    - ~/.omp/agent/skills/godmode
+```
+
+omp has no `--skill` flag, so the pi smoke test above does not apply. Verified omp smoke test:
+
+```bash
+omp -p --tools=read "Use your read tool on skill://optimize and reply with its frontmatter description line. If unreadable, reply READ_FAIL."
+```
+
+A working install replies with the optimize description: `Autonomous optimization loop. 3 parallel agents per round, mechanical metrics only.`
+
+- **Profiles:** with an active omp profile, `getAgentDir()` resolves to `~/.omp/profiles/<name>/agent` — skills load from `~/.omp/profiles/<name>/agent/skills` instead.
+- **Never point PREFIX at `~/.omp/agent/managed-skills`** — that directory is omp's autolearn-only provider.
+- **One location only:** omp also discovers user- and project-level `.agent[s]/skills` by default (agents provider; `~/.agents/skills` verified on omp v18.0.8). Install godmode for omp in exactly one location; generic skill names (`test`, `review`, `build`, ...) take precedence over same-named skills in omp's lower-priority providers (per omp's priority-first name dedup).
+- **Skills only:** this adapter ships the skills catalog — no godmode subagent injection, no omp model-routing wiring.
+- **Name-squat warning:** the npm package `oh-my-pi` (v0.2.0, `acidsugarx`) is unrelated. Official omp channels: `curl -fsSL https://omp.sh/install | sh`, `brew install can1357/tap/omp`, `bun install -g @oh-my-pi/pi-coding-agent`, GitHub releases.
+
+Uninstall: `rm -rf ~/.omp/agent/skills/godmode` and remove the `customDirectories` entry from `~/.omp/agent/config.yml`.
 
 ---
 

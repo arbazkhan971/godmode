@@ -18,6 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GODMODE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DEFAULT_PREFIX="$HOME/.pi/agent/skills"
+OMP_SKILLS_DIR="$HOME/.omp/agent/skills"
 PREFIX="${1:-${PREFIX:-$DEFAULT_PREFIX}}"
 
 # Refuse prefixes that would install (or delete) directly under the filesystem root.
@@ -99,10 +100,27 @@ echo "  pi -p -ne --skill \"$PREFIX/godmode/optimize/SKILL.md\" \"Reply GODMODE_
 # ---------------------------------------------------------------------------
 
 if [ "$PREFIX" != "$DEFAULT_PREFIX" ]; then
-    echo ""
-    echo "Note: PREFIX is not pi's default skill dir ($DEFAULT_PREFIX)."
-    echo "omp's exact skill directory is undocumented — candidate paths to try:"
-    echo "  $HOME/.omp/agent/skills"
-    echo "  $HOME/.config/omp/skills"
-    echo "Set PREFIX=<candidate> and re-run this installer."
+    if [ "$PREFIX" = "$OMP_SKILLS_DIR" ]; then
+        # Case A: omp's documented user skills dir.
+        echo ""
+        echo "Note: $PREFIX is omp's documented user skills dir — skills install under"
+        echo "  $PREFIX/godmode/, one level deeper than omp scans (<skills-root>/<skill-name>/SKILL.md)."
+        echo "One-time registration is REQUIRED for omp to discover the godmode collection."
+        echo "Add this to ~/.omp/agent/config.yml if not already present:"
+        echo "  skills:"
+        echo "    customDirectories:"
+        echo "      - ~/.omp/agent/skills/godmode"
+        echo "Profile caveat: with an active omp profile, skills load from"
+        echo "  ~/.omp/profiles/<name>/agent/skills instead."
+    else
+        # Case B: any other non-default PREFIX (forks, custom layouts).
+        echo ""
+        echo "Note: PREFIX is not pi's default skill dir ($DEFAULT_PREFIX)."
+        echo "omp's confirmed user skills dir is $OMP_SKILLS_DIR."
+        echo "PREFIX is honored as given for forks and custom layouts."
+        echo "For omp, install there and register the collection once in ~/.omp/agent/config.yml:"
+        echo "  skills:"
+        echo "    customDirectories:"
+        echo "      - ~/.omp/agent/skills/godmode"
+    fi
 fi
