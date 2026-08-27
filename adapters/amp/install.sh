@@ -120,7 +120,7 @@ mkdir -p "$GODMODE_DIR"
 if [ -f "$CONFIG_FILE" ]; then
     echo "[skip] .godmode/config.yaml already exists"
 else
-    PROJECT_NAME="$(basename "$TARGET_DIR")"
+    PROJECT_NAME="$(basename "$TARGET_DIR" | tr -cd '[:alnum:]._-')"
     LANGUAGE="unknown"
     TEST_CMD=""
     LINT_CMD=""
@@ -219,7 +219,7 @@ touch "$GODMODE_DIR/ship-log.tsv" 2>/dev/null || true
 echo ""
 echo "Godmode installed successfully for Amp."
 echo ""
-echo "  135 skills wired via .agents/skills/ (Amp project skills dir)"
+echo "  $(find "$GODMODE_ROOT/skills" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ') skills wired via .agents/skills/ (Amp project skills dir)"
 echo "  Godmode instructions in AGENTS.md (or AGENTS.godmode.md if you kept your own)"
 echo "  skills/ and agents/ symlinks at the root keep the target in sync with this clone"
 echo ""
@@ -232,4 +232,4 @@ echo ""
 echo "Note: Amp reads .agents/skills/ and root AGENTS.md natively; symlinks keep"
 echo "skills in sync with this clone. For a committable install, replace the"
 echo ".agents/skills symlink with a copy:"
-echo '  cp -rL "$(readlink -f .agents/skills)" .agents/skills.real && rm .agents/skills && mv .agents/skills.real .agents/skills'
+echo '  rm -rf .agents/skills.real && cp -rL "$(readlink -f .agents/skills)" .agents/skills.real && rm .agents/skills && mv .agents/skills.real .agents/skills'

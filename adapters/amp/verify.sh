@@ -34,7 +34,7 @@ echo ""
 verify_file_exists "$TARGET_DIR/AGENTS.md" "AGENTS.md present"
 
 # Amp-only: guard against a user-authored AGENTS.md that predates the install
-# (installer writes a godmode section or an AGENTS.godmode.md sidecar)
+# (installer copies godmode's AGENTS.md wholesale or writes an AGENTS.godmode.md full-file sidecar)
 if [ -f "$TARGET_DIR/AGENTS.md" ] && grep -q "Godmode for AI Coding Agents" "$TARGET_DIR/AGENTS.md"; then
     check_pass "AGENTS.md carries godmode instructions"
 else
@@ -55,7 +55,11 @@ verify_symlink "$TARGET_DIR/.agents/skills" ".agents/skills wired (Amp project s
 # ---------------------------------------------------------------------------
 
 expected="$(find "$GODMODE_ROOT/skills" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
-count_skills "$TARGET_DIR/.agents/skills" "$expected"
+if [ "$expected" -gt 0 ] 2>/dev/null; then
+    count_skills "$TARGET_DIR/.agents/skills" "$expected"
+else
+    check_fail "Skills count — source skills dir empty or missing: $GODMODE_ROOT/skills (cannot verify from this clone)"
+fi
 
 # Provenance spot-check: the godmode router skill must be present
 verify_file_exists "$TARGET_DIR/.agents/skills/godmode/SKILL.md" "godmode router skill present"
