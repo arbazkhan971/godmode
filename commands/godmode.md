@@ -47,6 +47,7 @@ Turn on Godmode for Claude Code. A complete development workflow — from idea t
 |--|--|
 | `/godmode:setup` | Configure Godmode for this project |
 | `/godmode:verify` | Evidence gate — prove claims with commands |
+| `/godmode:doctor` | Model-routing doctor — resolved role -> model table |
 
 ## The Godmode Loop
 
