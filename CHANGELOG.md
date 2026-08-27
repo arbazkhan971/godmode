@@ -5,11 +5,56 @@ All notable changes to Godmode are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Planned
+
+- Plugin marketplace listing
+- VSCode extension for Godmode status display
+- Web dashboard for optimization and fix logs
+- Additional language-specific skill variants
+- Community skill contributions
+
+## [2.0.0] - 2026-08-27
+
+### Added
+
+#### Universal core
+
+- Harness-neutral skill corpus: platform-specific wording removed from skill bodies; automated gate in `tests/validate-structure.sh` fails if `skills/**` contains the harness-specific "claude" wording (single justified allowlist entry).
+- Authoring-discipline prelude (`skills/principles`) and pre-commit discard audit reachable from every adapter.
+- Four-layer token stack: Progressive Disclosure routing (~90% routing-context reduction), stdio command patterns, terse output mode, token observability.
+- DispatchContext validation for all 7 subagents; named coordination patterns; research auto-dispatch.
+
+#### pi / omp adapter
+
+- `adapters/pi/`: `install.sh` + `verify.sh`; installs all skills into `$PREFIX/godmode/`; `PREFIX` override serves omp-compatible forks (omp exact dir undocumented — installer prints candidate paths).
+
+#### goal-bridge skill
+
+- `skills/goal-bridge/`: machine-checkable completion contracts (metric command, threshold, evidence path, rollback trigger; exit-0 semantics); `verify` and `ship` emit the contract block as final output.
+
+#### Skills
+
+- 135 skills across 13 domains (up from 16 in 1.0.0), including `goal-bridge` and the Discipline & Context skills.
+
+#### README 2.0
+
+- One-sentence intro; per-harness support matrix (8 harnesses); demo traces labeled as representative with a TODO for real captures.
+
+### Fixed
+
+- `adapters/pi/install.sh` rejects root-equivalent `PREFIX` values (`/`, `//`, `/.`) instead of installing/deleting under the filesystem root; an empty `PREFIX` falls back to the default skills directory.
+- `adapters/shared/verify-common.sh` JSON validation no longer interpolates filenames into `python3 -c`; identical pass/fail semantics.
+- `skills/tokens/SKILL.md` recommends gitignoring `.godmode/last-round-emit.txt` (rewritten scratch cache; append-only `token-log.tsv` stays committed).
+- Adapter verify scripts and `adapters/shared/verify-common.sh` carried a hard-coded expected skill count of 126 and failed against the current 135-skill corpus; expected count corrected to 135.
+
 ## [1.0.0] - 2024-01-15
 
 ### Added
 
 #### Skills (16 total)
+
 - **godmode** — Orchestrator skill that auto-detects project phase and routes to the right sub-skill
 - **think** — Collaborative brainstorming with 2-3 approach generation and spec writing
 - **predict** — Multi-persona expert consensus with 5 domain-specific evaluators
@@ -28,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **verify** — Evidence gate enforcing "prove it before claiming it"
 
 #### Commands (9 total)
+
 - `/godmode` — Main orchestrator command
 - `/godmode:think` — Brainstorm subcommand
 - `/godmode:plan` — Plan subcommand
@@ -39,16 +85,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/godmode:ship` — Ship subcommand
 
 #### Agents (2 total)
+
 - **code-reviewer** — 7-dimension code review agent with scored findings
 - **spec-reviewer** — 5-dimension specification review agent
 
 #### Infrastructure
+
 - Session-start hook with auto-detection for 7 languages
 - `.godmode/config.yaml` configuration system
 - TSV logging for optimize results, fix log, and ship log
 - Plugin marketplace metadata
 
 #### Documentation
+
 - Getting started guide with end-to-end walkthrough
 - 3 example workflows (API feature, bug fix, optimization)
 - Domain guide (backend, frontend, ML, content, DevOps)
@@ -58,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guide
 
 #### Reference Documents
+
 - Autonomous loop protocol (full specification)
 - Core principles (7 non-negotiable rules)
 - Results logging format (TSV schema)
@@ -65,12 +115,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debug workflow (7 techniques with detailed steps)
 - Fix workflow (prioritization, cascade detection)
 - Ship workflow (checklists, rollback protocol)
-
-## [Unreleased]
-
-### Planned
-- Plugin marketplace listing
-- VSCode extension for Godmode status display
-- Web dashboard for optimization and fix logs
-- Additional language-specific skill variants
-- Community skill contributions
