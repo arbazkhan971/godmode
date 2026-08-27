@@ -412,14 +412,22 @@ Full skill reference: [skills/](skills/)
 |---|---|---|---|---|
 | **Claude Code** | `claude plugin install godmode` | Plugin (`commands/`, `agents/`, `.claude-plugin/` marketplace) | Parallel (worktrees) | Full |
 | **pi** | `bash adapters/pi/install.sh` | Skills dir — `$HOME/.pi/agent/skills/godmode/` | Skills only | Full |
-| **omp** | `PREFIX=<omp-skills-dir> bash adapters/pi/install.sh` | Skills dir via the pi installer — omp exact dir is undocumented; the installer prints both candidate paths | Skills only | Same as pi |
+| **omp** | `PREFIX="$HOME/.omp/agent/skills" bash adapters/pi/install.sh` | Skills dir — `$HOME/.omp/agent/skills/godmode/` + one-line `customDirectories` registration (omp scans one level per skill; see `adapters/pi/README.md`) | Skills only | Skill-level (same corpus as pi) |
 | **Codex** | `bash adapters/codex/install.sh` | Copies `.codex/` agents into your repo; harness reads root `AGENTS.md` | Native (sequential) | Partial |
 | **OpenCode** | `bash adapters/opencode/install.sh` | Plugin (`plugin.json` + adapter entry) | Sequential | Partial |
 | **Gemini CLI** | `bash adapters/gemini/install.sh` | Generated files in your repo (`GEMINI.md` + config) | Sequential | Session-level |
 | **Cursor** | `bash adapters/cursor/install.sh` | Generated files in your repo (`.cursorrules`) | Background agents | Session-level |
 | **Amp** | `bash adapters/amp/install.sh` | Skills dir — `.agents/skills/` in your repo (Amp-native) + root `AGENTS.md` | Skills only | — |
 
-> **omp:** served by the same pi installer via `PREFIX`; its exact skill directory is undocumented, so the installer prints the candidates (`~/.omp/agent/skills`, `~/.config/omp/skills`) and you re-run with `PREFIX=<candidate>`.
+> **omp:** served by the same pi installer — `~/.omp/agent/skills` is omp's native user skills dir, confirmed from upstream source (can1357/oh-my-pi @ main, 2026-08-27) and verified against omp v18.0.8 (linux-x64). omp scans one level per skill, so the installed `godmode/` wrapper is not auto-discovered — register the collection once in `~/.omp/agent/config.yml`:
+>
+> ```yaml
+> skills:
+>   customDirectories:
+>     - ~/.omp/agent/skills/godmode
+> ```
+>
+> With an active omp profile, skills load from `~/.omp/profiles/<name>/agent/skills` instead. `PREFIX` is retained for pi-style forks — see [adapters/pi/README.md](adapters/pi/README.md) for the full omp walkthrough.
 > **Amp:** reads root `AGENTS.md` and the `.agents/skills/` project skills directory natively ([docs](https://ampcode.com/docs/customize/skills)); the adapter wires godmode's skills there. Subagents and model routing are Amp's own — the adapter wires neither.
 
 All 135 skills work on every platform. Parallel agent skills automatically degrade to sequential on platforms without native agent dispatch. The authoring-discipline prelude, Progressive Disclosure routing, and pre-commit discard audit all reach every adapter — Claude Code via `SKILL.md`, Gemini and OpenCode via their respective entry files importing `@./skills/principles/SKILL.md`.
