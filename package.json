@@ -59,7 +59,7 @@
   "claude-plugin": {
     "manifest": ".claude-plugin/marketplace.json",
     "skills": 135,
-    "commands": 118,
+    "commands": 119,
     "agents": 7
   }
 }
