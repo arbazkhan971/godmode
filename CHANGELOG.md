@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Social proof: GitHub Discussions enabled with a seeded "Show your godmode wins" thread; README gains a top demo capture and a Community section with star-history chart.
 - CI hardening (issue #8): repo-wide markdownlint gate (`npm run lint:md`, now correctly invoking `markdownlint-cli2` with a committed lockfile and `npm ci`), prose skill-count consistency gate (`tests/validate-prose-count.sh` — censuses all tracked files including extensionless adapter artifacts like `.cursorrules`, fails on total-count claims that drift from the live `skills/` count, frozen point-in-time docs allowlisted, embedded negative self-test), and adapter install smoke (`tests/adapter-smoke.sh` — runs every adapter's real `install.sh` + `verify.sh` against isolated temp-dir prefixes).
 
 - Real demo captures: three vhs tapes under `demo/` recording live pi sessions (zai/glm-5.3) — godmode skill routing, the optimize keep/revert loop (real metric, real KEEP, real `git reset --hard` revert), and a goal-bridge completion contract (red test → green, evidence file); rendered GIFs embedded in the README "See It In Action" section replacing the former illustrative-traces TODO, with text transcript fallbacks in `demo/transcripts/` and re-renderable via `bash demo/render.sh`.

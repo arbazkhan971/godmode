@@ -104,3 +104,4 @@ Autonomous AI coding skills inspired by [Karpathy's autoresearch](https://github
 ## Marketing
 - [Submission Queue](marketing/submission-queue.md) — Listing-target research queue: 16 targets with per-target status (4 PR_OPEN, 4 NEEDS_HUMAN, 8 SKIP) and protocol
 - [Drafts](marketing/drafts/) — Paste-ready NEEDS_HUMAN entries plus launch post drafts (Show HN, r/ClaudeAI, X thread); posted manually by a human, never auto-posted
+- [Discussions](https://github.com/arbazkhan971/godmode/discussions) — Social-proof surface: Discussions tab live, plus README hero demo GIF and star-history chart
