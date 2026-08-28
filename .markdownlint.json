@@ -6,5 +6,17 @@
   "MD024": { "siblings_only": true },
   "MD001": false,
   "MD026": false,
-  "MD060": false
+  "MD060": false,
+  "MD022": false,
+  "MD031": false,
+  "MD032": false,
+  "MD036": false,
+  "MD038": false,
+  "MD040": false,
+  "MD012": false,
+  "MD029": false,
+  "MD007": false,
+  "MD004": false,
+  "MD034": false,
+  "MD010": { "code_blocks": false }
 }

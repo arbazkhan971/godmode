@@ -47,7 +47,7 @@
   ],
   "scripts": {
     "validate": "bash tests/validate-skills.sh && bash tests/validate-structure.sh",
-    "lint:md": "markdownlint '**/*.md' --ignore node_modules",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
     "test": "bash tests/validate-skills.sh && bash tests/validate-structure.sh"
   },
   "devDependencies": {
