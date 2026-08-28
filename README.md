@@ -16,6 +16,7 @@ Godmode turns any AI coding assistant into an autonomous engineering loop — 13
 [![OpenCode](https://img.shields.io/badge/OpenCode-supported-7C3AED.svg)](adapters/opencode/)
 [![pi](https://img.shields.io/badge/pi-supported-20B2AA.svg)](adapters/pi/)
 [![Amp](https://img.shields.io/badge/Amp-supported-2257D7.svg)](adapters/amp/)
+[![Benchmark](https://img.shields.io/badge/benchmark-30_tasks-9B59B6.svg)](docs/blog/godmode-vs-plain-agent-benchmark.md)
 
 <p><img src="demo/optimize-loop.gif" alt="Terminal capture: godmode optimize loop on a real script — baseline 189ms, lru_cache KEEP at 0ms, fib(32) regression DISCARD at 517ms, reverted with git reset --hard" width="880"></p>
 <sub>Real capture, live pi session — a win kept, a regression caught and reverted. <a href="#see-it-in-action">More demos ↓</a></sub>
@@ -278,6 +279,14 @@ It ships with 135 expert skills across 13 domains (performance optimization, sec
 | AI adds "while we're here" refactors | Line-trace rule + pre-commit discard audit surgically drops drift hunks |
 | Long autonomous loops burn tokens | Terse mode, stdio patterns, Progressive Disclosure routing — ~90% routing context reduction, 40-60% emit reduction |
 | Agents silently guess missing dispatch fields | DispatchContext schema validation — missing field → `BLOCKED: invalid_dispatch` |
+
+---
+
+## Benchmark
+
+The repo benchmarked itself against a plain agent on 30 small tasks — 2 runs each, same model (`zai/glm-5.3`) in both arms, identical prompt. Godmode passed 60/60 scored runs; the plain agent passed 58/60. The plain agent was faster on median wall-clock (37.0s vs 41.0s), and the verify gate passed 48/48 checks over 24 of the 60 godmode passes.
+
+The honest breakdown — including where the plain agent won and why the pass difference is within noise — is in the [showdown post](docs/blog/godmode-vs-plain-agent-benchmark.md).
 
 ---
 
