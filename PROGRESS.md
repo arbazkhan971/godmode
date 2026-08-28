@@ -426,3 +426,36 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 
 ### Rows completed
 - 4 scored rows (pilot: bug-01×2 arms, feat-03×2 arms, all metric_pass=1). B2 batches follow this commit; count updated at iteration close.
+
+## M3 Iteration 3 — B2 EXIT: scored matrix 120/120, 168 total rows (>=150 crossed)
+
+### DONE
+- **B2 exited per GOAL3**: results.tsv at commit 08c8e01 = **168 completed rows** (120 scored + 48 verify; 165 exit-0 + 3 legit exit-124), **60/60 combos with 2 scored runs each**, every task both arms, >=150 gate crossed with 18-row margin inside the 150-210 band. 92 rows landed this iteration (76 -> 168).
+- **Orphan incident recovered**: prior iteration's 60-min timeout had orphaned batch 4's tail — 3 sec-05 pi runs hung on dead output pipes until timeout 600 reaped them; rows never recorded (zero data loss; the 21 already-recorded batch-4 rows committed as d0bdd19). Stale workspaces deleted, combos re-queued via resume key-skip; 3 ghost logs (sec-05 orphans) remain in git-ignored bench/logs as incident evidence.
+- **Death-proofed the farm**: this iteration's drain + verify chain ran under setsid nohup with PID-gated chaining (chain waits for drain exit before verify — closing both observed failure modes: pipe-orphan pi hangs and verify-before-drain double-dispatch, the no-claims-ledger trap the seq lens re-confirmed). No farm process survives this push; 68 verify combos remain queued for iteration 4 (116 available = 2 per godmode scored pass x 60, minus 48 done).
+- **Scored matrix drained**: 23 combos (sec-05 x3 re-run + test-01..05 x20 — test category's first rows; runs 1-5 min each, 2-5x slower than other categories). **Honest signal for the B3 post: sec-05 plain arm failed BOTH runs (600s timeouts, metric=0) while godmode passed in 405s** — that row stays in the table. All 3 exit-124 rows itemized: perf-05 g2 timeout-after-pass (metric=1, counts), sec-05 plain r1+r2 (metric=0).
+- **Verify wave**: 2 chunks of 24 via chain (both chunks complete in ~5 min — verify runs modal 40-60s), 48/48 metric_pass=1, parent_run task:godmode:run# format, 2-per-parent cap verified, zero infra rows.
+- **Headline scored numbers (for B3)**: godmode 60/60 passes, plain 58/60; verify replication 48/48.
+- **Integrity battery (risk-lens design) run at freeze: CLEAN** — dup 4-field keys 0; NF!=10 0; exit/metric domains 0 violations; model-note model:zai/glm-5.3 on every row (same-model-both-arms provable); fraud markers (metric_tampered/LEAK_SCAN_HIT/429_hit/infra:) 0; end>=start + 0<=dur<=660 0; epoch duration cross-check all rows within +-1s (rounding); parent_run format/orphan-verify/VCOUNT>2 0. Note: check-5's bash-read variant false-flags every scored row (adjacent-tab collapse — the run-farm.sh:121 gotcha); awk variant is authoritative.
+- **3-lens council IN PARALLEL** (architecture / risk+edge / scope-sequencing, glm-5.3, report-shaped, 3/3 first try) -> merged plan executed: freeze-then-gate, B3 NO-GO this iteration (post needs frozen corpus + implementer+gate waves that don't fit), exact B2 DoD checks honored.
+- Gate wave (reviewer+security+tester IN PARALLEL, glm-5.3) over frozen diff: GATE_RESULTS_PLACEHOLDER
+- Validators green on freeze snapshot; atomic commits; push.
+
+### NEXT
+1. **B3 (iteration 4)**: implement bench/analyze.py per arch-lens design (csv module with tab delimiter — never bash read; scored filter parent_run=='' vs verify regex ^(perf|bug|test|feat|sec|refac)-[0-9]{2}:godmode:[0-9]+$ and NEVER mix verify rows into arm comparisons; n/a on empty cells; dup-key exit 1; --assert-complete all-30 check; censored-124 column; probe bench/logs for KEEP/DISCARD vocabulary before omitting the column) + fixture test; regenerate tables from final TSV; showdown post docs/blog/godmode-vs-plain-agent-benchmark.md (TL;DR / methodology / overall + 6 category tables / where godmode won / where it didn't / verify stability / threats to validity / reproduce / 30-task appendix — every claim cites appendix rows); README badge AFTER post lands (validate-structure relative-link gate).
+2. Optional: drain remaining 68 verify combos (run-farm.sh --runs-per-combo 2 --verify-wave --batch 24 --lanes 4, x3) if more replication data wanted before B3 freeze; 168 already exceeds the gate.
+3. Consider flock claims ledger in run-farm.sh (queue.lock per GOAL3 B1 SPEED DIRECTIVE) before any future concurrent-driver use; single-invocation + PID-gating sufficed this iteration.
+4. B2 exit criteria all met at this push; M3 final gate awaits B3 (post + tables live) only — then M3_MISSION_STATUS: COMPLETE as first line of PROGRESS.md.
+
+### BLOCKERS
+- none (zero 429 windows; lanes held at 4 all iteration; zero infra rows)
+
+### LESSONS
+- A 60-min lead timeout mid-batch orphans pi runs that hang on dead output pipes until timeout reaps them — rows silently never land. The one-line fixes (setsid nohup launch + PID-gated chaining) eliminated both the orphan class AND the double-dispatch class this iteration; resume key-skip made recovery a non-event.
+- Freeze-then-gate is the only order that works with a live farm: commit a snapshot, gate the commit, push the commit — later mechanical appends belong to the next ledger. The TSV must never be gated while appending.
+- The bash-read tab-collapse gotcha now bit TWICE (run-farm.sh author, then my own battery check-5): any TSV consumer with empty parent_run fields must use awk -F'\t' or csv, never IFS read. Detector bugs that flag EVERY row are detector bugs — validate the instrument on known-good rows before trusting its output.
+- Budget batch ETAs by category mix: test-category runs are 2-5x slower (agents write test suites; metric compiles pyc variants); verify runs on the same tasks were modal 40-60s. Farm wall-clock is chunk-paced, not row-paced.
+- Council evidence packs over raw briefs: all three lenses returned disk-verified plans (the seq lens independently caught the 99-line mid-drain TSV and the no-claims-ledger hazard) with zero re-dispatches; the risk lens's awk battery became the freeze gate verbatim.
+
+### Rows completed
+- 92 this iteration (44 scored + 48 verify); 168 total in results.tsv (120 scored + 48 verify).
