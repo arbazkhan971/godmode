@@ -8,7 +8,7 @@
 
 ### 1. What is Godmode?
 
-Godmode is a skill plugin for Claude Code that provides a complete, disciplined development workflow -- from initial idea to optimized, shipped product. It bundles 97 implemented skills (with 54 more planned) that cover every phase of software development: design, planning, building, testing, optimization, security, and deployment.
+Godmode is a skill plugin for Claude Code that provides a complete, disciplined development workflow -- from initial idea to optimized, shipped product. It bundles 135 implemented skills that cover every phase of software development: design, planning, building, testing, optimization, security, and deployment.
 
 Instead of generating code and hoping for the best, Godmode enforces structure: design before code, tests before implementation, evidence before claims, and git commits at every step.
 
@@ -22,7 +22,7 @@ Key differences:
 - **Mechanical verification:** Every claim is backed by running a real command and reading the output -- never "it should work"
 - **TDD enforcement:** Tests are written before implementation. Always
 - **Git-as-memory:** Every experiment is committed, every bad change is auto-reverted, every decision is traceable
-- **97 specialized skills:** Dedicated workflows for security audits, load testing, database migrations, infrastructure-as-code, and dozens more
+- **135 specialized skills:** Dedicated workflows for security audits, load testing, database migrations, infrastructure-as-code, and dozens more
 
 Copilot helps you write code. Godmode helps you build software.
 
@@ -90,9 +90,9 @@ If your language has a test command and a way to measure results, Godmode works 
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full guide with templates and quality standards.
 
-### 9. What are "planned" skills?
+### 9. Are any skills still unimplemented?
 
-The 54 planned skills are directories that have been reserved for future implementation. They exist as empty directories under `skills/`. They represent skills the community has identified as valuable but that nobody has written the `SKILL.md` for yet. Contributing a planned skill is one of the best ways to help the project.
+No. All 135 skill directories ship with a complete `SKILL.md` implementation -- there are no empty "planned" directories. If a workflow you need is missing, propose it via an issue or PR; every skill is just a Markdown file.
 
 ### 10. Can I override or customize a skill's behavior?
 
@@ -236,9 +236,9 @@ No. Godmode is a set of Markdown skill files that instruct the AI agent. It does
 
 Every skill must have: clear trigger conditions, a numbered workflow, at least 2 examples with realistic input/output, at least 3 anti-patterns, and references to related skills.
 
-### 22. Can I contribute to a planned skill?
+### 22. Can I contribute a new skill?
 
-Absolutely. The 54 planned skill directories are specifically waiting for contributors. Pick any empty directory from the [planned skills list](COMPLETE-SKILL-LIST.md#planned-skills-54-directories-reserved), create a `SKILL.md`, and submit a PR. These are some of the highest-value contributions you can make.
+Absolutely. New skills are always welcome. Create a new directory under `skills/`, write its `SKILL.md` following the conventions in the [complete skill list](COMPLETE-SKILL-LIST.md), and submit a PR. These are some of the highest-value contributions you can make.
 
 ### 23. How do I test a skill before submitting?
 

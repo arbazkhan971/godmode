@@ -1,6 +1,6 @@
 # The Definitive Godmode Skill List
 
-> **97 implemented skills** across 151 skill directories. Organized alphabetically and by category.
+> **135 implemented skills**, each with a complete `SKILL.md`. Organized alphabetically and by category.
 >
 > Every skill is a Markdown file in `skills/<name>/SKILL.md`. Invoke any skill with `/godmode:<name>`.
 
@@ -10,174 +10,236 @@
 
 | Metric | Count |
 |--------|-------|
-| **Implemented skills** (have SKILL.md) | 97 |
-| **Planned skills** (directory reserved) | 54 |
-| **Total skill directories** | 151 |
-| **Categories** | 13 |
+| **Implemented skills** (have SKILL.md) | 135 |
+| **Planned skills** (directory reserved) | 0 |
+| **Total skill directories** | 135 |
+| **Categories** | 11 |
 
 ---
 
-## Alphabetical List (All 97 Implemented Skills)
+## Alphabetical List (All 135 Implemented Skills)
 
 | # | Skill | Command | One-Line Description |
 |---|-------|---------|---------------------|
-| 1 | a11y | `/godmode:a11y` | Accessibility testing and WCAG 2.1 AA/AAA compliance auditing |
-| 2 | adr | `/godmode:adr` | Architecture Decision Records with structured templates |
-| 3 | agent | `/godmode:agent` | AI agent design, orchestration, and evaluation |
-| 4 | api | `/godmode:api` | REST, GraphQL, and gRPC API design and specification |
-| 5 | architect | `/godmode:architect` | System architecture design, C4 diagrams, and pattern selection |
-| 6 | auth | `/godmode:auth` | Authentication and authorization flows (JWT, OAuth2, OIDC, SAML) |
-| 7 | automate | `/godmode:automate` | Task automation, scheduled jobs, and workflow orchestration |
-| 8 | backup | `/godmode:backup` | Backup strategies, RPO/RTO targets, and disaster recovery |
-| 9 | build | `/godmode:build` | Execute implementation with TDD and parallel agents |
-| 10 | cache | `/godmode:cache` | Multi-layer caching strategy (CDN, application, database) |
-| 11 | chaos | `/godmode:chaos` | Chaos engineering and controlled failure injection |
-| 12 | chart | `/godmode:chart` | Data visualization and charting (bar, line, scatter, heatmap) |
-| 13 | cicd | `/godmode:cicd` | CI/CD pipeline design for GitHub Actions, GitLab CI, CircleCI |
-| 14 | comply | `/godmode:comply` | Regulatory compliance (GDPR, HIPAA, SOC2, PCI-DSS) |
-| 15 | concurrent | `/godmode:concurrent` | Concurrency, parallelism, thread safety, and race condition detection |
-| 16 | config | `/godmode:config` | Environment and configuration management with feature flags |
-| 17 | contract | `/godmode:contract` | Consumer-driven API contract testing with Pact |
-| 18 | cost | `/godmode:cost` | Cloud cost optimization across AWS, GCP, and Azure |
-| 19 | ddd | `/godmode:ddd` | Domain-Driven Design — bounded contexts, aggregates, event storming |
-| 20 | debug | `/godmode:debug` | Scientific bug investigation using 7 systematic techniques |
-| 21 | deploy | `/godmode:deploy` | Blue-green, canary, and progressive rollout deployment strategies |
-| 22 | devsecops | `/godmode:devsecops` | Security integration into CI/CD pipelines (SAST, DAST, SCA) |
-| 23 | docs | `/godmode:docs` | Documentation generation — API docs, READMEs, runbooks |
-| 24 | dx | `/godmode:dx` | Developer experience optimization — tooling, feedback loops, DX |
-| 25 | e2e | `/godmode:e2e` | End-to-end browser testing with Playwright, Cypress, Selenium |
-| 26 | errortrack | `/godmode:errortrack` | Error aggregation, categorization, and budget tracking |
-| 27 | event | `/godmode:event` | Event-driven architecture, event sourcing, and CQRS |
-| 28 | finish | `/godmode:finish` | Branch finalization — merge, PR, keep, or discard |
-| 29 | fix | `/godmode:fix` | Autonomous error remediation loop until zero errors |
-| 30 | gamedev | `/godmode:gamedev` | Game development architecture and entity-component systems |
-| 31 | git | `/godmode:git` | Advanced Git workflows — branching, rebase, bisect, cherry-pick |
-| 32 | godmode | `/godmode` | The orchestrator — auto-detects phase and routes to the right skill |
-| 33 | graphql | `/godmode:graphql` | GraphQL schema design, resolvers, and N+1 query detection |
-| 34 | grpc | `/godmode:grpc` | gRPC service design with Protocol Buffers |
-| 35 | i18n | `/godmode:i18n` | Internationalization — string extraction, locales, RTL support |
-| 36 | incident | `/godmode:incident` | Incident response — SEV classification, timelines, post-mortems |
-| 37 | infra | `/godmode:infra` | Infrastructure as Code — Terraform, CloudFormation, Pulumi, CDK |
-| 38 | integration | `/godmode:integration` | Integration testing across real boundaries with Testcontainers |
-| 39 | iot | `/godmode:iot` | IoT and embedded systems — firmware, device communication, MQTT |
-| 40 | k8s | `/godmode:k8s` | Kubernetes — Helm charts, deployments, scaling, troubleshooting |
-| 41 | learn | `/godmode:learn` | Interactive learning, concept explanations, and codebase exploration |
-| 42 | lint | `/godmode:lint` | Linting and code standards — ESLint, Prettier, Ruff, Biome |
-| 43 | loadtest | `/godmode:loadtest` | Load and stress testing — k6, Artillery, Locust, JMeter |
-| 44 | micro | `/godmode:micro` | Microservices design, decomposition, and service mesh |
-| 45 | migrate | `/godmode:migrate` | Database migration and schema management across ORMs |
-| 46 | migration | `/godmode:migration` | Large-scale system and technology transition planning |
-| 47 | ml | `/godmode:ml` | ML experiment tracking, dataset validation, and model evaluation |
-| 48 | mlops | `/godmode:mlops` | ML model deployment — serving, versioning, and drift detection |
-| 49 | mobile | `/godmode:mobile` | Mobile development — iOS, Android, React Native, Flutter |
-| 50 | monorepo | `/godmode:monorepo` | Monorepo architecture with Turborepo, Nx, Lerna, Bazel |
-| 51 | network | `/godmode:network` | Network configuration, DNS, SSL/TLS, and troubleshooting |
-| 52 | observe | `/godmode:observe` | Monitoring and observability — metrics, logging, tracing, SLOs |
-| 53 | onboard | `/godmode:onboard` | Codebase onboarding — architecture walkthroughs and code tours |
-| 54 | optimize | `/godmode:optimize` | Autonomous iteration loop — the heart of Godmode |
-| 55 | pair | `/godmode:pair` | Pair programming with structured driver/navigator roles |
-| 56 | pattern | `/godmode:pattern` | Design pattern selection and anti-pattern detection |
-| 57 | pentest | `/godmode:pentest` | Penetration testing — recon, enumeration, exploitation, reporting |
-| 58 | perf | `/godmode:perf` | Performance profiling — CPU, memory, flame graphs, benchmarking |
-| 59 | pipeline | `/godmode:pipeline` | Data pipeline and ETL — Airflow, dbt, Spark, Dagster |
-| 60 | plan | `/godmode:plan` | Decompose spec into 2-5 min atomic tasks with file paths and tests |
-| 61 | pr | `/godmode:pr` | Pull request creation, templates, stacked PRs, and review |
-| 62 | predict | `/godmode:predict` | Multi-persona expert consensus — 5 experts evaluate your design |
-| 63 | prioritize | `/godmode:prioritize` | Task prioritization with ICE/RICE scoring and MoSCoW frameworks |
-| 64 | prompt | `/godmode:prompt` | Prompt engineering — design, test, version, and optimize LLM prompts |
-| 65 | quality | `/godmode:quality` | Code quality — duplication, complexity, tech debt, dependencies |
-| 66 | query | `/godmode:query` | Database query optimization — EXPLAIN plans, indexing, N+1 detection |
-| 67 | queue | `/godmode:queue` | Message queues and job processing — Kafka, RabbitMQ, SQS, Bull |
-| 68 | rag | `/godmode:rag` | Retrieval-Augmented Generation — embeddings, vector stores, chunking |
-| 69 | rbac | `/godmode:rbac` | Role-based access control, ABAC, and ReBAC permission design |
-| 70 | refactor | `/godmode:refactor` | Large-scale code transformation with impact analysis |
-| 71 | release | `/godmode:release` | Release management — semantic versioning, changelogs, tagging |
-| 72 | report | `/godmode:report` | Automated report generation — metrics, sprints, code health |
-| 73 | resilience | `/godmode:resilience` | System resilience — circuit breakers, retries, bulkheads, fallbacks |
-| 74 | retro | `/godmode:retro` | Sprint retrospectives and team health tracking |
-| 75 | review | `/godmode:review` | 2-stage code review — automated checks plus agent-based review |
-| 76 | rfc | `/godmode:rfc` | Technical proposals and Requests for Comments with templates |
-| 77 | scaffold | `/godmode:scaffold` | Code generation — boilerplate, CRUD, API endpoints, components |
-| 78 | scenario | `/godmode:scenario` | Edge case exploration across 12 failure dimensions |
-| 79 | search | `/godmode:search` | Full-text search — Elasticsearch, Algolia, Meilisearch, Typesense |
-| 80 | secrets | `/godmode:secrets` | Secrets management — Vault, AWS/GCP/Azure secret stores |
-| 81 | secure | `/godmode:secure` | Security audit — STRIDE + OWASP Top 10 + 4 red-team personas |
-| 82 | seo | `/godmode:seo` | SEO optimization — meta tags, structured data, Core Web Vitals |
-| 83 | setup | `/godmode:setup` | Configuration wizard — goal, scope, metric, verify, guard rails |
-| 84 | ship | `/godmode:ship` | 8-phase shipping workflow — PR, deploy, release, monitor |
-| 85 | snapshot | `/godmode:snapshot` | Snapshot and approval testing against known-good baselines |
-| 86 | standup | `/godmode:standup` | Automated daily standup reports from git activity |
-| 87 | state | `/godmode:state` | State management — Redux, Zustand, Jotai, MobX, and more |
-| 88 | storage | `/godmode:storage` | File storage and CDN — S3, GCS, Azure Blob, presigned URLs |
-| 89 | test | `/godmode:test` | TDD enforcement — RED-GREEN-REFACTOR discipline |
-| 90 | think | `/godmode:think` | Collaborative design sessions — brainstorm, spec, and explore |
-| 91 | type | `/godmode:type` | Type system strengthening and schema validation |
-| 92 | ui | `/godmode:ui` | UI component architecture, design systems, and Storybook |
-| 93 | unittest | `/godmode:unittest` | Unit testing mastery — Arrange-Act-Assert, mocking, coverage |
-| 94 | verify | `/godmode:verify` | Evidence gate — prove claims with mechanical verification |
-| 95 | visual | `/godmode:visual` | Visual regression testing — screenshots, pixel diffs, browsers |
-| 96 | web3 | `/godmode:web3` | Blockchain and Web3 — smart contracts, DApps, token systems |
-| 97 | webperf | `/godmode:webperf` | Web performance — Lighthouse, bundle analysis, code splitting |
+| 1 | a11y | `/godmode:a11y` | Accessibility — WCAG 2.1 AA/AAA, a11y audit, color contrast, keyboard navigation |
+| 2 | agent | `/godmode:agent` | AI agent development — ReAct/plan-and-execute/multi-agent architectures, tool design, memory systems |
+| 3 | analytics | `/godmode:analytics` | Product analytics implementation — event tracking, funnel analysis, A/B testing |
+| 4 | angular | `/godmode:angular` | Angular architecture — NgRx, Signals, RxJS, standalone components, lazy loading, dependency injection |
+| 5 | api | `/godmode:api` | API design and specification — REST, GraphQL, gRPC, OpenAPI, design an API, create API |
+| 6 | apidocs | `/godmode:apidocs` | API documentation — OpenAPI, Swagger, Redoc, contract-first development, spec-first, code-first |
+| 7 | architect | `/godmode:architect` | Software architecture design — system architecture, monolith/microservices/serverless/event-driven |
+| 8 | auth | `/godmode:auth` | Authentication and authorization — JWT, OAuth2, OIDC, SAML, API keys, mTLS, MFA, passwordless |
+| 9 | automate | `/godmode:automate` | Task automation — cron jobs, webhooks, GitHub Actions, Makefile, Taskfile, scripts, CI/CD |
+| 10 | backup | `/godmode:backup` | Backup and disaster recovery — backup strategy, disaster recovery, RPO/RTO, data integrity, durability |
+| 11 | bench | `/godmode:bench` | Formal benchmark harness — Runs a metric command N times across 2-3 variants |
+| 12 | build | `/godmode:build` | Implementation engine — Parallel agents in worktrees from plan. |
+| 13 | cache | `/godmode:cache` | Cache — Redis, Memcached, Varnish, CDN, cache invalidation, TTL, write-through, cache |
+| 14 | changelog | `/godmode:changelog` | Changelog and release notes management |
+| 15 | chaos | `/godmode:chaos` | Chaos engineering — failure injection, circuit breakers, game day, disaster recovery, resilience |
+| 16 | chart | `/godmode:chart` | Data visualization — chart, graph, dashboard, visualize data, plot, analytics, D3.js, Chart.js |
+| 17 | cicd | `/godmode:cicd` | CI/CD pipeline design — GitHub Actions, GitLab CI, CircleCI, Jenkins, stage optimization, caching |
+| 18 | cli | `/godmode:cli` | CLI tool development — Argument parsing (Commander, Clap, Cobra, Click), TUI frameworks |
+| 19 | comply | `/godmode:comply` | Compliance and governance — GDPR, HIPAA, SOC2, PCI-DSS, audit trails, privacy controls, data retention |
+| 20 | concurrent | `/godmode:concurrent` | Concurrency and parallelism — thread safety, race condition, deadlock, lock-free, async/await, actor |
+| 21 | config | `/godmode:config` | Config — dev/staging/prod, feature flags, A/B test rollout, config validation, env |
+| 22 | cost | `/godmode:cost` | Cloud cost optimization — AWS/GCP/Azure, right-sizing, waste detection, cost allocation, budget |
+| 23 | cron | `/godmode:cron` | Scheduled tasks and cron jobs |
+| 24 | crypto | `/godmode:crypto` | Crypto — encryption, hashing, Argon2, bcrypt, key management, JWT signing, TLS |
+| 25 | ddd | `/godmode:ddd` | Domain-Driven Design — Bounded contexts, context mapping, ubiquitous language, aggregates, entities |
+| 26 | debug | `/godmode:debug` | Scientific debugging — Reproduce → investigate → prove root cause. Finds all |
+| 27 | deploy | `/godmode:deploy` | Advanced deployment strategies — Blue-green, canary releases, progressive rollouts, automated rollback |
+| 28 | designsystem | `/godmode:designsystem` | Design system architecture — design tokens, theme systems, Figma to code, component API |
+| 29 | devsecops | `/godmode:devsecops` | DevSecOps pipeline security — SAST/DAST/SCA scanning, secret scanning, container scanning |
+| 30 | distributed | `/godmode:distributed` | Distributed systems design — CAP theorem, consensus (Raft/Paxos), sharding, partitioning, eventual |
+| 31 | django | `/godmode:django` | Django + FastAPI development — Project structure, DRF serializers/viewsets, Pydantic, async Django with |
+| 32 | docker | `/godmode:docker` | Docker containerization — Dockerfile, multi-stage builds, Docker Compose, image size optimization |
+| 33 | docs | `/godmode:docs` | Docs — OpenAPI/Swagger, JSDoc, docstrings, README, runbook, API docs, stale docs |
+| 34 | e2e | `/godmode:e2e` | End-to-end testing skill — Activates for browser-based E2E tests, cross-browser testing, flaky test |
+| 35 | edge | `/godmode:edge` | Edge computing and serverless — Deno Deploy, distributed state, Cloudflare Workers, Vercel Edge, AWS |
+| 36 | email | `/godmode:email` | Email and notifications — SendGrid, SES, Postmark, Resend, MJML, React Email, delivery tracking |
+| 37 | eval | `/godmode:eval` | AI/LLM evaluation — Benchmark creation, regression testing, statistical significance, LLM-as-judge |
+| 38 | event | `/godmode:event` | Event-driven architecture — SQS, NATS, schema versioning, DLQ, retry policies, idempotency. |
+| 39 | experiment | `/godmode:experiment` | A/B testing, experimentation, statistical analysis |
+| 40 | fastapi | `/godmode:fastapi` | FastAPI mastery skill — Covers Pydantic models, DI, async DB access, background tasks |
+| 41 | feature | `/godmode:feature` | Feature flag design, gradual rollouts, A/B testing, kill switches |
+| 42 | finish | `/godmode:finish` | Branch finalization — Validate, squash-merge, PR, keep, or discard. Clean state enforced. |
+| 43 | fix | `/godmode:fix` | Fix loop — One fix per commit, auto-revert on regression, until zero |
+| 44 | forms | `/godmode:forms` | Form architecture skill — Multi-step wizards, validation (client + server, async), file uploads |
+| 45 | ghactions | `/godmode:ghactions` | GitHub Actions workflows, custom actions, CI/CD |
+| 46 | git | `/godmode:git` | Advanced Git workflows skill — Branching models, merge vs rebase, interactive rebase, git bisect |
+| 47 | goal-bridge | `/godmode:goal-bridge` | Machine-checkable completion contracts for agent goal modes |
+| 48 | godmode | `/godmode` | Orchestrator — Routes to skills, detects stack/phase, dispatches multi-agent worktrees. Triggers |
+| 49 | graphql | `/godmode:graphql` | GraphQL API development skill — Schema design, resolver architecture, N+1 detection with DataLoader |
+| 50 | grpc | `/godmode:grpc` | gRPC and Protocol Buffers skill |
+| 51 | i18n | `/godmode:i18n` | Internationalization & localization skill — String extraction, translation workflows, pluralization |
+| 52 | incident | `/godmode:incident` | Incident response and post-mortem skill |
+| 53 | infra | `/godmode:infra` | Infrastructure as Code skill — Terraform, CloudFormation, Pulumi, CDK. IaC testing, cost estimation |
+| 54 | integration | `/godmode:integration` | Integration testing skill — Tests across real boundaries — databases, APIs, message queues. |
+| 55 | k8s | `/godmode:k8s` | Kubernetes and container orchestration skill |
+| 56 | laravel | `/godmode:laravel` | Laravel mastery skill — Eloquent ORM, service container, queues, events, Sanctum/Passport auth, Pest |
+| 57 | legacy | `/godmode:legacy` | Legacy code modernization skill — Characterization tests, golden master, incremental modernization |
+| 58 | lint | `/godmode:lint` | Linting and code standards skill |
+| 59 | loadtest | `/godmode:loadtest` | Load testing and performance testing skill |
+| 60 | logging | `/godmode:logging` | Structured logging skill — JSON logs, log levels, correlation IDs, PII redaction, log |
+| 61 | micro | `/godmode:micro` | Microservices design and management |
+| 62 | migrate | `/godmode:migrate` | Database migration and schema management |
+| 63 | migration | `/godmode:migration` | System migration and technology transition |
+| 64 | ml | `/godmode:ml` | ML development and experimentation |
+| 65 | mlops | `/godmode:mlops` | MLOps and model deployment |
+| 66 | mobile | `/godmode:mobile` | Mobile app development (iOS/Android/cross-platform) |
+| 67 | monorepo | `/godmode:monorepo` | Monorepo architecture and management -- |
+| 68 | network | `/godmode:network` | Network, DNS, SSL/TLS, CDN, load balancers |
+| 69 | nextjs | `/godmode:nextjs` | Next.js mastery -- App Router, Server Components, |
+| 70 | node | `/godmode:node` | Node.js backend development |
+| 71 | nosql | `/godmode:nosql` | NoSQL database design (Mongo, DynamoDB, etc) |
+| 72 | notify | `/godmode:notify` | Push notifications, SMS, in-app notifications, |
+| 73 | npm | `/godmode:npm` | Package management (npm/yarn/pnpm/bun) |
+| 74 | observe | `/godmode:observe` | Monitoring and observability (metrics/logs/traces) |
+| 75 | onboard | `/godmode:onboard` | Codebase onboarding and architecture walkthrough |
+| 76 | opensource | `/godmode:opensource` | Open source project management |
+| 77 | optimize | `/godmode:optimize` | Autonomous optimization loop — 3 parallel agents |
+| 78 | orm | `/godmode:orm` | ORM and data access optimization |
+| 79 | pattern | `/godmode:pattern` | Design pattern recommendation and anti-pattern |
+| 80 | pay | `/godmode:pay` | Payment and billing integration -- Stripe, |
+| 81 | pentest | `/godmode:pentest` | Penetration testing (OWASP methodology) |
+| 82 | perf | `/godmode:perf` | Performance profiling -- CPU, memory, concurrency, |
+| 83 | pipeline | `/godmode:pipeline` | Data pipeline and ETL -- extraction, |
+| 84 | plan | `/godmode:plan` | Task decomposition and dependency planning |
+| 85 | postgres | `/godmode:postgres` | PostgreSQL mastery -- advanced features, |
+| 86 | pr | `/godmode:pr` | Pull request excellence and review optimization |
+| 87 | predict | `/godmode:predict` | 3-persona + meta-expert evaluation |
+| 88 | principles | `/godmode:principles` | Authoring discipline prelude — Think -> Simplicity -> Surgical -> Goal-driven. Read before |
+| 89 | prompt | `/godmode:prompt` | Prompt engineering -- design, test, version, |
+| 90 | query | `/godmode:query` | Query optimization and EXPLAIN analysis |
+| 91 | queue | `/godmode:queue` | Message queue and job processing -- Kafka, |
+| 92 | rag | `/godmode:rag` | RAG (Retrieval-Augmented Generation) systems |
+| 93 | rails | `/godmode:rails` | Ruby on Rails mastery |
+| 94 | ratelimit | `/godmode:ratelimit` | Rate limiting algorithms, quota management, |
+| 95 | rbac | `/godmode:rbac` | Permission and access control (RBAC/ABAC/ReBAC) |
+| 96 | react | `/godmode:react` | React architecture -- components, state, |
+| 97 | realtime | `/godmode:realtime` | Real-time communication -- WebSocket, SSE, |
+| 98 | redis | `/godmode:redis` | Redis architecture and system design |
+| 99 | refactor | `/godmode:refactor` | Large-scale code refactoring and transformation |
+| 100 | reliability | `/godmode:reliability` | Site reliability engineering -- SLO/SLI/SLA, |
+| 101 | research | `/godmode:research` | Prior art and context gathering |
+| 102 | resilience | `/godmode:resilience` | System resilience -- circuit breakers, retries, |
+| 103 | responsive | `/godmode:responsive` | Responsive and adaptive design with CSS Grid, |
+| 104 | review | `/godmode:review` | 4-agent code review — Correctness, security |
+| 105 | rfc | `/godmode:rfc` | RFC and technical proposal writing |
+| 106 | scale | `/godmode:scale` | Scalability engineering — Horizontal/vertical decisions, auto-scaling, read replicas, connection |
+| 107 | scenario | `/godmode:scenario` | Edge case exploration — 12 dimensions, scored by likelihood x impact. Runnable tests |
+| 108 | schema | `/godmode:schema` | Data modeling and schema design |
+| 109 | search | `/godmode:search` | Search implementation — Full-text search, relevance tuning, facets, autocomplete, fuzzy matching. |
+| 110 | secrets | `/godmode:secrets` | Secrets management — Leak detection, rotation, vault setup, .env management, access auditing. |
+| 111 | secure | `/godmode:secure` | Security audit — STRIDE + OWASP Top 10 + 4 red-team personas. |
+| 112 | seed | `/godmode:seed` | Database seeding, test fixtures, factory patterns, fake data generation |
+| 113 | seo | `/godmode:seo` | SEO optimization — Meta tags, structured data, Core Web Vitals, sitemap, robots.txt |
+| 114 | setup | `/godmode:setup` | Configuration wizard — Auto-detects project stack, validates commands, saves .godmode/config.yaml. |
+| 115 | ship | `/godmode:ship` | Ship workflow — Checklist, dry-run, ship, verify. PR, deploy, or release. |
+| 116 | slo | `/godmode:slo` | SLOs, SLIs, error budgets, burn rate alerts, reliability targets, service level management |
+| 117 | spring | `/godmode:spring` | Spring Boot mastery — Auto-configuration, security, Data JPA, Actuator, testing with TestContainers. |
+| 118 | state | `/godmode:state` | State management design — Frontend state, server state, state machines, optimistic updates, caching. |
+| 119 | stdio | `/godmode:stdio` | Stdio — Canonical terse command patterns, 13 terse equivalents, context-efficient bash |
+| 120 | storage | `/godmode:storage` | File storage and CDN — Object storage, presigned URLs, image/video processing, lifecycle policies. |
+| 121 | svelte | `/godmode:svelte` | Svelte/SvelteKit mastery — Runes reactivity, stores, routing, form actions, SSR, adapter configuration. |
+| 122 | tailwind | `/godmode:tailwind` | Tailwind CSS mastery — Configuration, custom plugins, responsive design, dark mode, performance, CVA. |
+| 123 | team | `/godmode:team` | Team bundles — Invoke named skill bundles, YAML coordination pattern, dispatch pipeline/parallel/swarm |
+| 124 | terse | `/godmode:terse` | Output-compression mode for long autonomous loops |
+| 125 | test | `/godmode:test` | TDD loop — RED-GREEN-REFACTOR until coverage target met. |
+| 126 | think | `/godmode:think` | Design session — Explore problem, scan codebase, generate 2-3 approaches, recommend one |
+| 127 | tokens | `/godmode:tokens` | Token-budget observability for godmode loops |
+| 128 | tutorial | `/godmode:tutorial` | Day-0 onboarding walkthrough — Gets a first-time user from a fresh install to |
+| 129 | type | `/godmode:type` | Type system and schema validation |
+| 130 | ui | `/godmode:ui` | UI component architecture — Design systems, Storybook, CSS architecture, design tokens, component |
+| 131 | upload | `/godmode:upload` | File upload handling, image optimization, media processing, signed URLs, multipart, virus scanning |
+| 132 | verify | `/godmode:verify` | Evidence gate — Run command, read full output, confirm or deny claim. |
+| 133 | vue | `/godmode:vue` | Vue.js mastery — Composition API, Pinia, Vue Router, Nuxt SSR/SSG, Vite optimization |
+| 134 | webhook | `/godmode:webhook` | Webhook design, delivery, retry, HMAC verification, event subscriptions, dead letter queues |
+| 135 | webperf | `/godmode:webperf` | Web performance optimization — Lighthouse, bundle analysis, code splitting, image optimization, critical |
 
 ---
 
 ## Skills by Category
 
-### Core Workflow (15 skills)
+### Core Workflow (22 skills)
 
-The skills that form the THINK-BUILD-OPTIMIZE-SHIP loop.
+The skills that form the THINK-BUILD-OPTIMIZE-SHIP loop, plus the discipline, compression, and observability skills every skill inherits by default.
 
 | Skill | Phase | Description |
 |-------|--|--|
-| `godmode` | Meta | The orchestrator — auto-detects phase and routes to the right skill |
-| `setup` | Meta | Configuration wizard for project-specific settings |
-| `verify` | Meta | Evidence gate — prove claims with real command output |
-| `think` | THINK | Collaborative brainstorming and spec writing |
-| `predict` | THINK | 5 expert personas evaluate your design decision |
-| `scenario` | THINK | Explore edge cases across 12 failure dimensions |
-| `plan` | BUILD | Decompose spec into atomic, testable tasks |
-| `build` | BUILD | Execute with TDD, parallel agents, and code review |
-| `test` | BUILD | TDD enforcement — RED-GREEN-REFACTOR |
-| `review` | BUILD | 2-stage code review (automated + agent) |
-| `optimize` | OPTIMIZE | Autonomous iteration loop with mechanical verification |
-| `debug` | OPTIMIZE | Scientific bug investigation (7 techniques) |
-| `fix` | OPTIMIZE | Autonomous error remediation until zero errors |
-| `ship` | SHIP | 8-phase shipping workflow with pre-flight checks |
-| `finish` | SHIP | Branch finalization — merge, PR, keep, or discard |
+| `godmode` | Meta | Orchestrator — Routes to skills, detects stack/phase, dispatches |
+| `setup` | Meta | Configuration wizard — Auto-detects project stack, validates |
+| `verify` | Meta | Evidence gate — Run command, read full output, confirm or deny claim. |
+| `think` | THINK | Design session — Explore problem, scan codebase, generate 2-3 |
+| `predict` | THINK | 3-persona + meta-expert evaluation |
+| `scenario` | THINK | Edge case exploration — 12 dimensions, scored by likelihood x impact. |
+| `plan` | BUILD | Task decomposition and dependency planning |
+| `build` | BUILD | Implementation engine — Parallel agents in worktrees from plan. |
+| `test` | BUILD | TDD loop — RED-GREEN-REFACTOR until coverage target met. |
+| `review` | BUILD | 4-agent code review — Correctness, security |
+| `optimize` | OPTIMIZE | Autonomous optimization loop — 3 parallel agents |
+| `debug` | OPTIMIZE | Scientific debugging — Reproduce → investigate → prove root cause. |
+| `fix` | OPTIMIZE | Fix loop — One fix per commit, auto-revert on regression, until zero |
+| `ship` | SHIP | Ship workflow — Checklist, dry-run, ship, verify. PR, deploy, or |
+| `finish` | SHIP | Branch finalization — Validate, squash-merge, PR, keep, or discard. |
+| `principles` | Meta | Authoring discipline prelude — Think -> Simplicity -> Surgical -> |
+| `stdio` | Meta | Stdio — Canonical terse command patterns, 13 terse equivalents |
+| `terse` | Meta | Output-compression mode for long autonomous loops |
+| `tokens` | Meta | Token-budget observability for godmode loops |
+| `research` | THINK | Prior art and context gathering |
+| `team` | Meta | Team bundles — Invoke named skill bundles, YAML coordination pattern |
+| `goal-bridge` | Meta | Machine-checkable completion contracts for agent goal modes |
 
-### Architecture and Design (8 skills)
+### Architecture and Design (6 skills)
 
 Structural decisions that shape the system before code is written.
 
 | Skill | Desc |
 |--|--|
-| `architect` | System architecture design, C4 diagrams, pattern selection |
-| `rfc` | Technical proposals and Requests for Comments |
-| `adr` | Architecture Decision Records |
-| `ddd` | Domain-Driven Design — bounded contexts, aggregates, event storming |
-| `pattern` | Design pattern recommendation and anti-pattern detection |
-| `contract` | Consumer-driven API contract testing |
-| `scaffold` | Code generation and project scaffolding |
-| `schema` | Database and API schema design (planned) |
+| `architect` | Software architecture design — system architecture |
+| `rfc` | RFC and technical proposal writing |
+| `ddd` | Domain-Driven Design — Bounded contexts, context mapping, ubiquitous |
+| `pattern` | Design pattern recommendation and anti-pattern |
+| `schema` | Data modeling and schema design |
+| `distributed` | Distributed systems design — CAP theorem, consensus (Raft/Paxos) |
 
-### API and Backend (12 skills)
+### API and Backend (31 skills)
 
 Building robust server-side systems.
 
 | Skill | Desc |
 |--|--|
-| `api` | REST, GraphQL, and gRPC API design and specification |
-| `graphql` | GraphQL schema, resolvers, and query optimization |
-| `grpc` | gRPC services with Protocol Buffers |
-| `query` | Database query optimization and EXPLAIN plan analysis |
-| `cache` | Multi-layer caching strategy and invalidation |
-| `queue` | Message queues and async job processing |
-| `event` | Event-driven architecture, event sourcing, and CQRS |
-| `micro` | Microservices design, decomposition, and service mesh |
-| `search` | Full-text search with Elasticsearch, Algolia, Meilisearch |
-| `concurrent` | Thread safety, async patterns, and race condition detection |
-| `state` | State management design and implementation |
-| `pipeline` | Data pipeline and ETL workflows |
+| `api` | API design and specification — REST, GraphQL, gRPC, OpenAPI, design |
+| `apidocs` | API documentation — OpenAPI, Swagger, Redoc, contract-first |
+| `graphql` | GraphQL API development skill — Schema design, resolver architecture |
+| `grpc` | gRPC and Protocol Buffers skill |
+| `query` | Query optimization and EXPLAIN analysis |
+| `cache` | Cache — Redis, Memcached, Varnish, CDN, cache invalidation, TTL |
+| `redis` | Redis architecture and system design |
+| `queue` | Message queue and job processing -- Kafka, |
+| `event` | Event-driven architecture — SQS, NATS, schema versioning, DLQ, retry |
+| `micro` | Microservices design and management |
+| `search` | Search implementation — Full-text search, relevance tuning, facets |
+| `concurrent` | Concurrency and parallelism — thread safety, race condition |
+| `state` | State management design — Frontend state, server state, state |
+| `pipeline` | Data pipeline and ETL -- extraction, |
+| `django` | Django + FastAPI development — Project structure, DRF |
+| `fastapi` | FastAPI mastery skill — Covers Pydantic models, DI, async DB access |
+| `laravel` | Laravel mastery skill — Eloquent ORM, service container, queues |
+| `rails` | Ruby on Rails mastery |
+| `spring` | Spring Boot mastery — Auto-configuration, security, Data JPA |
+| `node` | Node.js backend development |
+| `nosql` | NoSQL database design (Mongo, DynamoDB, etc) |
+| `postgres` | PostgreSQL mastery -- advanced features, |
+| `orm` | ORM and data access optimization |
+| `ratelimit` | Rate limiting algorithms, quota management, |
+| `realtime` | Real-time communication -- WebSocket, SSE, |
+| `webhook` | Webhook design, delivery, retry, HMAC verification, event |
+| `email` | Email and notifications — SendGrid, SES, Postmark, Resend, MJML |
+| `notify` | Push notifications, SMS, in-app notifications, |
+| `pay` | Payment and billing integration -- Stripe, |
+| `seed` | Database seeding, test fixtures, factory patterns, fake data |
+| `analytics` | Product analytics implementation — event tracking, funnel analysis |
 
 ### Security and Compliance (8 skills)
 
@@ -185,101 +247,114 @@ Protecting systems and meeting regulatory requirements.
 
 | Skill | Desc |
 |--|--|
-| `secure` | STRIDE + OWASP Top 10 security audit with red-team personas |
-| `auth` | Authentication flows — JWT, OAuth2, OIDC, SAML, mTLS |
-| `rbac` | Role-based, attribute-based, and relationship-based access control |
-| `secrets` | Secrets management — Vault, AWS/GCP/Azure secret stores |
-| `pentest` | Penetration testing workflows and vulnerability exploitation |
-| `devsecops` | Security integration into CI/CD pipelines |
-| `comply` | Regulatory compliance — GDPR, HIPAA, SOC2, PCI-DSS |
-| `crypto` | Cryptographic implementation review (planned) |
+| `secure` | Security audit — STRIDE + OWASP Top 10 + 4 red-team personas. |
+| `auth` | Authentication and authorization — JWT, OAuth2, OIDC, SAML, API keys |
+| `rbac` | Permission and access control (RBAC/ABAC/ReBAC) |
+| `secrets` | Secrets management — Leak detection, rotation, vault setup, .env |
+| `pentest` | Penetration testing (OWASP methodology) |
+| `devsecops` | DevSecOps pipeline security — SAST/DAST/SCA scanning, secret |
+| `comply` | Compliance and governance — GDPR, HIPAA, SOC2, PCI-DSS, audit trails |
+| `crypto` | Crypto — encryption, hashing, Argon2, bcrypt, key management, JWT |
 
-### Testing and Quality (11 skills)
+### Testing and Quality (9 skills)
 
 Ensuring code correctness, reliability, and maintainability.
 
 | Skill | Desc |
 |--|--|
-| `test` | TDD enforcement — RED-GREEN-REFACTOR discipline |
-| `unittest` | Unit testing mastery — AAA pattern, mocking, coverage |
-| `e2e` | End-to-end browser testing with Playwright and Cypress |
-| `integration` | Integration testing across real boundaries with Testcontainers |
-| `loadtest` | Load and stress testing — k6, Artillery, Locust, JMeter |
-| `snapshot` | Snapshot and approval testing against baselines |
-| `visual` | Visual regression testing — screenshots and pixel diffs |
-| `chaos` | Chaos engineering — controlled failure injection |
-| `quality` | Code quality metrics — duplication, complexity, tech debt |
-| `lint` | Linting and code standards — ESLint, Prettier, Ruff, Biome |
-| `perf` | Performance profiling — CPU, memory, flame graphs, benchmarks |
+| `test` | TDD loop — RED-GREEN-REFACTOR until coverage target met. |
+| `e2e` | End-to-end testing skill — Activates for browser-based E2E tests |
+| `integration` | Integration testing skill — Tests across real boundaries — databases |
+| `loadtest` | Load testing and performance testing skill |
+| `chaos` | Chaos engineering — failure injection, circuit breakers, game day |
+| `lint` | Linting and code standards skill |
+| `perf` | Performance profiling -- CPU, memory, concurrency, |
+| `bench` | Formal benchmark harness — Runs a metric command N times across 2-3 |
+| `experiment` | A/B testing, experimentation, statistical analysis |
 
-### DevOps and Infrastructure (13 skills)
+### DevOps and Infrastructure (21 skills)
 
 Deploying, running, and monitoring production systems.
 
 | Skill | Desc |
 |--|--|
-| `deploy` | Blue-green, canary, and progressive rollout strategies |
-| `k8s` | Kubernetes — Helm charts, deployments, scaling, troubleshooting |
-| `infra` | Infrastructure as Code — Terraform, CloudFormation, Pulumi, CDK |
-| `cicd` | CI/CD pipeline design and optimization |
-| `release` | Release management — semantic versioning and changelogs |
-| `backup` | Backup strategy, RPO/RTO targets, and disaster recovery |
-| `incident` | Incident response — SEV classification and post-mortems |
-| `observe` | Observability — metrics, logging, tracing, SLOs |
-| `errortrack` | Error aggregation, categorization, and budget tracking |
-| `network` | Network configuration, DNS, SSL/TLS management |
-| `resilience` | Circuit breakers, retries, bulkheads, and fallbacks |
-| `config` | Environment and configuration management with feature flags |
-| `cost` | Cloud cost optimization and right-sizing recommendations |
+| `deploy` | Advanced deployment strategies — Blue-green, canary releases |
+| `k8s` | Kubernetes and container orchestration skill |
+| `infra` | Infrastructure as Code skill — Terraform, CloudFormation, Pulumi |
+| `cicd` | CI/CD pipeline design — GitHub Actions, GitLab CI, CircleCI, Jenkins |
+| `changelog` | Changelog and release notes management |
+| `backup` | Backup and disaster recovery — backup strategy, disaster recovery |
+| `incident` | Incident response and post-mortem skill |
+| `observe` | Monitoring and observability (metrics/logs/traces) |
+| `logging` | Structured logging skill — JSON logs, log levels, correlation IDs |
+| `network` | Network, DNS, SSL/TLS, CDN, load balancers |
+| `resilience` | System resilience -- circuit breakers, retries, |
+| `config` | Config — dev/staging/prod, feature flags, A/B test rollout, config |
+| `feature` | Feature flag design, gradual rollouts, A/B testing, kill switches |
+| `cost` | Cloud cost optimization — AWS/GCP/Azure, right-sizing, waste |
+| `docker` | Docker containerization — Dockerfile, multi-stage builds, Docker |
+| `ghactions` | GitHub Actions workflows, custom actions, CI/CD |
+| `cron` | Scheduled tasks and cron jobs |
+| `slo` | SLOs, SLIs, error budgets, burn rate alerts, reliability targets |
+| `reliability` | Site reliability engineering -- SLO/SLI/SLA, |
+| `scale` | Scalability engineering — Horizontal/vertical decisions |
+| `edge` | Edge computing and serverless — Deno Deploy, distributed state |
 
-### Frontend and UI (9 skills)
+### Frontend and UI (18 skills)
 
 Building user interfaces that are fast, accessible, and maintainable.
 
 | Skill | Desc |
 |--|--|
-| `ui` | UI component architecture, design systems, Storybook |
-| `a11y` | Accessibility testing — WCAG 2.1 AA/AAA compliance |
-| `visual` | Visual regression testing across browsers |
-| `seo` | SEO optimization — meta tags, structured data, Core Web Vitals |
-| `mobile` | Mobile development — iOS, Android, React Native, Flutter |
-| `chart` | Data visualization and charting libraries |
-| `webperf` | Web performance — Lighthouse, bundle analysis, code splitting |
-| `i18n` | Internationalization — locales, pluralization, RTL support |
-| `storage` | File storage and CDN — S3, presigned URLs, multipart upload |
+| `ui` | UI component architecture — Design systems, Storybook, CSS |
+| `designsystem` | Design system architecture — design tokens, theme systems, Figma to |
+| `a11y` | Accessibility — WCAG 2.1 AA/AAA, a11y audit, color contrast, keyboard |
+| `seo` | SEO optimization — Meta tags, structured data, Core Web Vitals |
+| `mobile` | Mobile app development (iOS/Android/cross-platform) |
+| `chart` | Data visualization — chart, graph, dashboard, visualize data, plot |
+| `webperf` | Web performance optimization — Lighthouse, bundle analysis, code |
+| `i18n` | Internationalization & localization skill — String extraction |
+| `storage` | File storage and CDN — Object storage, presigned URLs, image/video |
+| `upload` | File upload handling, image optimization, media processing, signed |
+| `angular` | Angular architecture — NgRx, Signals, RxJS, standalone components |
+| `react` | React architecture -- components, state, |
+| `vue` | Vue.js mastery — Composition API, Pinia, Vue Router, Nuxt SSR/SSG |
+| `svelte` | Svelte/SvelteKit mastery — Runes reactivity, stores, routing, form |
+| `nextjs` | Next.js mastery -- App Router, Server Components, |
+| `tailwind` | Tailwind CSS mastery — Configuration, custom plugins, responsive |
+| `forms` | Form architecture skill — Multi-step wizards, validation |
+| `responsive` | Responsive and adaptive design with CSS Grid, |
 
-### AI and ML (6 skills)
+### AI and ML (7 skills)
 
 Machine learning, LLMs, and intelligent systems.
 
 | Skill | Desc |
 |--|--|
-| `ml` | ML experiment tracking, dataset validation, model evaluation |
-| `mlops` | ML model deployment — serving, versioning, drift detection |
-| `rag` | Retrieval-Augmented Generation — embeddings, vector stores |
-| `prompt` | Prompt engineering — design, test, and optimize LLM prompts |
-| `agent` | AI agent design — ReAct, plan-and-execute, multi-agent |
-| `predict` | Multi-persona expert consensus on design decisions |
+| `ml` | ML development and experimentation |
+| `mlops` | MLOps and model deployment |
+| `rag` | RAG (Retrieval-Augmented Generation) systems |
+| `prompt` | Prompt engineering -- design, test, version, |
+| `agent` | AI agent development — ReAct/plan-and-execute/multi-agent |
+| `predict` | 3-persona + meta-expert evaluation |
+| `eval` | AI/LLM evaluation — Benchmark creation, regression testing |
 
-### Developer Experience (13 skills)
+### Developer Experience (10 skills)
 
 Making developers more productive and codebases more approachable.
 
 | Skill | Desc |
 |--|--|
-| `docs` | Documentation generation — API docs, READMEs, runbooks |
-| `onboard` | Codebase onboarding — architecture walkthroughs, code tours |
-| `learn` | Interactive learning and concept explanations |
-| `dx` | Developer experience improvements — tooling and feedback loops |
-| `scaffold` | Project scaffolding and boilerplate generation |
-| `refactor` | Large-scale code transformation with impact analysis |
-| `pair` | Pair programming with driver/navigator roles |
-| `standup` | Automated daily standup reports from git activity |
-| `report` | Automated report generation — metrics, sprints, code health |
-| `retro` | Sprint retrospectives and team health tracking |
-| `git` | Advanced Git workflows — branching, rebase, bisect |
-| `pr` | Pull request creation, templates, and stacked PRs |
-| `monorepo` | Monorepo architecture with Turborepo, Nx, Lerna, Bazel |
+| `docs` | Docs — OpenAPI/Swagger, JSDoc, docstrings, README, runbook, API docs |
+| `onboard` | Codebase onboarding and architecture walkthrough |
+| `tutorial` | Day-0 onboarding walkthrough — Gets a first-time user from a fresh |
+| `cli` | CLI tool development — Argument parsing |
+| `npm` | Package management (npm/yarn/pnpm/bun) |
+| `opensource` | Open source project management |
+| `refactor` | Large-scale code refactoring and transformation |
+| `git` | Advanced Git workflows skill — Branching models, merge vs rebase |
+| `pr` | Pull request excellence and review optimization |
+| `monorepo` | Monorepo architecture and management -- |
 
 ### Migration and Evolution (3 skills)
 
@@ -287,80 +362,18 @@ Moving systems forward without breaking them.
 
 | Skill | Desc |
 |--|--|
-| `migrate` | Database migration and schema management across ORMs |
-| `migration` | Large-scale system and technology transition planning |
-| `prioritize` | Task prioritization with ICE/RICE and MoSCoW frameworks |
+| `migrate` | Database migration and schema management |
+| `migration` | System migration and technology transition |
+| `legacy` | Legacy code modernization skill — Characterization tests, golden |
 
-### Specialized Domains (5 skills)
+### Specialized Domains (2 skills)
 
 Skills tailored to specific technology domains.
 
 | Skill | Desc |
 |--|--|
-| `web3` | Blockchain — smart contracts, DApps, token systems |
-| `iot` | IoT and embedded systems — firmware, MQTT, device protocols |
-| `gamedev` | Game development — game loops, ECS, physics systems |
-| `automate` | Task automation — webhooks, cron jobs, GitHub Actions |
-| `type` | Type system strengthening and schema validation |
-
----
-
-## Planned Skills (54 directories reserved)
-
-These skill directories exist but do not yet have a `SKILL.md` implementation. Contributions welcome.
-
-| Directory | Expected Domain |
-|-----------|----------------|
-| `aiops` | AI-powered operations and incident prediction |
-| `analytics` | Analytics instrumentation and dashboards |
-| `angular` | Angular framework patterns |
-| `animation` | UI animation design and implementation |
-| `changelog` | Automated changelog generation |
-| `cli` | CLI tool development |
-| `crypto` | Cryptographic implementation review |
-| `designsystem` | Design system creation and governance |
-| `desktop` | Desktop app development (Electron, Tauri) |
-| `distributed` | Distributed systems patterns |
-| `django` | Django framework patterns |
-| `edge` | Edge computing and CDN optimization |
-| `email` | Email template design and delivery |
-| `embeddings` | Embedding model selection and optimization |
-| `errorhandling` | Error handling patterns and strategies |
-| `eval` | LLM evaluation and benchmarking |
-| `extension` | Browser and IDE extension development |
-| `fastapi` | FastAPI framework patterns |
-| `finetune` | LLM fine-tuning workflows |
-| `forms` | Form design, validation, and submission |
-| `gdpr` | GDPR-specific compliance workflows |
-| `hipaa` | HIPAA-specific compliance workflows |
-| `laravel` | Laravel framework patterns |
-| `legacy` | Legacy system modernization |
-| `license` | License compliance and management |
-| `logging` | Structured logging implementation |
-| `multimodal` | Multimodal AI system development |
-| `nextjs` | Next.js framework patterns |
-| `node` | Node.js runtime optimization |
-| `nosql` | NoSQL database design and optimization |
-| `opensource` | Open-source project management |
-| `orm` | ORM setup, migrations, and query optimization |
-| `pay` | Payment integration (Stripe, etc.) |
-| `postgres` | PostgreSQL optimization and administration |
-| `pwa` | Progressive Web App setup and optimization |
-| `rails` | Ruby on Rails framework patterns |
-| `react` | React framework patterns |
-| `realtime` | WebSocket and real-time communication |
-| `redis` | Redis configuration and optimization |
-| `reliability` | Site reliability engineering practices |
-| `responsive` | Responsive design patterns |
-| `scale` | Horizontal and vertical scaling strategies |
-| `schema` | Database and API schema design |
-| `soc2` | SOC 2 compliance workflows |
-| `spring` | Spring framework patterns |
-| `svelte` | Svelte framework patterns |
-| `tailwind` | Tailwind CSS configuration and patterns |
-| `three` | Three.js and 3D web development |
-| `vue` | Vue.js framework patterns |
-| `wasm` | WebAssembly integration |
+| `automate` | Task automation — cron jobs, webhooks, GitHub Actions, Makefile |
+| `type` | Type system and schema validation |
 
 ---
 

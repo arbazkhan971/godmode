@@ -90,7 +90,7 @@ no emojis; no addressing the reader.
 - Release: <https://github.com/arbazkhan971/godmode/releases/tag/v2.0.0>
 - License: MIT
 - 135 skills, 7 subagents (planner, builder, reviewer, optimizer, explorer, security, tester)
-- Works across Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp (Amp: no adapter yet)
+- Works across Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp (Amp is skills-level: subagents and model routing are Amp's own)
 - Loop: measure -> modify -> verify -> keep/revert; every change mechanically verified; failed changes automatically reverted
 
 - Banned in any copy: illustrative demo numbers, star/download/user counts, hype adjectives, engagement-bait asks, run-environment details, URL shorteners.

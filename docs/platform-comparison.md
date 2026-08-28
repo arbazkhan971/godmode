@@ -1,6 +1,6 @@
 # Platform Comparison
 
-Godmode runs on 6 platforms. All 135 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
+Godmode runs across the supported platforms. All 135 skills work everywhere. This document covers what differs: agent dispatch, tool names, installation, and performance.
 
 ---
 
@@ -40,7 +40,7 @@ Sequential execution produces identical results. Only wall-clock time differs.
 
 - **Claude Code** and **Cursor** run multi-agent skills in parallel -- same wall-clock time as a single agent.
 - **Codex**, **Gemini CLI**, **OpenCode**, and **Amp** run the same tasks sequentially -- correct results, longer runtime.
-- Single-threaded skills (think, plan, debug, fix, secure, ship, and all 111 domain skills) run at identical speed on every platform.
+- Single-threaded skills (think, plan, debug, fix, secure, ship, and the domain skills) run at identical speed on every platform.
 - The slowdown is purely wall-clock. Verification logic, rollback behavior, output format, and decision quality are the same everywhere.
 
 ---

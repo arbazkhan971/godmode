@@ -23,7 +23,7 @@ Each goal is bound to a shell command before work starts. Every change is one at
 
 The goal-bridge skill makes done machine-checkable: the metric is one shell command that must exit zero, with evidence and rollback declared up front.
 
-The same 135 skills and 7 subagents run on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp.
+The same 135 skills and 7 subagents run on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp.
 
 Honest weakest point: the demo traces in the README are representative illustrations, not captured benchmarks. Real run recordings are tracked in issue #9.
 
@@ -35,7 +35,7 @@ CI reports failure after you push; it does not stop the agent mid-loop. Godmode 
 
 **Q: Does it work outside Claude Code?**
 
-Yes. The same loop runs on Codex, Cursor, Gemini CLI, OpenCode, pi, and omp. Subagents run in parallel where the harness supports it and degrade to sequential elsewhere. Amp has no adapter yet; the docs say so plainly instead of glossing it.
+Yes. The same loop runs on Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp. Subagents run in parallel where the harness supports it and degrade to sequential elsewhere. On Amp the adapter wires skills only; subagents and model routing are Amp's own, and the docs say so plainly instead of glossing it.
 
 **Q: What does keep/revert actually measure?**
 

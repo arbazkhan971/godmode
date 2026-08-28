@@ -14,7 +14,7 @@ We built Godmode because we kept seeing the same pattern: developers ask an AI t
 
 The problem was never code generation. The problem was the absence of process. Without a spec, the AI builds the wrong thing. Without tests, bugs hide until production. Without measurement, "optimization" is guesswork. Without a shipping checklist, deployments are gambling.
 
-Godmode is the process. It is 97 skills that encode how great software gets built -- not by typing faster, but by thinking first, testing everything, proving every claim, and tracking every decision.
+Godmode is the process. It is 135 skills that encode how great software gets built -- not by typing faster, but by thinking first, testing everything, proving every claim, and tracking every decision.
 
 ---
 
@@ -137,7 +137,7 @@ This eliminates the most common failure mode of AI coding: the agent says "done"
 
 You should not need 10 different tools for 10 different tasks. One plugin should handle the full lifecycle.
 
-Godmode bundles 97 skills into a single installation:
+Godmode bundles 135 skills into a single installation:
 - Design and planning
 - Test-driven development
 - Code review

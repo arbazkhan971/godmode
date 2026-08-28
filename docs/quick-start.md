@@ -212,9 +212,9 @@ Grouped by what you are trying to do, not alphabetical.
 | `ship` | Deploy to production | `/godmode:ship deploy to staging` |
 | `finish` | Merge PR, clean up branch | `/godmode:finish merge this branch` |
 
-### Specialized Skills (100+)
+### Specialized Skills
 
-Beyond the 15 core skills, godmode includes 100+ specialized skills for specific domains. Use them directly or let the orchestrator route you:
+Beyond the 15 core skills, godmode includes the remaining 120 specialized skills for specific domains. Use them directly or let the orchestrator route you:
 
 | Category | Skills | Example |
 |----------|--------|---------|
