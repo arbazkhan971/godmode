@@ -18,9 +18,9 @@ Conventions for this file: each numbered line below is one tweet, exactly as it 
 
    <!-- 264 chars -->
 
-4. One corpus, seven harnesses: Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp. Subagents run in parallel or sequentially per harness - same skills, same discipline. Honest limits: the Amp adapter is not written yet, and the README demos are representative traces.
+4. One corpus, eight harnesses: Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp. Same skills, same discipline; subagents parallel or sequential per harness. Honest limits: Amp wires skills only; below the README's three real vhs captures, blocks are illustrative.
 
-   <!-- 276 chars -->
+   <!-- 279 chars -->
 
 5. The part that matters most: failed experiments get reverted, not explained away. A bad change never survives on the strength of a confident summary. The repo stays only in states your metrics and tests support. "Looks good" is not a result.
 
@@ -34,6 +34,6 @@ Conventions for this file: each numbered line below is one tweet, exactly as it 
 
    <!-- 203 chars -->
 
-8. Try it: <https://github.com/arbazkhan971/godmode>
+8. Try it: <https://github.com/arbazkhan971/godmode> - there's a Discussions tab for wins and questions: <https://github.com/arbazkhan971/godmode/discussions>
 
-   <!-- 31 chars -->
+   <!-- 107 chars -->

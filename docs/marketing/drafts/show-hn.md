@@ -25,7 +25,7 @@ The goal-bridge skill makes done machine-checkable: the metric is one shell comm
 
 The same 135 skills and 7 subagents run on Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp.
 
-Honest weakest point: the demo traces in the README are representative illustrations, not captured benchmarks. Real run recordings are tracked in issue #9.
+Honest weakest point: the three captures at the top of the README are real vhs recordings from live pi sessions (tapes in demo/); the output-shape blocks below them are illustrative.
 
 ## Anticipated questions
 
@@ -43,4 +43,4 @@ Whatever you bind to the goal: a shell command with an exit status and, when the
 
 ## Author conduct
 
-The author answers comments in the thread; the prepared answers above are starting points.
+The author answers comments in the thread; the prepared answers above are starting points. The repo also has a Discussions tab for wins and questions: <https://github.com/arbazkhan971/godmode/discussions>.

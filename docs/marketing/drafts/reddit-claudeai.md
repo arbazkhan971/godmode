@@ -25,11 +25,13 @@ Disclosure: I am the author - this is built by arbazkhan971. I will be in the co
 
 **A concrete run.** I ask the agent to make a slow endpoint faster. It reads the current state, picks the change the evidence supports - say, an index on a hot query - commits it, and reruns the metric command. Metric improved and tests green: the commit stays. Metric flat or worse, or a guard red: the commit is reverted automatically, and the failure is written to a memory file the agent consults before its next attempt. The final summary contains commands and their output, not adjectives.
 
-**Where it runs.** Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp. Same skills everywhere; subagents run in parallel where the harness supports them and sequentially elsewhere. The Amp adapter is not written yet, and the docs say so.
+**Where it runs.** Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, omp, and Amp. Same skills everywhere; subagents run in parallel where the harness supports them and sequentially elsewhere. On Amp the adapter wires skills only - subagents and model routing are Amp's own - and the docs say so.
 
 **What it will NOT do.** It is not autocomplete. It is not a model - it drives whatever agent you already run. It does not replace your tests; it forces the agent to prove its work against your tests and a metric you choose. If you bind a bad metric, it will optimize the wrong thing, honestly.
 
-One honest caveat: the demo traces in the README are representative illustrations, not captured benchmarks; real run recordings are being tracked in the repo's issue #9.
+One honest caveat: the three captures at the top of the README are real vhs recordings from live pi sessions (tapes in demo/); the output-shape blocks below them are illustrative.
+
+**Discussion.** Wins and questions both land in the repo's Discussions tab: <https://github.com/arbazkhan971/godmode/discussions>.
 
 Links:
 
@@ -42,6 +44,6 @@ Links:
 - Authorship disclosed in the first line of the body, not buried; the author stays in the comments for the life of the thread.
 - Links point to source under an open license; no paywall, no signup, no tracking, nothing to buy.
 - No engagement asks of any kind appear anywhere in the post - verified line by line against the project's own banned-phrase list.
-- Limitations are stated inside the post itself (Amp adapter missing, bad metrics get optimized honestly, the top three README captures are real vhs recordings while the lower output-shape blocks are illustrative).
+- Limitations are stated inside the post itself (Amp adapter wires skills only, bad metrics get optimized honestly, the top three README captures are real vhs recordings while the lower output-shape blocks are illustrative).
 - One post to this community only. If it lands poorly, it is not reposted or resubmitted in another form.
 - Poster verifies their own account's self-promotion ratio (9:1) against the current reddit content policy and the subreddit sidebar immediately before submitting, since those change.
