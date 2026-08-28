@@ -48,7 +48,7 @@ Resist your hardest problem. Pick something a one-line shell command
 can measure. A good day-0 task:
 
 > "Reduce the word count of the first paragraph of `README.md` by
->  20% without changing its meaning."
+> 20% without changing its meaning."
 
 Metric:
 ```bash

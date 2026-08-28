@@ -229,7 +229,7 @@ FOR each entity (leaf first):
 POST: Add complexity/depth limits, validate schema
 ```
 
-## Quality Targets
+## Quality Targets (Detailed)
 - Target: <200ms p95 query response time
 - Max query depth: <=10 levels
 - Max query complexity: <=1000 points

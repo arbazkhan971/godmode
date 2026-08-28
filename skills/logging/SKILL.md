@@ -231,7 +231,7 @@ Never ask to continue. Loop autonomously until done.
 3. Libraries: package.json, go.mod, pyproject.toml
 ```
 
-## Quality Targets
+## Quality Targets (Detailed)
 - Target: <5ms per structured log write
 - Log retention: >=30 days for application logs
 - Max log line size: <10KB

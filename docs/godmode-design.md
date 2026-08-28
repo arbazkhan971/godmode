@@ -3629,17 +3629,17 @@ Settings are resolved in order (later overrides earlier):
 
 | Section | Field | Type | Default | Description |
 |---------|-------|--|--|--|
-| `project.type` | string | auto | Project language/framework |
-| `project.test_command` | string | auto | How to run tests |
-| `scope.include` | string[] | `["src/"]` | Directories the agent can modify |
-| `scope.exclude` | string[] | `["node_modules/"]` | Directories to never touch |
-| `metric.direction` | enum | — | `lower_is_better` or `higher_is_better` |
-| `metric.tolerance` | number | 0 | Noise floor for metric comparison |
-| `iterations.optimize_max` | int | 25 | Max optimization iterations |
-| `iterations.plateau_threshold` | int | 5 | Consecutive reverts before stopping |
-| `agents.max_parallel` | int | 3 | Max parallel sub-agents |
-| `behavior.auto_mode` | bool | false | Automatically chain skills |
-| `behavior.tdd_enforced` | bool | true | Require test-first development |
+| `project` | `type` | string | auto | Project language/framework |
+| `project` | `test_command` | string | auto | How to run tests |
+| `scope` | `include` | string[] | `["src/"]` | Directories the agent can modify |
+| `scope` | `exclude` | string[] | `["node_modules/"]` | Directories to never touch |
+| `metric` | `direction` | enum | — | `lower_is_better` or `higher_is_better` |
+| `metric` | `tolerance` | number | 0 | Noise floor for metric comparison |
+| `iterations` | `optimize_max` | int | 25 | Max optimization iterations |
+| `iterations` | `plateau_threshold` | int | 5 | Consecutive reverts before stopping |
+| `agents` | `max_parallel` | int | 3 | Max parallel sub-agents |
+| `behavior` | `auto_mode` | bool | false | Automatically chain skills |
+| `behavior` | `tdd_enforced` | bool | true | Require test-first development |
 
 ### Per-Project Override Example
 
@@ -6988,7 +6988,7 @@ The identity skills integrate into the Godmode workflow at these points:
 
 ## 78. Cross-Reference & Navigation
 
-Godmode now includes four cross-referencing documents to help developers navigate the 48 implemented skills efficiently.
+Godmode now includes four cross-referencing documents to help developers navigate the 135 implemented skills efficiently.
 
 ### 78.1 Master Skill Index (`docs/skill-index.md`)
 
@@ -9150,7 +9150,7 @@ Skills for specialized infrastructure and application domains that are common ac
 - **Notification system architecture:** Event-driven multi-channel routing (email, push, SMS, in-app), per-user per-channel preference management, rate limiting per user (max N notifications/hour), digest batching for low-priority notifications, queue-based async delivery with retry
 - **Delivery tracking and bounce handling:** Email lifecycle tracking (queued -> sent -> delivered -> opened -> clicked), hard bounce detection with immediate suppression, soft bounce tracking with escalation after 3 bounces in 30 days, spam complaint handling with automatic unsubscribe and team alerting, deliverability metrics dashboard (delivery rate, bounce rate, spam complaint rate)
 - **Email DNS authentication:** SPF, DKIM, and DMARC configuration with progressive DMARC policy (none -> quarantine -> reject over 30 days), bounce domain alignment, subdomain strategy for transactional vs marketing isolation
-- **Transactional vs marketing separation:** Separate subdomains (notifications.* vs marketing.*), separate IPs or provider accounts, isolated sender reputation, IP warm-up schedule for new dedicated IPs (50/day to full volume over 30 days)
+- **Transactional vs marketing separation:** Separate subdomains (notifications.\* vs marketing.\*), separate IPs or provider accounts, isolated sender reputation, IP warm-up schedule for new dedicated IPs (50/day to full volume over 30 days)
 
 **Invocation:** `/godmode:email`, "send emails", "notification system", "email templates", "push notifications", "bounce handling", "deliverability"
 
@@ -9202,7 +9202,7 @@ Cross-skill integration:
 
 **Iterations 236-243 (8 files, 4 skills, 4 commands)**
 
-## 95. Open Source & Community Skills
+## 95. Open Source & Community Skills (Iterations 236-243)
 
 Three skills for managing open source projects end-to-end: from license selection through community scaffolding to changelog automation.
 

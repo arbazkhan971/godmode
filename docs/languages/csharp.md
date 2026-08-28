@@ -28,7 +28,7 @@ verify_command: curl -s -o /dev/null -w '%{time_total}' http://localhost:5000/he
 
 ---
 
-## How Each Skill Applies to C#
+## How Each Skill Applies to C\#
 
 ### THINK Phase
 

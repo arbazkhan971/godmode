@@ -75,7 +75,7 @@ git commit -m "rfc: RFC-<NNN> -- <title> (<status>)"
 - Target: >=3 reviewers for architecture RFCs
 - Target: 100% of breaking changes documented in RFC
 
-## Quality Targets
+## Quality Targets (Summary)
 - Draft to decision: <2 weeks
 - Reviewers: >3 for architecture RFCs
 - Target: 100% breaking changes documented

@@ -63,7 +63,7 @@ Set headers on EVERY response (success and 429).
 
 ### 5. Distributed Rate Limiting (Redis)
 Lua script for atomic sliding window counter.
-Without shared state, N instances * limit = N*limit.
+Without shared state, N instances \* limit = N\*limit.
 Load script via `SCRIPT LOAD`, call via `EVALSHA`.
 
 ### 6. Middleware

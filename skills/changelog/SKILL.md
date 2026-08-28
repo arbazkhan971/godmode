@@ -107,7 +107,7 @@ const client = createClient({
   apiKey: 'my-api-key',
 ```
 
-**Migration:** See [Migration Guide](#migration-from-1x-to-2x) below.
+**Migration:** See [Migration Guide](#step-7-migration-guide-generation) below.
 
 ### Minimum Node.js version raised to 20
 Node.js 18 is no longer supported. Node.js 20 LTS is now the minimum.
@@ -229,7 +229,6 @@ npm install <package>@1
 ## Getting Help
 - [GitHub Issues](https://github.com/<org>/<repo>/issues)
 - [Discord](https://discord.gg/<invite>)
-```
 
 ### Step 8: Commit and Transition
 

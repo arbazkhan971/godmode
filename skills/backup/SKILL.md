@@ -90,7 +90,6 @@ Integrity verification queries:
 SELECT table_name, n_live_tup
 FROM pg_stat_user_tables
 ```
-```
 
 ### Step 6: Recovery Procedures
 Document step-by-step recovery for each failure scenario:

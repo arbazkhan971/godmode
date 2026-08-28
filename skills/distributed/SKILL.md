@@ -261,6 +261,7 @@ AUTO-DETECT SEQUENCE:
 
 2. Detect consensus/coordination:
  - grep for: etcd, consul, zookeeper in configs or dependencies
+```
 ## Keep/Discard Discipline
 Each design decision either passes validation or gets revised.
 - **KEEP**: Validation checklist passes for the design aspect, failure modes documented.
@@ -293,7 +294,6 @@ Append one row per session. Create the file with headers on first run.
 2. Consensus protocol with fault tolerance: tolerates (N-1)/2 failures.
 3. Partition handling defined. Fencing tokens on leader election.
 4. Every failure mode documented. Chaos test plan exists.
-```
 
 ## Stop Conditions
 Stop when: target reached, budget exhausted, or >5 consecutive discards.

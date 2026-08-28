@@ -12,7 +12,7 @@ Comprehensive guide to event sourcing, CQRS, saga patterns, reliable publishing,
 4. [Outbox Pattern](#outbox-pattern)
 5. [Event Schema Evolution](#event-schema-evolution)
 6. [Event Choreography](#event-choreography)
-7. [Event Store Design](#event-store-design)
+7. [Event Store Design](#event-store-architecture)
 8. [Idempotent Consumers](#idempotent-consumers)
 9. [Dead Letter Queues](#dead-letter-queues)
 10. [Pattern Combinations](#pattern-combinations)
