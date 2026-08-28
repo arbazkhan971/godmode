@@ -1,3 +1,5 @@
 task_id	phase	command	exit_code
 refac-02	starter	cp -r starter + README.md + metric.sh into mktemp ws; (cd ws && bash metric.sh)	1
 refac-02	solution	overlay solution/ onto ws starter; (cd ws && bash metric.sh)	0
+refac-02	sweep-starter	VERIFIED sweep 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh	1
+refac-02	sweep-solution	VERIFIED sweep 2026-08-28: overlay solution/ onto ws starter; timeout 60 bash metric.sh	0

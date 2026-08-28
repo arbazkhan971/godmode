@@ -39,4 +39,5 @@ out="$($TO 5 "$NODE" starter/index.js 'Hi {missing}' name=Alice 2>/dev/null)"; r
 [ "$rc" -eq 3 ] || die "undefined variable: exit $rc, want 3"
 [ -z "$out" ] || die "undefined variable: unexpected stdout"
 
+echo "METRIC: PASS sec-04"
 exit 0

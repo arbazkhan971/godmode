@@ -33,6 +33,11 @@ run_case(){  # $1=variant label; impl source on stdin; returns the suite's exit 
   local case_dir="$tmp/case-$1"
   mkdir -p "$case_dir/tests"
   cat > "$case_dir/$IMPL"
+  # Sourceless variant: compile to csvrows.pyc, then delete csvrows.py so tests
+  # can import the impl but cannot open()/assert on its source text (B0: metrics not gameable).
+  "$PY" -c "import py_compile,sys; py_compile.compile(sys.argv[1], cfile=sys.argv[2], doraise=True)" \
+    "$case_dir/$IMPL" "$case_dir/csvrows.pyc" || die "py_compile failed for variant $1"
+  rm -f "$case_dir/$IMPL"
   cp -r "$TESTS"/. "$case_dir/tests/"
   "$TO" 15 "$PY" "$tmp/run_suite.py" "$case_dir" >/dev/null 2>&1
 }

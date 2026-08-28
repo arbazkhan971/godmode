@@ -43,4 +43,5 @@ out="$($TO 10 "$PY" starter/main.py cat "$fx/root" missing.txt 2>/dev/null)"; rc
 [ "$rc" -ne 0 ] || die "missing.txt: exit 0, want nonzero"
 [ -z "$out" ] || die "missing.txt: unexpected stdout"
 
+echo "METRIC: PASS sec-01"
 exit 0

@@ -1,3 +1,6 @@
 task_id	phase	command	exit_code
 sec-01	starter	cd "$w" && bash metric.sh	1
 sec-01	solution	cp -r bench/tasks/sec-01/solution/. "$w/starter/" && cd "$w" && bash metric.sh	0
+sec-01	sweep-starter	VERIFIED sweep 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh	1
+sec-01	sweep-solution	VERIFIED sweep 2026-08-28: overlay solution/ onto ws starter; timeout 60 bash metric.sh	0
+sec-01	gate-B	VERIFIED gate-B 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh rc=1, no PASS line; overlay solution/ onto ws starter; timeout 60 bash metric.sh rc=0, stdout exactly 'METRIC: PASS sec-01'	0

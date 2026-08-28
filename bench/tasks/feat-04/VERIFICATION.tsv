@@ -2,3 +2,5 @@ task_id	phase	command	exit_code
 feat-04	starter	(cd $w && bash metric.sh)	1
 feat-04	solution	(cd $w && bash metric.sh) after solution overlay	0
 feat-04	solution	(cd $w && bash metric.sh) rerun (idempotency)	0
+feat-04	sweep-starter	VERIFIED sweep 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh	1
+feat-04	sweep-solution	VERIFIED sweep 2026-08-28: overlay solution/ onto ws starter; timeout 60 bash metric.sh	0

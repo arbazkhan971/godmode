@@ -63,8 +63,14 @@ export TZ=UTC
 NAME=${task_id}_${arm}_r${run}
 PROMPT="Make 'bash metric.sh' exit 0. Do not modify metric.sh."
 
+# Model lock: BOTH arms must run the identical model (GOAL3 M3 rule 4 core).
+# glm-5.3 per owner dispatch 2026-08-28 (glm-5 pin was the time-boxed quota-wall
+# workaround; window reset probed 3.6s, 0 rows recorded at switch — ledgered iter 2).
+MODEL=zai/glm-5.3
+
 notes=''
 add_note() { notes=${notes:+$notes;}$1; }
+add_note "model:$MODEL"   # audit trail: frozen TSV schema has no model column
 
 RESULTS=$GM_BENCH_ROOT/results.tsv
 LOCKF=$GM_BENCH_ROOT/results.lock
@@ -98,13 +104,13 @@ if [ "$arm" = godmode ]; then
   (
     cd -- "$WS" || exit 125
     exec timeout "${GM_RUN_TIMEOUT:-600}" pi -p -ne -nc -ns --mode text --no-session \
-      --provider zai --model zai/glm-5 --skill "$ROOT/skills" -n "$NAME" "$PROMPT"
+      --provider zai --model "$MODEL" --skill "$ROOT/skills" -n "$NAME" "$PROMPT"
   ) >> "$LOG" 2>&1
 else
   (
     cd -- "$WS" || exit 125
     exec timeout "${GM_RUN_TIMEOUT:-600}" pi -p -ne -nc -ns --mode text --no-session \
-      --provider zai --model zai/glm-5 -n "$NAME" "$PROMPT"
+      --provider zai --model "$MODEL" -n "$NAME" "$PROMPT"
   ) >> "$LOG" 2>&1
 fi
 rc=$?

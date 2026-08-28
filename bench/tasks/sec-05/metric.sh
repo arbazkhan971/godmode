@@ -66,4 +66,5 @@ out="$($TO 5 bash starter/main.sh 2>/dev/null)"; rc=$?
 [ "$rc" -eq 2 ] || die "usage: exit $rc, want 2"
 [ -z "$out" ] || die "usage: unexpected stdout"
 
+echo "METRIC: PASS sec-05"
 exit 0

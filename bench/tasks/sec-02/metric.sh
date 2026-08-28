@@ -52,4 +52,5 @@ my photo.png $d_spaced
 photo.png $d_photo"
 [ "$out" = "$want" ] || die "batch: wrong output"
 
+echo "METRIC: PASS sec-02"
 exit 0

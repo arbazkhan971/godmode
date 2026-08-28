@@ -3,3 +3,5 @@ perf-05	starter	cp -r starter + README.md + metric.sh into mktemp ws; (cd ws && 
 perf-05	solution	overlay solution/lib/audit.sh onto ws starter; (cd ws && bash metric.sh)	0
 perf-05	gate-starter	repeat starter check on fresh ws (exit 124 at 4s cap on seed 1337)	1
 perf-05	gate-solution	repeat solution check on fresh ws (both seeds pass, ~10.3s total incl. generation)	0
+perf-05	sweep-starter	VERIFIED sweep 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh	1
+perf-05	sweep-solution	VERIFIED sweep 2026-08-28: overlay solution/ onto ws starter; timeout 60 bash metric.sh	0

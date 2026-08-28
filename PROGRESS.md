@@ -398,3 +398,31 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 
 ### Rows completed
 - 0 scored rows (B2 not yet started; pilot = iter-2 opener). results.tsv: header only, committed.
+
+## M3 Iteration 2 — B1 exited (pilot + gates), corpus VERIFIED, B2 opened
+
+### DONE
+- **B1 exited**: pilot `run-farm.sh --tasks bug-01,feat-03 --lanes 2` → 4/4 rows in 74s, all metric_pass=1, exit 0, notes carry `model:zai/glm-5.3`, zero tamper/leak/429/timeout markers, /tmp/gm-farm cleaned. Plain-arm agent genuinely solved bug-01's off-by-one (log-verified). B1 exit clause per GOAL3 met (runner passes 2-task pilot end-to-end, both arms, results.tsv correct).
+- **MODEL LOCK EXCEPTION (ledgered per GOAL3 rule 5)**: run-one.sh switched both arms glm-5 → glm-5.3 via one `MODEL` var + unconditional `model:` note per row (frozen TSV schema has no model column — the note makes same-model-both-arms provable for B3). Basis: owner dispatch pins glm-5.3 everywhere (never flash/highspeed); the glm-5 pin was rule 4's time-boxed quota-wall workaround; window reset probed 3.6s at 12:37 UTC; 0 rows existed at switch (pre-farm, not mid-farm); GOAL3's B1 spec itself showed glm-5.3. Integrity invariant (identical model both arms) holds.
+- **VERIFIED sweep (deferred B0 tail) — 30/30 PASS** by gate tester: per-task starter-copy metric FAIL + solution-overlay metric PASS in isolated mktemp workspaces; rows appended to all 30 VERIFICATION.tsv. perf-04 inner 0.46s vs 2.5s cap, perf-05 inner 0.08s vs 4s cap (3× reps) — no flake risk. Lead independently re-verified the 9 gate-touched tasks (9/9) + the F1 cheat probe.
+- **Gate wave (reviewer+security+tester, parallel, glm-5.3)**: tester SWEEP: PASS 30/30; reviewer APPROVE (4 P3s — all closed: lead ran the mechanical diff [model-pin-only hunk confirmed], this ledger section lands with the commit, arm-audit evidence recorded below); security 2 findings → **F1-MEDIUM test-01 gameable via source-text tests — FIXED**: metric now compiles each variant to a sourceless `csvrows.pyc` (impl source deleted per case dir), so `open("csvrows.py")` cheat tests fail while behavior imports work; fix implementer + lead both probed the exact cheat (assertIn on source substring) → metric now nonzero. **F2-LOW inconsistent PASS lines — FIXED**: sec-01..05, perf-01..03 now print exactly `METRIC: PASS <task_id>` on success (8 metrics, exit-code contract unchanged). Residual (accepted): absolute-path source reads outside the workspace remain theoretically possible (leak scan + isolated copies mitigate); precompute fraud on fixed seeds accepted as designed risk.
+- **Arm audits (iter-1 NEXT item)**: plain arm (−p −ne −nc −ns) listed zero skills (NONE); godmode arm (+ `--skill <repo>/skills`) listed 20+ repo skills. F2-class leak-scan false-positive risk calibrated on pilot: godmode logs show zero hits.
+- Fleet pattern: 3-lens council IN PARALLEL (arch/risk/scope, glm-5.3, report-shaped) → merged plan → lead-direct thin edits (model pin per seq lens) → pilot → gate wave 3-parallel → 2 implementers PARALLEL disjoint (test-01 | 8 metrics) → lead re-verification. ≤6 concurrent, no sub-subagents, all glm-5.3.
+- Stray untracked 1.7MB generated file `700` at repo root (iter-1 perf-test leftover) deleted after no-reference grep (security lens concurred: no residual risk).
+
+### NEXT
+1. B2 drains: `run-farm.sh --runs-per-combo 2 --batch 24 --lanes 4` repeatedly (resume-idempotent), then verify wave `--runs-per-combo 2 --verify-wave` (TRAP: verify wave must pass --runs-per-combo 2 or run-2 passes spawn no verifies). Valid-row counter: exit_code ∉ {-1,125}; 124 counts; scored = empty parent_run. 150 ⇔ ≥15 godmode scored passes (120 + 2G).
+2. On 429: lanes auto-drop 4→2; ledger windows. If -1/125 rows appear: re-dispatch combo under NEW run#, never edit rows.
+3. B3 (analyze.py + showdown post + README badge) next iteration.
+
+### BLOCKERS
+- none (glm-5.3 window healthy; watch B2 volume)
+
+### LESSONS
+- Council converged 3/3 on glm-5.3 switch with the same two guards independently: one MODEL var (one-arm edit = silent contamination) + per-row model note (frozen schema otherwise leaves the same-model claim unprovable).
+- The pilot-before-gates ordering (seq lens) is right twice over: the 4 pilot rows were the gate's end-to-end evidence, and only 4 rows were at risk when the gate found the test-01 gaming hole.
+- Gate-found metric defects are cheapest BEFORE any row exists on the affected task: the F1 fix changed test-01's checksum for free (no rows to invalidate). Freeze order matters: gates → fixes → re-verify → INDEX VERIFIED → first batch.
+- Security's cheat-recipe specificity ("assertIn a pristine substring, assertNotIn a mutant marker") let the fix implementer reproduce the exact attack and the lead re-verify it in one command — vague gaming findings are unfixable, exploit-shaped ones are one-liners.
+
+### Rows completed
+- 4 scored rows (pilot: bug-01×2 arms, feat-03×2 arms, all metric_pass=1). B2 batches follow this commit; count updated at iteration close.

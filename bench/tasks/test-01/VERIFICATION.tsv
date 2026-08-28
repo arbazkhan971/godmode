@@ -1,3 +1,6 @@
 task_id	phase	command	exit_code
 test-01	starter	bash metric.sh	1
 test-01	solution	bash metric.sh	0
+test-01	sweep-starter	VERIFIED sweep 2026-08-28: mktemp ws + starter + metric.sh; timeout 60 bash metric.sh	1
+test-01	sweep-solution	VERIFIED sweep 2026-08-28: overlay solution/ onto ws starter; timeout 60 bash metric.sh	0
+test-01	srcless-fix	VERIFIED 2026-08-28 F1 fix: case dirs sourceless (py_compile cfile csvrows.pyc, rm csvrows.py pre-run): /tmp checks starter rc=1, solution rc=0 METRIC: PASS test-01, cheat-open-source rc=1, behavior-control pristine pass + kills m_quotes	0

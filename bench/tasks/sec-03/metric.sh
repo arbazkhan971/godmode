@@ -33,4 +33,5 @@ for v in "widget 3000" "-leading" "trailing-" "double--dash"; do
   [ "$out" = "INVALID" ] || die "invalid value '$v': verdict '$out', want INVALID"
 done
 
+echo "METRIC: PASS sec-03"
 exit 0

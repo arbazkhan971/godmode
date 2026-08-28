@@ -37,5 +37,5 @@ rc=$?
 [ "$rc" -eq 0 ] || die "starter/index.js exited rc=$rc"
 
 cmp -s "$tmp/out.txt" "$tmp/expected.txt" || die "output does not match expected intersection"
-echo "METRIC: PASS"
+echo "METRIC: PASS perf-03"
 exit 0

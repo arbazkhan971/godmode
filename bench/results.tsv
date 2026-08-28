@@ -1,1 +1,5 @@
 task_id	arm	run#	parent_run	start_ts	end_ts	exit_code	metric_pass	duration_s	notes
+bug-01	plain	1		2026-08-28T12:45:09Z	2026-08-28T12:45:49Z	0	1	40	model:zai/glm-5.3
+bug-01	godmode	1		2026-08-28T12:45:09Z	2026-08-28T12:45:50Z	0	1	41	model:zai/glm-5.3
+feat-03	godmode	1		2026-08-28T12:45:50Z	2026-08-28T12:46:15Z	0	1	25	model:zai/glm-5.3
+feat-03	plain	1		2026-08-28T12:45:50Z	2026-08-28T12:46:22Z	0	1	32	model:zai/glm-5.3

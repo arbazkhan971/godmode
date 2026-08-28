@@ -46,5 +46,5 @@ rc=$?
 [ "$rc" -eq 0 ] || die "starter/main.py exited rc=$rc"
 
 cmp -s "$tmp/out.txt" "$tmp/expected.txt" || die "output does not match expected frequency table"
-echo "METRIC: PASS"
+echo "METRIC: PASS perf-01"
 exit 0
