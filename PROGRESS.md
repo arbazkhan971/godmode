@@ -1,3 +1,5 @@
+M2_MISSION_STATUS: COMPLETE
+
 MISSION_STATUS: COMPLETE
 
 # PROGRESS — godmode 2.0 mission ledger
@@ -340,3 +342,31 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - `gh api -X PATCH repos/…` needs `-f name=<repo>` beside the flag you're changing — the council's F4 precheck avoided a 422 round-trip. `pinDiscussion` is not in the public GraphQL schema; optional API steps must be treated as droppable.
 - The security-agent classifier rejects imperative briefs ("audit for", "execute") as implementation on a no-mutation-tool agent; report-shaped phrasing ("your report must answer") passes first try. Imperatives for builders, noun-verb analysis frames for read-only agents.
 - Council evidence packs again paid for themselves: every GIF number, policy rule, and URL form used by 8 agents came from lead-side verification; the one thing the council pre-computed that mattered most was the PATCH `-f name` guard and the duplicate-pre-flight protocol (new race surface unique to GitHub-side mutations).
+
+## M2 Iteration 7 — M2-P6 exit (coverage sweep) + mission complete
+
+(Numbered 7 per the GOAL2 `## M2 Iteration N` ledger convention — iterations 2-6 precede; iteration 1 was never logged. The dispatch template said "Iteration 1"; chronological truth governs.)
+
+### DONE
+- M2-P6 exit pushed (commit 77b4d02, master, validators green pre-push; CI run started on that SHA). **5 new outcomes ≥ 3 required**: 4 PRs (all dedup checkpoint B clean immediately pre-create, +1/-0 README-only diffs, authorship disclosed in house phrasing) — composio-community/awesome-codex-skills#261 (16.1k★, entry after `polywave`, install-suffix deliberately omitted), Piebald-AI/awesome-gemini-cli#107 (497★, CONTRIBUTING bottom-of-section rule), ccplugins/awesome-claude-code-plugins#411 (924★, Workflow Orchestration end), jqueryscript/awesome-claude-code#627 (505★, (25 ⭐) live snapshot, sort-correct above the (18 ⭐) line) — plus hashgraph-online/awesome-codex-plugins NEEDS_HUMAN decision draft (13 verified preconditions + 3 PR-level rules; SECURITY.md nuance: docs/SECURITY.md exists, root absent).
+- Queue 16 → 25 targets (4 PR_OPEN rows with live URLs, 1 NEEDS_HUMAN, 4 SKIP incl. VoltAgent/awesome-codex-subagents vendoring + 3 audit SKIPs: heilcheng stale/SKILL.md-index scope, libukai guide-not-list, KarelDO dead-2023); totals awk-verified 0/12/5/8/0.
+- Fleet pattern honored: 3-lens council IN PARALLEL (planner×3 accepted 3/3) → 5 implementers IN PARALLEL (B1-B4 fork/branch/entry/push — NO pr create; B5 draft; disjoint scopes) → lead remote verification (GitHub compare API, byte-level anchor checks) → Gate #1 full PRE-PR (reviewer APPROVE 0×P1, security CLEAN/GO, tester 10/10) → findings fixed (draft date, PR-level rules, live-star citation, dedup line, placement pin, T4 body varied + emoji header) → LEAD gh pr create ×4 serial, 30-40s spacing, dedup re-run before each → queue update → Gate #2 parallel over merged diff (reviewer APPROVE, security GO, tester 7/7 incl. live PR liveness) → both residual findings fixed (docs/SECURITY.md wording, &amp;→&) → validators → atomic commit → push. All agents zai/glm-5.3, ≤6 concurrent, no sub-subagents.
+- Gate-caught pre-push: literal `[Name](URL)` format templates in queue Entry-format cells broke validate-structure's link checker (FAIL 2) — reworded to prose; caught by the mandatory battery BEFORE push, not after.
+- **All M2 phases P0-P6 now exited and verified** (iterations 2-7); M2_MISSION_STATUS: COMPLETE written as first line above.
+
+### NEXT (post-mission, human-fire queue)
+1. Monitor 8 open list-PRs (4 mission-1 + 4 new) for maintainer responses; never reopen closed PRs, max 1 PR/target honored.
+2. Human decisions pending: hashgraph Option A/B (draft), 4 older NEEDS_HUMAN forms, 3 launch posts (Discussions-wired).
+3. Polish backlog (unchanged): catalog-table ~127-row completeness, "13 domains vs 11 categories" label, setup-node pin, package.json files[] excludes demo/.
+
+### BLOCKERS
+- none
+
+### LESSONS
+- **Order gates by irreversibility — the two-gate split worked exactly as designed**: Gate #1 (full) over PR artifacts BEFORE `gh pr create` caught 5 fixable findings while fixes were still free (fork-branch + local body edits); Gate #2 (light) over the repo delta caught 2 more pre-push. A post-PR-only gate would have forced public fixup commits on 4 PRs.
+- **The lead's evidence pack had a factual hole the council caught**: "no single skill subdir" was false (skills/godmode/SKILL.md router exists) — which flipped the T1 install-suffix decision (a router-only install would ship broken UX to a 16k★ list). Evidence packs need file-level verification, not just search-result impressions; the risk lens's read-the-tree reflex is now standing practice.
+- **Dedup is a two-checkpoint protocol, not a pre-step**: fork-time grep AND immediately-before-create grep+pr-list. All four targets stayed clean across ~40 minutes, but active 16k★ lists append entries daily — only checkpoint-B output may back a "dedup clean <date>" queue claim.
+- **Reviewers without shells still verify remotely — route around the tool gap**: the G1 reviewer asked for the 5 gh api outputs via supervisor intercom; pasting fresh command output beats accepting an evidence-gap verdict. Its run died waiting; resume-with-outputs revived it with full context in one turn.
+- **Queue Entry-format cells must not contain literal markdown link templates** — `[x](URL)` inside backticks still trips validate-structure's link checker (relative-path resolution). Prose descriptions of format are the queue's own established convention; the one place I deviated was the one place it broke.
+- **Same-day 4-PR bursts are per-maintainer invisible** (1 PR/repo, +1 line each, tailored bodies): spam risk is operational (rate limits), not reputational — serialize PR creates with 30-60s spacing; the drop-to-4 fallback stayed unused.
+- Sort-order conventions hide in plain sight: jqueryscript's star-descending section would have made a blind append a visible convention break (25 above 18, not below); the risk lens's "verify sort not just format" rule placed the entry correctly on first try.
