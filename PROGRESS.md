@@ -1,3 +1,5 @@
+M3_MISSION_STATUS: COMPLETE
+
 M2_MISSION_STATUS: COMPLETE
 
 MISSION_STATUS: COMPLETE
@@ -459,3 +461,32 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 
 ### Rows completed
 - 92 this iteration (44 scored + 48 verify); 168 total in results.tsv (120 scored + 48 verify).
+
+## M3 Iteration 4 — B3 EXIT: analysis + showdown post; M3 COMPLETE
+
+### DONE
+- **B3 exited per GOAL3** at commits efcdbfc + 16c5706 + 04ef1f2: bench/analyze.py (stdlib csv/tab, read-only, scored=empty-parent_run vs verify-regex separation, dup-4-field-key exit 1, --assert-complete 30x2x>=2, C-124 censoring column + dagger footnotes, Mean excl C-124 companion, n/a empty cells, deterministic) + tests/validate-analyze.sh (14-case house-style validator, mktemp-isolated, sha256-guard around every real-TSV read) + docs/blog/godmode-vs-plain-agent-benchmark.md (259 lines; TL;DR/Methodology/Overall/6 categories/Where godmode won/Where it didn't/Verify stability/Threats/Reproduce/60-row appendix — all 83 pipe-table lines machine-verified verbatim against analyze output) + README badge (static benchmark-30_tasks label) and ## Benchmark section. Every claim traceable; keep/revert honestly reported as n/a-not-instrumented (lead's 171-log sweep found only 6 stray "kept" mentions — reviewer's 4-log sample missed them, full sweep governs).
+- **Headline published numbers** (frozen 168-row corpus): godmode 60/60 scored runs = 30/30 tasks; plain 58/60 = 29/30; plain FASTER on median (37.0s vs 41.0s) and on 20/30 per-task mids; godmode won test-writing (median 83.0 vs 89.5, mean 82.4 vs 135.0) and sec-05 (the only task-level delta, disclosed as cap-contingent and within noise); verify 48/48 over 24 of 60 godmode passes across 12 tasks, one-sided by design — all disclosed in the post itself. The honesty IS the brand: the post leads with the losses.
+- **Fleet pattern honored**: 3-lens council IN PARALLEL (arch/risk/scope, glm-5.3, 3/3 first try, report-shaped) → merged plan → Wave 1 single builder (analyze.py + validator, one author to prevent interface drift) → Wave 2 two builders IN PARALLEL disjoint (post | README, both DONE, zero scope bleed) → freeze (2 atomic commits) → validators green → Wave 3 gate IN PARALLEL (reviewer APPROVE 0xP1 0xP2 3xP3; security CLEAN with F1-LOW — accepted-first-try via noun-verb brief, the M2-6/M3-3 classifier lesson holds; tester PASS 9/9 incl. independent TSV recomputation, 83/83 verbatim byte-check, banned-word grep, disclosure grep, lint 0 errors/464 files) → findings fixed pre-push → ledger + status + single push. Peak concurrency 3, <=5 (AGENTS cap) and <=6 (dispatch cap); all children pinned zai/glm-5.3; no sub-sub-agents; metric.sh checksums never touched (results.tsv sha bafdd075...c694 verified unchanged at every wave gate).
+- **Post-gate hardening commit 04ef1f2** (smallest-fix recipes from gate findings): MODEL_RE capture restricted to model-id charset (closes security F1-LOW markdown-smuggle-in-notes) + duration domain guard 0 <= d < inf (closes reviewer P3); output proven BYTE-IDENTICAL on the frozen TSV (diff empty vs gated bundle), validator 14/14, both repo validators re-run green. Reviewer P3 "stray mentions" wording rejected with evidence (full sweep: 6 hits); CI wiring deferred as NEXT per surgical scope.
+- **M3 final gate met**: >=150 rows (168, pushed at 08c8e01), analysis post live (this push), M3_MISSION_STATUS: COMPLETE written as first line (this commit), pushed.
+
+### NEXT (post-mission)
+1. Wire tests/validate-analyze.sh into CI validate job alongside other validators (reviewer P3 follow-up).
+2. Optional: drain remaining 68 verify combos (run-farm.sh --runs-per-combo 2 --verify-wave --batch 24 --lanes 4) to strengthen replication coverage (48 -> ~184 rows); regenerate tables + post numbers only via analyze.py, never hand-edit.
+3. Human-fire queue from M2: 3 launch posts + 4 NEEDS_HUMAN forms + 8 open list-PRs to monitor; the showdown post is now the newsletter-pickup asset.
+4. M2 polish backlog unchanged (catalog tables, setup-node pin, package.json files[]).
+
+### BLOCKERS
+- none (zero 429 windows; no farm runs needed this iteration — corpus frozen at 168)
+
+### LESSONS
+- Council lenses cross-checked each other's numbers and both caught real traps: the risk lens's verify-asymmetry finding (48/48 covers only 24-of-60 parents on the 12 fastest tasks) and its 400s-cap-contingency insight (the entire task-level delta vanishes at a 400s cap) became mandatory post disclosures — a benchmark post that pre-empts its own strongest rebuttals is the shareable kind.
+- Single-author rule for spec+fixture pairs (seq lens): the validator encodes the analyzer's CLI contract; splitting authors invites interface drift that only surfaces at gate time.
+- "Paste-from-machine, prose-from-tables" is enforceable: the post builder's own verbatim-check caught two draft paste errors pre-report, and the tester's byte-check (83/83) plus the reviewer's hand recomputation of every table cell from the TSV gave three independent confirmations of the same numbers.
+- The security classifier's noun-verb rule is now proven twice (M2-6, M3-4): "Security review report of the diff... your report must answer" dispatches first-try; imperative audit briefs die at classification.
+- Post-gate code fixes are safe iff output-provable byte-identical: the hardening commit shipped with diff-empty proof against the gated bundle, so no re-gate of the post's tables was needed — the one artifact the gate had certified stayed certified.
+- Reviewer sampling vs lead census: the reviewer's 4-log grep concluded "zero keep/revert mentions" where the full 171-log sweep found 6; wording decisions in published claims should rest on the exhaustive sweep, not the sample.
+
+### Rows completed
+- 0 new rows this iteration (B3 analyzes the frozen 168-row corpus; results.tsv byte-identical since 08c8e01: 120 scored + 48 verify, >=150 gate held with 18-row margin).
