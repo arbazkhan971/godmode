@@ -763,7 +763,7 @@ Before contributing, ask yourself:
 These are the contributions that have the most impact right now:
 
 ### 1. Implement a Planned Skill
-54 skill directories are waiting for SKILL.md files. Pick one from the [planned skills list](docs/COMPLETE-SKILL-LIST.md#planned-skills-54-directories-reserved). Some high-priority ones:
+all skill directories contain a SKILL.md file. Pick one from the [planned skills list](docs/COMPLETE-SKILL-LIST.md#planned-skills-54-directories-reserved). Some high-priority ones:
 
 | Skill | Why It Matters |
 |-------|---------------|

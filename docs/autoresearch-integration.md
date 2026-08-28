@@ -93,7 +93,7 @@ Optional Docker wrapping for metric commands. AutoAgent requires Docker; Godmode
 
 ### Security and platform abstraction
 
-Autoresearch runs on one machine. Godmode enforces agent capability matrices (read-only agents cannot write, testers cannot touch production code) and adapts to 5 platforms (Claude Code, Gemini CLI, Codex, Cursor, OpenCode).
+Autoresearch runs on one machine. Godmode enforces agent capability matrices (read-only agents cannot write, testers cannot touch production code) and adapts to the supported platforms (Claude Code plus the adapters under adapters/).
 
 ---
 

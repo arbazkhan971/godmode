@@ -148,7 +148,7 @@
 | 125 | test | `/godmode:test` | TDD loop — RED-GREEN-REFACTOR until coverage target met. |
 | 126 | think | `/godmode:think` | Design session — Explore problem, scan codebase, generate 2-3 approaches, recommend one |
 | 127 | tokens | `/godmode:tokens` | Token-budget observability for godmode loops |
-| 128 | tutorial | `/godmode:tutorial` | Day-0 onboarding walkthrough — Gets a first-time user from a fresh install to |
+| 128 | tutorial | `/godmode:tutorial` | Day-0 onboarding walkthrough: first install to a first successful session |
 | 129 | type | `/godmode:type` | Type system and schema validation |
 | 130 | ui | `/godmode:ui` | UI component architecture — Design systems, Storybook, CSS architecture, design tokens, component |
 | 131 | upload | `/godmode:upload` | File upload handling, image optimization, media processing, signed URLs, multipart, virus scanning |

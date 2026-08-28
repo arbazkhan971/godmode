@@ -11,7 +11,7 @@
 
 ## Proposed one-paragraph entry (usable as a Client Showcase `description` or a discussion opener, pending human decision)
 
-godmode is a discipline layer for AI coding agents: 135 skills + 7 subagents wrapping Claude Code, Codex, Cursor, Gemini CLI, OpenCode, pi, and omp in a measure -> modify -> verify -> keep/revert loop. Its skills are folders containing SKILL.md files with name and description frontmatter — the same shape the Agent Skills standard specifies — usable across all seven of those harnesses. Every change is mechanically verified and failed changes are automatically reverted.
+godmode is a discipline layer for AI coding agents: 135 skills + 7 subagents wrapping Claude Code, Codex, Cursor, Gemini CLI, OpenCode, Amp, pi, and omp in a measure -> modify -> verify -> keep/revert loop. Its skills are folders containing SKILL.md files with name and description frontmatter — the same shape the Agent Skills standard specifies — usable across all eight of those harnesses. Every change is mechanically verified and failed changes are automatically reverted.
 
 - Repo: <https://github.com/arbazkhan971/godmode>
 - Release: <https://github.com/arbazkhan971/godmode/releases/tag/v2.0.0>

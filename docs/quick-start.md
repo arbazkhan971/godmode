@@ -214,7 +214,7 @@ Grouped by what you are trying to do, not alphabetical.
 
 ### Specialized Skills
 
-Beyond the 15 core skills, godmode includes the remaining 120 specialized skills for specific domains. Use them directly or let the orchestrator route you:
+Beyond the 15 core skills, godmode’s specialized skills cover specific domains and frameworks. Use them directly or let the orchestrator route you:
 
 | Category | Skills | Example |
 |----------|--------|---------|
