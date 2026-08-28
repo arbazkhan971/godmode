@@ -25,7 +25,7 @@ TSV_HEADER = ["task_id", "arm", "run#", "parent_run", "start_ts", "end_ts",
               "exit_code", "metric_pass", "duration_s", "notes"]
 TASK_RE = re.compile(r"^(?:perf|bug|test|feat|sec|refac)-[0-9]{2}$")
 PARENT_RE = re.compile(r"^(?:perf|bug|test|feat|sec|refac)-[0-9]{2}:godmode:[0-9]+$")
-MODEL_RE = re.compile(r"model:([^;\t]+)")
+MODEL_RE = re.compile(r"model:([A-Za-z0-9._/-]+)")
 UINT_RE = re.compile(r"^[0-9]+$")
 INT_RE = re.compile(r"^-?[0-9]+$")
 CENSOR_CODE = 124
@@ -94,6 +94,9 @@ def load_rows(path):
                 except ValueError:
                     raise DataError("domain",
                                     f"line {line}: bad duration_s '{duration_s}'") from None
+                if not 0 <= duration < float("inf"):
+                    raise DataError("domain",
+                                    f"line {line}: bad duration_s '{duration_s}'")
             else:
                 duration = None
             key = (task_id, arm, run, parent_run)
