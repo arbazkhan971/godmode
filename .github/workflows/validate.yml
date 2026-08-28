@@ -5,11 +5,16 @@ on:
   push:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: validate skills (frontmatter, marketplace coverage, command refs)
         run: bash tests/validate-skills.sh
       - name: validate structure (links, orphan files)
@@ -28,7 +33,7 @@ jobs:
           fi
       - name: markdownlint (repo-wide)
         run: |
-          npm ci
+          npm ci --ignore-scripts
           npm run lint:md
       - name: prose skill-count gate (incl. extensionless artifacts)
         run: bash tests/validate-prose-count.sh
