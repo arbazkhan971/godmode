@@ -1,0 +1,3 @@
+task_id	phase	command	exit_code
+refac-04	starter	cp -r starter + README.md + metric.sh into mktemp ws; (cd ws && bash metric.sh)	1
+refac-04	solution	overlay solution/ onto ws starter; (cd ws && bash metric.sh)	0

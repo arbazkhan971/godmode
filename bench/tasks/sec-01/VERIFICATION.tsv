@@ -1,0 +1,3 @@
+task_id	phase	command	exit_code
+sec-01	starter	cd "$w" && bash metric.sh	1
+sec-01	solution	cp -r bench/tasks/sec-01/solution/. "$w/starter/" && cd "$w" && bash metric.sh	0

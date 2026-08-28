@@ -1,0 +1,4 @@
+task_id	phase	command	exit_code
+sec-03	starter	cd "$w" && bash metric.sh	1
+sec-03	solution	cp -r bench/tasks/sec-03/solution/. "$w/starter/" && cd "$w" && bash metric.sh	0
+sec-03	extra	/usr/bin/timeout 12 /usr/bin/node starter/index.js "aaaaaaaaaaaaaaaaaaaaaaaaaaaa!" (raw starter hang probe)	124

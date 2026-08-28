@@ -14,35 +14,35 @@ Lead-owned manifest. Implementers report status; only the fleet lead edits this 
 
 | id | category | language | effort | title | status |
 |---|---|---|---|---|---|
-| perf-01 | performance-optimization | python3 | S | Word-frequency counter is too slow | EMPTY |
-| perf-02 | performance-optimization | python3 | M | Record join takes quadratic time | EMPTY |
-| perf-03 | performance-optimization | node | S | Tag intersection is too slow | EMPTY |
-| perf-04 | performance-optimization | node | L | Config re-parsed for every item | EMPTY |
-| perf-05 | performance-optimization | bash | M | Per-line grep sweep is too slow | EMPTY |
-| bug-01 | bug-fixing | python3 | S | Log parser drops the final entry | EMPTY |
-| bug-02 | bug-fixing | python3 | M | Cart totals leak between orders | EMPTY |
-| bug-03 | bug-fixing | node | S | Leaderboard sorts scores as text | EMPTY |
-| bug-04 | bug-fixing | node | L | Uploader reports completion too early | EMPTY |
-| bug-05 | bug-fixing | bash | S | Backup script mangles paths with spaces | EMPTY |
-| test-01 | test-writing | python3 | M | Write tests for the CSV row parser | EMPTY |
-| test-02 | test-writing | python3 | M | Write tests for the date-range calculator | EMPTY |
-| test-03 | test-writing | node | L | Write tests for the markup tokenizer | EMPTY |
-| test-04 | test-writing | node | M | Write tests for the double-ended queue | EMPTY |
-| test-05 | test-writing | bash | M | Write a smoke-test suite for the archiver CLI | EMPTY |
-| feat-01 | feature-implementation | python3 | S | Add a JSON output mode | EMPTY |
-| feat-02 | feature-implementation | python3 | M | Add pagination options | EMPTY |
-| feat-03 | feature-implementation | node | S | Add reverse ordering | EMPTY |
-| feat-04 | feature-implementation | node | M | Add a minimum-count filter | EMPTY |
-| feat-05 | feature-implementation | bash | S | Add a dry-run mode | EMPTY |
-| sec-01 | security-hardening | python3 | S | Block path traversal in the file server | EMPTY |
-| sec-02 | security-hardening | python3 | M | Stop shell injection in the thumbnail command | EMPTY |
-| sec-03 | security-hardening | node | S | Fix regex denial of service | EMPTY |
-| sec-04 | security-hardening | node | M | Escape HTML in the template renderer | EMPTY |
-| sec-05 | security-hardening | bash | L | Sanitize eval in the log filter | EMPTY |
-| refac-01 | refactoring | python3 | M | Extract the shared validation helper | EMPTY |
-| refac-02 | refactoring | python3 | L | Split the god-function | EMPTY |
-| refac-03 | refactoring | node | M | Unify the record-loading duplication | EMPTY |
-| refac-04 | refactoring | node | L | Remove the dead feature-flag branches | EMPTY |
-| refac-05 | refactoring | bash | M | Factor out the repeated archive steps | EMPTY |
+| perf-01 | performance-optimization | python3 | S | Word-frequency counter is too slow | DONE |
+| perf-02 | performance-optimization | python3 | M | Record join takes quadratic time | DONE |
+| perf-03 | performance-optimization | node | S | Tag intersection is too slow | DONE |
+| perf-04 | performance-optimization | node | L | Config re-parsed for every item | DONE |
+| perf-05 | performance-optimization | bash | M | Per-line grep sweep is too slow | DONE |
+| bug-01 | bug-fixing | python3 | S | Log parser drops the final entry | DONE |
+| bug-02 | bug-fixing | python3 | M | Cart totals leak between orders | DONE |
+| bug-03 | bug-fixing | node | S | Leaderboard sorts scores as text | DONE |
+| bug-04 | bug-fixing | node | L | Uploader reports completion too early | DONE |
+| bug-05 | bug-fixing | bash | S | Backup script mangles paths with spaces | DONE |
+| test-01 | test-writing | python3 | M | Write tests for the CSV row parser | DONE |
+| test-02 | test-writing | python3 | M | Write tests for the date-range calculator | DONE |
+| test-03 | test-writing | node | L | Write tests for the markup tokenizer | DONE |
+| test-04 | test-writing | node | M | Write tests for the double-ended queue | DONE |
+| test-05 | test-writing | bash | M | Write a smoke-test suite for the archiver CLI | DONE |
+| feat-01 | feature-implementation | python3 | S | Add a JSON output mode | DONE |
+| feat-02 | feature-implementation | python3 | M | Add pagination options | DONE |
+| feat-03 | feature-implementation | node | S | Add reverse ordering | DONE |
+| feat-04 | feature-implementation | node | M | Add a minimum-count filter | DONE |
+| feat-05 | feature-implementation | bash | S | Add a dry-run mode | DONE |
+| sec-01 | security-hardening | python3 | S | Block path traversal in the file server | DONE |
+| sec-02 | security-hardening | python3 | M | Stop shell injection in the thumbnail command | DONE |
+| sec-03 | security-hardening | node | S | Fix regex denial of service | DONE |
+| sec-04 | security-hardening | node | M | Escape HTML in the template renderer | DONE |
+| sec-05 | security-hardening | bash | L | Sanitize eval in the log filter | DONE |
+| refac-01 | refactoring | python3 | M | Extract the shared validation helper | DONE |
+| refac-02 | refactoring | python3 | L | Split the god-function | DONE |
+| refac-03 | refactoring | node | M | Unify the record-loading duplication | DONE |
+| refac-04 | refactoring | node | L | Remove the dead feature-flag branches | DONE |
+| refac-05 | refactoring | bash | M | Factor out the repeated archive steps | DONE |
 
 Status legend: `EMPTY` → `DONE` (implementer shipped + self-verified) → `VERIFIED` (independent gate re-derivation + lead final loop).

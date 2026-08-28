@@ -1,0 +1,4 @@
+task_id	phase	command	exit_code
+feat-01	starter	(cd $w && bash metric.sh)	1
+feat-01	solution	(cd $w && bash metric.sh) after solution overlay	0
+feat-01	solution	(cd $w && bash metric.sh) rerun (idempotency)	0

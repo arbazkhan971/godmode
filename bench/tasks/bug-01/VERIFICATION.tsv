@@ -1,0 +1,5 @@
+task_id	phase	command	exit_code
+bug-01	starter	cp -r starter + README.md + metric.sh into mktemp ws; (cd ws && bash metric.sh)	1
+bug-01	solution	overlay solution/ onto ws starter; (cd ws && bash metric.sh)	0
+bug-01	gate-starter	tester bash metric.sh pristine	1
+bug-01	gate-solution	tester own-fix metric.sh	0

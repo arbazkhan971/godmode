@@ -1,0 +1,3 @@
+task_id	phase	command	exit_code
+perf-03	starter	bash metric.sh	1
+perf-03	solution	bash metric.sh	0

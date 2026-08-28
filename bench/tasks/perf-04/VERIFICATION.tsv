@@ -1,0 +1,5 @@
+task_id	phase	command	exit_code
+perf-04	starter	cp -r starter + README.md + metric.sh into mktemp ws; (cd ws && bash metric.sh)	1
+perf-04	solution	overlay solution/lib/render.js onto ws starter; (cd ws && bash metric.sh)	0
+perf-04	gate-starter	repeat starter check on fresh ws (exit 124 at 2.5s cap on seed 1337)	1
+perf-04	gate-solution	repeat solution check on fresh ws (both seeds pass, ~2.6s total)	0
