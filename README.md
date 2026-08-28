@@ -17,6 +17,9 @@ Godmode turns any AI coding assistant into an autonomous engineering loop — 13
 [![pi](https://img.shields.io/badge/pi-supported-20B2AA.svg)](adapters/pi/)
 [![Amp](https://img.shields.io/badge/Amp-supported-2257D7.svg)](adapters/amp/)
 
+<p><img src="demo/optimize-loop.gif" alt="Terminal capture: godmode optimize loop on a real script — baseline 189ms, lru_cache KEEP at 0ms, fib(32) regression DISCARD at 517ms, reverted with git reset --hard" width="880"></p>
+<sub>Real capture, live pi session — a win kept, a regression caught and reverted. <a href="#see-it-in-action">More demos ↓</a></sub>
+
 </div>
 
 > **TL;DR:** Install with `claude plugin install godmode`. Say `/godmode optimize my API` and walk away. It measures, iterates, keeps improvements, reverts failures, and stops when done.
@@ -595,6 +598,14 @@ Opt out selectively: `/godmode:terse off`, `GODMODE_TOKENS=0`. Principles prelud
 
 Every improvement shipped in Phases 0–E fires automatically on every `/godmode:*` invocation. No flags. No opt-in. The 8 pipeline skills (`think`, `plan`, `build`, `test`, `fix`, `optimize`, `secure`, `ship`) each inherit the full stack via a `Rule 0` in their Hard Rules section that references [`SKILL.md §14 Default Activations`](SKILL.md). A first-time user running `/godmode make my API faster` on a fresh repo gets: research auto-dispatched (if non-trivial), principles prelude read by every agent, pre-commit audit dropping drift hunks before commit, terse mode activating at round 2, token logging at every round, Progressive Disclosure routing at ~90% context reduction, and a plan with a declared coordination pattern. Every one of those was opt-in before Phase E.
 </details>
+
+---
+
+## Community
+
+Wins, questions, and failure stories are welcome in [Discussions](https://github.com/arbazkhan971/godmode/discussions). Share what godmode kept — or reverted — for you.
+
+<p align="center"><a href="https://star-history.com/#arbazkhan971/godmode&Date"><img alt="Star History Chart" src="https://api.star-history.com/svg?repos=arbazkhan971/godmode&type=Date"></a></p>
 
 ---
 
