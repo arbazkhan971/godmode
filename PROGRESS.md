@@ -370,3 +370,31 @@ Append-only log per GOAL.md standing rule 7. One section per iteration: DONE / N
 - **Queue Entry-format cells must not contain literal markdown link templates** — `[x](URL)` inside backticks still trips validate-structure's link checker (relative-path resolution). Prose descriptions of format are the queue's own established convention; the one place I deviated was the one place it broke.
 - **Same-day 4-PR bursts are per-maintainer invisible** (1 PR/repo, +1 line each, tailored bodies): spam risk is operational (rate limits), not reputational — serialize PR creates with 30-60s spacing; the drop-to-4 fallback stayed unused.
 - Sort-order conventions hide in plain sight: jqueryscript's star-descending section would have made a blind append a visible convention break (25 above 18, not below); the risk lens's "verify sort not just format" rule placed the entry correctly on first try.
+
+## M3 Iteration 1 — B0 corpus complete + B1 runner staged (pilot pending)
+
+### DONE
+- **B0 exited on disk**: all 30 tasks complete. 28 were finished by the prior (unledgered) iteration with VERIFICATION.tsv evidence; the two gaps — **perf-04** (node, L, config-reparse) and **perf-05** (bash, M, per-line grep sweep) — were completed this iteration after two implementer waves died to rate limits (lead-authored final): README (no solution hints; perf-05 pins fixed-width 16-hex signature contract), metric.sh (seeded 1337/4242, expected output computed independently in-generator, wall-time caps enforced via timeout — perf-04: N=160k items, 2.5s cap, starter ~8.4s≈3.4x cap, solution ~0.5s; perf-05: 462-sig watchlist incl. dups + 50MB export, 4s cap, starter ~12s≈3x cap, solution ~1.6s), expected_effort, SOLUTION.md, VERIFICATION.tsv. INDEX.md: 30/30 DONE (VERIFIED sweep = iter-2 gate wave).
+- **B1 staged**: `bench/run-one.sh` (mktemp workspace, exact copylist, metric.sh sha256 before/after → metric_tampered rows, plain arm `-p -ne -nc -ns` vs godmode arm `--skill <repo>/skills`, both `zai/glm-5`, LEAK_SCAN_HIT/429_hit/timeout notes, flock-append, exit-0-always) and `bench/run-farm.sh` (deterministic queue, --batch/--tasks/--lanes/--runs-per-combo/--verify-wave/--dry-run, chunked xargs, checkpoint resume by 4-field key, lane-drop 4→2 on ≥3 429-hits) + results.tsv header + .gitignore. **Lead-verified via stub tests**: run-one all 5 paths (success/exact-godmode-argv/tamper-sha/leak/timeout-124); run-farm queue order, batch cap, resume-exact, verify-wave +2-per-pass idempotent, bad-id exit 2, SIGINT no-dup-rows (trap-deferral nuance noted below). Real results.tsv untouched (GM_BENCH_ROOT test isolation).
+- **Fleet pattern (compressed by quota + 60-min lead timeout)**: 3-lens council IN PARALLEL (arch/risk/scope — merged: glm-5 hardcode, detection-over-prevention for solution leakage, GM_BENCH_ROOT isolation, verify-wave arithmetic fix 120+2G≥150) → 4 implementers IN PARALLEL → wave-2 2 implementers. Two planner dispatches were rejected by the read-only task classifier before report-shaped phrasing landed (3rd try 3/3).
+- **429 root-cause identified**: fleet subagents default to **glm-5.3** (GOAL3 rule 4: walled until 18:40 today) — wave-1's simultaneous child failures were window exhaustion, not concurrency (lead's explicit `zai/glm-5` probe succeeded mid-outage). All remaining fleet dispatches must pin `model: zai/glm-5` explicitly; wave-2 children on glm-5.3 were killed at ~6 min and their scopes lead-completed.
+
+### NEXT (ordered, iter 2 opens with these)
+1. **B1 exit = PILOT**: `bash bench/run-farm.sh --tasks bug-01,feat-03 --lanes 2` (both arms, real zai/glm-5 runs; first 4 scored rows in results.tsv) + arm-audit probes (plain arm must show zero godmode skills; godmode arm must show repo skills loaded).
+2. Gate wave (reviewer+security+tester IN PARALLEL, all pinned zai/glm-5) over commit b4b8938 diff → INDEX DONE→VERIFIED sweep (30 tasks).
+3. B2 execution: `--batch 24` drains, lanes 4→2 on 429, until ≥150 rows (policy: 2 scored runs/combo both arms = 120 + verify-wave +2 per godmode pass).
+4. B3: analyze.py + honest showdown post.
+
+### BLOCKERS
+- glm-5.3 5h window (until 18:40 UTC) starved implementer waves 1-2; mitigated by explicit zai/glm-5 pinning (probe-verified working).
+
+### LESSONS
+- **The fleet's default child model is NOT the session model** — children spawned without an explicit `model:` ran glm-5.3 into the quota wall while the lead's glm-5 probe sailed through. Explicit per-dispatch model pinning is now standing practice for M3.
+- GOAL3's B1 inline `--model zai/glm-5.3` is stale vs rule 4's `zai/glm-5` — 3/3 council lenses + empirical 429 evidence: rule 4 wins; runner hardcodes glm-5.
+- Perf-metric sizing is node-version-dependent (9.8ms/item on /usr/bin/node v20 vs 51µs on v24): always measure on the box that runs the farm, at final N, before freezing caps.
+- Metric total-runtime budget must include generator passes (perf-05 PASS path ≈10.3s, generator-dominated) — cap the workload by the ≤30s contract, not just the program under test.
+- bash defers INT traps until the foreground pipeline ends: a single-PID SIGINT to run-farm mid-chunk lets the chunk finish (invariants held — zero dup keys, resume exact); real kills should signal the process group. Cosmetic, documented.
+- workflowScript task briefs must be backtick-free (JS template literal parsing) and report-shaped for read-only agents — two failure modes, two re-dispatches, both avoidable.
+
+### Rows completed
+- 0 scored rows (B2 not yet started; pilot = iter-2 opener). results.tsv: header only, committed.
