@@ -18,7 +18,13 @@
 
 set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+top_dir="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$top_dir" ]; then
+  echo "FAIL: not inside a git repository — run from the godmode repo"
+  echo "GATE BROKEN"
+  exit 2
+fi
+cd "$top_dir"
 
 ROOT="${1:-${GODMODE_PROSE_ROOT:-.}}"
 
@@ -30,6 +36,10 @@ actual="$(find skills -name SKILL.md -type f | wc -l | tr -d ' ')"
 # Claim shapes caught (council amendment: TOTAL-corpus-count drift only,
 # not subset references):
 #   A. Three-digit counts (1xx) are ALWAYS flagged, in the four shapes
+#      `NNN skills`, `NNN-skill`, `Skills (NNN)`, `(NNN skills)` — plus any
+#      ONE adjectival word between count and "skills" (`135 specialized
+#      skills`, `135 Godmode skills`) so the dominant adjectival claim shape
+#      cannot drift un-gated.
 #      "NNN skills", "NNN implemented skills", "NNN-skill", "Skills (NNN)",
 #      "(NNN skills)". The real drift classes (126/134/135/151) live here.
 #   B. Smaller counts are flagged ONLY with a total-context anchor on the
@@ -44,7 +54,7 @@ actual="$(find skills -name SKILL.md -type f | wc -l | tr -d ' ')"
 #      skills") is a documented residual blind spot of this design.
 # Blind to "N+ skills", "Skills (N+)", "N.x" section numbers, and path forms
 # such as `head -20 skills/foo/SKILL.md` (stripped below before extraction).
-CLAIM_RE='\<1[0-9][0-9] +([Ii]mplemented +)?[Ss]kills\>|\<1[0-9][0-9]-[Ss]kill|[Ss]kills? \(1[0-9][0-9]\)|\(1[0-9][0-9] +[Ss]kills?\)|\<[0-9]+ +([Ii]mplemented|[Tt]otal|[Cc]omplete|[Ff]ull) +[Ss]kills\>|\<([Bb]undles?|[Cc]atalog|[Cc]orpus)[^.0-9]{0,40}\<[0-9]+ +[Ss]kills\>|\<[0-9]+ +[Ss]kills +([Tt]otal|[Cc]omplete|[Ff]ull)\>'
+CLAIM_RE='\<1[0-9][0-9] +([A-Za-z-]+ +)?[Ss]kills\>|\<1[0-9][0-9]-[Ss]kill|[Ss]kills? \(1[0-9][0-9]\)|\(1[0-9][0-9] +[Ss]kills?\)|\<[0-9]+ +([Ii]mplemented|[Tt]otal|[Cc]omplete|[Ff]ull) +[Ss]kills\>|\<([Bb]undles?|[Cc]atalog|[Cc]orpus)[^.0-9]{0,40}\<[0-9]+ +[Ss]kills\>|\<[0-9]+ +[Ss]kills +([Tt]otal|[Cc]omplete|[Ff]ull)\>'
 
 PASS=0
 FAIL=0
@@ -124,15 +134,17 @@ anchor_num=97
 
 git ls-files > "$fixture/tracked-files.list"
 printf 'Godmode ships %s skills.\n' "$stale_num" > "$fixture/stale-fixture.md"
+printf 'Godmode ships %s specialized skills.\n' "$stale_num" >> "$fixture/stale-fixture.md"
 printf 'Godmode bundles %s skills today.\n' "$anchor_num" >> "$fixture/stale-fixture.md"
 printf 'Godmode ships %s skills.\n' "$actual" > "$fixture/current-fixture.md"
 
 selftest_out="$(scan_root "$fixture")"
-if printf '%s\n' "$selftest_out" | grep -q "stale-fixture.md.*claimed $stale_num, disk $actual" \
+adj_count="$(printf '%s\n' "$selftest_out" | grep -c "claimed $stale_num, disk $actual" || true)"
+if [ "$adj_count" -ge 2 ] \
    && printf '%s\n' "$selftest_out" | grep -q "stale-fixture.md.*claimed $anchor_num, disk $actual" \
    && ! printf '%s\n' "$selftest_out" | grep -q "current-fixture.md"; then
   PASS=$((PASS + 1))
-  echo "  PASS: self-test — stale 1xx $stale_num and anchored $anchor_num flagged, current $actual not flagged"
+  echo "  PASS: self-test — stale 1xx $stale_num (bare + adjectival) and anchored $anchor_num flagged, current $actual not flagged"
 else
   echo "  FAIL: self-test — detector cannot demonstrate detection"
   echo "GATE BROKEN"
