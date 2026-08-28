@@ -26,3 +26,11 @@ jobs:
             echo "skill count drift detected"
             exit 1
           fi
+      - name: markdownlint (repo-wide)
+        run: |
+          npm ci
+          npm run lint:md
+      - name: prose skill-count gate (incl. extensionless artifacts)
+        run: bash tests/validate-prose-count.sh
+      - name: adapter install smoke (real installers, temp prefixes)
+        run: bash tests/adapter-smoke.sh
